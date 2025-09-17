@@ -14,45 +14,13 @@ import {
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { getSearchFilterFromSearchString } from 'utils/searchUtils';
+import { normalizeToArray } from 'utils/arrayUtils';
 import { isVulnerabilitySeverity, type VulnerabilitySeverity } from 'types/cve.proto';
-import { getDate } from 'utils/dateUtils';
+import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
 
 export type ViewBasedReportJobDetailsProps = {
     reportSnapshot: ViewBasedReportSnapshot;
 };
-
-function formatCveDiscoveredTime(value: string): string {
-    try {
-        // Parse the condition prefix and date
-        const match = value.match(/^([<>]?)(.+)$/);
-        if (!match) {
-            return value; // Return original if parsing fails
-        }
-
-        const [, condition, dateStr] = match;
-        const date = new Date(dateStr);
-
-        // Check if date is valid
-        if (Number.isNaN(date.getTime())) {
-            return value; // Return original if date is invalid
-        }
-
-        const formattedDate = getDate(date);
-
-        // Map conditions to user-friendly text
-        switch (condition) {
-            case '>':
-                return `After ${formattedDate}`;
-            case '<':
-                return `Before ${formattedDate}`;
-            default:
-                return `On ${formattedDate}`;
-        }
-    } catch {
-        // Return original value if any error occurs
-        return value;
-    }
-}
 
 function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetailsProps) {
     const query = getSearchFilterFromSearchString(reportSnapshot.viewBasedVulnReportFilters.query);
@@ -143,7 +111,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                     <DescriptionListDescription>
                         {severityValues ? (
                             <Stack>
-                                {(Array.isArray(severityValues) ? severityValues : [severityValues])
+                                {normalizeToArray(severityValues)
                                     .filter((severity): severity is VulnerabilitySeverity =>
                                         isVulnerabilitySeverity(severity)
                                     )
@@ -164,10 +132,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                     <DescriptionListDescription>
                         {cveDiscoveredTimeValues ? (
                             <Stack>
-                                {(Array.isArray(cveDiscoveredTimeValues)
-                                    ? cveDiscoveredTimeValues
-                                    : [cveDiscoveredTimeValues]
-                                ).map((timeValue) => (
+                                {normalizeToArray(cveDiscoveredTimeValues).map((timeValue) => (
                                     <div key={timeValue}>{formatCveDiscoveredTime(timeValue)}</div>
                                 ))}
                             </Stack>
