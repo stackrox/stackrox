@@ -128,15 +128,14 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 		return errors.Wrap(err, "failed to initialize upgrade controllers")
 	}
 
-	go m.updateClusterHealthForever()
+	t := time.NewTicker(clusterCheckinInterval)
+	go m.updateClusterHealthForever(t.C, t.Stop)
 	return nil
 }
 
-func (m *manager) updateClusterHealthForever() {
-	t := time.NewTicker(clusterCheckinInterval)
-	defer t.Stop()
-
-	for range t.C {
+func (m *manager) updateClusterHealthForever(ticker <-chan time.Time, close func()) {
+	defer close()
+	for range ticker {
 		clusters, err := m.clusters.GetClusters(managerCtx)
 		if err != nil {
 			log.Errorf("error updating cluster healths: %v", err)
@@ -145,7 +144,11 @@ func (m *manager) updateClusterHealthForever() {
 		for _, cluster := range clusters {
 			conn := m.GetConnection(cluster.GetId())
 			if conn == nil {
-				m.updateInactiveClusterHealth(cluster)
+				// Only update inactive health if the sensor doesn't have health monitoring capability
+				// If it has HealthMonitoringCap, rely on the health pipeline instead
+				if !cluster.GetHealthStatus().GetHealthInfoComplete() {
+					m.updateInactiveClusterHealth(cluster)
+				}
 				continue
 			}
 
