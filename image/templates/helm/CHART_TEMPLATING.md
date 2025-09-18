@@ -1,6 +1,6 @@
 # Helm Chart Templating in ACS
 
-This document explains how we produces Helm charts from the codebase in ACS, focusing on the meta-templating system that allows us to customize charts based on build-time parameters.
+This document explains how we produce Helm charts from the ACS codebase, focusing on the meta-templating system that allows us to customize charts based on build-time parameters.
 
 ## Overview
 
