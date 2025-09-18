@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -115,12 +116,9 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 	if len(objs) < batchSize {
 		batchSize = len(objs)
 	}
-	inputRows := make([][]interface{}, 0, batchSize)
 
 	var err error
 
-	// This is a copy, so first we must delete the rows, and re-add them.
-	deletes := make([]string, 0, batchSize)
 	copyCols := []string{
 		"id",
 		"type",
@@ -144,56 +142,52 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 		return err
 	}
 
-	for idx, obj := range objs {
-		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
-			obj.Snoozed = storedCVE.GetSnoozed()
-			obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
-			obj.SnoozeStart = storedCVE.GetSnoozeStart()
-			obj.SnoozeExpiry = storedCVE.GetSnoozeExpiry()
-		} else {
-			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-		}
+	for objBatch := range batcher.Batch(objs, batchSize) {
+		inputRows := make([][]interface{}, 0, len(objBatch))
+		deletes := make([]string, 0, len(objBatch))
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
-		}
-
-		inputRows = append(inputRows, []interface{}{
-			obj.GetId(),
-			obj.GetType(),
-			obj.GetCveBaseInfo().GetCve(),
-			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-			obj.GetCvss(),
-			obj.GetSeverity(),
-			obj.GetImpactScore(),
-			obj.GetSnoozed(),
-			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
-			serialized,
-		})
-
-		// Add the id to be deleted.
-		deletes = append(deletes, obj.GetId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// Copy does not upsert so have to delete first.
-			_, err = tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCvesTableName+" WHERE id = ANY($1::text[])", deletes)
-			if err != nil {
-				return err
-			}
-			// Clear the inserts for the next batch.
-			deletes = nil
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{pkgSchema.ClusterCvesTableName}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
+		for _, obj := range objBatch {
+			if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
+				obj.Snoozed = storedCVE.GetSnoozed()
+				obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
+				obj.SnoozeStart = storedCVE.GetSnoozeStart()
+				obj.SnoozeExpiry = storedCVE.GetSnoozeExpiry()
+			} else {
+				obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 			}
 
-			// Clear the input rows for the next batch
-			inputRows = inputRows[:0]
+			serialized, marshalErr := obj.MarshalVT()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			inputRows = append(inputRows, []interface{}{
+				obj.GetId(),
+				obj.GetType(),
+				obj.GetCveBaseInfo().GetCve(),
+				protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+				protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+				obj.GetCvss(),
+				obj.GetSeverity(),
+				obj.GetImpactScore(),
+				obj.GetSnoozed(),
+				protocompat.NilOrTime(obj.GetSnoozeExpiry()),
+				serialized,
+			})
+
+			// Add the id to be deleted.
+			deletes = append(deletes, obj.GetId())
+		}
+
+		// Copy does not upsert so have to delete first.
+		_, err = tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCvesTableName+" WHERE id = ANY($1::text[])", deletes)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.CopyFrom(ctx, pgx.Identifier{pkgSchema.ClusterCvesTableName}, copyCols, pgx.CopyFromRows(inputRows))
+		if err != nil {
+			return err
 		}
 	}
 	return removeOrphanedClusterCVEs(ctx, tx)
@@ -204,7 +198,6 @@ func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType stora
 	if len(objs) < batchSize {
 		batchSize = len(objs)
 	}
-	inputRows := make([][]interface{}, 0, batchSize)
 
 	var err error
 	copyCols := []string{
@@ -221,46 +214,40 @@ func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType stora
 		return err
 	}
 
-	deletes := set.NewStringSet()
+	for objBatch := range batcher.Batch(objs, batchSize) {
+		inputRows := make([][]interface{}, 0, len(objBatch))
+		deletes := set.NewStringSet()
 
-	for idx, obj := range objs {
-		oldEdges.Remove(obj.GetId())
+		for _, obj := range objBatch {
+			oldEdges.Remove(obj.GetId())
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
+			serialized, marshalErr := obj.MarshalVT()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			inputRows = append(inputRows, []interface{}{
+				obj.GetId(),
+				obj.GetIsFixable(),
+				obj.GetFixedBy(),
+				uuid.FromStringOrNil(obj.GetClusterId()),
+				obj.GetCveId(),
+				serialized,
+			})
+
+			// Add the id to be deleted.
+			deletes.Add(obj.GetId())
 		}
 
-		inputRows = append(inputRows, []interface{}{
-			obj.GetId(),
-			obj.GetIsFixable(),
-			obj.GetFixedBy(),
-			uuid.FromStringOrNil(obj.GetClusterId()),
-			obj.GetCveId(),
-			serialized,
-		})
+		// Copy does not upsert so have to delete first.
+		_, err = tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCveEdgesTableName+" WHERE id = ANY($1::text[])", deletes.AsSlice())
+		if err != nil {
+			return err
+		}
 
-		// Add the id to be deleted.
-		deletes.Add(obj.GetId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// Copy does not upsert so have to delete first.
-			_, err = tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCveEdgesTableName+" WHERE id = ANY($1::text[])", deletes.AsSlice())
-			if err != nil {
-				return err
-			}
-
-			// Clear the inserts for the next batch
-			deletes = nil
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{pkgSchema.ClusterCveEdgesTableName}, copyCols, pgx.CopyFromRows(inputRows))
-			if err != nil {
-				return err
-			}
-
-			// Clear the input rows for the next batch
-			inputRows = inputRows[:0]
+		_, err = tx.CopyFrom(ctx, pgx.Identifier{pkgSchema.ClusterCveEdgesTableName}, copyCols, pgx.CopyFromRows(inputRows))
+		if err != nil {
+			return err
 		}
 	}
 	return removeOrphanedImageCVEEdges(ctx, tx, oldEdges.AsSlice())
