@@ -67,12 +67,12 @@ func (tr trackerRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics) (R
 		return RunnerConfiguration{}, nil
 	}
 	var runnerConfig RunnerConfiguration
-	for _, c := range tr {
-		rcfg, err := c.NewConfiguration(c.getGroupConfig(cfg))
+	for _, tracker := range tr {
+		trackerConfig, err := tracker.NewConfiguration(tracker.getGroupConfig(cfg))
 		if err != nil {
 			return nil, err
 		}
-		runnerConfig = append(runnerConfig, rcfg)
+		runnerConfig = append(runnerConfig, trackerConfig)
 	}
 	return runnerConfig, nil
 }
@@ -88,8 +88,8 @@ func (tr trackerRunner) Reconfigure(cfg RunnerConfiguration) {
 	} else if len(cfg) != len(tr) {
 		log.Error("invalid metrics configuration")
 	} else {
-		for i, r := range tr {
-			r.Reconfigure(cfg[i])
+		for i, tracker := range tr {
+			tracker.Reconfigure(cfg[i])
 		}
 	}
 }
@@ -103,8 +103,8 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
-		for _, r := range tr {
-			go r.Gather(ctx)
+		for _, tracker := range tr {
+			go tracker.Gather(ctx)
 		}
 	}
 	registry := metrics.GetCustomRegistry(userID)
