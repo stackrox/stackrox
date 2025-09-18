@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -142,7 +142,7 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 		return err
 	}
 
-	for objBatch := range batcher.Batch(objs, batchSize) {
+	for objBatch := range slices.Chunk(objs, batchSize) {
 		inputRows := make([][]interface{}, 0, len(objBatch))
 		deletes := make([]string, 0, len(objBatch))
 
@@ -214,7 +214,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType stora
 		return err
 	}
 
-	for objBatch := range batcher.Batch(objs, batchSize) {
+	for objBatch := range slices.Chunk(objs, batchSize) {
 		inputRows := make([][]interface{}, 0, len(objBatch))
 		deletes := set.NewStringSet()
 
