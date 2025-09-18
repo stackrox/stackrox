@@ -402,7 +402,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	return errorList.ToError()
 }
 
-// TODO: Make this return []*storage.ImageV2
+// TODO: ROX-30948 Make this return []*storage.ImageV2
 func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error) {
 	imageIDs := make([]string, 0, len(deployment.GetContainers()))
 	for _, c := range deployment.GetContainers() {

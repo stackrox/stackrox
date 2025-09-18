@@ -14,7 +14,6 @@ import (
 	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -69,13 +68,8 @@ func NewTestDataStore(
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	dbStore := pgStore.FullStoreWrap(pgStore.New(pool))
-	var imageStore imageDS.DataStore
-	var imageV2Store imageV2DS.DataStore
-	if features.FlattenImageData.Enabled() {
-		imageV2Store = imageV2DS.GetTestPostgresDataStore(t, pool)
-	} else {
-		imageStore = imageDS.GetTestPostgresDataStore(t, pool)
-	}
+	imageStore := imageDS.GetTestPostgresDataStore(t, pool)
+	imageV2Store := imageV2DS.GetTestPostgresDataStore(t, pool)
 	processBaselineStore := pbDS.GetTestPostgresDataStore(t, pool)
 	networkFlowClusterStore, err := nfDS.GetTestPostgresClusterDataStore(t, pool)
 	if err != nil {
