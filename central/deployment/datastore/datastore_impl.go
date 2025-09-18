@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
-	"github.com/stackrox/rox/central/imagev2/datastore/mapper"
 	"github.com/stackrox/rox/central/metrics"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
@@ -424,7 +424,7 @@ func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment 
 		for _, c := range deployment.GetContainers() {
 			img, ok := imageMap[c.GetImage().GetId()]
 			if ok {
-				images = append(images, mapper.ConvertToV1(img))
+				images = append(images, imageUtils.ConvertToV1(img))
 			} else {
 				images = append(images, types.ToImage(c.GetImage()))
 			}
