@@ -141,7 +141,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		}).
 		Return(nil)
 
-	runner := makeRunner(&runnerDatastores{dds, ads})
+	runner := makeRunner(&runnerDatastores{deployments: dds, alerts: ads})
 	runner.initialize(cds)
 	runner[0].Gather(makeAdminContext(t))
 	runner[1].Gather(makeAdminContext(t))
