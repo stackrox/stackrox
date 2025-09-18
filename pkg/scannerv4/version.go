@@ -1,7 +1,9 @@
 package scannerv4
 
 import (
+	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -23,10 +25,24 @@ type Version struct {
 // Encode converts a Version into a URI query string.
 // The error case is unlikely and can mostly be used as a program assertion.
 func (v Version) Encode() (string, error) {
-	var uv url.Values
-	if err := mapstructure.Decode(v, &uv); err != nil {
-		return "", err
+	// mapstructure doesn't have a convenient way to decode struct string
+	// fields into a map []string value. Instead, decode Version into a
+	// map[string]string first, copy the values over to a url.Values object,
+	// and encode that. This also has the added benefit of ignoring empty
+	// string fields in Version during the map[string]string -> url.Values
+	// copy.
+	var decodeMap map[string]string
+	if err := mapstructure.Decode(v, &decodeMap); err != nil {
+		return "", fmt.Errorf("decoding version to string map: %w", err)
 	}
+
+	uv := url.Values{}
+	for k, v := range decodeMap {
+		if v != "" {
+			uv.Set(k, v)
+		}
+	}
+
 	return uv.Encode(), nil
 }
 
@@ -37,15 +53,21 @@ func (v Version) Encode() (string, error) {
 func DecodeVersion(version string) (Version, error) {
 	uv, err := url.ParseQuery(version)
 	if err != nil {
-		return Version{}, err
+		return Version{}, fmt.Errorf("parsing url query string: %w", err)
 	}
 
-	// The `Values` type provided by net/url is a map under the hood:
-	// `type Values map[string][]string`. Therefore, we can use mapstructure to
-	// decode the values in a *Version.
+	// mapstructure doesn't have a convenient way to decode map []string values
+	// to struct string fields. Instead, copy all values over to a
+	// map[string]string while joining all string slices to a single string,
+	// then decode that map[string]string to a Version.
+	encodeMap := make(map[string]string)
+	for k, v := range uv {
+		encodeMap[k] = strings.Join(v, ",")
+	}
+
 	var v Version
-	if err := mapstructure.Decode(uv, &v); err != nil {
-		return Version{}, err
+	if err := mapstructure.Decode(encodeMap, &v); err != nil {
+		return Version{}, fmt.Errorf("decoding version from string map: %w", err)
 	}
 
 	return v, nil
