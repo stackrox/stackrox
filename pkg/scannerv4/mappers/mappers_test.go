@@ -1610,7 +1610,7 @@ func Test_toProtoV4VulnerabilitiesMapWithExploit(t *testing.T) {
 					Id:     "foo",
 					Issued: protoNow,
 					Name:   "CVE-1234-567",
-					Exploit: &v4.VulnerabilityReport_Vulnerability_Exploit{
+					Exploit: &v4.VulnerabilityReport_Vulnerability_CISAExploit{
 						CatalogVersion:             "2025.10.01",
 						DateAdded:                  "2025-09-20",
 						ShortDescription:           "This is a bad vulnerability",

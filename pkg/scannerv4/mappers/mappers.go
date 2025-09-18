@@ -711,7 +711,7 @@ func toProtoV4VulnerabilitiesMap(
 			}
 		}
 		if exploit != nil {
-			vulnerabilities[k].Exploit = &v4.VulnerabilityReport_Vulnerability_Exploit{
+			vulnerabilities[k].Exploit = &v4.VulnerabilityReport_Vulnerability_CISAExploit{
 				CatalogVersion:             exploit.CatalogVersion,
 				DateAdded:                  exploit.DateAdded,
 				ShortDescription:           exploit.ShortDescription,
