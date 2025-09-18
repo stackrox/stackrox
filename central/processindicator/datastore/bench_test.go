@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -61,8 +61,9 @@ func BenchmarkSearchIndicator(b *testing.B) {
 	db := pgtest.ForT(b)
 	store := postgresStore.New(db)
 	plopStore := plopStore.New(db)
+	searcher := search.New(store)
 
-	datastore := New(store, plopStore, nil)
+	datastore := New(store, plopStore, searcher, nil)
 
 	ctx := sac.WithAllAccess(context.Background())
 	// Add the data first.
@@ -70,7 +71,7 @@ func BenchmarkSearchIndicator(b *testing.B) {
 	require.NoError(b, err)
 
 	b.ResetTimer()
-	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment1).ProtoQuery()
+	query := pgSearch.NewQueryBuilder().AddExactMatches(pgSearch.DeploymentID, fixtureconsts.Deployment1).ProtoQuery()
 	for i := 0; i < b.N; i++ {
 		results, err := datastore.SearchRawProcessIndicators(ctx, query)
 		require.NoError(b, err)
