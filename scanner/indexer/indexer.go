@@ -41,7 +41,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgversion "github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/scanner/config"
@@ -589,11 +588,10 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, indexerVersion string, report *claircore.IndexReport) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.StoreIndexReport")
 
-	// Ensure the provided indexer version string is valid. This is important
-	// for comparability because pkgversion.CompareVersions returns 0 if the
-	// versions aren't comparable.
-	if pkgversion.GetVersionKind(indexerVersion) == pkgversion.InvalidKind {
-		return fmt.Errorf("indexer version %q is not a valid semantic version", indexerVersion)
+	var err error
+	report.Hash, err = createManifestDigest(hashID)
+	if err != nil {
+		return fmt.Errorf("creating claircore manifest digest: %w", err)
 	}
 	// Note that the conversion to and from v4.Contents truncates the
 	// claircore.IndexReport's Success and State fields. If the index report
@@ -601,20 +599,37 @@ func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, inde
 	report.Success = true
 	report.State = controller.IndexFinished.String()
 
-	err := i.externalIndexStore.StoreIndexReport(ctx, hashID, indexerVersion, report, i.randomExpiry(time.Now()),
-		func(iv string) bool {
-			// If the stored indexer version is not valid, let the datastore
-			// overwrite the record.
-			v, err := pkgscanner.DecodeVersion(iv)
-			return err != nil &&
-				pkgversion.GetVersionKind(indexerVersion) != pkgversion.InvalidKind &&
-				pkgversion.CompareVersions(indexerVersion, v.Indexer) >= 0
-		})
+	err = i.externalIndexStore.StoreIndexReport(
+		ctx,
+		hashID,
+		indexerVersion,
+		report,
+		i.randomExpiry(time.Now()),
+		shouldUpdateExternalIndexReport(indexerVersion),
+	)
 	if err != nil {
 		return fmt.Errorf("storing external index report with (hashID %q): %w", hashID, err)
 	}
 
 	return nil
+}
+
+// shouldUpdateExternalIndexReport returns a function to satisfy the versionCmp
+// requirement for postgres.ExternalIndexStore.StoreIndexReport. Closes over
+// incomingVersion and is intended to compare that version with the stored
+// indexer version to determine if the incoming version should overwrite the
+// existing external index report.
+func shouldUpdateExternalIndexReport(incomingVersion string) func(iv string) bool {
+	return func(storedVersion string) bool {
+		incomingIsValid := pkgversion.GetVersionKind(incomingVersion) != pkgversion.InvalidKind
+		storedIsValid := pkgversion.GetVersionKind(storedVersion) != pkgversion.InvalidKind
+		if incomingIsValid && storedIsValid {
+			return pkgversion.CompareVersions(incomingVersion, storedVersion) >= 0
+		}
+
+		return incomingIsValid ||
+			!incomingIsValid && !storedIsValid
+	}
 }
 
 // getContainerImageLayers fetches the image's manifest from the registry to get
