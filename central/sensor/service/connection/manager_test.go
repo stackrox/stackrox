@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
@@ -106,4 +107,55 @@ func Test_Manager_OnlyUpdatesInactiveHealthForLegacySensors(t *testing.T) {
 	// Mock expectations are automatically verified when test ends:
 	// - Legacy cluster (HealthInfoComplete=false) should get UpdateClusterHealth called
 	// - Modern cluster (HealthInfoComplete=true) should NOT get UpdateClusterHealth called
+}
+
+func TestUpdateClusterHealthForever_ModernSensorWithCorruptedHealthData(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClusterManager := mocks.NewMockClusterManager(ctrl)
+
+	// Create a modern cluster with corrupted health data (ancient timestamp from 2021)
+	// This simulates data that was corrupted by the bug in versions before the fix
+	ancientTimestamp := protocompat.TimestampNow()
+	ancientTimestamp.Seconds = 1617138742 // March 30, 2021 - matches the failing CI test timestamp
+
+	modernClusterWithCorruptedData := &storage.Cluster{
+		Id:   "modern-cluster-corrupted",
+		Name: "modern-cluster-corrupted",
+		HealthStatus: &storage.ClusterHealthStatus{
+			SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
+			CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+			LastContact:           ancientTimestamp,
+			HealthInfoComplete:    true, // Modern sensor with HealthMonitoringCap
+		},
+	}
+
+	m := &manager{
+		connectionsByClusterID:      make(map[string]connectionAndUpgradeController),
+		connectionsByClusterIDMutex: sync.RWMutex{},
+		clusters:                    mockClusterManager,
+	}
+
+	// For this test, we simulate NO active connection but corrupted health data
+	// This demonstrates the current bug: corrupted data persists indefinitely
+
+	// Set up mock expectations
+	mockClusterManager.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
+		modernClusterWithCorruptedData,
+	}, nil).AnyTimes()
+
+	mockClusterManager.EXPECT().GetCluster(gomock.Any(), "modern-cluster-corrupted").Return(modernClusterWithCorruptedData, true, nil).AnyTimes()
+
+	// The key test: modern cluster with corrupted data SHOULD get UpdateClusterHealth called
+	// to fix the corrupted ancient timestamp - this is what we want our fix to do
+	mockClusterManager.EXPECT().UpdateClusterHealth(gomock.Any(), "modern-cluster-corrupted", gomock.Any()).Times(1)
+
+	// Create a test ticker channel to control when health checks happen
+	testTicker := make(chan time.Time, 1)
+	testTicker <- time.Now()
+	close(testTicker)
+
+	// Start the health check loop with our test ticker - this should detect and fix corrupted data
+	m.updateClusterHealthForever(testTicker, func() {})
 }
