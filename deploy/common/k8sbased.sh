@@ -652,6 +652,7 @@ function launch_sensor {
     fi
 
     if [[ "${SECURED_CLUSTER_AUTO_LOCK_PROCESS_BASELINES:-}" == "true" ]]; then
+        extra_config+=("--auto-lock-process-baselines=true")
         extra_helm_config+=(--set "autoLockProcessBaselines.enabled=true")
     fi
 
