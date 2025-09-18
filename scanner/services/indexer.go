@@ -32,6 +32,9 @@ var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 		v4.Indexer_CreateIndexReport_FullMethodName,
 		v4.Indexer_GetOrCreateIndexReport_FullMethodName,
 	},
+	or.Or(idcheck.CentralOnly()): {
+		v4.Indexer_StoreIndexReport_FullMethodName,
+	},
 })
 
 type indexerService struct {
@@ -187,6 +190,33 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 		return nil, err
 	}
 	return &v4.HasIndexReportResponse{Exists: exists}, nil
+}
+
+func (s *indexerService) StoreIndexReport(ctx context.Context, req *v4.StoreIndexReportRequest) (*v4.StoreIndexReportResponse, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/service/indexer.StoreIndexReport",
+		"hash_id", req.GetHashId(),
+	)
+
+	zlog.Info(ctx).Msg("storing external index report for delegated scan")
+
+	if req.GetContents() == nil {
+		zlog.Debug(ctx).Msg("no contents, rejecting")
+		return nil, errox.InvalidArgs.New("empty contents")
+	}
+
+	zlog.Info(ctx).Msg("has contents, parsing")
+	ir, err := parseIndexReport(req.GetContents())
+	if err != nil {
+		return nil, fmt.Errorf("parsing contents to index report: %w", err)
+	}
+
+	err = s.indexer.StoreIndexReport(ctx, req.GetHashId(), req.GetIndexerVersion(), ir)
+	if err != nil {
+		return nil, fmt.Errorf("storing external index report: %w", err)
+	}
+
+	return &v4.StoreIndexReportResponse{Status: "completed"}, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

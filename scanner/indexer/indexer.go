@@ -42,6 +42,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/utils"
+	pkgversion "github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/indexer/manifest"
@@ -136,11 +137,17 @@ type ReportGetter interface {
 	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
 }
 
+// ReportStorer stores a claircore.IndexReport.
+type ReportStorer interface {
+	StoreIndexReport(ctx context.Context, hashID string, indexerVersion string, report *claircore.IndexReport) error
+}
+
 // Indexer represents an image indexer.
 //
 //go:generate mockgen-wrapper
 type Indexer interface {
 	ReportGetter
+	ReportStorer
 	IndexContainerImage(context.Context, string, string, ...Option) (*claircore.IndexReport, error)
 	Close(context.Context) error
 	Ready(context.Context) error
@@ -154,8 +161,11 @@ type localIndexer struct {
 	root            string
 	getLayerTimeout time.Duration
 
-	metadataStore          postgres.IndexerMetadataStore
-	manifestManager        *manifest.Manager
+	metadataStore   postgres.IndexerMetadataStore
+	manifestManager *manifest.Manager
+
+	externalIndexStore postgres.ExternalIndexStore
+
 	deleteIntervalStart    int64
 	deleteIntervalDuration int64
 }
@@ -204,6 +214,11 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		if err != nil {
 			return nil, fmt.Errorf("initializing postgres indexer metadata store: %w", err)
 		}
+	}
+
+	externalIndexStore, err := postgres.InitPostgresExternalIndexStore(ctx, pool)
+	if err != nil {
+		return nil, fmt.Errorf("initializing postgres external index store: %w", err)
 	}
 
 	root, err := os.MkdirTemp("", "scanner-fetcharena-*")
@@ -278,8 +293,11 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		root:            root,
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
 
-		metadataStore:          metadataStore,
-		manifestManager:        manifestManager,
+		metadataStore:   metadataStore,
+		manifestManager: manifestManager,
+
+		externalIndexStore: externalIndexStore,
+
 		deleteIntervalStart:    int64(deleteIntervalStart.Seconds()),
 		deleteIntervalDuration: int64(deleteIntervalDuration.Seconds()),
 	}, nil
@@ -569,6 +587,42 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 		return claircore.Digest{}, fmt.Errorf("creating manifest digest: %w", err)
 	}
 	return d, nil
+}
+
+func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, indexerVersion string, report *claircore.IndexReport) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.StoreIndexReport")
+
+	err := i.externalIndexStore.StoreIndexReport(
+		ctx,
+		hashID,
+		indexerVersion,
+		report,
+		i.randomExpiry(time.Now()),
+		shouldUpdateExternalIndexReport(indexerVersion),
+	)
+	if err != nil {
+		return fmt.Errorf("storing external index report with (hashID %q): %w", hashID, err)
+	}
+
+	return nil
+}
+
+// shouldUpdateExternalIndexReport returns a function to satisfy the versionCmp
+// requirement for postgres.ExternalIndexStore.StoreIndexReport. Closes over
+// incomingVersion and is intended to compare that version with the stored
+// indexer version to determine if the incoming version should overwrite the
+// existing external index report.
+func shouldUpdateExternalIndexReport(incomingVersion string) func(iv string) bool {
+	return func(storedVersion string) bool {
+		incomingIsValid := pkgversion.GetVersionKind(incomingVersion) != pkgversion.InvalidKind
+		storedIsValid := pkgversion.GetVersionKind(storedVersion) != pkgversion.InvalidKind
+		if incomingIsValid && storedIsValid {
+			return pkgversion.CompareVersions(incomingVersion, storedVersion) >= 0
+		}
+
+		return incomingIsValid ||
+			!incomingIsValid && !storedIsValid
+	}
 }
 
 // getContainerImageLayers fetches the image's manifest from the registry to get

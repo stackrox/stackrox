@@ -27,6 +27,7 @@ const (
 	Indexer_GetIndexReport_FullMethodName         = "/scanner.v4.Indexer/GetIndexReport"
 	Indexer_GetOrCreateIndexReport_FullMethodName = "/scanner.v4.Indexer/GetOrCreateIndexReport"
 	Indexer_HasIndexReport_FullMethodName         = "/scanner.v4.Indexer/HasIndexReport"
+	Indexer_StoreIndexReport_FullMethodName       = "/scanner.v4.Indexer/StoreIndexReport"
 )
 
 // IndexerClient is the client API for Indexer service.
@@ -45,6 +46,8 @@ type IndexerClient interface {
 	GetOrCreateIndexReport(ctx context.Context, in *GetOrCreateIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(ctx context.Context, in *HasIndexReportRequest, opts ...grpc.CallOption) (*HasIndexReportResponse, error)
+	// StoreIndexReport stores an external index report to the datastore.
+	StoreIndexReport(ctx context.Context, in *StoreIndexReportRequest, opts ...grpc.CallOption) (*StoreIndexReportResponse, error)
 }
 
 type indexerClient struct {
@@ -95,6 +98,16 @@ func (c *indexerClient) HasIndexReport(ctx context.Context, in *HasIndexReportRe
 	return out, nil
 }
 
+func (c *indexerClient) StoreIndexReport(ctx context.Context, in *StoreIndexReportRequest, opts ...grpc.CallOption) (*StoreIndexReportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StoreIndexReportResponse)
+	err := c.cc.Invoke(ctx, Indexer_StoreIndexReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IndexerServer is the server API for Indexer service.
 // All implementations should embed UnimplementedIndexerServer
 // for forward compatibility.
@@ -111,6 +124,8 @@ type IndexerServer interface {
 	GetOrCreateIndexReport(context.Context, *GetOrCreateIndexReportRequest) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error)
+	// StoreIndexReport stores an external index report to the datastore.
+	StoreIndexReport(context.Context, *StoreIndexReportRequest) (*StoreIndexReportResponse, error)
 }
 
 // UnimplementedIndexerServer should be embedded to have
@@ -131,6 +146,9 @@ func (UnimplementedIndexerServer) GetOrCreateIndexReport(context.Context, *GetOr
 }
 func (UnimplementedIndexerServer) HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasIndexReport not implemented")
+}
+func (UnimplementedIndexerServer) StoreIndexReport(context.Context, *StoreIndexReportRequest) (*StoreIndexReportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StoreIndexReport not implemented")
 }
 func (UnimplementedIndexerServer) testEmbeddedByValue() {}
 
@@ -224,6 +242,24 @@ func _Indexer_HasIndexReport_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Indexer_StoreIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StoreIndexReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexerServer).StoreIndexReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Indexer_StoreIndexReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexerServer).StoreIndexReport(ctx, req.(*StoreIndexReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Indexer_ServiceDesc is the grpc.ServiceDesc for Indexer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -246,6 +282,10 @@ var Indexer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HasIndexReport",
 			Handler:    _Indexer_HasIndexReport_Handler,
+		},
+		{
+			MethodName: "StoreIndexReport",
+			Handler:    _Indexer_StoreIndexReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

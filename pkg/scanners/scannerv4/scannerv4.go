@@ -229,6 +229,18 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
+	// Store the index report from external scanners. Note that this will use
+	// some time from the scan timeout.
+	imageScanScannerVersion, err := pkgscanner.DecodeVersion(components.IndexerVersion)
+	if err != nil {
+		log.Warnf("Failed to decode image scan scanner version: %v", err)
+	} else {
+		err := s.scannerClient.StoreImageIndex(ctx, digest, imageScanScannerVersion.Indexer, v4Contents)
+		if err != nil {
+			log.Warnf("Failed to store external index report: %v", err)
+		}
+	}
+
 	var scannerVersion pkgscanner.Version
 	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents, client.Version(&scannerVersion))
 	if err != nil {
