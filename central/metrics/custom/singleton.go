@@ -6,6 +6,7 @@ import (
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
+	expiryS "github.com/stackrox/rox/central/credentialexpiry/service"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	policyDS "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -35,6 +36,7 @@ func Singleton() Runner {
 			alertDS.Singleton(),
 			clusterDS.Singleton(),
 			policyDS.Singleton(),
+			expiryS.Singleton(),
 		})
 		go runner.initialize(configDS.Singleton())
 	})

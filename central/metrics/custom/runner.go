@@ -7,14 +7,14 @@ import (
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
-	"github.com/stackrox/rox/central/credentialexpiry/service"
+	expiryS "github.com/stackrox/rox/central/credentialexpiry/service"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/clusters"
 	"github.com/stackrox/rox/central/metrics/custom/expiry"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
+	"github.com/stackrox/rox/central/metrics/custom/policies"
 	"github.com/stackrox/rox/central/metrics/custom/policy_violations"
-	"github.com/stackrox/rox/central/metrics/custom/total_enabled_policies"
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
 	policyDS "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,6 +41,7 @@ type runnerDatastores struct {
 	alerts      alertDS.DataStore
 	clusters    clusterDS.DataStore
 	policies    policyDS.DataStore
+	expiry      expiryS.Service
 }
 
 func withHardcodedConfiguration(period uint32, descriptors map[string][]string) func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group {
@@ -71,12 +72,12 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 		clusters.New(ds.clusters),
 		(*storage.PrometheusMetrics).GetClusters,
 	}, {
-		total_enabled_policies.New(ds.policies),
+		policies.New(ds.policies),
 		withHardcodedConfiguration(60, map[string][]string{
-			"total_enabled_policies": {},
+			"total_policies": policies.GetLabels(),
 		}),
 	}, {
-		expiry.New(service.Singleton()),
+		expiry.New(ds.expiry),
 		withHardcodedConfiguration(60, map[string][]string{
 			"cred_exp": expiry.GetLabels(),
 		}),
