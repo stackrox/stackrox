@@ -67,8 +67,8 @@ func (e *externalIndexStore) StoreIndexReport(
 	}
 
 	const updateIndexReport = `
-		UPDATE external_index_report SET (indexer_version, index_report, expiration) =
-			($2, $3, $4) WHERE hash_id = $1`
+		UPDATE external_index_report SET (indexer_version, index_report, expiration, updated_at) =
+			($2, $3, $4, DEFAULT) WHERE hash_id = $1`
 
 	_, err = e.pool.Exec(ctx, updateIndexReport, hashID, indexerVersion, indexReport, expiration.UTC())
 	if err != nil {
