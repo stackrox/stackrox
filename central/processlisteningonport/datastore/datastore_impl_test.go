@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -16,7 +17,6 @@ import (
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -2733,7 +2733,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) {
 	batchSize := 30000
 
-	for plopBatch := range batcher.Batch(plops, batchSize) {
+	for plopBatch := range slices.Chunk(plops, batchSize) {
 		err := suite.datastore.AddProcessListeningOnPort(suite.hasWriteCtx, fixtureconsts.Cluster1, plopBatch...)
 		suite.NoError(err)
 	}
