@@ -83,17 +83,17 @@ func (m *MockReportStorer) EXPECT() *MockReportStorerMockRecorder {
 }
 
 // StoreIndexReport mocks base method.
-func (m *MockReportStorer) StoreIndexReport(ctx context.Context, hashID, scannerVersion string, report *claircore.IndexReport) error {
+func (m *MockReportStorer) StoreIndexReport(ctx context.Context, hashID, indexerVersion string, report *claircore.IndexReport) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StoreIndexReport", ctx, hashID, scannerVersion, report)
+	ret := m.ctrl.Call(m, "StoreIndexReport", ctx, hashID, indexerVersion, report)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // StoreIndexReport indicates an expected call of StoreIndexReport.
-func (mr *MockReportStorerMockRecorder) StoreIndexReport(ctx, hashID, scannerVersion, report any) *gomock.Call {
+func (mr *MockReportStorerMockRecorder) StoreIndexReport(ctx, hashID, indexerVersion, report any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreIndexReport", reflect.TypeOf((*MockReportStorer)(nil).StoreIndexReport), ctx, hashID, scannerVersion, report)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreIndexReport", reflect.TypeOf((*MockReportStorer)(nil).StoreIndexReport), ctx, hashID, indexerVersion, report)
 }
 
 // MockIndexer is a mock of Indexer interface.
@@ -185,15 +185,15 @@ func (mr *MockIndexerMockRecorder) Ready(arg0 any) *gomock.Call {
 }
 
 // StoreIndexReport mocks base method.
-func (m *MockIndexer) StoreIndexReport(ctx context.Context, hashID, scannerVersion string, report *claircore.IndexReport) error {
+func (m *MockIndexer) StoreIndexReport(ctx context.Context, hashID, indexerVersion string, report *claircore.IndexReport) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StoreIndexReport", ctx, hashID, scannerVersion, report)
+	ret := m.ctrl.Call(m, "StoreIndexReport", ctx, hashID, indexerVersion, report)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // StoreIndexReport indicates an expected call of StoreIndexReport.
-func (mr *MockIndexerMockRecorder) StoreIndexReport(ctx, hashID, scannerVersion, report any) *gomock.Call {
+func (mr *MockIndexerMockRecorder) StoreIndexReport(ctx, hashID, indexerVersion, report any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreIndexReport", reflect.TypeOf((*MockIndexer)(nil).StoreIndexReport), ctx, hashID, scannerVersion, report)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreIndexReport", reflect.TypeOf((*MockIndexer)(nil).StoreIndexReport), ctx, hashID, indexerVersion, report)
 }
