@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -16,7 +17,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -379,7 +379,7 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 		return err
 	}
 
-	for alertBatch := range batcher.Batch(alerts, alertResolveBatchSize) {
+	for alertBatch := range slices.Chunk(alerts, alertResolveBatchSize) {
 		for _, alert := range alertBatch {
 			alert.State = state
 		}

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -502,21 +503,10 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 
 func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []string, initialBatchSize int, continueOnError bool) error {
 	// Batch the deletes
-	localBatchSize := initialBatchSize
 	deletedCount := 0
 	numberToDelete := len(identifiers)
 
-	for {
-		if len(identifiers) == 0 {
-			break
-		}
-
-		if len(identifiers) < localBatchSize {
-			localBatchSize = len(identifiers)
-		}
-
-		identifierBatch := identifiers[:localBatchSize]
-
+	for identifierBatch := range slices.Chunk(identifiers, initialBatchSize) {
 		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
@@ -531,9 +521,6 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 		}
 		deletedCount = deletedCount + len(identifierBatch)
 		log.Debugf("deleted batch of %d records", len(identifierBatch))
-
-		// Move the slice forward to start the next batch
-		identifiers = identifiers[localBatchSize:]
 	}
 
 	log.Debugf("successfully deleted %d of %d records", deletedCount, numberToDelete)

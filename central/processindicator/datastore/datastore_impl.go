@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/stackrox/rox/central/metrics"
@@ -97,28 +98,13 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return sac.ErrResourceAccessDenied
 	}
 
-	localBatchSize := addBatchSize
-
-	for {
-		if len(indicators) == 0 {
-			break
-		}
-
-		if len(indicators) < localBatchSize {
-			localBatchSize = len(indicators)
-		}
-
-		identifierBatch := indicators[:localBatchSize]
-
+	for identifierBatch := range slices.Chunk(indicators, addBatchSize) {
 		err := ds.storage.UpsertMany(ctx, identifierBatch)
 		if err != nil {
 			log.Warnf("error adding a batch of indicators: %v", err)
 		} else {
 			log.Debugf("successfully added a batch of %d process indicators", len(identifierBatch))
 		}
-
-		// Move the slice forward to start the next batch
-		indicators = indicators[localBatchSize:]
 	}
 
 	return nil
