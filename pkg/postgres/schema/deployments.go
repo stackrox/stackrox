@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -12,8 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -57,7 +54,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
+		schema = GetDeploymentSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":             ImagesSchema,
 			"storage.NamespaceMetadata": NamespacesSchema,
@@ -67,7 +64,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployment", (*storage.Deployment)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
@@ -84,7 +80,6 @@ var (
 			v1.SearchCategory_PROCESS_INDICATORS,
 			v1.SearchCategory_PODS,
 		}...)
-		schema.ScopingResource = resources.Deployment
 		RegisterTable(schema, CreateTableDeploymentsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_DEPLOYMENTS, schema)
 		return schema
