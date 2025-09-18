@@ -172,4 +172,8 @@ var (
 	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
 
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
+
+	// StoreDelegatedScans enables storing delegated scans to Central's Scanner V4 Indexer. Currently, both
+	// StoreDelegatedScans and SBOMGeneration must be enabled to store delegated scans.
+	StoreDelegatedScans = registerFeature("Enables storing delegated scans to Central's Scanner V4 Indexer", "ROX_STORE_DELEGATED_SCANS", enabled)
 )
