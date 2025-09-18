@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -33,7 +32,7 @@ var (
 // callOptions contains optional data and gRPC parameters for the underlying
 // Scanner calls.
 type callOptions struct {
-	versionMetadataPtr *scannerv4.Version
+	version *scannerv4.Version
 }
 
 // CallOption configures call-specific options for scanner methods.
@@ -48,10 +47,10 @@ func makeCallOptions(callOpts ...CallOption) callOptions {
 	return options
 }
 
-// GetServiceVersion returns a CallOption that captures service metadata.
-func GetServiceVersion(v *scannerv4.Version) CallOption {
+// Version returns a CallOption that captures service version metadata.
+func Version(v *scannerv4.Version) CallOption {
 	return func(o *callOptions) {
-		o.versionMetadataPtr = v
+		o.version = v
 	}
 }
 
@@ -440,27 +439,29 @@ func defaultBackoff() backoff.BackOff {
 }
 
 // setIndexerVersion extracts the indexer version from the gRPC response
-// metadata response.
+// metadata response. Overwrites the stored version in options if called
+// more than once.
 func setIndexerVersion(options callOptions, responseMetadata metadata.MD) {
-	if options.versionMetadataPtr == nil {
+	if options.version == nil {
 		return
 	}
 
-	options.versionMetadataPtr.Indexer = scannerv4.DefaultVersion
+	options.version.Indexer = scannerv4.DefaultVersion
 	if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
-		options.versionMetadataPtr.Indexer = strings.Join(versions, ",")
+		options.version.Indexer = versions[0]
 	}
 }
 
 // setMatcherVersion extracts the matcher version from the gRPC response
-// metadata response.
+// metadata response. Overwrites the stored version in options if called
+// more than once.
 func setMatcherVersion(options callOptions, responseMetadata metadata.MD) {
-	if options.versionMetadataPtr == nil {
+	if options.version == nil {
 		return
 	}
 
-	options.versionMetadataPtr.Matcher = scannerv4.DefaultVersion
+	options.version.Matcher = scannerv4.DefaultVersion
 	if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
-		options.versionMetadataPtr.Matcher = strings.Join(versions, ",")
+		options.version.Matcher = versions[0]
 	}
 }
