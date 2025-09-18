@@ -116,9 +116,12 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 	if len(objs) < batchSize {
 		batchSize = len(objs)
 	}
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	var err error
 
+	// This is a copy, so first we must delete the rows, and re-add them.
+	deletes := make([]string, 0, batchSize)
 	copyCols := []string{
 		"id",
 		"type",
@@ -143,9 +146,6 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
-		inputRows := make([][]interface{}, 0, len(objBatch))
-		deletes := make([]string, 0, len(objBatch))
-
 		for _, obj := range objBatch {
 			if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
 				obj.Snoozed = storedCVE.GetSnoozed()
@@ -184,11 +184,16 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 		if err != nil {
 			return err
 		}
+		// Clear the inserts for the next batch.
+		deletes = deletes[:0]
 
 		_, err = tx.CopyFrom(ctx, pgx.Identifier{pkgSchema.ClusterCvesTableName}, copyCols, pgx.CopyFromRows(inputRows))
 		if err != nil {
 			return err
 		}
+
+		// Clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 	return removeOrphanedClusterCVEs(ctx, tx)
 }
@@ -198,6 +203,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType stora
 	if len(objs) < batchSize {
 		batchSize = len(objs)
 	}
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	var err error
 	copyCols := []string{
@@ -214,10 +220,9 @@ func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType stora
 		return err
 	}
 
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		inputRows := make([][]interface{}, 0, len(objBatch))
-		deletes := set.NewStringSet()
+	deletes := set.NewStringSet()
 
+	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 			oldEdges.Remove(obj.GetId())
 
@@ -245,10 +250,16 @@ func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType stora
 			return err
 		}
 
+		// Clear the inserts for the next batch
+		deletes = nil
+
 		_, err = tx.CopyFrom(ctx, pgx.Identifier{pkgSchema.ClusterCveEdgesTableName}, copyCols, pgx.CopyFromRows(inputRows))
 		if err != nil {
 			return err
 		}
+
+		// Clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 	return removeOrphanedImageCVEEdges(ctx, tx, oldEdges.AsSlice())
 }
