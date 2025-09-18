@@ -5,12 +5,16 @@ import (
 	"net/http"
 
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/clusters"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
 	"github.com/stackrox/rox/central/metrics/custom/policy_violations"
+	"github.com/stackrox/rox/central/metrics/custom/total_enabled_policies"
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
+	policyDS "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
@@ -33,6 +37,8 @@ type RunnerConfiguration []*custom.Configuration
 type runnerDatastores struct {
 	deployments deploymentDS.DataStore
 	alerts      alertDS.DataStore
+	clusters    clusterDS.DataStore
+	policies    policyDS.DataStore
 }
 
 func makeRunner(ds *runnerDatastores) trackerRunner {
@@ -42,6 +48,16 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 	}, {
 		policy_violations.New(ds.alerts),
 		(*storage.PrometheusMetrics).GetPolicyViolations,
+	}, {
+		clusters.New(ds.clusters),
+		(*storage.PrometheusMetrics).GetClusters,
+	}, {
+		total_enabled_policies.New(ds.policies),
+		func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group {
+			return &storage.PrometheusMetrics_Group{
+				GatheringPeriodMinutes: 30,
+			}
+		},
 	},
 	}
 }
