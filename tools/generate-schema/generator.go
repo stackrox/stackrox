@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"text/template"
 )
@@ -60,6 +61,22 @@ type SearchFieldData struct {
 	Analyzer     string
 }
 
+// RunDiscovery runs only the discovery phase for testing
+func (sg *SchemaGenerator) RunDiscovery() error {
+	configs, err := sg.discoverSchemas()
+	if err != nil {
+		return fmt.Errorf("discovering schemas: %w", err)
+	}
+
+	fmt.Printf("Discovered %d schema configurations:\n", len(configs))
+	for i, config := range configs {
+		fmt.Printf("%d. %s -> %s (category: %s, resource: %s)\n",
+			i+1, config.TypeName, config.TableName, config.SearchCategory, config.ScopingResource)
+	}
+
+	return nil
+}
+
 // Generate generates all schema files
 func (sg *SchemaGenerator) Generate() error {
 	sg.analyzer = NewTypeAnalyzer()
@@ -106,36 +123,169 @@ func (sg *SchemaGenerator) loadPackages() error {
 
 // discoverSchemas discovers existing schema configurations
 func (sg *SchemaGenerator) discoverSchemas() ([]SchemaData, error) {
+	return sg.discoverSchemasFromFiles()
+}
+
+// discoverSchemasFromFiles scans schema files to find walker.Walk usages
+func (sg *SchemaGenerator) discoverSchemasFromFiles() ([]SchemaData, error) {
 	var configs []SchemaData
 
-	// For now, let's start with a few well-known schemas
-	// This could be enhanced to auto-discover from existing schema files
-	knownSchemas := []struct {
-		typeName        string
-		tableName       string
-		searchCategory  string
-		scopingResource string
-	}{
-		{"Alert", "alerts", "ALERTS", "Alert"},
-		{"Deployment", "deployments", "DEPLOYMENTS", "Deployment"},
-		{"Image", "images", "IMAGES", "Image"},
-		{"Policy", "policies", "POLICIES", "WorkflowAdministration"},
-		{"Cluster", "clusters", "CLUSTERS", "Cluster"},
+	// Scan schema directory for walker.Walk usages
+	schemaDir := filepath.Join(sg.ProjectRoot, "pkg/postgres/schema")
+
+	files, err := ioutil.ReadDir(schemaDir)
+	if err != nil {
+		return nil, fmt.Errorf("reading schema directory: %w", err)
 	}
 
-	for _, schema := range knownSchemas {
-		config := SchemaData{
-			PackageName:     "schema",
-			TableName:       schema.tableName,
-			TypeName:        schema.typeName,
-			StoragePackage:  "github.com/stackrox/rox/generated/storage",
-			SearchCategory:  schema.searchCategory,
-			ScopingResource: schema.scopingResource,
+	for _, file := range files {
+		if !strings.HasSuffix(file.Name(), ".go") || strings.HasPrefix(file.Name(), "generated_") {
+			continue
 		}
-		configs = append(configs, config)
+
+		filePath := filepath.Join(schemaDir, file.Name())
+		config, err := sg.extractSchemaFromFile(filePath)
+		if err != nil {
+			if sg.Verbose {
+				log.Printf("Skipping %s: %v", file.Name(), err)
+			}
+			continue
+		}
+
+		if config != nil {
+			configs = append(configs, *config)
+		}
 	}
 
 	return configs, nil
+}
+
+// extractSchemaFromFile extracts schema configuration from a Go file
+func (sg *SchemaGenerator) extractSchemaFromFile(filePath string) (*SchemaData, error) {
+	content, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	contentStr := string(content)
+
+	// Look for walker.Walk pattern: walker.Walk(reflect.TypeOf((*storage.TypeName)(nil)), "table_name")
+	walkerPattern := `walker\.Walk\(reflect\.TypeOf\(\(\*storage\.([^)]+)\)\(nil\)\),\s*"([^"]+)"\)`
+	re := regexp.MustCompile(walkerPattern)
+
+	matches := re.FindStringSubmatch(contentStr)
+	if len(matches) != 3 {
+		return nil, fmt.Errorf("no walker.Walk pattern found")
+	}
+
+	typeName := matches[1]
+	tableName := matches[2]
+
+	// Extract search category from search.Walk pattern
+	searchCategory := sg.extractSearchCategory(contentStr, typeName)
+
+	// Extract scoping resource
+	scopingResource := sg.extractScopingResource(contentStr, typeName)
+
+	return &SchemaData{
+		PackageName:     "schema",
+		TableName:       tableName,
+		TypeName:        typeName,
+		StoragePackage:  "github.com/stackrox/rox/generated/storage",
+		SearchCategory:  searchCategory,
+		ScopingResource: scopingResource,
+	}, nil
+}
+
+// extractSearchCategory extracts search category from file content
+func (sg *SchemaGenerator) extractSearchCategory(content, typeName string) string {
+	// Look for v1.SearchCategory_CATEGORY pattern
+	searchPattern := `v1\.SearchCategory_([A-Z_]+)`
+	re := regexp.MustCompile(searchPattern)
+
+	matches := re.FindAllStringSubmatch(content, -1)
+	for _, match := range matches {
+		if len(match) == 2 {
+			category := match[1]
+			// Skip internal categories like SEARCH
+			if !strings.Contains(category, "SEARCH") {
+				return category
+			}
+		}
+	}
+
+	// Default mapping based on type name
+	return sg.defaultSearchCategory(typeName)
+}
+
+// extractScopingResource extracts scoping resource from file content
+func (sg *SchemaGenerator) extractScopingResource(content, typeName string) string {
+	// Look for resources.ResourceName pattern
+	resourcePattern := `resources\.([A-Za-z]+)`
+	re := regexp.MustCompile(resourcePattern)
+
+	matches := re.FindStringSubmatch(content)
+	if len(matches) == 2 {
+		return matches[1]
+	}
+
+	// Default mapping based on type name
+	return sg.defaultScopingResource(typeName)
+}
+
+// defaultSearchCategory provides default search category mapping
+func (sg *SchemaGenerator) defaultSearchCategory(typeName string) string {
+	categoryMap := map[string]string{
+		"Alert":          "ALERTS",
+		"Deployment":     "DEPLOYMENTS",
+		"Image":          "IMAGES",
+		"Policy":         "POLICIES",
+		"Cluster":        "CLUSTERS",
+		"AuthProvider":   "AUTH_PROVIDERS",
+		"Role":           "ROLES",
+		"Node":           "NODES",
+		"Secret":         "SECRETS",
+		"Namespace":      "NAMESPACES",
+		"ServiceAccount": "SERVICE_ACCOUNTS",
+	}
+
+	if category, ok := categoryMap[typeName]; ok {
+		return category
+	}
+
+	// Default: uppercase type name
+	return strings.ToUpper(typeName) + "S"
+}
+
+// defaultScopingResource provides default scoping resource mapping
+func (sg *SchemaGenerator) defaultScopingResource(typeName string) string {
+	resourceMap := map[string]string{
+		"Alert":                    "Alert",
+		"Deployment":               "Deployment",
+		"Image":                    "Image",
+		"Policy":                   "WorkflowAdministration",
+		"Cluster":                  "Cluster",
+		"AuthProvider":             "Access",
+		"Role":                     "Access",
+		"K8SRole":                  "Access",
+		"K8SRoleBinding":           "Access",
+		"PermissionSet":            "Access",
+		"Group":                    "Access",
+		"ServiceAccount":           "Access",
+		"ServiceIdentity":          "Access",
+		"Secret":                   "Secret",
+		"Node":                     "Node",
+		"Namespace":                "Namespace",
+		"ComplianceOperatorScan":   "Compliance",
+		"ComplianceOperatorProfile": "Compliance",
+	}
+
+	if resource, ok := resourceMap[typeName]; ok {
+		return resource
+	}
+
+	// Default: same as type name
+	return typeName
 }
 
 // generateSchema generates a single schema file

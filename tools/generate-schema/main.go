@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	outputDir = flag.String("output", "pkg/postgres/schema", "Output directory for generated schema files")
-	verbose   = flag.Bool("verbose", false, "Enable verbose logging")
+	outputDir    = flag.String("output", "pkg/postgres/schema", "Output directory for generated schema files")
+	verbose      = flag.Bool("verbose", false, "Enable verbose logging")
+	discoveryOnly = flag.Bool("discover", false, "Only run discovery without generating files")
 )
 
 func main() {
@@ -30,6 +31,14 @@ func main() {
 		ProjectRoot: projectRoot,
 		OutputDir:   filepath.Join(projectRoot, *outputDir),
 		Verbose:     *verbose,
+	}
+
+	if *discoveryOnly {
+		if err := generator.RunDiscovery(); err != nil {
+			log.Fatalf("Discovery failed: %v", err)
+		}
+		fmt.Println("Discovery completed successfully")
+		return
 	}
 
 	if err := generator.Generate(); err != nil {
