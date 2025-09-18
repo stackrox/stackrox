@@ -408,19 +408,14 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 	return m, nil
 }
 
-// StoreIndexIndex calls the Indexer's gRPC endpoint StoreIndexReport.
-func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error {
+// StoreImageIndex calls the Indexer's gRPC endpoint StoreIndexReport.
+// The ...CallOption is included for consistency but isn't currently used.
+func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, _callOpts ...CallOption) error {
 	if c.indexer == nil {
 		return errIndexerNotConfigured
 	}
 
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "StoreImageIndex")
-
-	// Process call options
-	var options callOptions
-	for _, callOpt := range callOpts {
-		callOpt(&options)
-	}
 
 	req := &v4.StoreIndexReportRequest{
 		HashId:         getImageManifestID(ref),
@@ -429,7 +424,7 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 	}
 	var r *v4.StoreIndexReportResponse
 	var responseMetadata metadata.MD
-	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.", func() error {
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.StoreImageIndex", func() error {
 		var err error
 		r, err = c.indexer.StoreIndexReport(ctx, req, grpc.Header(&responseMetadata))
 		return err
@@ -437,16 +432,7 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 	if err != nil {
 		return fmt.Errorf("store external index report: %w", err)
 	}
-	zlog.Debug(ctx).Err(err).Str("status", r.Status).Msg("received response from StoreIndexReportj")
-
-	// Extract matcher version from response headers
-	if options.versionMetadataPtr != nil {
-		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
-			options.versionMetadataPtr.Indexer = versions[0]
-		} else {
-			options.versionMetadataPtr.Indexer = scannerv4.DefaultVersion
-		}
-	}
+	zlog.Debug(ctx).Err(err).Str("status", r.Status).Msg("received response from StoreIndexReport")
 
 	return nil
 }
