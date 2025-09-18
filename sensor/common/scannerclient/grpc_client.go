@@ -237,10 +237,9 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
 	}
 
-	log.Debugf("Received index report from local Scanner V4 indexer for image: %q", image.GetName().GetFullName())
-
 	imageAnalysis := convertIndexReportToAnalysis(ir, scannerVersion.Indexer)
-	log.Debugf("Converted index report to image analysis: image: %q, status: %q, indexerVersion: %q",
+	log.Debugf("Converted index report from local Scanner V4 indexer to an image analysis: "+
+		"image: %q, status: %q, indexerVersion: %q",
 		image.GetName().GetFullName(),
 		imageAnalysis.ScanStatus,
 		imageAnalysis.IndexerVersion,
