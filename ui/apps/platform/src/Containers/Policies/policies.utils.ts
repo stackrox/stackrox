@@ -633,34 +633,39 @@ export function getServerPolicy(policyUntrimmed: ClientPolicy): Policy {
     return serverPolicy;
 }
 
+export type ValidPolicyLifeCycle = ['BUILD'] | ['DEPLOY'] | ['BUILD', 'DEPLOY'] | ['RUNTIME'];
+
 export function getLifeCyclesUpdates<
     T extends Pick<
         ClientPolicy,
         'lifecycleStages' | 'eventSource' | 'excludedImageNames' | 'enforcementActions'
     >,
->(values: T, lifecycleStage: LifecycleStage, isChecked: boolean): T {
+>(values: T, lifecycleStages: ValidPolicyLifeCycle): T {
     /*
      * Set all changed values at once, because separate setFieldValue calls
      * for lifecycleStages and eventSource cause inconsistent incorrect validation.
      */
     const changedValues = cloneDeep(values);
-    if (isChecked) {
-        changedValues.lifecycleStages = [...values.lifecycleStages, lifecycleStage];
-    } else {
-        changedValues.lifecycleStages = values.lifecycleStages.filter(
-            (stage) => stage !== lifecycleStage
-        );
-        if (lifecycleStage === 'RUNTIME') {
-            changedValues.eventSource = 'NOT_APPLICABLE';
-        }
-        if (lifecycleStage === 'BUILD') {
-            changedValues.excludedImageNames = [];
-        }
+
+    if (!lifecycleStages.some((stage) => stage === 'RUNTIME')) {
+        changedValues.eventSource = 'NOT_APPLICABLE';
+    }
+
+    if (!lifecycleStages.some((stage) => stage === 'BUILD')) {
+        changedValues.excludedImageNames = [];
+    }
+
+    const removedLifecycleStages = values.lifecycleStages.filter(
+        (stage) => !lifecycleStages.some((validStage) => validStage === stage)
+    );
+    removedLifecycleStages.forEach((lifecycleStage) => {
         changedValues.enforcementActions = filterEnforcementActionsForRemovedLifecycleStage(
             lifecycleStage,
             values.enforcementActions
         );
-    }
+    });
+
+    changedValues.lifecycleStages = [...lifecycleStages];
     return changedValues;
 }
 
