@@ -379,17 +379,16 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 		return err
 	}
 
-	b := batcher.New(len(alerts), alertResolveBatchSize)
-	for start, end, valid := b.Next(); valid; start, end, valid = b.Next() {
-		for _, alert := range alerts[start:end] {
+	for alertBatch := range batcher.Batch(alerts, alertResolveBatchSize) {
+		for _, alert := range alertBatch {
 			alert.State = state
 		}
-		err := s.dataStore.UpsertAlerts(ctx, alerts[start:end])
+		err := s.dataStore.UpsertAlerts(ctx, alertBatch)
 		if err != nil {
 			log.Error(err)
 			return err
 		}
-		for _, alert := range alerts[start:end] {
+		for _, alert := range alertBatch {
 			s.notifier.ProcessAlert(ctx, alert)
 		}
 	}

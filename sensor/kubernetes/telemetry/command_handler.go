@@ -308,13 +308,8 @@ func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,
 	if err != nil {
 		return errors.Wrap(err, "marshalling cluster info")
 	}
-	batchManager := batcher.New(len(jsonBytes), clusterInfoChunkSize)
-	for {
-		start, end, ok := batchManager.Next()
-		if !ok {
-			break
-		}
-		if err := sendMsgCb(subCtx, makeChunk(jsonBytes[start:end])); err != nil {
+	for byteBatch := range batcher.Batch(jsonBytes, clusterInfoChunkSize) {
+		if err := sendMsgCb(subCtx, makeChunk(byteBatch)); err != nil {
 			return err
 		}
 	}
