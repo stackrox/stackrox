@@ -480,12 +480,11 @@ func (x *ReportRetentionConfig) GetDownloadableReportGlobalRetentionBytes() uint
 	return 0
 }
 
-// next available tag: 4
+// next available tag: 3
 type PrometheusMetrics struct {
 	state                protoimpl.MessageState   `protogen:"open.v1"`
 	ImageVulnerabilities *PrometheusMetrics_Group `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities,proto3" json:"image_vulnerabilities,omitempty"`
 	PolicyViolations     *PrometheusMetrics_Group `protobuf:"bytes,2,opt,name=policy_violations,json=policyViolations,proto3" json:"policy_violations,omitempty"`
-	Clusters             *PrometheusMetrics_Group `protobuf:"bytes,3,opt,name=clusters,proto3" json:"clusters,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -530,13 +529,6 @@ func (x *PrometheusMetrics) GetImageVulnerabilities() *PrometheusMetrics_Group {
 func (x *PrometheusMetrics) GetPolicyViolations() *PrometheusMetrics_Group {
 	if x != nil {
 		return x.PolicyViolations
-	}
-	return nil
-}
-
-func (x *PrometheusMetrics) GetClusters() *PrometheusMetrics_Group {
-	if x != nil {
-		return x.Clusters
 	}
 	return nil
 }
@@ -1295,11 +1287,10 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x15ReportRetentionConfig\x12E\n" +
 	"\x1fhistory_retention_duration_days\x18\x01 \x01(\rR\x1chistoryRetentionDurationDays\x12K\n" +
 	"\"downloadable_report_retention_days\x18\x02 \x01(\rR\x1fdownloadableReportRetentionDays\x12Z\n" +
-	"*downloadable_report_global_retention_bytes\x18\x03 \x01(\rR&downloadableReportGlobalRetentionBytes\"\x9b\x04\n" +
+	"*downloadable_report_global_retention_bytes\x18\x03 \x01(\rR&downloadableReportGlobalRetentionBytes\"\xdd\x03\n" +
 	"\x11PrometheusMetrics\x12U\n" +
 	"\x15image_vulnerabilities\x18\x01 \x01(\v2 .storage.PrometheusMetrics.GroupR\x14imageVulnerabilities\x12M\n" +
-	"\x11policy_violations\x18\x02 \x01(\v2 .storage.PrometheusMetrics.GroupR\x10policyViolations\x12<\n" +
-	"\bclusters\x18\x03 \x01(\v2 .storage.PrometheusMetrics.GroupR\bclusters\x1a\xa1\x02\n" +
+	"\x11policy_violations\x18\x02 \x01(\v2 .storage.PrometheusMetrics.GroupR\x10policyViolations\x1a\xa1\x02\n" +
 	"\x05Group\x128\n" +
 	"\x18gathering_period_minutes\x18\x01 \x01(\rR\x16gatheringPeriodMinutes\x12S\n" +
 	"\vdescriptors\x18\x02 \x03(\v21.storage.PrometheusMetrics.Group.DescriptorsEntryR\vdescriptors\x1a \n" +
@@ -1405,28 +1396,27 @@ var file_storage_config_proto_depIdxs = []int32{
 	23, // 7: storage.DecommissionedClusterRetentionConfig.created_at:type_name -> google.protobuf.Timestamp
 	15, // 8: storage.PrometheusMetrics.image_vulnerabilities:type_name -> storage.PrometheusMetrics.Group
 	15, // 9: storage.PrometheusMetrics.policy_violations:type_name -> storage.PrometheusMetrics.Group
-	15, // 10: storage.PrometheusMetrics.clusters:type_name -> storage.PrometheusMetrics.Group
-	4,  // 11: storage.PrivateConfig.alert_config:type_name -> storage.AlertRetentionConfig
-	5,  // 12: storage.PrivateConfig.decommissioned_cluster_retention:type_name -> storage.DecommissionedClusterRetentionConfig
-	6,  // 13: storage.PrivateConfig.report_retention_config:type_name -> storage.ReportRetentionConfig
-	11, // 14: storage.PrivateConfig.vulnerability_exception_config:type_name -> storage.VulnerabilityExceptionConfig
-	12, // 15: storage.PrivateConfig.administration_events_config:type_name -> storage.AdministrationEventsConfig
-	7,  // 16: storage.PrivateConfig.metrics:type_name -> storage.PrometheusMetrics
-	18, // 17: storage.PlatformComponentConfig.rules:type_name -> storage.PlatformComponentConfig.Rule
-	3,  // 18: storage.Config.public_config:type_name -> storage.PublicConfig
-	8,  // 19: storage.Config.private_config:type_name -> storage.PrivateConfig
-	9,  // 20: storage.Config.platform_component_config:type_name -> storage.PlatformComponentConfig
-	21, // 21: storage.VulnerabilityExceptionConfig.expiry_options:type_name -> storage.VulnerabilityExceptionConfig.ExpiryOptions
-	17, // 22: storage.PrometheusMetrics.Group.descriptors:type_name -> storage.PrometheusMetrics.Group.DescriptorsEntry
-	16, // 23: storage.PrometheusMetrics.Group.DescriptorsEntry.value:type_name -> storage.PrometheusMetrics.Group.Labels
-	19, // 24: storage.PlatformComponentConfig.Rule.namespace_rule:type_name -> storage.PlatformComponentConfig.Rule.NamespaceRule
-	13, // 25: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
-	20, // 26: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	4,  // 10: storage.PrivateConfig.alert_config:type_name -> storage.AlertRetentionConfig
+	5,  // 11: storage.PrivateConfig.decommissioned_cluster_retention:type_name -> storage.DecommissionedClusterRetentionConfig
+	6,  // 12: storage.PrivateConfig.report_retention_config:type_name -> storage.ReportRetentionConfig
+	11, // 13: storage.PrivateConfig.vulnerability_exception_config:type_name -> storage.VulnerabilityExceptionConfig
+	12, // 14: storage.PrivateConfig.administration_events_config:type_name -> storage.AdministrationEventsConfig
+	7,  // 15: storage.PrivateConfig.metrics:type_name -> storage.PrometheusMetrics
+	18, // 16: storage.PlatformComponentConfig.rules:type_name -> storage.PlatformComponentConfig.Rule
+	3,  // 17: storage.Config.public_config:type_name -> storage.PublicConfig
+	8,  // 18: storage.Config.private_config:type_name -> storage.PrivateConfig
+	9,  // 19: storage.Config.platform_component_config:type_name -> storage.PlatformComponentConfig
+	21, // 20: storage.VulnerabilityExceptionConfig.expiry_options:type_name -> storage.VulnerabilityExceptionConfig.ExpiryOptions
+	17, // 21: storage.PrometheusMetrics.Group.descriptors:type_name -> storage.PrometheusMetrics.Group.DescriptorsEntry
+	16, // 22: storage.PrometheusMetrics.Group.DescriptorsEntry.value:type_name -> storage.PrometheusMetrics.Group.Labels
+	19, // 23: storage.PlatformComponentConfig.Rule.namespace_rule:type_name -> storage.PlatformComponentConfig.Rule.NamespaceRule
+	13, // 24: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
+	20, // 25: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions
+	26, // [26:26] is the sub-list for method output_type
+	26, // [26:26] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_storage_config_proto_init() }

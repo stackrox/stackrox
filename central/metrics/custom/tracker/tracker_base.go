@@ -58,6 +58,15 @@ func MakeLabelOrderMap[F Finding](getters []LazyLabel[F]) map[Label]int {
 	return result
 }
 
+// GetLabels returns a slice of labels from the list of lazy getters.
+func GetLabels[F Finding](getters []LazyLabel[F]) []string {
+	result := make([]string, 0, len(getters))
+	for _, l := range getters {
+		result = append(result, string(l.Label))
+	}
+	return result
+}
+
 type Tracker interface {
 	// Gather the data and update the metrics registry.
 	Gather(context.Context)

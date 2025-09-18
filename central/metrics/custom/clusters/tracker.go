@@ -11,9 +11,9 @@ import (
 
 func New(ds clusterDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
+		"health",
 		"clusters",
-		"clusters",
-		lazyLabels,
+		LazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
 			return trackClusters(ctx, ds)
 		},
