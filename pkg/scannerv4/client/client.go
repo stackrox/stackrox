@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -259,14 +260,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts
 		return nil, false, nil
 	}
 
-	// Extract indexer version from response headers
-	if options.versionMetadataPtr != nil {
-		if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
-			options.versionMetadataPtr.Indexer = versions[0]
-		} else {
-			options.versionMetadataPtr.Indexer = scannerv4.DefaultVersion
-		}
-	}
+	setIndexerVersion(options, responseMetadata)
 
 	return ir, true, nil
 }
@@ -346,14 +340,7 @@ func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest
 		return nil, fmt.Errorf("create index: %w", err)
 	}
 
-	// Extract indexer version from response headers
-	if options.versionMetadataPtr != nil {
-		if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
-			options.versionMetadataPtr.Indexer = versions[0]
-		} else {
-			options.versionMetadataPtr.Indexer = scannerv4.DefaultVersion
-		}
-	}
+	setIndexerVersion(options, responseMetadata)
 
 	return ir, nil
 }
@@ -386,14 +373,7 @@ func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, con
 		return nil, fmt.Errorf("get vulns: %w", err)
 	}
 
-	// Extract matcher version from response headers
-	if options.versionMetadataPtr != nil {
-		if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
-			options.versionMetadataPtr.Matcher = versions[0]
-		} else {
-			options.versionMetadataPtr.Matcher = scannerv4.DefaultVersion
-		}
-	}
+	setMatcherVersion(options, responseMetadata)
 
 	return vr, nil
 }
@@ -418,14 +398,7 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 		return nil, fmt.Errorf("get metadata: %w", err)
 	}
 
-	// Extract matcher version from response headers
-	if options.versionMetadataPtr != nil {
-		if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
-			options.versionMetadataPtr.Matcher = versions[0]
-		} else {
-			options.versionMetadataPtr.Matcher = scannerv4.DefaultVersion
-		}
-	}
+	setMatcherVersion(options, responseMetadata)
 
 	return m, nil
 }
@@ -464,4 +437,30 @@ func defaultBackoff() backoff.BackOff {
 	b.Multiplier = 2
 	b.MaxElapsedTime = time.Second * 10
 	return b
+}
+
+// setIndexerVersion extracts the indexer version from the gRPC response
+// metadata response.
+func setIndexerVersion(options callOptions, responseMetadata metadata.MD) {
+	if options.versionMetadataPtr == nil {
+		return
+	}
+
+	options.versionMetadataPtr.Indexer = scannerv4.DefaultVersion
+	if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
+		options.versionMetadataPtr.Indexer = strings.Join(versions, ",")
+	}
+}
+
+// setMatcherVersion extracts the matcher version from the gRPC response
+// metadata response.
+func setMatcherVersion(options callOptions, responseMetadata metadata.MD) {
+	if options.versionMetadataPtr == nil {
+		return
+	}
+
+	options.versionMetadataPtr.Matcher = scannerv4.DefaultVersion
+	if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
+		options.versionMetadataPtr.Matcher = strings.Join(versions, ",")
+	}
 }
