@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/compliance/collection/compliance_checks"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
+	"github.com/stackrox/rox/compliance/virtualmachine"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -93,7 +94,7 @@ func (c *Compliance) Start() {
 	}()
 
 	var wg concurrency.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
@@ -115,6 +116,18 @@ func (c *Compliance) Start() {
 			// sending node indexes into output toSensorC
 			for n := range nodeIndexesC {
 				toSensorC <- n
+			}
+		}
+	}(ctx)
+
+	go func(ctx context.Context) {
+		defer wg.Add(-1)
+		if features.VirtualMachines.Enabled() {
+			log.Infof("VM relay enabled")
+			relay := virtualmachine.NewRelay(conn)
+			err := relay.Run(ctx)
+			if err != nil {
+				log.Errorf("Error running VM relay: %v", err)
 			}
 		}
 	}(ctx)
