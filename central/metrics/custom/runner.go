@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
 	"github.com/stackrox/rox/central/metrics/custom/policies"
 	"github.com/stackrox/rox/central/metrics/custom/policy_violations"
+	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
 	policyDS "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -70,16 +71,18 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 		(*storage.PrometheusMetrics).GetPolicyViolations,
 	}, {
 		clusters.New(ds.clusters),
-		(*storage.PrometheusMetrics).GetClusters,
+		withHardcodedConfiguration(60, map[string][]string{
+			"clusters": tracker.GetLabels(clusters.LazyLabels),
+		}),
 	}, {
 		policies.New(ds.policies),
 		withHardcodedConfiguration(60, map[string][]string{
-			"total_policies": policies.GetLabels(),
+			"total_policies": tracker.GetLabels(policies.LazyLabels),
 		}),
 	}, {
 		expiry.New(ds.expiry),
 		withHardcodedConfiguration(60, map[string][]string{
-			"cred_exp": expiry.GetLabels(),
+			"cred_exp": tracker.GetLabels(expiry.LazyLabels),
 		}),
 	},
 	}

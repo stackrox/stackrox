@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-var lazyLabels = []tracker.LazyLabel[*finding]{
+var LazyLabels = []tracker.LazyLabel[*finding]{
 	{Label: "Cluster", Getter: func(f *finding) string { return f.cluster.GetName() }},
 	{Label: "Type", Getter: func(f *finding) string { return f.cluster.GetType().String() }},
 	{Label: "Status", Getter: func(f *finding) string {

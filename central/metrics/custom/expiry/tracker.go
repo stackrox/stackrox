@@ -14,7 +14,7 @@ func New(s service.Service) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
 		"health",
 		"credentials expiry",
-		lazyLabels,
+		LazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
 			return track(ctx, s)
 		},
@@ -28,6 +28,9 @@ func track(ctx context.Context, s service.Service) iter.Seq[*finding] {
 			return
 		}
 		for i, component := range v1.GetCertExpiry_Component_name {
+			if v1.GetCertExpiry_Component(i) == v1.GetCertExpiry_UNKNOWN {
+				continue
+			}
 			result, err := s.GetCertExpiry(ctx, &v1.GetCertExpiry_Request{
 				Component: v1.GetCertExpiry_Component(i),
 			})
