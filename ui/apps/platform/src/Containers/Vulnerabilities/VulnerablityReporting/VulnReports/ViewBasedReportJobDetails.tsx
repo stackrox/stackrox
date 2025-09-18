@@ -15,7 +15,7 @@ import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { getSearchFilterFromSearchString } from 'utils/searchUtils';
 import { normalizeToArray } from 'utils/arrayUtils';
-import { isVulnerabilitySeverity, type VulnerabilitySeverity } from 'types/cve.proto';
+import { isVulnerabilitySeverity } from 'types/cve.proto';
 import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
 
 export type ViewBasedReportJobDetailsProps = {
@@ -112,9 +112,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                         {severityValues ? (
                             <Stack>
                                 {normalizeToArray(severityValues)
-                                    .filter((severity): severity is VulnerabilitySeverity =>
-                                        isVulnerabilitySeverity(severity)
-                                    )
+                                    .filter((severity) => isVulnerabilitySeverity(severity))
                                     .map((severity) => (
                                         <VulnerabilitySeverityIconText
                                             key={severity}
