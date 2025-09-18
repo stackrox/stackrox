@@ -2030,6 +2030,7 @@ sensor:
       - admission-controller-listen-on-updates
       - admission-controller-scan-inline
       - admission-controller-timeout
+      - auto-lock-process-baselines
       - central
       - collection-method
       - collector-image-repository
@@ -2070,6 +2071,7 @@ sensor:
         - admission-controller-listen-on-updates
         - admission-controller-scan-inline
         - admission-controller-timeout
+        - auto-lock-process-baselines
         - ca
         - central
         - collection-method
@@ -2111,6 +2113,7 @@ sensor:
         - admission-controller-listen-on-updates
         - admission-controller-scan-inline
         - admission-controller-timeout
+        - auto-lock-process-baselines
         - ca
         - central
         - collection-method
