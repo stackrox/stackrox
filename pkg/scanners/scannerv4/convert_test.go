@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const scannerVersion = "matcher=v4.0.1"
+const scannerVersion = "indexer=4.8.3"
 
 func TestNoPanic(t *testing.T) {
 	assert.NotPanics(t, func() {
-		imageScan(nil, nil, scannerVersion)
+		imageScan(nil, nil, "")
 
 		report := &v4.VulnerabilityReport{}
 		imageScan(nil, report, scannerVersion)
@@ -121,6 +121,7 @@ func TestConvert(t *testing.T) {
 
 	protoassert.SlicesEqual(t, expected.Components, actual.Components)
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
+	assert.Equal(t, scannerVersion, actual.ScannerVersion)
 }
 
 func TestComponents(t *testing.T) {
