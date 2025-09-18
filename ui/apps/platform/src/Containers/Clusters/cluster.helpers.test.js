@@ -340,7 +340,7 @@ describe('cluster helpers', () => {
             expect(received).toEqual(expected);
         });
 
-        it(`should return "Secured cluster version is not managed by ${getProductBranding().shortName}." if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED`, () => {
+        it(`should return "Sensor is not running the same version as Central" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED`, () => {
             const testUpgradeStatus = {
                 upgradability: 'MANUAL_UPGRADE_REQUIRED',
             };
@@ -348,7 +348,7 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
-                displayValue: `Secured cluster version is not managed by ${getProductBranding().shortName}.`,
+                displayValue: 'Sensor is not running the same version as Central',
                 type: 'intervention',
             };
             expect(received).toEqual(expected);
