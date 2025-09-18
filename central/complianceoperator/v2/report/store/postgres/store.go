@@ -149,6 +149,9 @@ func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *st
 }
 
 func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorReportSnapshotV2) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -229,6 +232,9 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 }
 
 func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorReportSnapshotV2ReportId string, objs ...*storage.ComplianceOperatorReportSnapshotV2_Scan) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

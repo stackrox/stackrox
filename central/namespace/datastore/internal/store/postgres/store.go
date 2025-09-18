@@ -148,6 +148,9 @@ func insertIntoNamespaces(batch *pgx.Batch, obj *storage.NamespaceMetadata) erro
 }
 
 func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NamespaceMetadata) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

@@ -186,6 +186,9 @@ func insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch *pgx.Batch, 
 }
 
 func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanConfigurationV2) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -258,6 +261,9 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 }
 
 func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanConfigurationV2ID string, objs ...*storage.ComplianceOperatorScanConfigurationV2_ProfileName) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -301,6 +307,9 @@ func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, 
 }
 
 func copyFromComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanConfigurationV2ID string, objs ...*storage.ComplianceOperatorScanConfigurationV2_Cluster) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -344,6 +353,9 @@ func copyFromComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, 
 }
 
 func copyFromComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanConfigurationV2ID string, objs ...*storage.NotifierConfiguration) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

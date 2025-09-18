@@ -137,6 +137,9 @@ func insertIntoComplianceOperatorScanSettingBindingV2(batch *pgx.Batch, obj *sto
 }
 
 func copyFromComplianceOperatorScanSettingBindingV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanSettingBindingV2) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

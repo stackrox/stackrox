@@ -110,6 +110,9 @@ func insertIntoNetworkpolicyapplicationundorecords(batch *pgx.Batch, obj *storag
 }
 
 func copyFromNetworkpolicyapplicationundorecords(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

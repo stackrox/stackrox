@@ -141,6 +141,9 @@ func insertIntoK8sRoles(batch *pgx.Batch, obj *storage.K8SRole) error {
 }
 
 func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.K8SRole) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

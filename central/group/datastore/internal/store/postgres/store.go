@@ -113,6 +113,9 @@ func insertIntoGroups(batch *pgx.Batch, obj *storage.Group) error {
 }
 
 func copyFromGroups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Group) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

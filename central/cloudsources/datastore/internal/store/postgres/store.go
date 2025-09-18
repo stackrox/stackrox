@@ -123,6 +123,9 @@ func insertIntoCloudSources(batch *pgx.Batch, obj *storage.CloudSource) error {
 }
 
 func copyFromCloudSources(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.CloudSource) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

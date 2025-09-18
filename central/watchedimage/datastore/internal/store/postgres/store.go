@@ -109,6 +109,9 @@ func insertIntoWatchedImages(batch *pgx.Batch, obj *storage.WatchedImage) error 
 }
 
 func copyFromWatchedImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.WatchedImage) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

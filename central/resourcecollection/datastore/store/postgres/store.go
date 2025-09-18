@@ -140,6 +140,9 @@ func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, obj *storage.Res
 }
 
 func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ResourceCollection) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -208,6 +211,9 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 }
 
 func copyFromCollectionsEmbeddedCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, collectionID string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

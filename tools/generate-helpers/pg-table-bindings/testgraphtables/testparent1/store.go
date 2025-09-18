@@ -140,6 +140,9 @@ func insertIntoTestParent1Childrens(batch *pgx.Batch, obj *storage.TestParent1_C
 }
 
 func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestParent1) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -208,6 +211,9 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 }
 
 func copyFromTestParent1Childrens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testParent1ID string, objs ...*storage.TestParent1_Child1Ref) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

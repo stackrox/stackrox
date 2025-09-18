@@ -138,6 +138,9 @@ func insertIntoRisks(batch *pgx.Batch, obj *storage.Risk) error {
 }
 
 func copyFromRisks(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Risk) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

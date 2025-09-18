@@ -118,6 +118,9 @@ func insertIntoNodeComponents(batch *pgx.Batch, obj *storage.NodeComponent) erro
 }
 
 func copyFromNodeComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

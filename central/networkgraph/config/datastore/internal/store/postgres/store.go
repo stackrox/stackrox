@@ -109,6 +109,9 @@ func insertIntoNetworkGraphConfigs(batch *pgx.Batch, obj *storage.NetworkGraphCo
 }
 
 func copyFromNetworkGraphConfigs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkGraphConfig) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

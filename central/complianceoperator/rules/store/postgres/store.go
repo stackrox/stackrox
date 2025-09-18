@@ -109,6 +109,9 @@ func insertIntoComplianceOperatorRules(batch *pgx.Batch, obj *storage.Compliance
 }
 
 func copyFromComplianceOperatorRules(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorRule) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

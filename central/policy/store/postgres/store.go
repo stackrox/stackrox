@@ -124,6 +124,9 @@ func insertIntoPolicies(batch *pgx.Batch, obj *storage.Policy) error {
 }
 
 func copyFromPolicies(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Policy) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

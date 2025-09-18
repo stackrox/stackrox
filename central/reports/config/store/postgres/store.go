@@ -142,6 +142,9 @@ func insertIntoReportConfigurationsNotifiers(batch *pgx.Batch, obj *storage.Noti
 }
 
 func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ReportConfiguration) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -214,6 +217,9 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 }
 
 func copyFromReportConfigurationsNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, reportConfigurationID string, objs ...*storage.NotifierConfiguration) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

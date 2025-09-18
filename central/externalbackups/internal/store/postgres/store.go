@@ -109,6 +109,9 @@ func insertIntoExternalBackups(batch *pgx.Batch, obj *storage.ExternalBackup) er
 }
 
 func copyFromExternalBackups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ExternalBackup) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

@@ -136,6 +136,9 @@ func insertIntoAuthMachineToMachineConfigsMappings(batch *pgx.Batch, obj *storag
 }
 
 func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.AuthMachineToMachineConfig) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -200,6 +203,9 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 }
 
 func copyFromAuthMachineToMachineConfigsMappings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, authMachineToMachineConfigID string, objs ...*storage.AuthMachineToMachineConfig_Mapping) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

@@ -136,6 +136,9 @@ func insertIntoProcessBaselineResults(batch *pgx.Batch, obj *storage.ProcessBase
 }
 
 func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessBaselineResults) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

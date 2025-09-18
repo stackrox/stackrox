@@ -255,6 +255,9 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 {{- define "copyObject"}}
 {{- $schema := .schema }}
 func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
+	if len(objs) == 0 {
+		return nil
+	}
     batchSize := pgSearch.MaxBatchSize
     if len(objs) < batchSize {
         batchSize = len(objs)

@@ -125,6 +125,9 @@ func insertIntoNodeCves(batch *pgx.Batch, obj *storage.NodeCVE) error {
 }
 
 func copyFromNodeCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NodeCVE) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

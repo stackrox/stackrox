@@ -136,6 +136,9 @@ func insertIntoNetworkpolicies(batch *pgx.Batch, obj *storage.NetworkPolicy) err
 }
 
 func copyFromNetworkpolicies(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkPolicy) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

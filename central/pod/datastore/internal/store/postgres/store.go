@@ -172,6 +172,9 @@ func insertIntoPodsLiveInstances(batch *pgx.Batch, obj *storage.ContainerInstanc
 }
 
 func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Pod) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -242,6 +245,9 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 }
 
 func copyFromPodsLiveInstances(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, podID string, objs ...*storage.ContainerInstance) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

@@ -165,6 +165,9 @@ func insertIntoComplianceOperatorRuleV2Controls(batch *pgx.Batch, obj *storage.R
 }
 
 func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorRuleV2) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -237,6 +240,9 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 }
 
 func copyFromComplianceOperatorRuleV2Controls(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorRuleV2ID string, objs ...*storage.RuleControls) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

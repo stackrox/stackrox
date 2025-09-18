@@ -111,6 +111,9 @@ func insertIntoPermissionSets(batch *pgx.Batch, obj *storage.PermissionSet) erro
 }
 
 func copyFromPermissionSets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.PermissionSet) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

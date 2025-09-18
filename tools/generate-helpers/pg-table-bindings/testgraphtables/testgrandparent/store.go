@@ -166,6 +166,9 @@ func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, obj *storage
 }
 
 func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestGrandparent) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -234,6 +237,9 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 }
 
 func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testGrandparentID string, objs ...*storage.TestGrandparent_Embedded) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -283,6 +289,9 @@ func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, 
 }
 
 func copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testGrandparentID string, testGrandparentEmbeddedIdx int, objs ...*storage.TestGrandparent_Embedded_Embedded2) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

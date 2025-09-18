@@ -124,6 +124,9 @@ func insertIntoTestSingleUUIDKeyStructs(batch *pgx.Batch, obj *storage.TestSingl
 }
 
 func copyFromTestSingleUUIDKeyStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestSingleUUIDKeyStruct) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

@@ -124,6 +124,9 @@ func insertIntoTestSingleKeyStructs(batch *pgx.Batch, obj *storage.TestSingleKey
 }
 
 func copyFromTestSingleKeyStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestSingleKeyStruct) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

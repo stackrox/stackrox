@@ -109,6 +109,9 @@ func insertIntoComplianceStrings(batch *pgx.Batch, obj *storage.ComplianceString
 }
 
 func copyFromComplianceStrings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceStrings) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

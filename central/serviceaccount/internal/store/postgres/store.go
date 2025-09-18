@@ -140,6 +140,9 @@ func insertIntoServiceAccounts(batch *pgx.Batch, obj *storage.ServiceAccount) er
 }
 
 func copyFromServiceAccounts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ServiceAccount) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

@@ -115,6 +115,9 @@ func insertIntoTestG2GrandChild1(batch *pgx.Batch, obj *storage.TestG2GrandChild
 }
 
 func copyFromTestG2GrandChild1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestG2GrandChild1) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

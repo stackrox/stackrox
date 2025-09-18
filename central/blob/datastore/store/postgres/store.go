@@ -115,6 +115,9 @@ func insertIntoBlobs(batch *pgx.Batch, obj *storage.Blob) error {
 }
 
 func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Blob) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

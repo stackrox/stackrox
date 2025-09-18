@@ -110,6 +110,9 @@ func insertIntoNotifiers(batch *pgx.Batch, obj *storage.Notifier) error {
 }
 
 func copyFromNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Notifier) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

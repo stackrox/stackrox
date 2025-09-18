@@ -109,6 +109,9 @@ func insertIntoComplianceOperatorProfiles(batch *pgx.Batch, obj *storage.Complia
 }
 
 func copyFromComplianceOperatorProfiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorProfile) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

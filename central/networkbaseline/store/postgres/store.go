@@ -136,6 +136,9 @@ func insertIntoNetworkBaselines(batch *pgx.Batch, obj *storage.NetworkBaseline) 
 }
 
 func copyFromNetworkBaselines(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkBaseline) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

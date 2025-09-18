@@ -116,6 +116,9 @@ func insertIntoNetworkEntities(batch *pgx.Batch, obj *storage.NetworkEntity) err
 }
 
 func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkEntity) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

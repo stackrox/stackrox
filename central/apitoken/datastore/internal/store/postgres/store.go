@@ -115,6 +115,9 @@ func insertIntoAPITokens(batch *pgx.Batch, obj *storage.TokenMetadata) error {
 }
 
 func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TokenMetadata) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

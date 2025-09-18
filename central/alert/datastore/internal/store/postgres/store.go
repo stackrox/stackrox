@@ -167,6 +167,9 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 }
 
 func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Alert) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)

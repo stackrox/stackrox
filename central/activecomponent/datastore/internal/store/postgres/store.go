@@ -141,6 +141,9 @@ func insertIntoActiveComponentsActiveContextsSlices(batch *pgx.Batch, obj *stora
 }
 
 func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ActiveComponent) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -207,6 +210,9 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 }
 
 func copyFromActiveComponentsActiveContextsSlices(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, activeComponentID string, objs ...*storage.ActiveComponent_ActiveContext) error {
+	if len(objs) == 0 {
+		return nil
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
