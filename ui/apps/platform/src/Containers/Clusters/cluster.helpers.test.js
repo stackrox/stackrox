@@ -1,5 +1,3 @@
-import { getProductBranding } from 'constants/productBranding';
-
 import {
     findUpgradeState,
     formatSensorVersion,
