@@ -1,5 +1,5 @@
 ---
-name: go-expert-architect
+name: go-expert-dev
 description: Use this agent when working with Go 1.24+ development, including modern language features, concurrency patterns, performance optimization, or any Go-related technical decisions. This agent should be used proactively during Go development workflows.
 model: sonnet
 color: purple
