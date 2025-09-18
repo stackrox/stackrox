@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -157,50 +158,47 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		"serialized",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
+			serialized, marshalErr := obj.MarshalVT()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			inputRows = append(inputRows, []interface{}{
+				obj.GetId(),
+				obj.GetParentId(),
+				obj.GetVal(),
+				obj.GetStringSlice(),
+				serialized,
+			})
+
+			// Add the ID to be deleted.
+			deletes = append(deletes, obj.GetId())
 		}
 
-		inputRows = append(inputRows, []interface{}{
-			obj.GetId(),
-			obj.GetParentId(),
-			obj.GetVal(),
-			obj.GetStringSlice(),
-			serialized,
-		})
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
 
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = deletes[:0]
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
 		}
+		// clear the inserts and vals for the next batch
+		deletes = deletes[:0]
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
-	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
+	for _, obj := range objs {
 		if err := copyFromTestParent1Childrens(ctx, s, tx, obj.GetId(), obj.GetChildren()...); err != nil {
 			return err
 		}
@@ -222,29 +220,31 @@ func copyFromTestParent1Childrens(ctx context.Context, s pgSearch.Deleter, tx *p
 		"childid",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	idx := 0
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		inputRows = append(inputRows, []interface{}{
-			testParent1ID,
-			idx,
-			obj.GetChildId(),
-		})
+			inputRows = append(inputRows, []interface{}{
+				testParent1ID,
+				idx,
+				obj.GetChildId(),
+			})
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1_childrens"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+			idx++
 		}
+
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1_childrens"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	return nil

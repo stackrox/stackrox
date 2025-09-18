@@ -11,6 +11,7 @@ package postgres
 
 import (
     "context"
+    "slices"
     "strings"
     "time"
 
@@ -271,51 +272,52 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
     {{- end }}
     }
 
-    for idx, obj := range objs {
-        // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-        log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-		"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-		"to simply use the object.  %s", obj)
-        {{/* If embedded, the top-level has the full serialized object */}}
-        {{if not $schema.Parent }}
-        serialized, marshalErr := obj.MarshalVT()
-        if marshalErr != nil {
-            return marshalErr
-        }
-        {{end}}
-
-        inputRows = append(inputRows, []interface{}{
-            {{- template "insertValues" $schema }}
-        })
-
-        {{ if not $schema.Parent }}
-        // Add the ID to be deleted.
-        deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
-        {{end}}
-
-        // if we hit our batch size we need to push the data
-        if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
-            // copy does not upsert so have to delete first.  parent deletion cascades so only need to
-            // delete for the top level parent
+    {{ $idx := false }}{{ range $field := $schema.DBColumnFields }}{{if eq "idx" ($field.Getter "obj") -}}{{ $idx = true }}{{end}}{{ end -}}
+    {{ if $idx }}idx := 0{{ end }}
+    for objBatch := range slices.Chunk(objs, batchSize) {
+        for _, obj := range objBatch {
+            // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+            log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+            "in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+            "to simply use the object.  %s", obj)
+            {{/* If embedded, the top-level has the full serialized object */}}
             {{if not $schema.Parent }}
-            if err := s.DeleteMany(ctx, deletes); err != nil {
-                return err
+            serialized, marshalErr := obj.MarshalVT()
+            if marshalErr != nil {
+                return marshalErr
             }
-            // clear the inserts and vals for the next batch
-            deletes = deletes[:0]
             {{end}}
-            if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-                return err
-            }
-            // clear the input rows for the next batch
-            inputRows = inputRows[:0]
+
+            inputRows = append(inputRows, []interface{}{
+                {{- template "insertValues" $schema }}
+            })
+
+            {{ if not $schema.Parent }}
+            // Add the ID to be deleted.
+            deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+            {{end}}
+            {{- if $idx }}idx++{{ end -}}
         }
+
+        // copy does not upsert so have to delete first.  parent deletion cascades so only need to
+        // delete for the top level parent
+        {{if not $schema.Parent }}
+        if err := s.DeleteMany(ctx, deletes); err != nil {
+            return err
+        }
+        // clear the inserts and vals for the next batch
+        deletes = deletes[:0]
+        {{end}}
+        if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+            return err
+        }
+        // clear the input rows for the next batch
+        inputRows = inputRows[:0]
     }
 
     {{if $schema.Children }}
-    for idx, obj := range objs {
-        _ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-        {{range $child := $schema.Children }}
+    for {{ if $idx }}idx{{else}}_{{ end }}, obj := range objs {
+        {{- range $child := $schema.Children }}
         if err := {{ template "copyFunctionName" $child }}(ctx, s, tx{{ range $index, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }
