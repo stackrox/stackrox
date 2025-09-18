@@ -7,9 +7,11 @@ import (
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
+	"github.com/stackrox/rox/central/credentialexpiry/service"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/clusters"
+	"github.com/stackrox/rox/central/metrics/custom/expiry"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
 	"github.com/stackrox/rox/central/metrics/custom/policy_violations"
 	"github.com/stackrox/rox/central/metrics/custom/total_enabled_policies"
@@ -41,6 +43,23 @@ type runnerDatastores struct {
 	policies    policyDS.DataStore
 }
 
+func withHardcodedConfiguration(period uint32, descriptors map[string][]string) func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group {
+	group := &storage.PrometheusMetrics_Group{
+		GatheringPeriodMinutes: period,
+		Descriptors:            map[string]*storage.PrometheusMetrics_Group_Labels{},
+	}
+
+	for metric, labels := range descriptors {
+		group.Descriptors[metric] = &storage.PrometheusMetrics_Group_Labels{
+			Labels: labels,
+		}
+	}
+
+	return func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group {
+		return group
+	}
+}
+
 func makeRunner(ds *runnerDatastores) trackerRunner {
 	return trackerRunner{{
 		image_vulnerabilities.New(ds.deployments),
@@ -53,11 +72,14 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 		(*storage.PrometheusMetrics).GetClusters,
 	}, {
 		total_enabled_policies.New(ds.policies),
-		func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group {
-			return &storage.PrometheusMetrics_Group{
-				GatheringPeriodMinutes: 30,
-			}
-		},
+		withHardcodedConfiguration(60, map[string][]string{
+			"total_enabled_policies": {},
+		}),
+	}, {
+		expiry.New(service.Singleton()),
+		withHardcodedConfiguration(60, map[string][]string{
+			"cred_exp": expiry.GetLabels(),
+		}),
 	},
 	}
 }
