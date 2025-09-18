@@ -256,7 +256,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts
 
 	// Extract indexer version from response headers
 	if options.versionMetadataPtr != nil {
-		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
+		if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
 			options.versionMetadataPtr.Indexer = versions[0]
 		} else {
 			options.versionMetadataPtr.Indexer = scannerv4.DefaultVersion
@@ -351,7 +351,7 @@ func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest
 
 	// Extract indexer version from response headers
 	if options.versionMetadataPtr != nil {
-		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
+		if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
 			options.versionMetadataPtr.Indexer = versions[0]
 		} else {
 			options.versionMetadataPtr.Indexer = scannerv4.DefaultVersion
@@ -395,7 +395,7 @@ func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, con
 
 	// Extract matcher version from response headers
 	if options.versionMetadataPtr != nil {
-		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
+		if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
 			options.versionMetadataPtr.Matcher = versions[0]
 		} else {
 			options.versionMetadataPtr.Matcher = scannerv4.DefaultVersion
@@ -431,7 +431,7 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 
 	// Extract matcher version from response headers
 	if options.versionMetadataPtr != nil {
-		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
+		if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
 			options.versionMetadataPtr.Matcher = versions[0]
 		} else {
 			options.versionMetadataPtr.Matcher = scannerv4.DefaultVersion
