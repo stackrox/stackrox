@@ -38,6 +38,15 @@ type callOptions struct {
 // CallOption configures call-specific options for scanner methods.
 type CallOption func(*callOptions)
 
+// makeCallOptions processes all passed CallOptions to callOptions.
+func makeCallOptions(callOpts ...CallOption) callOptions {
+	var options callOptions
+	for _, callOpt := range callOpts {
+		callOpt(&options)
+	}
+	return options
+}
+
 // GetServiceVersion returns a CallOption that captures service metadata.
 func GetServiceVersion(v *scannerv4.Version) CallOption {
 	return func(o *callOptions) {
@@ -230,11 +239,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts
 		"hash_id", hashID,
 	)
 
-	// Process call options
-	var options callOptions
-	for _, callOpt := range callOpts {
-		callOpt(&options)
-	}
+	options := makeCallOptions(callOpts...)
 
 	var ir *v4.IndexReport
 	var responseMetadata metadata.MD
@@ -278,11 +283,7 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		"image", ref.String(),
 	)
 
-	// Process call options
-	var options callOptions
-	for _, callOpt := range callOpts {
-		callOpt(&options)
-	}
+	options := makeCallOptions(callOpts...)
 
 	return c.getOrCreateImageIndex(ctx, ref, auth, opt, options)
 }
@@ -303,11 +304,7 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 		"image", ref.String(),
 	)
 
-	// Process call options
-	var options callOptions
-	for _, callOpt := range callOpts {
-		callOpt(&options)
-	}
+	options := makeCallOptions(callOpts...)
 
 	ir, err := c.getOrCreateImageIndex(ctx, ref, auth, opt, options)
 	if err != nil {
@@ -372,11 +369,7 @@ func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, c
 		"image", ref.String(),
 	)
 
-	// Process call options
-	var options callOptions
-	for _, callOpt := range callOpts {
-		callOpt(&options)
-	}
+	options := makeCallOptions(callOpts...)
 
 	return c.getVulnerabilities(ctx, getImageManifestID(ref), contents, options)
 }
@@ -412,11 +405,7 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetMatcherMetadata")
 
-	// Process call options
-	var options callOptions
-	for _, callOpt := range callOpts {
-		callOpt(&options)
-	}
+	options := makeCallOptions(callOpts...)
 
 	var m *v4.Metadata
 	var responseMetadata metadata.MD
