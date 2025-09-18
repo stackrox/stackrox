@@ -1,0 +1,317 @@
+name: E2E tests
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Commit SHA of tests'
+        required: true
+        type: string
+      tested_commit:
+        description: 'Commit SHA to test'
+        required: true
+        type: string
+  workflow_call:
+env:
+  ROX_PRODUCT_BRANDING: stackrox
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFIG: "/tmp/kubeconfig"
+      FAIL_FAST: "true"
+      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+      POD_SECURITY_POLICIES: "false"
+      ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL: "true"
+      ROX_PROCESSES_LISTENING_ON_PORT: "false"
+      REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
+      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+      MAIN_IMAGE_TAG: ${{ inputs.tested_commit || github.event.pull_request.base.sha }}
+      TAG: ${{ inputs.tested_commit || github.event.pull_request.base.sha }}
+      GATHER_QA_TEST_DEBUG_LOGS: "false"
+      QA_TEST_DEBUG_LOGS: ""
+      SHARED_DIR: "/tmp"
+      #ORCHESTRATOR_FLAVOR: "openshift"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 #${{ github.event.pull_request.commits }}
+          fetch-tags: true
+          show-progress: false
+
+      - run: |
+          nohup git fetch origin '+refs/tags/*:refs/tags/*' >>/tmp/git.fetching.log 2>&1 &
+          echo $! | tee /tmp/git.fetching.pid
+
+      - uses: ./.github/actions/job-preamble
+        if: ${{ !env.ACT }}
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Env variables
+        run: |
+          JOB_NAME="${JOB_NAME:-ocp-4-19-qa-e2e-tests}"
+
+          ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/artifacts/}"
+          mkdir -p "$ARTIFACT_DIR"
+
+          cat >> "$GITHUB_ENV" <<EOF
+          SHARED_DIR=${SHARED_DIR:-/tmp}
+          ARTIFACT_DIR=${ARTIFACT_DIR}
+
+          CI_JOB_NAME=${JOB_NAME}
+          JOB_NAME=${JOB_NAME}
+          JOB_NAME_SAFE=qa-e2e-tests
+          GRADLE_USER_HOME=${HOME}
+          EOF
+
+      #- name: Check if testing on Infra cluster
+      #  timeout-minutes: 5
+      #  continue-on-error: true
+      #  run: |
+      #    source scripts/ci/lib.sh
+      #    test_on_infra | tee -a "$GITHUB_ENV"
+
+      - id: cluster-exists
+        continue-on-error: true
+        run: |
+          kubectl get nodes
+
+      - name: Create k8s Kind Cluster
+        if: ${{ steps.cluster-exists.outcome == 'failure' }}
+        uses: helm/kind-action@v1
+        with:
+          kubeconfig: "${{ env.KUBECONFIG }}"
+
+      - name: Determine cluster flavor
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          set -x
+          if kubectl get scc; then
+            echo "CLUSTER=OPENSHIFT" | tee -a "$GITHUB_ENV"
+          else
+            echo "CLUSTER=K8S" | tee -a "$GITHUB_ENV"
+          fi 
+          exit 0
+          # groovy tests require CLUSTER='OPENSHIFT' for ocp or ='K8S' for GKE.
+          if [[ "$(infractl get "$CLUSTER_NAME" --json | jq -r '.Flavor')" == *"openshift"* ]]; then
+            echo "CLUSTER=OPENSHIFT" | tee -a "$GITHUB_ENV"
+            # default is "K8S"
+          fi
+
+      - name: Check tag lookup
+        timeout-minutes: 0.5
+        continue-on-error: true
+        run: |
+          set -x
+          while [[ "$(git describe --match='*.x' --tags --abbrev=10 --always --dirty --long --exclude '*-nightly-*')" \
+            != *".x-"* ]]; do
+            sleep 1
+            pgrep -F /tmp/git.fetching.pid || break
+          done
+          git describe --tags --abbrev=10 --always --dirty --long --exclude '*-nightly-*' || true
+          set +e
+          # example: 4.9.x-457-g9867327a52
+          MAIN_IMAGE_TAG=$(git describe --match="*.x" --tags --abbrev=10 --long --exclude '*-nightly-*' "${MAIN_IMAGE_TAG:-master}")
+          echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
+          echo "TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
+
+      #- name: Remove existing Stackrox
+      #  continue-on-error: true
+      #  if: ${{ steps.cluster-exists.outcome != 'failure' }}
+      #  run: |
+      #    kubectl delete namespace stackrox
+
+      - name: Find or Deploy Stackrox
+        id: rox-exists
+        continue-on-error: true
+        env:
+          DEPLOY_STACKROX_VIA_OPERATOR: "false"
+          # LOAD_BALANCER: "lb"
+          # SCANNER_SUPPORT: "true"
+          SENSOR_HELM_DEPLOY: "true"
+          ROX_SCANNER_V4: "false"
+          MONITORING_SUPPORT: "false"
+          LOCAL_DEPLOYMENT: "true"
+          ROX_BASELINE_GENERATION_DURATION: "1m"
+          ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: "2m"
+        run: |
+          kubectl get namespace stackrox \
+            || { 
+              if [[ "${CLUSTER,,}" == "openshift" ]]; then
+                  kubectl get scc qatest-anyuid \
+                    || {
+                      kubectl create ns stackrox;
+                      kubectl create -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml";
+                    }
+              fi
+              tests/e2e/run-e2e-tests.sh -t "${MAIN_IMAGE_TAG}" --config-only qa && exit 1
+              # CI= ./deploy/deploy-local.sh;
+              find deploy -name password;
+              echo "ROX_USERNAME=admin" >> "$GITHUB_ENV";
+              echo "ROX_ADMIN_PASSWORD=$(cat deploy/*/central-deploy/password)" >> "$GITHUB_ENV";
+              exit 1;
+            }
+
+      - name: Stackrox service and auth lookup
+        id: stackrox-api
+        if: ${{ steps.rox-exists.outcome != 'failure' }}
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          set +e
+          set -x
+          ls -latr /tmp/
+          if [[ -e "${KUBECONFIG:-}" ]]; then
+            if [[ -z "${ROX_ADMIN_PASSWORD:-}" ]]; then
+              password="${ROX_ADMIN_PASSWORD:-$(cat "${KUBECONFIG%kubeconfig}admin-password")}"
+              password="${password:-$(kubectl -n stackrox get secret admin-pass -o json | jq -er '.data.password // ""' | base64 -d)}"
+              password="${password:-$(kubectl -n stackrox get secret central-htpasswd -o json | jq -er '.data.password // ""' | base64 -d)}"
+              echo "ROX_USERNAME=admin" | tee -a "$GITHUB_ENV"
+              echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
+            fi
+            if [[ -z "${API_HOSTNAME:-}" || ( $API_HOSTNAME == 'localhost' && -z "$(pgrep -F /tmp/forward.pid)" ) ]]; then
+              API_HOSTNAME=$(kubectl -n stackrox get route central -o jsonpath='{.status.ingress[0].host}')
+              API_HOSTNAME=${API_HOSTNAME:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')}
+              API_HOSTNAME=${API_HOSTNAME:-localhost}
+              echo "API_HOSTNAME=${API_HOSTNAME}" | tee -a "$GITHUB_ENV"
+              API_PORT=${API_PORT:-$(kubectl -n stackrox get route central -o jsonpath='{.spec.port.targetPort}')}
+              API_PORT=${API_PORT:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].port}')}
+              API_PORT=${API_PORT//https/443}
+              if [[ "$API_HOSTNAME" == 'localhost' ]]; then
+                ps -ef|grep kubectl || true
+                nohup kubectl -n stackrox port-forward svc/central 8000:443 &
+                echo $! | tee /tmp/forward.pid
+                API_PORT=8000
+              fi
+              API_PORT=${API_PORT:-443}
+              echo "API_HOSTNAME=${API_HOSTNAME}" | tee -a "$GITHUB_ENV"
+              echo "API_PORT=${API_PORT}" | tee -a "$GITHUB_ENV"
+            fi
+          fi
+          echo "API_ENDPOINT=${API_HOSTNAME:-localhost}:${API_PORT:-8000}" | tee -a "$GITHUB_ENV"
+
+      - name: Stackrox API test
+        if: ${{ steps.stackrox-api.outcome != 'failure' }}
+        continue-on-error: true
+        run: |
+          if [[ "${API_HOSTNAME:-}" == 'localhost' || -e /tmp/forward.pid ]]; then 
+            cat /tmp/forward.pid || true
+            ps -ef | grep kube || true
+          fi
+
+          curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.'
+
+      # Only needed for Groovy
+      - name: Get secured cluster name
+        continue-on-error: true
+        if: ${{ steps.stackrox-api.outcome != 'failure' }}
+        run: |
+          echo "Groovy tests expect a secured cluster. Default name is 'remote' but the Infra demo clusters set names like 'production'. Look up what secured clusters exist:"
+          set -x
+          CLUSTER_INFO=$(curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters")
+          echo "REMOTE_CLUSTER_NAME=$(jq -r '(.clusters[] | select(.name == "production") | .name) // .clusters[0].name' <<<"$CLUSTER_INFO")" | tee -a "$GITHUB_ENV"
+
+      - run: go get github.com/stackrox/scanner
+
+      - name: install oc cli
+        if: ${{ env.CLUSTER == 'OPENSHIFT' }}
+        run: |
+          # Some tests require `oc`.
+          curl --retry 5 --retry-all-errors -L -o /tmp/openshift-client-linux.tar.gz \
+            https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz
+          tar -C /tmp -xzf /tmp/openshift-client-linux.tar.gz
+          install --mode 755 /tmp/oc /usr/local/bin/
+          install --mode 755 /tmp/kubectl /usr/local/bin/
+
+      ## UI e2e - Cypress tests
+      #- name: UI E2E
+      #  timeout-minutes: 45
+      #  run: |
+      #    set +e
+      #    ls -latr ${SHARED_DIR}**
+      #    source tests/e2e/lib.sh
+      #    setup_automation_flavor_e2e_cluster "${CI_JOB_NAME}"
+      #    set -x
+      #    export DEPLOY_STACKROX_VIA_OPERATOR=true
+      #    export INSTALL_COMPLIANCE_OPERATOR=true
+      #    export ORCHESTRATOR_FLAVOR="${CLUSTER}"
+
+      #    #DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+      #    #HOSTALIASES=/tmp/hostaliases
+      #    #UI_BASE_URL (set to either "https://central-lb:443" or "https://localhost:${LOCAL_PORT}")
+      #    #make -C ui test-e2e, so these environment variables will be available during that execution.
+
+      #    export VERSION=$(echo "${MAIN_IMAGE_TAG}" | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g')  # operator/Makefile VERSION is CSV_TAG
+      #    tests/e2e/run-ui-e2e.sh
+
+      # QA e2e - groovy tests
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          #cache-read-only: false
+          cache-overwrite-existing: true
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release' }}
+
+      - timeout-minutes: 10
+        run: |
+          make -C qa-tests-backend compile
+
+      - timeout-minutes: 35
+        continue-on-error: true
+        run: |
+          export TEST_TARGET="smoke-test"
+          cd qa-tests-backend && ./gradlew testSMOKE --fail-fast
+
+      - timeout-minutes: 35
+        continue-on-error: true
+        run: |
+          export TEST_TARGET="bat-test"
+          cd qa-tests-backend && ./gradlew testParallelBAT testBAT --fail-fast --warn
+
+      - timeout-minutes: 35
+        run: |
+          export TEST_TARGET="test"
+          cd qa-tests-backend && ./gradlew testParallel testRest --fail-fast --warn
+
+      - name: Check shared dir and artifacts
+        if: always()
+        run: |
+          set +e
+          set -x
+          tail /tmp/git.fetching.log
+          ls -latr ${ARTIFACT_DIR}**
+          ls -latr ${SHARED_DIR}**
+          echo "check daemon:"
+          { pushd qa-tests-backend; ./gradlew --status || true; popd; }
+
+      - name: Publish Test Report
+        id: test-results
+        uses: test-summary/action@v2
+        continue-on-error: true
+        if: always()
+        with:
+          paths: 'qa-tests-backend/build/test-results/**/TEST-*.xml'
+          show: "all"
+
+      - name: Determine cluster flavor
+        if: ${{ steps.test-results.outcome == 'failure' }}
+        timeout-minutes: 5
+        run: |
+          tee -a "$GITHUB_STEP_SUMMARY" <<EOF
+          :boom: ${{ steps.test_summary.outputs.failed }}/${{ steps.test_summary.outputs.total }} failed
+          :seedling: ${{ steps.test_summary.outputs.passed }}/${{ steps.test_summary.outputs.total }} passed
+          :zzz: ${{ steps.test_summary.outputs.skipped }}/${{ steps.test_summary.outputs.total }} skipped
+          EOF
