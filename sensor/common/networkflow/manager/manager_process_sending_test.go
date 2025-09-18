@@ -254,23 +254,3 @@ func (b *sendNetflowsSuite) getUpdates(num int) ([]*storage.ProcessListeningOnPo
 	}
 	return p, e
 }
-
-func (b *sendNetflowsSuite) assertOneUpdatedProcess(isOpen bool, nameIs, nameIsNot string) {
-	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
-	procUpdate, ok := msg.Msg.(*central.MsgFromSensor_ProcessListeningOnPortUpdate)
-	b.Require().True(ok, "message should be ProcessListeningOnPortUpdate")
-	b.Require().Len(procUpdate.ProcessListeningOnPortUpdate.GetProcessesListeningOnPorts(), 1, "one updated process")
-	proc := procUpdate.ProcessListeningOnPortUpdate.GetProcessesListeningOnPorts()[0]
-	if nameIs != "" {
-		b.Assert().Equalf(nameIs, proc.GetProcess().GetProcessName(), "process name should be %s", nameIs)
-	}
-	if nameIsNot != "" {
-		b.Assert().NotEqualf(nameIs, proc.GetProcess().GetProcessName(), "process name should not be %s", nameIs)
-	}
-	closeTS := proc.GetCloseTimestamp().GetNanos()
-	if isOpen {
-		b.Assert().Equalf(int32(0), closeTS, "the process closeTS should be 0 (open) but is %d (closed)", closeTS)
-	} else {
-		b.Assert().NotEqualf(int32(0), closeTS, "the process should be closed but is open")
-	}
-}
