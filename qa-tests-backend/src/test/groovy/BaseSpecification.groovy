@@ -318,7 +318,7 @@ class BaseSpecification extends Specification {
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
         //TODO(ROX-30946): figure out why Sensor is unhealthy at the end of UpgradesTest
-        if (Env.IN_CI && this.class.simpleName == "UpgradesTest") {
+        if (Env.IN_CI && this.class.simpleName != "UpgradesTest") {
             log.info("Checking if cluster is healthy after test")
             waitForClusterHealthy()
         }
