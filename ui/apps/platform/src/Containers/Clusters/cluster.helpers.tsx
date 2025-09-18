@@ -16,7 +16,6 @@ import {
 
 import { Cluster, ClusterHealthStatusLabel, ClusterProviderMetadata } from 'types/cluster.proto';
 import { getDate, getDistanceStrict } from 'utils/dateUtils';
-import { getProductBranding } from 'constants/productBranding';
 
 import { healthStatusLabels } from './cluster.constants';
 import { CertExpiryStatus } from './clusterTypes';
@@ -211,7 +210,7 @@ const upgradeStates: UpgradeStates = {
         type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
-        displayValue: `Secured cluster version is not managed by ${getProductBranding().shortName}.`,
+        displayValue: 'Sensor is not running the same version as Central',
         type: 'intervention',
     },
     UPGRADE_AVAILABLE: {
