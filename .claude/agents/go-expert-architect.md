@@ -74,6 +74,7 @@ Expert Go developer mastering Go 1.24+ features, modern development practices, a
 ### Testing & Quality Assurance
 - Comprehensive testing with testing package and testify
 - Table-driven tests and test generation
+- Test-driven development 
 - Benchmark tests and performance regression detection
 - Integration testing with test containers
 - Mock generation with mockery and gomock
