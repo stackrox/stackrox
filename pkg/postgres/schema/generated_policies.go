@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	// GeneratedPolicySearchFields contains pre-computed search fields for policies
-	GeneratedPolicySearchFields = map[search.FieldLabel]*search.Field{
+	// generatedPolicySearchFields contains pre-computed search fields for policies
+	generatedPolicySearchFields = map[search.FieldLabel]*search.Field{
 
 		"Policy": {
 			FieldPath: "Id",
@@ -96,8 +96,8 @@ var (
 		},
 	}
 
-	// GeneratedPolicySchema is the pre-computed schema for policies table
-	GeneratedPolicySchema = &walker.Schema{
+	// generatedPolicySchema is the pre-computed schema for policies table
+	generatedPolicySchema = &walker.Schema{
 		Table:    "policies",
 		Type:     "*storage.Policy",
 		TypeName: "Policy",
@@ -386,8 +386,8 @@ var (
 // GetPolicySchema returns the generated schema for policies
 func GetPolicySchema() *walker.Schema {
 	// Set up search options if not already done
-	if GeneratedPolicySchema.OptionsMap == nil {
-		GeneratedPolicySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICIES, GeneratedPolicySearchFields))
+	if generatedPolicySchema.OptionsMap == nil {
+		generatedPolicySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICIES, generatedPolicySearchFields))
 	}
-	return GeneratedPolicySchema
+	return generatedPolicySchema
 }

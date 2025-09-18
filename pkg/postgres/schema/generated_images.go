@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	// GeneratedImageSearchFields contains pre-computed search fields for images
-	GeneratedImageSearchFields = map[search.FieldLabel]*search.Field{
+	// generatedImageSearchFields contains pre-computed search fields for images
+	generatedImageSearchFields = map[search.FieldLabel]*search.Field{
 
 		"Image": {
 			FieldPath: "Id",
@@ -31,8 +31,8 @@ var (
 		},
 	}
 
-	// GeneratedImageSchema is the pre-computed schema for images table
-	GeneratedImageSchema = &walker.Schema{
+	// generatedImageSchema is the pre-computed schema for images table
+	generatedImageSchema = &walker.Schema{
 		Table:    "images",
 		Type:     "*storage.Image",
 		TypeName: "Image",
@@ -182,8 +182,8 @@ var (
 // GetImageSchema returns the generated schema for images
 func GetImageSchema() *walker.Schema {
 	// Set up search options if not already done
-	if GeneratedImageSchema.OptionsMap == nil {
-		GeneratedImageSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGES, GeneratedImageSearchFields))
+	if generatedImageSchema.OptionsMap == nil {
+		generatedImageSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGES, generatedImageSearchFields))
 	}
-	return GeneratedImageSchema
+	return generatedImageSchema
 }

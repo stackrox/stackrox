@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	// GeneratedDeploymentSearchFields contains pre-computed search fields for deployments
-	GeneratedDeploymentSearchFields = map[search.FieldLabel]*search.Field{
+	// generatedDeploymentSearchFields contains pre-computed search fields for deployments
+	generatedDeploymentSearchFields = map[search.FieldLabel]*search.Field{
 
 		"Deployment": {
 			FieldPath: "Id",
@@ -87,8 +87,8 @@ var (
 		},
 	}
 
-	// GeneratedDeploymentSchema is the pre-computed schema for deployments table
-	GeneratedDeploymentSchema = &walker.Schema{
+	// generatedDeploymentSchema is the pre-computed schema for deployments table
+	generatedDeploymentSchema = &walker.Schema{
 		Table:    "deployments",
 		Type:     "*storage.Deployment",
 		TypeName: "Deployment",
@@ -458,8 +458,8 @@ var (
 // GetDeploymentSchema returns the generated schema for deployments
 func GetDeploymentSchema() *walker.Schema {
 	// Set up search options if not already done
-	if GeneratedDeploymentSchema.OptionsMap == nil {
-		GeneratedDeploymentSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, GeneratedDeploymentSearchFields))
+	if generatedDeploymentSchema.OptionsMap == nil {
+		generatedDeploymentSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, generatedDeploymentSearchFields))
 	}
-	return GeneratedDeploymentSchema
+	return generatedDeploymentSchema
 }

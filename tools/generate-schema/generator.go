@@ -418,8 +418,8 @@ import (
 )
 
 var (
-	// Generated{{.TypeName}}SearchFields contains pre-computed search fields for {{.TableName}}
-	Generated{{.TypeName}}SearchFields = map[search.FieldLabel]*search.Field{
+	// generated{{.TypeName}}SearchFields contains pre-computed search fields for {{.TableName}}
+	generated{{.TypeName}}SearchFields = map[search.FieldLabel]*search.Field{
 		{{range .SearchFields}}
 		"{{.FieldLabel}}": {
 			FieldPath: "{{.FieldPath}}",
@@ -432,8 +432,8 @@ var (
 		{{end}}
 	}
 
-	// Generated{{.TypeName}}Schema is the pre-computed schema for {{.TableName}} table
-	Generated{{.TypeName}}Schema = &walker.Schema{
+	// generated{{.TypeName}}Schema is the pre-computed schema for {{.TableName}} table
+	generated{{.TypeName}}Schema = &walker.Schema{
 		Table:    "{{.TableName}}",
 		Type:     "*storage.{{.TypeName}}",
 		TypeName: "{{.TypeName}}",
@@ -474,10 +474,10 @@ var (
 // Get{{.TypeName}}Schema returns the generated schema for {{.TableName}}
 func Get{{.TypeName}}Schema() *walker.Schema {
 	// Set up search options if not already done
-	if Generated{{.TypeName}}Schema.OptionsMap == nil {
-		Generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_{{.SearchCategory}}, Generated{{.TypeName}}SearchFields))
+	if generated{{.TypeName}}Schema.OptionsMap == nil {
+		generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_{{.SearchCategory}}, generated{{.TypeName}}SearchFields))
 	}
-	return Generated{{.TypeName}}Schema
+	return generated{{.TypeName}}Schema
 }
 `
 

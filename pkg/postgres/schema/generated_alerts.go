@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	// GeneratedAlertSearchFields contains pre-computed search fields for alerts
-	GeneratedAlertSearchFields = map[search.FieldLabel]*search.Field{
+	// generatedAlertSearchFields contains pre-computed search fields for alerts
+	generatedAlertSearchFields = map[search.FieldLabel]*search.Field{
 
 		"Alert": {
 			FieldPath: "Id",
@@ -71,8 +71,8 @@ var (
 		},
 	}
 
-	// GeneratedAlertSchema is the pre-computed schema for alerts table
-	GeneratedAlertSchema = &walker.Schema{
+	// generatedAlertSchema is the pre-computed schema for alerts table
+	generatedAlertSchema = &walker.Schema{
 		Table:    "alerts",
 		Type:     "*storage.Alert",
 		TypeName: "Alert",
@@ -264,8 +264,8 @@ var (
 // GetAlertSchema returns the generated schema for alerts
 func GetAlertSchema() *walker.Schema {
 	// Set up search options if not already done
-	if GeneratedAlertSchema.OptionsMap == nil {
-		GeneratedAlertSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ALERTS, GeneratedAlertSearchFields))
+	if generatedAlertSchema.OptionsMap == nil {
+		generatedAlertSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ALERTS, generatedAlertSearchFields))
 	}
-	return GeneratedAlertSchema
+	return generatedAlertSchema
 }

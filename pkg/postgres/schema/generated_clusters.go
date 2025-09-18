@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	// GeneratedClusterSearchFields contains pre-computed search fields for clusters
-	GeneratedClusterSearchFields = map[search.FieldLabel]*search.Field{
+	// generatedClusterSearchFields contains pre-computed search fields for clusters
+	generatedClusterSearchFields = map[search.FieldLabel]*search.Field{
 
 		"Cluster": {
 			FieldPath: "Id",
@@ -23,8 +23,8 @@ var (
 		},
 	}
 
-	// GeneratedClusterSchema is the pre-computed schema for clusters table
-	GeneratedClusterSchema = &walker.Schema{
+	// generatedClusterSchema is the pre-computed schema for clusters table
+	generatedClusterSchema = &walker.Schema{
 		Table:    "clusters",
 		Type:     "*storage.Cluster",
 		TypeName: "Cluster",
@@ -238,8 +238,8 @@ var (
 // GetClusterSchema returns the generated schema for clusters
 func GetClusterSchema() *walker.Schema {
 	// Set up search options if not already done
-	if GeneratedClusterSchema.OptionsMap == nil {
-		GeneratedClusterSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTERS, GeneratedClusterSearchFields))
+	if generatedClusterSchema.OptionsMap == nil {
+		generatedClusterSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTERS, generatedClusterSearchFields))
 	}
-	return GeneratedClusterSchema
+	return generatedClusterSchema
 }
