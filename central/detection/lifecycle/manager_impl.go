@@ -230,7 +230,7 @@ func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
 		return false
 	}
 
-	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL {
+	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL || cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
 		return cluster.GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
 	}
 
