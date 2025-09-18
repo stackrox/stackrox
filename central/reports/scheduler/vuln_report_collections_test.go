@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
-	"github.com/stackrox/rox/central/imagev2/datastore/mapper"
 	"github.com/stackrox/rox/central/reports/common"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
@@ -27,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -217,7 +217,7 @@ func (s *ReportingWithCollectionsTestSuite) truncateTable(name string) {
 func (s *ReportingWithCollectionsTestSuite) upsertManyImages(images []*storage.Image) {
 	for _, img := range images {
 		if features.FlattenImageData.Enabled() {
-			err := s.resolver.ImageV2DataStore.UpsertImage(s.ctx, mapper.ConvertToV2(img))
+			err := s.resolver.ImageV2DataStore.UpsertImage(s.ctx, imageUtils.ConvertToV2(img))
 			s.NoError(err)
 		} else {
 			err := s.resolver.ImageDataStore.UpsertImage(s.ctx, img)
