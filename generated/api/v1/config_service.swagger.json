@@ -490,9 +490,12 @@
         },
         "policyViolations": {
           "$ref": "#/definitions/storagePrometheusMetricsGroup"
+        },
+        "clusters": {
+          "$ref": "#/definitions/storagePrometheusMetricsGroup"
         }
       },
-      "title": "next available tag: 3"
+      "title": "next available tag: 4"
     },
     "storagePrometheusMetricsGroup": {
       "type": "object",
