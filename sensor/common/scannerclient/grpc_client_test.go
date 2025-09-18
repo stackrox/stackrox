@@ -92,3 +92,12 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 		})
 	}
 }
+
+// Note that this tests an unexported function to verify the indexer version is
+// set. If you need to change that logic, feel free to modify this test, but
+// consider how to keep this verification.
+func Test_convertIndexReportToAnalysis(t *testing.T) {
+	scannerVersion := "indexer=4.8.3"
+	imageAnalysis := convertIndexReportToAnalysis(nil, scannerVersion)
+	assert.Equal(t, imageAnalysis.IndexerVersion, scannerVersion)
+}
