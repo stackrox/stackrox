@@ -97,6 +97,14 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		return nil
 	}
 
+	vmState := virtualMachineV1.VirtualMachine_STOPPED
+	if vm.Running {
+		vmState = virtualMachineV1.VirtualMachine_RUNNING
+	}
+	vmVSockCID := int32(0)
+	if vm.VSOCKCID != nil {
+		vmVSockCID = int32(*vm.VSOCKCID)
+	}
 	// Send an Update event for the VirtualMachine that handles this instance
 	return component.NewEvent(&central.SensorEvent{
 		Id:     string(vm.ID),
@@ -107,6 +115,8 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 				Name:      vm.Name,
 				Namespace: vm.Namespace,
 				ClusterId: d.clusterID,
+				VsockCid:  vmVSockCID,
+				State:     vmState,
 			},
 		},
 	})

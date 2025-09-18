@@ -51,6 +51,10 @@ func processVirtualMachine(vm *virtualmachine.Info, action central.ResourceActio
 	} else {
 		store.AddOrUpdate(vm)
 	}
+	vmState := virtualMachineV1.VirtualMachine_STOPPED
+	if vm.Running {
+		vmState = virtualMachineV1.VirtualMachine_RUNNING
+	}
 	return component.NewEvent(&central.SensorEvent{
 		Id:     string(vm.ID),
 		Action: action,
@@ -60,6 +64,7 @@ func processVirtualMachine(vm *virtualmachine.Info, action central.ResourceActio
 				Namespace: vm.Namespace,
 				Name:      vm.Name,
 				ClusterId: clusterID,
+				State:     vmState,
 			},
 		},
 	})
