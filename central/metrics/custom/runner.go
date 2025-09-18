@@ -99,12 +99,14 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	var userID string
-	if id := authn.IdentityFromContextOrNil(req.Context()); id != nil {
+	reqCtx := req.Context()
+	if id := authn.IdentityFromContextOrNil(reqCtx); id != nil {
 		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
-		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
+		newCtx := authn.CopyContextIdentity(context.Background(), reqCtx)
+		newCtx = sac.CopyAccessScopeCheckerCore(newCtx, reqCtx)
 		for _, tracker := range tr {
-			go tracker.Gather(ctx)
+			go tracker.Gather(newCtx)
 		}
 	}
 	registry := metrics.GetCustomRegistry(userID)
