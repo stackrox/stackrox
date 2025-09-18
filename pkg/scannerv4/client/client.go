@@ -423,7 +423,7 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 	}
 
 	req := &v4.StoreIndexReportRequest{
-		HashId:         ref.DigestStr(),
+		HashId:         getImageManifestID(ref),
 		IndexerVersion: indexerVersion,
 		Contents:       contents,
 	}
