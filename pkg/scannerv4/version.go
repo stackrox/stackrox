@@ -11,7 +11,7 @@ import (
 const (
 	// ServiceVersionHeader is the key for the gRPC metadata (usually a header)
 	// that contains the Scanner version the caller is communicating with.
-	ServiceVersionHeader = "X-Scanner-Version"
+	ServiceVersionHeader = "x-scanner-version"
 
 	// DefaultVersion represents the default version string that will be used
 	// when setting the Scanner V4 version if no version was provided by the
