@@ -3,6 +3,7 @@ package fake
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"time"
 
@@ -225,7 +226,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	}
 	mgr.initializePreexistingResources()
 
-	if warn := validateWorkload(workload); warn != nil {
+	if warn := validateWorkload(&workload); warn != nil {
 		log.Warnf("Validaing workload: %s", warn)
 	}
 
@@ -235,11 +236,14 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	return mgr
 }
 
-func validateWorkload(workload Workload) error {
+func validateWorkload(workload *Workload) error {
 	if workload.NetworkWorkload.OpenPortReuseProbability < 0.0 || workload.NetworkWorkload.OpenPortReuseProbability > 1.0 {
+		corrected := math.Min(1.0, math.Max(0.0, workload.NetworkWorkload.OpenPortReuseProbability))
+		workload.NetworkWorkload.OpenPortReuseProbability = corrected
 		return fmt.Errorf("incorrect probability value %.2f for 'openPortReuseProbability', "+
-			"rounding to the nearest value from range <0.0, 1.0>", workload.NetworkWorkload.OpenPortReuseProbability)
+			"rounding to %.2f", workload.NetworkWorkload.OpenPortReuseProbability, corrected)
 	}
+	// More validation checks can be added in the future
 	return nil
 }
 
