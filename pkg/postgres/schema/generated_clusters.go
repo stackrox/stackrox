@@ -4,7 +4,6 @@ package schema
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -12,6 +11,18 @@ import (
 )
 
 var (
+	// GeneratedClusterSearchFields contains pre-computed search fields for clusters
+	GeneratedClusterSearchFields = map[search.FieldLabel]*search.Field{
+
+		"Cluster": {
+			FieldPath: "Id",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+	}
+
 	// GeneratedClusterSchema is the pre-computed schema for clusters table
 	GeneratedClusterSchema = &walker.Schema{
 		Table:    "clusters",
@@ -228,7 +239,7 @@ var (
 func GetClusterSchema() *walker.Schema {
 	// Set up search options if not already done
 	if GeneratedClusterSchema.OptionsMap == nil {
-		GeneratedClusterSchema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "clusters", (*storage.Cluster)(nil)))
+		GeneratedClusterSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTERS, GeneratedClusterSearchFields))
 	}
 	return GeneratedClusterSchema
 }

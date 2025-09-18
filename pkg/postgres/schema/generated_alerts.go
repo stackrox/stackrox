@@ -4,7 +4,6 @@ package schema
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -12,6 +11,66 @@ import (
 )
 
 var (
+	// GeneratedAlertSearchFields contains pre-computed search fields for alerts
+	GeneratedAlertSearchFields = map[search.FieldLabel]*search.Field{
+
+		"Alert": {
+			FieldPath: "Id",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+
+		"Lifecycle": {
+			FieldPath: "LifecycleStage",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+
+		"Cluster": {
+			FieldPath: "ClusterId",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+
+		"Namespace": {
+			FieldPath: "Namespace",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+
+		"Violation": {
+			FieldPath: "Time",
+			Type:      v1.SearchDataType_SEARCH_DATETIME,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+
+		"Platform": {
+			FieldPath: "PlatformComponent",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+
+		"Entity": {
+			FieldPath: "EntityType",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+	}
+
 	// GeneratedAlertSchema is the pre-computed schema for alerts table
 	GeneratedAlertSchema = &walker.Schema{
 		Table:    "alerts",
@@ -206,7 +265,7 @@ var (
 func GetAlertSchema() *walker.Schema {
 	// Set up search options if not already done
 	if GeneratedAlertSchema.OptionsMap == nil {
-		GeneratedAlertSchema.SetOptionsMap(search.Walk(v1.SearchCategory_ALERTS, "alerts", (*storage.Alert)(nil)))
+		GeneratedAlertSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ALERTS, GeneratedAlertSearchFields))
 	}
 	return GeneratedAlertSchema
 }

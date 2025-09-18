@@ -4,7 +4,6 @@ package schema
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -12,6 +11,91 @@ import (
 )
 
 var (
+	// GeneratedPolicySearchFields contains pre-computed search fields for policies
+	GeneratedPolicySearchFields = map[search.FieldLabel]*search.Field{
+
+		"Policy": {
+			FieldPath: "Id",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+
+		"Description": {
+			FieldPath: "Description",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+
+		"Disabled": {
+			FieldPath: "Disabled",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+
+		"Category": {
+			FieldPath: "Categories",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+
+		"Lifecycle": {
+			FieldPath: "LifecycleStages",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+
+		"Severity": {
+			FieldPath: "Severity",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+
+		"Enforcement": {
+			FieldPath: "EnforcementActions",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+
+		"SORT_Policy": {
+			FieldPath: "SORTName",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_POLICIES,
+			Analyzer:  "keyword",
+		},
+
+		"SORT_Lifecycle": {
+			FieldPath: "SORTLifecycleStage",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+
+		"SORT_Enforcement": {
+			FieldPath: "SORTEnforcement",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+	}
+
 	// GeneratedPolicySchema is the pre-computed schema for policies table
 	GeneratedPolicySchema = &walker.Schema{
 		Table:    "policies",
@@ -303,7 +387,7 @@ var (
 func GetPolicySchema() *walker.Schema {
 	// Set up search options if not already done
 	if GeneratedPolicySchema.OptionsMap == nil {
-		GeneratedPolicySchema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICIES, "policies", (*storage.Policy)(nil)))
+		GeneratedPolicySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICIES, GeneratedPolicySearchFields))
 	}
 	return GeneratedPolicySchema
 }

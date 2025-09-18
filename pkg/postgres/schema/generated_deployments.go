@@ -4,7 +4,6 @@ package schema
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -12,6 +11,82 @@ import (
 )
 
 var (
+	// GeneratedDeploymentSearchFields contains pre-computed search fields for deployments
+	GeneratedDeploymentSearchFields = map[search.FieldLabel]*search.Field{
+
+		"Deployment": {
+			FieldPath: "Id",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+
+		"Namespace": {
+			FieldPath: "Namespace",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+
+		"Orchestrator": {
+			FieldPath: "OrchestratorComponent",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+
+		"Pod": {
+			FieldPath: "PodLabels",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+
+		"Created": {
+			FieldPath: "Created",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+
+		"Cluster": {
+			FieldPath: "ClusterId",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+
+		"Image": {
+			FieldPath: "ImagePullSecrets",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+
+		"Service": {
+			FieldPath: "ServiceAccount",
+			Type:      v1.SearchDataType_SEARCH_NUMERIC,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+
+		"Platform": {
+			FieldPath: "PlatformComponent",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+	}
+
 	// GeneratedDeploymentSchema is the pre-computed schema for deployments table
 	GeneratedDeploymentSchema = &walker.Schema{
 		Table:    "deployments",
@@ -384,7 +459,7 @@ var (
 func GetDeploymentSchema() *walker.Schema {
 	// Set up search options if not already done
 	if GeneratedDeploymentSchema.OptionsMap == nil {
-		GeneratedDeploymentSchema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployments", (*storage.Deployment)(nil)))
+		GeneratedDeploymentSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, GeneratedDeploymentSearchFields))
 	}
 	return GeneratedDeploymentSchema
 }

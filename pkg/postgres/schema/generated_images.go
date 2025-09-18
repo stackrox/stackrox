@@ -4,7 +4,6 @@ package schema
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -12,6 +11,26 @@ import (
 )
 
 var (
+	// GeneratedImageSearchFields contains pre-computed search fields for images
+	GeneratedImageSearchFields = map[search.FieldLabel]*search.Field{
+
+		"Image": {
+			FieldPath: "Id",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+
+		"Last": {
+			FieldPath: "LastUpdated",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+	}
+
 	// GeneratedImageSchema is the pre-computed schema for images table
 	GeneratedImageSchema = &walker.Schema{
 		Table:    "images",
@@ -164,7 +183,7 @@ var (
 func GetImageSchema() *walker.Schema {
 	// Set up search options if not already done
 	if GeneratedImageSchema.OptionsMap == nil {
-		GeneratedImageSchema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGES, "images", (*storage.Image)(nil)))
+		GeneratedImageSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGES, GeneratedImageSearchFields))
 	}
 	return GeneratedImageSchema
 }

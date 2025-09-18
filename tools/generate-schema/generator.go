@@ -27,6 +27,7 @@ type SchemaData struct {
 	TypeName        string
 	StoragePackage  string
 	Fields          []SchemaField
+	SearchFields    []SearchFieldData
 	HasChildren     bool
 	SearchCategory  string
 	ScopingResource string
@@ -47,6 +48,16 @@ type SchemaField struct {
 	IsReference  bool
 	IsSearchable bool
 	SearchField  string
+}
+
+// SearchFieldData represents a search field for compile-time generation
+type SearchFieldData struct {
+	FieldLabel   string
+	FieldPath    string
+	DataType     string
+	Store        bool
+	Hidden       bool
+	Analyzer     string
 }
 
 // Generate generates all schema files
@@ -138,6 +149,9 @@ func (sg *SchemaGenerator) generateSchema(config SchemaData) error {
 	// Convert type info to schema fields
 	config.Fields = sg.convertFieldsToSchema(typeInfo.Fields)
 
+	// Generate search fields
+	config.SearchFields = sg.generateSearchFields(typeInfo.Fields, config.SearchCategory)
+
 	// Generate the Go code
 	code, err := sg.generateCode(config)
 	if err != nil {
@@ -197,6 +211,85 @@ func (sg *SchemaGenerator) convertFieldsToSchema(fields []FieldInfo) []SchemaFie
 	}
 
 	return schemaFields
+}
+
+// generateSearchFields generates search field data from analyzed fields
+func (sg *SchemaGenerator) generateSearchFields(fields []FieldInfo, searchCategory string) []SearchFieldData {
+	var searchFields []SearchFieldData
+	seenFields := make(map[string]bool)
+
+	for _, field := range fields {
+		if field.SearchTag == "" {
+			continue
+		}
+
+		// Parse search tag
+		searchFieldData := sg.parseSearchTag(field.SearchTag, field.Name, searchCategory)
+		if searchFieldData != nil && !seenFields[searchFieldData.FieldLabel] {
+			searchFields = append(searchFields, *searchFieldData)
+			seenFields[searchFieldData.FieldLabel] = true
+		}
+	}
+
+	return searchFields
+}
+
+// parseSearchTag parses a search struct tag and returns SearchFieldData
+func (sg *SchemaGenerator) parseSearchTag(searchTag, fieldName, searchCategory string) *SearchFieldData {
+	if searchTag == "" || searchTag == "-" {
+		return nil
+	}
+
+	parts := strings.Split(searchTag, ",")
+	if len(parts) == 0 {
+		return nil
+	}
+
+	fieldLabel := parts[0]
+	if fieldLabel == "" {
+		return nil
+	}
+
+	searchField := &SearchFieldData{
+		FieldLabel: fieldLabel,
+		FieldPath:  fieldName,
+		DataType:   sg.getSearchDataType(fieldName),
+	}
+
+	// Parse additional options
+	for i := 1; i < len(parts); i++ {
+		part := strings.TrimSpace(parts[i])
+		switch part {
+		case "hidden":
+			searchField.Hidden = true
+		case "store":
+			searchField.Store = true
+		default:
+			if strings.HasPrefix(part, "analyzer=") {
+				searchField.Analyzer = strings.TrimPrefix(part, "analyzer=")
+			}
+		}
+	}
+
+	return searchField
+}
+
+// getSearchDataType maps Go types to search data types
+func (sg *SchemaGenerator) getSearchDataType(fieldName string) string {
+	// This is a simplified mapping - in a real implementation we'd need
+	// to analyze the actual field type from the TypeInfo
+	switch {
+	case strings.Contains(strings.ToLower(fieldName), "time"):
+		return "DATETIME"
+	case strings.Contains(strings.ToLower(fieldName), "id"):
+		return "STRING"
+	case strings.Contains(strings.ToLower(fieldName), "name"):
+		return "STRING"
+	case strings.Contains(strings.ToLower(fieldName), "count"):
+		return "NUMERIC"
+	default:
+		return "STRING"
+	}
 }
 
 // fieldNameToColumnName converts Go field name to database column name
@@ -318,7 +411,6 @@ package {{.PackageName}}
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -326,6 +418,20 @@ import (
 )
 
 var (
+	// Generated{{.TypeName}}SearchFields contains pre-computed search fields for {{.TableName}}
+	Generated{{.TypeName}}SearchFields = map[search.FieldLabel]*search.Field{
+		{{range .SearchFields}}
+		"{{.FieldLabel}}": {
+			FieldPath: "{{.FieldPath}}",
+			Type:      v1.SearchDataType_SEARCH_{{.DataType}},
+			Store:     {{.Store}},
+			Hidden:    {{.Hidden}},
+			Category:  v1.SearchCategory_{{$.SearchCategory}},
+			{{if .Analyzer}}Analyzer:  "{{.Analyzer}}",{{end}}
+		},
+		{{end}}
+	}
+
 	// Generated{{.TypeName}}Schema is the pre-computed schema for {{.TableName}} table
 	Generated{{.TypeName}}Schema = &walker.Schema{
 		Table:    "{{.TableName}}",
@@ -369,7 +475,7 @@ var (
 func Get{{.TypeName}}Schema() *walker.Schema {
 	// Set up search options if not already done
 	if Generated{{.TypeName}}Schema.OptionsMap == nil {
-		Generated{{.TypeName}}Schema.SetOptionsMap(search.Walk(v1.SearchCategory_{{.SearchCategory}}, "{{.TableName}}", (*storage.{{.TypeName}})(nil)))
+		Generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_{{.SearchCategory}}, Generated{{.TypeName}}SearchFields))
 	}
 	return Generated{{.TypeName}}Schema
 }
