@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
     Alert,
-    Checkbox,
     Divider,
     Flex,
     Form,
@@ -40,44 +39,39 @@ function getEventSourceHelperText(eventSource) {
 function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const { errors, setFieldTouched, setFieldValue, setValues, touched, values } =
         useFormikContext<ClientPolicy>();
-    const [lifeCycleChange, setLifeCycleChange] = useState<{
-        lifecycleStage: LifecycleStage;
-        isChecked: boolean;
-    } | null>(null);
+    const [lifeCycleChanges, setLifeCycleChanges] = useState<LifecycleStage[] | null>(null);
 
-    function onChangeLifecycleStage(lifecycleStage: LifecycleStage, isChecked: boolean) {
+    function onChangeLifecycleStages(lifecycleStages: LifecycleStage[]) {
         const hasNonEmptyPolicyGroup = values.policySections.some(
             (section) => section.policyGroups.length > 0
         );
+
         if (hasNonEmptyPolicyGroup) {
             // for existing policies, warn that changing lifecycles will clear all policy criteria
-            setLifeCycleChange({ lifecycleStage, isChecked });
+            setLifeCycleChanges(lifecycleStages);
         } else {
             // for new policies, just update lifecycle stages
-            const newValues = getLifeCyclesUpdates(values, lifecycleStage, isChecked);
+            const newValues = getLifeCyclesUpdates(values, lifecycleStages);
             setValues(newValues);
         }
     }
 
-    function onConfirmChangeLifecycle(
-        lifecycleStage: LifecycleStage | undefined,
-        isChecked: boolean | undefined
-    ) {
+    function onConfirmChangeLifecycle(lifecycleStages: LifecycleStage[] | null) {
         // type guard, because TS is a cruel master
-        if (lifecycleStage) {
+        if (lifecycleStages && lifecycleStages.length > 0) {
             // first, update the lifecycles
-            const newValues = getLifeCyclesUpdates(values, lifecycleStage, !!isChecked);
+            const newValues = getLifeCyclesUpdates(values, lifecycleStages);
 
             // second, clear the policy criteria
             const clearedCriteria = cloneDeep(initialPolicy.policySections);
             newValues.policySections = clearedCriteria;
             setValues(newValues);
         }
-        setLifeCycleChange(null);
+        setLifeCycleChanges(null);
     }
 
     function onCancelChangeLifecycle() {
-        setLifeCycleChange(null);
+        setLifeCycleChanges(null);
     }
 
     function onChangeAuditLogEventSource() {
@@ -92,9 +86,10 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         });
         values.excludedDeploymentScopes.forEach(({ scope }, idx) => {
             // disable because unused label might be specified for rest spread idiom.
-            /* eslint-disable @typescript-eslint/no-unused-vars */
-            const { label, ...rest } = scope || {};
-            /* eslint-enable @typescript-eslint/no-unused-vars */
+
+            const { ...rest } = scope || {};
+            delete rest.label;
+
             setFieldValue(
                 `excludedDeploymentScopes[${idx}]`,
                 {
@@ -113,9 +108,13 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
 
     const eventSourceHelperText = getEventSourceHelperText(values.eventSource);
 
-    const hasBuild = values.lifecycleStages.includes('BUILD');
-    const hasDeploy = values.lifecycleStages.includes('DEPLOY');
-    const hasRuntime = values.lifecycleStages.includes('RUNTIME');
+    const isBuild = values.lifecycleStages.includes('BUILD') && values.lifecycleStages.length === 1;
+    const isDeploy =
+        values.lifecycleStages.includes('DEPLOY') && values.lifecycleStages.length === 1;
+    const isBuildAndDeploy =
+        values.lifecycleStages.includes('BUILD') && values.lifecycleStages.includes('DEPLOY');
+    const isRuntime =
+        values.lifecycleStages.includes('RUNTIME') && values.lifecycleStages.length === 1;
 
     return (
         <Flex
@@ -138,13 +137,8 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             <ConfirmationModal
                 ariaLabel="Reset policy criteria"
                 confirmText="Reset policy criteria"
-                isOpen={!!lifeCycleChange}
-                onConfirm={() =>
-                    onConfirmChangeLifecycle(
-                        lifeCycleChange?.lifecycleStage,
-                        lifeCycleChange?.isChecked
-                    )
-                }
+                isOpen={!!lifeCycleChanges && lifeCycleChanges.length > 0}
+                onConfirm={() => onConfirmChangeLifecycle(lifeCycleChanges)}
                 onCancel={onCancelChangeLifecycle}
                 title="Reset policy criteria?"
             >
@@ -198,33 +192,47 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         }
                     >
                         <Flex direction={{ default: 'row' }} className="pf-v5-u-pb-sm">
-                            <Checkbox
+                            <Radio
                                 label="Build"
-                                isChecked={hasBuild}
+                                isChecked={isBuild}
                                 id="policy-lifecycle-stage-build"
-                                onChange={(_event, isChecked) => {
+                                name="lifecycleStages"
+                                onChange={() => {
                                     setFieldTouched('lifecycleStages', true, true);
-                                    onChangeLifecycleStage('BUILD', isChecked);
+                                    onChangeLifecycleStages(['BUILD']);
                                 }}
                                 isDisabled={hasActiveViolations}
                             />
-                            <Checkbox
+                            <Radio
                                 label="Deploy"
-                                isChecked={hasDeploy}
+                                isChecked={isDeploy}
                                 id="policy-lifecycle-stage-deploy"
-                                onChange={(_event, isChecked) => {
+                                name="lifecycleStages"
+                                onChange={() => {
                                     setFieldTouched('lifecycleStages', true, true);
-                                    onChangeLifecycleStage('DEPLOY', isChecked);
+                                    onChangeLifecycleStages(['DEPLOY']);
                                 }}
                                 isDisabled={hasActiveViolations}
                             />
-                            <Checkbox
-                                label="Runtime"
-                                isChecked={hasRuntime}
-                                id="policy-lifecycle-stage-runtime"
-                                onChange={(_event, isChecked) => {
+                            <Radio
+                                label="Build and Deploy"
+                                isChecked={isBuildAndDeploy}
+                                id="policy-lifecycle-stage-build-and-deploy"
+                                name="lifecycleStages"
+                                onChange={() => {
                                     setFieldTouched('lifecycleStages', true, true);
-                                    onChangeLifecycleStage('RUNTIME', isChecked);
+                                    onChangeLifecycleStages(['BUILD', 'DEPLOY']);
+                                }}
+                                isDisabled={hasActiveViolations}
+                            />
+                            <Radio
+                                label="Runtime"
+                                isChecked={isRuntime}
+                                id="policy-lifecycle-stage-runtime"
+                                name="lifecycleStages"
+                                onChange={() => {
+                                    setFieldTouched('lifecycleStages', true, true);
+                                    onChangeLifecycleStages(['RUNTIME']);
                                 }}
                                 isDisabled={hasActiveViolations}
                             />
@@ -241,7 +249,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     <FormGroup
                         fieldId="policy-event-source"
                         label="Event sources (Runtime lifecycle only)"
-                        isRequired={hasRuntime}
+                        isRequired={isRuntime}
                         className="pf-v5-u-pt-lg"
                     >
                         <Flex direction={{ default: 'row' }}>
@@ -251,7 +259,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 id="policy-event-source-deployment"
                                 name="eventSource"
                                 onChange={() => setFieldValue('eventSource', 'DEPLOYMENT_EVENT')}
-                                isDisabled={!hasRuntime || hasActiveViolations}
+                                isDisabled={!isRuntime || hasActiveViolations}
                             />
                             <Radio
                                 label="Audit logs"
@@ -259,7 +267,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 id="policy-event-source-audit-logs"
                                 name="eventSource"
                                 onChange={onChangeAuditLogEventSource}
-                                isDisabled={!hasRuntime || hasActiveViolations}
+                                isDisabled={!isRuntime || hasActiveViolations}
                             />
                         </Flex>
                         <FormHelperText>
