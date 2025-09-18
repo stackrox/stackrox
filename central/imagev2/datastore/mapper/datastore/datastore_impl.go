@@ -4,6 +4,7 @@ import (
 	"context"
 
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,6 +20,11 @@ type datastoreImpl struct {
 	imageV2DataStore imageV2Datastore.DataStore
 
 	flattenImageData bool
+}
+
+func (ds *datastoreImpl) GetCandidateBaseImages(ctx context.Context, id string) ([]*common.CandidateBaseImage, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func newDatastoreImpl(datastoreV1 imageDatastore.DataStore, datastoreV2 imageV2Datastore.DataStore) *datastoreImpl {

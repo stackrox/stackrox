@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	biDataStore "github.com/stackrox/rox/central/baseimage/datastore"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
@@ -116,6 +117,8 @@ type serviceImpl struct {
 	scanWaiterManager waiter.Manager[*storage.Image]
 
 	clusterSACHelper sachelper.ClusterSacHelper
+
+	baseImageDatastore biDataStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -234,6 +237,14 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()), logging.Err(err))
 		return err
+	}
+	baseImages, err := s.datastore.GetCandidateBaseImages(context.Background(), img.GetId())
+	if err != nil {
+		log.Errorf("failed to get candidate base images",
+			logging.Err(err),
+		)
+	} else {
+		log.Infof("number of base images: %d", len(baseImages))
 	}
 	return nil
 }

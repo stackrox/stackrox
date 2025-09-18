@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/image/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,4 +34,6 @@ type Store interface {
 
 	// GetImagesRiskView retrieves an image id and risk score to initialize rankers
 	GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageRiskView, error)
+
+	GetCandidateBaseImages(ctx context.Context, id string) ([]*common.CandidateBaseImage, error)
 }
