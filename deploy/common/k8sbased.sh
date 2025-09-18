@@ -874,10 +874,22 @@ function launch_sensor {
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
-        roxctl --endpoint "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
-             --collection-method="$COLLECTION_METHOD" \
-             "${ORCH}" \
-             "${extra_config[@]+"${extra_config[@]}"}"
+	roxctl_cmd=(
+          roxctl
+          --endpoint "${API_ENDPOINT}"
+          --ca ""
+          --insecure-skip-tls-verify
+          sensor generate
+          --main-image-repository="${MAIN_IMAGE_REPO}"
+          --central="$CLUSTER_API_ENDPOINT"
+          --collection-method="$COLLECTION_METHOD"
+          "${ORCH}"
+          "${extra_config[@]+"${extra_config[@]}"}"
+        )
+
+        echo "Executing command: ${roxctl_cmd}"
+        "${roxctl_cmd}"
+
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
         if [[ "${GENERATE_SCANNER_DEPLOYMENT_BUNDLE:-}" == "true" ]]; then
             roxctl --endpoint "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify scanner generate \
