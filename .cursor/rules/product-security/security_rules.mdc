@@ -1,0 +1,30 @@
+---
+description: Global security rules for all projects 🛡️
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Security Principles
+
+- **Complete Mediation:** Ensure every access request is validated and authorized. No bypasses allowed.
+- **Compromise Recording:** Implement mechanisms to detect, record, and respond to security breaches.
+- **Defense in Depth:** Use multiple, layered security controls to protect systems and data.
+- **Economy of Mechanism:** Keep designs simple and easy to understand. Avoid unnecessary complexity.
+- **Least Common Mechanism:** Minimize shared resources and isolate components to reduce risk.
+- **Least Privilege:** Grant only the minimum permissions necessary for users and systems.
+- **Open Design:** Favor transparency and well-understood mechanisms over security by obscurity.
+- **Psychological Acceptability:** Make security controls user-friendly and aligned with user expectations.
+- **Secure by Design, Default, Deployment (SD3):** Ship with secure defaults, deny by default, and avoid hardcoded credentials.
+
+# Security Controls
+
+- **Authentication:** Use strong, standard authentication methods. Require authentication for all non-public areas. Store credentials securely and enforce password policies. Use multi-factor authentication where possible.
+- **Authorization:** Enforce least privilege and explicit permissions. Use a single, trusted component for authorization checks. Deny by default and audit permissions regularly.
+- **Encryption:** Encrypt all network traffic and data at rest where applicable. Use approved certificates and protocols.
+- **Logging:** Log security events centrally. Do not log sensitive data. Restrict log access and monitor for suspicious activity.
+- **Networking:** Encrypt all communications. Do not expose unnecessary endpoints or ports. Restrict network access to only what is required.
+
+---
+
+Apply these rules to all code, infrastructure, and processes to maintain a strong security posture across your projects.

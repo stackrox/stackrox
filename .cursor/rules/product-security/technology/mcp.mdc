@@ -1,0 +1,15 @@
+---
+description: Secure coding rules for Model Context Protocol (MCP) clients and servers
+globs:
+  - "**/*mcp*"
+alwaysApply: false
+---
+
+- Authenticate and authorize actions using the privileges of the principal (for example, the user) initiating the interaction, via standard authentication protocols (such as OAuth).
+- Don't let servers use their own credentials to perform actions on behalf of the user.
+- All actions executed by the MCP server must be traceable to the authenticated principal and conform to their permissions and scope.
+- Prevent prompt injection.
+- Prevent command injection.
+- Prevent API call injection.
+- Implement logging the tools and the parameters to be called as well as the outputs from the tools.
+- MCP clients must request the approval from the user before calling actions from an MCP server.

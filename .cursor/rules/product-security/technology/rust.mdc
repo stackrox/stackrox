@@ -1,0 +1,28 @@
+---
+description: Secure coding rules for Rust projects 🦀
+globs:
+  - "**/Cargo.toml"
+  - "**/*.rs"
+alwaysApply: false
+---
+
+- Avoid using unsafe code
+- Always handle `Result` and `Option` using `match`, do not use `unwrap`
+- Propagate errors using the `?` handle
+- Always display meaningful error messages, which the user can act upon
+- Prevent buffer overflows by using safe indexing methods (e.g., `get()`, `get_mut()`) and validating input sizes
+- Prevent SQL injection by using parameterized queries and escaping user input
+- Prevent XSS by escaping user input when rendering HTML
+- Prevent command injection by avoiding the use of `std::process::Command` with user-supplied arguments
+- Protect against DoS attacks by limiting resource usage (e.g., memory, CPU, network connections)
+- Use the `checked_add`, `checked_sub`, `checked_mul`, etc. methods on integers to prevent overflows
+- Avoid data races by using appropriate synchronization primitives (`Mutex`, `RwLock`, channels)
+- Be aware of integer overflow and use checked arithmetic methods to prevent it
+- Handle Unicode characters correctly to avoid unexpected behavior
+- Handle file paths correctly, especially when dealing with different operating systems
+- Be careful when writing concurrent code to avoid data races and deadlocks
+- Split code into smaller, reusable modules
+- Try to use as much the standard library as possible, only use crates if needed
+- Prefer using crates with less dependencies, utilize crate features, in order to limit indirect dependencies
+- Prefer crates with broader community adoption, which have more downloads, more github stars, are used in major projects
+- Prefer crates with more than one maintainers, with recent commits/changes
