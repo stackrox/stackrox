@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -28,7 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestSingleKeyStruct)(nil)), "test_single_key_structs")
+		schema = GetTestSingleKeyStructSchema()
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestSingleKeyStructsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(100), schema)

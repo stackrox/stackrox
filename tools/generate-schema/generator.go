@@ -295,6 +295,24 @@ func (sg *SchemaGenerator) defaultSearchCategory(typeName string) string {
 		"SystemInfo":                                    "",
 		"Version":                                       "",
 		"WatchedImage":                                  "",
+
+		// Test entities - all use SEARCH_UNSET
+		"TestStruct":               "SEARCH_UNSET",
+		"TestParent3":              "SEARCH_UNSET",
+		"TestSingleUUIDKeyStruct":  "SEARCH_UNSET",
+		"TestGGrandChild1":         "SEARCH_UNSET",
+		"TestGrandChild1":          "SEARCH_UNSET",
+		"TestParent4":              "SEARCH_UNSET",
+		"TestSingleKeyStruct":      "SEARCH_UNSET",
+		"TestChild1":               "SEARCH_UNSET",
+		"TestG3GrandChild1":        "SEARCH_UNSET",
+		"TestChild2":               "SEARCH_UNSET",
+		"TestChild1P4":             "SEARCH_UNSET",
+		"TestGrandparent":          "SEARCH_UNSET",
+		"TestG2GrandChild1":        "SEARCH_UNSET",
+		"TestParent1":              "SEARCH_UNSET",
+		"TestShortCircuit":         "SEARCH_UNSET",
+		"TestParent2":              "SEARCH_UNSET",
 	}
 
 	if category, ok := categoryMap[typeName]; ok {

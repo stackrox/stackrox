@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -33,7 +32,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestStruct)(nil)), "test_structs")
+		schema = GetTestStructSchema()
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestStructsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(101), schema)

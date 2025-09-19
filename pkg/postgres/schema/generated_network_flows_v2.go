@@ -56,7 +56,6 @@ var (
 				DataType:   postgres.Map,
 			},
 		},
-
 	}
 )
 
