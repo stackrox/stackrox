@@ -466,6 +466,10 @@ var (
 	// AuthProvider fields.
 	AuthProviderName = newFieldLabel("AuthProvider Name")
 
+	// Virtual Machine fields.
+	VirtualMachineID   = newFieldLabel("Virtual Machine ID")
+	VirtualMachineName = newFieldLabel("Virtual Machine Name")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")

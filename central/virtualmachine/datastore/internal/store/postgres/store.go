@@ -124,11 +124,12 @@ func insertIntoVirtualMachines(batch *pgx.Batch, obj *storage.VirtualMachine) er
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetNamespace(),
+		obj.GetName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO virtual_machines (Id, Namespace, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO virtual_machines (Id, Namespace, Name, ClusterId, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Namespace = EXCLUDED.Namespace, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -148,6 +149,7 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 	copyCols := []string{
 		"id",
 		"namespace",
+		"name",
 		"clusterid",
 		"serialized",
 	}
@@ -166,6 +168,7 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetNamespace(),
+			obj.GetName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
 		})
