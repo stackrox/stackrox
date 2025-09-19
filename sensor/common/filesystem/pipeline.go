@@ -6,9 +6,10 @@ import (
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/trace"
 )
@@ -17,20 +18,21 @@ type Pipeline struct {
 	detector detector.Detector
 	stopper  concurrency.Stopper
 
-	activity chan *storage.FileActivity
-	cm       *channelmultiplexer.ChannelMultiplexer[*storage.FileActivity]
+	activity        chan *storage.FileActivity
+	clusterEntities *clusterentities.Store
 
 	msgCtx context.Context
 }
 
-func NewFileSystemPipeline(detector detector.Detector) *Pipeline {
+func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store) *Pipeline {
 	msgCtx, _ := context.WithCancelCause(trace.Background())
 
 	p := &Pipeline{
-		detector: detector,
-		activity: make(chan *storage.FileActivity),
-		stopper:  concurrency.NewStopper(),
-		msgCtx:   msgCtx,
+		detector:        detector,
+		activity:        make(chan *storage.FileActivity),
+		clusterEntities: clusterEntities,
+		stopper:         concurrency.NewStopper(),
+		msgCtx:          msgCtx,
 	}
 
 	go p.run()
@@ -40,21 +42,43 @@ func NewFileSystemPipeline(detector detector.Detector) *Pipeline {
 func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 	psignal := fs.GetProcess()
 
-	activity := &storage.FileActivity{
-		Process: &storage.ProcessIndicator{
-			Id: uuid.NewV4().String(),
-			Signal: &storage.ProcessSignal{
-				Id:           psignal.Id,
-				Uid:          psignal.Uid,
-				Gid:          psignal.Gid,
-				Time:         psignal.CreationTime,
-				Name:         psignal.Name,
-				Args:         psignal.Args,
-				ExecFilePath: psignal.ExecFilePath,
-				Pid:          psignal.Pid,
-				Scraped:      psignal.Scraped,
-			},
+	pi := &storage.ProcessIndicator{
+		Id: uuid.NewV4().String(),
+		Signal: &storage.ProcessSignal{
+			Id:           psignal.Id,
+			Uid:          psignal.Uid,
+			Gid:          psignal.Gid,
+			Time:         psignal.CreationTime,
+			Name:         psignal.Name,
+			Args:         psignal.Args,
+			ExecFilePath: psignal.ExecFilePath,
+			Pid:          psignal.Pid,
+			Scraped:      psignal.Scraped,
+			ContainerId:  psignal.ContainerId,
 		},
+	}
+
+	if psignal.GetContainerId() != "" {
+		metadata, ok, _ := p.clusterEntities.LookupByContainerID(psignal.GetContainerId())
+		if !ok {
+			// unexpected - process should exist before file activity is
+			// reported
+			log.Debug("Container ID:", psignal.GetContainerId(), "not found for file activity")
+		}
+
+		pi.DeploymentId = metadata.DeploymentID
+		pi.ContainerName = metadata.ContainerName
+		pi.PodId = metadata.PodID
+		pi.PodUid = metadata.PodUID
+		pi.Namespace = metadata.Namespace
+		pi.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(metadata.StartTime)
+		pi.ImageId = metadata.ImageID
+	} else {
+		// TODO: populate node info
+	}
+
+	activity := &storage.FileActivity{
+		Process: pi,
 	}
 
 	if fs.GetOpen() != nil {

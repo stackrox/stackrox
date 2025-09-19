@@ -131,7 +131,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	var filesystemService filesystem.Service
-	filesystemService = filesystem.New(policyDetector)
+	filesystemService = filesystem.New(policyDetector, storeProvider.Entities())
 
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))

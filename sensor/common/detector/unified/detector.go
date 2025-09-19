@@ -20,7 +20,8 @@ type Detector interface {
 	ReconcilePolicies(newList []*storage.Policy)
 	DetectDeployment(ctx deploytime.DetectionContext, deployment booleanpolicy.EnhancedDeployment) []*storage.Alert
 	DetectProcess(enhancedDeployment booleanpolicy.EnhancedDeployment, processIndicator *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert
-	DetectFileActivity(activity *storage.FileActivity) []*storage.Alert
+	DetectFileActivityForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, activity *storage.FileActivity) []*storage.Alert
+	DetectFileActivityForHost(activity *storage.FileActivity) []*storage.Alert
 	DetectKubeEventForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) []*storage.Alert
 	DetectNetworkFlowForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) []*storage.Alert
 	DetectAuditLogEvents(auditEvent *sensor.AuditEvents) []*storage.Alert

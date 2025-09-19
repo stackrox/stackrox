@@ -99,8 +99,8 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			return errors.Wrap(err, "error handling resource alerts")
 		}
 		return nil
-	} else if alertResults.GetSource() == central.AlertResults_FILE_EVENT {
-		if err := s.lifecycleManager.HandleFileAlerts(clusterID, alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
+	} else if alertResults.GetSource() == central.AlertResults_HOST_EVENT {
+		if err := s.lifecycleManager.HandleHostAlerts(clusterID, alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
 			return errors.Wrap(err, "error handling file alerts")
 		}
 		return nil

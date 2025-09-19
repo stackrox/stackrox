@@ -303,7 +303,7 @@ func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject 
 		return alert.GetResource()
 	case *storage.Alert_Image:
 		return nil // This is theoretically possible even though image doesn't have a ns/cluster
-	case *storage.Alert_File_:
+	case *storage.Alert_Host_:
 		return nil
 	default:
 		log.Errorf("UNEXPECTED: Alert Entity %s unknown", alert.GetEntity())
@@ -400,8 +400,8 @@ func convertAlert(alert *storage.ListAlert, result searchCommon.Result) *v1.Sear
 		entityName = entity.Resource.GetName()
 	case *storage.ListAlert_Deployment:
 		entityName = entity.Deployment.GetName()
-	case *storage.ListAlert_File:
-		entityName = entity.File.GetPath()
+	case *storage.ListAlert_Host:
+		entityName = entity.Host.GetHostname()
 	}
 	resourceTypeTitleCase := strings.Title(strings.ToLower(entityInfo.GetResourceType().String()))
 	var location string
