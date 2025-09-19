@@ -3,10 +3,8 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Version)(nil)), "versions")
+		schema = GetVersionSchema()
 		schema.ScopingResource = resources.Version
 		RegisterTable(schema, CreateTableVersionsStmt)
 		return schema

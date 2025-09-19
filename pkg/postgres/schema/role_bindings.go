@@ -3,8 +3,6 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -31,7 +29,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), "role_bindings")
+		schema = GetK8SRoleBindingSchema()
 		schema.ScopingResource = resources.K8sRoleBinding
 		RegisterTable(schema, CreateTableRoleBindingsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, schema)

@@ -1,9 +1,6 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
@@ -46,7 +43,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), "network_flows_v2")
+		schema = GetNetworkFlowSchema()
 		RegisterTable(schema, CreateTableNetworkFlowsStmt)
 		return schema
 	}()

@@ -3,12 +3,10 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -34,7 +32,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ImageV2)(nil)), "images_v2")
+		schema = GetImageV2Schema()
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,

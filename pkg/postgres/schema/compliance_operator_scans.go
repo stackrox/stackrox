@@ -3,9 +3,6 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -24,7 +21,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorScan)(nil)), "compliance_operator_scans")
+		schema = GetComplianceOperatorScanSchema()
 		schema.ScopingResource = resources.ComplianceOperator
 		RegisterTable(schema, CreateTableComplianceOperatorScansStmt)
 		return schema

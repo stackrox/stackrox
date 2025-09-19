@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -26,7 +23,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.K8SRole)(nil)), "k8s_roles")
+		schema = GetK8SRoleSchema()
 		schema.ScopingResource = resources.K8sRole
 		RegisterTable(schema, CreateTableK8sRolesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLES, schema)

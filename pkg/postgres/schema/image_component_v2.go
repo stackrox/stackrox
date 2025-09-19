@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,7 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentV2)(nil)), "image_component_v2")
+		schema = GetImageComponentV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":   ImagesSchema,
 			"storage.ImageV2": ImagesV2Schema,

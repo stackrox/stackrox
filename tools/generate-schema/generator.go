@@ -203,19 +203,20 @@ func (sg *SchemaGenerator) extractSchemaFromFile(filePath string) (*SchemaData, 
 
 // extractSearchCategory extracts search category from file content
 func (sg *SchemaGenerator) extractSearchCategory(content, typeName string) string {
-	// Look for v1.SearchCategory_CATEGORY pattern
-	searchPattern := `v1\.SearchCategory_([A-Z_]+)`
-	re := regexp.MustCompile(searchPattern)
+	// First, look for RegisterCategoryToTable calls (these are authoritative)
+	registerPattern := `RegisterCategoryToTable\(v1\.SearchCategory_([A-Z_0-9]+)`
+	re := regexp.MustCompile(registerPattern)
+	matches := re.FindStringSubmatch(content)
+	if len(matches) == 2 {
+		return matches[1]
+	}
 
-	matches := re.FindAllStringSubmatch(content, -1)
-	for _, match := range matches {
-		if len(match) == 2 {
-			category := match[1]
-			// Skip internal categories like SEARCH
-			if !strings.Contains(category, "SEARCH") {
-				return category
-			}
-		}
+	// Second, look for schema.SetOptionsMap(search.Walk(...)) calls
+	setOptionsMapPattern := `schema\.SetOptionsMap\(search\.Walk\(v1\.SearchCategory_([A-Z_0-9]+)`
+	re2 := regexp.MustCompile(setOptionsMapPattern)
+	matches2 := re2.FindStringSubmatch(content)
+	if len(matches2) == 2 {
+		return matches2[1]
 	}
 
 	// Default mapping based on type name
@@ -240,6 +241,14 @@ func (sg *SchemaGenerator) extractScopingResource(content, typeName string) stri
 // defaultSearchCategory provides default search category mapping
 func (sg *SchemaGenerator) defaultSearchCategory(typeName string) string {
 	categoryMap := map[string]string{
+		// Entities from our analysis that DO have SearchCategory
+		"ImageComponentV2": "IMAGE_COMPONENTS_V2",
+		"ImageCVEV2":       "IMAGE_VULNERABILITIES_V2",
+		"ImageV2":          "IMAGES_V2",
+		"K8SRole":          "ROLES",
+		"K8SRoleBinding":   "ROLEBINDINGS",
+
+		// Previously working entities
 		"Alert":          "ALERTS",
 		"Deployment":     "DEPLOYMENTS",
 		"Image":          "IMAGES",
@@ -251,6 +260,41 @@ func (sg *SchemaGenerator) defaultSearchCategory(typeName string) string {
 		"Secret":         "SECRETS",
 		"Namespace":      "NAMESPACES",
 		"ServiceAccount": "SERVICE_ACCOUNTS",
+
+		// All remaining entities that don't use SearchCategory (based on analysis)
+		"AuthMachineToMachineConfig":                    "",
+		"ClusterInitBundle":                             "",
+		"ComplianceConfig":                              "",
+		"ComplianceOperatorCheckResult":                 "",
+		"ComplianceOperatorProfile":                     "",
+		"ComplianceOperatorRule":                        "",
+		"ComplianceOperatorScanSettingBinding":          "",
+		"ComplianceOperatorScan":                        "",
+		"ComplianceStrings":                             "",
+		"Config":                                        "",
+		"DeclarativeConfigHealth":                       "",
+		"DelegatedRegistryConfig":                       "",
+		"ExternalBackup":                                "",
+		"Group":                                         "",
+		"Hash":                                          "",
+		"InstallationInfo":                              "",
+		"IntegrationHealth":                             "",
+		"LogImbue":                                      "",
+		"NetworkFlowV2":                                 "",
+		"NetworkGraphConfig":                            "",
+		"NetworkPolicyApplicationUndoDeploymentRecord": "",
+		"NetworkPolicyApplicationUndoRecord":           "",
+		"NotificationSchedule":                          "",
+		"NotifierEncConfig":                             "",
+		"Notifier":                                      "",
+		"PermissionSet":                                 "",
+		"SensorUpgradeConfig":                           "",
+		"ServiceIdentity":                               "",
+		"SignatureIntegration":                          "",
+		"SimpleAccessScope":                             "",
+		"SystemInfo":                                    "",
+		"Version":                                       "",
+		"WatchedImage":                                  "",
 	}
 
 	if category, ok := categoryMap[typeName]; ok {
@@ -580,7 +624,7 @@ var (
 			Type:      v1.SearchDataType_SEARCH_{{.DataType}},
 			Store:     {{.Store}},
 			Hidden:    {{.Hidden}},
-			Category:  v1.SearchCategory_{{$.SearchCategory}},
+			{{if $.SearchCategory}}Category:  v1.SearchCategory_{{$.SearchCategory}},{{end}}
 			{{if .Analyzer}}Analyzer:  "{{.Analyzer}}",{{end}}
 		},
 		{{end}}
@@ -629,7 +673,7 @@ var (
 func Get{{.TypeName}}Schema() *walker.Schema {
 	// Set up search options if not already done
 	if generated{{.TypeName}}Schema.OptionsMap == nil {
-		generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_{{.SearchCategory}}, generated{{.TypeName}}SearchFields))
+		{{if .SearchCategory}}generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_{{.SearchCategory}}, generated{{.TypeName}}SearchFields)){{else}}generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, generated{{.TypeName}}SearchFields)){{end}}
 	}
 	return generated{{.TypeName}}Schema
 }

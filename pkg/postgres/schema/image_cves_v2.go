@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -29,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ImageCVEV2)(nil)), "image_cves_v2")
+		schema = GetImageCVEV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":            ImagesSchema,
 			"storage.ImageComponentV2": ImageComponentV2Schema,
