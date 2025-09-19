@@ -63,8 +63,8 @@ func (r *Relay) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debug("Context done, shutting down relay")
-			return nil
+			log.Info("Shutting down virtual machine relay")
+			return ctx.Err()
 		default:
 			conn, err := r.vsockServer.listener.Accept()
 			if err != nil {
