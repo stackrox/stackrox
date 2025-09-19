@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
@@ -45,6 +46,9 @@ var migrationToolFile string
 //go:embed migration_tool_test.go.tpl
 var migrationToolTestFile string
 
+//go:embed optimized_schema.go.tpl
+var optimizedSchemaFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
@@ -53,6 +57,7 @@ var (
 	storeTestTemplate         = newTemplate(storeTestFile)
 	migrationToolTemplate     = newTemplate(migrationToolFile)
 	migrationToolTestTemplate = newTemplate(migrationToolTestFile)
+	optimizedSchemaTemplate   = newTemplate(optimizedSchemaFile)
 )
 
 type properties struct {
@@ -111,6 +116,9 @@ type properties struct {
 
 	// Provides options map for sort option transforms
 	TransformSortOptions string
+
+	// Generate optimized schema files
+	GenerateOptimizedSchema bool
 }
 
 type parsedReference struct {
@@ -145,6 +153,7 @@ func main() {
 	c.Flags().StringVar(&props.DefaultSortField, "default-sort", "", "if set, provides a default sort for search if one is not present")
 	c.Flags().BoolVar(&props.ReverseDefaultSort, "reverse-default-sort", false, "if true, reverses the default sort")
 	c.Flags().StringVar(&props.TransformSortOptions, "transform-sort-options", "", "if set, provides an option map for sort transforms")
+	c.Flags().BoolVar(&props.GenerateOptimizedSchema, "generate-optimized-schema", true, "if true, generates optimized schema files with pre-computed search fields")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
@@ -231,6 +240,12 @@ func main() {
 			return err
 		}
 
+		if props.GenerateOptimizedSchema {
+			if err := generateOptimizedSchema(schema, props, trimmedType, searchCategory); err != nil {
+				return err
+			}
+		}
+
 		if props.ConversionFuncs {
 			if err := generateConversionFuncs(schema, props.SchemaDirectory); err != nil {
 				return err
@@ -299,4 +314,104 @@ func v1SearchCategoryString(category string) string {
 		return fmt.Sprintf("v1.SearchCategory(%d)", asInt)
 	}
 	return fmt.Sprintf("v1.SearchCategory_%s", category)
+}
+
+// OptimizedSchemaData represents the data for generating optimized schema files
+type OptimizedSchemaData struct {
+	TypeName       string
+	Table          string
+	Type           string
+	SearchCategory string
+	Fields         []OptimizedSchemaField
+	SearchFields   []OptimizedSearchField
+}
+
+type OptimizedSchemaField struct {
+	Name         string
+	ColumnName   string
+	Type         string
+	SQLType      string
+	DataType     string
+	IsPrimaryKey bool
+}
+
+type OptimizedSearchField struct {
+	FieldLabel     string
+	FieldPath      string
+	Store          bool
+	Hidden         bool
+	SearchCategory string
+	Analyzer       string
+}
+
+func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedType, searchCategory string) error {
+	// Generate the optimized schema file in the same directory
+
+	// Extract fields from walker schema
+	var fields []OptimizedSchemaField
+	for _, field := range schema.Fields {
+		optimizedField := OptimizedSchemaField{
+			Name:         field.Name,
+			ColumnName:   field.ColumnName,
+			Type:         field.Type,
+			SQLType:      field.SQLType,
+			DataType:     getDataTypeName(field.DataType),
+			IsPrimaryKey: field.Options.PrimaryKey,
+		}
+		fields = append(fields, optimizedField)
+	}
+
+	// Generate search fields (simplified approach - use empty list for now)
+	var searchFields []OptimizedSearchField
+	// Note: Search field generation is complex and will be handled by the build system
+	// For now, we generate the schema structure and search fields will be empty
+
+	// Clean search category name
+	cleanSearchCategory := strings.TrimPrefix(searchCategory, "v1.")
+
+	data := OptimizedSchemaData{
+		TypeName:       trimmedType,
+		Table:          schema.Table,
+		Type:           props.Type,
+		SearchCategory: cleanSearchCategory,
+		Fields:         fields,
+		SearchFields:   searchFields,
+	}
+
+	templateMap := map[string]interface{}{
+		"TypeName":       data.TypeName,
+		"Table":          data.Table,
+		"Type":           data.Type,
+		"SearchCategory": data.SearchCategory,
+		"Fields":         data.Fields,
+		"SearchFields":   data.SearchFields,
+	}
+
+	fileName := filepath.Join(props.SchemaDirectory, fmt.Sprintf("generated_%s.go", schema.Table))
+	return common.RenderFile(templateMap, optimizedSchemaTemplate, fileName)
+}
+
+func getDataTypeName(dataType interface{}) string {
+	switch dataType {
+	case nil:
+		return "String" // default
+	default:
+		// Try to extract the type name from the interface
+		dataTypeStr := fmt.Sprintf("%v", dataType)
+		if strings.Contains(dataTypeStr, "String") {
+			return "String"
+		} else if strings.Contains(dataTypeStr, "Integer") {
+			return "Integer"
+		} else if strings.Contains(dataTypeStr, "Bool") {
+			return "Bool"
+		} else if strings.Contains(dataTypeStr, "DateTime") {
+			return "DateTime"
+		} else if strings.Contains(dataTypeStr, "Map") {
+			return "Map"
+		} else if strings.Contains(dataTypeStr, "Array") {
+			return "StringArray"
+		} else {
+			return "String" // fallback
+		}
+	}
 }

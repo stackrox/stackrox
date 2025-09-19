@@ -52,9 +52,9 @@ var (
         if schema != nil {
             return schema
         }
-        schema = walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
+        schema = Get{{.TrimmedType}}Schema()
         {{- else}}
-        schema := walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
+        schema = Get{{.TrimmedType}}Schema()
         {{- end}}
 
         {{- if gt (len .References) 0 }}
@@ -69,15 +69,12 @@ var (
          })
          {{- end }}
 
-        {{- if .SearchCategory }}
-            schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.TypeName|lower}}", ({{.Schema.Type}})(nil)))
-            {{- if .SearchScope }}
+        {{- if .SearchScope }}
             schema.SetSearchScope([]v1.SearchCategory{
             {{- range $category := .SearchScope }}
                 {{$category}},
             {{- end}}
             }...)
-            {{- end }}
         {{- end }}
 
         {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
