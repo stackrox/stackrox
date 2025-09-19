@@ -92,6 +92,10 @@ var (
 				EpssProbability: 22,
 				EpssPercentile:  98,
 			},
+			Exploit: &storage.Exploit{
+				Known:                      true,
+				KnownRansomwareCampaignUse: true,
+			},
 		},
 		{
 			Cve:     "cve2",
@@ -130,6 +134,7 @@ var (
 			CvssMetrics:           nil,
 			NvdCvss:               0,
 			Epss:                  nil,
+			Exploit:               nil,
 		},
 	}
 )
@@ -218,6 +223,10 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 				Epss: &storage.EPSS{
 					EpssProbability: 22,
 					EpssPercentile:  98,
+				},
+				Exploit: &storage.Exploit{
+					Known:                      true,
+					KnownRansomwareCampaignUse: true,
 				},
 			},
 			Cvss:                 0,
