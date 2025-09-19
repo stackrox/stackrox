@@ -1,8 +1,1 @@
-{
-  "mcpServers": {
-    "gopls": {
-      "command": "gopls",
-      "args": ["mcp"]
-    }
-  }
-}
+.cursor/mcp.json
