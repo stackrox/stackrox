@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
+	"github.com/stackrox/rox/scanner/enricher/notaffected"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
@@ -139,20 +140,23 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		&fixedby.Enricher{},
 		&nvd.Enricher{},
 	}
-	var (
-		epssEnabled bool
-		csafEnabled bool
-	)
-	if features.EPSSScore.Enabled() {
-		epssEnabled = true
+
+	epssEnabled := features.EPSSScore.Enabled()
+	csafEnabled := features.ScannerV4RedHatCSAF.Enabled() && !features.ScannerV4RedHatCVEs.Enabled()
+	notAffectedEnabled := features.ScannerV4KnownNotAffected.Enabled()
+
+	if epssEnabled {
 		enrichers = append(enrichers, &epss.Enricher{})
 	}
-	if features.ScannerV4RedHatCSAF.Enabled() && !features.ScannerV4RedHatCVEs.Enabled() {
-		csafEnabled = true
+	if csafEnabled {
 		enrichers = append(enrichers, &csaf.Enricher{})
+	}
+	if notAffectedEnabled {
+		enrichers = append(enrichers, &notaffected.Enricher{})
 	}
 	zlog.Info(ctx).Bool("enabled", epssEnabled).Msg("EPSS enrichment")
 	zlog.Info(ctx).Bool("enabled", csafEnabled).Msg("CSAF enrichment")
+	zlog.Info(ctx).Bool("enabled", notAffectedEnabled).Msg("Known not affected enrichment")
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
