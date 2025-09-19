@@ -34,8 +34,7 @@ func (s *VsockServer) Start() error {
 
 func (s *VsockServer) Stop() {
 	log.Infof("Stopping vsock server on port %d", s.port)
-	err := s.listener.Close()
-	if err != nil {
+	if err := s.listener.Close(); err != nil {
 		log.Errorf("Error closing vsock listener: %v", err)
 	}
 }
@@ -56,8 +55,7 @@ func NewRelay(conn grpc.ClientConnInterface) *Relay {
 func (r *Relay) Run(ctx context.Context) error {
 	log.Info("Starting virtual machine relay")
 
-	err := r.vsockServer.Start()
-	if err != nil {
+	if err := r.vsockServer.Start(); err != nil {
 		return errors.Wrap(err, "starting vsock server")
 	}
 	defer r.vsockServer.Stop()
