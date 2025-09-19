@@ -301,7 +301,7 @@ type fileMatcherImpl struct {
 	matcherImpl
 }
 
-func (m *fileMatcherImpl) MatchFileActivity(cache *CacheReceptacle, activity *storage.FileActivity) (Violations, error) {
+func (m *fileMatcherImpl) MatchHostFileActivity(cache *CacheReceptacle, activity *storage.FileActivity) (Violations, error) {
 	violation := &storage.Alert_Violation{
 		Message: fmt.Sprintf("Unexpected file system activity: %s", activity.GetFile().GetPath()),
 	}
@@ -310,4 +310,8 @@ func (m *fileMatcherImpl) MatchFileActivity(cache *CacheReceptacle, activity *st
 			violation,
 		},
 	}, nil
+}
+
+func (m *fileMatcherImpl) MatchDeploymentWithFileActivity(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, activity *storage.FileActivity) (Violations, error) {
+	return Violations{}, nil
 }

@@ -81,10 +81,10 @@ func WithResource(resourceName string, resourceType storage.Alert_Resource_Resou
 	}
 }
 
-func WithFile(path string) AlertFilterOption {
+func WithHost(name string) AlertFilterOption {
 	return &alertFilterOptionImpl{
 		applyFunc: func(qb *search.QueryBuilder) {
-			qb.AddExactMatches(search.UnexpectedFilesystemAccess, path)
+			qb.AddExactMatches(search.Node, name)
 		},
 	}
 }

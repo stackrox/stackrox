@@ -32,8 +32,9 @@ message Alert {
     bool inactive = 15; // @gotags: search:"Inactive Deployment"
   }
 
-  message File {
-    string path = 1;
+  message Host {
+    string id = 1;
+    string name = 2;
   }
 
   // Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)
@@ -63,7 +64,7 @@ message Alert {
       K8S_EVENT = 1;
       NETWORK_FLOW = 2;
       NETWORK_POLICY = 3;
-      FILE_EVENT = 4;
+      HOST_EVENT = 4;
     }
     message KeyValueAttrs {
       message KeyValueAttr {
@@ -131,7 +132,7 @@ message Alert {
     DEPLOYMENT = 1;
     CONTAINER_IMAGE = 2;
     RESOURCE = 3;
-    FILE = 4;
+    HOST = 4;
   }
 
   oneof Entity {
@@ -144,9 +145,9 @@ message Alert {
     // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
     Resource resource = 16;
-    // Represents an alert on a file, whether inside a container or on the node.
+    // Represents an alert from a host.
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-    File file = 24;
+    Host host = 24;
   }
 
   // For run-time phase alert, a maximum of 40 violations are retained.
@@ -192,15 +193,15 @@ message ListAlert {
     NETWORK_POLICIES = 5;
     SECURITY_CONTEXT_CONSTRAINTS = 6;
     EGRESS_FIREWALLS = 7;
-    FILE = 8;
+    HOST = 8;
   }
 
   message ResourceEntity {
     string name = 1;
   }
 
-  message FileEntity {
-    string path = 1;
+  message HostEntity {
+    string hostname = 1;
   }
 
   string id = 1;
@@ -222,7 +223,7 @@ message ListAlert {
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
     ResourceEntity resource = 11;
 
-    FileEntity file = 16;
+    HostEntity host = 16;
   }
 
   // Next available tag: 17

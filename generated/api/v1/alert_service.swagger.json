@@ -621,7 +621,7 @@
         "DEPLOYMENT",
         "CONTAINER_IMAGE",
         "RESOURCE",
-        "FILE"
+        "HOST"
       ],
       "default": "UNSET"
     },
@@ -649,6 +649,17 @@
         "count": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "AlertHost": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
         }
       }
     },
@@ -722,7 +733,7 @@
         "K8S_EVENT",
         "NETWORK_FLOW",
         "NETWORK_POLICY",
-        "FILE_EVENT"
+        "HOST_EVENT"
       ],
       "default": "GENERIC"
     },
@@ -812,10 +823,10 @@
       },
       "description": "Fields common to all entities that an alert might belong to."
     },
-    "ListAlertFileEntity": {
+    "ListAlertHostEntity": {
       "type": "object",
       "properties": {
-        "path": {
+        "hostname": {
           "type": "string"
         }
       }
@@ -975,9 +986,9 @@
           "$ref": "#/definitions/storageAlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
-        "file": {
-          "$ref": "#/definitions/storageAlertFile",
-          "title": "Represents an alert on a file, whether inside a container or on the node.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        "host": {
+          "$ref": "#/definitions/AlertHost",
+          "title": "Represents an alert from a host.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "violations": {
           "type": "array",
@@ -1073,14 +1084,6 @@
         }
       }
     },
-    "storageAlertFile": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        }
-      }
-    },
     "storageAlertResource": {
       "type": "object",
       "properties": {
@@ -1159,7 +1162,7 @@
         "NOT_APPLICABLE",
         "DEPLOYMENT_EVENT",
         "AUDIT_LOG_EVENT",
-        "FILE_EVENT"
+        "HOST_EVENT"
       ],
       "default": "NOT_APPLICABLE"
     },
@@ -1345,8 +1348,8 @@
           "$ref": "#/definitions/ListAlertResourceEntity",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
-        "file": {
-          "$ref": "#/definitions/ListAlertFileEntity"
+        "host": {
+          "$ref": "#/definitions/ListAlertHostEntity"
         }
       }
     },
@@ -1421,7 +1424,7 @@
         "NETWORK_POLICIES",
         "SECURITY_CONTEXT_CONSTRAINTS",
         "EGRESS_FIREWALLS",
-        "FILE"
+        "HOST"
       ],
       "default": "DEPLOYMENT",
       "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)"
