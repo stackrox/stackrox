@@ -106,7 +106,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	container := containerResult.Container
 
 	// SECTION: ENRICHMENT OF ENDPOINT
-	epInd := indicator.ContainerEndpoint{
+	ind := indicator.ContainerEndpoint{
 		Entity:   networkgraph.EntityForDeployment(container.DeploymentID),
 		Port:     ep.endpoint.IPAndPort.Port,
 		Protocol: ep.endpoint.L4Proto.ToProtobuf(),
@@ -119,10 +119,10 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 		processIndicator, resultPLOP, reasonPLOP = m.enrichPLOP(ep, container)
 		if processIndicator != nil {
 			processesListening[*processIndicator] = status.lastSeen
-			m.endpointProcessMapping[epInd] = processIndicator
+			m.endpointProcessMapping[ind] = processIndicator
 		} else {
 			// Process indicator has been updated from a value to nil (or was always nil)
-			delete(m.endpointProcessMapping, epInd)
+			delete(m.endpointProcessMapping, ind)
 		}
 
 	} else {
@@ -135,11 +135,11 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 
 	// Multiple endpoints from a collector can result in a single enriched endpoint,
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
-	if oldTS, found := enrichedEndpoints[epInd]; found && oldTS >= status.lastSeen {
+	if oldTS, found := enrichedEndpoints[ind]; found && oldTS >= status.lastSeen {
 		return EnrichmentResultSuccess, resultPLOP, EnrichmentReasonEpDuplicate, reasonPLOP
 	}
 
-	enrichedEndpoints[epInd] = status.lastSeen
+	enrichedEndpoints[ind] = status.lastSeen
 	if !features.SensorCapturesIntermediateEvents.Enabled() {
 		return EnrichmentResultSuccess, resultPLOP, EnrichmentReasonEpFeatureDisabled, reasonPLOP
 	}
@@ -148,7 +148,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	defer m.activeEndpointsMutex.Unlock()
 	if !status.isClosed() {
 		m.activeEndpoints[*ep] = &containerEndpointIndicatorWithAge{
-			ContainerEndpoint: epInd,
+			ContainerEndpoint: ind,
 			lastUpdate:        lastUpdate,
 		}
 		return EnrichmentResultSuccess, resultPLOP, EnrichmentReasonEpSuccessActive, reasonPLOP
