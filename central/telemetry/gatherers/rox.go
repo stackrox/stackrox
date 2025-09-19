@@ -3,6 +3,7 @@ package gatherers
 import (
 	"context"
 
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
@@ -21,9 +22,9 @@ func newRoxGatherer(central *CentralGatherer, cluster *ClusterGatherer) *RoxGath
 }
 
 // Gather returns telemetry information about this Rox
-func (c *RoxGatherer) Gather(ctx context.Context, pullFromSensors bool, pullFromCentral bool) *data.TelemetryData {
+func (c *RoxGatherer) Gather(ctx context.Context, pullFromSensors bool, pullFromCentral bool, clusterFilter set.StringSet) *data.TelemetryData {
 	telemetryData := &data.TelemetryData{
-		Clusters: c.cluster.Gather(ctx, pullFromSensors),
+		Clusters: c.cluster.Gather(ctx, pullFromSensors, clusterFilter),
 	}
 
 	if pullFromCentral {
