@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"slices"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	"github.com/stackrox/rox/central/virtualmachine/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -83,6 +83,19 @@ func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListV
 		searchQuery = parsedQuery
 	}
 	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
+	if len(searchQuery.GetPagination().GetSortOptions()) == 0 {
+		if searchQuery.GetPagination() == nil {
+			searchQuery.Pagination = &v1.QueryPagination{}
+		}
+		searchQuery.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.VirtualMachineName.String(),
+			},
+			{
+				Field: search.Namespace.String(),
+			},
+		}
+	}
 
 	vms, err := s.datastore.SearchRawVirtualMachines(ctx, searchQuery)
 	if err != nil {
@@ -93,25 +106,6 @@ func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListV
 	v2VMs := make([]*v2.VirtualMachine, 0, len(vms))
 	for _, vm := range vms {
 		v2VMs = append(v2VMs, storagetov2.VirtualMachine(vm))
-	}
-	requestQueryPagination := request.GetQuery().GetPagination()
-	if requestQueryPagination.GetSortOption() == nil && len(requestQueryPagination.GetSortOptions()) == 0 {
-		// If no sorting is requested, sort by VM name then by VM namespace
-		slices.SortFunc(v2VMs, func(vm1, vm2 *v2.VirtualMachine) int {
-			if vm1.GetName() < vm2.GetName() {
-				return -1
-			}
-			if vm1.GetName() > vm2.GetName() {
-				return 1
-			}
-			if vm1.GetNamespace() < vm2.GetNamespace() {
-				return -1
-			}
-			if vm1.GetNamespace() > vm2.GetNamespace() {
-				return 1
-			}
-			return 0
-		})
 	}
 
 	return &v2.ListVirtualMachinesResponse{
