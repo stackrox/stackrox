@@ -7,6 +7,11 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.6.10]
+
+### Technical Changes
+- ROX-30945: Starting from version 4.6.10, product container images are built and released using a different set of technologies as compared to earlier versions. This may bring changes to metadata such as container labels, contents and location of SBOMs, and so on. These changes do not affect the functioning of the product but may impact third-party integrations.
+
 ## [4.6.7]
 
 ### Technical Changes
