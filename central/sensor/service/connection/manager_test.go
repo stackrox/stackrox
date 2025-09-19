@@ -138,7 +138,7 @@ func TestUpdateClusterHealthForever_ModernSensorWithCorruptedHealthData(t *testi
 	}
 
 	// For this test, we simulate NO active connection but corrupted health data
-	// This demonstrates the current bug: corrupted data persists indefinitely
+	// This demonstrates the fixed behavior: corrupted data gets updated with proper status
 
 	// Set up mock expectations
 	mockClusterManager.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
@@ -148,7 +148,7 @@ func TestUpdateClusterHealthForever_ModernSensorWithCorruptedHealthData(t *testi
 	mockClusterManager.EXPECT().GetCluster(gomock.Any(), "modern-cluster-corrupted").Return(modernClusterWithCorruptedData, true, nil).AnyTimes()
 
 	// The key test: modern cluster with corrupted data SHOULD get UpdateClusterHealth called
-	// to fix the corrupted ancient timestamp - this is what we want our fix to do
+	// to fix the corrupted ancient timestamp with appropriate disconnected status
 	mockClusterManager.EXPECT().UpdateClusterHealth(gomock.Any(), "modern-cluster-corrupted", gomock.Any()).Times(1)
 
 	// Create a test ticker channel to control when health checks happen

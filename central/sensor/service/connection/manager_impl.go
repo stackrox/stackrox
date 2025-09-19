@@ -188,9 +188,21 @@ func (m *manager) fixCorruptedHealthDataIfNeeded(cluster *storage.Cluster) {
 		log.Warnf("Detected potentially corrupted health data for cluster %s (last_contact: %v), updating to current time",
 			cluster.GetName(), lastContact)
 
+		// Determine appropriate sensor health status based on connection state
+		conn := m.GetConnection(cluster.GetId())
+		var sensorStatus storage.ClusterHealthStatus_HealthStatusLabel
+		if conn != nil {
+			// Active connection - sensor is healthy
+			sensorStatus = storage.ClusterHealthStatus_HEALTHY
+		} else {
+			// No connection - determine status based on how long since last contact
+			// Use the same logic as updateInactiveClusterHealth for consistency
+			sensorStatus = clusterhealth.PopulateInactiveSensorStatus(time.Now())
+		}
+
 		// Update health status with current timestamp to fix the corruption
 		clusterHealthStatus := &storage.ClusterHealthStatus{
-			SensorHealthStatus:      storage.ClusterHealthStatus_HEALTHY,
+			SensorHealthStatus:      sensorStatus,
 			CollectorHealthStatus:   healthStatus.GetCollectorHealthStatus(),
 			LastContact:             protocompat.TimestampNow(),
 			CollectorHealthInfo:     healthStatus.GetCollectorHealthInfo(),
