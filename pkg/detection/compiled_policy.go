@@ -25,6 +25,7 @@ type CompiledPolicy interface {
 	MatchAgainstAuditLogEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent) (booleanpolicy.Violations, error)
 	MatchAgainstDeploymentAndNetworkFlow(cacheReceptacle *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (booleanpolicy.Violations, error)
 	MatchAgainstFileActivity(cacheReceptacle *booleanpolicy.CacheReceptacle, activity *storage.FileActivity) (booleanpolicy.Violations, error)
+	MatchAgainstFileActivityAndDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, activity *storage.FileActivity) (booleanpolicy.Violations, error)
 
 	Predicate
 }
@@ -64,11 +65,9 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		}
 		// set predicates
 		compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
+		compiled.predicates = append(compiled.predicates, &filePredicate{policy: policy})
 		if policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
 			compiled.predicates = append(compiled.predicates, &auditEventPredicate{scopes: scopes, exclusions: exclusions})
-		}
-		if policy.GetEventSource() == storage.EventSource_FILE_EVENT {
-			compiled.predicates = append(compiled.predicates, &filePredicate{policy: policy})
 		}
 	}
 
@@ -147,7 +146,7 @@ func (cp *compiledPolicy) setRuntimeMatchers(policy *storage.Policy) error {
 		}
 	}
 
-	if policy.GetEventSource() == storage.EventSource_FILE_EVENT {
+	if policy.GetEventSource() == storage.EventSource_HOST_EVENT || policy.GetEventSource() == storage.EventSource_DEPLOYMENT_EVENT {
 		err := cp.setFileEventMatcher(policy)
 		if err != nil {
 			return errors.Wrapf(err, "building file event matcher for policy %q", policy.GetName())
@@ -348,7 +347,14 @@ func (cp *compiledPolicy) MatchAgainstFileActivity(cache *booleanpolicy.CacheRec
 	if cp.fileEventMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against file activity", cp.Policy().GetName())
 	}
-	return cp.fileEventMatcher.MatchFileActivity(cache, activity)
+	return cp.fileEventMatcher.MatchHostFileActivity(cache, activity)
+}
+
+func (cp *compiledPolicy) MatchAgainstFileActivityAndDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, activity *storage.FileActivity) (booleanpolicy.Violations, error) {
+	if cp.fileEventMatcher == nil {
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployment file activity", cp.Policy().GetName())
+	}
+	return cp.fileEventMatcher.MatchDeploymentWithFileActivity(cacheReceptacle, enhancedDeployment, activity)
 }
 
 // Policy returns the policy that was compiled.
@@ -482,10 +488,14 @@ type filePredicate struct {
 }
 
 func (fp *filePredicate) AppliesTo(input interface{}) bool {
-	_, isFileActivity := input.(*storage.FileActivity)
+	fa, isFileActivity := input.(*storage.FileActivity)
 	if !isFileActivity {
 		return false
 	}
 
-	return fp.policy.GetEventSource() == storage.EventSource_FILE_EVENT
+	if fa.GetProcess().GetDeploymentId() != "" {
+		return fp.policy.GetEventSource() == storage.EventSource_DEPLOYMENT_EVENT
+	}
+
+	return fp.policy.GetEventSource() == storage.EventSource_HOST_EVENT
 }

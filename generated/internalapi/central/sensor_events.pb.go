@@ -85,7 +85,7 @@ type AlertResults_Source int32
 const (
 	AlertResults_DEPLOYMENT_EVENT AlertResults_Source = 0
 	AlertResults_AUDIT_EVENT      AlertResults_Source = 1
-	AlertResults_FILE_EVENT       AlertResults_Source = 2
+	AlertResults_HOST_EVENT       AlertResults_Source = 2
 )
 
 // Enum value maps for AlertResults_Source.
@@ -93,12 +93,12 @@ var (
 	AlertResults_Source_name = map[int32]string{
 		0: "DEPLOYMENT_EVENT",
 		1: "AUDIT_EVENT",
-		2: "FILE_EVENT",
+		2: "HOST_EVENT",
 	}
 	AlertResults_Source_value = map[string]int32{
 		"DEPLOYMENT_EVENT": 0,
 		"AUDIT_EVENT":      1,
-		"FILE_EVENT":       2,
+		"HOST_EVENT":       2,
 	}
 )
 
@@ -1981,7 +1981,7 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\x10DEPLOYMENT_EVENT\x10\x00\x12\x0f\n" +
 	"\vAUDIT_EVENT\x10\x01\x12\x0e\n" +
 	"\n" +
-	"FILE_EVENT\x10\x02\"Z\n" +
+	"HOST_EVENT\x10\x02\"Z\n" +
 	"\x06Timing\x12\x1e\n" +
 	"\n" +
 	"dispatcher\x18\x01 \x01(\tR\n" +

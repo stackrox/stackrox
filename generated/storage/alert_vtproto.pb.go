@@ -85,12 +85,13 @@ func (m *Alert_Deployment) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *Alert_File) CloneVT() *Alert_File {
+func (m *Alert_Host) CloneVT() *Alert_Host {
 	if m == nil {
-		return (*Alert_File)(nil)
+		return (*Alert_Host)(nil)
 	}
-	r := new(Alert_File)
-	r.Path = m.Path
+	r := new(Alert_Host)
+	r.Id = m.Id
+	r.Name = m.Name
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -98,7 +99,7 @@ func (m *Alert_File) CloneVT() *Alert_File {
 	return r
 }
 
-func (m *Alert_File) CloneMessageVT() proto.Message {
+func (m *Alert_Host) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -382,12 +383,12 @@ func (m *Alert_Resource_) CloneVT() isAlert_Entity {
 	return r
 }
 
-func (m *Alert_File_) CloneVT() isAlert_Entity {
+func (m *Alert_Host_) CloneVT() isAlert_Entity {
 	if m == nil {
-		return (*Alert_File_)(nil)
+		return (*Alert_Host_)(nil)
 	}
-	r := new(Alert_File_)
-	r.File = m.File.CloneVT()
+	r := new(Alert_Host_)
+	r.Host = m.Host.CloneVT()
 	return r
 }
 
@@ -429,12 +430,12 @@ func (m *ListAlert_ResourceEntity) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ListAlert_FileEntity) CloneVT() *ListAlert_FileEntity {
+func (m *ListAlert_HostEntity) CloneVT() *ListAlert_HostEntity {
 	if m == nil {
-		return (*ListAlert_FileEntity)(nil)
+		return (*ListAlert_HostEntity)(nil)
 	}
-	r := new(ListAlert_FileEntity)
-	r.Path = m.Path
+	r := new(ListAlert_HostEntity)
+	r.Hostname = m.Hostname
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -442,7 +443,7 @@ func (m *ListAlert_FileEntity) CloneVT() *ListAlert_FileEntity {
 	return r
 }
 
-func (m *ListAlert_FileEntity) CloneMessageVT() proto.Message {
+func (m *ListAlert_HostEntity) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -491,12 +492,12 @@ func (m *ListAlert_Resource) CloneVT() isListAlert_Entity {
 	return r
 }
 
-func (m *ListAlert_File) CloneVT() isListAlert_Entity {
+func (m *ListAlert_Host) CloneVT() isListAlert_Entity {
 	if m == nil {
-		return (*ListAlert_File)(nil)
+		return (*ListAlert_Host)(nil)
 	}
-	r := new(ListAlert_File)
-	r.File = m.File.CloneVT()
+	r := new(ListAlert_Host)
+	r.Host = m.Host.CloneVT()
 	return r
 }
 
@@ -670,20 +671,23 @@ func (this *Alert_Deployment) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *Alert_File) EqualVT(that *Alert_File) bool {
+func (this *Alert_Host) EqualVT(that *Alert_Host) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Path != that.Path {
+	if this.Id != that.Id {
+		return false
+	}
+	if this.Name != that.Name {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *Alert_File) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*Alert_File)
+func (this *Alert_Host) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*Alert_Host)
 	if !ok {
 		return false
 	}
@@ -1181,8 +1185,8 @@ func (this *Alert_Resource_) EqualVT(thatIface isAlert_Entity) bool {
 	return true
 }
 
-func (this *Alert_File_) EqualVT(thatIface isAlert_Entity) bool {
-	that, ok := thatIface.(*Alert_File_)
+func (this *Alert_Host_) EqualVT(thatIface isAlert_Entity) bool {
+	that, ok := thatIface.(*Alert_Host_)
 	if !ok {
 		return false
 	}
@@ -1192,12 +1196,12 @@ func (this *Alert_File_) EqualVT(thatIface isAlert_Entity) bool {
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.File, that.File; p != q {
+	if p, q := this.Host, that.Host; p != q {
 		if p == nil {
-			p = &Alert_File{}
+			p = &Alert_Host{}
 		}
 		if q == nil {
-			q = &Alert_File{}
+			q = &Alert_Host{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1256,20 +1260,20 @@ func (this *ListAlert_ResourceEntity) EqualMessageVT(thatMsg proto.Message) bool
 	}
 	return this.EqualVT(that)
 }
-func (this *ListAlert_FileEntity) EqualVT(that *ListAlert_FileEntity) bool {
+func (this *ListAlert_HostEntity) EqualVT(that *ListAlert_HostEntity) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Path != that.Path {
+	if this.Hostname != that.Hostname {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ListAlert_FileEntity) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ListAlert_FileEntity)
+func (this *ListAlert_HostEntity) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ListAlert_HostEntity)
 	if !ok {
 		return false
 	}
@@ -1375,8 +1379,8 @@ func (this *ListAlert_Resource) EqualVT(thatIface isListAlert_Entity) bool {
 	return true
 }
 
-func (this *ListAlert_File) EqualVT(thatIface isListAlert_Entity) bool {
-	that, ok := thatIface.(*ListAlert_File)
+func (this *ListAlert_Host) EqualVT(thatIface isListAlert_Entity) bool {
+	that, ok := thatIface.(*ListAlert_Host)
 	if !ok {
 		return false
 	}
@@ -1386,12 +1390,12 @@ func (this *ListAlert_File) EqualVT(thatIface isListAlert_Entity) bool {
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.File, that.File; p != q {
+	if p, q := this.Host, that.Host; p != q {
 		if p == nil {
-			p = &ListAlert_FileEntity{}
+			p = &ListAlert_HostEntity{}
 		}
 		if q == nil {
-			q = &ListAlert_FileEntity{}
+			q = &ListAlert_HostEntity{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1693,7 +1697,7 @@ func (m *Alert_Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_File) MarshalVT() (dAtA []byte, err error) {
+func (m *Alert_Host) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1706,12 +1710,12 @@ func (m *Alert_File) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_File) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Alert_Host) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Alert_File) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Alert_Host) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1723,10 +1727,17 @@ func (m *Alert_File) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Path) > 0 {
-		i -= len(m.Path)
-		copy(dAtA[i:], m.Path)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Path)))
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Id)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -2552,15 +2563,15 @@ func (m *Alert_Resource_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Alert_File_) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Alert_Host_) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Alert_File_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Alert_Host_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.File != nil {
-		size, err := m.File.MarshalToSizedBufferVT(dAtA[:i])
+	if m.Host != nil {
+		size, err := m.Host.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2685,7 +2696,7 @@ func (m *ListAlert_ResourceEntity) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAlert_FileEntity) MarshalVT() (dAtA []byte, err error) {
+func (m *ListAlert_HostEntity) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2698,12 +2709,12 @@ func (m *ListAlert_FileEntity) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAlert_FileEntity) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ListAlert_HostEntity) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ListAlert_FileEntity) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ListAlert_HostEntity) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2715,10 +2726,10 @@ func (m *ListAlert_FileEntity) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Path) > 0 {
-		i -= len(m.Path)
-		copy(dAtA[i:], m.Path)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Path)))
+	if len(m.Hostname) > 0 {
+		i -= len(m.Hostname)
+		copy(dAtA[i:], m.Hostname)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Hostname)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -2870,15 +2881,15 @@ func (m *ListAlert_Resource) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ListAlert_File) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ListAlert_Host) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ListAlert_File) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ListAlert_Host) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.File != nil {
-		size, err := m.File.MarshalToSizedBufferVT(dAtA[:i])
+	if m.Host != nil {
+		size, err := m.Host.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3188,13 +3199,17 @@ func (m *Alert_Deployment) SizeVT() (n int) {
 	return n
 }
 
-func (m *Alert_File) SizeVT() (n int) {
+func (m *Alert_Host) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Path)
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -3548,14 +3563,14 @@ func (m *Alert_Resource_) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *Alert_File_) SizeVT() (n int) {
+func (m *Alert_Host_) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.File != nil {
-		l = m.File.SizeVT()
+	if m.Host != nil {
+		l = m.Host.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 3
@@ -3605,13 +3620,13 @@ func (m *ListAlert_ResourceEntity) SizeVT() (n int) {
 	return n
 }
 
-func (m *ListAlert_FileEntity) SizeVT() (n int) {
+func (m *ListAlert_HostEntity) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Path)
+	l = len(m.Hostname)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -3688,14 +3703,14 @@ func (m *ListAlert_Resource) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *ListAlert_File) SizeVT() (n int) {
+func (m *ListAlert_Host) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.File != nil {
-		l = m.File.SizeVT()
+	if m.Host != nil {
+		l = m.Host.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 3
@@ -4494,7 +4509,7 @@ func (m *Alert_Deployment) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Alert_File) UnmarshalVT(dAtA []byte) error {
+func (m *Alert_Host) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4517,15 +4532,15 @@ func (m *Alert_File) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Alert_File: wiretype end group for non-group")
+			return fmt.Errorf("proto: Alert_Host: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Alert_File: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Alert_Host: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -4553,7 +4568,39 @@ func (m *Alert_File) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Path = string(dAtA[iNdEx:postIndex])
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -6531,7 +6578,7 @@ func (m *Alert) UnmarshalVT(dAtA []byte) error {
 			}
 		case 24:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field File", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6558,16 +6605,16 @@ func (m *Alert) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Entity.(*Alert_File_); ok {
-				if err := oneof.File.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Entity.(*Alert_Host_); ok {
+				if err := oneof.Host.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &Alert_File{}
+				v := &Alert_Host{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Entity = &Alert_File_{File: v}
+				m.Entity = &Alert_Host_{Host: v}
 			}
 			iNdEx = postIndex
 		case 25:
@@ -6909,7 +6956,7 @@ func (m *ListAlert_ResourceEntity) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListAlert_FileEntity) UnmarshalVT(dAtA []byte) error {
+func (m *ListAlert_HostEntity) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6932,15 +6979,15 @@ func (m *ListAlert_FileEntity) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListAlert_FileEntity: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListAlert_HostEntity: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListAlert_FileEntity: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListAlert_HostEntity: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Hostname", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -6968,7 +7015,7 @@ func (m *ListAlert_FileEntity) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Path = string(dAtA[iNdEx:postIndex])
+			m.Hostname = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -7321,7 +7368,7 @@ func (m *ListAlert) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 16:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field File", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7348,16 +7395,16 @@ func (m *ListAlert) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Entity.(*ListAlert_File); ok {
-				if err := oneof.File.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Entity.(*ListAlert_Host); ok {
+				if err := oneof.Host.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &ListAlert_FileEntity{}
+				v := &ListAlert_HostEntity{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Entity = &ListAlert_File{File: v}
+				m.Entity = &ListAlert_Host{Host: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -8744,7 +8791,7 @@ func (m *Alert_Deployment) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Alert_File) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *Alert_Host) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8767,15 +8814,15 @@ func (m *Alert_File) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Alert_File: wiretype end group for non-group")
+			return fmt.Errorf("proto: Alert_Host: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Alert_File: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Alert_Host: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -8807,7 +8854,43 @@ func (m *Alert_File) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Path = stringValue
+			m.Id = stringValue
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Name = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -10861,7 +10944,7 @@ func (m *Alert) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 		case 24:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field File", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -10888,16 +10971,16 @@ func (m *Alert) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Entity.(*Alert_File_); ok {
-				if err := oneof.File.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Entity.(*Alert_Host_); ok {
+				if err := oneof.Host.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &Alert_File{}
+				v := &Alert_Host{}
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Entity = &Alert_File_{File: v}
+				m.Entity = &Alert_Host_{Host: v}
 			}
 			iNdEx = postIndex
 		case 25:
@@ -11259,7 +11342,7 @@ func (m *ListAlert_ResourceEntity) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListAlert_FileEntity) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ListAlert_HostEntity) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11282,15 +11365,15 @@ func (m *ListAlert_FileEntity) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListAlert_FileEntity: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListAlert_HostEntity: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListAlert_FileEntity: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListAlert_HostEntity: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Hostname", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -11322,7 +11405,7 @@ func (m *ListAlert_FileEntity) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Path = stringValue
+			m.Hostname = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -11679,7 +11762,7 @@ func (m *ListAlert) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 16:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field File", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -11706,16 +11789,16 @@ func (m *ListAlert) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Entity.(*ListAlert_File); ok {
-				if err := oneof.File.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Entity.(*ListAlert_Host); ok {
+				if err := oneof.Host.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &ListAlert_FileEntity{}
+				v := &ListAlert_HostEntity{}
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Entity = &ListAlert_File{File: v}
+				m.Entity = &ListAlert_Host{Host: v}
 			}
 			iNdEx = postIndex
 		default:

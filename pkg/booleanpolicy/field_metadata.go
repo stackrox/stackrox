@@ -882,7 +882,7 @@ func initializeFieldMetadata() FieldMetadata {
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
 		},
-		[]storage.EventSource{storage.EventSource_FILE_EVENT},
+		[]storage.EventSource{storage.EventSource_HOST_EVENT},
 		[]RuntimeFieldType{FileActivity}, negationForbidden,
 	)
 

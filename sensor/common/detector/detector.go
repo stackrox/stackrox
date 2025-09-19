@@ -579,7 +579,6 @@ func (d *detectorImpl) ProcessIndicator(ctx context.Context, pi *storage.Process
 }
 
 func (d *detectorImpl) ProcessFilesystem(ctx context.Context, fs *storage.FileActivity) {
-	log.Info("are we even doing this?")
 	go d.pushFileActivity(ctx, fs)
 }
 
@@ -693,7 +692,12 @@ func (d *detectorImpl) processFileActivity() {
 
 			log.Info("Detecting ", item.Activity)
 
-			alerts := d.unifiedDetector.DetectFileActivity(item.Activity)
+			var alerts []*storage.Alert
+			if item.Activity.GetProcess().GetDeploymentId() != "" {
+				alerts = d.unifiedDetector.DetectFileActivityForDeployment(booleanpolicy.EnhancedDeployment{}, item.Activity)
+			} else {
+				alerts = d.unifiedDetector.DetectFileActivityForHost(item.Activity)
+			}
 
 			log.Info("Alerts: ", alerts)
 
@@ -703,7 +707,7 @@ func (d *detectorImpl) processFileActivity() {
 						Action: central.ResourceAction_CREATE_RESOURCE,
 						Resource: &central.SensorEvent_AlertResults{
 							AlertResults: &central.AlertResults{
-								Source: central.AlertResults_FILE_EVENT,
+								Source: central.AlertResults_HOST_EVENT,
 								Alerts: alerts,
 								Stage:  storage.LifecycleStage_RUNTIME,
 							},

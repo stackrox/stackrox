@@ -79,10 +79,10 @@ func constructFileAlert(
 		Id:             uuid.NewV4().String(),
 		Policy:         policy.CloneVT(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Entity:         convert.ToAlertFile(activity),
+		Entity:         convert.ToAlertHost(activity),
 		Violations:     violations.AlertViolations,
 		Time:           protocompat.TimestampNow(),
-		EntityType:     storage.Alert_FILE,
+		EntityType:     storage.Alert_HOST,
 	}
 }
 

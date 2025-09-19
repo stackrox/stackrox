@@ -58,9 +58,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
 		"entityType: Alert_EntityType!",
-		"file: Alert_File",
 		"fileViolation: Alert_FileSystemViolation",
 		"firstOccurred: Time",
+		"host: Alert_Host",
 		"id: ID!",
 		"image: ContainerImage",
 		"lifecycleStage: LifecycleStage!",
@@ -80,7 +80,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"Alert_Deployment",
 		"ContainerImage",
 		"Alert_Resource",
-		"Alert_File",
+		"Alert_Host",
 	}))
 	utils.Must(builder.AddType("Alert_Deployment", []string{
 		"annotations: [Label!]!",
@@ -104,12 +104,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"message: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_EntityType(0)))
-	utils.Must(builder.AddType("Alert_File", []string{
-		"path: String!",
-	}))
 	utils.Must(builder.AddType("Alert_FileSystemViolation", []string{
 		"fileActivity: [FileActivity]!",
 		"message: String!",
+	}))
+	utils.Must(builder.AddType("Alert_Host", []string{
+		"id: ID!",
+		"name: String!",
 	}))
 	utils.Must(builder.AddType("Alert_ProcessViolation", []string{
 		"message: String!",
@@ -2053,12 +2054,6 @@ func (resolver *alertResolver) EntityType(ctx context.Context) string {
 	return value.String()
 }
 
-func (resolver *alertResolver) File(ctx context.Context) (*alert_FileResolver, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetFile()
-	return resolver.root.wrapAlert_File(value, true, nil)
-}
-
 func (resolver *alertResolver) FileViolation(ctx context.Context) (*alert_FileSystemViolationResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetFileViolation()
@@ -2069,6 +2064,12 @@ func (resolver *alertResolver) FirstOccurred(ctx context.Context) (*graphql.Time
 	resolver.ensureData(ctx)
 	value := resolver.data.GetFirstOccurred()
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *alertResolver) Host(ctx context.Context) (*alert_HostResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetHost()
+	return resolver.root.wrapAlert_Host(value, true, nil)
 }
 
 func (resolver *alertResolver) Id(ctx context.Context) graphql.ID {
@@ -2177,9 +2178,9 @@ func (resolver *alertResolver) Entity() *alertEntityResolver {
 			resolver: &alert_ResourceResolver{root: resolver.root, data: val},
 		}
 	}
-	if val := resolver.data.GetFile(); val != nil {
+	if val := resolver.data.GetHost(); val != nil {
 		return &alertEntityResolver{
-			resolver: &alert_FileResolver{root: resolver.root, data: val},
+			resolver: &alert_HostResolver{root: resolver.root, data: val},
 		}
 	}
 	return nil
@@ -2200,8 +2201,8 @@ func (resolver *alertEntityResolver) ToAlert_Resource() (*alert_ResourceResolver
 	return res, ok
 }
 
-func (resolver *alertEntityResolver) ToAlert_File() (*alert_FileResolver, bool) {
-	res, ok := resolver.resolver.(*alert_FileResolver)
+func (resolver *alertEntityResolver) ToAlert_Host() (*alert_HostResolver, bool) {
+	res, ok := resolver.resolver.(*alert_HostResolver)
 	return res, ok
 }
 
@@ -2424,53 +2425,6 @@ func toAlert_EntityTypes(values *[]string) []storage.Alert_EntityType {
 	return output
 }
 
-type alert_FileResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.Alert_File
-}
-
-func (resolver *Resolver) wrapAlert_File(value *storage.Alert_File, ok bool, err error) (*alert_FileResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &alert_FileResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapAlert_Files(values []*storage.Alert_File, err error) ([]*alert_FileResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*alert_FileResolver, len(values))
-	for i, v := range values {
-		output[i] = &alert_FileResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapAlert_FileWithContext(ctx context.Context, value *storage.Alert_File, ok bool, err error) (*alert_FileResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &alert_FileResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapAlert_FilesWithContext(ctx context.Context, values []*storage.Alert_File, err error) ([]*alert_FileResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*alert_FileResolver, len(values))
-	for i, v := range values {
-		output[i] = &alert_FileResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *alert_FileResolver) Path(ctx context.Context) string {
-	value := resolver.data.GetPath()
-	return value
-}
-
 type alert_FileSystemViolationResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -2520,6 +2474,58 @@ func (resolver *alert_FileSystemViolationResolver) FileActivity(ctx context.Cont
 
 func (resolver *alert_FileSystemViolationResolver) Message(ctx context.Context) string {
 	value := resolver.data.GetMessage()
+	return value
+}
+
+type alert_HostResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Host
+}
+
+func (resolver *Resolver) wrapAlert_Host(value *storage.Alert_Host, ok bool, err error) (*alert_HostResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_HostResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Hosts(values []*storage.Alert_Host, err error) ([]*alert_HostResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_HostResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_HostResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlert_HostWithContext(ctx context.Context, value *storage.Alert_Host, ok bool, err error) (*alert_HostResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_HostResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_HostsWithContext(ctx context.Context, values []*storage.Alert_Host, err error) ([]*alert_HostResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_HostResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_HostResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_HostResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *alert_HostResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
 	return value
 }
 

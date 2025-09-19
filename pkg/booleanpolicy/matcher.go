@@ -80,8 +80,17 @@ type DeploymentWithNetworkFlowMatcher interface {
 	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
 }
 
+type DeploymentWithFileActivityMatcher interface {
+	MatchDeploymentWithFileActivity(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, activity *storage.FileActivity) (Violations, error)
+}
+
+type HostFileEventMatcher interface {
+	MatchHostFileActivity(cache *CacheReceptacle, activity *storage.FileActivity) (Violations, error)
+}
+
 type FileEventMatcher interface {
-	MatchFileActivity(cache *CacheReceptacle, activity *storage.FileActivity) (Violations, error)
+	DeploymentWithFileActivityMatcher
+	HostFileEventMatcher
 }
 
 type sectionAndEvaluator struct {

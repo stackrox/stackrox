@@ -146,7 +146,7 @@
         "DEPLOYMENT",
         "CONTAINER_IMAGE",
         "RESOURCE",
-        "FILE"
+        "HOST"
       ],
       "default": "UNSET"
     },
@@ -162,6 +162,17 @@
             "type": "object",
             "$ref": "#/definitions/storageFileActivity"
           }
+        }
+      }
+    },
+    "AlertHost": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
         }
       }
     },
@@ -224,7 +235,7 @@
         "K8S_EVENT",
         "NETWORK_FLOW",
         "NETWORK_POLICY",
-        "FILE_EVENT"
+        "HOST_EVENT"
       ],
       "default": "GENERIC"
     },
@@ -523,9 +534,9 @@
           "$ref": "#/definitions/storageAlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
-        "file": {
-          "$ref": "#/definitions/storageAlertFile",
-          "title": "Represents an alert on a file, whether inside a container or on the node.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        "host": {
+          "$ref": "#/definitions/AlertHost",
+          "title": "Represents an alert from a host.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "violations": {
           "type": "array",
@@ -618,14 +629,6 @@
         },
         "inactive": {
           "type": "boolean"
-        }
-      }
-    },
-    "storageAlertFile": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
         }
       }
     },
@@ -936,7 +939,7 @@
         "NOT_APPLICABLE",
         "DEPLOYMENT_EVENT",
         "AUDIT_LOG_EVENT",
-        "FILE_EVENT"
+        "HOST_EVENT"
       ],
       "default": "NOT_APPLICABLE"
     },

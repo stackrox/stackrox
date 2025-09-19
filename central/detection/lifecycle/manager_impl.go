@@ -496,7 +496,7 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 }
 
 // HandleResourceAlerts handles the lifecycle of the provided alerts (including alerting, merging, etc) all of which belong to the specified resource
-func (m *managerImpl) HandleFileAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
+func (m *managerImpl) HandleHostAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
 	m.filterOutDisabledPolicies(&alerts)
 	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {
 		return nil
@@ -508,7 +508,7 @@ func (m *managerImpl) HandleFileAlerts(clusterID string, alerts []*storage.Alert
 			// Use cluster id and namespace name to align with sac filters
 			alertmanager.WithClusterID(clusterID),
 			// alertmanager.WithNamespace(key.namespace),
-			alertmanager.WithFile(alert.GetFile().GetPath()),
+			alertmanager.WithHost(alert.GetHost().GetName()),
 		}
 		if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts, opts...); err != nil {
 			return err

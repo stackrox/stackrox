@@ -18,7 +18,8 @@ type Detector interface {
 	DetectForDeploymentAndKubeEvent(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
 	DetectForDeploymentAndNetworkFlow(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
 	DetectForAuditEvents(auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error)
-	DetectForFileActivity(activity *storage.FileActivity) ([]*storage.Alert, error)
+	DetectForHostFileActivity(activity *storage.FileActivity) ([]*storage.Alert, error)
+	DetectForDeploymentFileActivity(enhancedDeployment booleanpolicy.EnhancedDeployment, activity *storage.FileActivity) ([]*storage.Alert, error)
 }
 
 var (
@@ -75,11 +76,15 @@ func (d *detectorImpl) DetectForDeploymentAndNetworkFlow(
 	return d.detectForDeployment(enhancedDeployment, nil, false, nil, flow)
 }
 
-func (d *detectorImpl) DetectForFileActivity(activity *storage.FileActivity) ([]*storage.Alert, error) {
-	return d.detectForFileActivity(activity)
+func (d *detectorImpl) DetectForHostFileActivity(activity *storage.FileActivity) ([]*storage.Alert, error) {
+	return d.detectForFileActivity(nil, activity)
 }
 
-func (d *detectorImpl) detectForFileActivity(activity *storage.FileActivity) ([]*storage.Alert, error) {
+func (d *detectorImpl) DetectForDeploymentFileActivity(enhancedDeployment booleanpolicy.EnhancedDeployment, activity *storage.FileActivity) ([]*storage.Alert, error) {
+	return d.detectForFileActivity(&enhancedDeployment, activity)
+}
+
+func (d *detectorImpl) detectForFileActivity(enhancedDeployment *booleanpolicy.EnhancedDeployment, activity *storage.FileActivity) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptable booleanpolicy.CacheReceptacle
 
@@ -94,14 +99,26 @@ func (d *detectorImpl) detectForFileActivity(activity *storage.FileActivity) ([]
 			return nil
 		}
 
-		violation, err := compiled.MatchAgainstFileActivity(&cacheReceptable, activity)
-		if err != nil {
-			return errors.Wrapf(err, "evaluating violations for policy %q; file activity %s/%s",
-				compiled.Policy().GetName(), activity.GetType(), activity.GetFile().GetPath())
-		}
+		if enhancedDeployment != nil {
+			violation, err := compiled.MatchAgainstFileActivityAndDeployment(&cacheReceptable, *enhancedDeployment, activity)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; file activity %s/%s",
+					compiled.Policy().GetName(), activity.GetType(), activity.GetFile().GetPath())
+			}
 
-		if alert := constructFileAlert(compiled.Policy(), activity, violation); alert != nil {
-			alerts = append(alerts, alert)
+			if alert := constructFileAlert(compiled.Policy(), activity, violation); alert != nil {
+				alerts = append(alerts, alert)
+			}
+		} else {
+			violation, err := compiled.MatchAgainstFileActivity(&cacheReceptable, activity)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; file activity %s/%s",
+					compiled.Policy().GetName(), activity.GetType(), activity.GetFile().GetPath())
+			}
+
+			if alert := constructFileAlert(compiled.Policy(), activity, violation); alert != nil {
+				alerts = append(alerts, alert)
+			}
 		}
 		return nil
 	})
