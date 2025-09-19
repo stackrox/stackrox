@@ -81,9 +81,7 @@ func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 		return 0, errors.New("Failed to extract remote address from vsock connection")
 	}
 
-	vsockCID := remoteAddr.ContextID
-
-	return vsockCID, nil
+	return remoteAddr.ContextID, nil
 }
 
 func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient) {
@@ -113,16 +111,14 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 		return
 	}
 
-	injectVsockCIDIntoIndexReport(indexReport, vsockCID)
+	// Fill the vsock context ID - at the moment the agent does not populate this field; if that changes, this can be
+	// replaced with a sanity check.
+	indexReport.VsockCid = strconv.Itoa(int(vsockCID))
 
 	err = sendReportToSensor(ctx, indexReport, sensorClient)
 	if err != nil {
 		log.Errorf("Failed to send report to sensor: %v", err)
 	}
-}
-
-func injectVsockCIDIntoIndexReport(indexReport *v1.IndexReport, vsockCID uint32) {
-	indexReport.VsockCid = strconv.Itoa(int(vsockCID))
 }
 
 func parseIndexReport(data []byte) (*v1.IndexReport, error) {
