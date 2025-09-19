@@ -20,9 +20,9 @@ export type ViewBasedReportsTableProps<T> = {
 };
 
 const onDownload = (snapshot: ViewBasedReportSnapshot) => () => {
-    const { reportJobId, requestName, reportStatus } = snapshot;
+    const { reportJobId, name, reportStatus } = snapshot;
     const { completedAt } = reportStatus;
-    const filename = `${requestName}-${completedAt}`;
+    const filename = `${name}-${completedAt}`;
     return downloadReportByJobId({
         reportJobId,
         filename,
@@ -63,13 +63,8 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                     filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) =>
                         data.map((snapshot) => {
-                            const {
-                                user,
-                                reportStatus,
-                                isDownloadAvailable,
-                                reportJobId,
-                                requestName,
-                            } = snapshot;
+                            const { user, reportStatus, isDownloadAvailable, reportJobId, name } =
+                                snapshot;
                             const areDownloadActionsDisabled = currentUser.userId !== user.id;
 
                             return (
@@ -84,7 +79,7 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                                                     openModal();
                                                 }}
                                             >
-                                                {requestName}
+                                                {name}
                                             </Button>
                                         </Td>
                                         <Td dataLabel="Requester">{user.name}</Td>
