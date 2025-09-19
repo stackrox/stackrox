@@ -48,14 +48,10 @@ func IssueSecuredClusterCerts(namespace, clusterID string, sensorSupportsCARotat
 		return nil, errors.Wrap(err, "could not load CA for signing")
 	}
 
-	var secondaryCA mtls.CA
-	if sensorSupportsCARotation {
-		secondaryCA, err = mtls.SecondaryCAForSigning()
-		if err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				log.Warnf("Failed to load secondary CA for signing (certificates will still be issued): %v", err)
-			}
-			secondaryCA = nil
+	secondaryCA, err := mtls.SecondaryCAForSigning()
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Warnf("Failed to load secondary CA for signing (certificates will still be issued): %v", err)
 		}
 	}
 
