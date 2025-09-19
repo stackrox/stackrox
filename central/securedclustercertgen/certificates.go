@@ -73,6 +73,11 @@ func IssueSecuredClusterCertsWithCAs(
 		return nil, errors.New("primary CA is required")
 	}
 
+	log.Infof("IssueSecuredClusterCertsWithCAs with sensorCAFingerprint=%q sensorSupportsCARotation=%t", sensorCAFingerprint, sensorSupportsCARotation)
+	if secondaryCA != nil {
+		log.Infof("IssueSecuredClusterCertsWithCAs Secondary CA fingerprint=%q", cryptoutils.CertFingerprint(secondaryCA.Certificate()))
+	}
+
 	if secondaryCA != nil {
 		if sensorSupportsCARotation {
 			// If CA rotation is enabled, ensure the signing CA is the one that expires later.
@@ -80,10 +85,12 @@ func IssueSecuredClusterCertsWithCAs(
 			secondaryCACert := secondaryCA.Certificate()
 			if secondaryCACert.NotAfter.After(primaryCACert.NotAfter) {
 				primaryCA, secondaryCA = secondaryCA, primaryCA
+				log.Infof("IssueSecuredClusterCertsWithCAs swapped primary and secondary CA")
 			}
 		} else if sensorCAFingerprint != "" && sensorCAFingerprint == cryptoutils.CertFingerprint(secondaryCA.Certificate()) {
 			// If a CA fingerprint is provided, prefer the matching CA. Otherwise just use the primary CA.
 			primaryCA, secondaryCA = secondaryCA, primaryCA
+			log.Infof("IssueSecuredClusterCertsWithCAs swapped primary and secondary CA due to CA fingerprint match")
 		}
 	}
 
