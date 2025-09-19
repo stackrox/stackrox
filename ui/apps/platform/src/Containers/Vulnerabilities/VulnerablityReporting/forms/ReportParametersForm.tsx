@@ -78,14 +78,14 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
         );
     }
     /*
-    // Ross CISA KEV includeKnownExploit?
-    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER')) {
+    // Ross CISA KEV
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_KEV_EXPLOIT')) {
         optionalColumnsCheckboxes.push(
             <Checkbox
-                key="includeKnownExploit"
-                label="known exploit"
-                id="reportParameters.includeKnownExploit"
-                isChecked={formik.values.reportParameters.includeKnownExploit}
+                key="includeExploitable"
+                label="TBD"
+                id="reportParameters.includeExploitable"
+                isChecked={formik.values.reportParameters.includeExploitable}
                 onChange={onChange}
             />
         );
