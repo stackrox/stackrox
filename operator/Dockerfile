@@ -43,8 +43,6 @@ COPY generated/ generated/
 
 # Copy scripts/go-build.sh and dependencies.
 COPY scripts/ scripts/
-COPY make/ make/
-COPY Makefile Makefile
 COPY operator/build/status.sh status.sh
 
 # This creates a git repo in workdir so that `git grep` command in build.sh can succeed and actually find //XDef-s.
@@ -54,9 +52,8 @@ RUN git init && git add .
 # enabled by default, therefore we disable CGO here to keep doing the thing we used to.
 ENV CGO_ENABLED=0
 
-
-# Build the operator binary for target architecture.
-RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
+# Build the operator binary.
+RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
 
 ARG TARGET_ARCH
 FROM --platform=linux/${TARGET_ARCH} registry.access.redhat.com/ubi8-micro:latest
