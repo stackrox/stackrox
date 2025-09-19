@@ -24,7 +24,7 @@ If atlassian-mcp or prowject tools are unavailable:
 4. Guide user to StackRox triage dashboard: https://issues.redhat.com/secure/Dashboard.jspa?selectPageId=12342126
 
 **Tools**:
-- [mcp-atllasian](https://github.com/sooperset/mcp-atlassian)
+- [mcp-atlassian](https://github.com/sooperset/mcp-atlassian)
 - [Github MCP](https://github.com/github/github-mcp-server)
 - [PROW MCP](https://github.com/janisz/prowject)
 
