@@ -20,7 +20,7 @@ var (
 		Help: "Counts the internal update events for the categorizeUpdate method in TransitionBased updateComputer. " +
 			"The 'transition' allows counting the transitions of connections between states 'open' and 'closed'." +
 			"Action stores the decision whether a given update was sent to Central.",
-	}, []string{"transition", "entity", "action", "reason"})
+	}, []string{"uc", "transition", "entity", "action", "reason"})
 	periodicCleanupDurationSeconds = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
