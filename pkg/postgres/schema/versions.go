@@ -17,6 +17,9 @@ var (
 	CreateTableVersionsStmt = &postgres.CreateStmts{
 		GormModel: (*Versions)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE versions REPLICA IDENTITY FULL",
+		},
 	}
 
 	// VersionsSchema is the go schema for table `versions`.
