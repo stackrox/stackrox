@@ -22,27 +22,47 @@ var (
 	ErrStopIterator = errors.New("stopped")
 )
 
-type WithError interface {
+type Finding interface {
 	GetError() error
+	GetIncrement() int
+}
+
+type CommonFinding struct{}
+
+func (f *CommonFinding) GetError() error {
+	return nil
+}
+
+func (f *CommonFinding) GetIncrement() int {
+	return 1
 }
 
 // LazyLabel enables deferred evaluation of a label's value.
 // Computing and storing values for all labels for every finding would be
 // inefficient. Instead, the Getter function computes the value for this
 // specific label only when provided with a finding.
-type LazyLabel[Finding WithError] struct {
+type LazyLabel[F Finding] struct {
 	Label
-	Getter func(Finding) string
+	Getter func(F) string
 }
 
 // MakeLabelOrderMap maps labels to their order according to the order of
 // the labels in the list of getters.
 // Respecting the order is important for computing the aggregation key, which is
 // a concatenation of label values.
-func MakeLabelOrderMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]int {
+func MakeLabelOrderMap[F Finding](getters []LazyLabel[F]) map[Label]int {
 	result := make(map[Label]int, len(getters))
 	for i, getter := range getters {
 		result[getter.Label] = i + 1
+	}
+	return result
+}
+
+// GetLabels returns a slice of labels from the list of lazy getters.
+func GetLabels[F Finding](getters []LazyLabel[F]) []string {
+	result := make([]string, 0, len(getters))
+	for _, l := range getters {
+		result = append(result, string(l.Label))
 	}
 	return result
 }
@@ -58,7 +78,7 @@ type Tracker interface {
 }
 
 // FindingGenerator returns an iterator to the sequence of findings.
-type FindingGenerator[Finding WithError] func(context.Context, MetricDescriptors) iter.Seq[Finding]
+type FindingGenerator[F Finding] func(context.Context, MetricDescriptors) iter.Seq[F]
 
 type gatherer struct {
 	http.Handler
@@ -70,12 +90,12 @@ type gatherer struct {
 // TrackerBase implements a generic finding tracker.
 // Configured with a finding generator and other arguments, it runs a goroutine
 // that periodically aggregates gathered values and updates the gauge values.
-type TrackerBase[Finding WithError] struct {
+type TrackerBase[F Finding] struct {
 	metricPrefix string
 	description  string
 	labelOrder   map[Label]int
-	getters      map[Label]func(Finding) string
-	generator    FindingGenerator[Finding]
+	getters      map[Label]func(F) string
+	generator    FindingGenerator[F]
 
 	// metricsConfig can be changed with an API call.
 	config           *Configuration
@@ -87,8 +107,8 @@ type TrackerBase[Finding WithError] struct {
 }
 
 // makeGettersMap transforms a list of label names with their getters to a map.
-func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]func(Finding) string {
-	result := make(map[Label]func(Finding) string, len(getters))
+func makeGettersMap[F Finding](getters []LazyLabel[F]) map[Label]func(F) string {
+	result := make(map[Label]func(F) string, len(getters))
 	for _, getter := range getters {
 		result[getter.Label] = getter.Getter
 	}
@@ -97,10 +117,10 @@ func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]f
 
 // MakeTrackerBase initializes a tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
-func MakeTrackerBase[Finding WithError](metricPrefix, description string,
-	getters []LazyLabel[Finding], generator FindingGenerator[Finding],
-) *TrackerBase[Finding] {
-	return &TrackerBase[Finding]{
+func MakeTrackerBase[F Finding](metricPrefix, description string,
+	getters []LazyLabel[F], generator FindingGenerator[F],
+) *TrackerBase[F] {
+	return &TrackerBase[F]{
 		metricPrefix:    metricPrefix,
 		description:     description,
 		labelOrder:      MakeLabelOrderMap(getters),

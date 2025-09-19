@@ -36,19 +36,19 @@ type aggregatedRecord struct {
 //			{"Y": {labels: {L2="Y"}, total: 1}},
 //			{"Z": {labels: {L2="Z"}, total: 2}}
 //	}
-type aggregator[Finding WithError] struct {
+type aggregator[F Finding] struct {
 	result     map[MetricName]map[aggregationKey]*aggregatedRecord
 	md         MetricDescriptors
 	labelOrder map[Label]int
-	getters    map[Label]func(Finding) string
+	getters    map[Label]func(F) string
 }
 
-func makeAggregator[Finding WithError](md MetricDescriptors, labelOrder map[Label]int, getters map[Label]func(Finding) string) *aggregator[Finding] {
+func makeAggregator[F Finding](md MetricDescriptors, labelOrder map[Label]int, getters map[Label]func(F) string) *aggregator[F] {
 	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
 	for metric := range md {
 		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
 	}
-	return &aggregator[Finding]{aggregated, md, labelOrder, getters}
+	return &aggregator[F]{aggregated, md, labelOrder, getters}
 }
 
 // count the finding in the aggregation result.
@@ -59,9 +59,9 @@ func (r *aggregator[Finding]) count(finding Finding) {
 	for metric, labels := range r.md {
 		if key, labels := makeAggregationKey(labels, labelValue, r.labelOrder); key != "" {
 			if rec, ok := r.result[metric][key]; ok {
-				rec.total++
+				rec.total += finding.GetIncrement()
 			} else {
-				r.result[metric][key] = &aggregatedRecord{labels, 1}
+				r.result[metric][key] = &aggregatedRecord{labels, finding.GetIncrement()}
 			}
 		}
 	}
