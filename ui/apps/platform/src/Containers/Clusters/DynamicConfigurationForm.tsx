@@ -50,8 +50,12 @@ function DynamicConfigurationForm({
     // HelmValueWarning precedes FormHelperText element.
     return (
         <Form isWidthLimited>
-            <FormGroup label="Custom default image registry">
+            <FormGroup
+                fieldId="dynamicConfig.registryOverride"
+                label="Custom default image registry"
+            >
                 <TextInput
+                    id="dynamicConfig.registryOverride"
                     type="text"
                     value={dynamicConfig.registryOverride}
                     onChange={(_event, value) =>
@@ -165,7 +169,7 @@ function DynamicConfigurationForm({
             </FormGroup>
             <FormGroup label="Cluster audit logging">
                 <SelectSingle
-                    id="tolerationsConfig.disabled"
+                    id="dynamicConfig.disableAuditLogs"
                     value={dynamicConfig.disableAuditLogs ? 'disabled' : 'enabled'}
                     handleSelect={(id, value) => handleChange(id, value === 'disabled')}
                     isDisabled={isManagerTypeNonConfigurable || !isLoggingSupported}
