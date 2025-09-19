@@ -18,6 +18,7 @@ const baseReportSnapshot: Omit<ConfiguredReportSnapshot, 'reportStatus' | 'isDow
         imageTypes: ['DEPLOYED'],
         includeAdvisory: false,
         includeEpssProbability: false,
+        includeKnownExploit: false,
         includeNvdCvss: false,
         allVuln: true,
     },
