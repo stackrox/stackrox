@@ -138,11 +138,6 @@ type TransitionBased struct {
 	lastCleanup      time.Time
 }
 
-func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(currentEp map[indicator.ContainerEndpoint]timestamp.MicroTS, currentProc map[indicator.ProcessListening]timestamp.MicroTS, mapping map[indicator.ContainerEndpoint]*indicator.ProcessListening) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
-	//TODO implement me
-	panic("implement me")
-}
-
 // newStringSetPtr returns a pointer to a new string set, which is originally a value type.
 // This avoids copying the set when it is used in the deduper.
 func newStringSetPtr() *set.StringSet {
@@ -346,6 +341,83 @@ func categorizeUpdateNoPast(
 		return false, TransitionTypeOpen2Open
 	}
 	return true, TransitionTypeNew2Open
+}
+
+func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
+	endpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
+	processes map[indicator.ProcessListening]timestamp.MicroTS,
+	mapping map[indicator.ContainerEndpoint]*indicator.ProcessListening,
+) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
+	if len(endpoints)+len(processes) == 0 {
+		// Received an empty map with current state. This may happen because:
+		// - Some items were discarded during the enrichment process, so none made it through.
+		// - This command was run on an empty map.
+		// In this case, the current updates would be empty.
+		// The `cachedUpdates` already contains past updates collected during offline mode, so no action needed.
+		return c.cachedUpdatesEp, c.cachedUpdatesProc
+	}
+	procEnabled := env.ProcessesListeningOnPort.BooleanSetting()
+	if !procEnabled {
+		if len(processes) > 0 {
+			logging.GetRateLimitedLogger().WarnL(loggingRateLimiter,
+				"Received process(es) while ProcessesListeningOnPorts feature is disabled. This may indicate a misconfiguration.")
+		}
+	}
+
+	// temporarily index current processes by their key
+	procMap := make(map[string]indicator.ProcessListening, len(processes))
+	if procEnabled {
+		for listening := range processes {
+			procMap[listening.Key(c.hashingAlgo)] = listening
+		}
+	}
+
+	var epUpdates []*storage.NetworkEndpoint
+	var procUpdates []*storage.ProcessListeningOnPortFromSensor
+
+	// Process currently enriched entities one by one, categorize the transition, and generate an update if applicable.
+	for ep, currTS := range endpoints {
+		key := ep.Key(c.hashingAlgo)
+		// Based on the categorization, we calculate the transition and whether an update should be sent.
+		updateEp, updateProc, transition, dAction := categorizeEndpointUpdate(currTS, key, ep.ProcessKey, c.deduperHasEndpointAndProcess)
+		updateMetrics(updateEp, transition, EndpointEnrichedEntity)
+		updateMetrics(updateProc, transition, ProcessEnrichedEntity)
+		// TODO: Remove this log line before merging
+		log.Infof("Deduper action=%s endpoint, transition=%s, key=%s/%s", dAction.String(), transition.String(), key, ep.ProcessKey)
+		switch dAction {
+		case deduperActionAdd, deduperActionUpdateProcess:
+			concurrency.WithLock(&c.endpointsDeduperMutex, func() {
+				c.endpointsDeduper[key] = ep.ProcessKey
+			})
+		case deduperActionRemove:
+			concurrency.WithLock(&c.endpointsDeduperMutex, func() {
+				delete(c.endpointsDeduper, key)
+			})
+		default: // noop
+		}
+		if updateEp {
+			epUpdates = append(epUpdates, ep.ToProto(currTS))
+		}
+		if procEnabled && updateProc {
+			proc, found := procMap[ep]
+			if !found && ep.ProcessKey != "" {
+				log.Warnf("cannot find process with key %s", ep.ProcessKey)
+				continue
+			}
+			procUpdates = append(procUpdates, proc.ToProto(currTS))
+		}
+	}
+	log.Infof("Num items left in procMap: %d. procMap: %v", len(procMap)-len(procUpdates), procMap)
+	procMap = nil
+	// Store into cache in case sending to Central fails.
+	c.cachedUpdatesEp = slices.Grow(c.cachedUpdatesEp, len(epUpdates))
+	c.cachedUpdatesEp = append(c.cachedUpdatesEp, epUpdates...)
+	if procEnabled {
+		c.cachedUpdatesProc = slices.Grow(c.cachedUpdatesProc, len(procUpdates))
+		c.cachedUpdatesProc = append(c.cachedUpdatesProc, procUpdates...)
+	}
+	// Return concatenated past and current updates.
+	return c.cachedUpdatesEp, c.cachedUpdatesProc
 }
 
 // ComputeUpdatedEndpoints computes endpoint updates to send to Central in the current tick.
