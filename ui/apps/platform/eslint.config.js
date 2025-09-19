@@ -732,7 +732,6 @@ module.exports = [
             'src/Components/**',
             'src/Containers/AccessControl/**',
             'src/Containers/Administration/**',
-            'src/Containers/Audit/**',
             'src/Containers/Clusters/**',
             'src/Containers/Collections/**',
             'src/Containers/Compliance/**', // deprecated
