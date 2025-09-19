@@ -138,6 +138,11 @@ type TransitionBased struct {
 	lastCleanup      time.Time
 }
 
+func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(currentEp map[indicator.ContainerEndpoint]timestamp.MicroTS, currentProc map[indicator.ProcessListening]timestamp.MicroTS, mapping map[indicator.ContainerEndpoint]*indicator.ProcessListening) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
+	//TODO implement me
+	panic("implement me")
+}
+
 // newStringSetPtr returns a pointer to a new string set, which is originally a value type.
 // This avoids copying the set when it is used in the deduper.
 func newStringSetPtr() *set.StringSet {

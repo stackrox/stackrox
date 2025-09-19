@@ -148,19 +148,20 @@ func NewManager(
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
 	mgr := &networkFlowManager{
-		connectionsByHost: make(map[string]*hostConnections),
-		clusterEntities:   clusterEntities,
-		publicIPs:         newPublicIPsManager(),
-		externalSrcs:      externalSrcs,
-		policyDetector:    policyDetector,
-		enricherTicker:    enricherTicker,
-		enricherTickerC:   enricherTicker.C,
-		updateComputer:    updateComputer,
-		initialSync:       &atomic.Bool{},
-		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
-		stopper:           concurrency.NewStopper(),
-		pubSub:            pubSub,
+		connectionsByHost:      make(map[string]*hostConnections),
+		clusterEntities:        clusterEntities,
+		publicIPs:              newPublicIPsManager(),
+		externalSrcs:           externalSrcs,
+		policyDetector:         policyDetector,
+		enricherTicker:         enricherTicker,
+		enricherTickerC:        enricherTicker.C,
+		updateComputer:         updateComputer,
+		initialSync:            &atomic.Bool{},
+		activeConnections:      make(map[connection]*networkConnIndicatorWithAge),
+		activeEndpoints:        make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		endpointProcessMapping: make(map[indicator.ContainerEndpoint]*indicator.ProcessListening),
+		stopper:                concurrency.NewStopper(),
+		pubSub:                 pubSub,
 	}
 	maxAgeSetting := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
 	if maxAgeSetting > 0 && maxAgeSetting <= enricherCycle {
@@ -208,6 +209,9 @@ type networkFlowManager struct {
 
 	clusterEntities EntityStore
 	externalSrcs    externalsrcs.Store
+
+	endpointProcessMappingMutex sync.RWMutex
+	endpointProcessMapping      map[indicator.ContainerEndpoint]*indicator.ProcessListening
 
 	// UpdateComputer implementation for computing flow updates that are sent to Central on each tick.
 	updateComputer updatecomputer.UpdateComputer
@@ -382,6 +386,9 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 			})
 		}
 	})
+	concurrency.WithRLock(&m.endpointProcessMappingMutex, func() {
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsMapping", "endpoints&processes").Set(float64(len(m.endpointProcessMapping)))
+	})
 	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
 	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
 
@@ -405,7 +412,7 @@ func (m *networkFlowManager) enrichAndSend() {
 	// and updates them by adding data from different sources (enriching).
 	// It updates m.activeEndpoints and m.activeConnections if EE is open (i.e., lastSeen is set to null by Collector).
 	// Enriched-entities for which the enrichment should be retried are not returned from currentEnrichedConnsAndEndpoints!
-	currentConns, currentEndpoints, currentProcesses := m.currentEnrichedConnsAndEndpoints()
+	currentConns, currentEndpoints, currentProcesses := m.currentEnrichedConnsAndEndpoints(m.endpointProcessMapping)
 
 	// The new changes are sent to Central using the update computer implementation.
 	updatedConns := m.updateComputer.ComputeUpdatedConns(currentConns)
@@ -477,7 +484,7 @@ func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListening
 	})
 }
 
-func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
+func (m *networkFlowManager) currentEnrichedConnsAndEndpoints(endpointProcessMapping map[indicator.ContainerEndpoint]*indicator.ProcessListening) (
 	enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS,
 	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
 	enrichedProcesses map[indicator.ProcessListening]timestamp.MicroTS,
@@ -488,9 +495,10 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 	enrichedConnections = make(map[indicator.NetworkConn]timestamp.MicroTS)
 	enrichedEndpoints = make(map[indicator.ContainerEndpoint]timestamp.MicroTS)
 	enrichedProcesses = make(map[indicator.ProcessListening]timestamp.MicroTS)
+	endpointProcessMapping = make(map[indicator.ContainerEndpoint]*indicator.ProcessListening)
 	for _, hostConns := range allHostConns {
 		m.enrichHostConnections(now, hostConns, enrichedConnections)
-		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses)
+		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses, endpointProcessMapping)
 	}
 	return enrichedConnections, enrichedEndpoints, enrichedProcesses
 }
