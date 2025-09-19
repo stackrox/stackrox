@@ -93,8 +93,11 @@ func (a *FakeAgent) generateIndexReport() *vmv1.IndexReport {
 	// Generate a unique hash ID
 	hashID := fmt.Sprintf("vm-report-%d", time.Now().Unix())
 
-	// Generate a fake vsock CID (Context ID)
-	fakeCID := fmt.Sprintf("fake-cid-%d", rand.Intn(1000)+100)
+	vsockCID, err := vsock.ContextID()
+	if err != nil {
+		log.Printf("Failed to get vsockCID")
+		vsockCID = 42
+	}
 
 	// Create realistic package data
 	packages := a.generatePackages()
@@ -116,7 +119,7 @@ func (a *FakeAgent) generateIndexReport() *vmv1.IndexReport {
 
 	// Wrap it in a virtualmachine.v1.IndexReport
 	return &vmv1.IndexReport{
-		VsockCid: fakeCID,
+		VsockCid: fmt.Sprintf("%d", vsockCID),
 		IndexV4:  v4Report,
 	}
 }
