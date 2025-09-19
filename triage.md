@@ -8,7 +8,7 @@ To enable automated CI triage capabilities, you need to configure the following 
 
 - [mcp-atllasian](https://github.com/sooperset/mcp-atlassian)
 - [Github MCP](https://github.com/github/github-mcp-server)
-- [PROW MCP](https://github.com/redhat-community-ai-tools/prowject)
+- [Prow MCP](https://github.com/redhat-community-ai-tools/prowject)
 
 ## Agent Configuration
 
