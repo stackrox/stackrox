@@ -30,17 +30,17 @@ If atlassian-mcp or prowject tools are unavailable:
 
 ## IMMEDIATE AUTO-ACTIONS:
 
-**JIRA Pattern Detection** → Execute `mcp__mcp-atlassian__jira_get_issue`:
+**JIRA Ticket Detection** → Automatic JIRA investigation:
 - ROX-XXXXX format (e.g., ROX-28636, ROX-30083)
 - JIRA URLs containing issues.redhat.com/browse/ROX-
 - Any mention of JIRA ticket references
 
-**Prow Build Pattern Detection** → Download artifacts and analyze:
+**Prow Build Detection** → Automatic artifact download and analysis:
 - Numeric build IDs (e.g., 1963388448995807232)
 - Prow URLs (prow.ci.openshift.org, gcsweb-ci URLs)
 - Job names (pull-ci-stackrox-stackrox-*)
 
-**Error Log Pattern Detection** → Immediate analysis:
+**Error Log Detection** → Immediate analysis:
 - Stack traces, exception logs, error messages
 - Failed test output, JUnit results
 - Any CI/CD failure logs
