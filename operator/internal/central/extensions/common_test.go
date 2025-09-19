@@ -120,51 +120,6 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	assert.Empty(t, postDeletionSecretsByName, "newly created secrets remain after deletion")
 }
 
-func testSecretReconciliationAtTime(
-	t *testing.T,
-	central *platform.Central,
-	client ctrlClient.Client,
-	runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader,
-		statusUpdater func(updateStatusFunc), log logr.Logger, renderCache *rendercache.RenderCache, atTime time.Time) error,
-	c secretReconciliationTestCase,
-	reconcileTime time.Time,
-) {
-	statusUpdater := func(statusFunc updateStatusFunc) {
-		statusFunc(&central.Status)
-	}
-	renderCache := rendercache.NewRenderCache()
-
-	// Verify that an initial invocation does not touch any of the existing unmanaged secrets, and creates
-	// the expected managed ones
-	err := runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), renderCache, reconcileTime)
-	if c.ExpectedError == "" {
-		require.NoError(t, err)
-	} else {
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), c.ExpectedError)
-		return
-	}
-
-	if c.VerifyStatus != nil {
-		c.VerifyStatus(t, &central.Status)
-	}
-
-	secretsList, secretsByName := listSecrets(t, client)
-	verifyUnmanagedSecretsNotChanged(t, c.Existing, secretsByName)
-	verifyNotCreatedSecrets(t, c.ExpectedNotExistingSecrets, secretsByName)
-	caHash, _ := renderCache.GetCAHash(central)
-	verifyCreatedSecrets(t, c.ExpectedCreatedSecrets, secretsByName, central.Name, &reconcileTime, caHash)
-	assert.Empty(t, secretsByName, "one or more unexpected secrets exist")
-
-	// Verify that a second invocation does not further change the cluster state at the same point in time
-	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), renderCache, reconcileTime)
-	assert.NoError(t, err, "second invocation of reconciliation function failed")
-	if c.VerifyStatus != nil {
-		c.VerifyStatus(t, &central.Status)
-	}
-	verifySecretsMatch(t, client, secretsList)
-}
-
 func buildFakeCentral(c secretReconciliationTestCase) *platform.Central {
 	central := &platform.Central{
 		TypeMeta: metav1.TypeMeta{
