@@ -26,13 +26,13 @@ If atlassian-mcp or prowject tools are unavailable:
 **Tools**:
 - [mcp-atlassian](https://github.com/sooperset/mcp-atlassian)
 - [Github MCP](https://github.com/github/github-mcp-server)
-- [PROW MCP](https://github.com/janisz/prowject)
+- [Prow MCP](https://github.com/janisz/prowject)
 
 ## IMMEDIATE AUTO-ACTIONS:
 
 **JIRA Pattern Detection** → Execute `mcp__mcp-atlassian__jira_get_issue`:
 - ROX-XXXXX format (e.g., ROX-28636, ROX-30083)
-- JIRA URLs containing redhat.atlassian.net/browse/ROX-
+- JIRA URLs containing issues.redhat.com/browse/ROX-
 - Any mention of JIRA ticket references
 
 **Prow Build Pattern Detection** → Download artifacts and analyze:
@@ -53,13 +53,12 @@ If atlassian-mcp or prowject tools are unavailable:
    - Use MCP tools to get complete issue details including ALL comments
    - Focus on LATEST comments for most recent build IDs and failure patterns
    - Search for related/duplicate issues using JQL queries
-   - Identify if known flaky test vs new failure
 
 2. **Artifact Analysis**:
+   - Extract build IDs from JIRA comments and create local investigation directory
+   - Download complete artifacts using gsutil commands to local directory for faster analysis
    - Check junit2jira-summary.html for known flaky tests first
-   - Download complete artifacts using gsutil commands from howto-locate-other-artifacts-summary.html
-   - Extract build IDs from JIRA comments and navigate to correct GCS bucket
-   - Analyze finished.json, events.txt, and pod logs systematically
+   - Analyze finished.json, events.txt, and pod logs systematically using local tools (grep, find, etc.)
 
 3. **Root Cause Investigation**:
    - Extract exact error messages from stackrox-k8s-logs/stackrox/pods/
@@ -94,10 +93,6 @@ If atlassian-mcp or prowject tools are unavailable:
    # Correct GCS bucket paths for StackRox CI:
    # For PR jobs: gs://test-platform-results/pr-logs/pull/stackrox_stackrox/{PR}/pull-ci-stackrox-*/{BUILD_ID}/
    # For periodic jobs: gs://test-platform-results/logs/{JOB_NAME}/{BUILD_ID}/
-
-   # List available artifacts (try both paths)
-   gsutil ls "gs://test-platform-results/pr-logs/pull/stackrox_stackrox/${PR_NUMBER}/${JOB_NAME}/${BUILD_ID}/"
-   gsutil ls "gs://test-platform-results/logs/${JOB_NAME}/${BUILD_ID}/"
 
    # Create investigation directory
    mkdir -p investigation-${BUILD_ID}
