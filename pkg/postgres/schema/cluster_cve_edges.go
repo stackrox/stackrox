@@ -4,14 +4,11 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -28,7 +25,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ClusterCVEEdge)(nil)), "cluster_cve_edges")
+		schema = GetClusterCVEEdgeSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster":    ClustersSchema,
 			"storage.ClusterCVE": ClusterCvesSchema,
@@ -37,7 +34,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_VULN_EDGE, "clustercveedge", (*storage.ClusterCVEEdge)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_CLUSTER_VULNERABILITIES,
 			v1.SearchCategory_CLUSTER_VULN_EDGE,

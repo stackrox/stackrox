@@ -15,10 +15,11 @@ import (
 
 // SchemaGenerator generates PostgreSQL schema files
 type SchemaGenerator struct {
-	ProjectRoot string
-	OutputDir   string
-	Verbose     bool
-	analyzer    *TypeAnalyzer
+	ProjectRoot  string
+	OutputDir    string
+	Verbose      bool
+	EntityFilter string
+	analyzer     *TypeAnalyzer
 }
 
 // SchemaData represents the data needed to generate a schema file
@@ -153,7 +154,10 @@ func (sg *SchemaGenerator) discoverSchemasFromFiles() ([]SchemaData, error) {
 		}
 
 		if config != nil {
-			configs = append(configs, *config)
+			// Apply entity filter if specified
+			if sg.EntityFilter == "" || config.TypeName == sg.EntityFilter {
+				configs = append(configs, *config)
+			}
 		}
 	}
 

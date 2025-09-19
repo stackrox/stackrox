@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -12,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -29,7 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ReportSnapshot)(nil)), "report_snapshots")
+		schema = GetReportSnapshotSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ReportConfiguration": ReportConfigurationsSchema,
 		}
@@ -37,7 +35,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_SNAPSHOT, "reportsnapshot", (*storage.ReportSnapshot)(nil)))
 		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTableReportSnapshotsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_REPORT_SNAPSHOT, schema)

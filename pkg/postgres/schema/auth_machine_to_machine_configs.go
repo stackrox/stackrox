@@ -4,7 +4,9 @@ package schema
 
 import (
 	"fmt"
+	"reflect"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,7 +30,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = GetAuthMachineToMachineConfigSchema()
+		schema = walker.Walk(reflect.TypeOf((*storage.AuthMachineToMachineConfig)(nil)), "auth_machine_to_machine_configs")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Role": RolesSchema,
 		}

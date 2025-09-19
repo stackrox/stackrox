@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -37,7 +36,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(105), "testg2grandchild1", (*storage.TestG2GrandChild1)(nil)))
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestG2GrandChild1Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(105), schema)

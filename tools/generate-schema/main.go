@@ -12,6 +12,7 @@ var (
 	outputDir    = flag.String("output", "pkg/postgres/schema", "Output directory for generated schema files")
 	verbose      = flag.Bool("verbose", false, "Enable verbose logging")
 	discoveryOnly = flag.Bool("discover", false, "Only run discovery without generating files")
+	entityFilter = flag.String("entity", "", "Generate only for specific entity (e.g., 'AuthProvider')")
 )
 
 func main() {
@@ -28,9 +29,10 @@ func main() {
 	}
 
 	generator := &SchemaGenerator{
-		ProjectRoot: projectRoot,
-		OutputDir:   filepath.Join(projectRoot, *outputDir),
-		Verbose:     *verbose,
+		ProjectRoot:  projectRoot,
+		OutputDir:    filepath.Join(projectRoot, *outputDir),
+		Verbose:      *verbose,
+		EntityFilter: *entityFilter,
 	}
 
 	if *discoveryOnly {
