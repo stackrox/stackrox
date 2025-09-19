@@ -22,7 +22,7 @@ import (
 	"github.com/quay/claircore/pkg/tmp"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/scanner/enricher/csaf/internal/zreader"
+	"github.com/stackrox/rox/scanner/enricher/internal/zreader"
 )
 
 var (

@@ -171,5 +171,10 @@ var (
 	// This must be set in Scanner V4 Indexer to have any effect.
 	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
 
+	// ScannerV4KnownNotAffected enables filtering of vulnerabilities from Red Hat image layers which Red Hat deems do not affect Red Hat products.
+	//
+	// This must be set in Scanner V4 Matcher to have any effect.
+	ScannerV4KnownNotAffected = registerFeature("Scanner V4 will enrich its results with Red Hat VEX 'known_not_affected' data", "ROX_SCANNER_V4_KNOWN_NOT_AFFECTED", enabled)
+
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
 )
