@@ -71,10 +71,11 @@ type gatherer struct {
 // Configured with a finding generator and other arguments, it runs a goroutine
 // that periodically aggregates gathered values and updates the gauge values.
 type TrackerBase[Finding WithError] struct {
-	description string
-	labelOrder  map[Label]int
-	getters     map[Label]func(Finding) string
-	generator   FindingGenerator[Finding]
+	metricPrefix string
+	description  string
+	labelOrder   map[Label]int
+	getters      map[Label]func(Finding) string
+	generator    FindingGenerator[Finding]
 
 	// metricsConfig can be changed with an API call.
 	config           *Configuration
@@ -96,10 +97,11 @@ func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]f
 
 // MakeTrackerBase initializes a tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
-func MakeTrackerBase[Finding WithError](description string,
+func MakeTrackerBase[Finding WithError](metricPrefix, description string,
 	getters []LazyLabel[Finding], generator FindingGenerator[Finding],
 ) *TrackerBase[Finding] {
 	return &TrackerBase[Finding]{
+		metricPrefix:    metricPrefix,
 		description:     description,
 		labelOrder:      MakeLabelOrderMap(getters),
 		getters:         makeGettersMap(getters),
@@ -110,12 +112,12 @@ func MakeTrackerBase[Finding WithError](description string,
 
 // NewConfiguration does not apply the configuration.
 func (tracker *TrackerBase[Finding]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
-	current := tracker.GetConfiguration()
+	current := tracker.getConfiguration()
 	if current == nil {
 		current = &Configuration{}
 	}
 
-	md, err := TranslateStorageConfiguration(cfg.GetDescriptors(), tracker.labelOrder)
+	md, err := translateStorageConfiguration(cfg.GetDescriptors(), tracker.metricPrefix, tracker.labelOrder)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +140,7 @@ func (tracker *TrackerBase[Finding]) Reconfigure(cfg *Configuration) {
 	if cfg == nil {
 		cfg = &Configuration{}
 	}
-	previous := tracker.SetConfiguration(cfg)
+	previous := tracker.setConfiguration(cfg)
 	if previous != nil {
 		if cfg.period == 0 {
 			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
@@ -189,13 +191,13 @@ func (tracker *TrackerBase[Finding]) registerMetric(gatherer *gatherer, cfg *Con
 	log.Debugf("Registered %s Prometheus metric %q", tracker.description, metric)
 }
 
-func (tracker *TrackerBase[Finding]) GetConfiguration() *Configuration {
+func (tracker *TrackerBase[Finding]) getConfiguration() *Configuration {
 	tracker.metricsConfigMux.RLock()
 	defer tracker.metricsConfigMux.RUnlock()
 	return tracker.config
 }
 
-func (tracker *TrackerBase[Finding]) SetConfiguration(config *Configuration) *Configuration {
+func (tracker *TrackerBase[Finding]) setConfiguration(config *Configuration) *Configuration {
 	tracker.metricsConfigMux.Lock()
 	defer tracker.metricsConfigMux.Unlock()
 	previous := tracker.config
@@ -232,7 +234,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if err != nil {
 		return
 	}
-	cfg := tracker.GetConfiguration()
+	cfg := tracker.getConfiguration()
 	if cfg == nil {
 		return
 	}

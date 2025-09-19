@@ -12,7 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	store "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
+	virtualmachine "github.com/stackrox/rox/sensor/common/virtualmachine"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,7 +41,7 @@ func (m *MockvirtualMachineStore) EXPECT() *MockvirtualMachineStoreMockRecorder 
 }
 
 // AddOrUpdate mocks base method.
-func (m *MockvirtualMachineStore) AddOrUpdate(vm *store.VirtualMachineInfo) {
+func (m *MockvirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AddOrUpdate", vm)
 }
@@ -53,7 +53,7 @@ func (mr *MockvirtualMachineStoreMockRecorder) AddOrUpdate(vm any) *gomock.Call 
 }
 
 // ClearState mocks base method.
-func (m *MockvirtualMachineStore) ClearState(id store.VMID) {
+func (m *MockvirtualMachineStore) ClearState(id virtualmachine.VMID) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ClearState", id)
 }
@@ -65,10 +65,10 @@ func (mr *MockvirtualMachineStoreMockRecorder) ClearState(id any) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockvirtualMachineStore) Get(id store.VMID) *store.VirtualMachineInfo {
+func (m *MockvirtualMachineStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", id)
-	ret0, _ := ret[0].(*store.VirtualMachineInfo)
+	ret0, _ := ret[0].(*virtualmachine.Info)
 	return ret0
 }
 
@@ -79,7 +79,7 @@ func (mr *MockvirtualMachineStoreMockRecorder) Get(id any) *gomock.Call {
 }
 
 // Has mocks base method.
-func (m *MockvirtualMachineStore) Has(id store.VMID) bool {
+func (m *MockvirtualMachineStore) Has(id virtualmachine.VMID) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Has", id)
 	ret0, _ := ret[0].(bool)
@@ -93,7 +93,7 @@ func (mr *MockvirtualMachineStoreMockRecorder) Has(id any) *gomock.Call {
 }
 
 // Remove mocks base method.
-func (m *MockvirtualMachineStore) Remove(id store.VMID) {
+func (m *MockvirtualMachineStore) Remove(id virtualmachine.VMID) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Remove", id)
 }
@@ -105,7 +105,7 @@ func (mr *MockvirtualMachineStoreMockRecorder) Remove(id any) *gomock.Call {
 }
 
 // UpdateStateOrCreate mocks base method.
-func (m *MockvirtualMachineStore) UpdateStateOrCreate(vm *store.VirtualMachineInfo) {
+func (m *MockvirtualMachineStore) UpdateStateOrCreate(vm *virtualmachine.Info) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "UpdateStateOrCreate", vm)
 }

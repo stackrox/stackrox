@@ -145,25 +145,25 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 	_ = result.Body.Close()
 	assert.NoError(t, err)
 	assert.Equal(t,
-		`# HELP rox_central_Cluster_Namespace_Severity_count The total number of CVEs aggregated by Cluster,Namespace,Severity and gathered every 2h1m0s
-# TYPE rox_central_Cluster_Namespace_Severity_count gauge
-rox_central_Cluster_Namespace_Severity_count{Cluster="cluster-1",Namespace="namespace-1",Severity="CRITICAL_VULNERABILITY_SEVERITY"} 1
-rox_central_Cluster_Namespace_Severity_count{Cluster="cluster-1",Namespace="namespace-2",Severity="CRITICAL_VULNERABILITY_SEVERITY"} 2
-rox_central_Cluster_Namespace_Severity_count{Cluster="cluster-1",Namespace="namespace-2",Severity="MODERATE_VULNERABILITY_SEVERITY"} 2
-rox_central_Cluster_Namespace_Severity_count{Cluster="cluster-2",Namespace="namespace-2",Severity="LOW_VULNERABILITY_SEVERITY"} 2
-rox_central_Cluster_Namespace_Severity_count{Cluster="cluster-2",Namespace="namespace-2",Severity="MODERATE_VULNERABILITY_SEVERITY"} 2
-# HELP rox_central_Deployment_ImageTag_count The total number of CVEs aggregated by Deployment,ImageTag and gathered every 2h1m0s
-# TYPE rox_central_Deployment_ImageTag_count gauge
-rox_central_Deployment_ImageTag_count{Deployment="D0",ImageTag="tag"} 1
-rox_central_Deployment_ImageTag_count{Deployment="D1",ImageTag="tag"} 3
-rox_central_Deployment_ImageTag_count{Deployment="D2",ImageTag="tag"} 1
-rox_central_Deployment_ImageTag_count{Deployment="D3",ImageTag="latest"} 2
-rox_central_Deployment_ImageTag_count{Deployment="D3",ImageTag="tag"} 2
-# HELP rox_central_Severity_count The total number of CVEs aggregated by Severity and gathered every 2h1m0s
-# TYPE rox_central_Severity_count gauge
-rox_central_Severity_count{Severity="CRITICAL_VULNERABILITY_SEVERITY"} 3
-rox_central_Severity_count{Severity="LOW_VULNERABILITY_SEVERITY"} 2
-rox_central_Severity_count{Severity="MODERATE_VULNERABILITY_SEVERITY"} 4
+		`# HELP rox_central_image_vuln_Cluster_Namespace_Severity_count The total number of image vulnerabilities aggregated by Cluster,Namespace,Severity and gathered every 2h1m0s
+# TYPE rox_central_image_vuln_Cluster_Namespace_Severity_count gauge
+rox_central_image_vuln_Cluster_Namespace_Severity_count{Cluster="cluster-1",Namespace="namespace-1",Severity="CRITICAL_VULNERABILITY_SEVERITY"} 1
+rox_central_image_vuln_Cluster_Namespace_Severity_count{Cluster="cluster-1",Namespace="namespace-2",Severity="CRITICAL_VULNERABILITY_SEVERITY"} 2
+rox_central_image_vuln_Cluster_Namespace_Severity_count{Cluster="cluster-1",Namespace="namespace-2",Severity="MODERATE_VULNERABILITY_SEVERITY"} 2
+rox_central_image_vuln_Cluster_Namespace_Severity_count{Cluster="cluster-2",Namespace="namespace-2",Severity="LOW_VULNERABILITY_SEVERITY"} 2
+rox_central_image_vuln_Cluster_Namespace_Severity_count{Cluster="cluster-2",Namespace="namespace-2",Severity="MODERATE_VULNERABILITY_SEVERITY"} 2
+# HELP rox_central_image_vuln_Deployment_ImageTag_count The total number of image vulnerabilities aggregated by Deployment,ImageTag and gathered every 2h1m0s
+# TYPE rox_central_image_vuln_Deployment_ImageTag_count gauge
+rox_central_image_vuln_Deployment_ImageTag_count{Deployment="D0",ImageTag="tag"} 1
+rox_central_image_vuln_Deployment_ImageTag_count{Deployment="D1",ImageTag="tag"} 3
+rox_central_image_vuln_Deployment_ImageTag_count{Deployment="D2",ImageTag="tag"} 1
+rox_central_image_vuln_Deployment_ImageTag_count{Deployment="D3",ImageTag="latest"} 2
+rox_central_image_vuln_Deployment_ImageTag_count{Deployment="D3",ImageTag="tag"} 2
+# HELP rox_central_image_vuln_Severity_count The total number of image vulnerabilities aggregated by Severity and gathered every 2h1m0s
+# TYPE rox_central_image_vuln_Severity_count gauge
+rox_central_image_vuln_Severity_count{Severity="CRITICAL_VULNERABILITY_SEVERITY"} 3
+rox_central_image_vuln_Severity_count{Severity="LOW_VULNERABILITY_SEVERITY"} 2
+rox_central_image_vuln_Severity_count{Severity="MODERATE_VULNERABILITY_SEVERITY"} 4
 `,
 		string(body))
 }
