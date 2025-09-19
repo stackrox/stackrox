@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -90,21 +91,6 @@ func (mr *MockDataStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, id)
 }
 
-// GetAllVirtualMachines mocks base method.
-func (m *MockDataStore) GetAllVirtualMachines(ctx context.Context) ([]*storage.VirtualMachine, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllVirtualMachines", ctx)
-	ret0, _ := ret[0].([]*storage.VirtualMachine)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllVirtualMachines indicates an expected call of GetAllVirtualMachines.
-func (mr *MockDataStoreMockRecorder) GetAllVirtualMachines(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllVirtualMachines", reflect.TypeOf((*MockDataStore)(nil).GetAllVirtualMachines), ctx)
-}
-
 // GetVirtualMachine mocks base method.
 func (m *MockDataStore) GetVirtualMachine(ctx context.Context, id string) (*storage.VirtualMachine, bool, error) {
 	m.ctrl.T.Helper()
@@ -119,6 +105,21 @@ func (m *MockDataStore) GetVirtualMachine(ctx context.Context, id string) (*stor
 func (mr *MockDataStoreMockRecorder) GetVirtualMachine(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVirtualMachine", reflect.TypeOf((*MockDataStore)(nil).GetVirtualMachine), ctx, id)
+}
+
+// SearchRawVirtualMachines mocks base method.
+func (m *MockDataStore) SearchRawVirtualMachines(ctx context.Context, query *v1.Query) ([]*storage.VirtualMachine, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRawVirtualMachines", ctx, query)
+	ret0, _ := ret[0].([]*storage.VirtualMachine)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawVirtualMachines indicates an expected call of SearchRawVirtualMachines.
+func (mr *MockDataStoreMockRecorder) SearchRawVirtualMachines(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawVirtualMachines", reflect.TypeOf((*MockDataStore)(nil).SearchRawVirtualMachines), ctx, query)
 }
 
 // UpsertVirtualMachine mocks base method.

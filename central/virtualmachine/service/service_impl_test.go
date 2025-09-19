@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -136,6 +137,16 @@ func TestListVirtualMachines(t *testing.T) {
 		testVMs[i] = storagetov2.VirtualMachine(vm)
 	}
 
+	storageVMsInReversedOrder := make([]*storage.VirtualMachine, len(storageVMs))
+	for i, vm := range storageVMs {
+		storageVMsInReversedOrder[len(storageVMsInReversedOrder)-i-1] = vm
+	}
+
+	testVMsInReversedOrder := make([]*v2.VirtualMachine, len(testVMs))
+	for i, vm := range testVMs {
+		testVMsInReversedOrder[len(testVMsInReversedOrder)-i-1] = vm
+	}
+
 	tests := []struct {
 		name           string
 		request        *v2.ListVirtualMachinesRequest
@@ -148,7 +159,7 @@ func TestListVirtualMachines(t *testing.T) {
 			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetAllVirtualMachines(ctx).
+					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return(storageVMs, nil)
 			},
 			expectedResult: &v2.ListVirtualMachinesResponse{
@@ -161,7 +172,7 @@ func TestListVirtualMachines(t *testing.T) {
 			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetAllVirtualMachines(ctx).
+					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return([]*storage.VirtualMachine{}, nil)
 			},
 			expectedResult: &v2.ListVirtualMachinesResponse{
@@ -174,11 +185,45 @@ func TestListVirtualMachines(t *testing.T) {
 			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetAllVirtualMachines(ctx).
+					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return(nil, errors.New("datastore error"))
 			},
 			expectedResult: nil,
 			expectedError:  "datastore error",
+		},
+		{
+			name:    "default sort order",
+			request: &v2.ListVirtualMachinesRequest{},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					SearchRawVirtualMachines(ctx, gomock.Any()).
+					Return(storageVMs, nil)
+			},
+			expectedResult: &v2.ListVirtualMachinesResponse{
+				VirtualMachines: testVMs,
+			},
+		},
+		{
+			name: "honor requested sort order",
+			request: &v2.ListVirtualMachinesRequest{
+				Query: &v2.RawQuery{
+					Pagination: &v2.Pagination{
+						SortOptions: []*v2.SortOption{
+							{
+								Field: search.ClusterID.String(),
+							},
+						},
+					},
+				},
+			},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					SearchRawVirtualMachines(ctx, gomock.Any()).
+					Return(storageVMsInReversedOrder, nil)
+			},
+			expectedResult: &v2.ListVirtualMachinesResponse{
+				VirtualMachines: testVMsInReversedOrder,
+			},
 		},
 	}
 

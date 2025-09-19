@@ -4,17 +4,25 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	"github.com/stackrox/rox/central/virtualmachine/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	defaultPageSize = 100
 )
 
 var (
@@ -65,8 +73,31 @@ func (s *serviceImpl) GetVirtualMachine(ctx context.Context, request *v2.GetVirt
 }
 
 func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListVirtualMachinesRequest) (*v2.ListVirtualMachinesResponse, error) {
-	// TODO: Filtering/search capabilities
-	vms, err := s.datastore.GetAllVirtualMachines(ctx)
+	searchQuery := search.EmptyQuery()
+	requestQuery := request.GetQuery().GetQuery()
+	if requestQuery != "" {
+		parsedQuery, err := search.ParseQuery(requestQuery)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing input query")
+		}
+		searchQuery = parsedQuery
+	}
+	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
+	if len(searchQuery.GetPagination().GetSortOptions()) == 0 {
+		if searchQuery.GetPagination() == nil {
+			searchQuery.Pagination = &v1.QueryPagination{}
+		}
+		searchQuery.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.VirtualMachineName.String(),
+			},
+			{
+				Field: search.Namespace.String(),
+			},
+		}
+	}
+
+	vms, err := s.datastore.SearchRawVirtualMachines(ctx, searchQuery)
 	if err != nil {
 		// TODO: Handle specific error cases with proper error codes, e.g. duplicate ID
 		return nil, err
