@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/mdlayher/vsock"
-	"google.golang.org/protobuf/proto"
-
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	vmv1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 // FakeAgent generates and sends index reports over vsock
@@ -29,16 +29,7 @@ func NewFakeAgent(port uint32, packageCount int) *FakeAgent {
 
 // Run starts the fake agent that generates and sends index reports
 func (a *FakeAgent) Run(ctx context.Context) error {
-	log.Printf("Attempting to connect to host via vsock on port %d", a.port)
-
-	// Connect to the host via vsock
-	conn, err := vsock.Dial(vsock.Host, a.port, nil)
-	if err != nil {
-		return fmt.Errorf("failed to dial vsock: %v", err)
-	}
-	defer conn.Close()
-
-	log.Printf("✅ Successfully connected to host via vsock on port %d", a.port)
+	log.Printf("Fake agent starting - will send reports every 10 seconds on port %d", a.port)
 
 	// Send first report immediately, then every 10 seconds
 	for {
@@ -52,13 +43,14 @@ func (a *FakeAgent) Run(ctx context.Context) error {
 
 		log.Printf("🔄 Starting to generate and send index report...")
 		report := a.generateIndexReport()
-		log.Printf("📊 Generated report with hash_id: %s, packages: %d, distributions: %d, repositories: %d",
-			report.HashId, len(report.Contents.Packages), len(report.Contents.Distributions), len(report.Contents.Repositories))
+		log.Printf("📊 Generated report with vsock_cid: %s, hash_id: %s, packages: %d, distributions: %d, repositories: %d",
+			report.VsockCid, report.IndexV4.HashId, len(report.IndexV4.Contents.Packages), len(report.IndexV4.Contents.Distributions), len(report.IndexV4.Contents.Repositories))
 
-		if err := a.sendReport(conn, report); err != nil {
+		// Connect, send, and close for each report
+		if err := a.connectAndSendReport(report); err != nil {
 			log.Printf("❌ Failed to send report: %v", err)
 		} else {
-		log.Printf("✅ Successfully sent index report with hash_id: %s", report.HashId)
+			log.Printf("✅ Successfully sent index report with vsock_cid: %s, hash_id: %s", report.VsockCid, report.IndexV4.HashId)
 		}
 
 		// Wait 10 seconds before next report
@@ -72,17 +64,45 @@ func (a *FakeAgent) Run(ctx context.Context) error {
 	}
 }
 
-// generateIndexReport creates a realistic v4.IndexReport with various packages
-func (a *FakeAgent) generateIndexReport() *v4.IndexReport {
+// connectAndSendReport opens a new vsock connection, sends the report, and closes the connection
+func (a *FakeAgent) connectAndSendReport(report *vmv1.IndexReport) error {
+	log.Printf("🔌 Opening new vsock connection to host on port %d", a.port)
+
+	// Connect to the host via vsock
+	conn, err := vsock.Dial(vsock.Host, a.port, nil)
+	if err != nil {
+		return fmt.Errorf("failed to dial vsock: %v", err)
+	}
+	defer func() {
+		log.Printf("🔌 Closing vsock connection")
+		conn.Close()
+	}()
+
+	log.Printf("✅ Successfully connected to host via vsock on port %d", a.port)
+
+	// Send the report
+	if err := a.sendReport(conn, report); err != nil {
+		return fmt.Errorf("failed to send report: %v", err)
+	}
+
+	return nil
+}
+
+// generateIndexReport creates a realistic virtualmachine.v1.IndexReport with various packages
+func (a *FakeAgent) generateIndexReport() *vmv1.IndexReport {
 	// Generate a unique hash ID
 	hashID := fmt.Sprintf("vm-report-%d", time.Now().Unix())
+
+	// Generate a fake vsock CID (Context ID)
+	fakeCID := fmt.Sprintf("fake-cid-%d", rand.Intn(1000)+100)
 
 	// Create realistic package data
 	packages := a.generatePackages()
 	distributions := a.generateDistributions()
 	repositories := a.generateRepositories()
 
-	return &v4.IndexReport{
+	// Create the v4 index report
+	v4Report := &v4.IndexReport{
 		HashId:  hashID,
 		State:   "IndexFinished",
 		Success: true,
@@ -92,6 +112,12 @@ func (a *FakeAgent) generateIndexReport() *v4.IndexReport {
 			Distributions: distributions,
 			Repositories:  repositories,
 		},
+	}
+
+	// Wrap it in a virtualmachine.v1.IndexReport
+	return &vmv1.IndexReport{
+		VsockCid: fakeCID,
+		IndexV4:  v4Report,
 	}
 }
 
@@ -289,7 +315,7 @@ func (a *FakeAgent) generateRepositories() []*v4.Repository {
 }
 
 // sendReport serializes and sends the index report over vsock
-func (a *FakeAgent) sendReport(conn *vsock.Conn, report *v4.IndexReport) error {
+func (a *FakeAgent) sendReport(conn *vsock.Conn, report *vmv1.IndexReport) error {
 	log.Printf("📤 Serializing index report to protobuf...")
 
 	// Serialize the report to protobuf
