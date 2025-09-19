@@ -70,7 +70,11 @@ func (r *Relay) Run(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
-			go handleVsockConnection(ctx, conn, r.sensorClient)
+			go func() {
+				if err := handleVsockConnection(ctx, conn, r.sensorClient); err != nil {
+					log.Errorf("Error handling vsock connection: %v", err)
+				}
+			}()
 		}
 	}
 }
@@ -84,7 +88,7 @@ func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	return remoteAddr.ContextID, nil
 }
 
-func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient) {
+func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
 	defer func() {
 		if err := conn.Close(); err != nil {
 			log.Errorf("Failed to close connection: %v", err)
@@ -95,30 +99,28 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 
 	vsockCID, err := extractVsockCIDFromConnection(conn)
 	if err != nil {
-		log.Errorf("Error extracting vsock CID: %v", err)
-		return
+		return errors.Wrap(err, "extracting vsock CID")
 	}
 
 	data, err := io.ReadAll(conn)
 	if err != nil {
-		log.Errorf("Failed to read data from vsock connection (vsock CID %d): %v", vsockCID, err)
-		return
+		return errors.Wrapf(err, "reading data from vsock connection (CID: %d)", vsockCID)
 	}
 
 	indexReport, err := parseIndexReport(data)
 	if err != nil {
-		log.Errorf("Failed to parse index report: %v", err)
-		return
+		return errors.Wrap(err, "parsing index report data")
 	}
 
 	// Fill the vsock context ID - at the moment the agent does not populate this field; if that changes, this can be
 	// replaced with a sanity check.
 	indexReport.VsockCid = strconv.Itoa(int(vsockCID))
 
-	err = sendReportToSensor(ctx, indexReport, sensorClient)
-	if err != nil {
-		log.Errorf("Failed to send report to sensor: %v", err)
+	if err = sendReportToSensor(ctx, indexReport, sensorClient); err != nil {
+		return errors.Wrap(err, "sending report to sensor")
 	}
+
+	return nil
 }
 
 func parseIndexReport(data []byte) (*v1.IndexReport, error) {
