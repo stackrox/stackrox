@@ -54,7 +54,7 @@ func NewRelay(conn grpc.ClientConnInterface) *Relay {
 }
 
 func (r *Relay) Run(ctx context.Context) error {
-	log.Info("Starting relay")
+	log.Info("Starting virtual machine relay")
 
 	err := r.vsockServer.Start()
 	if err != nil {
@@ -80,7 +80,7 @@ func (r *Relay) Run(ctx context.Context) error {
 func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
 	if !ok {
-		return 0, errors.New("failed to extract remote addr from vsock connection")
+		return 0, errors.New("Failed to extract remote address from vsock connection")
 	}
 
 	vsockCID := remoteAddr.ContextID
