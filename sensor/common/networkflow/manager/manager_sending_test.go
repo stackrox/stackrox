@@ -34,7 +34,7 @@ type sendNetflowsSuite struct {
 	suite.Suite
 	mockCtrl     *gomock.Controller
 	mockEntity   *mocksManager.MockEntityStore
-	uc           *updatecomputer.TransitionBased
+	uc           updatecomputer.UpdateComputer
 	m            *networkFlowManager
 	mockDetector *mocksDetector.MockDetector
 	fakeTicker   chan time.Time

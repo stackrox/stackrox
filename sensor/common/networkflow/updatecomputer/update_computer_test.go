@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
@@ -319,103 +318,270 @@ func Test_closedConnTimestamps(t *testing.T) {
 	}
 }
 
-func TestComputeUpdatedEndpoints(t *testing.T) {
+func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
 
-	endpoint1 := indicator.ContainerEndpoint{
+	ep1 := indicator.ContainerEndpoint{
 		Entity:   entity1,
 		Port:     8080,
 		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 	}
+	p1 := indicator.ProcessListening{
+		Process: indicator.ProcessInfo{
+			ProcessName: "proc-name",
+			ProcessArgs: "proc-args",
+			ProcessExec: "proc-exec",
+		},
+		PodID:         "",
+		ContainerName: "",
+		DeploymentID:  "",
+		PodUID:        "",
+		Namespace:     "",
+		Protocol:      0,
+		Port:          0,
+	}
+	p2 := indicator.ProcessListening{
+		Process: indicator.ProcessInfo{
+			ProcessName: "proc2-name",
+			ProcessArgs: "proc2-args",
+			ProcessExec: "proc2-exec",
+		},
+		PodID:         "",
+		ContainerName: "",
+		DeploymentID:  "",
+		PodUID:        "",
+		Namespace:     "",
+		Protocol:      0,
+		Port:          0,
+	}
 
-	now := timestamp.Now()
+	closedNow := timestamp.Now()
 	open := timestamp.InfiniteFuture
-	past := now - 1000
+	closedInThePast := closedNow - 1000
 
 	testCases := map[string]struct {
-		initial          map[indicator.ContainerEndpoint]timestamp.MicroTS
-		current          map[indicator.ContainerEndpoint]timestamp.MicroTS
-		expectNumUpdates map[string]int
+		initialEp            map[indicator.ContainerEndpoint]timestamp.MicroTS
+		currentEp            map[indicator.ContainerEndpoint]timestamp.MicroTS
+		initialProc          map[indicator.ProcessListening]timestamp.MicroTS
+		currentProc          map[indicator.ProcessListening]timestamp.MicroTS
+		initialMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListening
+		currentMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListening
+		expectNumUpdatesEp   map[string]int
+		expectNumUpdatesProc map[string]int
 	}{
 		"Should send new closed endpoints": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: now,
+			initialEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{},
+			currentEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: closedNow,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			initialProc: map[indicator.ProcessListening]timestamp.MicroTS{},
+			currentProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: closedNow,
+			},
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should send update when open endpoints are closed": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: open,
+			initialEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: open,
 			},
-			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: past,
+			currentEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: closedInThePast,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			initialProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: open,
+			},
+			currentProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: closedInThePast,
+			},
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should not send an update when open endpoints remain open": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: open,
+			initialEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: open,
 			},
-			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: open,
+			currentEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: open,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			initialProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: open,
+			},
+			currentProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: open,
+			},
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		"Should not send update when closed TS is updated to a past value": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: now,
+			initialEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: closedNow,
 			},
-			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: past,
+			currentEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: closedInThePast,
+			},
+			initialProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: closedNow,
+			},
+			currentProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: closedInThePast,
+			},
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
 			},
 			// We do not track close-timestamps for endpoints as we do for connections.
 			// This results in always sending updates on closed->closed transitions.
 			// This is intentional, as we estimate lower overhead in sending duplicates compared to
 			// tracking all closed endpoints in memory for a limited time (as done for connections).
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 1},
+			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 1},
+			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 1},
 		},
 		"Should send update when closed TS is updated to a younger value": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: past,
+			initialEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: closedInThePast,
 			},
-			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: now,
+			currentEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: closedNow,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			initialProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: closedInThePast,
+			},
+			currentProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: closedNow,
+			},
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should produce no updates on empty input": {
-			initial:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			current:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			initialEp:            map[indicator.ContainerEndpoint]timestamp.MicroTS{},
+			currentEp:            map[indicator.ContainerEndpoint]timestamp.MicroTS{},
+			initialProc:          map[indicator.ProcessListening]timestamp.MicroTS{},
+			currentProc:          map[indicator.ProcessListening]timestamp.MicroTS{},
+			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		"Should send an update on deletion for legacy but not for TransitionBased": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: open,
+			initialEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: open,
 			},
-			current:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			currentEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{},
+			initialProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: open,
+			},
+			currentProc: map[indicator.ProcessListening]timestamp.MicroTS{},
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
 		},
 		"handling nils": {
-			initial:          nil,
-			current:          nil,
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			initialEp:            nil,
+			currentEp:            nil,
+			initialProc:          nil,
+			currentProc:          nil,
+			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
+		},
+		// Process-specific cases
+		"Should replace process on two open-endpoint messages": {
+			initialEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: open,
+			},
+			currentEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: open,
+			},
+			initialProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: open,
+			},
+			currentProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p2: open,
+			},
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p2,
+			},
+			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear.
+			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
+		},
+		"Should send single update when process is replaced for endpoint, but not forgotten": {
+			initialEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: open,
+			},
+			currentEp: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				ep1: open,
+			},
+			initialProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: open,
+			},
+			currentProc: map[indicator.ProcessListening]timestamp.MicroTS{
+				p1: open, // This is now an orphan process, we know it exists, but it does not belong to any endpoint.
+				p2: open,
+			},
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p1,
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListening{
+				ep1: &p2,
+			},
+			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			// Legacy sends now a single update (for p2), as the p1 is not gone.
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 	}
 
-	executeAssertions := func(t *testing.T, l UpdateComputer, expectedNumUpdates int, initial, current map[indicator.ContainerEndpoint]timestamp.MicroTS) {
+	executeAssertions := func(t *testing.T, l UpdateComputer,
+		expectedNumUpdatesEp, expectedNumUpdatesProc int,
+		initialEp, currentEp map[indicator.ContainerEndpoint]timestamp.MicroTS,
+		initialProc, currentProc map[indicator.ProcessListening]timestamp.MicroTS,
+		initialMapping, currentMapping map[indicator.ContainerEndpoint]*indicator.ProcessListening) {
 		t.Helper()
 		// Bring model to the initial state
-		l.ComputeUpdatedEndpoints(initial)
-		l.OnSuccessfulSend(nil, initial, nil)
+		ie, ip := l.ComputeUpdatedEndpointsAndProcesses(initialEp, initialProc, initialMapping)
+		_, _ = ie, ip
+		l.OnSuccessfulSend(nil, initialEp, initialProc)
 		// Call to OnSuccessfulSend with nils should not change anything in the state
 		l.OnSuccessfulSend(nil, nil, nil)
 
-		updates := l.ComputeUpdatedEndpoints(current)
-		assert.Len(t, updates, expectedNumUpdates)
+		updatesEp, updatesProc := l.ComputeUpdatedEndpointsAndProcesses(currentEp, currentProc, currentMapping)
+		assert.Len(t, updatesEp, expectedNumUpdatesEp, "num endpoint updates incorrect")
+		assert.Len(t, updatesProc, expectedNumUpdatesProc, "num proc updates incorrect")
 
 		// Verify protobuf conversion
-		for _, update := range updates {
+		for _, update := range updatesEp {
 			assert.NotNil(t, update.Props)
 			assert.Equal(t, uint32(8080), update.Props.Port)
 			assert.Equal(t, storage.L4Protocol_L4_PROTOCOL_TCP, update.Props.L4Protocol)
@@ -425,147 +591,18 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			t.Run(implLegacy, func(t *testing.T) {
-				executeAssertions(t, NewLegacy(), tc.expectNumUpdates[implLegacy], tc.initial, tc.current)
+				executeAssertions(t, NewLegacy(),
+					tc.expectNumUpdatesEp[implLegacy], tc.expectNumUpdatesProc[implLegacy],
+					tc.initialEp, tc.currentEp,
+					tc.initialProc, tc.currentProc,
+					tc.initialMapping, tc.currentMapping)
 			})
 			t.Run(implTransitionBased, func(t *testing.T) {
-				executeAssertions(t, NewTransitionBased(), tc.expectNumUpdates[implTransitionBased], tc.initial, tc.current)
-			})
-		})
-	}
-}
-
-// TestComputeUpdatedProcesses relies on exactly the same method as for endpoints.
-func TestComputeUpdatedProcesses(t *testing.T) {
-	process1 := indicator.ProcessListening{
-		Process: indicator.ProcessInfo{
-			ProcessName: "nginx",
-			ProcessArgs: "-g daemon off;",
-			ProcessExec: "/usr/sbin/nginx",
-		},
-		PodID:         "pod-1",
-		ContainerName: "nginx-container",
-		DeploymentID:  "nginx-deployment",
-		PodUID:        "uid-123",
-		Namespace:     "default",
-		Port:          80,
-		Protocol:      storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-
-	now := timestamp.Now()
-	open := timestamp.InfiniteFuture
-	past := now - 1000
-
-	testCases := map[string]struct {
-		initial          map[indicator.ProcessListening]timestamp.MicroTS
-		current          map[indicator.ProcessListening]timestamp.MicroTS
-		disableFeature   bool
-		expectNumUpdates map[string]int
-	}{
-		"Should not send any updates if feature is disabled": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: now, // should generate an update if feat is enabled
-			},
-			disableFeature:   true,
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
-		},
-		"Should send new closed processes": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: now,
-			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
-		},
-		"Should send update when open processes are closed": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: open,
-			},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: past,
-			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
-		},
-		"Should not send an update when open processes remain open": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: open,
-			},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: open,
-			},
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
-		},
-		"Should not send update when closed TS is updated to a past value": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: now,
-			},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: past,
-			},
-			// We do not track close-timestamps for processes (as they rely on endpoints) as we do for connections.
-			// This results in always sending updates on closed->closed transitions.
-			// This is intentional, as we estimate lower overhead in sending duplicates compared to
-			// tracking all closed endpoints in memory for a limited time (as done for connections).
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 1},
-		},
-		"Should send update when closed TS is updated to a younger value": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: past,
-			},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: now,
-			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
-		},
-		"Should produce no updates on empty input": {
-			initial:          map[indicator.ProcessListening]timestamp.MicroTS{},
-			current:          map[indicator.ProcessListening]timestamp.MicroTS{},
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
-		},
-		"Should send an update on deletion (specific for legacy)": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: open,
-			},
-			current:          map[indicator.ProcessListening]timestamp.MicroTS{},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 0},
-		},
-		"handling nils": {
-			initial:          nil,
-			current:          nil,
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
-		},
-	}
-
-	executeAssertions := func(t *testing.T, l UpdateComputer, expectedNumUpdates int, disableFeat bool, initial, current map[indicator.ProcessListening]timestamp.MicroTS) {
-		t.Helper()
-		t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "true")
-		if disableFeat {
-			t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
-		}
-
-		// Trigger a computation + successful send as a way to bring the updateComputer to the initial state.
-		l.ComputeUpdatedProcesses(initial)
-		l.OnSuccessfulSend(nil, nil, initial)
-		// Call to OnSuccessfulSend with nils should not change anything in the state
-		l.OnSuccessfulSend(nil, nil, nil)
-
-		updates := l.ComputeUpdatedProcesses(current)
-		assert.Len(t, updates, expectedNumUpdates)
-		// The actual behavior depends on the ProcessesListeningOnPort feature flag, here we do basic checks.
-		for _, update := range updates {
-			assert.NotNil(t, update.Process)
-			assert.Equal(t, uint32(80), update.Port)
-			assert.Equal(t, storage.L4Protocol_L4_PROTOCOL_TCP, update.Protocol)
-			assert.Equal(t, "nginx", update.Process.ProcessName)
-		}
-	}
-
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			t.Run(implLegacy, func(t *testing.T) {
-				executeAssertions(t, NewLegacy(), tc.expectNumUpdates[implLegacy], tc.disableFeature, tc.initial, tc.current)
-			})
-			t.Run(implTransitionBased, func(t *testing.T) {
-				executeAssertions(t, NewTransitionBased(), tc.expectNumUpdates[implTransitionBased], tc.disableFeature, tc.initial, tc.current)
+				executeAssertions(t, NewTransitionBased(),
+					tc.expectNumUpdatesEp[implTransitionBased], tc.expectNumUpdatesProc[implTransitionBased],
+					tc.initialEp, tc.currentEp,
+					tc.initialProc, tc.currentProc,
+					tc.initialMapping, tc.currentMapping)
 			})
 		})
 	}

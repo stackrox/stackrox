@@ -49,16 +49,17 @@ func (m *networkFlowManager) executeEndpointAction(
 
 func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS, hostConns *hostConnections,
 	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
-	processesListening map[indicator.ProcessListening]timestamp.MicroTS,
-	mapping map[indicator.ContainerEndpoint]*indicator.ProcessListening) {
+	processesListening map[indicator.ProcessListening]timestamp.MicroTS) {
 	concurrency.WithLock(&hostConns.mutex, func() {
 		flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
 		flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "endpoints").Add(float64(len(hostConns.endpoints)))
 		for ep, status := range hostConns.endpoints {
-			resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, mapping, now)
-			action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
-			m.executeEndpointAction(action, &ep, status, hostConns, enrichedEndpoints, now)
-			updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, status)
+			concurrency.WithLock(&m.endpointProcessMappingMutex, func() {
+				resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, now)
+				action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
+				m.executeEndpointAction(action, &ep, status, hostConns, enrichedEndpoints, now)
+				updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, status)
+			})
 		}
 	})
 	concurrency.WithRLock(&m.activeEndpointsMutex, func() {
@@ -76,7 +77,6 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	status *connStatus,
 	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
 	processesListening map[indicator.ProcessListening]timestamp.MicroTS,
-	mapping map[indicator.ContainerEndpoint]*indicator.ProcessListening,
 	lastUpdate timestamp.MicroTS,
 ) (resultNG, resultPLOP EnrichmentResult, reasonNG, reasonPLOP EnrichmentReasonEp) {
 	isFresh := status.isFresh(now)
@@ -119,10 +119,10 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 		processIndicator, resultPLOP, reasonPLOP = m.enrichPLOP(ep, container)
 		if processIndicator != nil {
 			processesListening[*processIndicator] = status.lastSeen
-			mapping[epInd] = processIndicator
-		} else if _, found := mapping[epInd]; found {
-			// Process indicator has been updated from a value to nil
-			delete(mapping, epInd)
+			m.endpointProcessMapping[epInd] = processIndicator
+		} else {
+			// Process indicator has been updated from a value to nil (or was always nil)
+			delete(m.endpointProcessMapping, epInd)
 		}
 
 	} else {

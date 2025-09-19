@@ -15,6 +15,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 	open := timestamp.InfiniteFuture
 	closed := now.Add(-time.Second)
 
+	const deploymentID = srcID
 	p1 := defaultProcessKey()
 	p2 := anotherProcessKey()
 
@@ -27,9 +28,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 		input                       *endpointPair
 		expectedNumContainerLookups int
 		expectedNumUpdates          map[updatecomputer.EnrichedEntity]int
-		expectedDeduperLen          map[updatecomputer.EnrichedEntity]int
-		deduperShouldContain        map[updatecomputer.EnrichedEntity]string
-		deduperShouldNotContain     map[updatecomputer.EnrichedEntity]string
+		expectedDeduperState        map[string]string
 		expectedUpdatedProcesses    *indicator.ProcessInfo
 	}
 
@@ -46,14 +45,9 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 						updatecomputer.ProcessEnrichedEntity:  1,
 						updatecomputer.EndpointEnrichedEntity: 1,
 					},
-					expectedDeduperLen: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  1,
-						updatecomputer.EndpointEnrichedEntity: 1,
+					expectedDeduperState: map[string]string{
+						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p1open.processListeningIndicator().Key(indicator.HashingAlgoHash),
 					},
-					deduperShouldContain: map[updatecomputer.EnrichedEntity]string{
-						updatecomputer.ProcessEnrichedEntity: e1p1open.deduperKey(indicator.HashingAlgoHash),
-					},
-					deduperShouldNotContain:  map[updatecomputer.EnrichedEntity]string{},
 					expectedUpdatedProcesses: &p1,
 				},
 				{
@@ -64,14 +58,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 						updatecomputer.ProcessEnrichedEntity:  1,
 						updatecomputer.EndpointEnrichedEntity: 1,
 					},
-					expectedDeduperLen: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  0,
-						updatecomputer.EndpointEnrichedEntity: 0,
-					},
-					deduperShouldContain: map[updatecomputer.EnrichedEntity]string{},
-					deduperShouldNotContain: map[updatecomputer.EnrichedEntity]string{
-						updatecomputer.ProcessEnrichedEntity: e1p1open.deduperKey(indicator.HashingAlgoHash),
-					},
+					expectedDeduperState:     map[string]string{},
 					expectedUpdatedProcesses: &p1,
 				},
 			},
@@ -86,17 +73,10 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 						updatecomputer.ProcessEnrichedEntity:  1,
 						updatecomputer.EndpointEnrichedEntity: 1,
 					},
-					expectedDeduperLen: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  1,
-						updatecomputer.EndpointEnrichedEntity: 1,
-					},
-					deduperShouldContain: map[updatecomputer.EnrichedEntity]string{
-						updatecomputer.ProcessEnrichedEntity: e1p1open.deduperKey(indicator.HashingAlgoHash),
-					},
-					deduperShouldNotContain: map[updatecomputer.EnrichedEntity]string{
-						updatecomputer.ProcessEnrichedEntity: e1p2open.deduperKey(indicator.HashingAlgoHash),
-					},
 					expectedUpdatedProcesses: &p1,
+					expectedDeduperState: map[string]string{
+						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p1open.processListeningIndicator().Key(indicator.HashingAlgoHash),
+					},
 				},
 				{
 					description:                 "Open the same endpoint e1 with new process p2",
@@ -106,15 +86,8 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 						updatecomputer.ProcessEnrichedEntity:  1,
 						updatecomputer.EndpointEnrichedEntity: 0,
 					},
-					expectedDeduperLen: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  1,
-						updatecomputer.EndpointEnrichedEntity: 1,
-					},
-					deduperShouldContain: map[updatecomputer.EnrichedEntity]string{
-						updatecomputer.ProcessEnrichedEntity: e1p2open.deduperKey(indicator.HashingAlgoHash),
-					},
-					deduperShouldNotContain: map[updatecomputer.EnrichedEntity]string{
-						updatecomputer.ProcessEnrichedEntity: e1p1open.deduperKey(indicator.HashingAlgoHash),
+					expectedDeduperState: map[string]string{
+						e1p2open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p2open.processListeningIndicator().Key(indicator.HashingAlgoHash),
 					},
 					expectedUpdatedProcesses: &p2,
 				},
@@ -130,16 +103,6 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 						updatecomputer.ProcessEnrichedEntity:  1,
 						updatecomputer.EndpointEnrichedEntity: 1,
 					},
-					expectedDeduperLen: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  1,
-						updatecomputer.EndpointEnrichedEntity: 1,
-					},
-					deduperShouldContain: map[updatecomputer.EnrichedEntity]string{
-						updatecomputer.ProcessEnrichedEntity: e1p1open.deduperKey(indicator.HashingAlgoHash),
-					},
-					deduperShouldNotContain: map[updatecomputer.EnrichedEntity]string{
-						updatecomputer.ProcessEnrichedEntity: e1p2open.deduperKey(indicator.HashingAlgoHash),
-					},
 					expectedUpdatedProcesses: &p1,
 				},
 				{
@@ -150,14 +113,9 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 						updatecomputer.ProcessEnrichedEntity:  0,
 						updatecomputer.EndpointEnrichedEntity: 0,
 					},
-					expectedDeduperLen: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  1,
-						updatecomputer.EndpointEnrichedEntity: 1,
+					expectedDeduperState: map[string]string{
+						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p1open.processListeningIndicator().Key(indicator.HashingAlgoHash),
 					},
-					deduperShouldContain: map[updatecomputer.EnrichedEntity]string{
-						updatecomputer.ProcessEnrichedEntity: e1p1open.deduperKey(indicator.HashingAlgoHash),
-					},
-					deduperShouldNotContain:  map[updatecomputer.EnrichedEntity]string{},
 					expectedUpdatedProcesses: nil,
 				},
 			},
@@ -186,16 +144,8 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 				b.Require().Equal(e.expectedNumUpdates[updatecomputer.ProcessEnrichedEntity], len(updatesP), "Number of process updates should match")
 				b.Require().Equal(e.expectedNumUpdates[updatecomputer.EndpointEnrichedEntity], len(updatesE), "Number of endpoint updates should match")
 
-				for ee, l := range e.expectedDeduperLen {
-					b.assertDeduperLen(ee, l)
-				}
-
-				for ee, key := range e.deduperShouldContain {
-					b.assertDeduperContains(ee, key)
-				}
-
-				for ee, key := range e.deduperShouldNotContain {
-					b.assertDeduperNotContains(ee, key)
+				if e.expectedDeduperState != nil {
+					b.assertDeduperState(e.expectedDeduperState)
 				}
 				if e.expectedNumUpdates[updatecomputer.ProcessEnrichedEntity] > 0 && e.expectedUpdatedProcesses != nil {
 					b.Equal(e.expectedUpdatedProcesses.ProcessName, updatesP[0].GetProcess().GetProcessName(), "Updated process name should match")
@@ -212,27 +162,24 @@ func (b *sendNetflowsSuite) assertNoOtherUpdates() {
 	mustNotRead(b.T(), b.m.sensorUpdates)
 }
 
-func (b *sendNetflowsSuite) assertDeduperLen(ee updatecomputer.EnrichedEntity, expectedLen int) {
-	dedupers := b.uc.GetState()
-	got := dedupers[ee].Cardinality()
-	b.Equal(expectedLen, got, "expected %d deduper entries, got=%d", expectedLen, got)
-}
-
-func (b *sendNetflowsSuite) assertDeduperContains(ee updatecomputer.EnrichedEntity, value string) {
-	dedupers := b.uc.GetState()
-	b.Truef(dedupers[ee].Contains(value), "expected %s deduper to contain %s", ee, value)
-}
-
-func (b *sendNetflowsSuite) assertDeduperNotContains(ee updatecomputer.EnrichedEntity, value string) {
-	dedupers := b.uc.GetState()
-	b.Falsef(dedupers[ee].Contains(value), "expected %s deduper to not contain %s", ee, value)
+func (b *sendNetflowsSuite) assertDeduperState(expected map[string]string) {
+	if testable, ok := b.uc.(updatecomputer.TestableUpdateComputer); ok {
+		testable.WithEndpointDeduperAccess(func(epDeduper map[string]string) {
+			b.EqualValuesf(expected, epDeduper, "deduper state should match expected")
+		})
+	} else {
+		b.T().Skip("Update computer doesn't support deduper state access")
+	}
 }
 
 func (b *sendNetflowsSuite) printDedupers() {
-	dedupers := b.uc.GetState()
-	b.T().Logf("conn deduper: (%s)", dedupers[updatecomputer.ConnectionEnrichedEntity].ElementsString(";"))
-	b.T().Logf("endp deduper: (%s)", dedupers[updatecomputer.EndpointEnrichedEntity].ElementsString(";"))
-	b.T().Logf("proc deduper: (%s)", dedupers[updatecomputer.ProcessEnrichedEntity].ElementsString(";"))
+	if testable, ok := b.uc.(updatecomputer.TestableUpdateComputer); ok {
+		testable.WithEndpointDeduperAccess(func(deduper map[string]string) {
+			b.T().Logf("endponit->process deduper: (%v)", deduper)
+		})
+	} else {
+		b.T().Log("Update computer doesn't support deduper state access")
+	}
 }
 
 func (b *sendNetflowsSuite) getUpdates(num int) ([]*storage.ProcessListeningOnPortFromSensor, []*storage.NetworkEndpoint) {

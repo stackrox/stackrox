@@ -26,19 +26,20 @@ func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (
 	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
 	mgr := &networkFlowManager{
-		clusterEntities:   mockEntityStore,
-		externalSrcs:      mockExternalStore,
-		policyDetector:    mockDetector,
-		updateComputer:    updatecomputer.New(),
-		connectionsByHost: make(map[string]*hostConnections),
-		sensorUpdates:     make(chan *message.ExpiringMessage, 5),
-		publicIPs:         newPublicIPsManager(),
-		centralReady:      concurrency.NewSignal(),
-		enricherTicker:    time.NewTicker(time.Hour),
-		enricherTickerC:   enrichTicker,
-		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
-		stopper:           concurrency.NewStopper(),
+		clusterEntities:        mockEntityStore,
+		externalSrcs:           mockExternalStore,
+		policyDetector:         mockDetector,
+		updateComputer:         updatecomputer.New(),
+		connectionsByHost:      make(map[string]*hostConnections),
+		sensorUpdates:          make(chan *message.ExpiringMessage, 5),
+		publicIPs:              newPublicIPsManager(),
+		centralReady:           concurrency.NewSignal(),
+		enricherTicker:         time.NewTicker(time.Hour),
+		enricherTickerC:        enrichTicker,
+		activeConnections:      make(map[connection]*networkConnIndicatorWithAge),
+		activeEndpoints:        make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		endpointProcessMapping: make(map[indicator.ContainerEndpoint]*indicator.ProcessListening),
+		stopper:                concurrency.NewStopper(),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }
@@ -200,26 +201,22 @@ func (ep *endpointPair) containerID(id string) *endpointPair {
 	return ep
 }
 
-func (ep *endpointPair) deduperKey(algo indicator.HashingAlgo) string {
+func (ep *endpointPair) processListeningIndicator() *indicator.ProcessListening {
 	// Assumption: The container/deployment IDs are empty in the test
-	ind := indicator.ProcessListening{
+	return &indicator.ProcessListening{
 		Process:  ep.endpoint.processKey,
 		Port:     ep.endpoint.endpoint.IPAndPort.Port,
 		Protocol: ep.endpoint.endpoint.L4Proto.ToProtobuf(),
 	}
-	return ind.Key(algo)
 }
 
-func (ep *endpointPair) withIPandPort(ip string, port int) *endpointPair {
-	ep.endpoint.endpoint.IPAndPort.Address = net.ParseIP(ip)
-	ep.endpoint.endpoint.IPAndPort.Port = uint16(port)
-	return ep
-}
-
-func (ep *endpointPair) copyWithProcess(p indicator.ProcessInfo) *endpointPair {
-	e2 := *ep
-	e2.endpoint.processKey = p
-	return &e2
+func (ep *endpointPair) endpointIndicator(deplID string) *indicator.ContainerEndpoint {
+	// Assumption: The container/deployment IDs are empty in the test
+	return &indicator.ContainerEndpoint{
+		Entity:   networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: deplID},
+		Port:     ep.endpoint.endpoint.IPAndPort.Port,
+		Protocol: ep.endpoint.endpoint.L4Proto.ToProtobuf(),
+	}
 }
 
 func (ep *endpointPair) lastSeen(lastSeen timestamp.MicroTS) *endpointPair {

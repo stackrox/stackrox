@@ -412,12 +412,14 @@ func (m *networkFlowManager) enrichAndSend() {
 	// and updates them by adding data from different sources (enriching).
 	// It updates m.activeEndpoints and m.activeConnections if EE is open (i.e., lastSeen is set to null by Collector).
 	// Enriched-entities for which the enrichment should be retried are not returned from currentEnrichedConnsAndEndpoints!
-	currentConns, currentEndpoints, currentProcesses := m.currentEnrichedConnsAndEndpoints(m.endpointProcessMapping)
+	currentConns, currentEndpoints, currentProcesses := m.currentEnrichedConnsAndEndpoints()
 
 	// The new changes are sent to Central using the update computer implementation.
 	updatedConns := m.updateComputer.ComputeUpdatedConns(currentConns)
-	updatedEndpoints := m.updateComputer.ComputeUpdatedEndpoints(currentEndpoints)
-	updatedProcesses := m.updateComputer.ComputeUpdatedProcesses(currentProcesses)
+	updatedEndpoints, updatedProcesses := concurrency.WithRLock2(&m.endpointProcessMappingMutex, func() ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
+		return m.updateComputer.ComputeUpdatedEndpointsAndProcesses(
+			currentEndpoints, currentProcesses, m.endpointProcessMapping)
+	})
 
 	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("connections").Add(float64(len(updatedConns)))
 	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
@@ -433,7 +435,7 @@ func (m *networkFlowManager) enrichAndSend() {
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
 		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
 			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSend(currentConns, currentEndpoints, nil)
+			m.updateComputer.OnSuccessfulSend(currentConns, currentEndpoints, currentProcesses)
 		}
 	}
 
@@ -484,7 +486,7 @@ func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListening
 	})
 }
 
-func (m *networkFlowManager) currentEnrichedConnsAndEndpoints(endpointProcessMapping map[indicator.ContainerEndpoint]*indicator.ProcessListening) (
+func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 	enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS,
 	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
 	enrichedProcesses map[indicator.ProcessListening]timestamp.MicroTS,
@@ -495,10 +497,9 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints(endpointProcessMap
 	enrichedConnections = make(map[indicator.NetworkConn]timestamp.MicroTS)
 	enrichedEndpoints = make(map[indicator.ContainerEndpoint]timestamp.MicroTS)
 	enrichedProcesses = make(map[indicator.ProcessListening]timestamp.MicroTS)
-	endpointProcessMapping = make(map[indicator.ContainerEndpoint]*indicator.ProcessListening)
 	for _, hostConns := range allHostConns {
 		m.enrichHostConnections(now, hostConns, enrichedConnections)
-		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses, endpointProcessMapping)
+		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses)
 	}
 	return enrichedConnections, enrichedEndpoints, enrichedProcesses
 }
