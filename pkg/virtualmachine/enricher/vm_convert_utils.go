@@ -79,26 +79,7 @@ func maybeOverwriteSeverity(vuln *storage.EmbeddedVulnerability) {
 	}
 
 	// Only overwrite if the new severity is more severe than the current one
-	if shouldOverwriteSeverity(vuln.GetSeverity(), newSeverity) {
+	if vuln.GetSeverity() < newSeverity {
 		vuln.Severity = newSeverity
 	}
-}
-
-func shouldOverwriteSeverity(current, proposed storage.VulnerabilitySeverity) bool {
-	severityOrder := map[storage.VulnerabilitySeverity]int{
-		storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY:   0,
-		storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:       1,
-		storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:  2,
-		storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY: 3,
-		storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:  4,
-	}
-
-	currentOrder, currentExists := severityOrder[current]
-	proposedOrder, proposedExists := severityOrder[proposed]
-
-	if !currentExists || !proposedExists {
-		return false
-	}
-
-	return proposedOrder > currentOrder
 }

@@ -2,6 +2,7 @@ package enricher
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ import (
 var (
 	log         = logging.LoggerForModule()
 	scanTimeout = env.ScanTimeout.DurationSetting()
+	vmDigest    name.Digest
 )
 
 const vmMockDigest = "vm-registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
@@ -43,12 +45,6 @@ func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.Virtu
 		return errors.New("index report is required for VM scanning")
 	}
 
-	vmDigest, err := name.NewDigest(vmMockDigest)
-	if err != nil {
-		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)
-		return errors.Wrapf(err, "failed to parse digest for VM %q", vm.GetName())
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
@@ -61,4 +57,11 @@ func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.Virtu
 	vm.Scan = toVirtualMachineScan(vr)
 	log.Debugf("Enriched VM %s with %d components", vm.GetName(), len(vm.GetScan().GetComponents()))
 	return nil
+}
+
+func init() {
+	vmDigest, err := name.NewDigest(vmMockDigest)
+	if err != nil {
+		panic(fmt.Sprintf(err, "failed to parse mock digest %q", vmDigest))
+	}
 }
