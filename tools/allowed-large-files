@@ -12,6 +12,7 @@ central/networkgraph/service/service_impl_test.go
 central/networkpolicies/graph/evaluator_test.go
 central/processlisteningonport/datastore/datastore_impl_test.go
 central/pruning/pruning_test.go
+central/reports/service/v2/service_impl_test.go
 central/splunk/violations_test.go
 central/testutils/testdata/imgdata.json.gz
 central/vulnmgmt/vulnerabilityrequest/datastore/datastore_impl_postgres_test.go
@@ -65,4 +66,3 @@ ui/apps/platform/package-lock.json
 ui/apps/platform/src/Containers/Integrations/IntegrationForm/Forms/SignatureIntegrationForm.tsx
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg
-central/reports/service/v2/service_impl_test.go
