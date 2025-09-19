@@ -2,6 +2,10 @@ package virtualmachine
 
 import (
 	"context"
+	"io"
+	"net"
+	"strconv"
+
 	"github.com/mdlayher/vsock"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -9,9 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
-	"io"
-	"net"
-	"strconv"
 )
 
 var log = logging.LoggerForModule()
