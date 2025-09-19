@@ -16,7 +16,9 @@ var (
 			FieldPath: "{{.FieldPath}}",
 			Store:     {{.Store}},
 			Hidden:    {{.Hidden}},
+			{{- if .SearchCategory }}
 			Category:  []v1.SearchCategory{v1.{{.SearchCategory}}},
+			{{- end }}
 			{{- if .Analyzer }}
 			Analyzer:  search.{{.Analyzer}},
 			{{- end }}
@@ -52,7 +54,11 @@ var (
 func Get{{.TypeName}}Schema() *walker.Schema {
 	// Set up search options if not already done
 	if generated{{.TypeName}}Schema.OptionsMap == nil {
+		{{- if .SearchCategory }}
 		generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.{{.SearchCategory}}, generated{{.TypeName}}SearchFields))
+		{{- else }}
+		generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, generated{{.TypeName}}SearchFields))
+		{{- end }}
 	}
 	return generated{{.TypeName}}Schema
 }
