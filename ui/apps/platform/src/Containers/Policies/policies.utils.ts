@@ -629,33 +629,32 @@ export function getServerPolicy(policyUntrimmed: ClientPolicy): Policy {
     return serverPolicy;
 }
 
-export function getLifeCyclesUpdates(
-    values: ClientPolicy,
-    lifecycleStage: LifecycleStage,
-    isChecked: boolean
-) {
+export function getLifeCyclesUpdates(values: ClientPolicy, lifecycleStages: LifecycleStage[]) {
     /*
      * Set all changed values at once, because separate setFieldValue calls
      * for lifecycleStages and eventSource cause inconsistent incorrect validation.
      */
     const changedValues = cloneDeep(values);
-    if (isChecked) {
-        changedValues.lifecycleStages = [...values.lifecycleStages, lifecycleStage];
-    } else {
-        changedValues.lifecycleStages = values.lifecycleStages.filter(
-            (stage) => stage !== lifecycleStage
-        );
-        if (lifecycleStage === 'RUNTIME') {
-            changedValues.eventSource = 'NOT_APPLICABLE';
-        }
-        if (lifecycleStage === 'BUILD') {
-            changedValues.excludedImageNames = [];
-        }
+
+    if (!lifecycleStages.includes('RUNTIME')) {
+        changedValues.eventSource = 'NOT_APPLICABLE';
+    }
+
+    if (!lifecycleStages.includes('BUILD')) {
+        changedValues.excludedImageNames = [];
+    }
+
+    const removedLifecycleStages = values.lifecycleStages.filter(
+        (stage) => !lifecycleStages.includes(stage)
+    );
+    removedLifecycleStages.forEach((lifecycleStage) => {
         changedValues.enforcementActions = filterEnforcementActionsForRemovedLifecycleStage(
             lifecycleStage,
             values.enforcementActions
         );
-    }
+    });
+
+    changedValues.lifecycleStages = [...lifecycleStages];
     return changedValues;
 }
 

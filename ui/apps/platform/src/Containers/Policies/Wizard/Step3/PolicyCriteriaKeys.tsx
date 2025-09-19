@@ -47,8 +47,6 @@ type PolicyCriteriaKeysProps = {
 function PolicyCriteriaKeys({ keys }: PolicyCriteriaKeysProps) {
     const domains = getCriteriaDomains(keys);
 
-    // console.log(domains);
-
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             <Title headingLevel="h2">Drag out policy fields</Title>
