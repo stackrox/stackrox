@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -27,6 +28,7 @@ var (
 			return schema
 		}
 		schema = GetAlertSchema()
+		schema.ScopingResource = resources.Alert
 		RegisterTable(schema, CreateTableAlertsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ALERTS, schema)
 		return schema
