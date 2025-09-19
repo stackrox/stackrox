@@ -740,7 +740,6 @@ module.exports = [
             'src/Containers/ConfigManagement/**',
             'src/Containers/Dashboard/**',
             'src/Containers/Docs/**',
-            'src/Containers/ExceptionConfiguration/**',
             'src/Containers/Images/**',
             'src/Containers/Integrations/**',
             'src/Containers/Login/**',
