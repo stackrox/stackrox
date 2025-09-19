@@ -4,6 +4,7 @@ package schema
 
 import (
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -21,7 +22,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = GetComplianceOperatorRuleSchema()
+		schema = internal.GetComplianceOperatorRuleSchema()
 		schema.ScopingResource = resources.ComplianceOperator
 		RegisterTable(schema, CreateTableComplianceOperatorRulesStmt)
 		return schema

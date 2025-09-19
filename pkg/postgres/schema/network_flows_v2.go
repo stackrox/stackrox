@@ -37,15 +37,17 @@ var (
 		},
 	}
 
-	// NetworkFlowsSchema is the go schema for table `nodes`.
+	// NetworkFlowsSchema is the go schema for table `network_flows_v2`.
+	// Network flows is a partitioned table which is not supported by Gorm, as such, network flows
+	// do not utilize the gorm model and don't have a full schema.
 	NetworkFlowsSchema = func() *walker.Schema {
 		schema := GetSchemaForTable("network_flows_v2")
 		if schema != nil {
 			return schema
 		}
-		schema = GetNetworkFlowSchema()
-		RegisterTable(schema, CreateTableNetworkFlowsStmt)
-		return schema
+		// For now, return nil since network flows don't have a full walker schema
+		// due to being a partitioned table
+		return nil
 	}()
 )
 

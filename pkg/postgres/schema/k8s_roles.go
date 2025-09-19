@@ -5,6 +5,7 @@ package schema
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
@@ -23,7 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = GetK8SRoleSchema()
+		schema = internal.GetK8SRoleSchema()
 		schema.ScopingResource = resources.K8sRole
 		RegisterTable(schema, CreateTableK8sRolesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLES, schema)

@@ -5,6 +5,7 @@ package schema
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
@@ -23,7 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = GetNetworkEntitySchema()
+		schema = internal.GetNetworkEntitySchema()
 		schema.ScopingResource = resources.NetworkEntity
 		RegisterTable(schema, CreateTableNetworkEntitiesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_ENTITY, schema)

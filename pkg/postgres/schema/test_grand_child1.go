@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
@@ -25,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = GetTestGrandChild1Schema()
+		schema = internal.GetTestGrandChild1Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.TestChild1":       TestChild1Schema,
 			"storage.TestGGrandChild1": TestGGrandChild1Schema,

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -26,7 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = GetVersionSchema()
+		schema = internal.GetVersionSchema()
 		schema.ScopingResource = resources.Version
 		RegisterTable(schema, CreateTableVersionsStmt)
 		return schema

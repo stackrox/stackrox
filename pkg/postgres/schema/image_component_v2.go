@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
@@ -27,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = GetImageComponentV2Schema()
+		schema = internal.GetImageComponentV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":   ImagesSchema,
 			"storage.ImageV2": ImagesV2Schema,

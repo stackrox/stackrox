@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
@@ -25,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = GetComplianceRunMetadataSchema()
+		schema = internal.GetComplianceRunMetadataSchema()
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceRunMetadataStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_METADATA, schema)

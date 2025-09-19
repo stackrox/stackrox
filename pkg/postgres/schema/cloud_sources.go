@@ -6,6 +6,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
@@ -24,7 +25,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = GetCloudSourceSchema()
+		schema = internal.GetCloudSourceSchema()
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableCloudSourcesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLOUD_SOURCES, schema)
