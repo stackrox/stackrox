@@ -26,12 +26,24 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
     const query = getSearchFilterFromSearchString(reportSnapshot.viewBasedVulnReportFilters.query);
 
     // Extract vulnerability-specific filters
-    const severityValues = query.Severity;
-    const cveDiscoveredTimeValues = query['CVE Discovered Time'];
+    const findValueByKey = (
+        obj: Partial<Record<string, string | string[]>>,
+        targetKey: string
+    ): string | string[] | undefined => {
+        const foundKey = Object.keys(obj).find(
+            (key) => key.toLowerCase() === targetKey.toLowerCase()
+        );
+        return foundKey ? obj[foundKey] : undefined;
+    };
+
+    const severityValues = findValueByKey(query, 'Severity');
+    const cveDiscoveredTimeValues = findValueByKey(query, 'CVE Created Time');
 
     // Create scope filters excluding vulnerability-specific ones
     const scopeFilters = Object.fromEntries(
-        Object.entries(query).filter(([key]) => key !== 'Severity' && key !== 'CVE Discovered Time')
+        Object.entries(query).filter(
+            ([key]) => key.toLowerCase() !== 'severity' && key.toLowerCase() !== 'cve created time'
+        )
     );
 
     const scopeFilterChips = Object.entries(scopeFilters).map(([key, value]) => {
@@ -68,9 +80,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
             >
                 <DescriptionListGroup>
                     <DescriptionListTerm>Name</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        {reportSnapshot.requestName}
-                    </DescriptionListDescription>
+                    <DescriptionListDescription>{reportSnapshot.name}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
                     <DescriptionListTerm>Results type</DescriptionListTerm>
