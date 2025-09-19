@@ -19,5 +19,4 @@ var LazyLabels = []tracker.LazyLabel[*finding]{
 type finding struct {
 	tracker.CommonFinding
 	cluster *storage.Cluster
-	err     error
 }
