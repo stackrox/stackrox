@@ -123,7 +123,7 @@ func (c *Compliance) Start() {
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
 		if features.VirtualMachines.Enabled() {
-			log.Infof("VM relay enabled")
+			log.Infof("Virtual machine relay enabled")
 			relay := virtualmachine.NewRelay(conn)
 			err := relay.Run(ctx)
 			if err != nil {
