@@ -1300,7 +1300,7 @@ type CVEInfo struct {
 	// cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
 	CvssMetrics   []*CVSSScore `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics,proto3" json:"cvss_metrics,omitempty"`
 	Epss          *EPSS        `protobuf:"bytes,12,opt,name=epss,proto3" json:"epss,omitempty"`
-	Exploit       *Exploit     `protobuf:"bytes,13,opt,name=exploit,proto3" json:"exploit,omitempty"`
+	Exploit       *Exploit     `protobuf:"bytes,13,opt,name=exploit,proto3" json:"exploit,omitempty" search:"Exploit,store"` // @gotags: search:"Exploit,store"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

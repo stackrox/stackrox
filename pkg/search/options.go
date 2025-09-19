@@ -64,6 +64,8 @@ var (
 	CVEOrphaned        = newFieldLabel("CVE Orphaned")
 	CVEOrphanedTime    = newFieldLabel("CVE Orphaned Time")
 	EPSSProbablity     = newFieldLabel("EPSS Probability")
+	KnownExploit       = newFieldLabel("Known Exploit")
+	KnownRansomware    = newFieldLabel("Known Ransomware Campaign")
 	AdvisoryName       = newFieldLabel("Advisory Name")
 	AdvisoryLink       = newFieldLabel("Advisory Link")
 
