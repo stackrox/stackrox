@@ -24,42 +24,42 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 	e1p2open := createEndpointPairWithProcess(now, now, open, p2)
 
 	type event struct {
-		description                 string
-		input                       *endpointPair
-		expectedNumContainerLookups int
-		expectedNumUpdates          map[updatecomputer.EnrichedEntity]int
-		expectedDeduperState        map[string]string
-		expectedUpdatedProcesses    *indicator.ProcessInfo
+		description                          string
+		input                                *endpointPair
+		expectedNumContainerLookups          int
+		expectedNumUpdatesEndpoint           int
+		expectedNumUpdatesProcess            int
+		expectedDeduperState                 map[string]string
+		expectedEndpointProcessMappingLength int
+		expectedUpdatedProcesses             *indicator.ProcessInfo
 	}
 
 	tt := map[string]struct {
 		events []event
 	}{
-		"open-e1p1 followed by close-e1p1 should yield empty deduper": {
+		"open-e1p1 followed by close-e1p1 should yield empty deduper and mapping": {
 			events: []event{
 				{
 					description:                 "Open endpoint e1 with new process p1",
 					input:                       e1p1open,
 					expectedNumContainerLookups: 1,
-					expectedNumUpdates: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  1,
-						updatecomputer.EndpointEnrichedEntity: 1,
-					},
+					expectedNumUpdatesEndpoint:  1,
+					expectedNumUpdatesProcess:   1,
 					expectedDeduperState: map[string]string{
 						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p1open.processListeningIndicator().Key(indicator.HashingAlgoHash),
 					},
-					expectedUpdatedProcesses: &p1,
+					expectedEndpointProcessMappingLength: 1,
+					expectedUpdatedProcesses:             &p1,
 				},
 				{
-					description:                 "Closing endpoint e1 with new process p1",
-					input:                       e1p1closed,
-					expectedNumContainerLookups: 1,
-					expectedNumUpdates: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  1,
-						updatecomputer.EndpointEnrichedEntity: 1,
-					},
-					expectedDeduperState:     map[string]string{},
-					expectedUpdatedProcesses: &p1,
+					description:                          "Closing endpoint e1 with new process p1",
+					input:                                e1p1closed,
+					expectedNumContainerLookups:          1,
+					expectedNumUpdatesEndpoint:           1,
+					expectedNumUpdatesProcess:            1,
+					expectedDeduperState:                 map[string]string{},
+					expectedEndpointProcessMappingLength: 0,
+					expectedUpdatedProcesses:             &p1,
 				},
 			},
 		},
@@ -69,54 +69,50 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					description:                 "Open endpoint e1 with new process p1",
 					input:                       e1p1open,
 					expectedNumContainerLookups: 1,
-					expectedNumUpdates: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  1,
-						updatecomputer.EndpointEnrichedEntity: 1,
-					},
-					expectedUpdatedProcesses: &p1,
+					expectedNumUpdatesEndpoint:  1,
+					expectedNumUpdatesProcess:   1,
 					expectedDeduperState: map[string]string{
 						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p1open.processListeningIndicator().Key(indicator.HashingAlgoHash),
 					},
+					expectedEndpointProcessMappingLength: 1,
+					expectedUpdatedProcesses:             &p1,
 				},
 				{
 					description:                 "Open the same endpoint e1 with new process p2",
 					input:                       e1p2open,
 					expectedNumContainerLookups: 1,
-					expectedNumUpdates: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  1,
-						updatecomputer.EndpointEnrichedEntity: 0,
-					},
+					expectedNumUpdatesEndpoint:  0,
+					expectedNumUpdatesProcess:   1,
 					expectedDeduperState: map[string]string{
 						e1p2open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p2open.processListeningIndicator().Key(indicator.HashingAlgoHash),
 					},
-					expectedUpdatedProcesses: &p2,
+					expectedEndpointProcessMappingLength: 1,
+					expectedUpdatedProcesses:             &p2,
 				},
 			},
 		},
 		"duplicated inputs should not yield duplicated updates": {
 			events: []event{
 				{
-					description:                 "Open endpoint e1 with new process p1",
-					input:                       e1p1open,
-					expectedNumContainerLookups: 1,
-					expectedNumUpdates: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  1,
-						updatecomputer.EndpointEnrichedEntity: 1,
-					},
-					expectedUpdatedProcesses: &p1,
+					description:                          "Open endpoint e1 with new process p1",
+					input:                                e1p1open,
+					expectedNumContainerLookups:          1,
+					expectedNumUpdatesEndpoint:           1,
+					expectedNumUpdatesProcess:            1,
+					expectedEndpointProcessMappingLength: 1,
+					expectedUpdatedProcesses:             &p1,
 				},
 				{
 					description:                 "Open the same endpoint e1 with the same process p1",
 					input:                       e1p1open,
 					expectedNumContainerLookups: 1,
-					expectedNumUpdates: map[updatecomputer.EnrichedEntity]int{
-						updatecomputer.ProcessEnrichedEntity:  0,
-						updatecomputer.EndpointEnrichedEntity: 0,
-					},
+					expectedNumUpdatesEndpoint:  0,
+					expectedNumUpdatesProcess:   0,
 					expectedDeduperState: map[string]string{
 						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p1open.processListeningIndicator().Key(indicator.HashingAlgoHash),
 					},
-					expectedUpdatedProcesses: nil,
+					expectedEndpointProcessMappingLength: 1,
+					expectedUpdatedProcesses:             nil,
 				},
 			},
 		},
@@ -131,23 +127,22 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 				b.updateEp(e.input)
 				b.thenTickerTicks()
 				// Calculate total number of expected updates to Central in this tick
-				expectedNumMessagesToCentral := 0
-				for _, value := range e.expectedNumUpdates {
-					expectedNumMessagesToCentral += value
-				}
+				expectedNumMessagesToCentral := e.expectedNumUpdatesEndpoint + e.expectedNumUpdatesProcess
 				updatesP, updatesE := b.getUpdates(expectedNumMessagesToCentral)
 				b.T().Logf("event[%d]: got updatesP: %v", i, updatesP)
 				b.T().Logf("event[%d]: got updatesE: %v", i, updatesE)
 				b.printDedupers()
 				b.assertNoOtherUpdates()
 
-				b.Require().Equal(e.expectedNumUpdates[updatecomputer.ProcessEnrichedEntity], len(updatesP), "Number of process updates should match")
-				b.Require().Equal(e.expectedNumUpdates[updatecomputer.EndpointEnrichedEntity], len(updatesE), "Number of endpoint updates should match")
+				b.Require().Equal(e.expectedNumUpdatesProcess, len(updatesP), "Number of process updates should match")
+				b.Require().Equal(e.expectedNumUpdatesEndpoint, len(updatesE), "Number of endpoint updates should match")
 
 				if e.expectedDeduperState != nil {
 					b.assertDeduperState(e.expectedDeduperState)
 				}
-				if e.expectedNumUpdates[updatecomputer.ProcessEnrichedEntity] > 0 && e.expectedUpdatedProcesses != nil {
+				b.assertEndpointProcessMappingLength(e.expectedEndpointProcessMappingLength)
+
+				if e.expectedNumUpdatesProcess > 0 && e.expectedUpdatedProcesses != nil {
 					b.Equal(e.expectedUpdatedProcesses.ProcessName, updatesP[0].GetProcess().GetProcessName(), "Updated process name should match")
 					b.Equal(e.expectedUpdatedProcesses.ProcessArgs, updatesP[0].GetProcess().GetProcessArgs(), "Updated process args should match")
 					b.Equal(e.expectedUpdatedProcesses.ProcessExec, updatesP[0].GetProcess().GetProcessExecFilePath(), "Updated process exec should match")
@@ -170,6 +165,10 @@ func (b *sendNetflowsSuite) assertDeduperState(expected map[string]string) {
 	} else {
 		b.T().Skip("Update computer doesn't support deduper state access")
 	}
+}
+
+func (b *sendNetflowsSuite) assertEndpointProcessMappingLength(expected int) {
+	b.Lenf(b.m.endpointProcessMapping, expected, "endpoint-process mapping should have length %d", expected)
 }
 
 func (b *sendNetflowsSuite) printDedupers() {
