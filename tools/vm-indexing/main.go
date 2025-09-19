@@ -20,7 +20,7 @@ var log = logging.LoggerForModule()
 func main() {
 	cfg := index.NodeIndexerConfig{
 		// Where to start searching for the rpm db - usually /usr/share/rpm or /var/lib/rpm
-		HostPath: "/usr/share/rpm",
+		HostPath: "/",
 		// Client used to fetch the mapping json
 		Client: &http.Client{
 			Timeout: 10 * time.Second,

@@ -156,15 +156,19 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 	}
 	defer pkgutils.IgnoreError(layer.Close)
 
+	log.Debugf("layer %v", layer)
+
 	repos, err := runRepositoryScanner(ctx, l.cfg, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run repository scanner")
 	}
+	log.Debugf("repos %v", repos)
 
 	pkgs, err := runPackageScanner(ctx, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run package scanner")
 	}
+	log.Debugf("pkg %v", pkgs)
 
 	ccReport, err := runCoalescer(ctx, ccLayerDigest, repos, pkgs)
 	if err != nil {
@@ -234,19 +238,39 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 }
 
 func runPackageScanner(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
-	scanner := rpm.Scanner{}
+	scanner := rhel.PackageScanner{}
+	scanner2 := rpm.Scanner{}
 	pkgs, err := scanner.Scan(ctx, layer)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to invoke RPM scanner")
+		return nil, errors.Wrap(err, "failed to invoke RHEL scanner")
 	}
+	pkgs2, err := scanner2.Scan(ctx, layer)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to invok RPM scanner")
+	}
+
+	log.Infof("lvm --> pkgs rhel: %v", func() []string {
+		var ret []string
+		for _, pkg := range pkgs {
+			ret = append(ret, pkg.Name)
+		}
+		return ret
+	}())
+	log.Infof("lvm --> pkgs rpm: %v", func() []string {
+		var ret []string
+		for _, pkg := range pkgs2 {
+			ret = append(ret, pkg.Name)
+		}
+		return ret
+	}())
 
 	// Filter out packages in which we are not interested.
 	// At this time, we are only interested in the RHCOS RPM database.
 	filtered := pkgs[:0]
 	for _, pkg := range pkgs {
-		if pkg.PackageDB == rhcosPackageDB {
-			filtered = append(filtered, pkg)
-		}
+		// if pkg.PackageDB == rhcosPackageDB {
+		filtered = append(filtered, pkg)
+		// }
 	}
 	for i, p := range filtered {
 		p.ID = strconv.Itoa(i)
