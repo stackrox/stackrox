@@ -69,7 +69,8 @@ const defaultNewClusterType = 'KUBERNETES_CLUSTER';
 const defaultCollectionMethod = 'CORE_BPF';
 
 export const newClusterDefault = {
-    id: undefined,
+    // TODO Add Cluster type and add missing properties?
+    id: undefined, // TODO empty string?
     name: '',
     type: defaultNewClusterType,
     mainImage: 'stackrox/main',
@@ -77,13 +78,11 @@ export const newClusterDefault = {
     centralApiEndpoint: 'central.stackrox:443',
     runtimeSupport: false,
     collectionMethod: defaultCollectionMethod,
-    DEPRECATEDProviderMetadata: null,
     admissionControllerEvents: true,
     admissionController: true, // default changed in 4.9
     admissionControllerUpdates: true, // default changed in 4.9
-    admissionControlFailOnError: false, // property added in 4.9 false means Fail open
-    DEPRECATEDOrchestratorMetadata: null,
-    status: undefined,
+    admissionControllerFailOnError: false, // property added in 4.9 false means Fail open
+    status: null,
     tolerationsConfig: {
         disabled: false,
     },
@@ -96,6 +95,8 @@ export const newClusterDefault = {
             disableBypass: false,
         },
         registryOverride: '',
+        disableAuditLogs: false,
+        autoLockProcessBaselinesConfig: null,
     },
     healthStatus: undefined,
     slimCollector: false,
