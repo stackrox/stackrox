@@ -55,12 +55,14 @@ function SensorUpgradePanel({
                                 <SensorUpgrade upgradeStatus={upgradeStatus} />
                             </DescriptionListDescription>
                         </DescriptionListGroup>
-                        <DescriptionListGroup>
-                            <DescriptionListTerm>Status reasoning</DescriptionListTerm>
-                            <DescriptionListDescription>
-                                {statusReason || 'Unknown'}
-                            </DescriptionListDescription>
-                        </DescriptionListGroup>
+                        {statusReason && (
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Sensor information</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    {statusReason}
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                        )}
                         {actionProps && (
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Available action</DescriptionListTerm>

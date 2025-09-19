@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	runner     *aggregatorRunner
+	runner     trackerRunner
 	onceRunner sync.Once
 
 	log = logging.LoggerForModule()
@@ -20,15 +20,18 @@ var (
 
 type Runner interface {
 	http.Handler
-	ValidateConfiguration(*storage.PrometheusMetrics) (*RunnerConfiguration, error)
-	Reconfigure(*RunnerConfiguration)
+	ValidateConfiguration(*storage.PrometheusMetrics) (RunnerConfiguration, error)
+	Reconfigure(RunnerConfiguration)
 }
 
 // Singleton returns a runner, or nil if there were errors during
 // initialization. nil runner is safe, but no-op.
 func Singleton() Runner {
 	onceRunner.Do(func() {
-		runner = makeRunner(deploymentDS.Singleton(), alertDS.Singleton())
+		runner = makeRunner(&runnerDatastores{
+			deploymentDS.Singleton(),
+			alertDS.Singleton(),
+		})
 		go runner.initialize(configDS.Singleton())
 	})
 	return runner

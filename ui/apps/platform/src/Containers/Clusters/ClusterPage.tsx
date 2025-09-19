@@ -202,7 +202,12 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
     function onChange(path: string, value: boolean | number | string) {
         // path can be a dot path to property like: tolerationsConfig.disabled
         setSelectedCluster((oldClusterSettings) => {
-            if (get(oldClusterSettings, path) === undefined) {
+            if (
+                get(oldClusterSettings, path) === undefined &&
+                path !== 'dynamicConfig.autoLockProcessBaselinesConfig.enabled'
+            ) {
+                // TODO delete if statement?
+                // Added exception above to set property if autoLockProcessBaselinesConfig is null.
                 return oldClusterSettings;
             }
 

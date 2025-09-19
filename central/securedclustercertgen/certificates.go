@@ -48,14 +48,10 @@ func IssueSecuredClusterCerts(namespace, clusterID string, sensorSupportsCARotat
 		return nil, errors.Wrap(err, "could not load CA for signing")
 	}
 
-	var secondaryCA mtls.CA
-	if sensorSupportsCARotation {
-		secondaryCA, err = mtls.SecondaryCAForSigning()
-		if err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				log.Warnf("Failed to load secondary CA for signing (certificates will still be issued): %v", err)
-			}
-			secondaryCA = nil
+	secondaryCA, err := mtls.SecondaryCAForSigning()
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Warnf("Failed to load secondary CA for signing (certificates will still be issued): %v", err)
 		}
 	}
 
@@ -77,16 +73,18 @@ func IssueSecuredClusterCertsWithCAs(
 		return nil, errors.New("primary CA is required")
 	}
 
-	// If CA rotation is enabled and both CAs are present, ensure the primary CA is the one that expires later.
-	if sensorSupportsCARotation && secondaryCA != nil {
-		primaryCACert := primaryCA.Certificate()
-		secondaryCACert := secondaryCA.Certificate()
-		if secondaryCACert.NotAfter.After(primaryCACert.NotAfter) {
+	if secondaryCA != nil {
+		if sensorSupportsCARotation {
+			// If CA rotation is enabled, ensure the signing CA is the one that expires later.
+			primaryCACert := primaryCA.Certificate()
+			secondaryCACert := secondaryCA.Certificate()
+			if secondaryCACert.NotAfter.After(primaryCACert.NotAfter) {
+				primaryCA, secondaryCA = secondaryCA, primaryCA
+			}
+		} else if sensorCAFingerprint != "" && sensorCAFingerprint == cryptoutils.CertFingerprint(secondaryCA.Certificate()) {
+			// If a CA fingerprint is provided, prefer the matching CA. Otherwise just use the primary CA.
 			primaryCA, secondaryCA = secondaryCA, primaryCA
 		}
-	} else if sensorCAFingerprint != "" && secondaryCA != nil && sensorCAFingerprint == cryptoutils.CertFingerprint(secondaryCA.Certificate()) {
-		// If a CA fingerprint is provided, prefer the matching CA. Otherwise just use the primary CA.
-		primaryCA, secondaryCA = secondaryCA, primaryCA
 	}
 
 	certIssuer := certIssuerImpl{
