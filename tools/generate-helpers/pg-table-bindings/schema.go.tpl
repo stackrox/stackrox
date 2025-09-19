@@ -15,6 +15,7 @@ import (
     {{- if .FeatureFlag }}
     "github.com/stackrox/rox/pkg/features"{{- end }}
     "github.com/stackrox/rox/pkg/postgres"
+    "github.com/stackrox/rox/pkg/postgres/schema/internal"
     "github.com/stackrox/rox/pkg/postgres/walker"
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/sac/resources"
@@ -52,9 +53,9 @@ var (
         if schema != nil {
             return schema
         }
-        schema = Get{{.TrimmedType}}Schema()
+        schema = internal.Get{{.TrimmedType}}Schema()
         {{- else}}
-        schema = Get{{.TrimmedType}}Schema()
+        schema = internal.Get{{.TrimmedType}}Schema()
         {{- end}}
 
         {{- if gt (len .References) 0 }}

@@ -15,11 +15,13 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/spf13/cobra"
-	_ "github.com/stackrox/rox/generated/storage"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/generate-helpers/common"
@@ -361,10 +363,8 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 		fields = append(fields, optimizedField)
 	}
 
-	// Generate search fields (simplified approach - use empty list for now)
-	var searchFields []OptimizedSearchField
-	// Note: Search field generation is complex and will be handled by the build system
-	// For now, we generate the schema structure and search fields will be empty
+	// Generate search fields using reflection on the protobuf type
+	searchFields := generateSearchFields(props.Type, trimmedType)
 
 	// Clean search category name
 	cleanSearchCategory := strings.TrimPrefix(searchCategory, "v1.")
@@ -372,7 +372,7 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 	data := OptimizedSchemaData{
 		TypeName:       trimmedType,
 		Table:          schema.Table,
-		Type:           props.Type,
+		Type:           schema.Type, // Use schema.Type instead of props.Type to preserve pointer asterisk
 		SearchCategory: cleanSearchCategory,
 		Fields:         fields,
 		SearchFields:   searchFields,
@@ -387,31 +387,165 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 		"SearchFields":   data.SearchFields,
 	}
 
-	fileName := filepath.Join(props.SchemaDirectory, fmt.Sprintf("generated_%s.go", schema.Table))
+	internalDir := filepath.Join(props.SchemaDirectory, "internal")
+	if err := os.MkdirAll(internalDir, 0755); err != nil {
+		return fmt.Errorf("failed to create internal directory: %w", err)
+	}
+	fileName := filepath.Join(internalDir, fmt.Sprintf("%s.go", schema.Table))
 	return common.RenderFile(templateMap, optimizedSchemaTemplate, fileName)
 }
 
 func getDataTypeName(dataType interface{}) string {
-	switch dataType {
-	case nil:
-		return "String" // default
+	if dataType == nil {
+		return "" // nil should map to empty string, not "String"
+	}
+
+	// Convert the DataType value to string and map to Go constant names
+	dataTypeStr := fmt.Sprintf("%v", dataType)
+	switch dataTypeStr {
+	case "":
+		return "" // empty DataType should remain empty
+	case "bytes":
+		return "Bytes"
+	case "bool":
+		return "Bool"
+	case "numeric":
+		return "Numeric"
+	case "string":
+		return "String"
+	case "datetime":
+		return "DateTime"
+	case "map":
+		return "Map"
+	case "enum":
+		return "Enum"
+	case "stringarray":
+		return "StringArray"
+	case "enumarray":
+		return "EnumArray"
+	case "integer":
+		return "Integer"
+	case "intarray":
+		return "IntArray"
+	case "biginteger":
+		return "BigInteger"
+	case "uuid":
+		return "UUID"
+	case "cidr":
+		return "CIDR"
 	default:
-		// Try to extract the type name from the interface
-		dataTypeStr := fmt.Sprintf("%v", dataType)
-		if strings.Contains(dataTypeStr, "String") {
-			return "String"
-		} else if strings.Contains(dataTypeStr, "Integer") {
-			return "Integer"
-		} else if strings.Contains(dataTypeStr, "Bool") {
-			return "Bool"
-		} else if strings.Contains(dataTypeStr, "DateTime") {
-			return "DateTime"
-		} else if strings.Contains(dataTypeStr, "Map") {
-			return "Map"
-		} else if strings.Contains(dataTypeStr, "Array") {
-			return "StringArray"
-		} else {
-			return "String" // fallback
-		}
+		return "String" // fallback
 	}
 }
+
+func generateSearchFields(protoType, trimmedType string) []OptimizedSearchField {
+	if protoType == "" {
+		return []OptimizedSearchField{}
+	}
+
+	// Get the protobuf type using reflection from the storage package
+
+	// Try to find the actual type by name in the storage package
+	var protoObj interface{}
+	switch trimmedType {
+	case "Alert":
+		protoObj = &storage.Alert{}
+	case "Cluster":
+		protoObj = &storage.Cluster{}
+	case "Deployment":
+		protoObj = &storage.Deployment{}
+	case "Image":
+		protoObj = &storage.Image{}
+	case "Policy":
+		protoObj = &storage.Policy{}
+	case "Node":
+		protoObj = &storage.Node{}
+	case "Secret":
+		protoObj = &storage.Secret{}
+	case "Role":
+		protoObj = &storage.Role{}
+	// Add more cases as needed for other types
+	default:
+		// For types we don't have explicit cases for, return empty for now
+		log.Printf("No explicit case for type %s, returning empty search fields", trimmedType)
+		return []OptimizedSearchField{}
+	}
+
+	if protoObj == nil {
+		return []OptimizedSearchField{}
+	}
+
+	// Use the existing search.Walk functionality to get search fields
+	searchCategory := getSearchCategoryForType(trimmedType)
+	optionsMap := search.Walk(searchCategory, "", protoObj)
+
+	// Convert OptionsMap to our OptimizedSearchField format
+	var searchFields []OptimizedSearchField
+	for fieldLabel, field := range optionsMap.Original() {
+		searchField := OptimizedSearchField{
+			FieldLabel:     string(fieldLabel),
+			FieldPath:      field.FieldPath,
+			Store:          field.Store,
+			Hidden:         field.Hidden,
+			SearchCategory: getSearchCategoryName(searchCategory),
+		}
+
+		// Add analyzer if present
+		if field.Analyzer != "" {
+			searchField.Analyzer = field.Analyzer
+		}
+
+		searchFields = append(searchFields, searchField)
+	}
+
+	return searchFields
+}
+
+func getSearchCategoryForType(typeName string) v1.SearchCategory {
+	switch typeName {
+	case "Alert":
+		return v1.SearchCategory_ALERTS
+	case "Cluster":
+		return v1.SearchCategory_CLUSTERS
+	case "Deployment":
+		return v1.SearchCategory_DEPLOYMENTS
+	case "Image":
+		return v1.SearchCategory_IMAGES
+	case "Policy":
+		return v1.SearchCategory_POLICIES
+	case "Node":
+		return v1.SearchCategory_NODES
+	case "Secret":
+		return v1.SearchCategory_SECRETS
+	case "Role":
+		return v1.SearchCategory_ROLES
+	// Add more mappings as needed
+	default:
+		return v1.SearchCategory_SEARCH_UNSET
+	}
+}
+
+func getSearchCategoryName(category v1.SearchCategory) string {
+	// Convert category back to string name for template
+	switch category {
+	case v1.SearchCategory_ALERTS:
+		return "SearchCategory_ALERTS"
+	case v1.SearchCategory_CLUSTERS:
+		return "SearchCategory_CLUSTERS"
+	case v1.SearchCategory_DEPLOYMENTS:
+		return "SearchCategory_DEPLOYMENTS"
+	case v1.SearchCategory_IMAGES:
+		return "SearchCategory_IMAGES"
+	case v1.SearchCategory_POLICIES:
+		return "SearchCategory_POLICIES"
+	case v1.SearchCategory_NODES:
+		return "SearchCategory_NODES"
+	case v1.SearchCategory_SECRETS:
+		return "SearchCategory_SECRETS"
+	case v1.SearchCategory_ROLES:
+		return "SearchCategory_ROLES"
+	default:
+		return "SearchCategory_SEARCH_UNSET"
+	}
+}
+

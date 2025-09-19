@@ -1,5 +1,5 @@
 
-package schema
+package internal
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -9,25 +9,25 @@ import (
 )
 
 var (
-	// generated{{.TypeName}}SearchFields contains pre-computed search fields for {{.Table}}
-	generated{{.TypeName}}SearchFields = map[search.FieldLabel]*search.Field{
+	// {{.TypeName}}SearchFields contains pre-computed search fields for {{.Table}}
+	{{.TypeName}}SearchFields = map[search.FieldLabel]*search.Field{
 		{{- range .SearchFields }}
 		search.FieldLabel("{{.FieldLabel}}"): {
 			FieldPath: "{{.FieldPath}}",
 			Store:     {{.Store}},
 			Hidden:    {{.Hidden}},
 			{{- if .SearchCategory }}
-			Category:  []v1.SearchCategory{v1.{{.SearchCategory}}},
+			Category:  v1.{{.SearchCategory}},
 			{{- end }}
 			{{- if .Analyzer }}
-			Analyzer:  search.{{.Analyzer}},
+			Analyzer:  "{{.Analyzer}}",
 			{{- end }}
 		},
 		{{- end }}
 	}
 
-	// generated{{.TypeName}}Schema is the pre-computed schema for {{.Table}} table
-	generated{{.TypeName}}Schema = &walker.Schema{
+	// {{.TypeName}}Schema is the pre-computed schema for {{.Table}} table
+	{{.TypeName}}Schema = &walker.Schema{
 		Table:    "{{.Table}}",
 		Type:     "{{.Type}}",
 		TypeName: "{{.TypeName}}",
@@ -38,7 +38,9 @@ var (
 				ColumnName: "{{.ColumnName}}",
 				Type:       "{{.Type}}",
 				SQLType:    "{{.SQLType}}",
+				{{- if .DataType }}
 				DataType:   postgres.{{.DataType}},
+				{{- end }}
 				{{- if .IsPrimaryKey }}
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
@@ -53,12 +55,12 @@ var (
 // Get{{.TypeName}}Schema returns the generated schema for {{.Table}}
 func Get{{.TypeName}}Schema() *walker.Schema {
 	// Set up search options if not already done
-	if generated{{.TypeName}}Schema.OptionsMap == nil {
+	if {{.TypeName}}Schema.OptionsMap == nil {
 		{{- if .SearchCategory }}
-		generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.{{.SearchCategory}}, generated{{.TypeName}}SearchFields))
+		{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.{{.SearchCategory}}, {{.TypeName}}SearchFields))
 		{{- else }}
-		generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, generated{{.TypeName}}SearchFields))
+		{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, {{.TypeName}}SearchFields))
 		{{- end }}
 	}
-	return generated{{.TypeName}}Schema
+	return {{.TypeName}}Schema
 }
