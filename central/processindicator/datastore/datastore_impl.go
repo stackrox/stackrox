@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -25,6 +26,8 @@ const (
 
 var (
 	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
+
+	addBatchSize = env.ProcessAddBatchSize.IntegerSetting()
 )
 
 type datastoreImpl struct {
@@ -96,7 +99,31 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.UpsertMany(ctx, indicators)
+	localBatchSize := addBatchSize
+
+	for {
+		if len(indicators) == 0 {
+			break
+		}
+
+		if len(indicators) < localBatchSize {
+			localBatchSize = len(indicators)
+		}
+
+		identifierBatch := indicators[:localBatchSize]
+
+		err := ds.storage.UpsertMany(ctx, identifierBatch)
+		if err != nil {
+			log.Warnf("error adding a batch of indicators: %v", err)
+		} else {
+			log.Debugf("successfully added a batch of %d process indicators", len(identifierBatch))
+		}
+
+		// Move the slice forward to start the next batch
+		indicators = indicators[localBatchSize:]
+	}
+
+	return nil
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
