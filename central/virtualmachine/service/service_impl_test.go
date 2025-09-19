@@ -197,7 +197,7 @@ func TestListVirtualMachines(t *testing.T) {
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					SearchRawVirtualMachines(ctx, gomock.Any()).
-					Return(storageVMsInReversedOrder, nil)
+					Return(storageVMs, nil)
 			},
 			expectedResult: &v2.ListVirtualMachinesResponse{
 				VirtualMachines: testVMs,
