@@ -11,6 +11,7 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -77,10 +78,26 @@ func (s *clusterGathererTestSuite) TestGather() {
 	s.mockNamespaceDatastore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, nil)
 	s.mockNodeDatastore.EXPECT().SearchRawNodes(gomock.Any(), gomock.Any()).Return(nil, nil)
 	s.mockConnectionManager.EXPECT().GetActiveConnections().Return(nil)
-	clusters := s.gatherer.Gather(context.Background(), true)
+	clusters := s.gatherer.Gather(context.Background(), true, nil)
 	s.Len(clusters, 1)
 	cluster := clusters[0]
 	mockCluster := mockClusters[0]
 	s.Equal(mockCluster.GetId(), cluster.ID)
 	s.Equal("Google", cluster.CloudProvider)
+}
+
+func (s *clusterGathererTestSuite) TestGatherWithClusterFilter() {
+	s.mockClusterDatastore.EXPECT().GetClusters(gomock.Any()).Return(mockClusters, nil).Times(2)
+	s.mockConnectionManager.EXPECT().GetActiveConnections().Return(nil).Times(2)
+
+	// Test filtering out clusters
+	clusters := s.gatherer.Gather(context.Background(), true, set.NewStringSet("nonexistent"))
+	s.Len(clusters, 0)
+
+	// Test including the cluster by name - need to mock these calls for the clusterFromDatastores path
+	s.mockNamespaceDatastore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, nil)
+	s.mockNodeDatastore.EXPECT().SearchRawNodes(gomock.Any(), gomock.Any()).Return(nil, nil)
+	clusters = s.gatherer.Gather(context.Background(), true, set.NewStringSet("123"))
+	s.Len(clusters, 1)
+	s.Equal(mockClusters[0].GetId(), clusters[0].ID)
 }
