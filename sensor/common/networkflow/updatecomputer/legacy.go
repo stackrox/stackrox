@@ -28,11 +28,6 @@ type Legacy struct {
 	lastSentStateMutex sync.RWMutex
 }
 
-func (l *Legacy) ComputeUpdatedEndpointsAndProcesses(currentEp map[indicator.ContainerEndpoint]timestamp.MicroTS, currentProc map[indicator.ProcessListening]timestamp.MicroTS, mapping map[indicator.ContainerEndpoint]*indicator.ProcessListening) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
-	//TODO implement me
-	panic("implement me")
-}
-
 // NewLegacy creates a new instance of the legacy update computer
 func NewLegacy() *Legacy {
 	return &Legacy{
@@ -56,6 +51,10 @@ func (l *Legacy) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint
 			return (&ep).ToProto(ts)
 		})
 	})
+}
+
+func (l *Legacy) ComputeUpdatedEndpointsAndProcesses(currentEp map[indicator.ContainerEndpoint]timestamp.MicroTS, currentProc map[indicator.ProcessListening]timestamp.MicroTS, mapping map[indicator.ContainerEndpoint]*indicator.ProcessListening) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
+	return l.ComputeUpdatedEndpoints(currentEp), l.ComputeUpdatedProcesses(currentProc)
 }
 
 func (l *Legacy) ComputeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
