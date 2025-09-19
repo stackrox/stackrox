@@ -175,7 +175,7 @@ func (b *sendNetflowsSuite) assertDeduperState(expected map[string]string) {
 func (b *sendNetflowsSuite) printDedupers() {
 	if testable, ok := b.uc.(updatecomputer.TestableUpdateComputer); ok {
 		testable.WithEndpointDeduperAccess(func(deduper map[string]string) {
-			b.T().Logf("endponit->process deduper: (%v)", deduper)
+			b.T().Logf("endpoint->process deduper: (%v)", deduper)
 		})
 	} else {
 		b.T().Log("Update computer doesn't support deduper state access")

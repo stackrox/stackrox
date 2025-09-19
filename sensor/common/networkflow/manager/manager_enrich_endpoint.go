@@ -115,7 +115,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	// SECTION: ENRICHMENT OF PROCESSES LISTENING ON PORTS
 	if env.ProcessesListeningOnPort.BooleanSetting() {
 		status.enrichmentConsumption.consumedPLOP = true
-		var processIndicator *indicator.ProcessListening = nil
+		var processIndicator *indicator.ProcessListening
 		processIndicator, resultPLOP, reasonPLOP = m.enrichPLOP(ep, container)
 		if processIndicator != nil {
 			processesListening[*processIndicator] = status.lastSeen

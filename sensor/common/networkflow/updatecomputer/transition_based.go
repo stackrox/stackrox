@@ -346,8 +346,7 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 		sendEndpointUpdate, sendProcessUpdate, transition, dAction := categorizeEndpointUpdate(currTS, epKey, procKey, c.deduperHasEndpointAndProcess)
 		updateMetrics(sendEndpointUpdate, transition, EndpointEnrichedEntity)
 		updateMetrics(sendProcessUpdate, transition, ProcessEnrichedEntity)
-		// TODO: Remove this log line before merging
-		log.Infof("Deduper action=%s endpoint, transition=%s, key=%s/%s", dAction.String(), transition.String(), epKey, procKey)
+
 		switch dAction {
 		case deduperActionAdd, deduperActionUpdateProcess:
 			concurrency.WithLock(&c.endpointsDeduperMutex, func() {
@@ -370,7 +369,6 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 			procUpdates = append(procUpdates, procInd.ToProto(currTS))
 		}
 	}
-	log.Infof("Mapping status: %v", mapping)
 
 	// Store into cache in case sending to Central fails.
 	c.cachedUpdatesEp = slices.Grow(c.cachedUpdatesEp, len(epUpdates))
