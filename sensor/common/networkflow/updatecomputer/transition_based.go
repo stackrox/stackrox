@@ -418,13 +418,6 @@ func categorizeEndpointUpdate(currTS timestamp.MicroTS, epKey, procKey string,
 	return false, true, TransitionTypeReplaceProcess, deduperActionUpdateProcess
 }
 
-func (c *TransitionBased) deduperHasEndpoint() func(epKey string) bool {
-	return func(epKey string) bool {
-		hasEp, _ := c.deduperHasEndpointAndProcess(epKey, "")
-		return hasEp
-	}
-}
-
 func (c *TransitionBased) deduperHasEndpointAndProcess(epKey, procKey string) (bool, bool) {
 	return concurrency.WithRLock2(&c.endpointsDeduperMutex, func() (bool, bool) {
 		pKey, ok := c.endpointsDeduper[epKey]
