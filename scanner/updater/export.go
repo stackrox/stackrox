@@ -18,6 +18,7 @@ import (
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater/manual"
@@ -51,7 +52,9 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	bundles["nvd"] = nvdOpts()
 	bundles["epss"] = epssOpts()
 	bundles["stackrox-rhel-csaf"] = redhatCSAFOpts()
-	bundles["cisa-kev"] = kevOpts()
+	if features.CISAKEV.Enabled() {
+		bundles["cisa-kev"] = kevOpts()
+	}
 
 	// ClairCore updaters.
 	for _, uSet := range []string{
