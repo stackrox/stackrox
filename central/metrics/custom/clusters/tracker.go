@@ -23,6 +23,9 @@ func New(ds clusterDS.DataStore) *tracker.TrackerBase[*finding] {
 func trackClusters(ctx context.Context, ds clusterDS.DataStore) iter.Seq[*finding] {
 	f := finding{}
 	return func(yield func(*finding) bool) {
+		if ds == nil {
+			return
+		}
 		_ = ds.WalkClusters(ctx, func(cluster *storage.Cluster) error {
 			f.cluster = cluster
 			if !yield(&f) {
