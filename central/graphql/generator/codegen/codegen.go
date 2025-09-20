@@ -20,6 +20,7 @@ import (
 var codegen string
 var templates = map[string]string{
 	"codegen":      codegen,
+	"bytes":        `base64.StdEncoding.EncodeToString(value)`,
 	"enum":         `value.String()`,
 	"enumslice":    `stringSlice(value)`,
 	"float":        `float64(value)`,
@@ -87,6 +88,9 @@ func getFieldTransform(fd fieldData) (templateName string, returnType string) {
 			return "pointer", fmt.Sprintf("(*%sResolver, error)", lower(fd.Type.Elem().Name()))
 		}
 	case reflect.Slice:
+		if fd.Type.Elem().Kind() == reflect.Uint8 {
+			return "bytes", "string"
+		}
 		template, ret := getFieldTransform(fieldData{Name: fd.Name, Type: fd.Type.Elem()})
 		if len(ret) > 0 && ret[0] == '(' {
 			// this converts (*fooResolver, error) into ([]*fooResolver, error)
