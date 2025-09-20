@@ -9,8 +9,10 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
+	"github.com/stackrox/rox/central/metrics/custom/node_vulnerabilities"
 	"github.com/stackrox/rox/central/metrics/custom/policy_violations"
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
+	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
@@ -33,6 +35,7 @@ type RunnerConfiguration []*custom.Configuration
 type runnerDatastores struct {
 	deployments deploymentDS.DataStore
 	alerts      alertDS.DataStore
+	nodes       nodeDS.DataStore
 }
 
 func makeRunner(ds *runnerDatastores) trackerRunner {
@@ -42,6 +45,9 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 	}, {
 		policy_violations.New(ds.alerts),
 		(*storage.PrometheusMetrics).GetPolicyViolations,
+	}, {
+		node_vulnerabilities.New(ds.nodes),
+		(*storage.PrometheusMetrics).GetNodeVulnerabilities,
 	},
 	}
 }
