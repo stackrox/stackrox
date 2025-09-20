@@ -1,6 +1,8 @@
 package enricher
 
 import (
+	"fmt"
+
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
@@ -20,7 +22,7 @@ var (
 	metadataHashToVersion = map[uint64]int{
 		// initial hash of the metadata maps to 0
 		// hash changed when mirror* fields were added to storage.DataSource.
-		9951397471562364405: 0,
+		17163336154989241852: 0,
 	}
 
 	metadataHash uint64
@@ -37,6 +39,9 @@ func init() {
 	var err error
 	metadataHash, err = hashstructure.Hash(metadata, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
 	utils.Must(err)
+
+	// Print the calculated hash value here
+	fmt.Printf(">>>> Current metadata hash: %d\n", metadataHash)
 
 	if val, ok := metadataHashToVersion[metadataHash]; !ok || val != metadataVersion {
 		panic("current metadata hash must be equal to current version in map")

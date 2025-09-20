@@ -51,4 +51,6 @@ message ImageComponentV2 {
   string architecture = 13;
 
   string image_id_v2 = 14; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+
+  int64 layer_idx = 15; // @gotags: search:"Component Layer Index,store,hidden"
 }

@@ -86,6 +86,11 @@ type storeImpl struct {
 	keyFence           concurrency.KeyFence
 }
 
+func (s *storeImpl) GetCandidateBaseImages(ctx context.Context, id string) ([]*common.CandidateBaseImage, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
 	tx *postgres.Tx, parts *imagePartsAsSlice,

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/image/datastore/store"
+	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -35,6 +36,8 @@ type DataStore interface {
 
 	DeleteImages(ctx context.Context, ids ...string) error
 	Exists(ctx context.Context, id string) (bool, error)
+
+	GetCandidateBaseImages(ctx context.Context, id string) ([]*common.CandidateBaseImage, error)
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, and searcher.

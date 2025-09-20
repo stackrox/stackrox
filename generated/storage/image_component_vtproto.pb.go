@@ -78,6 +78,7 @@ func (m *ImageComponentV2) CloneVT() *ImageComponentV2 {
 	r.Location = m.Location
 	r.Architecture = m.Architecture
 	r.ImageIdV2 = m.ImageIdV2
+	r.LayerIdx = m.LayerIdx
 	if m.SetTopCvss != nil {
 		r.SetTopCvss = m.SetTopCvss.(interface {
 			CloneVT() isImageComponentV2_SetTopCvss
@@ -253,6 +254,9 @@ func (this *ImageComponentV2) EqualVT(that *ImageComponentV2) bool {
 		return false
 	}
 	if this.ImageIdV2 != that.ImageIdV2 {
+		return false
+	}
+	if this.LayerIdx != that.LayerIdx {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -462,6 +466,11 @@ func (m *ImageComponentV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			return 0, err
 		}
 		i -= size
+	}
+	if m.LayerIdx != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LayerIdx))
+		i--
+		dAtA[i] = 0x78
 	}
 	if len(m.ImageIdV2) > 0 {
 		i -= len(m.ImageIdV2)
@@ -681,6 +690,9 @@ func (m *ImageComponentV2) SizeVT() (n int) {
 	l = len(m.ImageIdV2)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.LayerIdx != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.LayerIdx))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1408,6 +1420,25 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.ImageIdV2 = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerIdx", wireType)
+			}
+			m.LayerIdx = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LayerIdx |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2190,6 +2221,25 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.ImageIdV2 = stringValue
 			iNdEx = postIndex
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerIdx", wireType)
+			}
+			m.LayerIdx = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LayerIdx |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

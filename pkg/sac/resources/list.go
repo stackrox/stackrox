@@ -51,6 +51,8 @@ var (
 
 	Detection      = newResourceMetadata("Detection", permissions.GlobalScope)
 	Image          = newResourceMetadata("Image", permissions.NamespaceScope)
+	BaseImage      = newResourceMetadata("BaseImage", permissions.GlobalScope)
+	BaseImageLayer = newResourceMetadata("BaseImageLayer", permissions.GlobalScope)
 	VirtualMachine = newResourceMetadata("VirtualMachine", permissions.NamespaceScope)
 
 	// Integration groups all integration-related resources. It aims to cover
