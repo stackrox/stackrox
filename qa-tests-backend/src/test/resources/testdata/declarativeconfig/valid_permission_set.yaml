@@ -1,0 +1,9 @@
+name: ${PERMISSION_SET_KEY}
+description: declarative permission set used in testing
+resources:
+- resource: Integration
+  access: READ_ACCESS
+- resource: Administration
+  access: READ_ACCESS
+- resource: Access
+  access: READ_ACCESS
