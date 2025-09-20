@@ -161,3 +161,39 @@ func TestFromCIDRBytesInvalid(t *testing.T) {
 		assert.Equal(t, IPNetwork{}, actual)
 	}
 }
+
+func TestIPAddressCompare(t *testing.T) {
+	tests := map[string]struct {
+		a        IPAddress
+		b        IPAddress
+		expected int
+	}{
+		"should return zero when addresses are identical": {
+			a:        ParseIP("192.168.1.1"),
+			b:        ParseIP("192.168.1.1"),
+			expected: 0,
+		},
+		"should return negative when first address is lexicographically smaller": {
+			a:        ParseIP("192.168.1.1"),
+			b:        ParseIP("192.168.1.2"),
+			expected: -1,
+		},
+		"should return positive when first address is lexicographically larger": {
+			a:        ParseIP("192.168.1.2"),
+			b:        ParseIP("192.168.1.1"),
+			expected: 1,
+		},
+		"should return negative when IPv4 compared to IPv6 due to byte length": {
+			a:        ParseIP("192.168.1.1"),
+			b:        ParseIP("::1"),
+			expected: -12,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := IPAddressCompare(tt.a, tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
