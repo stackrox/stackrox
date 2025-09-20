@@ -13,3 +13,7 @@ export function toggleItemInArray<T>(
         : [...array, selectedItem];
     return newArray;
 }
+
+export function normalizeToArray<T>(value: T | T[]): T[] {
+    return Array.isArray(value) ? value : [value];
+}

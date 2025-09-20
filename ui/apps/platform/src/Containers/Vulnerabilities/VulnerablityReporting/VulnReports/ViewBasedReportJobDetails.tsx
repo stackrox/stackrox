@@ -14,16 +14,27 @@ import {
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { getSearchFilterFromSearchString } from 'utils/searchUtils';
+import { normalizeToArray } from 'utils/arrayUtils';
+import { isVulnerabilitySeverity } from 'types/cve.proto';
+import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
 
 export type ViewBasedReportJobDetailsProps = {
     reportSnapshot: ViewBasedReportSnapshot;
 };
 
 function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetailsProps) {
-    // @TODO: We need to separate the "CVE Severity" and "CVEs discovered since" filters from the rest of the filters.
-    // The relevant search terms are called "Severity" and "CVE Discovered Time".
     const query = getSearchFilterFromSearchString(reportSnapshot.viewBasedVulnReportFilters.query);
-    const scopeFilterChips = Object.entries(query).map(([key, value]) => {
+
+    // Extract vulnerability-specific filters
+    const severityValues = query.Severity;
+    const cveDiscoveredTimeValues = query['CVE Discovered Time'];
+
+    // Create scope filters excluding vulnerability-specific ones
+    const scopeFilters = Object.fromEntries(
+        Object.entries(query).filter(([key]) => key !== 'Severity' && key !== 'CVE Discovered Time')
+    );
+
+    const scopeFilterChips = Object.entries(scopeFilters).map(([key, value]) => {
         if (!value) {
             return null;
         }
@@ -98,15 +109,35 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                 <DescriptionListGroup>
                     <DescriptionListTerm>CVE severity</DescriptionListTerm>
                     <DescriptionListDescription>
-                        <Stack>
-                            <VulnerabilitySeverityIconText severity="CRITICAL_VULNERABILITY_SEVERITY" />
-                            <VulnerabilitySeverityIconText severity="IMPORTANT_VULNERABILITY_SEVERITY" />
-                        </Stack>
+                        {severityValues ? (
+                            <Stack>
+                                {normalizeToArray(severityValues)
+                                    .filter((severity) => isVulnerabilitySeverity(severity))
+                                    .map((severity) => (
+                                        <VulnerabilitySeverityIconText
+                                            key={severity}
+                                            severity={severity}
+                                        />
+                                    ))}
+                            </Stack>
+                        ) : (
+                            'All severities'
+                        )}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>CVEs discovered since</DescriptionListTerm>
-                    <DescriptionListDescription>All time</DescriptionListDescription>
+                    <DescriptionListTerm>CVEs discovered time</DescriptionListTerm>
+                    <DescriptionListDescription>
+                        {cveDiscoveredTimeValues ? (
+                            <Stack>
+                                {normalizeToArray(cveDiscoveredTimeValues).map((timeValue) => (
+                                    <div key={timeValue}>{formatCveDiscoveredTime(timeValue)}</div>
+                                ))}
+                            </Stack>
+                        ) : (
+                            'All time'
+                        )}
+                    </DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
         </Flex>
