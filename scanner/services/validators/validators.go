@@ -98,13 +98,22 @@ func validateContents(contents *v4.Contents) error {
 	if contents == nil {
 		return nil
 	}
-	if err := validateList(contents.GetPackages(), "Contents.Packages", validatePackage); err != nil {
+	if err := validateMap(contents.GetPackages(), "Contents.Packages", validatePackage); err != nil {
 		return err
 	}
-	if err := validateList(contents.GetDistributions(), "Contents.Distributions", validateDistribution); err != nil {
+	if err := validateList(contents.GetPackagesDEPRECATED(), "Contents.PackagesDEPRECATED", validatePackage); err != nil {
 		return err
 	}
-	if err := validateList(contents.GetRepositories(), "Contents.Repositories", validateRepository); err != nil {
+	if err := validateMap(contents.GetDistributions(), "Contents.Distributions", validateDistribution); err != nil {
+		return err
+	}
+	if err := validateList(contents.GetDistributionsDEPRECATED(), "Contents.DistributionsDEPRECATED", validateDistribution); err != nil {
+		return err
+	}
+	if err := validateMap(contents.GetRepositories(), "Contents.Repositories", validateRepository); err != nil {
+		return err
+	}
+	if err := validateList(contents.GetRepositoriesDEPRECATED(), "Contents.RepositoriesDEPRECATED", validateRepository); err != nil {
 		return err
 	}
 	for k, envs := range contents.GetEnvironments() {
@@ -112,6 +121,27 @@ func validateContents(contents *v4.Contents) error {
 			if env == nil {
 				return fmt.Errorf("Contents.Environments[%q] element #%d is empty", k, idx+1)
 			}
+		}
+	}
+	return nil
+}
+
+func validateMap[T hasIDAndCPE](l map[string]T, fieldName string, validateF func(T) error) error {
+	var n int
+	for _, o := range l {
+		n++
+		if reflect.ValueOf(o).IsZero() {
+			return fmt.Errorf("%s element #%d is empty", fieldName, n)
+		}
+		if o.GetId() == "" {
+			return fmt.Errorf("%s element #%d: Id is empty", fieldName, n)
+		}
+		_, err := cpe.Unbind(o.GetCpe())
+		if err != nil {
+			return fmt.Errorf("%s element #%d (id: %q): invalid CPE: %w", fieldName, n, o.GetId(), err)
+		}
+		if err := validateF(o); err != nil {
+			return fmt.Errorf("%s element #%d (id: %q): %w", fieldName, n, o.GetId(), err)
 		}
 	}
 	return nil
