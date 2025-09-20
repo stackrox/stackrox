@@ -22,12 +22,10 @@ func TestNoPanic(t *testing.T) {
 		report.Contents = &v4.Contents{}
 		imageScan(nil, report, scannerVersion)
 
-		report.Contents.Packages = []*v4.Package{}
+		report.Contents.Packages = map[string]*v4.Package{}
 		imageScan(nil, report, scannerVersion)
 
-		report.Contents.Packages = append(report.Contents.Packages, &v4.Package{
-			Id: "1",
-		})
+		report.Contents.Packages = map[string]*v4.Package{"1": {Id: "1"}}
 		imageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities = map[string]*v4.StringList{}
@@ -67,14 +65,14 @@ func TestConvert(t *testing.T) {
 					},
 				},
 			},
-			Distributions: []*v4.Distribution{
-				{
+			Distributions: map[string]*v4.Distribution{
+				"0": {
 					Did:       "rhel",
 					VersionId: "9",
 				},
 			},
-			Packages: []*v4.Package{
-				{
+			Packages: map[string]*v4.Package{
+				"1": {
 					Id:      "1",
 					Name:    "my-java-pkg",
 					Version: "1.2.3",
@@ -171,15 +169,15 @@ func TestComponents(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				HashId: "hashID",
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
+					Packages: map[string]*v4.Package{
+						"1": {
 							Id:      "1",
 							Name:    "glib2",
 							Version: "2.68.4-14.el9",
 						},
 					},
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"1": {
 							Id:        "1",
 							Did:       "rhel",
 							VersionId: "9",
@@ -251,15 +249,15 @@ func TestComponents(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				HashId: "hashID",
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
+					Packages: map[string]*v4.Package{
+						"1": {
 							Id:      "1",
 							Name:    "glib2",
 							Version: "2.68.4-14.el9",
 						},
 					},
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"1": {
 							Id:        "1",
 							Did:       "rhel",
 							VersionId: "9",
@@ -1073,8 +1071,8 @@ func TestOS(t *testing.T) {
 			expected: "rhel:9",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"-1": {
 							Did:       "rhel",
 							VersionId: "9",
 							Version:   "9",
@@ -1087,8 +1085,8 @@ func TestOS(t *testing.T) {
 			expected: "ubuntu:22.04",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"0": {
 							Did:       "ubuntu",
 							VersionId: "22.04",
 							Version:   "22.04 (Jammy)",
@@ -1101,8 +1099,8 @@ func TestOS(t *testing.T) {
 			expected: "debian:12",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"1": {
 							Did:       "debian",
 							VersionId: "12",
 							Version:   "12 (bookworm)",
@@ -1115,8 +1113,8 @@ func TestOS(t *testing.T) {
 			expected: "alpine:3.18",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"3": {
 							Did:       "alpine",
 							VersionId: "3.18",
 							Version:   "3.18",
@@ -1129,13 +1127,13 @@ func TestOS(t *testing.T) {
 			expected: "unknown",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"4": {
 							Did:       "alpine",
 							VersionId: "3.18",
 							Version:   "3.18",
 						},
-						{
+						"idk": {
 							Did: "idk",
 						},
 					},
