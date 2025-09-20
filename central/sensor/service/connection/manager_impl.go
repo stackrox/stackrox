@@ -128,15 +128,14 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 		return errors.Wrap(err, "failed to initialize upgrade controllers")
 	}
 
-	go m.updateClusterHealthForever()
+	t := time.NewTicker(clusterCheckinInterval)
+	go m.updateClusterHealthForever(t.C, t.Stop)
 	return nil
 }
 
-func (m *manager) updateClusterHealthForever() {
-	t := time.NewTicker(clusterCheckinInterval)
-	defer t.Stop()
-
-	for range t.C {
+func (m *manager) updateClusterHealthForever(ticker <-chan time.Time, close func()) {
+	defer close()
+	for range ticker {
 		clusters, err := m.clusters.GetClusters(managerCtx)
 		if err != nil {
 			log.Errorf("error updating cluster healths: %v", err)
@@ -145,7 +144,14 @@ func (m *manager) updateClusterHealthForever() {
 		for _, cluster := range clusters {
 			conn := m.GetConnection(cluster.GetId())
 			if conn == nil {
-				m.updateInactiveClusterHealth(cluster)
+				// Only update inactive health if the sensor doesn't have health monitoring capability
+				// If it has HealthMonitoringCap, rely on the health pipeline instead
+				if !cluster.GetHealthStatus().GetHealthInfoComplete() {
+					m.updateInactiveClusterHealth(cluster)
+				} else {
+					// For modern sensors with no connection, check if health data is corrupted
+					m.fixCorruptedHealthDataIfNeeded(cluster)
+				}
 				continue
 			}
 
@@ -153,7 +159,62 @@ func (m *manager) updateClusterHealthForever() {
 			// Otherwise, rely on cluster health pipeline.
 			if !conn.HasCapability(centralsensor.HealthMonitoringCap) {
 				m.updateActiveClusterHealth(cluster)
+			} else {
+				// For modern sensors with active connection, check if health data is corrupted
+				// from previous versions and fix it if needed
+				m.fixCorruptedHealthDataIfNeeded(cluster)
 			}
+		}
+	}
+}
+
+// fixCorruptedHealthDataIfNeeded detects and fixes health data that was corrupted
+// by the race condition bug in versions before the fix. This can happen when:
+// 1. A cluster was upgraded from an older version that had corrupted health data
+// 2. The health pipeline hasn't updated the data yet
+// 3. The LastContact timestamp is extremely old (indicating corruption)
+func (m *manager) fixCorruptedHealthDataIfNeeded(cluster *storage.Cluster) {
+	healthStatus := cluster.GetHealthStatus()
+	if healthStatus == nil {
+		return
+	}
+
+	lastContact := protoconv.ConvertTimestampToTimeOrDefault(healthStatus.GetLastContact(), time.Time{})
+
+	// If the last contact is more than 7 days old for a modern sensor, it's likely corrupted data
+	// This is conservative to avoid false positives while catching genuinely corrupted data
+	// (like the 4+ year old timestamps we've seen from the race condition bug)
+	if time.Since(lastContact) > 7*24*time.Hour {
+		log.Warnf("Detected potentially corrupted health data for cluster %s (last_contact: %v), updating to current time",
+			cluster.GetName(), lastContact)
+
+		// Determine appropriate sensor health status based on connection state
+		conn := m.GetConnection(cluster.GetId())
+		var sensorStatus storage.ClusterHealthStatus_HealthStatusLabel
+		if conn != nil {
+			// Active connection - sensor is healthy
+			sensorStatus = storage.ClusterHealthStatus_HEALTHY
+		} else {
+			// No connection - determine status based on how long since last contact
+			// Use the same logic as updateInactiveClusterHealth for consistency
+			sensorStatus = clusterhealth.PopulateInactiveSensorStatus(time.Now())
+		}
+
+		// Update health status with current timestamp to fix the corruption
+		clusterHealthStatus := &storage.ClusterHealthStatus{
+			SensorHealthStatus:      sensorStatus,
+			CollectorHealthStatus:   healthStatus.GetCollectorHealthStatus(),
+			LastContact:             protocompat.TimestampNow(),
+			CollectorHealthInfo:     healthStatus.GetCollectorHealthInfo(),
+			HealthInfoComplete:      healthStatus.GetHealthInfoComplete(),
+			AdmissionControlHealthStatus: healthStatus.GetAdmissionControlHealthStatus(),
+			AdmissionControlHealthInfo:   healthStatus.GetAdmissionControlHealthInfo(),
+			ScannerHealthInfo:       healthStatus.GetScannerHealthInfo(),
+		}
+		clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
+
+		if err := m.clusters.UpdateClusterHealth(managerCtx, cluster.GetId(), clusterHealthStatus); err != nil {
+			log.Errorf("error fixing corrupted health data for cluster %s (id: %s): %v", cluster.GetName(), cluster.GetId(), err)
 		}
 	}
 }
