@@ -285,13 +285,13 @@ function launch_central {
         rm -rf central-bundle "${k8s_dir}/central-bundle"
         echo "Generating Central bundle..."
 
-	roxctl_cmd=(
+        roxctl_cmd=(
           roxctl
-	  central generate
-	  "${ORCH}"
-	  "${EXTRA_ARGS[@]}"
-	  --output-dir="central-bundle"
-	  "${STORAGE}" "${STORAGE_ARGS[@]}"
+          central generate
+          "${ORCH}"
+          "${EXTRA_ARGS[@]}"
+          --output-dir="central-bundle"
+          "${STORAGE}" "${STORAGE_ARGS[@]}"
         )
 
         echo "Executing command: ${roxctl_cmd[@]}"
