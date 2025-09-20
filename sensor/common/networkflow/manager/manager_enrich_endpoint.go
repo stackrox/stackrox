@@ -54,10 +54,12 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS,
 		flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
 		flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "endpoints").Add(float64(len(hostConns.endpoints)))
 		for ep, status := range hostConns.endpoints {
-			resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, now)
-			action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
-			m.executeEndpointAction(action, &ep, status, hostConns, enrichedEndpoints, now)
-			updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, status)
+			concurrency.WithLock(&m.endpointProcessMappingMutex, func() {
+				resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, now)
+				action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
+				m.executeEndpointAction(action, &ep, status, hostConns, enrichedEndpoints, now)
+				updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, status)
+			})
 		}
 	})
 	concurrency.WithRLock(&m.activeEndpointsMutex, func() {
@@ -103,22 +105,33 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 
 	container := containerResult.Container
 
-	// SECTION: ENRICHMENT OF PROCESSES LISTENING ON PORTS
-	if env.ProcessesListeningOnPort.BooleanSetting() {
-		status.enrichmentConsumption.consumedPLOP = true
-		resultPLOP, reasonPLOP = m.enrichPLOP(ep, container, processesListening, status.lastSeen)
-	} else {
-		resultPLOP = EnrichmentResultSkipped
-		reasonPLOP = EnrichmentReasonEpFeaturePlopDisabled
-	}
-
 	// SECTION: ENRICHMENT OF ENDPOINT
-	status.enrichmentConsumption.consumedNetworkGraph = true
 	ind := indicator.ContainerEndpoint{
 		Entity:   networkgraph.EntityForDeployment(container.DeploymentID),
 		Port:     ep.endpoint.IPAndPort.Port,
 		Protocol: ep.endpoint.L4Proto.ToProtobuf(),
 	}
+
+	// SECTION: ENRICHMENT OF PROCESSES LISTENING ON PORTS
+	if env.ProcessesListeningOnPort.BooleanSetting() {
+		status.enrichmentConsumption.consumedPLOP = true
+		var processIndicator *indicator.ProcessListening
+		processIndicator, resultPLOP, reasonPLOP = m.enrichPLOP(ep, container)
+		if processIndicator != nil {
+			processesListening[*processIndicator] = status.lastSeen
+			m.endpointProcessMapping[ind] = processIndicator
+		} else {
+			// Process indicator has been updated from a value to nil (or was always nil)
+			delete(m.endpointProcessMapping, ind)
+		}
+
+	} else {
+		resultPLOP = EnrichmentResultSkipped
+		reasonPLOP = EnrichmentReasonEpFeaturePlopDisabled
+	}
+
+	// SECTION: ENRICHMENT OF ENDPOINT continued
+	status.enrichmentConsumption.consumedNetworkGraph = true
 
 	// Multiple endpoints from a collector can result in a single enriched endpoint,
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
@@ -146,12 +159,11 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 func (m *networkFlowManager) enrichPLOP(
 	ep *containerEndpoint,
 	container clusterentities.ContainerMetadata,
-	processesListening map[indicator.ProcessListening]timestamp.MicroTS,
-	lastSeen timestamp.MicroTS) (resultPLOP EnrichmentResult, reasonPLOP EnrichmentReasonEp) {
+) (ind *indicator.ProcessListening, resultPLOP EnrichmentResult, reasonPLOP EnrichmentReasonEp) {
 	if ep.processKey == emptyProcessInfo {
-		return EnrichmentResultInvalidInput, EnrichmentReasonEpEmptyProcessInfo
+		return nil, EnrichmentResultInvalidInput, EnrichmentReasonEpEmptyProcessInfo
 	}
-	indicatorPLOP := indicator.ProcessListening{
+	return &indicator.ProcessListening{
 		PodID:         container.PodID,
 		ContainerName: container.ContainerName,
 		DeploymentID:  container.DeploymentID,
@@ -160,9 +172,7 @@ func (m *networkFlowManager) enrichPLOP(
 		Protocol:      ep.endpoint.L4Proto.ToProtobuf(),
 		PodUID:        container.PodUID,
 		Namespace:     container.Namespace,
-	}
-	processesListening[indicatorPLOP] = lastSeen
-	return EnrichmentResultSuccess, EnrichmentReasonEp("")
+	}, EnrichmentResultSuccess, EnrichmentReasonEp("")
 }
 
 // deactivateEndpointNoLock removes endpoint from active endpoints and sets the timestamp in enrichedEndpoints.

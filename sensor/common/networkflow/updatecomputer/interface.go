@@ -14,8 +14,11 @@ import (
 type UpdateComputer interface {
 	// ComputeUpdatedConns updates based on currentState state and implementation-specific tracking
 	ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow
-	ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint
-	ComputeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor
+	ComputeUpdatedEndpointsAndProcesses(
+		endpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
+		processes map[indicator.ProcessListening]timestamp.MicroTS,
+		mapping map[indicator.ContainerEndpoint]*indicator.ProcessListening,
+	) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor)
 
 	// OnSuccessfulSend contains actions that should be executed after successful sending of updates to Central.
 	OnSuccessfulSend(currentConns map[indicator.NetworkConn]timestamp.MicroTS,

@@ -148,19 +148,20 @@ func NewManager(
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
 	mgr := &networkFlowManager{
-		connectionsByHost: make(map[string]*hostConnections),
-		clusterEntities:   clusterEntities,
-		publicIPs:         newPublicIPsManager(),
-		externalSrcs:      externalSrcs,
-		policyDetector:    policyDetector,
-		enricherTicker:    enricherTicker,
-		enricherTickerC:   enricherTicker.C,
-		updateComputer:    updateComputer,
-		initialSync:       &atomic.Bool{},
-		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
-		stopper:           concurrency.NewStopper(),
-		pubSub:            pubSub,
+		connectionsByHost:      make(map[string]*hostConnections),
+		clusterEntities:        clusterEntities,
+		publicIPs:              newPublicIPsManager(),
+		externalSrcs:           externalSrcs,
+		policyDetector:         policyDetector,
+		enricherTicker:         enricherTicker,
+		enricherTickerC:        enricherTicker.C,
+		updateComputer:         updateComputer,
+		initialSync:            &atomic.Bool{},
+		activeConnections:      make(map[connection]*networkConnIndicatorWithAge),
+		activeEndpoints:        make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		endpointProcessMapping: make(map[indicator.ContainerEndpoint]*indicator.ProcessListening),
+		stopper:                concurrency.NewStopper(),
+		pubSub:                 pubSub,
 	}
 	maxAgeSetting := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
 	if maxAgeSetting > 0 && maxAgeSetting <= enricherCycle {
@@ -208,6 +209,9 @@ type networkFlowManager struct {
 
 	clusterEntities EntityStore
 	externalSrcs    externalsrcs.Store
+
+	endpointProcessMappingMutex sync.RWMutex
+	endpointProcessMapping      map[indicator.ContainerEndpoint]*indicator.ProcessListening
 
 	// UpdateComputer implementation for computing flow updates that are sent to Central on each tick.
 	updateComputer updatecomputer.UpdateComputer
@@ -382,6 +386,9 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 			})
 		}
 	})
+	concurrency.WithRLock(&m.endpointProcessMappingMutex, func() {
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsMapping", "endpoints&processes").Set(float64(len(m.endpointProcessMapping)))
+	})
 	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
 	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
 
@@ -409,8 +416,10 @@ func (m *networkFlowManager) enrichAndSend() {
 
 	// The new changes are sent to Central using the update computer implementation.
 	updatedConns := m.updateComputer.ComputeUpdatedConns(currentConns)
-	updatedEndpoints := m.updateComputer.ComputeUpdatedEndpoints(currentEndpoints)
-	updatedProcesses := m.updateComputer.ComputeUpdatedProcesses(currentProcesses)
+	updatedEndpoints, updatedProcesses := concurrency.WithRLock2(&m.endpointProcessMappingMutex, func() ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
+		return m.updateComputer.ComputeUpdatedEndpointsAndProcesses(
+			currentEndpoints, currentProcesses, m.endpointProcessMapping)
+	})
 
 	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("connections").Add(float64(len(updatedConns)))
 	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
@@ -426,7 +435,7 @@ func (m *networkFlowManager) enrichAndSend() {
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
 		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
 			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSend(currentConns, currentEndpoints, nil)
+			m.updateComputer.OnSuccessfulSend(currentConns, currentEndpoints, currentProcesses)
 		}
 	}
 

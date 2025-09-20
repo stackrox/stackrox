@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -33,6 +34,7 @@ type sendNetflowsSuite struct {
 	suite.Suite
 	mockCtrl     *gomock.Controller
 	mockEntity   *mocksManager.MockEntityStore
+	uc           updatecomputer.UpdateComputer
 	m            *networkFlowManager
 	mockDetector *mocksDetector.MockDetector
 	fakeTicker   chan time.Time
@@ -47,7 +49,9 @@ func (b *sendNetflowsSuite) SetupTest() {
 	b.mockCtrl = gomock.NewController(b.T())
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
+	b.uc = updatecomputer.NewTransitionBased()
 	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, enrichTickerC)
+	b.m.updateComputer = b.uc
 
 	b.fakeTicker = make(chan time.Time)
 	go b.m.enrichConnections(b.fakeTicker)
@@ -138,7 +142,7 @@ func (b *sendNetflowsSuite) TestCloseEndpoint() {
 
 	b.updateEp(createEndpointPair(timestamp.Now().Add(-time.Hour), timestamp.Now()).lastSeen(timestamp.Now()))
 	b.thenTickerTicks()
-	b.assertOneUpdatedCloseEndpoint()
+	b.assertOneUpdatedEndpoint(false)
 }
 
 func (b *sendNetflowsSuite) TestCloseEndpointFailedLookup() {
@@ -158,7 +162,7 @@ func (b *sendNetflowsSuite) TestCloseOldEndpointFailedLookup() {
 	b.m.activeEndpoints[*pair.endpoint] = &containerEndpointIndicatorWithAge{}
 	b.updateEp(pair)
 	b.thenTickerTicks()
-	b.assertOneUpdatedCloseEndpoint()
+	b.assertOneUpdatedEndpoint(false)
 }
 
 func (b *sendNetflowsSuite) TestUnchangedConnection() {
@@ -246,12 +250,17 @@ func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
 	b.Assert().NotEqual(int32(0), netflowUpdate.NetworkFlowUpdate.GetUpdated()[0].GetLastSeenTimestamp().GetNanos(), "the connection should not be open")
 }
 
-func (b *sendNetflowsSuite) assertOneUpdatedCloseEndpoint() {
+func (b *sendNetflowsSuite) assertOneUpdatedEndpoint(isOpen bool) {
 	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdatedEndpoints(), 1, "one updated endpint")
-	b.Assert().NotEqual(int32(0), netflowUpdate.NetworkFlowUpdate.GetUpdatedEndpoints()[0].GetLastActiveTimestamp().GetNanos(), "the endpoint should not be open")
+	closeTS := netflowUpdate.NetworkFlowUpdate.GetUpdatedEndpoints()[0].GetLastActiveTimestamp().GetNanos()
+	if isOpen {
+		b.Assert().Equal(int32(0), closeTS, "the endpoint should be open but is closed")
+	} else {
+		b.Assert().NotEqual(int32(0), closeTS, "the endpoint should be closed but is open")
+	}
 }
 
 func mustNotRead[T any](t *testing.T, ch chan T) {

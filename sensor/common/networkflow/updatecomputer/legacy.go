@@ -45,7 +45,11 @@ func (l *Legacy) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp
 	})
 }
 
-func (l *Legacy) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
+func (l *Legacy) ComputeUpdatedEndpointsAndProcesses(currentEp map[indicator.ContainerEndpoint]timestamp.MicroTS, currentProc map[indicator.ProcessListening]timestamp.MicroTS, mapping map[indicator.ContainerEndpoint]*indicator.ProcessListening) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
+	return l.computeUpdatedEndpoints(currentEp), l.computeUpdatedProcesses(currentProc)
+}
+
+func (l *Legacy) computeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
 	return concurrency.WithRLock1(&l.lastSentStateMutex, func() []*storage.NetworkEndpoint {
 		return computeUpdates(current, l.enrichedEndpointsLastSentState, func(ep indicator.ContainerEndpoint, ts timestamp.MicroTS) *storage.NetworkEndpoint {
 			return (&ep).ToProto(ts)
@@ -53,7 +57,7 @@ func (l *Legacy) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint
 	})
 }
 
-func (l *Legacy) ComputeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
+func (l *Legacy) computeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
 		if len(current) > 0 {
 			logging.GetRateLimitedLogger().Warn(loggingRateLimiter,
