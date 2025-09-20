@@ -45,6 +45,7 @@ controller webhooks will now be configured to 1) always scan images inline 2) ei
 - ROX-28326: Custom Prometheus metrics exposed on the `/metrics` path of the central API endpoint. Configured via the `/v1/config` service.
   Disabled by default.
 - ROX-20262: Enable internal CA rotation for Operator-installed Centrals and Secured Clusters. Operator-installed Secured Clusters have full support, while Helm-installed Secured Clusters have partial support (can connect to Central with rotated CA but their certificates remain signed by the older CA).
+- ROX-29681: StackRox now supports CISA KEV data by default when using Scanner V4. To turn this off, set `ROX_CISA_KEV=false` in both Central and Scanner V4 Matcher.
 
 ### Removed Features
 

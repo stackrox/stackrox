@@ -131,6 +131,13 @@ var (
 
 	// Locks process baselines when their deployments leave the observation period
 	AutoLockProcessBaselines = registerFeature("Locks process baselines when their deployments leave the observation period", "ROX_AUTOLOCK_PROCESS_BASELINES")
+
+	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
+
+	// CISAKEV enables support for CISA Known Exploited Vulnerabilities (KEV) data.
+	//
+	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
+	CISAKEV = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
@@ -170,6 +177,4 @@ var (
 	//
 	// This must be set in Scanner V4 Indexer to have any effect.
 	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
-
-	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
 )
