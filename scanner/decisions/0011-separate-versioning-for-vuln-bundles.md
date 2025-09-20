@@ -8,6 +8,7 @@
 Status: Accepted
 
 Updates: [#0009](0009-scannerv4-read-manual-vulnerabilities.md)
+Updated By: [#0017](0017-rc-handling-in-vulnerability-bundles.md)
 
 ## Context
 

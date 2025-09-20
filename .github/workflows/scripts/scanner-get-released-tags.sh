@@ -42,7 +42,13 @@ while read -r line; do
 
     # Add the JSON object to the array
     json_array+=("{\"version\":\"$version\",\"ref\":\"$resolved_tag\"}")
-done < scanner/updater/version/VULNERABILITY_BUNDLE_VERSION
+done < <(
+    if [ -n "${SCANNER_BUNDLE_STREAM:-}" ] && [ -n "${SCANNER_BUNDLE_REFERENCE:-}" ]; then
+        echo "${SCANNER_BUNDLE_STREAM}" "${SCANNER_BUNDLE_REFERENCE}"
+    else
+        cat scanner/updater/version/VULNERABILITY_BUNDLE_VERSION
+    fi
+)
 
 # Convert the array to a single-line JSON array
 json_output=$(printf "%s," "${json_array[@]}" | sed 's/,$//')
