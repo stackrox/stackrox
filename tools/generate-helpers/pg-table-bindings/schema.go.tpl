@@ -15,6 +15,7 @@ import (
     {{- if .FeatureFlag }}
     "github.com/stackrox/rox/pkg/features"{{- end }}
     "github.com/stackrox/rox/pkg/postgres"
+    "github.com/stackrox/rox/pkg/postgres/schema/internal"
     "github.com/stackrox/rox/pkg/postgres/walker"
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/sac/resources"
@@ -52,9 +53,9 @@ var (
         if schema != nil {
             return schema
         }
-        schema = walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
+        schema = internal.Get{{.TrimmedType}}Schema()
         {{- else}}
-        schema := walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
+        schema = internal.Get{{.TrimmedType}}Schema()
         {{- end}}
 
         {{- if gt (len .References) 0 }}
@@ -69,15 +70,12 @@ var (
          })
          {{- end }}
 
-        {{- if .SearchCategory }}
-            schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.TypeName|lower}}", ({{.Schema.Type}})(nil)))
-            {{- if .SearchScope }}
+        {{- if .SearchScope }}
             schema.SetSearchScope([]v1.SearchCategory{
             {{- range $category := .SearchScope }}
                 {{$category}},
             {{- end}}
             }...)
-            {{- end }}
         {{- end }}
 
         {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}

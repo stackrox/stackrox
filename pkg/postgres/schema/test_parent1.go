@@ -4,15 +4,13 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -34,7 +32,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestParent1)(nil)), "test_parent1")
+		schema = internal.GetTestParent1Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.TestGrandparent": TestGrandparentsSchema,
 			"storage.TestChild1":      TestChild1Schema,
@@ -43,7 +41,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(110), "testparent1", (*storage.TestParent1)(nil)))
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestParent1Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(110), schema)

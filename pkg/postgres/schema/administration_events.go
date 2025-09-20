@@ -3,15 +3,14 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -28,8 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.AdministrationEvent)(nil)), "administration_events")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ADMINISTRATION_EVENTS, "administrationevent", (*storage.AdministrationEvent)(nil)))
+		schema = internal.GetAdministrationEventSchema()
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableAdministrationEventsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_EVENTS, schema)
