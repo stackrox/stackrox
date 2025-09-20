@@ -1,21 +1,15 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom-v5-compat';
-import startCase from 'lodash/startCase';
 
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import PageHeader from 'Components/PageHeader';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
-import ExportButton from 'Components/ExportButton';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
-import entityTypes from 'constants/entityTypes';
-import useCaseLabels from 'messages/useCase';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
 import parseURL from 'utils/URLParser';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { WorkflowState } from 'utils/WorkflowState';
 import { getVulnerabilityManagementEntityTypes } from 'utils/entityRelationships';
-import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
 
 import { entityNounSentenceCasePlural } from '../entitiesForVulnerabilityManagement';
 import WorkflowSidePanel from '../WorkflowSidePanel';
@@ -24,7 +18,6 @@ import ListComponent from './VulnMgmtList';
 
 const WorkflowListPageLayout = () => {
     const location = useLocation();
-    const [isExporting, setIsExporting] = useState(false);
 
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
@@ -54,12 +47,7 @@ const WorkflowListPageLayout = () => {
     const selectedRow = workflowState.getSelectedTableRow();
 
     const header = entityNounSentenceCasePlural[pageListType];
-    const exportFilename = `${useCaseLabels[useCase]} ${startCase(header)} Report`;
     const entityContext = {};
-
-    function customCsvExportHandler(fileName) {
-        return exportCvesAsCsv(fileName, workflowState, pageListType);
-    }
 
     if (selectedRow) {
         const { entityType, entityId } = selectedRow;
@@ -75,21 +63,6 @@ const WorkflowListPageLayout = () => {
                     classes="pr-0 ignore-react-onclickoutside"
                 >
                     <div className="flex flex-1 justify-end h-full">
-                        {(pageListType === entityTypes.IMAGE_CVE ||
-                            pageListType === entityTypes.NODE_CVE ||
-                            pageListType === entityTypes.CLUSTER_CVE) && (
-                            <div className="flex items-center pr-2">
-                                <ExportButton
-                                    fileName={exportFilename}
-                                    type={pageListType}
-                                    page={useCase}
-                                    disabled={!!sidePanelEntityId}
-                                    customCsvExportHandler={customCsvExportHandler}
-                                    isExporting={isExporting}
-                                    setIsExporting={setIsExporting}
-                                />
-                            </div>
-                        )}
                         <div className="flex items-center pl-2">
                             <EntitiesMenu
                                 text="All Entities"
@@ -125,7 +98,6 @@ const WorkflowListPageLayout = () => {
                     </SidePanelAnimatedArea>
                 </div>
             </div>
-            {isExporting && <BackdropExporting />}
         </workflowStateContext.Provider>
     );
 };
