@@ -6,9 +6,9 @@ import "google/protobuf/timestamp.proto";
 
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 message VirtualMachine {
-  string id = 1; // @gotags: sql:"pk,type(uuid)"
+  string id = 1; // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID,store"
   string namespace = 2; // @gotags: search:"Namespace,store"
-  string name = 3;
+  string name = 3; // @gotags: search:"Virtual Machine Name,store"
   string cluster_id = 4; // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
   string cluster_name = 5;
   map<string, string> facts = 6;
