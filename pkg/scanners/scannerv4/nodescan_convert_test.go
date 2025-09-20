@@ -333,8 +333,8 @@ func createVulnerabilityReport() *v4.VulnerabilityReport {
 			"0": {Values: []string{"7401229"}},
 		},
 		Contents: &v4.Contents{
-			Packages: []*v4.Package{
-				{
+			Packages: map[string]*v4.Package{
+				"0": {
 					Id:      "0",
 					Name:    "openssh-clients",
 					Version: "8.7p1-38.el9",
@@ -351,7 +351,7 @@ func createVulnerabilityReport() *v4.VulnerabilityReport {
 					Arch:           "x86_64",
 					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 				},
-				{
+				"1": {
 					Id:      "1",
 					Name:    "skopeo",
 					Version: "2:1.14.4-2.rhaos4.16.el9",
@@ -368,14 +368,14 @@ func createVulnerabilityReport() *v4.VulnerabilityReport {
 					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 				},
 			},
-			Repositories: []*v4.Repository{
-				{
+			Repositories: map[string]*v4.Repository{
+				"0": {
 					Id:   "0",
 					Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
 					Key:  "rhel-cpe-repository",
 					Cpe:  "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*",
 				},
-				{
+				"1": {
 					Id:   "1",
 					Name: "cpe:/a:redhat:openshift:4.16::el9",
 					Key:  "rhel-cpe-repository",
@@ -439,8 +439,8 @@ func createOutOfBoundsReport() *v4.VulnerabilityReport {
 			"1": {Values: []string{"7401229"}},
 		},
 		Contents: &v4.Contents{
-			Packages: []*v4.Package{
-				{
+			Packages: map[string]*v4.Package{
+				"0": {
 					Id:      "0",
 					Name:    "openssh-clients",
 					Version: "8.7p1-38.el9",
@@ -457,7 +457,7 @@ func createOutOfBoundsReport() *v4.VulnerabilityReport {
 					Arch:           "x86_64",
 					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 				},
-				{
+				"1": {
 					Id:      "1",
 					Name:    "skopeo",
 					Version: "2:1.14.4-2.rhaos4.16.el9",
@@ -474,14 +474,14 @@ func createOutOfBoundsReport() *v4.VulnerabilityReport {
 					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 				},
 			},
-			Repositories: []*v4.Repository{
-				{
+			Repositories: map[string]*v4.Repository{
+				"0": {
 					Id:   "0",
 					Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
 					Key:  "rhel-cpe-repository",
 					Cpe:  "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*",
 				},
-				{
+				"1": {
 					Id:   "1",
 					Name: "cpe:/a:redhat:openshift:4.16::el9",
 					Key:  "rhel-cpe-repository",
