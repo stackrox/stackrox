@@ -736,7 +736,6 @@ module.exports = [
             'src/Containers/Collections/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ComplianceEnhanced/**',
-            'src/Containers/ConfigManagement/**',
             'src/Containers/Dashboard/**',
             'src/Containers/Docs/**',
             'src/Containers/ExceptionConfiguration/**',
