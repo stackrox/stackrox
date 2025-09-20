@@ -28,17 +28,17 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 	// Add stuff to the properties of contents.
 	addPackage := func(p *v4.Package) opts {
 		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
-			r.Contents.Packages = append(r.Contents.Packages, p)
+			r.Contents.Packages[p.GetId()] = p
 		})
 	}
 	addDistribution := func(d *v4.Distribution) opts {
 		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
-			r.Contents.Distributions = append(r.Contents.Distributions, d)
+			r.Contents.Distributions[d.GetId()] = d
 		})
 	}
 	addRepository := func(d *v4.Repository) opts {
 		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
-			r.Contents.Repositories = append(r.Contents.Repositories, d)
+			r.Contents.Repositories[d.GetId()] = d
 		})
 	}
 	addEnvironment := func(pkgId string, d *v4.Environment) opts {
@@ -71,21 +71,21 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{nilContent},
 		},
 		"when one of the packages is empty": {
-			wantErr: "Contents.Packages element #2 is empty",
+			wantErr: "Contents.Packages element \"\" is empty",
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addPackage(nil),
 			},
 		},
 		"when one of the packages doesn't have id": {
-			wantErr: `Contents.Packages element #2: Id is empty`,
+			wantErr: `Contents.Packages element "": ID is empty`,
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addPackage(&v4.Package{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when one of the packages has an invalid CPE": {
-			wantErr: `Contents.Packages element #2 (id: "bar"): invalid CPE`,
+			wantErr: `Contents.Packages element "bar": invalid CPE: cpe: string does not appear to be a bound WFN: "something weird"`,
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addPackage(&v4.Package{Id: "bar", Cpe: "something weird"}),
@@ -97,7 +97,7 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			},
 		},
 		"when a package has a source package with another source package": {
-			wantErr: `Contents.Packages element #1 (id: "foo"): package ID="foo" has a source with a source`,
+			wantErr: `Contents.Packages element "foo": package ID="foo" has a source with a source`,
 			argOpts: []opts{
 				addPackage(&v4.Package{
 					Id:     "foo",
@@ -107,42 +107,42 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			},
 		},
 		"when one of the distributions is empty": {
-			wantErr: "Contents.Distributions element #2 is empty",
+			wantErr: "Contents.Distributions element \"\" is empty",
 			argOpts: []opts{
 				addDistribution(&v4.Distribution{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addDistribution(nil),
 			},
 		},
 		"when one of the distributions doesn't have id": {
-			wantErr: "Contents.Distributions element #2: Id is empty",
+			wantErr: "Contents.Distributions element \"\": ID is empty",
 			argOpts: []opts{
 				addDistribution(&v4.Distribution{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addDistribution(&v4.Distribution{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when one of the distributions has an invalid CPE": {
-			wantErr: `Contents.Distributions element #2 (id: "bar"): invalid CPE`,
+			wantErr: `Contents.Distributions element "bar": invalid CPE: cpe: string does not appear to be a bound WFN: "something weird"`,
 			argOpts: []opts{
 				addDistribution(&v4.Distribution{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addDistribution(&v4.Distribution{Id: "bar", Cpe: "something weird"}),
 			},
 		},
 		"when one of the repositories is empty": {
-			wantErr: "Contents.Repositories element #2 is empty",
+			wantErr: "Contents.Repositories element \"\" is empty",
 			argOpts: []opts{
 				addRepository(&v4.Repository{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addRepository(nil),
 			},
 		},
 		"when one of the repositories doesn't have an id": {
-			wantErr: "Contents.Repositories element #2: Id is empty",
+			wantErr: "Contents.Repositories element \"\": ID is empty",
 			argOpts: []opts{
 				addRepository(&v4.Repository{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addRepository(&v4.Repository{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when one of the repositories has an invalid CPE": {
-			wantErr: `Contents.Repositories element #2 (id: "bar"): invalid CPE`,
+			wantErr: `Contents.Repositories element "bar": invalid CPE: cpe: string does not appear to be a bound WFN: "something weird"`,
 			argOpts: []opts{
 				addRepository(&v4.Repository{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addRepository(&v4.Repository{Id: "bar", Cpe: "something weird"}),
@@ -176,9 +176,9 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 				tt.arg = &v4.GetVulnerabilitiesRequest{
 					HashId: "/v4/containerimage/foobar",
 					Contents: &v4.Contents{
-						Packages:      []*v4.Package{},
-						Distributions: []*v4.Distribution{},
-						Repositories:  []*v4.Repository{},
+						Packages:      map[string]*v4.Package{},
+						Distributions: map[string]*v4.Distribution{},
+						Repositories:  map[string]*v4.Repository{},
 						Environments:  map[string]*v4.Environment_List{},
 					},
 				}
@@ -230,12 +230,12 @@ func Test_validateGetSBOMRequest(t *testing.T) {
 				Name: "name",
 				Uri:  "uri",
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{},
+					Packages: map[string]*v4.Package{
+						"": {},
 					},
 				},
 			},
-			wantErr: "Id is empty",
+			wantErr: "Contents.Packages element \"\": ID is empty",
 		},
 		"no error on valid req": {
 			req: &v4.GetSBOMRequest{

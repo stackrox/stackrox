@@ -402,8 +402,19 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 					},
 				},
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
+					PackagesDEPRECATED: []*v4.Package{
 						{
+							Id:      "1",
+							Name:    "nodejs1",
+							Version: "1",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+					},
+					Packages: map[string]*v4.Package{
+						"1": {
 							Id:      "1",
 							Name:    "nodejs1",
 							Version: "1",
@@ -577,7 +588,45 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 					},
 				},
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
+					Packages: map[string]*v4.Package{
+						"0": {
+							Id:      "0",
+							Name:    "my go binary",
+							Version: "0",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+						"1": {
+							Id:      "1",
+							Name:    "my java jar",
+							Version: "1",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+						"2": {
+							Id:      "2",
+							Name:    "my python egg",
+							Version: "2",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+						"3": {
+							Id:      "3",
+							Name:    "my ruby gem",
+							Version: "3",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+					},
+					PackagesDEPRECATED: []*v4.Package{
 						{
 							Id:      "0",
 							Name:    "my go binary",
@@ -615,7 +664,21 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Cpe: emptyCPE,
 						},
 					},
-					Repositories: []*v4.Repository{
+					Repositories: map[string]*v4.Repository{
+						"0": {
+							Id:   "0",
+							Name: "Red Hat Container Catalog",
+							Uri:  `https://catalog.redhat.com/software/containers/explore`,
+							Cpe:  emptyCPE,
+						},
+						"1": {
+							Id:   "1",
+							Name: "something else",
+							Uri:  "somethingelse.com",
+							Cpe:  emptyCPE,
+						},
+					},
+					RepositoriesDEPRECATED: []*v4.Repository{
 						{
 							Id:   "0",
 							Name: "Red Hat Container Catalog",
@@ -683,10 +746,10 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 			for _, pkgVulns := range got.GetPackageVulnerabilities() {
 				slices.Sort(pkgVulns.GetValues())
 			}
-			slices.SortFunc(got.GetContents().GetPackages(), func(a, b *v4.Package) int {
+			slices.SortFunc(got.GetContents().GetPackagesDEPRECATED(), func(a, b *v4.Package) int {
 				return strings.Compare(a.GetId(), b.GetId())
 			})
-			slices.SortFunc(got.GetContents().GetRepositories(), func(a, b *v4.Repository) int {
+			slices.SortFunc(got.GetContents().GetRepositoriesDEPRECATED(), func(a, b *v4.Repository) int {
 				return strings.Compare(a.GetId(), b.GetId())
 			})
 
@@ -710,7 +773,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 		},
 		"when content package has source with source then error": {
 			arg: &v4.Contents{
-				Packages: []*v4.Package{
+				PackagesDEPRECATED: []*v4.Package{
 					{
 						Id:  "sample package",
 						Cpe: "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
@@ -726,7 +789,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 		},
 		"when content package has invalid CPE then error": {
 			arg: &v4.Contents{
-				Packages: []*v4.Package{
+				PackagesDEPRECATED: []*v4.Package{
 					{
 						Id:  "sample package",
 						Cpe: "something that is not a cpe",
@@ -737,7 +800,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 		},
 		"when distribution contains invalid cpe then error": {
 			arg: &v4.Contents{
-				Distributions: []*v4.Distribution{
+				DistributionsDEPRECATED: []*v4.Distribution{
 					{
 						Cpe: "something that is not a cpe",
 					},
@@ -747,7 +810,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 		},
 		"when repository contains invalid cpe then error": {
 			arg: &v4.Contents{
-				Repositories: []*v4.Repository{
+				RepositoriesDEPRECATED: []*v4.Repository{
 					{
 						Cpe: "something that is not a cpe",
 					},
@@ -758,7 +821,29 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 
 		"when all fields are valid then return success": {
 			arg: &v4.Contents{
-				Packages: []*v4.Package{
+				Packages: map[string]*v4.Package{
+					"sample pkg id": {
+						Id:      "sample pkg id",
+						Name:    "sample pkg name",
+						Version: "sample pkg version",
+						NormalizedVersion: &v4.NormalizedVersion{
+							Kind: "test",
+							V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
+						},
+						Kind: "sample pkg kind",
+						Source: &v4.Package{
+							Id:   "sample source id",
+							Name: "sample source name",
+							Cpe:  "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
+						},
+						PackageDb:      "sample pkg db",
+						RepositoryHint: "sample pkg repo hint",
+						Module:         "sample pkg module",
+						Arch:           "sample pkg arch",
+						Cpe:            "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
+					},
+				},
+				PackagesDEPRECATED: []*v4.Package{
 					{
 						Id:      "sample pkg id",
 						Name:    "sample pkg name",
@@ -780,7 +865,20 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 						Cpe:            "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
 					},
 				},
-				Distributions: []*v4.Distribution{
+				Distributions: map[string]*v4.Distribution{
+					"sample dist id": {
+						Id:              "sample dist id",
+						Did:             "sample dist did",
+						Name:            "sample dist name",
+						Version:         "sample dist version",
+						VersionCodeName: "sample dist version codename",
+						VersionId:       "sample dist version id",
+						Arch:            "sample dist arch",
+						Cpe:             "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
+						PrettyName:      "sample dist pretty",
+					},
+				},
+				DistributionsDEPRECATED: []*v4.Distribution{
 					{
 						Id:              "sample dist id",
 						Did:             "sample dist did",
@@ -793,7 +891,16 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 						PrettyName:      "sample dist pretty",
 					},
 				},
-				Repositories: []*v4.Repository{
+				Repositories: map[string]*v4.Repository{
+					"sample id": {
+						Id:   "sample id",
+						Name: "sample name",
+						Key:  "sample key",
+						Uri:  "sample URI",
+						Cpe:  "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
+					},
+				},
+				RepositoriesDEPRECATED: []*v4.Repository{
 					{
 						Id:   "sample id",
 						Name: "sample name",
@@ -950,7 +1057,7 @@ func Test_toProtoV4Package(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := toProtoV4Package(tt.arg)
+			got, err := v4Package(tt.arg)
 			if tt.wantErr != "" {
 				assert.ErrorContains(t, err, tt.wantErr)
 				assert.Nil(t, tt.want)
@@ -971,7 +1078,7 @@ func Test_toProtoV4Package(t *testing.T) {
 				},
 			},
 		}
-		got, err := toProtoV4Package(arg)
+		got, err := v4Package(arg)
 		assert.Nil(t, got)
 		assert.ErrorContains(t, err, "source specifies source")
 	})
@@ -1020,7 +1127,8 @@ func Test_toProtoV4Distribution(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := toProtoV4Distribution(tt.arg)
+			got, err := v4Distribution(tt.arg)
+			assert.NoError(t, err)
 			protoassert.Equal(t, tt.want, got)
 		})
 	}
@@ -1055,7 +1163,8 @@ func Test_toProtoV4Repository(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := toProtoV4Repository(tt.arg)
+			got, err := v4Repository(tt.arg)
+			assert.NoError(t, err)
 			protoassert.Equal(t, tt.want, got)
 		})
 	}
@@ -1093,7 +1202,7 @@ func Test_toProtoV4Environment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := toProtoV4Environment(tt.arg)
+			got := v4Environment(tt.arg)
 			protoassert.Equal(t, tt.want, got)
 			if tt.want != nil && tt.want.RepositoryIds != nil {
 				assert.NotEqual(t, &tt.want.RepositoryIds, &got.RepositoryIds)
@@ -1124,17 +1233,32 @@ func Test_toProtoV4Contents(t *testing.T) {
 				},
 			},
 			want: &v4.Contents{
-				Packages: []*v4.Package{{
+				Packages: map[string]*v4.Package{
+					"sample pkg": {
+						Cpe: emptyCPE,
+						NormalizedVersion: &v4.NormalizedVersion{
+							Kind: "",
+							V:    make([]int32, 10),
+						},
+					},
+				},
+				PackagesDEPRECATED: []*v4.Package{{
 					Cpe: emptyCPE,
 					NormalizedVersion: &v4.NormalizedVersion{
 						Kind: "",
 						V:    make([]int32, 10),
 					},
 				}},
-				Distributions: []*v4.Distribution{{
+				Distributions: map[string]*v4.Distribution{
+					"sample dist": {Cpe: emptyCPE},
+				},
+				DistributionsDEPRECATED: []*v4.Distribution{{
 					Cpe: emptyCPE,
 				}},
-				Repositories: []*v4.Repository{{
+				Repositories: map[string]*v4.Repository{
+					"sample repo": {Cpe: emptyCPE},
+				},
+				RepositoriesDEPRECATED: []*v4.Repository{{
 					Cpe: emptyCPE,
 				}},
 				Environments: map[string]*v4.Environment_List{

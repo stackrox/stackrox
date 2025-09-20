@@ -32,9 +32,14 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 
 	pkgs := report.GetContents().GetPackages()
+	if len(pkgs) == 0 {
+		// Fallback to the deprecated slice, if needed.
+		for _, pkg := range report.GetContents().GetPackagesDEPRECATED() {
+			pkgs[pkg.GetId()] = pkg
+		}
+	}
 	components := make([]*storage.EmbeddedImageScanComponent, 0, len(pkgs))
-	for _, pkg := range pkgs {
-		id := pkg.GetId()
+	for id, pkg := range pkgs {
 		vulnIDs := report.GetPackageVulnerabilities()[id].GetValues()
 
 		var (
@@ -353,11 +358,21 @@ func normalizedSeverity(severity v4.VulnerabilityReport_Vulnerability_Severity) 
 // return "unknown", as StackRox only supports a single base-OS at this time.
 func os(report *v4.VulnerabilityReport) string {
 	dists := report.GetContents().GetDistributions()
+	if len(dists) == 0 {
+		// Fallback to the deprecated slice, if needed.
+		for _, dist := range report.GetContents().GetDistributionsDEPRECATED() {
+			dists[dist.GetId()] = dist
+		}
+	}
 	if len(dists) != 1 {
 		return "unknown"
 	}
 
-	dist := dists[0]
+	var dist *v4.Distribution
+	for _, d := range dists {
+		dist = d
+		break
+	}
 	return dist.GetDid() + ":" + dist.GetVersionId()
 }
 
