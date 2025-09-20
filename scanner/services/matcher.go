@@ -137,11 +137,22 @@ func (s *matcherService) RegisterServiceHandler(_ context.Context, _ *runtime.Se
 
 func (s *matcherService) notes(ctx context.Context, vr *v4.VulnerabilityReport) []v4.VulnerabilityReport_Note {
 	dists := vr.GetContents().GetDistributions()
+	if len(dists) == 0 {
+		// Fallback to the deprecated slice, if needed.
+		for _, dist := range vr.GetContents().GetDistributionsDEPRECATED() {
+			dists[dist.GetId()] = dist
+		}
+	}
 	if len(dists) != 1 {
 		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN}
 	}
 
-	dist := dists[0]
+	var dist *v4.Distribution
+	for _, d := range dists {
+		dist = d
+		break
+	}
+
 	distID := dist.GetDid()
 	versionID := dist.GetVersionId()
 	knownDists := s.matcher.GetKnownDistributions(ctx)
