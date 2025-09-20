@@ -101,7 +101,9 @@ function AdvancedFiltersToolbar({
             [category]:
                 action === 'ADD'
                     ? uniq([...selectedSearchFilter, value])
-                    : selectedSearchFilter.filter((oldValue) => value !== oldValue),
+                    : action === 'REMOVE'
+                      ? selectedSearchFilter.filter((oldValue) => value !== oldValue)
+                      : [value],
         };
         onFilterChange(newFilter, { category, value, action });
     }
