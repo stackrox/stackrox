@@ -5,7 +5,6 @@ import (
 	"embed"
 
 	"github.com/remind101/migrate"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -16,23 +15,16 @@ const (
 	MatcherMigrationTable = "matcher_migrations"
 )
 
-// IndexerMigrations lists the indexer migrations. Some items are added during
-// init() so these may not be in order. Note that the ordering is reconciled
-// via their IDs.
+// IndexerMigrations lists the indexer migrations, in order.
 var IndexerMigrations = []migrate.Migration{
+	{
+		ID: 1,
+		Up: runFile("indexer/01-init.sql"),
+	},
 	{
 		ID: 2,
 		Up: runFile("indexer/02-external-index-report.sql"),
 	},
-}
-
-func init() {
-	if features.ScannerV4ReIndex.Enabled() {
-		IndexerMigrations = append(IndexerMigrations, migrate.Migration{
-			ID: 1,
-			Up: runFile("indexer/01-init.sql"),
-		})
-	}
 }
 
 // MatcherMigrations lists the matcher migrations, in order.

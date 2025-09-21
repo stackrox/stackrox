@@ -214,7 +214,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}
 
-	externalIndexStore, err := postgres.InitPostgresExternalIndexStore(ctx, pool)
+	externalIndexStore, err := postgres.InitPostgresExternalIndexStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres external index store: %w", err)
 	}

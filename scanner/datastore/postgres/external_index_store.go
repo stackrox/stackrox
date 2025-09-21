@@ -38,6 +38,7 @@ type externalIndexStore struct {
 func InitPostgresExternalIndexStore(
 	_ context.Context,
 	pool *pgxpool.Pool,
+	doMigration bool,
 ) (ExternalIndexStore, error) {
 	if pool == nil {
 		return nil, errors.New("pool must be non-nil")
@@ -46,11 +47,13 @@ func InitPostgresExternalIndexStore(
 	db := stdlib.OpenDB(*pool.Config().ConnConfig)
 	defer utils.IgnoreError(db.Close)
 
-	migrator := migrate.NewPostgresMigrator(db)
-	migrator.Table = migrations.IndexerMigrationTable
-	err := migrator.Exec(migrate.Up, migrations.IndexerMigrations...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to perform migrations: %w", err)
+	if doMigration {
+		migrator := migrate.NewPostgresMigrator(db)
+		migrator.Table = migrations.IndexerMigrationTable
+		err := migrator.Exec(migrate.Up, migrations.IndexerMigrations...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to perform migrations: %w", err)
+		}
 	}
 
 	return &externalIndexStore{

@@ -15,7 +15,7 @@ import (
 func Test_ExternalIndexReport_GCIndexReports(t *testing.T) {
 	ctx := context.Background()
 	pool := testDB(t, ctx, "external_index_report_test")
-	store, err := InitPostgresExternalIndexStore(ctx, pool)
+	store, err := InitPostgresExternalIndexStore(ctx, pool, true)
 	require.NoError(t, err)
 	now := time.Now()
 
