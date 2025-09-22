@@ -97,8 +97,8 @@ func (s *imageV2DatastoreSACSuite) deleteNamespace(id string) {
 
 func (s *imageV2DatastoreSACSuite) verifyRawImagesEqual(image1, image2 *storage.ImageV2) {
 	s.Equal(image1.GetId(), image2.GetId())
-	s.Equal(image1.GetComponentCount(), image2.GetComponentCount())
-	s.Equal(image1.GetCveCount(), image2.GetCveCount())
+	s.Equal(image1.GetScanStats().GetComponentCount(), image2.GetScanStats().GetComponentCount())
+	s.Equal(image1.GetScanStats().GetCveCount(), image2.GetScanStats().GetCveCount())
 }
 
 func (s *imageV2DatastoreSACSuite) TestUpsertImage() {
@@ -335,8 +335,8 @@ func (s *imageV2DatastoreSACSuite) TestGetImageMetadata() {
 		if testCase.ExpectedFound {
 			s.True(found)
 			s.Equal(image.GetId(), readImageMeta.GetId())
-			s.Equal(image.GetComponentCount(), readImageMeta.GetComponentCount())
-			s.Equal(image.GetCveCount(), readImageMeta.GetCveCount())
+			s.Equal(image.GetScanStats().GetComponentCount(), readImageMeta.GetScanStats().GetComponentCount())
+			s.Equal(image.GetScanStats().GetCveCount(), readImageMeta.GetScanStats().GetCveCount())
 		} else {
 			s.False(found)
 			s.Nil(readImageMeta)
@@ -356,18 +356,18 @@ func (s *imageV2DatastoreSACSuite) TestGetImageMetadata() {
 			readImageMeta2 := readMeta[1]
 			if readImageMeta1.GetId() == image.GetId() {
 				s.Equal(image.GetId(), readImageMeta1.GetId())
-				s.Equal(image.GetComponentCount(), readImageMeta1.GetComponentCount())
-				s.Equal(image.GetCveCount(), readImageMeta1.GetCveCount())
+				s.Equal(image.GetScanStats().GetComponentCount(), readImageMeta1.GetScanStats().GetComponentCount())
+				s.Equal(image.GetScanStats().GetCveCount(), readImageMeta1.GetScanStats().GetCveCount())
 				s.Equal(image2.GetId(), readImageMeta2.GetId())
-				s.Equal(image2.GetComponentCount(), readImageMeta2.GetComponentCount())
-				s.Equal(image2.GetCveCount(), readImageMeta2.GetCveCount())
+				s.Equal(image2.GetScanStats().GetComponentCount(), readImageMeta2.GetScanStats().GetComponentCount())
+				s.Equal(image2.GetScanStats().GetCveCount(), readImageMeta2.GetScanStats().GetCveCount())
 			} else {
 				s.Equal(image2.GetId(), readImageMeta1.GetId())
-				s.Equal(image2.GetComponentCount(), readImageMeta1.GetComponentCount())
-				s.Equal(image2.GetCveCount(), readImageMeta1.GetCveCount())
+				s.Equal(image2.GetScanStats().GetComponentCount(), readImageMeta1.GetScanStats().GetComponentCount())
+				s.Equal(image2.GetScanStats().GetCveCount(), readImageMeta1.GetScanStats().GetCveCount())
 				s.Equal(image.GetId(), readImageMeta2.GetId())
-				s.Equal(image.GetComponentCount(), readImageMeta2.GetComponentCount())
-				s.Equal(image.GetCveCount(), readImageMeta2.GetCveCount())
+				s.Equal(image.GetScanStats().GetComponentCount(), readImageMeta2.GetScanStats().GetComponentCount())
+				s.Equal(image.GetScanStats().GetCveCount(), readImageMeta2.GetScanStats().GetCveCount())
 			}
 		} else {
 			s.Len(readMeta, 0)
@@ -393,18 +393,18 @@ func (s *imageV2DatastoreSACSuite) TestGetImagesBatch() {
 			readImageMeta2 := readMeta[1]
 			if readImageMeta1.GetId() == image1.GetId() {
 				s.Equal(image1.GetId(), readImageMeta1.GetId())
-				s.Equal(image1.GetComponentCount(), readImageMeta1.GetComponentCount())
-				s.Equal(image1.GetCveCount(), readImageMeta1.GetCveCount())
+				s.Equal(image1.GetScanStats().GetComponentCount(), readImageMeta1.GetScanStats().GetComponentCount())
+				s.Equal(image1.GetScanStats().GetCveCount(), readImageMeta1.GetScanStats().GetCveCount())
 				s.Equal(image2.GetId(), readImageMeta2.GetId())
-				s.Equal(image2.GetComponentCount(), readImageMeta2.GetComponentCount())
-				s.Equal(image2.GetCveCount(), readImageMeta2.GetCveCount())
+				s.Equal(image2.GetScanStats().GetComponentCount(), readImageMeta2.GetScanStats().GetComponentCount())
+				s.Equal(image2.GetScanStats().GetCveCount(), readImageMeta2.GetScanStats().GetCveCount())
 			} else {
 				s.Equal(image2.GetId(), readImageMeta1.GetId())
-				s.Equal(image2.GetComponentCount(), readImageMeta1.GetComponentCount())
-				s.Equal(image2.GetCveCount(), readImageMeta1.GetCveCount())
+				s.Equal(image2.GetScanStats().GetComponentCount(), readImageMeta1.GetScanStats().GetComponentCount())
+				s.Equal(image2.GetScanStats().GetCveCount(), readImageMeta1.GetScanStats().GetCveCount())
 				s.Equal(image1.GetId(), readImageMeta2.GetId())
-				s.Equal(image1.GetComponentCount(), readImageMeta2.GetComponentCount())
-				s.Equal(image1.GetCveCount(), readImageMeta2.GetCveCount())
+				s.Equal(image1.GetScanStats().GetComponentCount(), readImageMeta2.GetScanStats().GetComponentCount())
+				s.Equal(image1.GetScanStats().GetCveCount(), readImageMeta2.GetScanStats().GetCveCount())
 			}
 		} else {
 			s.Len(readMeta, 0)
@@ -430,8 +430,8 @@ func (s *imageV2DatastoreSACSuite) TestWalkByQuery() {
 				matchedImage = image2
 			}
 			s.Equal(matchedImage.GetId(), image.GetId())
-			s.Equal(matchedImage.GetComponentCount(), image.GetComponentCount())
-			s.Equal(matchedImage.GetCveCount(), image.GetCveCount())
+			s.Equal(matchedImage.GetScanStats().GetComponentCount(), image.GetScanStats().GetComponentCount())
+			s.Equal(matchedImage.GetScanStats().GetCveCount(), image.GetScanStats().GetCveCount())
 			return nil
 		})
 		s.Require().NoError(err)
