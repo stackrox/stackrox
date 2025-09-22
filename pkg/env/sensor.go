@@ -45,6 +45,23 @@ var (
 	// 100 (per flow) * 1000 (flows) * 100 (buffer size) = 10 MB
 	NetworkFlowBufferSize = RegisterIntegerSetting("ROX_SENSOR_NETFLOW_OFFLINE_BUFFER_SIZE", 100)
 
+	// NetworkFlowClosedConnRememberDuration controls how long the categorized update computer will track
+	// timestamps for closed connections to handle late-arriving updates.
+	NetworkFlowClosedConnRememberDuration = registerDurationSetting("ROX_NETFLOW_CLOSED_CONN_REMEMBER_DURATION", 6*time.Minute)
+	// NetworkFlowUseLegacyUpdateComputer enables the Legacy update computer for the network flow enrichment pipeline
+	// updates sent to Central. Setting this to `true` enables the behavior as in 4.8 and earlier.
+	NetworkFlowUseLegacyUpdateComputer = RegisterBooleanSetting("ROX_NETFLOW_USE_LEGACY_UPDATE_COMPUTER", false)
+
+	// NetworkFlowDeduperHashingAlgorithm selects the hashing algorithm used for the deduper in the process of
+	// computing the updates for Central.
+	// Available choices and their effects (case-insensitive):
+	// - "FNV64" (default): Uses 64-bit FNV-1a algorithm that optimizes the memory consumption of Sensor.
+	//                      It is one of the fastest available 64-bit hashes with decent collision probability.
+	// - "String": Uses CPU-optimized string concatenation to produce a hash. This implementation makes the deduper
+	//             use more memory than FNV64 (roughly 3x more) but optimizes the CPU performance. It may be preferred
+	//             on less active clusters with little network traffic and processes or when CPU resource is limited.
+	NetworkFlowDeduperHashingAlgorithm = RegisterSetting("ROX_NETFLOW_DEDUPER_HASHING_ALGORITHM", WithDefault("FNV64"))
+
 	// ProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline.
 	// 1 Item in the buffer = ~300 bytes
 	// 50000 * 300 = 15 MB
@@ -86,6 +103,11 @@ var (
 	// ResponsesChannelBufferSize defines how many messages to central are we buffering before dropping messages
 	// Setting this variable to zero will disable this feature.
 	ResponsesChannelBufferSize = RegisterIntegerSetting("ROX_RESPONSES_CHANNEL_BUFFER_SIZE", 100000)
+
+	// RequestsChannelBufferSize defines how many messages from central are we buffering before dropping messages
+	// Setting this variable to zero will create an unlimited size queue..
+	// TODO: discover the better value
+	RequestsChannelBufferSize = RegisterIntegerSetting("ROX_REQUESTS_CHANNEL_BUFFER_SIZE", 100000)
 
 	// EnrichmentPurgerTickerMaxAge controls the max age of collector updates (network flows & container endpoints)
 	// for keeping them in  Sensor's memory. Entries that has not been enriched (due to a bug or error)

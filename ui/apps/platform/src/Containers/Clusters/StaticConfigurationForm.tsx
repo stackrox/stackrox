@@ -53,8 +53,9 @@ function StaticConfigurationForm({
     // HelmValueWarning precedes FormHelperText element.
     return (
         <Form isWidthLimited>
-            <FormGroup label="Cluster name" isRequired>
+            <FormGroup fieldId="name" label="Cluster name" isRequired>
                 <TextInput
+                    id="name"
                     type="text"
                     value={selectedCluster.name}
                     onChange={(_event, value) => handleChange('name', value)}
@@ -68,6 +69,7 @@ function StaticConfigurationForm({
                     value={selectedCluster.type}
                     handleSelect={handleChange}
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     {filteredClusterTypeOptions.map(({ label, value }) => (
                         <SelectOption key={value} value={value}>
@@ -80,8 +82,9 @@ function StaticConfigurationForm({
                     helmValue={selectedCluster?.helmConfig?.staticConfig?.type}
                 />
             </FormGroup>
-            <FormGroup label="Main image repository" isRequired>
+            <FormGroup fieldId="mainImage" label="Main image repository" isRequired>
                 <TextInput
+                    id="mainImage"
                     type="text"
                     value={selectedCluster.mainImage}
                     onChange={(_event, value) => handleChange('mainImage', value)}
@@ -93,8 +96,13 @@ function StaticConfigurationForm({
                     helmValue={selectedCluster?.helmConfig?.staticConfig?.mainImage}
                 />
             </FormGroup>
-            <FormGroup label="Central API endpoint (include port)" isRequired>
+            <FormGroup
+                fieldId="centralApiEndpoint"
+                label="Central API endpoint (include port)"
+                isRequired
+            >
                 <TextInput
+                    id="centralApiEndpoint"
                     type="text"
                     value={selectedCluster.centralApiEndpoint}
                     onChange={(_event, value) => handleChange('centralApiEndpoint', value)}
@@ -112,6 +120,7 @@ function StaticConfigurationForm({
                     value={selectedCluster.collectionMethod}
                     handleSelect={handleChange}
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     {filteredRuntimeOptions.map(({ label, value }) => (
                         <SelectOption key={value} value={value}>
@@ -124,8 +133,12 @@ function StaticConfigurationForm({
                     helmValue={selectedCluster?.helmConfig?.staticConfig?.collectionMethod}
                 />
             </FormGroup>
-            <FormGroup label="Collector image repository (uses Main image repository by default)">
+            <FormGroup
+                fieldId="collectorImage"
+                label="Collector image repository (uses Main image repository by default)"
+            >
                 <TextInput
+                    id="collectorImage"
                     type="text"
                     value={selectedCluster.collectorImage}
                     onChange={(_event, value) => handleChange('collectorImage', value)}
@@ -144,6 +157,7 @@ function StaticConfigurationForm({
                     }
                     handleSelect={(id, value) => handleChange(id, value === 'failClosed')}
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     <SelectOption value="failOpen">Fail open</SelectOption>
                     <SelectOption value="failClosed">Fail closed</SelectOption>
@@ -184,9 +198,10 @@ function StaticConfigurationForm({
                     value={selectedCluster.tolerationsConfig?.disabled ? 'disabled' : 'enabled'}
                     handleSelect={(id, value) => handleChange(id, value === 'disabled')}
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enabled</SelectOption>
-                    <SelectOption value="eisabled">Disabled</SelectOption>
+                    <SelectOption value="disabled">Disabled</SelectOption>
                 </SelectSingle>
                 <HelmValueWarning
                     currentValue={selectedCluster?.tolerationsConfig?.disabled}

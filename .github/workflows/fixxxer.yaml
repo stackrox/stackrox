@@ -70,7 +70,7 @@ jobs:
 
     - run: ./scripts/fixxxer.sh
 
-    - uses: ad-m/github-push-action@v0.8.0
+    - uses: ad-m/github-push-action@v1.0.0
       with:
         branch: ${{ steps.pr-metadata.outputs.branch }}
         github_token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}

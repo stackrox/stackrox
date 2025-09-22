@@ -3,20 +3,17 @@ syntax = "proto3";
 package storage;
 
 import "google/protobuf/timestamp.proto";
-import "storage/image.proto";
 
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 message VirtualMachine {
-  string id = 1; // @gotags: search:"Virtual Machine ID,store,hidden" sql:"pk"
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
   string namespace = 2; // @gotags: search:"Namespace,store"
-  string name = 3; // @gotags: search:"Name,store"
+  string name = 3;
   string cluster_id = 4; // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
   string cluster_name = 5;
   map<string, string> facts = 6;
 
-  VirtualMachineScan scan = 7; // @gotags: policy:"Virtual Machine Scan"
-
-  google.protobuf.Timestamp last_updated = 8; // @gotags: search:"Last Updated,hidden"
+  google.protobuf.Timestamp last_updated = 7;
 
   enum Note {
     MISSING_METADATA = 0;
@@ -24,26 +21,13 @@ message VirtualMachine {
     MISSING_SIGNATURE = 2;
     MISSING_SIGNATURE_VERIFICATION_DATA = 3;
   }
-  repeated Note notes = 9;
-}
+  repeated Note notes = 8;
 
-// TODO: Consider cleaning this up. It doesn't have to perfectly match the image scan message.
-message VirtualMachineScan {
-  string scanner_version = 1;
-  google.protobuf.Timestamp scan_time = 2; // @gotags: search:"Virtual Machine Scan Time,store"
-  // TODO (ROX-30352): We need to think hard about reusing EmbeddedImageScanComponent.  May need to use a new proto from scratch.
-  repeated EmbeddedImageScanComponent components = 3; // @gotags: sql:"-"
-  string operating_system = 4; // @gotags: search:"Virtual Machine OS,store"
-  // DataSource contains information about which integration was used to scan the image
-  DataSource data_source = 5;
-  enum Note {
-    UNSET = 0;
-    OS_UNAVAILABLE = 1;
-    PARTIAL_SCAN_DATA = 2;
-    OS_CVES_UNAVAILABLE = 3;
-    OS_CVES_STALE = 4;
-    LANGUAGE_CVES_UNAVAILABLE = 5;
-    CERTIFIED_RHEL_SCAN_UNAVAILABLE = 6;
+  int32 vsock_cid = 9;
+  enum State {
+    UNKNOWN = 0;
+    STOPPED = 1;
+    RUNNING = 2;
   }
-  repeated Note notes = 6;
+  State state = 10;
 }

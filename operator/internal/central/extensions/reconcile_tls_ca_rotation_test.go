@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
@@ -34,12 +35,14 @@ func TestCentralCARotation(t *testing.T) {
 	client := buildFakeClient(t, baseCase, central)
 
 	// similar to reconcileCentralTLS, but injects a custom currentTime
-	runAt := func(ctx context.Context, central *platform.Central, c ctrlClient.Client, d ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger, currentTime time.Time) error {
+	runAt := func(ctx context.Context, central *platform.Central, c ctrlClient.Client, d ctrlClient.Reader, statusUpdater func(updateStatusFunc),
+		log logr.Logger, renderCache *rendercache.RenderCache, currentTime time.Time) error {
 		run := &createCentralTLSExtensionRun{
 			SecretReconciliator:   commonExtensions.NewSecretReconciliator(c, d, central),
 			centralObj:            central,
 			currentTime:           currentTime,
 			extraIssueCertOptions: []mtls.IssueCertOption{mtls.WithValidityNotBefore(currentTime)},
+			renderCache:           renderCache,
 		}
 		return run.Execute(ctx)
 	}

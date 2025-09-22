@@ -6,7 +6,7 @@ import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/e
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { ResourceName } from 'types/roleResources';
-import { FeatureFlagPredicate } from 'utils/featureFlagUtils';
+import { FeatureFlagPredicate, allEnabled } from 'utils/featureFlagUtils';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -364,6 +364,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/virtual-machine-cves': {
+        featureFlagRequirements: allEnabled(['ROX_VIRTUAL_MACHINES']),
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     'vulnerability-management': {

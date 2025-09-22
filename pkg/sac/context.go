@@ -37,3 +37,13 @@ func WithAllAccess(ctx context.Context) context.Context {
 func WithNoAccess(ctx context.Context) context.Context {
 	return WithGlobalAccessScopeChecker(ctx, denyAllScopeCheckerCore)
 }
+
+// CopyAccessScopeCheckerCore extracts the ScopeCheckerCore from from, if any,
+// and adds it to to.
+func CopyAccessScopeCheckerCore(to, from context.Context) context.Context {
+	core, _ := from.Value(globalAccessScopeContextKey{}).(ScopeCheckerCore)
+	if core == nil {
+		return to
+	}
+	return WithGlobalAccessScopeChecker(to, core)
+}

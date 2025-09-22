@@ -120,11 +120,13 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
 		ret, err := loader.FromID(ctx, string(*args.ID))
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
@@ -134,6 +136,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 		query := search.NewQueryBuilder().AddExactMatches(search.CVE, ret.GetCveBaseInfo().GetCve()).ProtoQuery()
 		cveFlatData, err := resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
@@ -160,7 +163,6 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 // ImageVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
-
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -176,6 +178,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		// Get the flattened data
 		cveFlatData, err := resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
@@ -187,6 +190,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
@@ -346,7 +350,6 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 // TopImageVulnerability returns the most severe image vulnerability found in the scoped context
 func (resolver *Resolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "TopImageVulnerability")
-
 	searchCategory := v1.SearchCategory_IMAGES
 	if features.FlattenImageData.Enabled() {
 		searchCategory = v1.SearchCategory_IMAGES_V2
@@ -1380,14 +1383,6 @@ func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (*advisoryReso
 func (resolver *imageCVEV2Resolver) OperatingSystem(ctx context.Context) string {
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
-	}
-
-	scope, hasScope := scoped.GetScope(resolver.ctx)
-	if !hasScope {
-		return ""
-	}
-	if scope.Level != v1.SearchCategory_IMAGE_COMPONENTS_V2 {
-		return ""
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetComponentId()).ProtoQuery()

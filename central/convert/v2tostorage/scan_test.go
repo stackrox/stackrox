@@ -9,40 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDataSource(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    *v2.DataSource
-		expected *storage.DataSource
-	}{
-		{
-			name:     "nil input",
-			input:    nil,
-			expected: nil,
-		},
-		{
-			name: "complete datasource",
-			input: &v2.DataSource{
-				Id:     "ds-123",
-				Name:   "production-scanner",
-				Mirror: "scanner.prod.example.com",
-			},
-			expected: &storage.DataSource{
-				Id:     "ds-123",
-				Name:   "production-scanner",
-				Mirror: "scanner.prod.example.com",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := DataSource(tt.input)
-			protoassert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestScanComponent(t *testing.T) {
 	tests := []struct {
 		name     string

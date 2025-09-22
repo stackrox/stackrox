@@ -14,28 +14,29 @@ import {
     GridItem,
     HelperText,
     HelperTextItem,
-    HelperTextItemProps,
     PageSection,
     Split,
     SplitItem,
     Switch,
     Text,
     TextInput,
-    TextInputProps,
     Title,
 } from '@patternfly/react-core';
+import type { HelperTextItemProps, TextInputProps } from '@patternfly/react-core';
 import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
-import { FormikHandlers, useFormik } from 'formik';
+import { useFormik } from 'formik';
+import type { FormikHandlers } from 'formik';
 import * as yup from 'yup';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { VulnerabilitiesExceptionConfig } from 'services/ExceptionConfigService';
-import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import type { VulnerabilitiesExceptionConfig } from 'services/ExceptionConfigService';
+import useToasts from 'hooks/patternfly/useToasts';
+import type { Toast } from 'hooks/patternfly/useToasts';
 import usePermissions from 'hooks/usePermissions';
 
-import { UseVulnerabilitiesExceptionConfigReturn } from './useVulnerabilitiesExceptionConfig';
+import type { UseVulnerabilitiesExceptionConfigReturn } from './useVulnerabilitiesExceptionConfig';
 
 type BaseSettingProps = {
     fieldId: string;
