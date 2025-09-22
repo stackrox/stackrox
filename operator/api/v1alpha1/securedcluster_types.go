@@ -65,8 +65,8 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Kubernetes Audit Logs Ingestion Settings"
 	AuditLogs *AuditLogsSpec `json:"auditLogs,omitempty"`
 
-	// Settings relating to process baselines
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Process baslines settings"
+	// Settings relating to process baselines.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Process Baselines Settings"
 	ProcessBaselines *ProcessBaselinesSpec `json:"processBaselines,omitempty"`
 
 	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
