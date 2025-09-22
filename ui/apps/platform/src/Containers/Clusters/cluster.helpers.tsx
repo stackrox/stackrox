@@ -16,7 +16,6 @@ import {
 
 import { Cluster, ClusterHealthStatusLabel, ClusterProviderMetadata } from 'types/cluster.proto';
 import { getDate, getDistanceStrict } from 'utils/dateUtils';
-import { getProductBranding } from 'constants/productBranding';
 
 import { healthStatusLabels } from './cluster.constants';
 import { CertExpiryStatus } from './clusterTypes';
@@ -70,7 +69,8 @@ const defaultNewClusterType = 'KUBERNETES_CLUSTER';
 const defaultCollectionMethod = 'CORE_BPF';
 
 export const newClusterDefault = {
-    id: undefined,
+    // TODO Add Cluster type and add missing properties?
+    id: undefined, // TODO empty string?
     name: '',
     type: defaultNewClusterType,
     mainImage: 'stackrox/main',
@@ -78,13 +78,11 @@ export const newClusterDefault = {
     centralApiEndpoint: 'central.stackrox:443',
     runtimeSupport: false,
     collectionMethod: defaultCollectionMethod,
-    DEPRECATEDProviderMetadata: null,
     admissionControllerEvents: true,
     admissionController: true, // default changed in 4.9
     admissionControllerUpdates: true, // default changed in 4.9
-    admissionControlFailOnError: false, // property added in 4.9 false means Fail open
-    DEPRECATEDOrchestratorMetadata: null,
-    status: undefined,
+    admissionControllerFailOnError: false, // property added in 4.9 false means Fail open
+    status: null,
     tolerationsConfig: {
         disabled: false,
     },
@@ -97,6 +95,8 @@ export const newClusterDefault = {
             disableBypass: false,
         },
         registryOverride: '',
+        disableAuditLogs: false,
+        autoLockProcessBaselinesConfig: null,
     },
     healthStatus: undefined,
     slimCollector: false,
@@ -211,7 +211,7 @@ const upgradeStates: UpgradeStates = {
         type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
-        displayValue: `Secured cluster version is not managed by ${getProductBranding().shortName}.`,
+        displayValue: 'Sensor is not running the same version as Central',
         type: 'intervention',
     },
     UPGRADE_AVAILABLE: {
