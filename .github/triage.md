@@ -9,7 +9,52 @@ To enable automated CI triage capabilities, you need to configure the following 
 - [mcp-atlassian](https://github.com/sooperset/mcp-atlassian)
 - [Github MCP](https://github.com/github/github-mcp-server)
 - [Prow MCP](https://github.com/redhat-community-ai-tools/prowject)
+Example MCPs configuration template:
 
+- Install gopls https://go.dev/gopls/#installation
+- Generate `JIRA_PERSONAL_TOKEN` here https://issues.redhat.com/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens
+- Generate `CONFLUENCE_PERSONAL_TOKEN`  here https://spaces.redhat.com/plugins/personalaccesstokens/usertokens.action
+- Generate `GITHUB_TOKEN` folowing this instructions https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+- Remember to pin image vesrions with SHA
+- Configure Claude following this instructions https://docs.claude.com/en/docs/claude-code/mcp or Cursor https://cursor.com/docs/context/mcp (note: cursor have a different syntax for env resolution)
+
+```json
+"mcpServers": {
+    "mcp-atlassian": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "CONFLUENCE_URL",
+        "-e",
+        "CONFLUENCE_PERSONAL_TOKEN",
+        "-e",
+        "JIRA_URL",
+        "-e",
+        "JIRA_PERSONAL_TOKEN",
+        "ghcr.io/sooperset/mcp-atlassian:<Use desired version SHA>"
+      ],
+      "env": {
+        "CONFLUENCE_URL": "https://spaces.redhat.com/",
+        "CONFLUENCE_PERSONAL_TOKEN": "${CONFLUENCE_PERSONAL_TOKEN}",
+        "JIRA_URL": "https://issues.redhat.com",
+        "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}"
+      }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_TOKEN}"
+      }
+    },
+    "gopls-mcp": {
+      "command": "gopls",
+      "args": ["mcp"]
+    }
+  }
 ## Agent Configuration
 
 The `stackrox-ci-failure-investigator` agent is automatically configured in `.claude/agents/` and provides:
