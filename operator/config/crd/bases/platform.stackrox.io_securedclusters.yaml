@@ -789,7 +789,7 @@ spec:
                     type: string
                 type: object
               processBaselines:
-                description: Settings relating to process baselines
+                description: Settings relating to process baselines.
                 properties:
                   autoLock:
                     description: |-
