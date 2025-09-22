@@ -62,7 +62,7 @@ message ImageV2 {
   }
 
   ScanStats scan_stats = 8;
-  
+
   google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden"
 
   bool not_pullable = 10;
