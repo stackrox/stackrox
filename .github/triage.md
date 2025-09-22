@@ -70,6 +70,13 @@ The `stackrox-ci-failure-investigator` agent is automatically configured in `.cl
 
 ## Usage
 
+### Confirm MCP servers are functional
+
+Run: `/mcp`.
+
+In case of problems, try `/doctor`.
+
+
 ### Slash Command
 
 You can use the `/triage` command for automated CI failure investigation:
