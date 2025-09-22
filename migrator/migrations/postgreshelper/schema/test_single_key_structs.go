@@ -8,6 +8,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -21,9 +22,11 @@ var (
 
 	// TestSingleKeyStructsSchema is the go schema for table `test_single_key_structs`.
 	TestSingleKeyStructsSchema = func() *walker.Schema {
-		schema = GetTestSingleKeyStructSchema()
-		schema.ScopingResource = resources.Namespace
-		return schema
+		s := schema.GetSchemaForTable("test_single_key_structs")
+		if s != nil {
+			return s
+		}
+		return s
 	}()
 )
 

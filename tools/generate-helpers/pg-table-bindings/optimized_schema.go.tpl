@@ -41,6 +41,12 @@ var (
 				{{- if .DataType }}
 				DataType:   postgres.{{.DataType}},
 				{{- end }}
+				{{- if .SearchFieldName }}
+				Search: walker.SearchField{
+					FieldName: "{{.SearchFieldName}}",
+					Enabled:   true,
+				},
+				{{- end }}
 				{{- if .IsPrimaryKey }}
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,

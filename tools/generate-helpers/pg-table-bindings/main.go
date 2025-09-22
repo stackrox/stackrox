@@ -336,6 +336,7 @@ type OptimizedSchemaField struct {
 	SQLType      string
 	DataType     string
 	IsPrimaryKey bool
+	SearchFieldName string // The field name for search if this field is searchable
 }
 
 type OptimizedSearchField struct {
@@ -350,22 +351,35 @@ type OptimizedSearchField struct {
 func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedType, searchCategory string) error {
 	// Generate the optimized schema file in the same directory
 
+	// Generate search fields using reflection on the protobuf type first
+	searchFields := generateSearchFields(props.Type, trimmedType)
+
+	// Create a map from field path to search field name for lookup
+	fieldPathToSearchName := make(map[string]string)
+	for _, searchField := range searchFields {
+		fieldPathToSearchName[searchField.FieldPath] = searchField.FieldLabel
+	}
+
 	// Extract fields from walker schema
 	var fields []OptimizedSchemaField
 	for _, field := range schema.Fields {
+		// Find the search field name for this field by matching the column name
+		searchFieldName := ""
+		if fieldName, exists := fieldPathToSearchName["."+strings.ToLower(field.ColumnName)]; exists {
+			searchFieldName = fieldName
+		}
+
 		optimizedField := OptimizedSchemaField{
-			Name:         field.Name,
-			ColumnName:   field.ColumnName,
-			Type:         field.Type,
-			SQLType:      field.SQLType,
-			DataType:     getDataTypeName(field.DataType),
-			IsPrimaryKey: field.Options.PrimaryKey,
+			Name:            field.Name,
+			ColumnName:      field.ColumnName,
+			Type:            field.Type,
+			SQLType:         field.SQLType,
+			DataType:        getDataTypeName(field.DataType),
+			IsPrimaryKey:    field.Options.PrimaryKey,
+			SearchFieldName: searchFieldName,
 		}
 		fields = append(fields, optimizedField)
 	}
-
-	// Generate search fields using reflection on the protobuf type
-	searchFields := generateSearchFields(props.Type, trimmedType)
 
 	// Clean search category name
 	cleanSearchCategory := strings.TrimPrefix(searchCategory, "v1.")
