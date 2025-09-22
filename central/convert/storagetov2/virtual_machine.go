@@ -19,6 +19,7 @@ func VirtualMachine(vm *storage.VirtualMachine) *v2.VirtualMachine {
 		VsockCid:    vm.GetVsockCid(),
 		State:       convertVirtualMachineState(vm.GetState()),
 		LastUpdated: vm.GetLastUpdated(),
+		Scan:        VirtualMachineScan(vm.GetScan()),
 	}
 }
 
@@ -32,5 +33,37 @@ func convertVirtualMachineState(state storage.VirtualMachine_State) v2.VirtualMa
 		return v2.VirtualMachine_RUNNING
 	default:
 		return v2.VirtualMachine_UNKNOWN
+	}
+}
+
+func VirtualMachineScan(scan *storage.VirtualMachineScan) *v2.VirtualMachineScan {
+	if scan == nil {
+		return nil
+	}
+	return &v2.VirtualMachineScan{
+		ScanTime:        scan.GetScanTime(),
+		OperatingSystem: scan.GetOperatingSystem(),
+		Notes:           VirtualMachineScanNotes(scan.GetNotes()),
+		Components:      EmbeddedVirtualMachineScanComponents(scan.GetComponents()),
+	}
+}
+
+func VirtualMachineScanNotes(notes []storage.VirtualMachineScan_Note) []v2.VirtualMachineScan_Note {
+	if notes == nil {
+		return nil
+	}
+	result := make([]v2.VirtualMachineScan_Note, len(notes))
+	for i, note := range notes {
+		result[i] = convertVirtualMachineScanNote(note)
+	}
+	return result
+}
+
+func convertVirtualMachineScanNote(note storage.VirtualMachineScan_Note) v2.VirtualMachineScan_Note {
+	switch note {
+	case storage.VirtualMachineScan_UNSET:
+		return v2.VirtualMachineScan_UNSET
+	default:
+		return v2.VirtualMachineScan_UNSET
 	}
 }
