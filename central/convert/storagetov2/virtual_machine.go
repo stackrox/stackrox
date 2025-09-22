@@ -1,6 +1,7 @@
 package storagetov2
 
 import (
+	"github.com/stackrox/rox/central/convert/helpers"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -49,14 +50,7 @@ func VirtualMachineScan(scan *storage.VirtualMachineScan) *v2.VirtualMachineScan
 }
 
 func VirtualMachineScanNotes(notes []storage.VirtualMachineScan_Note) []v2.VirtualMachineScan_Note {
-	if notes == nil {
-		return nil
-	}
-	result := make([]v2.VirtualMachineScan_Note, len(notes))
-	for i, note := range notes {
-		result[i] = convertVirtualMachineScanNote(note)
-	}
-	return result
+	return helpers.ConvertEnumArray(notes, convertVirtualMachineScanNote)
 }
 
 func convertVirtualMachineScanNote(note storage.VirtualMachineScan_Note) v2.VirtualMachineScan_Note {

@@ -799,7 +799,7 @@ var File_storage_virtual_machine_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x11storage/cve.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa3\x05\n" +
+	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\"\xa3\x05\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
