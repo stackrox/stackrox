@@ -35,7 +35,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1634d01739d3aca41166279bdf31424c8fcfac8e27621b02fb235bdde561add3
       - name: kind
         value: task
       resolver: bundles
@@ -136,7 +136,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1634d01739d3aca41166279bdf31424c8fcfac8e27621b02fb235bdde561add3
       - name: kind
         value: task
       resolver: bundles
@@ -154,7 +154,7 @@ spec:
       - name: name
         value: determine-dependency-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1634d01739d3aca41166279bdf31424c8fcfac8e27621b02fb235bdde561add3
       - name: kind
         value: task
       resolver: bundles
@@ -170,7 +170,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1634d01739d3aca41166279bdf31424c8fcfac8e27621b02fb235bdde561add3
       - name: kind
         value: task
       resolver: bundles
@@ -195,7 +195,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1634d01739d3aca41166279bdf31424c8fcfac8e27621b02fb235bdde561add3
       - name: kind
         value: task
       resolver: bundles
