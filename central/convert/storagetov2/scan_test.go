@@ -6,8 +6,147 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
-	"github.com/stretchr/testify/assert"
 )
+
+const (
+	testComponentName      = "wordpress-ns-simple-intro-loader"
+	testComponentVersion   = "2.2.3"
+	testComponentRiskScore = 4.5
+)
+
+func TestEmbeddedVirtualMachineScanComponents(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []*storage.EmbeddedVirtualMachineScanComponent
+		expected []*v2.ScanComponent
+	}{
+		{
+			name:     "nil input",
+			input:    nil,
+			expected: nil,
+		},
+		{
+			name: "input vector without nil entry",
+			input: []*storage.EmbeddedVirtualMachineScanComponent{
+				{
+					Name:      testComponentName,
+					Version:   testComponentVersion,
+					RiskScore: testComponentRiskScore,
+					Vulnerabilities: []*storage.VirtualMachineVulnerability{
+						storageVirtualMachineTestVuln,
+					},
+				},
+			},
+			expected: []*v2.ScanComponent{
+				{
+					Name:      testComponentName,
+					Version:   testComponentVersion,
+					RiskScore: testComponentRiskScore,
+					Vulns: []*v2.EmbeddedVulnerability{
+						v2VirtualMachineTestVuln,
+					},
+				},
+			},
+		},
+		{
+			name: "nil entries in input vector are ignored",
+			input: []*storage.EmbeddedVirtualMachineScanComponent{
+				nil,
+				{
+					Name:      testComponentName,
+					Version:   testComponentVersion,
+					RiskScore: testComponentRiskScore,
+					Vulnerabilities: []*storage.VirtualMachineVulnerability{
+						storageVirtualMachineTestVuln,
+					},
+				},
+				nil,
+			},
+			expected: []*v2.ScanComponent{
+				{
+					Name:      testComponentName,
+					Version:   testComponentVersion,
+					RiskScore: testComponentRiskScore,
+					Vulns: []*v2.EmbeddedVulnerability{
+						v2VirtualMachineTestVuln,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(it *testing.T) {
+			result := EmbeddedVirtualMachineScanComponents(tc.input)
+			protoassert.SlicesEqual(it, tc.expected, result)
+		})
+	}
+}
+
+func TestEmbeddedVirtualMachineScanComponent(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *storage.EmbeddedVirtualMachineScanComponent
+		expected *v2.ScanComponent
+	}{
+		{
+			name:     "nil input",
+			input:    nil,
+			expected: nil,
+		},
+		{
+			name: "component without SetTopCVSS",
+			input: &storage.EmbeddedVirtualMachineScanComponent{
+				Name:      testComponentName,
+				Version:   testComponentVersion,
+				RiskScore: testComponentRiskScore,
+				Vulnerabilities: []*storage.VirtualMachineVulnerability{
+					storageVirtualMachineTestVuln,
+				},
+			},
+			expected: &v2.ScanComponent{
+				Name:      testComponentName,
+				Version:   testComponentVersion,
+				RiskScore: testComponentRiskScore,
+				Vulns: []*v2.EmbeddedVulnerability{
+					v2VirtualMachineTestVuln,
+				},
+			},
+		},
+		{
+			name: "component with SetTopCVSS",
+			input: &storage.EmbeddedVirtualMachineScanComponent{
+				Name:      testComponentName,
+				Version:   testComponentVersion,
+				RiskScore: testComponentRiskScore,
+				SetTopCvss: &storage.EmbeddedVirtualMachineScanComponent_TopCvss{
+					TopCvss: 7.1,
+				},
+				Vulnerabilities: []*storage.VirtualMachineVulnerability{
+					storageVirtualMachineTestVuln,
+				},
+			},
+			expected: &v2.ScanComponent{
+				Name:      testComponentName,
+				Version:   testComponentVersion,
+				RiskScore: testComponentRiskScore,
+				SetTopCvss: &v2.ScanComponent_TopCvss{
+					TopCvss: 7.1,
+				},
+				Vulns: []*v2.EmbeddedVulnerability{
+					v2VirtualMachineTestVuln,
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(it *testing.T) {
+			result := EmbeddedVirtualMachineScanComponent(tc.input)
+			protoassert.Equal(it, tc.expected, result)
+		})
+	}
+}
 
 func TestScanComponent(t *testing.T) {
 	tests := []struct {
@@ -23,49 +162,21 @@ func TestScanComponent(t *testing.T) {
 		{
 			name: "component with top cvss",
 			input: &storage.EmbeddedImageScanComponent{
-				Name:    "vulnerable-lib",
-				Version: "1.2.3",
-				License: &storage.License{
-					Name: "MIT",
-					Type: "permissive",
-					Url:  "https://opensource.org/licenses/MIT",
-				},
-				Source:       storage.SourceType_PYTHON,
-				Location:     "/usr/lib/python/vulnerable-lib",
+				Name:         "vulnerable-lib",
+				Version:      "1.2.3",
 				RiskScore:    8.5,
-				FixedBy:      "1.2.4",
 				Architecture: "amd64",
 				SetTopCvss: &storage.EmbeddedImageScanComponent_TopCvss{
 					TopCvss: 9.8,
 				},
-				Executables: []*storage.EmbeddedImageScanComponent_Executable{
-					{
-						Path:         "/usr/bin/vuln-exec",
-						Dependencies: []string{"lib1", "lib2"},
-					},
-				},
 			},
 			expected: &v2.ScanComponent{
-				Name:    "vulnerable-lib",
-				Version: "1.2.3",
-				License: &v2.License{
-					Name: "MIT",
-					Type: "permissive",
-					Url:  "https://opensource.org/licenses/MIT",
-				},
-				Source:       v2.SourceType_PYTHON,
-				Location:     "/usr/lib/python/vulnerable-lib",
+				Name:         "vulnerable-lib",
+				Version:      "1.2.3",
 				RiskScore:    8.5,
-				FixedBy:      "1.2.4",
 				Architecture: "amd64",
 				SetTopCvss: &v2.ScanComponent_TopCvss{
 					TopCvss: 9.8,
-				},
-				Executables: []*v2.ScanComponent_Executable{
-					{
-						Path:         "/usr/bin/vuln-exec",
-						Dependencies: []string{"lib1", "lib2"},
-					},
 				},
 			},
 		},
@@ -74,12 +185,10 @@ func TestScanComponent(t *testing.T) {
 			input: &storage.EmbeddedImageScanComponent{
 				Name:    "safe-lib",
 				Version: "2.0.0",
-				Source:  storage.SourceType_GO,
 			},
 			expected: &v2.ScanComponent{
 				Name:    "safe-lib",
 				Version: "2.0.0",
-				Source:  v2.SourceType_GO,
 			},
 		},
 	}
@@ -88,41 +197,6 @@ func TestScanComponent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ScanComponent(tt.input)
 			protoassert.Equal(t, tt.expected, result)
-		})
-	}
-}
-func TestConvertSourceType(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    storage.SourceType
-		expected v2.SourceType
-	}{
-		{
-			name:     "OS source type",
-			input:    storage.SourceType_OS,
-			expected: v2.SourceType_OS,
-		},
-		{
-			name:     "Python source type",
-			input:    storage.SourceType_PYTHON,
-			expected: v2.SourceType_PYTHON,
-		},
-		{
-			name:     "Java source type",
-			input:    storage.SourceType_JAVA,
-			expected: v2.SourceType_JAVA,
-		},
-		{
-			name:     "Go source type",
-			input:    storage.SourceType_GO,
-			expected: v2.SourceType_GO,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := convertSourceType(tt.input)
-			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -149,24 +223,20 @@ func TestScanComponents(t *testing.T) {
 				{
 					Name:    "component1",
 					Version: "1.0.0",
-					Source:  storage.SourceType_OS,
 				},
 				{
 					Name:    "component2",
 					Version: "2.0.0",
-					Source:  storage.SourceType_PYTHON,
 				},
 			},
 			expected: []*v2.ScanComponent{
 				{
 					Name:    "component1",
 					Version: "1.0.0",
-					Source:  v2.SourceType_OS,
 				},
 				{
 					Name:    "component2",
 					Version: "2.0.0",
-					Source:  v2.SourceType_PYTHON,
 				},
 			},
 		},
@@ -200,72 +270,6 @@ func TestScanComponents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ScanComponents(tt.input)
 			protoassert.SlicesEqual(t, tt.expected, result)
-		})
-	}
-}
-
-func TestExecutable(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    *storage.EmbeddedImageScanComponent_Executable
-		expected *v2.ScanComponent_Executable
-	}{
-		{
-			name:     "nil input",
-			input:    nil,
-			expected: nil,
-		},
-		{
-			name: "complete executable",
-			input: &storage.EmbeddedImageScanComponent_Executable{
-				Path:         "/usr/bin/test-exec",
-				Dependencies: []string{"dependency1", "dependency2"},
-			},
-			expected: &v2.ScanComponent_Executable{
-				Path:         "/usr/bin/test-exec",
-				Dependencies: []string{"dependency1", "dependency2"},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := Executable(tt.input)
-			protoassert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestLicense(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    *storage.License
-		expected *v2.License
-	}{
-		{
-			name:     "nil input",
-			input:    nil,
-			expected: nil,
-		},
-		{
-			name: "complete license",
-			input: &storage.License{
-				Name: "Apache-2.0",
-				Type: "permissive",
-				Url:  "https://opensource.org/licenses/Apache-2.0",
-			},
-			expected: &v2.License{
-				Name: "Apache-2.0",
-				Type: "permissive",
-				Url:  "https://opensource.org/licenses/Apache-2.0",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := License(tt.input)
-			protoassert.Equal(t, tt.expected, result)
 		})
 	}
 }
