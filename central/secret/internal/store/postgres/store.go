@@ -195,10 +195,7 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -270,10 +267,7 @@ func copyFromSecretsFiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -324,10 +318,7 @@ func copyFromSecretsFilesRegistries(ctx context.Context, s pgSearch.Deleter, tx 
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{

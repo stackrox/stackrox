@@ -168,10 +168,7 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -243,10 +240,7 @@ func copyFromComplianceOperatorRuleV2Controls(ctx context.Context, s pgSearch.De
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{

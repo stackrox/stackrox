@@ -112,10 +112,7 @@ func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them

@@ -189,10 +189,7 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -264,10 +261,7 @@ func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, 
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -310,10 +304,7 @@ func copyFromComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, 
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -356,10 +347,7 @@ func copyFromComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context,
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
