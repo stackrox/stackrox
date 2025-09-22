@@ -25,12 +25,13 @@ var (
 )
 
 func initialize() {
-	storage := pgStore.New(globaldb.GetPostgres())
-	plopStorage := plopStore.New(globaldb.GetPostgres())
+	db := globaldb.GetPostgres()
+	storage := pgStore.New(db)
+	plopStorage := plopStore.New(db)
 
 	p := pruner.NewFactory(minArgsPerProcess, pruneInterval)
 
-	ad = New(storage, plopStorage, p)
+	ad = New(db, storage, plopStorage, p)
 }
 
 // Singleton provides the interface for non-service external interaction.
