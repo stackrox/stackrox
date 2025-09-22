@@ -252,7 +252,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 
 	var manifestManager *manifest.Manager
 	if features.ScannerV4ReIndex.Enabled() {
-		manifestManager = manifest.NewManager(ctx, metadataStore, locker)
+		manifestManager = manifest.NewManager(ctx, metadataStore, externalIndexStore, locker)
 		// Set any manifests indexed prior to the existence of the manifest_metadata table
 		// to expire immediately.
 		// TODO(ROX-26957): Consider moving this elsewhere so we do not block initialization.
