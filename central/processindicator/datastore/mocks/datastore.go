@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	views "github.com/stackrox/rox/central/processindicator/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
@@ -108,6 +109,21 @@ func (m *MockDataStore) GetProcessIndicators(ctx context.Context, ids []string) 
 func (mr *MockDataStoreMockRecorder) GetProcessIndicators(ctx, ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicators), ctx, ids)
+}
+
+// GetProcessIndicatorsRiskView mocks base method.
+func (m *MockDataStore) GetProcessIndicatorsRiskView(ctx context.Context, q *v1.Query) ([]*views.ProcessIndicatorRiskView, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProcessIndicatorsRiskView", ctx, q)
+	ret0, _ := ret[0].([]*views.ProcessIndicatorRiskView)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProcessIndicatorsRiskView indicates an expected call of GetProcessIndicatorsRiskView.
+func (mr *MockDataStoreMockRecorder) GetProcessIndicatorsRiskView(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicatorsRiskView", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicatorsRiskView), ctx, q)
 }
 
 // PruneProcessIndicators mocks base method.
