@@ -41,10 +41,8 @@ describe('Network Graph smoke tests', () => {
         // check that group of nodes for NS is present
         cy.get(`${networkGraphSelectors.groups} [data-id="stackrox"]`);
 
-        // check that label for NS is present and has the filtered-namespace class
-        cy.get(
-            `${networkGraphSelectors.nodes} [data-id="stackrox"] g.filtered-namespace text`
-        ).contains('stackrox');
+        // check that label for NS is present
+        cy.get(networkGraphSelectors.filteredNamespaceGroupNode('stackrox'));
 
         // check that toolbar and buttons are present
         cy.get(`${networkGraphSelectors.toolbar}`);

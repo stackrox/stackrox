@@ -22,7 +22,7 @@ describe('Exception Management Request Details Page', () => {
 
     it('should be able to sort on the "CVE" column', () => {
         deferAndVisitRequestDetails(deferralProps);
-        cy.get(selectors.tableSortColumn('CVE')).should('have.attr', 'aria-sort', 'none');
+        cy.get(selectors.tableSortColumn('CVE')).should('not.have.attr', 'aria-sort');
         cy.get(selectors.tableColumnSortButton('CVE')).click();
         cy.location('search').should('contain', 'sortOption[field]=CVE&sortOption[direction]=desc');
         cy.get(selectors.tableSortColumn('CVE')).should('have.attr', 'aria-sort', 'descending');
@@ -72,7 +72,7 @@ describe('Exception Management Request Details Page', () => {
 
     it('should be able to sort on the "CVSS" column', () => {
         deferAndVisitRequestDetails(deferralProps);
-        cy.get(selectors.tableSortColumn('CVSS')).should('have.attr', 'aria-sort', 'none');
+        cy.get(selectors.tableSortColumn('CVSS')).should('not.have.attr', 'aria-sort');
         cy.get(selectors.tableColumnSortButton('CVSS')).click();
         cy.location('search').should(
             'contain',
@@ -89,11 +89,7 @@ describe('Exception Management Request Details Page', () => {
 
     it('should be able to sort on the "Affected images" column', () => {
         deferAndVisitRequestDetails(deferralProps);
-        cy.get(selectors.tableSortColumn('Affected images')).should(
-            'have.attr',
-            'aria-sort',
-            'none'
-        );
+        cy.get(selectors.tableSortColumn('Affected images')).should('not.have.attr', 'aria-sort');
         cy.get(selectors.tableColumnSortButton('Affected images')).click();
         cy.location('search').should(
             'contain',
@@ -118,11 +114,7 @@ describe('Exception Management Request Details Page', () => {
 
     it('should be able to sort on the "First discovered" column', () => {
         deferAndVisitRequestDetails(deferralProps);
-        cy.get(selectors.tableSortColumn('First discovered')).should(
-            'have.attr',
-            'aria-sort',
-            'none'
-        );
+        cy.get(selectors.tableSortColumn('First discovered')).should('not.have.attr', 'aria-sort');
         cy.get(selectors.tableColumnSortButton('First discovered')).click();
         cy.location('search').should(
             'contain',
