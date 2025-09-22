@@ -4,6 +4,9 @@ import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
 import type { Advisory, CVSSV3Severity, EmbeddedVulnerability } from 'types/vulnerability.proto';
 
+import type { FixableStatus, VulnerabilitySeverityLabel } from '../types';
+import { severityLabelToSeverity } from '../utils/searchUtils';
+
 // Most if not all functions in this file will be removed once backend filtering is implemented.
 
 export function getVirtualMachineSeveritiesCount(
@@ -95,4 +98,83 @@ export function getVirtualMachineCveTableData(virtualMachine?: VirtualMachine): 
     });
 
     return Array.from(map.values()).sort(defaultCveTableSort);
+}
+
+type VirtualMachineCveSearchFilter = Partial<{
+    CVE: string[];
+    SEVERITY: VulnerabilitySeverityLabel[];
+    FIXABLE: FixableStatus[];
+    Component: string[];
+    'Component Version': string[];
+}>;
+
+export function applyVirtualMachineCveTableFilters(
+    cveTableData: CveTableRow[],
+    searchFilter: VirtualMachineCveSearchFilter
+): CveTableRow[] {
+    if (!searchFilter || Object.keys(searchFilter).length === 0) {
+        return cveTableData;
+    }
+
+    // normalize filters
+    // - convert text filters to lowercase (CVE, Component, Component Version)
+    // - map  severity ui labels to severity data values (enum)
+    const cveFilters = searchFilter.CVE?.map((cve) => cve.toLowerCase());
+    const componentFilters = searchFilter.Component?.map((component) => component.toLowerCase());
+    const componentVersionFilters = searchFilter['Component Version']?.map((version) =>
+        version.toLowerCase()
+    );
+    const severityFilters = searchFilter.SEVERITY?.map((label) => severityLabelToSeverity(label));
+    const fixableFilters: FixableStatus[] | undefined = searchFilter.FIXABLE;
+
+    return cveTableData.filter((cveTableRow) => {
+        // "CVE" filter, case insensitive and substring
+        if (cveFilters) {
+            const cveNameLowerCase = cveTableRow.cve.toLowerCase();
+            if (!cveFilters.some((filter) => cveNameLowerCase.includes(filter))) {
+                return false;
+            }
+        }
+
+        // "SEVERITY" filter, exact
+        if (severityFilters) {
+            if (!severityFilters.includes(cveTableRow.severity)) {
+                return false;
+            }
+        }
+
+        // "FIXABLE" filter, exact
+        if (fixableFilters) {
+            const rowFixable: FixableStatus = cveTableRow.isFixable ? 'Fixable' : 'Not fixable';
+            if (!fixableFilters.includes(rowFixable)) {
+                return false;
+            }
+        }
+
+        // "Component" filter, case insensitive and substring
+        if (componentFilters) {
+            const components = cveTableRow.affectedComponents ?? [];
+            const hasMatch = components.some((comp) => {
+                const compNameLowerCase = comp.name.toLowerCase();
+                return componentFilters.some((filter) => compNameLowerCase.includes(filter));
+            });
+            if (!hasMatch) {
+                return false;
+            }
+        }
+
+        // "Component Version" filter, case insensitive and substring
+        if (componentVersionFilters) {
+            const components = cveTableRow.affectedComponents ?? [];
+            const hasMatch = components.some((comp) => {
+                const versionLowerCase = (comp.version ?? '').toLowerCase();
+                return componentVersionFilters.some((filter) => versionLowerCase.includes(filter));
+            });
+            if (!hasMatch) {
+                return false;
+            }
+        }
+
+        return true; // passed all filter conditions
+    });
 }
