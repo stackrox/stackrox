@@ -35,7 +35,7 @@ Example MCPs configuration template:
         "JIRA_URL",
         "-e",
         "JIRA_PERSONAL_TOKEN",
-        "ghcr.io/sooperset/mcp-atlassian:<Use desired version SHA>"
+        "ghcr.io/sooperset/mcp-atlassian@sha256:<Use desired version SHA>"
       ],
       "env": {
         "CONFLUENCE_URL": "https://spaces.redhat.com/",
