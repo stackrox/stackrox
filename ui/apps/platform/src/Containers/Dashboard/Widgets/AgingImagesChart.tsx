@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import {
-    Chart,
-    ChartAxis,
-    ChartBar,
-    ChartContainer,
-    ChartLabelProps,
-} from '@patternfly/react-charts';
+import { Chart, ChartAxis, ChartBar, ChartContainer } from '@patternfly/react-charts';
+import type { ChartLabelProps } from '@patternfly/react-charts';
 
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
@@ -17,7 +12,7 @@ import {
     severityColorScale,
 } from 'utils/chartUtils';
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { vulnManagementImagesPath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
 import isResourceScoped from '../utils';

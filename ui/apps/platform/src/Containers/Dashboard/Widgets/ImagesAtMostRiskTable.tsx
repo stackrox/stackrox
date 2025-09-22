@@ -5,7 +5,7 @@ import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { CriticalSeverityIcon, ImportantSeverityIcon } from 'Components/PatternFly/SeverityIcons';
 import { noViolationsColor } from 'constants/severityColors';
-import { ImageName } from 'types/image.proto';
+import type { ImageName } from 'types/image.proto';
 import { vulnManagementPath } from 'routePaths';
 
 type VulnCounts = {
