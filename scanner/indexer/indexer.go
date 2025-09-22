@@ -27,6 +27,7 @@ import (
 	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/gobin"
 	ccindexer "github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/nodejs"
