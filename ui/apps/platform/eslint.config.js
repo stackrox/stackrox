@@ -733,7 +733,6 @@ module.exports = [
             'src/Containers/AccessControl/**',
             'src/Containers/Administration/**',
             'src/Containers/Clusters/**',
-            'src/Containers/Collections/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ComplianceEnhanced/**',
             'src/Containers/Dashboard/**',
