@@ -57,6 +57,8 @@ Example MCPs configuration template:
     }
   }
 }
+```
+
 ## Agent Configuration
 
 The `stackrox-ci-failure-investigator` agent is automatically configured in `.claude/agents/` and provides:
