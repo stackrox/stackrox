@@ -219,6 +219,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Alert ID",
+					Enabled:   true,
+				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -306,6 +310,10 @@ var (
 				Type:       "storage.LifecycleStage",
 				SQLType:    "integer",
 				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Lifecycle Stage",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterId",
@@ -313,6 +321,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterName",
@@ -320,6 +332,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Namespace",
@@ -327,6 +343,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "NamespaceId",
@@ -334,6 +354,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Id",
@@ -432,6 +456,10 @@ var (
 				Type:       "storage.ViolationState",
 				SQLType:    "integer",
 				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Violation State",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "PlatformComponent",
@@ -439,6 +467,10 @@ var (
 				Type:       "bool",
 				SQLType:    "bool",
 				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Platform Component",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "EntityType",
@@ -446,6 +478,10 @@ var (
 				Type:       "storage.Alert_EntityType",
 				SQLType:    "integer",
 				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Entity Type",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "serialized",

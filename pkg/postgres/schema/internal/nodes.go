@@ -223,6 +223,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Node ID",
+					Enabled:   true,
+				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -233,6 +237,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Node",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterId",
@@ -240,6 +248,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterName",
@@ -247,6 +259,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Labels",
@@ -254,6 +270,10 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Node Label",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Annotations",
@@ -261,6 +281,10 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Node Annotation",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "JoinedAt",
@@ -282,6 +306,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Operating System",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "LastUpdated",
@@ -324,6 +352,10 @@ var (
 				Type:       "int64",
 				SQLType:    "bigint",
 				DataType:   postgres.BigInteger,
+				Search: walker.SearchField{
+					FieldName: "Node Risk Priority",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "RiskScore",
@@ -331,6 +363,10 @@ var (
 				Type:       "float32",
 				SQLType:    "numeric",
 				DataType:   postgres.Numeric,
+				Search: walker.SearchField{
+					FieldName: "Node Risk Score",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "TopCvss",

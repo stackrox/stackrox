@@ -98,6 +98,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Policy ID",
+					Enabled:   true,
+				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -108,6 +112,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Policy",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Description",
@@ -115,6 +123,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Description",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Disabled",
@@ -122,6 +134,10 @@ var (
 				Type:       "bool",
 				SQLType:    "bool",
 				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Disabled",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Categories",
@@ -129,6 +145,10 @@ var (
 				Type:       "[]string",
 				SQLType:    "text[]",
 				DataType:   postgres.StringArray,
+				Search: walker.SearchField{
+					FieldName: "Category",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "LifecycleStages",
@@ -136,6 +156,10 @@ var (
 				Type:       "[]storage.LifecycleStage",
 				SQLType:    "int[]",
 				DataType:   postgres.EnumArray,
+				Search: walker.SearchField{
+					FieldName: "Lifecycle Stage",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Severity",
@@ -143,6 +167,10 @@ var (
 				Type:       "storage.Severity",
 				SQLType:    "integer",
 				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Severity",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "EnforcementActions",
@@ -150,6 +178,10 @@ var (
 				Type:       "[]storage.EnforcementAction",
 				SQLType:    "int[]",
 				DataType:   postgres.EnumArray,
+				Search: walker.SearchField{
+					FieldName: "Enforcement",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "LastUpdated",

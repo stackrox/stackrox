@@ -332,6 +332,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Deployment ID",
+					Enabled:   true,
+				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -342,6 +346,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Deployment",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Type",
@@ -349,6 +357,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Deployment Type",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Namespace",
@@ -356,6 +368,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "NamespaceId",
@@ -363,6 +379,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "OrchestratorComponent",
@@ -370,6 +390,10 @@ var (
 				Type:       "bool",
 				SQLType:    "bool",
 				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Orchestrator Component",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Labels",
@@ -377,6 +401,10 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Deployment Label",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "PodLabels",
@@ -384,6 +412,10 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Pod Label",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Created",
@@ -398,6 +430,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterName",
@@ -405,6 +441,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Annotations",
@@ -412,6 +452,10 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Deployment Annotation",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Priority",
@@ -419,6 +463,10 @@ var (
 				Type:       "int64",
 				SQLType:    "bigint",
 				DataType:   postgres.BigInteger,
+				Search: walker.SearchField{
+					FieldName: "Deployment Risk Priority",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ImagePullSecrets",
@@ -426,6 +474,10 @@ var (
 				Type:       "[]string",
 				SQLType:    "text[]",
 				DataType:   postgres.StringArray,
+				Search: walker.SearchField{
+					FieldName: "Image Pull Secret",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ServiceAccount",
@@ -433,6 +485,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Service Account",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ServiceAccountPermissionLevel",
@@ -440,6 +496,10 @@ var (
 				Type:       "storage.PermissionLevel",
 				SQLType:    "integer",
 				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Service Account Permission Level",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "RiskScore",
@@ -447,6 +507,10 @@ var (
 				Type:       "float32",
 				SQLType:    "numeric",
 				DataType:   postgres.Numeric,
+				Search: walker.SearchField{
+					FieldName: "Deployment Risk Score",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "PlatformComponent",
@@ -454,6 +518,10 @@ var (
 				Type:       "bool",
 				SQLType:    "bool",
 				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Platform Component",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "serialized",

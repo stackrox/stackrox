@@ -79,6 +79,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Secret ID",
+					Enabled:   true,
+				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -89,6 +93,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Secret",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterId",
@@ -96,6 +104,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterName",
@@ -103,6 +115,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Namespace",
@@ -110,6 +126,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "CreatedAt",

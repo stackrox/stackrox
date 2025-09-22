@@ -97,6 +97,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -107,6 +111,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Type",
@@ -114,6 +122,10 @@ var (
 				Type:       "storage.ClusterType",
 				SQLType:    "integer",
 				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Cluster Platform Type",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Labels",
@@ -121,6 +133,10 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Cluster Label",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Type",

@@ -242,6 +242,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Image Sha",
+					Enabled:   true,
+				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -371,6 +375,10 @@ var (
 				Type:       "int64",
 				SQLType:    "bigint",
 				DataType:   postgres.BigInteger,
+				Search: walker.SearchField{
+					FieldName: "Image Risk Priority",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "RiskScore",
@@ -378,6 +386,10 @@ var (
 				Type:       "float32",
 				SQLType:    "numeric",
 				DataType:   postgres.Numeric,
+				Search: walker.SearchField{
+					FieldName: "Image Risk Score",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "TopCvss",

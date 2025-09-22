@@ -365,8 +365,16 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 	for _, field := range schema.Fields {
 		// Find the search field name for this field by matching the column name
 		searchFieldName := ""
-		if fieldName, exists := fieldPathToSearchName["."+strings.ToLower(field.ColumnName)]; exists {
-			searchFieldName = fieldName
+		// Try multiple variations of the field path to match
+		possiblePaths := []string{
+			"." + strings.ToLower(field.ColumnName),
+			"." + pgutils.NamingStrategy.ColumnName("", field.ColumnName),
+		}
+		for _, path := range possiblePaths {
+			if fieldName, exists := fieldPathToSearchName[path]; exists {
+				searchFieldName = fieldName
+				break
+			}
 		}
 
 		optimizedField := OptimizedSchemaField{

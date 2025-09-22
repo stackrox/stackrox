@@ -91,6 +91,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Role Binding ID",
+					Enabled:   true,
+				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -101,6 +105,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Role Binding",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Namespace",
@@ -108,6 +116,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterId",
@@ -115,6 +127,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterName",
@@ -122,6 +138,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterRole",
@@ -129,6 +149,10 @@ var (
 				Type:       "bool",
 				SQLType:    "bool",
 				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Cluster Role",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Labels",
@@ -136,6 +160,10 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Role Binding Label",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Annotations",
@@ -143,6 +171,10 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Role Binding Annotation",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "RoleId",
@@ -150,6 +182,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Role ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "serialized",
