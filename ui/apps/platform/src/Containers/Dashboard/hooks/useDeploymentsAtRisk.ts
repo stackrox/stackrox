@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { fetchDeploymentsWithProcessInfo } from 'services/DeploymentsService';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import useRestQuery from 'hooks/useRestQuery';
 
 export default function useDeploymentsAtRisk(searchFilter: SearchFilter, numberOfResults = 6) {
