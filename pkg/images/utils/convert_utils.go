@@ -9,7 +9,7 @@ func ConvertToV1(image *storage.ImageV2) *storage.Image {
 		return nil
 	}
 	return &storage.Image{
-		Id:             image.GetSha(),
+		Id:             image.GetDigest(),
 		Name:           image.GetName(),
 		Names:          []*storage.ImageName{image.GetName()},
 		IsClusterLocal: image.GetIsClusterLocal(),
@@ -21,13 +21,13 @@ func ConvertToV1(image *storage.ImageV2) *storage.Image {
 		RiskScore:      image.GetRiskScore(),
 		Scan:           image.GetScan(),
 		SetComponents: &storage.Image_Components{
-			Components: image.GetComponentCount(),
+			Components: image.GetScanStats().GetComponentCount(),
 		},
 		SetCves: &storage.Image_Cves{
-			Cves: image.GetCveCount(),
+			Cves: image.GetScanStats().GetCveCount(),
 		},
 		SetFixable: &storage.Image_FixableCves{
-			FixableCves: image.GetFixableCveCount(),
+			FixableCves: image.GetScanStats().GetFixableCveCount(),
 		},
 		SetTopCvss: &storage.Image_TopCvss{
 			TopCvss: image.GetTopCvss(),
@@ -49,9 +49,9 @@ func ConvertToV2(image *storage.Image) *storage.ImageV2 {
 	if image == nil {
 		return nil
 	}
-	return &storage.ImageV2{
+	ret := &storage.ImageV2{
 		Id:                        NewImageV2ID(image.GetName(), image.GetId()),
-		Sha:                       image.GetId(),
+		Digest:                    image.GetId(),
 		Name:                      image.GetName(),
 		IsClusterLocal:            image.GetIsClusterLocal(),
 		LastUpdated:               image.GetLastUpdated(),
@@ -61,13 +61,12 @@ func ConvertToV2(image *storage.Image) *storage.ImageV2 {
 		Priority:                  image.GetPriority(),
 		RiskScore:                 image.GetRiskScore(),
 		Scan:                      image.GetScan(),
-		ComponentCount:            image.GetComponents(),
-		CveCount:                  image.GetCves(),
-		FixableCveCount:           image.GetFixableCves(),
 		TopCvss:                   image.GetTopCvss(),
 		SignatureVerificationData: image.GetSignatureVerificationData(),
 		Signature:                 image.GetSignature(),
 	}
+	FillScanStatsV2(ret)
+	return ret
 }
 
 func ConvertNotesToV2(notes []storage.Image_Note) []storage.ImageV2_Note {

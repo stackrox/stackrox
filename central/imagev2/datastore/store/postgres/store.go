@@ -119,7 +119,7 @@ func (s *storeImpl) insertIntoImages(
 	if len(existingCVEs) == 0 {
 		// If we did not find any existing CVEs for the image, we may have just upgraded to q version using new CVE data model.
 		// So we try to migrate the CVE created and first image occurrence timestamps from the legacy model.
-		existingCVEs, err = getLegacyImageCVEs(ctx, tx, parts.image.GetSha())
+		existingCVEs, err = getLegacyImageCVEs(ctx, tx, parts.image.GetDigest())
 		if err != nil {
 			return err
 		}
@@ -153,7 +153,7 @@ func (s *storeImpl) insertIntoImages(
 
 	values := []interface{}{
 		cloned.GetId(),
-		cloned.GetSha(),
+		cloned.GetDigest(),
 		cloned.GetName().GetRegistry(),
 		cloned.GetName().GetRemote(),
 		cloned.GetName().GetTag(),
@@ -167,19 +167,19 @@ func (s *storeImpl) insertIntoImages(
 		protocompat.NilOrTime(cloned.GetScan().GetScanTime()),
 		cloned.GetScan().GetOperatingSystem(),
 		protocompat.NilOrTime(cloned.GetSignature().GetFetched()),
-		cloned.GetComponentCount(),
-		cloned.GetCveCount(),
-		cloned.GetFixableCveCount(),
-		cloned.GetUnknownCveCount(),
-		cloned.GetFixableUnknownCveCount(),
-		cloned.GetCriticalCveCount(),
-		cloned.GetFixableCriticalCveCount(),
-		cloned.GetImportantCveCount(),
-		cloned.GetFixableImportantCveCount(),
-		cloned.GetModerateCveCount(),
-		cloned.GetFixableModerateCveCount(),
-		cloned.GetLowCveCount(),
-		cloned.GetFixableLowCveCount(),
+		cloned.GetScanStats().GetComponentCount(),
+		cloned.GetScanStats().GetCveCount(),
+		cloned.GetScanStats().GetFixableCveCount(),
+		cloned.GetScanStats().GetUnknownCveCount(),
+		cloned.GetScanStats().GetFixableUnknownCveCount(),
+		cloned.GetScanStats().GetCriticalCveCount(),
+		cloned.GetScanStats().GetFixableCriticalCveCount(),
+		cloned.GetScanStats().GetImportantCveCount(),
+		cloned.GetScanStats().GetFixableImportantCveCount(),
+		cloned.GetScanStats().GetModerateCveCount(),
+		cloned.GetScanStats().GetFixableModerateCveCount(),
+		cloned.GetScanStats().GetLowCveCount(),
+		cloned.GetScanStats().GetFixableLowCveCount(),
 		protocompat.NilOrTime(cloned.GetLastUpdated()),
 		cloned.GetPriority(),
 		cloned.GetRiskScore(),
@@ -187,7 +187,7 @@ func (s *storeImpl) insertIntoImages(
 		serialized,
 	}
 
-	finalStr := "INSERT INTO " + imagesV2Table + " (Id, Sha, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, ComponentCount, CveCount, FixableCveCount, UnknownCveCount, FixableUnknownCveCount, CriticalCveCount, FixableCriticalCveCount, ImportantCveCount, FixableImportantCveCount, ModerateCveCount, FixableModerateCveCount, LowCveCount, FixableLowCveCount, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Sha = EXCLUDED.Sha, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, ComponentCount = EXCLUDED.ComponentCount, CveCount = EXCLUDED.CveCount, FixableCveCount = EXCLUDED.FixableCveCount, UnknownCveCount = EXCLUDED.UnknownCveCount, FixableUnknownCveCount = EXCLUDED.FixableUnknownCveCount, CriticalCveCount = EXCLUDED.CriticalCveCount, FixableCriticalCveCount = EXCLUDED.FixableCriticalCveCount, ImportantCveCount = EXCLUDED.ImportantCveCount, FixableImportantCveCount = EXCLUDED.FixableImportantCveCount, ModerateCveCount = EXCLUDED.ModerateCveCount, FixableModerateCveCount = EXCLUDED.FixableModerateCveCount, LowCveCount = EXCLUDED.LowCveCount, FixableLowCveCount = EXCLUDED.FixableLowCveCount, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO " + imagesV2Table + " (Id, Digest, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, ScanStats_ComponentCount, ScanStats_CveCount, ScanStats_FixableCveCount, ScanStats_UnknownCveCount, ScanStats_FixableUnknownCveCount, ScanStats_CriticalCveCount, ScanStats_FixableCriticalCveCount, ScanStats_ImportantCveCount, ScanStats_FixableImportantCveCount, ScanStats_ModerateCveCount, ScanStats_FixableModerateCveCount, ScanStats_LowCveCount, ScanStats_FixableLowCveCount, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Digest = EXCLUDED.Digest, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, ScanStats_ComponentCount = EXCLUDED.ScanStats_ComponentCount, ScanStats_CveCount = EXCLUDED.ScanStats_CveCount, ScanStats_FixableCveCount = EXCLUDED.ScanStats_FixableCveCount, ScanStats_UnknownCveCount = EXCLUDED.ScanStats_UnknownCveCount, ScanStats_FixableUnknownCveCount = EXCLUDED.ScanStats_FixableUnknownCveCount, ScanStats_CriticalCveCount = EXCLUDED.ScanStats_CriticalCveCount, ScanStats_FixableCriticalCveCount = EXCLUDED.ScanStats_FixableCriticalCveCount, ScanStats_ImportantCveCount = EXCLUDED.ScanStats_ImportantCveCount, ScanStats_FixableImportantCveCount = EXCLUDED.ScanStats_FixableImportantCveCount, ScanStats_ModerateCveCount = EXCLUDED.ScanStats_ModerateCveCount, ScanStats_FixableModerateCveCount = EXCLUDED.ScanStats_FixableModerateCveCount, ScanStats_LowCveCount = EXCLUDED.ScanStats_LowCveCount, ScanStats_FixableLowCveCount = EXCLUDED.ScanStats_FixableLowCveCount, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	_, err = tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -439,19 +439,22 @@ func populateImageScanHash(scan *storage.ImageScan) error {
 
 func fillScanStatsFromExistingImage(oldImage *storage.ImageV2, image *storage.ImageV2) {
 	image.RiskScore = oldImage.GetRiskScore()
-	image.ComponentCount = oldImage.GetComponentCount()
-	image.CveCount = oldImage.GetCveCount()
-	image.FixableCveCount = oldImage.GetFixableCveCount()
-	image.UnknownCveCount = oldImage.GetUnknownCveCount()
-	image.FixableUnknownCveCount = oldImage.GetFixableUnknownCveCount()
-	image.CriticalCveCount = oldImage.GetCriticalCveCount()
-	image.FixableCriticalCveCount = oldImage.GetFixableCriticalCveCount()
-	image.ImportantCveCount = oldImage.GetImportantCveCount()
-	image.FixableImportantCveCount = oldImage.GetFixableImportantCveCount()
-	image.ModerateCveCount = oldImage.GetModerateCveCount()
-	image.FixableModerateCveCount = oldImage.GetFixableModerateCveCount()
-	image.LowCveCount = oldImage.GetLowCveCount()
-	image.FixableLowCveCount = oldImage.GetFixableLowCveCount()
+	if image.GetScanStats() == nil {
+		image.ScanStats = &storage.ImageV2_ScanStats{}
+	}
+	image.GetScanStats().ComponentCount = oldImage.GetScanStats().GetComponentCount()
+	image.GetScanStats().CveCount = oldImage.GetScanStats().GetCveCount()
+	image.GetScanStats().FixableCveCount = oldImage.GetScanStats().GetFixableCveCount()
+	image.GetScanStats().UnknownCveCount = oldImage.GetScanStats().GetUnknownCveCount()
+	image.GetScanStats().FixableUnknownCveCount = oldImage.GetScanStats().GetFixableUnknownCveCount()
+	image.GetScanStats().CriticalCveCount = oldImage.GetScanStats().GetCriticalCveCount()
+	image.GetScanStats().FixableCriticalCveCount = oldImage.GetScanStats().GetFixableCriticalCveCount()
+	image.GetScanStats().ImportantCveCount = oldImage.GetScanStats().GetImportantCveCount()
+	image.GetScanStats().FixableImportantCveCount = oldImage.GetScanStats().GetFixableImportantCveCount()
+	image.GetScanStats().ModerateCveCount = oldImage.GetScanStats().GetModerateCveCount()
+	image.GetScanStats().FixableModerateCveCount = oldImage.GetScanStats().GetFixableModerateCveCount()
+	image.GetScanStats().LowCveCount = oldImage.GetScanStats().GetLowCveCount()
+	image.GetScanStats().FixableLowCveCount = oldImage.GetScanStats().GetFixableLowCveCount()
 	image.TopCvss = oldImage.GetTopCvss()
 }
 

@@ -128,7 +128,7 @@ func (s *ImageViewTestSuite) SetupSuite() {
 		}
 		var sha1, sha2, sha3, sha4 *storage.ImageV2
 		for _, i := range imagesV2 {
-			switch i.GetSha() {
+			switch i.GetDigest() {
 			case "sha1":
 				sha1 = i
 			case "sha2":
