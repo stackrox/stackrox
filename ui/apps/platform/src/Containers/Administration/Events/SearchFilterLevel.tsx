@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Divider } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
-import { AdministrationEventLevel, levels } from 'services/AdministrationEventsService';
+import { levels } from 'services/AdministrationEventsService';
+import type { AdministrationEventLevel } from 'services/AdministrationEventsService';
 
 import { getLevelText } from './AdministrationEvent';
 
