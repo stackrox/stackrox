@@ -761,7 +761,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [ImageV2_Note!]!",
 		"priority: Int!",
 		"riskScore: Float!",
-		"scanStats: ImageV2_ScanStats",
 		"signature: ImageSignature",
 		"signatureVerificationData: ImageSignatureVerificationData",
 		"topCvss: Float!",
@@ -9059,12 +9058,6 @@ func (resolver *imageV2Resolver) RiskScore(ctx context.Context) float64 {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetRiskScore()
 	return float64(value)
-}
-
-func (resolver *imageV2Resolver) ScanStats(ctx context.Context) (*imageV2_ScanStatsResolver, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetScanStats()
-	return resolver.root.wrapImageV2_ScanStats(value, true, nil)
 }
 
 func (resolver *imageV2Resolver) Signature(ctx context.Context) (*imageSignatureResolver, error) {
