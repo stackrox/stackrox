@@ -144,6 +144,8 @@ func getImageWithComponentsV2(componentsPerImage []*storage.EmbeddedImageScanCom
 			ScanTime:   protocompat.TimestampNow(),
 			Components: componentsPerImage,
 		},
-		ComponentCount: int32(len(componentsPerImage)),
+		ScanStats: &storage.ImageV2_ScanStats{
+			ComponentCount: int32(len(componentsPerImage)),
+		},
 	}
 }
