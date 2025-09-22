@@ -233,6 +233,14 @@ func (s *ImagesV2StoreSuite) TestUpsert_MigratingFromOldCVEModel() {
 }
 
 func (s *ImagesV2StoreSuite) TestUpsert_MigratingFromNewCVEModel() {
+	// Need to set ROX_FLATTEN_IMAGE_DATA to false in order to insert into old image table but new CVE and component tables.
+	// This is because the functions that convert EmbeddedComponents and EmbeddedVulnerabilities to ComponentV2 and CVEV2
+	// set the imageID based on whether the flattened image model is enabled or not.
+	s.T().Setenv(features.FlattenImageData.EnvVar(), "false")
+	if features.FlattenImageData.Enabled() {
+		s.T().Skip("Cannot set ROX_FLATTEN_IMAGE_DATA to false for inserting data to old model. Skipping...")
+	}
+
 	imageV2 := getTestImageV2("image1", "sha256:SHA1")
 	imageV1 := convertToImageV1(imageV2)
 
@@ -242,6 +250,12 @@ func (s *ImagesV2StoreSuite) TestUpsert_MigratingFromNewCVEModel() {
 	foundImageV1, exists, err := s.newCVEModelImageV1Store.Get(s.ctx, imageV1.GetId())
 	s.NoError(err)
 	s.True(exists)
+
+	// Set ROX_FLATTEN_IMAGE_DATA to true now to insert into ImageV2 model
+	s.T().Setenv(features.FlattenImageData.EnvVar(), "true")
+	if !features.FlattenImageData.Enabled() {
+		s.T().Skip("Cannot set ROX_FLATTEN_IMAGE_DATA to true for inserting data to new model. Skipping...")
+	}
 
 	// Set the created and first image occurrence timestamps in the test image to a future value
 	for _, comp := range imageV2.GetScan().GetComponents() {
