@@ -16,7 +16,7 @@ Example MCPs configuration template:
 - Generate `CONFLUENCE_PERSONAL_TOKEN`  here https://spaces.redhat.com/plugins/personalaccesstokens/usertokens.action
 - Generate `GITHUB_TOKEN` folowing these instructions https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
 - Remember to pin image vesrions with SHA
-- Configure Claude following this instructions https://docs.claude.com/en/docs/claude-code/mcp or Cursor https://cursor.com/docs/context/mcp (note: cursor have a different syntax for env resolution)
+- Follow instructions to [configure Claude code](https://docs.claude.com/en/docs/claude-code/mcp) or [Cursor](https://cursor.com/docs/context/mcp) (note: cursor have a different syntax for env resolution)
 
 ```json
 {
