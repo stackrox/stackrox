@@ -19,7 +19,8 @@ Example MCPs configuration template:
 - Configure Claude following this instructions https://docs.claude.com/en/docs/claude-code/mcp or Cursor https://cursor.com/docs/context/mcp (note: cursor have a different syntax for env resolution)
 
 ```json
-"mcpServers": {
+{
+ "mcpServers": {
     "mcp-atlassian": {
       "command": "docker",
       "args": [
@@ -55,6 +56,7 @@ Example MCPs configuration template:
       "args": ["mcp"]
     }
   }
+}
 ## Agent Configuration
 
 The `stackrox-ci-failure-investigator` agent is automatically configured in `.claude/agents/` and provides:
