@@ -39,6 +39,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/networking/v1"
 	v12 "k8s.io/api/rbac/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -1302,11 +1303,13 @@ func (c *TestContext) waitForCRDsDeletion(ctx context.Context, dirPath string, p
 				return errors.Wrapf(err, "error checking existence of CRD %s", crdName)
 			}
 
-			if exists {
-				return errors.Errorf("CRD %s still exists", crdName)
+			if !exists {
+				crdNames.Remove(crdName)
 			}
+		}
 
-			crdNames.Remove(crdName)
+		if crdNames.Cardinality() > 0 {
+			return errors.Errorf("CRDs %v still exist", crdNames.AsSlice())
 		}
 
 		return nil
@@ -1328,7 +1331,7 @@ func (c *TestContext) crdExists(ctx context.Context, crdName string) (bool, erro
 		return true, nil
 	}
 
-	if strings.HasSuffix(err.Error(), "not found") {
+	if k8sErrors.IsNotFound(err) {
 		return false, nil
 	}
 
