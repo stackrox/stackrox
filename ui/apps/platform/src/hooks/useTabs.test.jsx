@@ -1,8 +1,9 @@
 import React from 'react';
 import { act, render, renderHook, screen } from '@testing-library/react';
 
+import Tab from 'Components/Tab';
+
 import useTabs from './useTabs';
-import Tab from '../Components/Tab';
 
 const initialProps = {
     children: [

@@ -35,7 +35,7 @@ import { PublicConfigProvider } from 'providers/PublicConfigProvider';
 import { TelemetryConfigProvider } from 'providers/TelemetryConfigProvider';
 import { MetadataProvider } from 'providers/MetadataProvider';
 import ReduxUserPermissionProvider from 'Containers/ReduxUserPermissionProvider';
-import { fetchCentralCapabilitiesThunk } from './reducers/centralCapabilities';
+import { fetchCentralCapabilitiesThunk } from 'reducers/centralCapabilities';
 
 // We need to call this MobX utility function, to prevent the error
 //   Uncaught Error: [MobX] There are multiple, different versions of MobX active. Make sure MobX is loaded only once or use `configure({ isolateGlobalState: true })`
