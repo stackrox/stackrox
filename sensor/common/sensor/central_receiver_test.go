@@ -37,6 +37,8 @@ type centralReceiverSuite struct {
 	mockClient *mocksClient.MockServiceCommunicateClient
 	receiver   CentralReceiver
 	finished   *sync.WaitGroup
+	ctx        context.Context
+	cancel     context.CancelFunc
 }
 
 var _ suite.SetupTestSuite = (*centralReceiverSuite)(nil)
@@ -57,13 +59,13 @@ func (s *centralReceiverSuite) SetupTest() {
 	s.mockClient = mocksClient.NewMockServiceCommunicateClient(s.controller)
 	s.finished = &sync.WaitGroup{}
 	s.finished.Add(1)
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 }
 
 func (s *centralReceiverSuite) TearDownTest() {
-	if s.receiver != nil {
-		s.receiver.Stop()
-		s.finished.Wait()
-	}
+	s.cancel()
+	s.receiver.Stop()
+	s.finished.Wait()
 	goleak.AssertNoGoroutineLeaks(s.T())
 }
 
@@ -72,7 +74,8 @@ func Test_CentralReceiverSuite(t *testing.T) {
 }
 
 func (s *centralReceiverSuite) Test_StreamContextCancelShouldStopFlow() {
-	s.receiver = NewCentralReceiver(s.finished)
+	processor := NewComponentProcessor(s.ctx, nil)
+	s.receiver = NewCentralReceiver(s.finished, processor)
 	streamContext, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	s.mockClient.EXPECT().Context().AnyTimes().Return(streamContext).AnyTimes()
@@ -89,7 +92,8 @@ func (s *centralReceiverSuite) Test_StreamContextCancelShouldStopFlow() {
 }
 
 func (s *centralReceiverSuite) Test_RecvErrorShouldStopFlow() {
-	s.receiver = NewCentralReceiver(s.finished)
+	processor := NewComponentProcessor(s.ctx, nil)
+	s.receiver = NewCentralReceiver(s.finished, processor)
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
 	s.mockClient.EXPECT().Recv().Times(1).DoAndReturn(func() (*central.MsgToSensor, error) {
@@ -102,7 +106,8 @@ func (s *centralReceiverSuite) Test_RecvErrorShouldStopFlow() {
 }
 
 func (s *centralReceiverSuite) Test_EofShouldStopFlowWithNoError() {
-	s.receiver = NewCentralReceiver(s.finished)
+	processor := NewComponentProcessor(s.ctx, nil)
+	s.receiver = NewCentralReceiver(s.finished, processor)
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
 	s.mockClient.EXPECT().Recv().Times(1).DoAndReturn(func() (*central.MsgToSensor, error) {
@@ -132,7 +137,8 @@ func (s *centralReceiverSuite) Test_SlowComponentDoesNotBlockOthers() {
 	}
 
 	components := []common.SensorComponent{fastComponent, blockingComponent}
-	s.receiver = NewCentralReceiver(s.finished, components...)
+	processor := NewComponentProcessor(s.ctx, components)
+	s.receiver = NewCentralReceiver(s.finished, processor)
 
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
@@ -174,7 +180,8 @@ func (s *centralReceiverSuite) Test_FilterIgnoresMessages() {
 	close(tick)
 
 	components := []common.SensorComponent{fastComponent}
-	s.receiver = NewCentralReceiver(s.finished, components...)
+	processor := NewComponentProcessor(s.ctx, components)
+	s.receiver = NewCentralReceiver(s.finished, processor)
 
 	// Get initial metric values before test
 	initialDropped := getOpMetricValue(s.T(), fastComponent.Name(), op.Dropped.String())
@@ -245,7 +252,8 @@ func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
 	}
 
 	components := []common.SensorComponent{slowComponent}
-	s.receiver = NewCentralReceiver(s.finished, components...)
+	processor := NewComponentProcessor(s.ctx, components)
+	s.receiver = NewCentralReceiver(s.finished, processor)
 
 	// Get initial metric values before test
 	initialDropped := getOpMetricValue(s.T(), slowComponent.Name(), op.Dropped.String())
@@ -313,7 +321,8 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 	}}
 
 	components := []common.SensorComponent{errorComponent}
-	s.receiver = NewCentralReceiver(s.finished, components...)
+	processor := NewComponentProcessor(s.ctx, components)
+	s.receiver = NewCentralReceiver(s.finished, processor)
 
 	// Get initial error count before test
 	initialErrors := getMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})

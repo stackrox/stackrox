@@ -13,11 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/safe"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
-	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
@@ -38,7 +36,8 @@ import (
 type centralCommunicationImpl struct {
 	receiver            CentralReceiver
 	sender              CentralSender
-	components          []common.SensorComponent
+	processor           *ComponentProcessor
+	capabilities        []string
 	clientReconcile     bool
 	initialDeduperState map[deduperkey.Key]uint64
 	syncTimeout         time.Duration
@@ -148,12 +147,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		RequestDeduperState:      s.clientReconcile,
 	}
 
-	capsSet := set.NewSet[centralsensor.SensorCapability]()
-	for _, component := range s.components {
-		capsSet.AddAll(component.Capabilities()...)
-	}
-	capsSet.Add(centralsensor.SendDeduperStateOnReconnect)
-	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
+	sensorHello.Capabilities = s.capabilities
 
 	// Inject desired Helm configuration, if any.
 	if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil && helmManagedCfg.GetClusterId() == "" {
