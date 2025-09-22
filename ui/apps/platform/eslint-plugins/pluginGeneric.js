@@ -345,6 +345,50 @@ const rules = {
             };
         },
     },
+    'import-type-order': {
+        // Require import type to follow corresponding import statement (if it exists).
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require import type to follow corresponding import statement (if it exists).',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.importKind === 'type' && typeof node.source?.value === 'string') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            Array.isArray(ancestors[ancestors.length - 1].body)
+                        ) {
+                            const hasImportKindTypeAndSourceValue = (child) =>
+                                child.type === 'ImportDeclaration' &&
+                                child.importKind === 'type' &&
+                                child.source?.value === node.source.value;
+                            const hasImportKindValueAndSourceValue = (child) =>
+                                child.type === 'ImportDeclaration' &&
+                                child.importKind === 'value' &&
+                                child.source?.value === node.source.value;
+
+                            const { body } = ancestors[ancestors.length - 1];
+                            const indexType = body.findIndex(hasImportKindTypeAndSourceValue);
+                            const indexValue = body.findIndex(hasImportKindValueAndSourceValue);
+                            if (indexType >= 0 && indexValue >= 0 && indexType !== indexValue + 1) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Move import type to follow corresponding import statement',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'pagination-function-call': {
         // Require that pagination property has function call like getPaginationParams.
         // Some classic pages have queryService.getPagination function call instead.
