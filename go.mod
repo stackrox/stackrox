@@ -88,7 +88,7 @@ require (
 	github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
-	github.com/olekukonko/tablewriter v1.0.9
+	github.com/olekukonko/tablewriter v1.1.0
 	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/go-digest v1.0.0
@@ -170,7 +170,7 @@ require (
 	k8s.io/kubectl v0.33.5
 	k8s.io/kubelet v0.32.9
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	kubevirt.io/api v1.6.0
+	kubevirt.io/api v1.6.1
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/controller-tools v0.18.0
 	sigs.k8s.io/e2e-framework v0.6.0
