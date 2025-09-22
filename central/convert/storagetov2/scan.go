@@ -1,22 +1,13 @@
 package storagetov2
 
 import (
+	"github.com/stackrox/rox/central/convert/helpers"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 func EmbeddedVirtualMachineScanComponents(components []*storage.EmbeddedVirtualMachineScanComponent) []*v2.ScanComponent {
-	if components == nil {
-		return nil
-	}
-	result := make([]*v2.ScanComponent, 0, len(components))
-	for _, cmp := range components {
-		if cmp == nil {
-			continue
-		}
-		result = append(result, EmbeddedVirtualMachineScanComponent(cmp))
-	}
-	return result
+	return helpers.ConvertPointerArray(components, EmbeddedVirtualMachineScanComponent)
 }
 
 func EmbeddedVirtualMachineScanComponent(cmp *storage.EmbeddedVirtualMachineScanComponent) *v2.ScanComponent {
