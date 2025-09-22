@@ -19,3 +19,13 @@ commands:
     # Run kuttl assert on the generated file
     ${KUTTL:-kubectl-kuttl} assert --namespace $NAMESPACE --timeout 30 $assert_file
     rm $assert_file
+    # Verify that each Stackrox pod has the expected config-hash annotation
+    mismatch_pods=$(retry-kubectl.sh get pods -n $NAMESPACE -o json | jq -r --arg hash "$config_hash" '[.items[]
+      | select(.metadata.labels["app.kubernetes.io/name"]=="stackrox")
+      | select(.metadata.annotations["app.stackrox.io/config-hash"] != $hash)
+      | .metadata.name] | @tsv')
+    if [ -n "$mismatch_pods" ]; then
+      echo "ERROR: Pods with missing or mismatched app.stackrox.io/config-hash:"
+      printf '%s\n' "$mismatch_pods"
+      exit 1
+    fi
