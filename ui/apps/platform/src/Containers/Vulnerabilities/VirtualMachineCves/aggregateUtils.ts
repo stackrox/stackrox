@@ -1,6 +1,8 @@
+import { severityRankings } from 'constants/vulnerabilities';
 import type { VirtualMachine } from 'services/VirtualMachineService';
-import type { ScanComponent } from 'types/scanComponent.proto';
-import type { CVSSV3Severity, EmbeddedVulnerability } from 'types/vulnerability.proto';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
+import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
+import type { Advisory, CVSSV3Severity, EmbeddedVulnerability } from 'types/vulnerability.proto';
 
 // Most if not all functions in this file will be removed once backend filtering is implemented.
 
@@ -26,59 +28,76 @@ export function getVirtualMachineSeveritiesCount(
     return severityCounts;
 }
 
-type AffectedComponent = Omit<ScanComponent, 'vulns'>;
-type CVEId = EmbeddedVulnerability['cve'];
-
-export type CVEEntry = EmbeddedVulnerability & {
-    affectedComponents: AffectedComponent[];
+export type CveComponentRow = {
+    name: ScanComponent['name'];
+    sourceType: SourceType;
+    version: ScanComponent['version'];
+    fixedBy: EmbeddedVulnerability['fixedBy'];
+    advisory: Advisory;
 };
 
-// Dictionary keyed by CVE (example: "CVE-2024-00010": { affectedComponents: [...] })
-type CVEDictionary = Record<CVEId, CVEEntry>;
+export type CveTableRow = {
+    cve: EmbeddedVulnerability['cve'];
+    severity: VulnerabilitySeverity; // worst severity across components for this CVE
+    isFixable: boolean; // true if any vulnerability is fixable across components
+    cvss: number; // max score across components
+    epssProbability: number; // should be the same across all components
+    affectedComponents: CveComponentRow[];
+};
 
-export function getVirtualMachineCvesDictionaryData(virtualMachine: VirtualMachine): CVEDictionary {
-    const components = virtualMachine?.scan?.components ?? [];
-
-    const cvesWithAffectedComponents: CVEDictionary = {};
-
-    components.forEach((comp) => {
-        const { vulns, ...componentDetails } = comp;
-        const componentWithoutVulns: AffectedComponent = componentDetails;
-        vulns.forEach((vulnerability) => {
-            if (cvesWithAffectedComponents[vulnerability.cve]) {
-                cvesWithAffectedComponents[vulnerability.cve].affectedComponents.push(
-                    componentWithoutVulns
-                );
-            } else {
-                cvesWithAffectedComponents[vulnerability.cve] = {
-                    ...vulnerability,
-                    affectedComponents: [componentWithoutVulns],
-                };
-            }
-        });
-    });
-
-    return cvesWithAffectedComponents;
+function worstSeverity(a: VulnerabilitySeverity, b: VulnerabilitySeverity): VulnerabilitySeverity {
+    if (!b) {
+        return a;
+    }
+    return severityRankings[a] >= severityRankings[b] ? a : b;
 }
 
-export type CVEWithAffectedComponents = EmbeddedVulnerability & {
-    cve: CVEId;
-    affectedComponents: AffectedComponent[];
-};
-
-// Returns a sorted list of CVE entries with their affected components
-export function getVirtualMachineCvesListData(
-    virtualMachine?: VirtualMachine
-): CVEWithAffectedComponents[] {
+export function getVirtualMachineCveTableData(virtualMachine?: VirtualMachine): CveTableRow[] {
     if (!virtualMachine) {
         return [];
     }
 
-    const dict = getVirtualMachineCvesDictionaryData(virtualMachine);
-    return Object.keys(dict)
-        .sort()
-        .map((cve) => ({
-            ...dict[cve],
-            affectedComponents: dict[cve].affectedComponents,
-        }));
+    const map = new Map<string, CveTableRow>();
+
+    virtualMachine.scan?.components?.forEach((component) => {
+        component.vulns?.forEach((vulnerability) => {
+            const { advisory, cve, cvss, epss, fixedBy, severity } = vulnerability;
+
+            let row = map.get(cve);
+            if (!row) {
+                row = {
+                    cve,
+                    severity,
+                    isFixable: !!fixedBy,
+                    cvss,
+                    epssProbability: epss.epssProbability,
+                    affectedComponents: [],
+                };
+                map.set(cve, row);
+            }
+
+            // update row with worse severity/score
+            row.severity = worstSeverity(row.severity, severity);
+            row.cvss = Math.max(row.cvss, cvss);
+
+            // display fixable if any vulnerability is fixable
+            row.isFixable = row.isFixable || !!fixedBy;
+
+            row.affectedComponents.push({
+                name: component.name,
+                sourceType: component.source,
+                version: component.version,
+                fixedBy,
+                advisory,
+            });
+        });
+    });
+
+    // sort CVEs using collator to handle numeric values
+    // without numeric sorting, localeCompare would put CVE-2024-10 before CVE-2024-9
+    const collator = new Intl.Collator('en', {
+        numeric: true, // compare digit runs as numbers
+        sensitivity: 'base', // ignore case/accents (probably not needed for CVEs)
+    });
+    return Array.from(map.values()).sort((a, b) => collator.compare(a.cve, b.cve));
 }

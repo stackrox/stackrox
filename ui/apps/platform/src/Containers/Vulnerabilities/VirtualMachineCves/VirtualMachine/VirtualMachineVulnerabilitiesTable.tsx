@@ -1,19 +1,28 @@
 import React from 'react';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import CvssFormatted from 'Components/CvssFormatted';
+import ExpandRowTh from 'Components/ExpandRowTh';
+import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useSet from 'hooks/useSet';
 import type { TableUIState } from 'utils/getTableUIState';
 
-import type { CVEWithAffectedComponents } from '../aggregateUtils';
+import type { CveTableRow } from '../aggregateUtils';
+import { formatEpssProbabilityAsPercent } from '../../WorkloadCves/Tables/table.utils';
+import VirtualMachineComponentsTable from './VirtualMachineComponentsTable';
 
 export type VirtualMachineVulnerabilitiesTableProps = {
-    tableState: TableUIState<CVEWithAffectedComponents>;
+    tableState: TableUIState<CveTableRow>;
 };
 
 function VirtualMachineVulnerabilitiesTable({
     tableState,
 }: VirtualMachineVulnerabilitiesTableProps) {
+    const COL_SPAN = 7;
+    const expandedRowSet = useSet<string>();
+
     return (
         <Table
             borders={tableState.type === 'COMPLETE'}
@@ -23,6 +32,7 @@ function VirtualMachineVulnerabilitiesTable({
         >
             <Thead>
                 <Tr>
+                    <ExpandRowTh />
                     <Th>CVE</Th>
                     <Th>Severity</Th>
                     <Th>CVE status</Th>
@@ -40,26 +50,62 @@ function VirtualMachineVulnerabilitiesTable({
                 emptyProps={{
                     message: 'No CVEs were detected for this virtual machine',
                 }}
-                renderer={({ data }) => (
-                    <Tbody>
-                        {data.map((virtualMachine) => {
-                            return (
-                                <Tr key={virtualMachine.cve}>
-                                    <Td dataLabel="CVE">{virtualMachine.cve} </Td>
+                renderer={({ data }) =>
+                    data.map((vulnerability, rowIndex) => {
+                        const isExpanded = expandedRowSet.has(vulnerability.cve);
+                        return (
+                            <Tbody key={vulnerability.cve} isExpanded={isExpanded}>
+                                <Tr>
+                                    <Td
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () =>
+                                                expandedRowSet.toggle(vulnerability.cve),
+                                        }}
+                                    />
+                                    <Td dataLabel="CVE">{vulnerability.cve} </Td>
                                     <Td dataLabel="Severity">
                                         <VulnerabilitySeverityIconText
-                                            severity={virtualMachine.severity}
+                                            severity={vulnerability.severity}
                                         />
                                     </Td>
-                                    <Td dataLabel="CVE status">ROX-30535</Td>
-                                    <Td dataLabel="CVSS">ROX-30535</Td>
-                                    <Td dataLabel="EPSS probability">ROX-30535</Td>
-                                    <Td dataLabel="Affected components">ROX-30535</Td>
+                                    <Td dataLabel="CVE status">
+                                        <VulnerabilityFixableIconText
+                                            isFixable={vulnerability.isFixable}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="CVSS">
+                                        <CvssFormatted
+                                            cvss={vulnerability.cvss}
+                                            scoreVersion="v3"
+                                        />
+                                    </Td>
+                                    <Td dataLabel="EPSS probability">
+                                        {formatEpssProbabilityAsPercent(
+                                            vulnerability.epssProbability
+                                        )}
+                                    </Td>
+                                    <Td dataLabel="Affected components">
+                                        {vulnerability.affectedComponents.length === 1
+                                            ? vulnerability.affectedComponents[0].name
+                                            : `${vulnerability.affectedComponents.length} components`}
+                                    </Td>
                                 </Tr>
-                            );
-                        })}
-                    </Tbody>
-                )}
+                                <Tr isExpanded={isExpanded}>
+                                    <Td />
+                                    <Td colSpan={COL_SPAN - 1}>
+                                        <ExpandableRowContent>
+                                            <VirtualMachineComponentsTable
+                                                components={vulnerability.affectedComponents}
+                                            />
+                                        </ExpandableRowContent>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })
+                }
             />
         </Table>
     );

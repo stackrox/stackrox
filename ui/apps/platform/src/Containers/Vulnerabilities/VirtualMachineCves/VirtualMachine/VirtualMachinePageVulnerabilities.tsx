@@ -5,7 +5,7 @@ import useRestQuery from 'hooks/useRestQuery';
 import { getVirtualMachine } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import { getVirtualMachineCvesListData } from '../aggregateUtils';
+import { getVirtualMachineCveTableData } from '../aggregateUtils';
 import VirtualMachineVulnerabilitiesTable from './VirtualMachineVulnerabilitiesTable';
 
 export type VirtualMachinePageVulnerabilitiesProps = {
@@ -22,11 +22,11 @@ function VirtualMachinePageVulnerabilities({
 
     const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
 
-    const virtualMachine = getVirtualMachineCvesListData(data);
+    const virtualMachineTableData = getVirtualMachineCveTableData(data);
 
     const tableState = getTableUIState({
         isLoading,
-        data: virtualMachine,
+        data: virtualMachineTableData,
         error,
         searchFilter: {},
     });
