@@ -92,7 +92,7 @@ jobs:
           fi
 
   check-image-vulnerabilities-konflux:
-    name: Check ${{ matrix.image }}:${{ inputs.version }}
+    name: Check ${{ matrix.image }}:${{ inputs.version }} (konflux)
     runs-on: ubuntu-latest
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
