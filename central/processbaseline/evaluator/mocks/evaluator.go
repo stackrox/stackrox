@@ -12,6 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
+	views "github.com/stackrox/rox/central/processindicator/views"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -41,10 +42,10 @@ func (m *MockEvaluator) EXPECT() *MockEvaluatorMockRecorder {
 }
 
 // EvaluateBaselinesAndPersistResult mocks base method.
-func (m *MockEvaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deployment) ([]*storage.ProcessIndicator, error) {
+func (m *MockEvaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deployment) ([]*views.ProcessIndicatorRiskView, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EvaluateBaselinesAndPersistResult", deployment)
-	ret0, _ := ret[0].([]*storage.ProcessIndicator)
+	ret0, _ := ret[0].([]*views.ProcessIndicatorRiskView)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

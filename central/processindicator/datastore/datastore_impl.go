@@ -227,9 +227,27 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 
 // GetProcessIndicatorsRiskView retrieves minimal fields from process indicator for risk evaluation
 func (ds *datastoreImpl) GetProcessIndicatorsRiskView(ctx context.Context, q *v1.Query) ([]*views.ProcessIndicatorRiskView, error) {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
+	}
+
+	cloned := q.CloneVT()
+	// Add the select fields of the view to the query.
+	cloned.Selects = []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ContainerName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessExecPath).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessContainerStartTime).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessCreationTime).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessArguments).Proto(),
+	}
+
 	// We do not need the entire process indicator to process risk.  That object is large.  Use a view instead
 	var results []*views.ProcessIndicatorRiskView
-	results, err := pgSearch.RunSelectRequestForSchema[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, q)
+	results, err := pgSearch.RunSelectRequestForSchema[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned)
 	if err != nil {
 		log.Errorf("unable to retrieve indicators for risk processing: %v", err)
 	}
