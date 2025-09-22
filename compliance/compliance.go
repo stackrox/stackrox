@@ -120,6 +120,9 @@ func (c *Compliance) Start() {
 		}
 	}(ctx)
 
+	// The virtual machine relay (ROX-30476), which reads VM index reports from vsock connections and forwards them to
+	// sensor, is currently started and run in the compliance container. This enables reusing the existing connection to
+	// sensor and accelerates initial development.
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
 		if features.VirtualMachines.Enabled() {
