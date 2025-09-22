@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package storage;
 
-import "storage/cve.proto";
 import "google/protobuf/timestamp.proto";
+import "storage/cve.proto";
 
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 message VirtualMachine {
@@ -89,7 +89,6 @@ message VirtualMachineCVEInfo {
   repeated CVSSScore cvss_metrics = 11;
   VirtualMachineEPSS epss = 12;
 }
-
 
 // VirtualMachineEPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
 // This structure is a clone of the EPSS message from cve.proto, stripped from its search tags.
