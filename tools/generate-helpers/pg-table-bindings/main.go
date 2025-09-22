@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -464,6 +465,8 @@ func generateSearchFields(protoType, trimmedType string) []OptimizedSearchField 
 		protoObj = &storage.Secret{}
 	case "Role":
 		protoObj = &storage.Role{}
+	case "K8SRoleBinding":
+		protoObj = &storage.K8SRoleBinding{}
 	// Add more cases as needed for other types
 	default:
 		// For types we don't have explicit cases for, return empty for now
@@ -498,6 +501,11 @@ func generateSearchFields(protoType, trimmedType string) []OptimizedSearchField 
 		searchFields = append(searchFields, searchField)
 	}
 
+	// Sort searchFields by FieldLabel to ensure stable order between generations
+	sort.Slice(searchFields, func(i, j int) bool {
+		return searchFields[i].FieldLabel < searchFields[j].FieldLabel
+	})
+
 	return searchFields
 }
 
@@ -519,6 +527,8 @@ func getSearchCategoryForType(typeName string) v1.SearchCategory {
 		return v1.SearchCategory_SECRETS
 	case "Role":
 		return v1.SearchCategory_ROLES
+	case "K8SRoleBinding":
+		return v1.SearchCategory_ROLEBINDINGS
 	// Add more mappings as needed
 	default:
 		return v1.SearchCategory_SEARCH_UNSET
@@ -544,6 +554,8 @@ func getSearchCategoryName(category v1.SearchCategory) string {
 		return "SearchCategory_SECRETS"
 	case v1.SearchCategory_ROLES:
 		return "SearchCategory_ROLES"
+	case v1.SearchCategory_ROLEBINDINGS:
+		return "SearchCategory_ROLEBINDINGS"
 	default:
 		return "SearchCategory_SEARCH_UNSET"
 	}

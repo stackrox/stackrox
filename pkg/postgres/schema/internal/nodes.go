@@ -11,32 +11,14 @@ import (
 var (
 	// NodeSearchFields contains pre-computed search fields for nodes
 	NodeSearchFields = map[search.FieldLabel]*search.Field{
-		search.FieldLabel("Component"): {
-			FieldPath: ".scan.components.name",
+		search.FieldLabel("Advisory Link"): {
+			FieldPath: ".scan.components.vulns.advisory.link",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
-		search.FieldLabel("Fixed By"): {
-			FieldPath: ".scan.components.vulns.SetFixedBy.FixedBy",
-			Store:     true,
-			Hidden:    true,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Cluster ID"): {
-			FieldPath: ".cluster_id",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Node"): {
-			FieldPath: ".name",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Component Version"): {
-			FieldPath: ".scan.components.version",
+		search.FieldLabel("Advisory Name"): {
+			FieldPath: ".scan.components.vulns.advisory.name",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
@@ -47,15 +29,63 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
+		search.FieldLabel("CVE Count"): {
+			FieldPath: ".SetCves.Cves",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
 		search.FieldLabel("CVE Created Time"): {
 			FieldPath: ".scan.components.vulnerabilities.cve_base_info.created_at.seconds",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
-		search.FieldLabel("Taint Effect"): {
-			FieldPath: ".taints.taint_effect",
+		search.FieldLabel("CVE Published On"): {
+			FieldPath: ".scan.components.vulnerabilities.cve_base_info.published_on.seconds",
 			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("CVE Snoozed"): {
+			FieldPath: ".scan.components.vulns.suppressed",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("CVSS"): {
+			FieldPath: ".scan.components.vulns.cvss",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Cluster"): {
+			FieldPath: ".cluster_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".cluster_id",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Component"): {
+			FieldPath: ".scan.components.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Component Count"): {
+			FieldPath: ".SetComponents.Components",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Component Version"): {
+			FieldPath: ".scan.components.version",
+			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
@@ -65,21 +95,45 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
+		search.FieldLabel("EPSS Probability"): {
+			FieldPath: ".scan.components.vulnerabilities.cve_base_info.epss.epss_probability",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Fixable CVE Count"): {
+			FieldPath: ".SetFixable.FixableCves",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Fixed By"): {
+			FieldPath: ".scan.components.vulns.SetFixedBy.FixedBy",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Last Updated"): {
+			FieldPath: ".last_updated.seconds",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
 		search.FieldLabel("NVD CVSS"): {
 			FieldPath: ".scan.components.vulns.nvd_cvss",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
-		search.FieldLabel("Node Risk Priority"): {
-			FieldPath: ".priority",
-			Store:     false,
-			Hidden:    true,
+		search.FieldLabel("Node"): {
+			FieldPath: ".name",
+			Store:     true,
+			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
-		search.FieldLabel("Node Top CVSS"): {
-			FieldPath: ".SetTopCvss.TopCvss",
-			Store:     true,
+		search.FieldLabel("Node Annotation"): {
+			FieldPath: ".annotations",
+			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
@@ -89,20 +143,50 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
-		search.FieldLabel("Last Updated"): {
-			FieldPath: ".last_updated.seconds",
-			Store:     false,
-			Hidden:    true,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Advisory Name"): {
-			FieldPath: ".scan.components.vulns.advisory.name",
+		search.FieldLabel("Node Join Time"): {
+			FieldPath: ".joined_at.seconds",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
-		search.FieldLabel("Vulnerability State"): {
-			FieldPath: ".scan.components.vulns.state",
+		search.FieldLabel("Node Label"): {
+			FieldPath: ".labels",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Risk Priority"): {
+			FieldPath: ".priority",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Risk Score"): {
+			FieldPath: ".risk_score",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Scan Time"): {
+			FieldPath: ".scan.scan_time.seconds",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Top CVSS"): {
+			FieldPath: ".SetTopCvss.TopCvss",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Operating System"): {
+			FieldPath: ".os_image",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Taint Effect"): {
+			FieldPath: ".taints.taint_effect",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
@@ -119,93 +203,9 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},
-		search.FieldLabel("Operating System"): {
-			FieldPath: ".os_image",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Fixable CVE Count"): {
-			FieldPath: ".SetFixable.FixableCves",
-			Store:     true,
-			Hidden:    true,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Cluster"): {
-			FieldPath: ".cluster_name",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Node Label"): {
-			FieldPath: ".labels",
+		search.FieldLabel("Vulnerability State"): {
+			FieldPath: ".scan.components.vulns.state",
 			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Node Join Time"): {
-			FieldPath: ".joined_at.seconds",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Advisory Link"): {
-			FieldPath: ".scan.components.vulns.advisory.link",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("CVSS"): {
-			FieldPath: ".scan.components.vulns.cvss",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("CVE Published On"): {
-			FieldPath: ".scan.components.vulnerabilities.cve_base_info.published_on.seconds",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("CVE Snoozed"): {
-			FieldPath: ".scan.components.vulns.suppressed",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("EPSS Probability"): {
-			FieldPath: ".scan.components.vulnerabilities.cve_base_info.epss.epss_probability",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Node Annotation"): {
-			FieldPath: ".annotations",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Component Count"): {
-			FieldPath: ".SetComponents.Components",
-			Store:     true,
-			Hidden:    true,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("CVE Count"): {
-			FieldPath: ".SetCves.Cves",
-			Store:     true,
-			Hidden:    true,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Node Risk Score"): {
-			FieldPath: ".risk_score",
-			Store:     false,
-			Hidden:    true,
-			Category:  v1.SearchCategory_NODES,
-		},
-		search.FieldLabel("Node Scan Time"): {
-			FieldPath: ".scan.scan_time.seconds",
-			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_NODES,
 		},

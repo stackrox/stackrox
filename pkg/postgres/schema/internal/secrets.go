@@ -11,38 +11,14 @@ import (
 var (
 	// SecretSearchFields contains pre-computed search fields for secrets
 	SecretSearchFields = map[search.FieldLabel]*search.Field{
-		search.FieldLabel("Secret ID"): {
-			FieldPath: ".id",
-			Store:     true,
-			Hidden:    true,
-			Category:  v1.SearchCategory_SECRETS,
-		},
-		search.FieldLabel("Secret"): {
-			FieldPath: ".name",
-			Store:     true,
+		search.FieldLabel("Cert Expiration"): {
+			FieldPath: ".files.Metadata.Cert.end_date.seconds",
+			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,
 		},
 		search.FieldLabel("Cluster"): {
 			FieldPath: ".cluster_name",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_SECRETS,
-		},
-		search.FieldLabel("Created Time"): {
-			FieldPath: ".created_at.seconds",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_SECRETS,
-		},
-		search.FieldLabel("Secret Type"): {
-			FieldPath: ".files.type",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_SECRETS,
-		},
-		search.FieldLabel("Image Pull Secret Registry"): {
-			FieldPath: ".files.Metadata.ImagePullSecret.registries.name",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,
@@ -53,14 +29,38 @@ var (
 			Hidden:    true,
 			Category:  v1.SearchCategory_SECRETS,
 		},
+		search.FieldLabel("Created Time"): {
+			FieldPath: ".created_at.seconds",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Image Pull Secret Registry"): {
+			FieldPath: ".files.Metadata.ImagePullSecret.registries.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_SECRETS,
+		},
 		search.FieldLabel("Namespace"): {
 			FieldPath: ".namespace",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,
 		},
-		search.FieldLabel("Cert Expiration"): {
-			FieldPath: ".files.Metadata.Cert.end_date.seconds",
+		search.FieldLabel("Secret"): {
+			FieldPath: ".name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Secret ID"): {
+			FieldPath: ".id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Secret Type"): {
+			FieldPath: ".files.type",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,

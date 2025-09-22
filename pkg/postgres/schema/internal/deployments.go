@@ -11,32 +11,8 @@ import (
 var (
 	// DeploymentSearchFields contains pre-computed search fields for deployments
 	DeploymentSearchFields = map[search.FieldLabel]*search.Field{
-		search.FieldLabel("Exposing Service"): {
-			FieldPath: ".ports.exposure_infos.service_name",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Image Tag"): {
-			FieldPath: ".containers.image.name.tag",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Image ID"): {
-			FieldPath: ".containers.image.id_v2",
-			Store:     false,
-			Hidden:    true,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Volume Source"): {
-			FieldPath: ".containers.volumes.source",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Volume Type"): {
-			FieldPath: ".containers.volumes.type",
+		search.FieldLabel("Add Capabilities"): {
+			FieldPath: ".containers.security_context.add_capabilities",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
@@ -47,14 +23,38 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Deployment Risk Score"): {
-			FieldPath: ".risk_score",
-			Store:     false,
+		search.FieldLabel("CPU Cores Request"): {
+			FieldPath: ".containers.resources.cpu_cores_request",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Cluster"): {
+			FieldPath: ".cluster_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".cluster_id",
+			Store:     true,
 			Hidden:    true,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Platform Component"): {
-			FieldPath: ".platform_component",
+		search.FieldLabel("Created"): {
+			FieldPath: ".created.seconds",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment"): {
+			FieldPath: ".name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment Annotation"): {
+			FieldPath: ".annotations",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
@@ -65,82 +65,34 @@ var (
 			Hidden:    true,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
+		search.FieldLabel("Deployment Label"): {
+			FieldPath: ".labels",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment Risk Priority"): {
+			FieldPath: ".priority",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment Risk Score"): {
+			FieldPath: ".risk_score",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
 		search.FieldLabel("Deployment Type"): {
 			FieldPath: ".type",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Namespace"): {
-			FieldPath: ".namespace",
+		search.FieldLabel("Drop Capabilities"): {
+			FieldPath: ".containers.security_context.drop_capabilities",
 			Store:     true,
 			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Volume Name"): {
-			FieldPath: ".containers.volumes.name",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Image Pull Secret"): {
-			FieldPath: ".image_pull_secrets",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Exposed Node Port"): {
-			FieldPath: ".ports.exposure_infos.node_port",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("External IP"): {
-			FieldPath: ".ports.exposure_infos.external_ips",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Orchestrator Component"): {
-			FieldPath: ".orchestrator_component",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Environment Variable Source"): {
-			FieldPath: ".containers.config.env.env_var_source",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Volume ReadOnly"): {
-			FieldPath: ".containers.volumes.read_only",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Service Account"): {
-			FieldPath: ".service_account",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Port Protocol"): {
-			FieldPath: ".ports.protocol",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Created"): {
-			FieldPath: ".created.seconds",
-			Store:     true,
-			Hidden:    true,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Cluster ID"): {
-			FieldPath: ".cluster_id",
-			Store:     true,
-			Hidden:    true,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
 		search.FieldLabel("Environment Key"): {
@@ -155,21 +107,21 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Image Sha"): {
-			FieldPath: ".containers.image.id",
-			Store:     true,
-			Hidden:    true,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Read Only Root Filesystem"): {
-			FieldPath: ".containers.security_context.read_only_root_filesystem",
+		search.FieldLabel("Environment Variable Source"): {
+			FieldPath: ".containers.config.env.env_var_source",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Secret"): {
-			FieldPath: ".containers.secrets.name",
-			Store:     false,
+		search.FieldLabel("Exposed Node Port"): {
+			FieldPath: ".ports.exposure_infos.node_port",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Exposing Service"): {
+			FieldPath: ".ports.exposure_infos.service_name",
+			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
@@ -179,46 +131,10 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Deployment"): {
-			FieldPath: ".name",
+		search.FieldLabel("Exposure Level"): {
+			FieldPath: ".ports.exposure_infos.level",
 			Store:     true,
 			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Namespace ID"): {
-			FieldPath: ".namespace_id",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Privileged"): {
-			FieldPath: ".containers.security_context.privileged",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Secret Path"): {
-			FieldPath: ".containers.secrets.path",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("CPU Cores Request"): {
-			FieldPath: ".containers.resources.cpu_cores_request",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Memory Limit (MB)"): {
-			FieldPath: ".containers.resources.memory_mb_limit",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Deployment Risk Priority"): {
-			FieldPath: ".priority",
-			Store:     false,
-			Hidden:    true,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
 		search.FieldLabel("External Hostname"): {
@@ -227,15 +143,28 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Pod Label"): {
-			FieldPath: ".pod_labels",
+		search.FieldLabel("External IP"): {
+			FieldPath: ".ports.exposure_infos.external_ips",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Cluster"): {
-			FieldPath: ".cluster_name",
+		search.FieldLabel("Image"): {
+			FieldPath: ".containers.image.name.full_name",
 			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+			Analyzer:  "standard",
+		},
+		search.FieldLabel("Image ID"): {
+			FieldPath: ".containers.image.id_v2",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Image Pull Secret"): {
+			FieldPath: ".image_pull_secrets",
+			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
@@ -251,15 +180,15 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Drop Capabilities"): {
-			FieldPath: ".containers.security_context.drop_capabilities",
+		search.FieldLabel("Image Sha"): {
+			FieldPath: ".containers.image.id",
 			Store:     true,
-			Hidden:    false,
+			Hidden:    true,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Deployment Annotation"): {
-			FieldPath: ".annotations",
-			Store:     false,
+		search.FieldLabel("Image Tag"): {
+			FieldPath: ".containers.image.name.tag",
+			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
@@ -269,33 +198,8 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Exposure Level"): {
-			FieldPath: ".ports.exposure_infos.level",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Deployment Label"): {
-			FieldPath: ".labels",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Image"): {
-			FieldPath: ".containers.image.name.full_name",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-			Analyzer:  "standard",
-		},
-		search.FieldLabel("Add Capabilities"): {
-			FieldPath: ".containers.security_context.add_capabilities",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_DEPLOYMENTS,
-		},
-		search.FieldLabel("Volume Destination"): {
-			FieldPath: ".containers.volumes.destination",
+		search.FieldLabel("Memory Limit (MB)"): {
+			FieldPath: ".containers.resources.memory_mb_limit",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
@@ -306,14 +210,110 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
-		search.FieldLabel("Service Account Permission Level"): {
-			FieldPath: ".service_account_permission_level",
+		search.FieldLabel("Namespace"): {
+			FieldPath: ".namespace",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Namespace ID"): {
+			FieldPath: ".namespace_id",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Orchestrator Component"): {
+			FieldPath: ".orchestrator_component",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Platform Component"): {
+			FieldPath: ".platform_component",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Pod Label"): {
+			FieldPath: ".pod_labels",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
 		search.FieldLabel("Port"): {
 			FieldPath: ".ports.container_port",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Port Protocol"): {
+			FieldPath: ".ports.protocol",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Privileged"): {
+			FieldPath: ".containers.security_context.privileged",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Read Only Root Filesystem"): {
+			FieldPath: ".containers.security_context.read_only_root_filesystem",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Secret"): {
+			FieldPath: ".containers.secrets.name",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Secret Path"): {
+			FieldPath: ".containers.secrets.path",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Service Account"): {
+			FieldPath: ".service_account",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Service Account Permission Level"): {
+			FieldPath: ".service_account_permission_level",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Volume Destination"): {
+			FieldPath: ".containers.volumes.destination",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Volume Name"): {
+			FieldPath: ".containers.volumes.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Volume ReadOnly"): {
+			FieldPath: ".containers.volumes.read_only",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Volume Source"): {
+			FieldPath: ".containers.volumes.source",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Volume Type"): {
+			FieldPath: ".containers.volumes.type",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_DEPLOYMENTS,

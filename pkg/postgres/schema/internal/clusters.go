@@ -11,14 +11,8 @@ import (
 var (
 	// ClusterSearchFields contains pre-computed search fields for clusters
 	ClusterSearchFields = map[search.FieldLabel]*search.Field{
-		search.FieldLabel("Cluster Status"): {
-			FieldPath: ".health_status.overall_health_status",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_CLUSTERS,
-		},
-		search.FieldLabel("Scanner Status"): {
-			FieldPath: ".health_status.scanner_health_status",
+		search.FieldLabel("Admission Control Status"): {
+			FieldPath: ".health_status.admission_control_health_status",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
@@ -29,9 +23,33 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Cluster Kubernetes Version"): {
+			FieldPath: ".status.orchestrator_metadata.version",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
 		search.FieldLabel("Cluster Label"): {
 			FieldPath: ".labels",
 			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Cluster Platform Type"): {
+			FieldPath: ".type",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Cluster Status"): {
+			FieldPath: ".health_status.overall_health_status",
+			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
@@ -41,20 +59,8 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
-		search.FieldLabel("Sensor Status"): {
-			FieldPath: ".health_status.sensor_health_status",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_CLUSTERS,
-		},
 		search.FieldLabel("Collector Status"): {
 			FieldPath: ".health_status.collector_health_status",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_CLUSTERS,
-		},
-		search.FieldLabel("Admission Control Status"): {
-			FieldPath: ".health_status.admission_control_health_status",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
@@ -65,21 +71,15 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
-		search.FieldLabel("Cluster ID"): {
-			FieldPath: ".id",
+		search.FieldLabel("Scanner Status"): {
+			FieldPath: ".health_status.scanner_health_status",
 			Store:     true,
-			Hidden:    true,
-			Category:  v1.SearchCategory_CLUSTERS,
-		},
-		search.FieldLabel("Cluster Platform Type"): {
-			FieldPath: ".type",
-			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
-		search.FieldLabel("Cluster Kubernetes Version"): {
-			FieldPath: ".status.orchestrator_metadata.version",
-			Store:     false,
+		search.FieldLabel("Sensor Status"): {
+			FieldPath: ".health_status.sensor_health_status",
+			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},

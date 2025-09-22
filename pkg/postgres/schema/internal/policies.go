@@ -11,6 +11,12 @@ import (
 var (
 	// PolicySearchFields contains pre-computed search fields for policies
 	PolicySearchFields = map[search.FieldLabel]*search.Field{
+		search.FieldLabel("Category"): {
+			FieldPath: ".categories",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
 		search.FieldLabel("Description"): {
 			FieldPath: ".description",
 			Store:     false,
@@ -23,47 +29,28 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
-		search.FieldLabel("Lifecycle Stage"): {
-			FieldPath: ".lifecycle_stages",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_POLICIES,
-		},
-		search.FieldLabel("Severity"): {
-			FieldPath: ".severity",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_POLICIES,
-		},
 		search.FieldLabel("Enforcement"): {
 			FieldPath: ".enforcement_actions",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
-		search.FieldLabel("SORT_Policy"): {
-			FieldPath: ".SORT_name",
-			Store:     false,
-			Hidden:    true,
+		search.FieldLabel("Lifecycle Stage"): {
+			FieldPath: ".lifecycle_stages",
+			Store:     true,
+			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
-			Analyzer:  "keyword",
 		},
-		search.FieldLabel("SORT_Lifecycle Stage"): {
-			FieldPath: ".SORT_lifecycleStage",
-			Store:     false,
-			Hidden:    true,
+		search.FieldLabel("Policy"): {
+			FieldPath: ".name",
+			Store:     true,
+			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("Policy ID"): {
 			FieldPath: ".id",
 			Store:     true,
 			Hidden:    true,
-			Category:  v1.SearchCategory_POLICIES,
-		},
-		search.FieldLabel("Category"): {
-			FieldPath: ".categories",
-			Store:     true,
-			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("Policy Last Updated"): {
@@ -78,8 +65,21 @@ var (
 			Hidden:    true,
 			Category:  v1.SearchCategory_POLICIES,
 		},
-		search.FieldLabel("Policy"): {
-			FieldPath: ".name",
+		search.FieldLabel("SORT_Lifecycle Stage"): {
+			FieldPath: ".SORT_lifecycleStage",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("SORT_Policy"): {
+			FieldPath: ".SORT_name",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_POLICIES,
+			Analyzer:  "keyword",
+		},
+		search.FieldLabel("Severity"): {
+			FieldPath: ".severity",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,

@@ -10,7 +10,74 @@ import (
 
 var (
 	// K8SRoleBindingSearchFields contains pre-computed search fields for role_bindings
-	K8SRoleBindingSearchFields = map[search.FieldLabel]*search.Field{}
+	K8SRoleBindingSearchFields = map[search.FieldLabel]*search.Field{
+		search.FieldLabel("Cluster"): {
+			FieldPath: ".cluster_name",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".cluster_id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Cluster Role"): {
+			FieldPath: ".cluster_role",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Namespace"): {
+			FieldPath: ".namespace",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Role Binding"): {
+			FieldPath: ".name",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Role Binding Annotation"): {
+			FieldPath: ".annotations",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Role Binding ID"): {
+			FieldPath: ".id",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Role Binding Label"): {
+			FieldPath: ".labels",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Role ID"): {
+			FieldPath: ".role_id",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Subject"): {
+			FieldPath: ".subjects.name",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Subject Kind"): {
+			FieldPath: ".subjects.kind",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+	}
 
 	// K8SRoleBindingSchema is the pre-computed schema for role_bindings table
 	K8SRoleBindingSchema = &walker.Schema{

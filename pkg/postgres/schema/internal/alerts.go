@@ -11,51 +11,15 @@ import (
 var (
 	// AlertSearchFields contains pre-computed search fields for alerts
 	AlertSearchFields = map[search.FieldLabel]*search.Field{
-		search.FieldLabel("Policy"): {
-			FieldPath: ".policy.name",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("Severity"): {
-			FieldPath: ".policy.severity",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("SORT_Lifecycle Stage"): {
-			FieldPath: ".policy.SORT_lifecycleStage",
+		search.FieldLabel("Alert ID"): {
+			FieldPath: ".id",
 			Store:     false,
-			Hidden:    true,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("Deployment"): {
-			FieldPath: ".Entity.Deployment.name",
-			Store:     true,
 			Hidden:    false,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("Image Tag"): {
-			FieldPath: ".Entity.Image.name.tag",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("SORT_Enforcement"): {
-			FieldPath: ".policy.SORT_enforcement",
-			Store:     false,
-			Hidden:    true,
 			Category:  v1.SearchCategory_ALERTS,
 		},
 		search.FieldLabel("Category"): {
 			FieldPath: ".policy.categories",
 			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("Enforcement"): {
-			FieldPath: ".enforcement.action",
-			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
@@ -65,10 +29,16 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
-		search.FieldLabel("Image Sha"): {
-			FieldPath: ".Entity.Image.id",
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".cluster_id",
 			Store:     true,
-			Hidden:    true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Deployment"): {
+			FieldPath: ".Entity.Deployment.name",
+			Store:     true,
+			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
 		search.FieldLabel("Deployment ID"): {
@@ -77,26 +47,8 @@ var (
 			Hidden:    true,
 			Category:  v1.SearchCategory_ALERTS,
 		},
-		search.FieldLabel("Resource Type"): {
-			FieldPath: ".Entity.Resource.resource_type",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("Violation Time"): {
-			FieldPath: ".time.seconds",
-			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("Violation State"): {
-			FieldPath: ".state",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("Alert ID"): {
-			FieldPath: ".id",
+		search.FieldLabel("Description"): {
+			FieldPath: ".policy.description",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
@@ -107,8 +59,8 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
-		search.FieldLabel("Lifecycle Stage"): {
-			FieldPath: ".lifecycle_stage",
+		search.FieldLabel("Enforcement"): {
+			FieldPath: ".enforcement.action",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
@@ -119,22 +71,17 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
-		search.FieldLabel("Policy Last Updated"): {
-			FieldPath: ".policy.last_updated.seconds",
+		search.FieldLabel("Image"): {
+			FieldPath: ".Entity.Image.name.full_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+			Analyzer:  "standard",
+		},
+		search.FieldLabel("Image ID"): {
+			FieldPath: ".Entity.Image.id_v2",
 			Store:     false,
-			Hidden:    false,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("Cluster ID"): {
-			FieldPath: ".cluster_id",
-			Store:     true,
-			Hidden:    false,
-			Category:  v1.SearchCategory_ALERTS,
-		},
-		search.FieldLabel("Namespace"): {
-			FieldPath: ".namespace",
-			Store:     true,
-			Hidden:    false,
+			Hidden:    true,
 			Category:  v1.SearchCategory_ALERTS,
 		},
 		search.FieldLabel("Image Registry"): {
@@ -149,8 +96,38 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
-		search.FieldLabel("Resource"): {
-			FieldPath: ".Entity.Resource.name",
+		search.FieldLabel("Image Sha"): {
+			FieldPath: ".Entity.Image.id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Image Tag"): {
+			FieldPath: ".Entity.Image.name.tag",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Inactive Deployment"): {
+			FieldPath: ".Entity.Deployment.inactive",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Lifecycle Stage"): {
+			FieldPath: ".lifecycle_stage",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Namespace"): {
+			FieldPath: ".namespace",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Namespace ID"): {
+			FieldPath: ".namespace_id",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
@@ -161,30 +138,47 @@ var (
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
+		search.FieldLabel("Policy"): {
+			FieldPath: ".policy.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
 		search.FieldLabel("Policy ID"): {
 			FieldPath: ".policy.id",
 			Store:     true,
 			Hidden:    true,
 			Category:  v1.SearchCategory_ALERTS,
 		},
-		search.FieldLabel("Description"): {
-			FieldPath: ".policy.description",
+		search.FieldLabel("Policy Last Updated"): {
+			FieldPath: ".policy.last_updated.seconds",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
-		search.FieldLabel("Namespace ID"): {
-			FieldPath: ".namespace_id",
+		search.FieldLabel("Resource"): {
+			FieldPath: ".Entity.Resource.name",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
-		search.FieldLabel("Image"): {
-			FieldPath: ".Entity.Image.name.full_name",
+		search.FieldLabel("Resource Type"): {
+			FieldPath: ".Entity.Resource.resource_type",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
-			Analyzer:  "standard",
+		},
+		search.FieldLabel("SORT_Enforcement"): {
+			FieldPath: ".policy.SORT_enforcement",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("SORT_Lifecycle Stage"): {
+			FieldPath: ".policy.SORT_lifecycleStage",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ALERTS,
 		},
 		search.FieldLabel("SORT_Policy"): {
 			FieldPath: ".policy.SORT_name",
@@ -193,16 +187,22 @@ var (
 			Category:  v1.SearchCategory_ALERTS,
 			Analyzer:  "keyword",
 		},
-		search.FieldLabel("Inactive Deployment"): {
-			FieldPath: ".Entity.Deployment.inactive",
-			Store:     false,
+		search.FieldLabel("Severity"): {
+			FieldPath: ".policy.severity",
+			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
-		search.FieldLabel("Image ID"): {
-			FieldPath: ".Entity.Image.id_v2",
+		search.FieldLabel("Violation State"): {
+			FieldPath: ".state",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Violation Time"): {
+			FieldPath: ".time.seconds",
 			Store:     false,
-			Hidden:    true,
+			Hidden:    false,
 			Category:  v1.SearchCategory_ALERTS,
 		},
 	}
