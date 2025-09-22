@@ -173,7 +173,7 @@ var (
 
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
 
-	// StoreDelegatedScans enables storing delegated scans to Central's Scanner V4 Indexer. Currently, both
-	// StoreDelegatedScans and SBOMGeneration must be enabled to store delegated scans.
-	StoreDelegatedScans = registerFeature("Enables storing delegated scans to Central's Scanner V4 Indexer", "ROX_STORE_DELEGATED_SCANS", enabled)
+	// ScannerV4StoreExternalIndexReports enables storing delegated scans to Central's Scanner V4 Indexer. Currently,
+	// both ScannerV4StoreExternalIndexReports and SBOMGeneration must be enabled to store delegated scans.
+	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
 )
