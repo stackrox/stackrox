@@ -13,4 +13,3 @@ export function toggleItemInArray<T>(
         : [...array, selectedItem];
     return newArray;
 }
-
