@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/python-39:latest@sha256:cc46d2979862d93e9da4d021e9100c7feb542dac3157acb2715b8baf54730c2b AS builder
+FROM registry.access.redhat.com/ubi9/python-39:latest@sha256:842eeb962621099270f52246499b16c7da5204b76d4a33c94d59339061404827 AS builder
 
 # Because 'default' user cannot create build/ directory and errrors like:
 # mkdir: cannot create directory ‘build/’: Permission denied
