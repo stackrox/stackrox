@@ -9,6 +9,7 @@ import io.stackrox.proto.api.v1.NodeServiceOuterClass
 class NodeService extends BaseService {
     static NodeServiceGrpc.NodeServiceBlockingStub getNodeClient() {
         return NodeServiceGrpc.newBlockingStub(getChannel())
+            .withMaxInboundMessageSize(3 * 4194304) // Three times the default size
     }
 
     static getNodes(String clusterId = ClusterService.getClusterId()) {
