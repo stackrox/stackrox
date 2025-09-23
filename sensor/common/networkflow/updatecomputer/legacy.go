@@ -110,7 +110,9 @@ func (l *Legacy) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indica
 		defer l.lastSentStateMutex.Unlock()
 		l.enrichedConnsLastSentState = make(map[indicator.NetworkConn]timestamp.MicroTS, len(enrichedEndpointsProcesses))
 		for _, withClose := range enrichedEndpointsProcesses {
-			l.enrichedProcessesLastSentState[*withClose.ProcessListening] = withClose.LastSeen
+			if withClose.ProcessListening != nil {
+				l.enrichedProcessesLastSentState[*withClose.ProcessListening] = withClose.LastSeen
+			}
 		}
 	}
 }
