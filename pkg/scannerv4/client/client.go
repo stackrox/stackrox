@@ -32,7 +32,8 @@ var (
 // callOptions contains optional data and gRPC parameters for the underlying
 // Scanner calls.
 type callOptions struct {
-	version *scannerv4.Version
+	version                     *scannerv4.Version
+	includeExternalIndexReports bool
 }
 
 // CallOption configures call-specific options for scanner methods.
@@ -51,6 +52,15 @@ func makeCallOptions(callOpts ...CallOption) callOptions {
 func Version(v *scannerv4.Version) CallOption {
 	return func(o *callOptions) {
 		o.version = v
+	}
+}
+
+// IncludeExternalIndexReports returns a CallOption that will inform library
+// calls to include external index reports when retrieving index reports from
+// Scanner V4's Indexer.
+func IncludeExternalIndexReports() CallOption {
+	return func(o *callOptions) {
+		o.includeExternalIndexReports = true
 	}
 }
 
@@ -218,7 +228,7 @@ func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref nam
 
 	// verify index report exists for the image
 	hashID := getImageManifestID(ref)
-	ir, found, err := c.getImageIndex(ctx, hashID, true, options)
+	ir, found, err := c.getImageIndex(ctx, hashID, options)
 	if err != nil {
 		return nil, false, err
 	}
@@ -249,7 +259,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts
 
 	options := makeCallOptions(callOpts...)
 
-	return c.getImageIndex(ctx, hashID, false, options)
+	return c.getImageIndex(ctx, hashID, options)
 }
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint GetOrCreateIndexReport.
@@ -295,8 +305,8 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 	return c.getVulnerabilities(ctx, ir.GetHashId(), nil, options)
 }
 
-func (c *gRPCScanner) getImageIndex(ctx context.Context, hashID string, includeExternal bool, options callOptions) (*v4.IndexReport, bool, error) {
-	req := &v4.GetIndexReportRequest{HashId: hashID, IncludeExternal: includeExternal}
+func (c *gRPCScanner) getImageIndex(ctx context.Context, hashID string, options callOptions) (*v4.IndexReport, bool, error) {
+	req := &v4.GetIndexReportRequest{HashId: hashID, IncludeExternal: options.includeExternalIndexReports}
 	var ir *v4.IndexReport
 	var responseMetadata metadata.MD
 	// Get the IndexReport, if it exists.

@@ -116,7 +116,7 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 		"hash_id", req.GetHashId(),
 	)
 	zlog.Info(ctx).Msg("getting index report for container image")
-	ir, err := s.getIndexReport(ctx, req.GetHashId(), req.IncludeExternal)
+	ir, err := s.getIndexReport(ctx, req.GetHashId(), req.GetIncludeExternal())
 	switch {
 	case errors.Is(err, errox.NotFound):
 		zlog.Warn(ctx).Err(err).Send()
