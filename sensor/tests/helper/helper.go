@@ -1177,30 +1177,40 @@ func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, nam
 	return lastMessage
 }
 
-// GetAllAlertsWithDeploymentID find all alert messages by deployment ID. If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
-func GetAllAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, checkEmptyAlertResults bool) []*central.MsgFromSensor {
+// GetAllAlertsWithDeploymentID find all alert messages by deployment ID. If onlyEmptyAlertResults is set to true it will return only AlertResults with no Alerts
+func GetAllAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, onlyEmptyAlertResults bool) []*central.MsgFromSensor {
 	var alerts []*central.MsgFromSensor
 	for i := len(messages) - 1; i >= 0; i-- {
-		if checkEmptyAlertResults && messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id && len(messages[i].GetEvent().GetAlertResults().GetAlerts()) == 0 {
+		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() != id {
+			continue
+		}
+
+		if !onlyEmptyAlertResults {
 			alerts = append(alerts, messages[i])
 			continue
 		}
-		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id {
+
+		if len(messages[i].GetEvent().GetAlertResults().GetAlerts()) == 0 {
 			alerts = append(alerts, messages[i])
 		}
 	}
 	return alerts
 }
 
-// GetLastAlertsWithDeploymentID find most recent alert message by deployment ID. If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
-func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, checkEmptyAlertResults bool) *central.MsgFromSensor {
+// GetLastAlertsWithDeploymentID find most recent alert message by deployment ID. If onlyEmptyAlertResults is set to true it will return only AlertResults with no Alerts
+func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, onlyEmptyAlertResults bool) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
 	for i := len(messages) - 1; i >= 0; i-- {
-		if checkEmptyAlertResults && messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id && len(messages[i].GetEvent().GetAlertResults().GetAlerts()) == 0 {
+		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() != id {
+			continue
+		}
+
+		if !onlyEmptyAlertResults {
 			lastMessage = messages[i]
 			break
 		}
-		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id {
+
+		if len(messages[i].GetEvent().GetAlertResults().GetAlerts()) == 0 {
 			lastMessage = messages[i]
 			break
 		}
