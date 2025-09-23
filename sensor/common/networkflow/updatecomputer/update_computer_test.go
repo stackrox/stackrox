@@ -485,6 +485,23 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear.
 			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
 		},
+		"A replacement triggered with a close message should close the correct process": {
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+				ep1: {
+					ProcessListening: &p2,
+					LastSeen:         closedNow,
+				},
+			},
+			expectNumUpdatesEp: map[string]int{implLegacy: 1, implTransitionBased: 1}, // for closing ep1
+			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear (as closed).
+			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
+		},
 	}
 
 	executeAssertions := func(t *testing.T, l UpdateComputer,
