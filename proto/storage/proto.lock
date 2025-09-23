@@ -18368,34 +18368,18 @@
             ]
           },
           {
-            "name": "VirtualMachineScan.Note",
+            "name": "VirtualMachine.State",
             "enum_fields": [
               {
-                "name": "UNSET"
+                "name": "UNKNOWN"
               },
               {
-                "name": "OS_UNAVAILABLE",
+                "name": "STOPPED",
                 "integer": 1
               },
               {
-                "name": "PARTIAL_SCAN_DATA",
+                "name": "RUNNING",
                 "integer": 2
-              },
-              {
-                "name": "OS_CVES_UNAVAILABLE",
-                "integer": 3
-              },
-              {
-                "name": "OS_CVES_STALE",
-                "integer": 4
-              },
-              {
-                "name": "LANGUAGE_CVES_UNAVAILABLE",
-                "integer": 5
-              },
-              {
-                "name": "CERTIFIED_RHEL_SCAN_UNAVAILABLE",
-                "integer": 6
               }
             ]
           }
@@ -18431,19 +18415,24 @@
               },
               {
                 "id": 7,
-                "name": "scan",
-                "type": "VirtualMachineScan"
-              },
-              {
-                "id": 8,
                 "name": "last_updated",
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 9,
+                "id": 8,
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "vsock_cid",
+                "type": "int32"
+              },
+              {
+                "id": 10,
+                "name": "state",
+                "type": "State"
               }
             ],
             "maps": [
@@ -18456,51 +18445,11 @@
                 }
               }
             ]
-          },
-          {
-            "name": "VirtualMachineScan",
-            "fields": [
-              {
-                "id": 1,
-                "name": "scanner_version",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "scan_time",
-                "type": "google.protobuf.Timestamp"
-              },
-              {
-                "id": 3,
-                "name": "components",
-                "type": "EmbeddedImageScanComponent",
-                "is_repeated": true
-              },
-              {
-                "id": 4,
-                "name": "operating_system",
-                "type": "string"
-              },
-              {
-                "id": 5,
-                "name": "data_source",
-                "type": "DataSource"
-              },
-              {
-                "id": 6,
-                "name": "notes",
-                "type": "Note",
-                "is_repeated": true
-              }
-            ]
           }
         ],
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
-          },
-          {
-            "path": "storage/image.proto"
           }
         ],
         "package": {

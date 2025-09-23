@@ -130,6 +130,10 @@ message GetReportHistoryRequest {
   RawQuery report_param_query = 2;
 }
 
+message GetViewBasedReportHistoryRequest {
+  RawQuery report_param_query = 1;
+}
+
 message ReportHistoryResponse {
   repeated ReportSnapshot report_snapshots = 1;
 }
@@ -296,11 +300,11 @@ service ReportService {
     };
   }
 
-  rpc GetViewBasedReportMyHistory(RawQuery) returns (ReportHistoryResponse) {
+  rpc GetViewBasedMyReportHistory(GetViewBasedReportHistoryRequest) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/my-history"};
   }
 
-  rpc GetViewBasedReportHistory(RawQuery) returns (ReportHistoryResponse) {
+  rpc GetViewBasedReportHistory(GetViewBasedReportHistoryRequest) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/history"};
   }
 }

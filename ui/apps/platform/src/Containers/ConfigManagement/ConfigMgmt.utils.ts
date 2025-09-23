@@ -9,8 +9,8 @@ import { defaultRoleSort } from 'Containers/ConfigManagement/List/ConfigManageme
 import { defaultSecretSort } from 'Containers/ConfigManagement/List/ConfigManagementListSecrets';
 import { defaultServiceAccountSort } from 'Containers/ConfigManagement/List/ConfigManagementListServiceAccounts';
 import { defaultSubjectSort } from 'Containers/ConfigManagement/List/ConfigManagementListSubjects';
-import { GraphQLSortOption } from 'types/search';
-import { ConfigurationManagementEntityType } from 'utils/entityRelationships';
+import type { GraphQLSortOption } from 'types/search';
+import type { ConfigurationManagementEntityType } from 'utils/entityRelationships';
 
 const defaultSortFieldMap: Record<ConfigurationManagementEntityType, GraphQLSortOption[]> = {
     CLUSTER: defaultClusterSort,

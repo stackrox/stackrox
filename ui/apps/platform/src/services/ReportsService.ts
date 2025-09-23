@@ -1,5 +1,9 @@
 import queryString from 'qs';
 
+import {
+    isConfiguredReportSnapshot,
+    isViewBasedReportSnapshot,
+} from 'services/ReportsService.types';
 import type {
     ReportConfiguration,
     ReportHistoryResponse,
@@ -8,10 +12,6 @@ import type {
     RunReportResponse,
     RunReportResponseViewBased,
     ConfiguredReportSnapshot,
-} from 'services/ReportsService.types';
-import {
-    isConfiguredReportSnapshot,
-    isViewBasedReportSnapshot,
 } from 'services/ReportsService.types';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';

@@ -54,15 +54,15 @@ function ReportParametersDetails({
         );
     }
     /*
-    // Ross CISA KEV includeKnownExploit?
+    // Ross CISA KEV
     if (
         isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_WHATEVER') &&
-        formValues.reportParameters.includeKnownExploit
+        isFeatureFlagEnabled('ROX_KEV_EXPLOIT') &&
+        formValues.reportParameters.includeExploitable
     ) {
         optionalColumnsDescriptions.push(
-            <DescriptionListDescription key="includeKnownExploit">
-                Known exploit
+            <DescriptionListDescription key="includeExploitable">
+                TBD
             </DescriptionListDescription>
         );
     }

@@ -29,22 +29,22 @@ func TestRunner_makeRunner(t *testing.T) {
 				Metrics: nil,
 			},
 			nil)
-		runner := makeRunner(nil, nil)
+		runner := makeRunner(&runnerDatastores{})
 		runner.initialize(cds)
 		assert.NotNil(t, runner)
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, cfg)
-		runner.Reconfigure(&RunnerConfiguration{})
+		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 	})
 
@@ -53,22 +53,22 @@ func TestRunner_makeRunner(t *testing.T) {
 		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
 			nil,
 			errors.New("DB error"))
-		runner := makeRunner(nil, nil)
+		runner := makeRunner(&runnerDatastores{})
 		assert.NotNil(t, runner)
 		runner.initialize(cds)
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, cfg)
-		runner.Reconfigure(&RunnerConfiguration{})
+		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 	})
 }
@@ -84,14 +84,14 @@ func TestRunner_ServeHTTP(t *testing.T) {
 				ImageVulnerabilities: &storage.PrometheusMetrics_Group{
 					GatheringPeriodMinutes: 10,
 					Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
-						"test_metric": {
+						"metric1": {
 							Labels: []string{"Cluster", "Severity"},
 						},
 					}},
 				PolicyViolations: &storage.PrometheusMetrics_Group{
 					GatheringPeriodMinutes: 10,
 					Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
-						"test_violations_metric": {
+						"metric2": {
 							Labels: []string{"Cluster", "Policy", "Categories"},
 						},
 					}}}},
@@ -141,10 +141,10 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		}).
 		Return(nil)
 
-	runner := makeRunner(dds, ads)
+	runner := makeRunner(&runnerDatastores{deployments: dds, alerts: ads})
 	runner.initialize(cds)
-	runner.image_vulnerabilities.Gather(makeAdminContext(t))
-	runner.policy_violations.Gather(makeAdminContext(t))
+	runner[0].Gather(makeAdminContext(t))
+	runner[1].Gather(makeAdminContext(t))
 
 	expectedBody := func(metricName, decription, labels, vector string) string {
 		metricName = "rox_central_" + metricName
@@ -164,11 +164,11 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		_ = result.Body.Close()
 		assert.NoError(t, err)
 		assert.Contains(t, string(body),
-			expectedBody("test_metric", "CVEs",
+			expectedBody("image_vuln_metric1", "image vulnerabilities",
 				"Cluster,Severity",
 				`Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"`))
 		assert.Contains(t, string(body),
-			expectedBody("test_violations_metric", "policy violations",
+			expectedBody("policy_violation_metric2", "policy violations",
 				"Cluster,Policy,Categories",
 				`Categories="catA,catB",Cluster="cluster1",Policy="Test Policy"`))
 	})

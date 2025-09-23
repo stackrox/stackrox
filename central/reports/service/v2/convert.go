@@ -385,6 +385,41 @@ func (s *serviceImpl) convertProtoNotifierSnapshotToV2(notifierSnapshot *storage
 	}
 }
 
+// convertViewBasedPrototoV2ReportSnapshot converts storage.ReportSnapshot to apiV2.ReportSnapshot for view based reports
+func (s *serviceImpl) convertViewBasedProtoReportSnapshotstoV2(snapshots []*storage.ReportSnapshot) ([]*apiV2.ReportSnapshot, error) {
+	if snapshots == nil {
+		return nil, nil
+	}
+	blobNames, err := s.getExistingBlobNames(snapshots)
+	if err != nil {
+		return nil, err
+	}
+	v2snaps := make([]*apiV2.ReportSnapshot, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		viewBasedFilters := &apiV2.ViewBasedVulnerabilityReportFilters{
+			Query: snapshot.GetViewBasedVulnReportFilters().GetQuery(),
+		}
+		snapshotv2 := &apiV2.ReportSnapshot{
+			ReportStatus:   s.convertPrototoV2Reportstatus(snapshot.GetReportStatus()),
+			ReportConfigId: snapshot.GetReportConfigurationId(),
+			ReportJobId:    snapshot.GetReportId(),
+			Name:           snapshot.GetName(),
+			Description:    snapshot.GetDescription(),
+			User: &apiV2.SlimUser{
+				Id:   snapshot.GetRequester().GetId(),
+				Name: snapshot.GetRequester().GetName(),
+			},
+			Filter: &apiV2.ReportSnapshot_ViewBasedVulnReportFilters{
+				ViewBasedVulnReportFilters: viewBasedFilters,
+			},
+			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
+		}
+		v2snaps = append(v2snaps, snapshotv2)
+	}
+
+	return v2snaps, nil
+}
+
 // convertPrototoV2ReportSnapshot converts storage.ReportSnapshot to apiV2.ReportSnapshot
 func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.ReportSnapshot) ([]*apiV2.ReportSnapshot, error) {
 	if snapshots == nil {

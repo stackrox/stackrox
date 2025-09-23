@@ -5,6 +5,7 @@ import { LabelGroup } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
+// import useFeatureFlags from 'hooks/useFeatureFlags'; // Ross CISA KEV
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -23,6 +24,7 @@ import {
 
 // import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
+// import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils'; // Ross CISA KEV
 import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
@@ -119,6 +121,7 @@ function DeploymentVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: DeploymentVulnerabilitiesTableProps) {
+    // const { isFeatureFlagEnabled } = useFeatureFlags(); // Ross CISA KEV
     const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
@@ -185,14 +188,17 @@ function DeploymentVulnerabilitiesTable({
                         const labels: ReactNode[] = [];
                         /*
                         // Ross CISA KEV
-                        // TODO replace key prop value with property name
-                        if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
-                            labels.push(<KnownExploitLabel key="knownExploit" isCompact />);
+                        if (
+                            isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+                            isFeatureFlagEnabled('ROX_KEV_EXPLOIT') &&
+                            hasKnownExploit(cveBaseInfo?.exploit)
+                        ) {
+                            labels.push(<KnownExploitLabel key="exploit" isCompact />);
                             // Future code if design decision is separate labels.
-                            // if (TODO) {
+                            // if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
                             //     labels.push(
                             //         <KnownExploitLabel
-                            //             key="knownRansomware"
+                            //             key="knownRansomwareCampaignUse"
                             //             isCompact
                             //             isKnownToBeUsedInRansomwareCampaigns
                             //         />

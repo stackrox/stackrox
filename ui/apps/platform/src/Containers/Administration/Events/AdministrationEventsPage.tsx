@@ -1,4 +1,5 @@
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Bullseye, PageSection, Spinner, Text, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
@@ -7,13 +8,13 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import {
-    AdministrationEvent,
     countAdministrationEvents,
     defaultSortOption,
     getListAdministrationEventsArg,
     listAdministrationEvents,
     sortFields,
 } from 'services/AdministrationEventsService';
+import type { AdministrationEvent } from 'services/AdministrationEventsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import AdministrationEventsTable from './AdministrationEventsTable';
