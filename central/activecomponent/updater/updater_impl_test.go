@@ -207,8 +207,8 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 	}
 	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return(deploymentIDs, nil)
 	s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	s.mockProcessIndicatorDataStore.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
-		func(ctx context.Context, query *v1.Query) ([]*storage.ProcessIndicator, error) {
+	s.mockProcessIndicatorDataStore.EXPECT().GetByQueryFn(gomock.Any(), gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
+		func(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
 			queries := query.GetConjunction().GetQueries()
 			s.Assert().Len(queries, 2)
 			var containerName, deploymentID string
@@ -226,18 +226,20 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 			}
 			for _, pi := range mockIndicators {
 				if pi.ContainerName == containerName && deploymentID == pi.DeploymentID {
-					var ret []*storage.ProcessIndicator
 					for _, exec := range pi.ExePaths {
-						ret = append(ret, &storage.ProcessIndicator{
+						err := fn(&storage.ProcessIndicator{
 							Id:      uuid.NewV4().String(),
 							ImageId: pi.ImageID,
 							Signal:  &storage.ProcessSignal{ExecFilePath: exec}},
 						)
+						if err != nil {
+							return err
+						}
 					}
-					return ret, nil
+					return nil
 				}
 			}
-			return nil, nil
+			return nil
 		})
 	s.mockImageDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context, query *v1.Query) ([]search.Result, error) {
@@ -881,8 +883,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				}
 			}
 
-			s.mockProcessIndicatorDataStore.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Times(databaseFetchCount).DoAndReturn(
-				func(ctx context.Context, query *v1.Query) ([]*storage.ProcessIndicator, error) {
+			s.mockProcessIndicatorDataStore.EXPECT().GetByQueryFn(gomock.Any(), gomock.Any(), gomock.Any()).Times(databaseFetchCount).DoAndReturn(
+				func(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
 					queries := query.GetConjunction().Queries
 					s.Assert().Len(queries, 2)
 					var containerName string
@@ -899,18 +901,19 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 						}
 					}
 
-					var ret []*storage.ProcessIndicator
-
 					for _, exec := range testCase.indicators[containerName].ExePaths {
-						ret = append(ret, &storage.ProcessIndicator{
+						err := fn(&storage.ProcessIndicator{
 							Id:            uuid.NewV4().String(),
 							ImageId:       testCase.indicators[containerName].ImageID,
 							DeploymentId:  deployment.GetId(),
 							ContainerName: containerName,
 							Signal:        &storage.ProcessSignal{ExecFilePath: exec}},
 						)
+						if err != nil {
+							return err
+						}
 					}
-					return ret, nil
+					return nil
 				})
 
 			s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).Times(testCase.searchRawActiveComponentsTimes).DoAndReturn(
