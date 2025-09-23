@@ -66,7 +66,7 @@ Such defaulting flow can:
 - Implement complex defaulting logic (beyond what static CRD defaulting supports).
 - Persist defaulting decisions in the custom resource's metadata as feature-specific annotation.
 - Differentiate between green-field (fresh installation) and brown-field (upgrade) scenarios when making defaulting decision.
-- Perform validation which can differentiate between explicitly provided and defaulted values ([example](https://github.com/stackrox/stackrox/blob/61f6070457bd832bef632b694ecfb3779d2d43a2/operator/internal/central/values/defaults/central_db_defaulting.go#L20-L23)).
+- Perform validation which can differentiate between explicitly provided and defaulted values ([example](https://github.com/stackrox/stackrox/blob/master/operator/internal/central/defaults/central_db.go#L20-L23)).
 - Ensure that subsequent reconciler extensions work with a custom resource spec that already includes all relevant defaulting decisions.
 
 #### Reference Implementation

@@ -1,10 +1,11 @@
-package defaulting
+package defaults
 
 import (
 	"reflect"
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/common"
 )
 
 var (
@@ -12,10 +13,6 @@ var (
 		Name:           "scanner-V4",
 		DefaultingFunc: centralScannerV4Defaulting,
 	}
-)
-
-const (
-	FeatureDefaultKeyScannerV4 = "feature-defaults.platform.stackrox.io/scannerV4"
 )
 
 // Only returns Enabled or Disabled.
@@ -39,7 +36,7 @@ func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.Centra
 	// This includes the case spec.ScannerComponent == "Default".
 
 	// A default entry exists already, use recorded value.
-	recordedValue := platform.ScannerV4ComponentPolicy(annotations[FeatureDefaultKeyScannerV4])
+	recordedValue := platform.ScannerV4ComponentPolicy(annotations[common.FeatureDefaultKeyScannerV4])
 	if recordedValue == platform.ScannerV4Enabled || recordedValue == platform.ScannerV4Disabled {
 		logger.Info("using previously recorded ScannerV4 componentPolicy", "componentPolicy", recordedValue)
 		return recordedValue, true
@@ -56,7 +53,7 @@ func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.Centra
 	// Upgrade.
 	logger.Info("assuming upgrade")
 
-	if annotations[FeatureDefaultKeyScannerV4] == "" {
+	if annotations[common.FeatureDefaultKeyScannerV4] == "" {
 		// No entry in the statusDefaults yet -> preserve defaulting behavior of versions which did not populate
 		// statusDefaults with a ScannerV4ComponentPolicy.
 		logger.Info("empty feature-default annotation, using default ScannerV4 componentPolicy for upgrades",
@@ -72,7 +69,7 @@ func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.Centra
 	return defaultForUpgrades, true
 }
 
-// centralStatusUninitialized checks if the provided Central status is uninitialized.
+// centralStatusUninitialized checks if the provided CentralStatus is uninitialized.
 func centralStatusUninitialized(status *platform.CentralStatus) bool {
 	return status == nil || reflect.DeepEqual(status, &platform.CentralStatus{})
 }
@@ -87,9 +84,9 @@ func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStat
 
 	// User is relying on defaults. Set in-memory default and persist corresponding annotation.
 
-	if annotations[FeatureDefaultKeyScannerV4] != string(componentPolicy) {
+	if annotations[common.FeatureDefaultKeyScannerV4] != string(componentPolicy) {
 		// Update feature default setting.
-		annotations[FeatureDefaultKeyScannerV4] = string(componentPolicy)
+		annotations[common.FeatureDefaultKeyScannerV4] = string(componentPolicy)
 	}
 
 	defaults.ScannerV4 = &platform.ScannerV4Spec{ScannerComponent: &componentPolicy}

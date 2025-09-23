@@ -59,7 +59,7 @@ Instead, we use:
 
 ### 2. Set the default value
 
-Add something like this in the [central](https://github.com/stackrox/stackrox/blob/master/operator/internal/central/values/defaults/defaults.go) `defaults.go` file:
+Add something like this in the [central](https://github.com/stackrox/stackrox/blob/master/operator/internal/central/defaults/static.go) `static.go` file:
 
 ```go
 var staticDefaults = platform.CentralSpec{
@@ -69,7 +69,7 @@ var staticDefaults = platform.CentralSpec{
 }
 ```
 
-There is also a [secured cluster](https://github.com/stackrox/stackrox/blob/master/operator/internal/securedcluster/values/defaults/defaults.go) counterpart if you are modifying the `SecuredCluster` CRD.
+There is also a [secured cluster](https://github.com/stackrox/stackrox/blob/master/operator/internal/securedcluster/defaults/static.go) counterpart if you are modifying the `SecuredCluster` CRD.
 
 Note that the last line in the field description should explain how the default is set, using the specific syntax shown above.
 There are unit tests that enforce that the comment matches the default set in the code.
