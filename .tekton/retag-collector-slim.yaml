@@ -32,14 +32,9 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: input-image-repo
-    value: quay.io/rhacs-eng/release-collector
+    value: quay.io/rhacs-eng/release-collector-slim
   - name: input-image-tag-makefile-target
     value: collector-tag
-  # Historically, slim collector is first built to quay.io/rhacs-eng/collector:<original-tag>-slim, and then it's
-  # retagged to quay.io/rhacs-eng/collector-slim:<main-tag>. The latter (suffix in repo, not in tag) is selected to
-  # follow downstream/release/catalog restrictions of not being able to specify image suffixes.
-  # Here we retag the full collector, not slim (i.e. quay.io/rhacs-eng/release-collector:<original-tag>) to
-  # quay.io/rhacs-eng/release-collector-slim:<main-tag>. It is safe because there's no difference between full and slim images.
   - name: output-image-repo
     value: quay.io/rhacs-eng/release-collector-slim
 
@@ -47,7 +42,7 @@ spec:
     name: retag-pipeline
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-collector-4-6
+    serviceAccountName: build-pipeline-collector-slim-4-6
 
   timeouts:
     tasks: 30m
