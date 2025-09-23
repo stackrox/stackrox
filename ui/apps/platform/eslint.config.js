@@ -766,6 +766,7 @@ module.exports = [
             '@typescript-eslint/consistent-type-imports': 'error',
             'limited/no-inline-type-imports': 'error',
             'limited/no-qualified-name-react': 'error',
+            'limited/no-relative-path-to-src-in-import': 'error',
         },
     },
     {

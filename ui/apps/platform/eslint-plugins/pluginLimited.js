@@ -105,6 +105,75 @@ const rules = {
             };
         },
     },
+    'no-relative-path-to-src-in-import': {
+        // Prerequisite so import statements from other containers can have consistent order.
+        // By the way, absence of src in path is magic in project configuration.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace relative path to subfolder of src with path from subfolder',
+            },
+            schema: [],
+        },
+        create(context) {
+            // Too bad, so sad, that this array might become inconsistent with reality.
+            const subfolders = [
+                'Components',
+                'ConsolePlugin',
+                'constants',
+                'Containers',
+                'css',
+                'hooks',
+                'images',
+                'init',
+                'messages',
+                'mockData',
+                'providers',
+                'queries',
+                'reducers',
+                'sagas',
+                'services',
+                'sorters',
+                'test-utils',
+                'types',
+                'utils',
+            ];
+
+            return {
+                Literal(node) {
+                    if (typeof node.value === 'string') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].type === 'ImportDeclaration'
+                        ) {
+                            // Calculate slashes in filename after base to prevent false positive
+                            // for relative path to subfolder like Containers or hooks within a container folder.
+                            const baseSuffix = 'ui/apps/platform/';
+                            const indexAtStartOfSuffix = context.filename.indexOf(baseSuffix);
+                            if (indexAtStartOfSuffix >= 0) {
+                                const indexAfterBase = indexAtStartOfSuffix + baseSuffix.length;
+                                const filenameAfterBase = context.filename.slice(indexAfterBase);
+                                const depth = [...filenameAfterBase.matchAll(/\//g)].length;
+                                const relativePrefix = depth === 0 ? './' : '../'.repeat(depth - 1);
+                                if (
+                                    subfolders.some((subfolder) =>
+                                        node.value.startsWith(`${relativePrefix}${subfolder}/`)
+                                    )
+                                ) {
+                                    context.report({
+                                        node,
+                                        message:
+                                            'Replace relative path to subfolder of src with path from subfolder',
+                                    });
+                                }
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
 };
 
 // Use limited as key of pluginLimited in eslint.config.js file.
