@@ -1,6 +1,17 @@
-/* globals module require */
+/* globals __dirname module require */
 
+const fs = require('node:fs');
 const path = require('node:path');
+
+// Adapted from getSrcAliases in vite.config.js file.
+const srcPath = path.resolve(__dirname, '..', 'src'); // src is sibling of eslint-plugins folder
+const srcSubfolders = fs
+    .readdirSync(srcPath, { withFileTypes: true })
+    .filter((dirent) => {
+        // Avoid hidden directories, like `.DS_Store`
+        return dirent.isDirectory() && !dirent.name.startsWith('.');
+    })
+    .map(({ name }) => name);
 
 // Limited rules have exceptions via ignores property.
 // When ESLint plugin for Visual Studio Code has support for suppressions, they might supersede limited rules.
@@ -116,29 +127,6 @@ const rules = {
             schema: [],
         },
         create(context) {
-            // Too bad, so sad, that this array might become inconsistent with reality.
-            const subfolders = [
-                'Components',
-                'ConsolePlugin',
-                'constants',
-                'Containers',
-                'css',
-                'hooks',
-                'images',
-                'init',
-                'messages',
-                'mockData',
-                'providers',
-                'queries',
-                'reducers',
-                'sagas',
-                'services',
-                'sorters',
-                'test-utils',
-                'types',
-                'utils',
-            ];
-
             return {
                 Literal(node) {
                     if (typeof node.value === 'string') {
@@ -157,8 +145,8 @@ const rules = {
                                 const depth = [...filenameAfterBase.matchAll(/\//g)].length;
                                 const relativePrefix = depth === 0 ? './' : '../'.repeat(depth - 1);
                                 if (
-                                    subfolders.some((subfolder) =>
-                                        node.value.startsWith(`${relativePrefix}${subfolder}/`)
+                                    srcSubfolders.some((srcSubfolder) =>
+                                        node.value.startsWith(`${relativePrefix}${srcSubfolder}/`)
                                     )
                                 ) {
                                     context.report({
