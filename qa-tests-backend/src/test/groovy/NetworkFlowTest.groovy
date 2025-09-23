@@ -29,6 +29,7 @@ import services.ClusterService
 import services.DeploymentService
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import util.ApplicationHealth
 import util.CollectorUtil
 import util.Env
 import util.Helpers
@@ -301,7 +302,10 @@ class NetworkFlowTest extends BaseSpecification {
         then:
         "Check for edge between collector and sensor, if collector is installed"
         if (collectorUid != null) {
-            log.info "Checking for edge between collector and sensor"
+            log.info "Waiting for collector to be healthy before checking network edges"
+            ApplicationHealth ah = new ApplicationHealth(orchestrator, 120)
+            ah.waitForCollectorHealthiness()
+            log.info "Collector is healthy, now checking for edge between collector and sensor"
             edges = NetworkGraphUtil.checkForEdge(collectorUid, sensorUid)
             assert edges
         }
