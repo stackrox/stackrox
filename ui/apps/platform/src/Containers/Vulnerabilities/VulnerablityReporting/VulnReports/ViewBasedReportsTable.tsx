@@ -4,6 +4,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import useAuthStatus from 'hooks/useAuthStatus';
+import useRestQuery from 'hooks/useRestQuery';
 import { GetSortParams } from 'hooks/useURLSort';
 import useModal from 'hooks/useModal';
 import { getDateTime } from 'utils/dateUtils';
@@ -11,6 +12,8 @@ import { TableUIState } from 'utils/getTableUIState';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { downloadReportByJobId } from 'services/ReportsService';
+import { fetchSystemConfig } from 'services/SystemConfigService';
+import { calculateReportExpiration } from '../utils';
 import ViewBasedReportJobDetails from './ViewBasedReportJobDetails';
 
 export type ViewBasedReportsTableProps<T> = {
@@ -36,10 +39,14 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
     onClearFilters,
 }: ViewBasedReportsTableProps<T>) {
     const { currentUser } = useAuthStatus();
+    const { data: systemConfig } = useRestQuery(fetchSystemConfig);
     const { isModalOpen, openModal, closeModal } = useModal();
     const [selectedJobDetails, setSelectedJobDetails] = useState<ViewBasedReportSnapshot | null>(
         null
     );
+
+    const retentionDays =
+        systemConfig?.privateConfig?.reportRetentionConfig?.downloadableReportRetentionDays;
 
     return (
         <>
@@ -50,7 +57,7 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                         <Th>Requester</Th>
                         <Th>Job status</Th>
                         <Th>Expiration</Th>
-                        <Th sort={getSortParams('Report Completed Time')}>Completed</Th>
+                        <Th sort={getSortParams('Report Completion Time')}>Completed</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
@@ -93,8 +100,12 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                                                 onDownload={onDownload(snapshot)}
                                             />
                                         </Td>
-                                        {/* @TODO: Show the difference between the retention period for view-based downloadable reports and the date when this was created */}
-                                        <Td dataLabel="Expiration">7 days</Td>
+                                        <Td dataLabel="Expiration">
+                                            {calculateReportExpiration(
+                                                reportStatus.completedAt,
+                                                retentionDays
+                                            )}
+                                        </Td>
                                         <Td dataLabel="Completed">
                                             {reportStatus.completedAt
                                                 ? getDateTime(reportStatus.completedAt)
