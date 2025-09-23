@@ -128,5 +128,20 @@ func GetNodeCVESchema() *walker.Schema {
 	if NodeCVESchema.OptionsMap == nil {
 		NodeCVESchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NODE_VULNERABILITIES, NodeCVESearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range NodeCVESchema.Fields {
+		NodeCVESchema.Fields[i].Schema = NodeCVESchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(NodeCVESchema)
 	return NodeCVESchema
 }

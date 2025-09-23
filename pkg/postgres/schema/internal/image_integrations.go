@@ -58,5 +58,20 @@ func GetImageIntegrationSchema() *walker.Schema {
 	if ImageIntegrationSchema.OptionsMap == nil {
 		ImageIntegrationSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_INTEGRATIONS, ImageIntegrationSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ImageIntegrationSchema.Fields {
+		ImageIntegrationSchema.Fields[i].Schema = ImageIntegrationSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ImageIntegrationSchema)
 	return ImageIntegrationSchema
 }

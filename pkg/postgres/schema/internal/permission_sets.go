@@ -51,5 +51,20 @@ func GetPermissionSetSchema() *walker.Schema {
 	if PermissionSetSchema.OptionsMap == nil {
 		PermissionSetSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, PermissionSetSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range PermissionSetSchema.Fields {
+		PermissionSetSchema.Fields[i].Schema = PermissionSetSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(PermissionSetSchema)
 	return PermissionSetSchema
 }

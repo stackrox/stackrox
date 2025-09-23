@@ -72,5 +72,20 @@ func GetRiskSchema() *walker.Schema {
 	if RiskSchema.OptionsMap == nil {
 		RiskSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_RISKS, RiskSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range RiskSchema.Fields {
+		RiskSchema.Fields[i].Schema = RiskSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(RiskSchema)
 	return RiskSchema
 }

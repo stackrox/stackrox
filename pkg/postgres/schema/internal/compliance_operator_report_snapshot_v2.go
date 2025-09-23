@@ -98,6 +98,49 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "compliance_operator_report_snapshot_v2_scans",
+				Type:     "*storage.ComplianceOperatorReportSnapshotV2_Scan",
+				TypeName: "ComplianceOperatorReportSnapshotV2_Scan",
+				Fields: []walker.Field{
+					{
+						Name:       "complianceOperatorReportSnapshotV2ReportId",
+						ColumnName: "compliance_operator_report_snapshot_v2_ReportId",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ScanRefId",
+						ColumnName: "ScanRefId",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+					{
+						Name:       "LastStartedTime",
+						ColumnName: "LastStartedTime",
+						Type:       "*timestamppb.Timestamp",
+						SQLType:    "timestamp",
+						DataType:   postgres.DateTime,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -107,5 +150,20 @@ func GetComplianceOperatorReportSnapshotV2Schema() *walker.Schema {
 	if ComplianceOperatorReportSnapshotV2Schema.OptionsMap == nil {
 		ComplianceOperatorReportSnapshotV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT, ComplianceOperatorReportSnapshotV2SearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ComplianceOperatorReportSnapshotV2Schema.Fields {
+		ComplianceOperatorReportSnapshotV2Schema.Fields[i].Schema = ComplianceOperatorReportSnapshotV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ComplianceOperatorReportSnapshotV2Schema)
 	return ComplianceOperatorReportSnapshotV2Schema
 }

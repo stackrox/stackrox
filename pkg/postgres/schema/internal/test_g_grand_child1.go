@@ -51,5 +51,20 @@ func GetTestGGrandChild1Schema() *walker.Schema {
 	if TestGGrandChild1Schema.OptionsMap == nil {
 		TestGGrandChild1Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(107), TestGGrandChild1SearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range TestGGrandChild1Schema.Fields {
+		TestGGrandChild1Schema.Fields[i].Schema = TestGGrandChild1Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(TestGGrandChild1Schema)
 	return TestGGrandChild1Schema
 }

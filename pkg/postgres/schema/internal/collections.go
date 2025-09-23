@@ -56,6 +56,42 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "collections_embedded_collections",
+				Type:     "*storage.ResourceCollection_EmbeddedResourceCollection",
+				TypeName: "ResourceCollection_EmbeddedResourceCollection",
+				Fields: []walker.Field{
+					{
+						Name:       "collectionID",
+						ColumnName: "collections_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Id",
+						ColumnName: "Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -65,5 +101,20 @@ func GetResourceCollectionSchema() *walker.Schema {
 	if ResourceCollectionSchema.OptionsMap == nil {
 		ResourceCollectionSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COLLECTIONS, ResourceCollectionSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ResourceCollectionSchema.Fields {
+		ResourceCollectionSchema.Fields[i].Schema = ResourceCollectionSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ResourceCollectionSchema)
 	return ResourceCollectionSchema
 }

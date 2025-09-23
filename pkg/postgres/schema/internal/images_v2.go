@@ -252,6 +252,49 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "images_v2_layers",
+				Type:     "*storage.ImageLayer",
+				TypeName: "ImageLayer",
+				Fields: []walker.Field{
+					{
+						Name:       "imageV2ID",
+						ColumnName: "images_v2_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Instruction",
+						ColumnName: "Instruction",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+					{
+						Name:       "Value",
+						ColumnName: "Value",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -261,5 +304,20 @@ func GetImageV2Schema() *walker.Schema {
 	if ImageV2Schema.OptionsMap == nil {
 		ImageV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGES_V2, ImageV2SearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ImageV2Schema.Fields {
+		ImageV2Schema.Fields[i].Schema = ImageV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ImageV2Schema)
 	return ImageV2Schema
 }

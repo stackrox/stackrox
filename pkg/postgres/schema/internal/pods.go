@@ -63,6 +63,42 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "pods_live_instances",
+				Type:     "*storage.ContainerInstance",
+				TypeName: "ContainerInstance",
+				Fields: []walker.Field{
+					{
+						Name:       "podID",
+						ColumnName: "pods_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ImageDigest",
+						ColumnName: "ImageDigest",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -72,5 +108,20 @@ func GetPodSchema() *walker.Schema {
 	if PodSchema.OptionsMap == nil {
 		PodSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PODS, PodSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range PodSchema.Fields {
+		PodSchema.Fields[i].Schema = PodSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(PodSchema)
 	return PodSchema
 }

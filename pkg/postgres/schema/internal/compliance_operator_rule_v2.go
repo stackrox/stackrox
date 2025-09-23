@@ -70,6 +70,49 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "compliance_operator_rule_v2_controls",
+				Type:     "*storage.RuleControls",
+				TypeName: "RuleControls",
+				Fields: []walker.Field{
+					{
+						Name:       "complianceOperatorRuleV2ID",
+						ColumnName: "compliance_operator_rule_v2_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Standard",
+						ColumnName: "Standard",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+					{
+						Name:       "Control",
+						ColumnName: "Control",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -79,5 +122,20 @@ func GetComplianceOperatorRuleV2Schema() *walker.Schema {
 	if ComplianceOperatorRuleV2Schema.OptionsMap == nil {
 		ComplianceOperatorRuleV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_RULES, ComplianceOperatorRuleV2SearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ComplianceOperatorRuleV2Schema.Fields {
+		ComplianceOperatorRuleV2Schema.Fields[i].Schema = ComplianceOperatorRuleV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ComplianceOperatorRuleV2Schema)
 	return ComplianceOperatorRuleV2Schema
 }

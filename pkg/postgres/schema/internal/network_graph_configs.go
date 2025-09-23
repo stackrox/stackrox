@@ -44,5 +44,20 @@ func GetNetworkGraphConfigSchema() *walker.Schema {
 	if NetworkGraphConfigSchema.OptionsMap == nil {
 		NetworkGraphConfigSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, NetworkGraphConfigSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range NetworkGraphConfigSchema.Fields {
+		NetworkGraphConfigSchema.Fields[i].Schema = NetworkGraphConfigSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(NetworkGraphConfigSchema)
 	return NetworkGraphConfigSchema
 }

@@ -72,5 +72,20 @@ func GetImageCVEEdgeSchema() *walker.Schema {
 	if ImageCVEEdgeSchema.OptionsMap == nil {
 		ImageCVEEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_VULN_EDGE, ImageCVEEdgeSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ImageCVEEdgeSchema.Fields {
+		ImageCVEEdgeSchema.Fields[i].Schema = ImageCVEEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ImageCVEEdgeSchema)
 	return ImageCVEEdgeSchema
 }

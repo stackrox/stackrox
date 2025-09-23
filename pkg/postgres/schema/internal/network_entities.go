@@ -65,5 +65,20 @@ func GetNetworkEntitySchema() *walker.Schema {
 	if NetworkEntitySchema.OptionsMap == nil {
 		NetworkEntitySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_ENTITY, NetworkEntitySearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range NetworkEntitySchema.Fields {
+		NetworkEntitySchema.Fields[i].Schema = NetworkEntitySchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(NetworkEntitySchema)
 	return NetworkEntitySchema
 }

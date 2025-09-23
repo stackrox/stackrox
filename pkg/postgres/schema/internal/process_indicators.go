@@ -128,5 +128,20 @@ func GetProcessIndicatorSchema() *walker.Schema {
 	if ProcessIndicatorSchema.OptionsMap == nil {
 		ProcessIndicatorSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PROCESS_INDICATORS, ProcessIndicatorSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ProcessIndicatorSchema.Fields {
+		ProcessIndicatorSchema.Fields[i].Schema = ProcessIndicatorSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ProcessIndicatorSchema)
 	return ProcessIndicatorSchema
 }

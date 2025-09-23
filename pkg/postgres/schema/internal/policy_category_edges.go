@@ -58,5 +58,20 @@ func GetPolicyCategoryEdgeSchema() *walker.Schema {
 	if PolicyCategoryEdgeSchema.OptionsMap == nil {
 		PolicyCategoryEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICY_CATEGORY_EDGE, PolicyCategoryEdgeSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range PolicyCategoryEdgeSchema.Fields {
+		PolicyCategoryEdgeSchema.Fields[i].Schema = PolicyCategoryEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(PolicyCategoryEdgeSchema)
 	return PolicyCategoryEdgeSchema
 }

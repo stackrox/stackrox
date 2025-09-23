@@ -107,5 +107,20 @@ func GetProcessListeningOnPortStorageSchema() *walker.Schema {
 	if ProcessListeningOnPortStorageSchema.OptionsMap == nil {
 		ProcessListeningOnPortStorageSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, ProcessListeningOnPortStorageSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ProcessListeningOnPortStorageSchema.Fields {
+		ProcessListeningOnPortStorageSchema.Fields[i].Schema = ProcessListeningOnPortStorageSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ProcessListeningOnPortStorageSchema)
 	return ProcessListeningOnPortStorageSchema
 }

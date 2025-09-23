@@ -227,5 +227,20 @@ func GetPolicySchema() *walker.Schema {
 	if PolicySchema.OptionsMap == nil {
 		PolicySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICIES, PolicySearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range PolicySchema.Fields {
+		PolicySchema.Fields[i].Schema = PolicySchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(PolicySchema)
 	return PolicySchema
 }

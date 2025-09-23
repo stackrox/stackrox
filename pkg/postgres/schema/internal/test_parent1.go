@@ -56,6 +56,42 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "test_parent1_childrens",
+				Type:     "*storage.TestParent1_Child1Ref",
+				TypeName: "TestParent1_Child1Ref",
+				Fields: []walker.Field{
+					{
+						Name:       "testParent1ID",
+						ColumnName: "test_parent1_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ChildId",
+						ColumnName: "ChildId",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -65,5 +101,20 @@ func GetTestParent1Schema() *walker.Schema {
 	if TestParent1Schema.OptionsMap == nil {
 		TestParent1Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(110), TestParent1SearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range TestParent1Schema.Fields {
+		TestParent1Schema.Fields[i].Schema = TestParent1Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(TestParent1Schema)
 	return TestParent1Schema
 }

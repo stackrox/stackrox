@@ -56,6 +56,88 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "test_grandparents_embeddeds",
+				Type:     "*storage.TestGrandparent_Embedded",
+				TypeName: "TestGrandparent_Embedded",
+				Fields: []walker.Field{
+					{
+						Name:       "testGrandparentID",
+						ColumnName: "test_grandparents_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Val",
+						ColumnName: "Val",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+				Children: []*walker.Schema{
+					{
+						Table:    "test_grandparents_embeddeds_embedded2",
+						Type:     "*storage.TestGrandparent_Embedded_Embedded2",
+						TypeName: "TestGrandparent_Embedded_Embedded2",
+						Fields: []walker.Field{
+							{
+								Name:       "testGrandparentID",
+								ColumnName: "test_grandparents_Id",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "testGrandparentEmbeddedIdx",
+								ColumnName: "test_grandparents_embeddeds_idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "idx",
+								ColumnName: "idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "Val",
+								ColumnName: "Val",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -65,5 +147,20 @@ func GetTestGrandparentSchema() *walker.Schema {
 	if TestGrandparentSchema.OptionsMap == nil {
 		TestGrandparentSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(109), TestGrandparentSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range TestGrandparentSchema.Fields {
+		TestGrandparentSchema.Fields[i].Schema = TestGrandparentSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(TestGrandparentSchema)
 	return TestGrandparentSchema
 }

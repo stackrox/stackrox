@@ -114,5 +114,20 @@ func GetImageComponentV2Schema() *walker.Schema {
 	if ImageComponentV2Schema.OptionsMap == nil {
 		ImageComponentV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_COMPONENTS_V2, ImageComponentV2SearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ImageComponentV2Schema.Fields {
+		ImageComponentV2Schema.Fields[i].Schema = ImageComponentV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ImageComponentV2Schema)
 	return ImageComponentV2Schema
 }

@@ -49,6 +49,110 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "compliance_operator_scan_configuration_v2_profiles",
+				Type:     "*storage.ComplianceOperatorScanConfigurationV2_ProfileName",
+				TypeName: "ComplianceOperatorScanConfigurationV2_ProfileName",
+				Fields: []walker.Field{
+					{
+						Name:       "complianceOperatorScanConfigurationV2ID",
+						ColumnName: "compliance_operator_scan_configuration_v2_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ProfileName",
+						ColumnName: "ProfileName",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+			{
+				Table:    "compliance_operator_scan_configuration_v2_clusters",
+				Type:     "*storage.ComplianceOperatorScanConfigurationV2_Cluster",
+				TypeName: "ComplianceOperatorScanConfigurationV2_Cluster",
+				Fields: []walker.Field{
+					{
+						Name:       "complianceOperatorScanConfigurationV2ID",
+						ColumnName: "compliance_operator_scan_configuration_v2_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ClusterId",
+						ColumnName: "ClusterId",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+					},
+				},
+			},
+			{
+				Table:    "compliance_operator_scan_configuration_v2_notifiers",
+				Type:     "*storage.NotifierConfiguration",
+				TypeName: "NotifierConfiguration",
+				Fields: []walker.Field{
+					{
+						Name:       "complianceOperatorScanConfigurationV2ID",
+						ColumnName: "compliance_operator_scan_configuration_v2_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Id",
+						ColumnName: "Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -58,5 +162,20 @@ func GetComplianceOperatorScanConfigurationV2Schema() *walker.Schema {
 	if ComplianceOperatorScanConfigurationV2Schema.OptionsMap == nil {
 		ComplianceOperatorScanConfigurationV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG, ComplianceOperatorScanConfigurationV2SearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ComplianceOperatorScanConfigurationV2Schema.Fields {
+		ComplianceOperatorScanConfigurationV2Schema.Fields[i].Schema = ComplianceOperatorScanConfigurationV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ComplianceOperatorScanConfigurationV2Schema)
 	return ComplianceOperatorScanConfigurationV2Schema
 }

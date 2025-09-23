@@ -44,5 +44,20 @@ func GetComplianceOperatorScanSettingBindingSchema() *walker.Schema {
 	if ComplianceOperatorScanSettingBindingSchema.OptionsMap == nil {
 		ComplianceOperatorScanSettingBindingSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, ComplianceOperatorScanSettingBindingSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ComplianceOperatorScanSettingBindingSchema.Fields {
+		ComplianceOperatorScanSettingBindingSchema.Fields[i].Schema = ComplianceOperatorScanSettingBindingSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ComplianceOperatorScanSettingBindingSchema)
 	return ComplianceOperatorScanSettingBindingSchema
 }

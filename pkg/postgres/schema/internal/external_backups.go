@@ -44,5 +44,20 @@ func GetExternalBackupSchema() *walker.Schema {
 	if ExternalBackupSchema.OptionsMap == nil {
 		ExternalBackupSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, ExternalBackupSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ExternalBackupSchema.Fields {
+		ExternalBackupSchema.Fields[i].Schema = ExternalBackupSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ExternalBackupSchema)
 	return ExternalBackupSchema
 }

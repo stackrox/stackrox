@@ -58,5 +58,20 @@ func GetNodeComponentEdgeSchema() *walker.Schema {
 	if NodeComponentEdgeSchema.OptionsMap == nil {
 		NodeComponentEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NODE_COMPONENT_EDGE, NodeComponentEdgeSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range NodeComponentEdgeSchema.Fields {
+		NodeComponentEdgeSchema.Fields[i].Schema = NodeComponentEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(NodeComponentEdgeSchema)
 	return NodeComponentEdgeSchema
 }

@@ -72,5 +72,20 @@ func GetGroupSchema() *walker.Schema {
 	if GroupSchema.OptionsMap == nil {
 		GroupSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, GroupSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range GroupSchema.Fields {
+		GroupSchema.Fields[i].Schema = GroupSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(GroupSchema)
 	return GroupSchema
 }

@@ -65,5 +65,20 @@ func GetSecuredUnitsSchema() *walker.Schema {
 	if SecuredUnitsSchema.OptionsMap == nil {
 		SecuredUnitsSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ADMINISTRATION_USAGE, SecuredUnitsSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range SecuredUnitsSchema.Fields {
+		SecuredUnitsSchema.Fields[i].Schema = SecuredUnitsSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(SecuredUnitsSchema)
 	return SecuredUnitsSchema
 }

@@ -86,5 +86,20 @@ func GetServiceAccountSchema() *walker.Schema {
 	if ServiceAccountSchema.OptionsMap == nil {
 		ServiceAccountSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SERVICE_ACCOUNTS, ServiceAccountSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ServiceAccountSchema.Fields {
+		ServiceAccountSchema.Fields[i].Schema = ServiceAccountSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ServiceAccountSchema)
 	return ServiceAccountSchema
 }

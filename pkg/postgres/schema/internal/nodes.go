@@ -382,6 +382,56 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "nodes_taints",
+				Type:     "*storage.Taint",
+				TypeName: "Taint",
+				Fields: []walker.Field{
+					{
+						Name:       "nodeID",
+						ColumnName: "nodes_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Key",
+						ColumnName: "Key",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+					{
+						Name:       "Value",
+						ColumnName: "Value",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+					{
+						Name:       "TaintEffect",
+						ColumnName: "TaintEffect",
+						Type:       "storage.TaintEffect",
+						SQLType:    "integer",
+						DataType:   postgres.Enum,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -391,5 +441,20 @@ func GetNodeSchema() *walker.Schema {
 	if NodeSchema.OptionsMap == nil {
 		NodeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NODES, NodeSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range NodeSchema.Fields {
+		NodeSchema.Fields[i].Schema = NodeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(NodeSchema)
 	return NodeSchema
 }

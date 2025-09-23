@@ -194,6 +194,49 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "role_bindings_subjects",
+				Type:     "*storage.Subject",
+				TypeName: "Subject",
+				Fields: []walker.Field{
+					{
+						Name:       "roleBindingID",
+						ColumnName: "role_bindings_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Kind",
+						ColumnName: "Kind",
+						Type:       "storage.SubjectKind",
+						SQLType:    "integer",
+						DataType:   postgres.Enum,
+					},
+					{
+						Name:       "Name",
+						ColumnName: "Name",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -203,5 +246,20 @@ func GetK8SRoleBindingSchema() *walker.Schema {
 	if K8SRoleBindingSchema.OptionsMap == nil {
 		K8SRoleBindingSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ROLEBINDINGS, K8SRoleBindingSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range K8SRoleBindingSchema.Fields {
+		K8SRoleBindingSchema.Fields[i].Schema = K8SRoleBindingSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(K8SRoleBindingSchema)
 	return K8SRoleBindingSchema
 }

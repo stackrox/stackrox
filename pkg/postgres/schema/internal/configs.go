@@ -33,5 +33,20 @@ func GetConfigSchema() *walker.Schema {
 	if ConfigSchema.OptionsMap == nil {
 		ConfigSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, ConfigSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ConfigSchema.Fields {
+		ConfigSchema.Fields[i].Schema = ConfigSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ConfigSchema)
 	return ConfigSchema
 }

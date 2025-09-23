@@ -58,5 +58,20 @@ func GetCloudSourceSchema() *walker.Schema {
 	if CloudSourceSchema.OptionsMap == nil {
 		CloudSourceSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLOUD_SOURCES, CloudSourceSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range CloudSourceSchema.Fields {
+		CloudSourceSchema.Fields[i].Schema = CloudSourceSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(CloudSourceSchema)
 	return CloudSourceSchema
 }

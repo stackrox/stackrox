@@ -70,6 +70,42 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "report_configurations_notifiers",
+				Type:     "*storage.NotifierConfiguration",
+				TypeName: "NotifierConfiguration",
+				Fields: []walker.Field{
+					{
+						Name:       "reportConfigurationID",
+						ColumnName: "report_configurations_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Id",
+						ColumnName: "Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -79,5 +115,20 @@ func GetReportConfigurationSchema() *walker.Schema {
 	if ReportConfigurationSchema.OptionsMap == nil {
 		ReportConfigurationSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_REPORT_CONFIGURATIONS, ReportConfigurationSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ReportConfigurationSchema.Fields {
+		ReportConfigurationSchema.Fields[i].Schema = ReportConfigurationSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ReportConfigurationSchema)
 	return ReportConfigurationSchema
 }

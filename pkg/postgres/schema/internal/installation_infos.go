@@ -33,5 +33,20 @@ func GetInstallationInfoSchema() *walker.Schema {
 	if InstallationInfoSchema.OptionsMap == nil {
 		InstallationInfoSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, InstallationInfoSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range InstallationInfoSchema.Fields {
+		InstallationInfoSchema.Fields[i].Schema = InstallationInfoSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(InstallationInfoSchema)
 	return InstallationInfoSchema
 }

@@ -44,5 +44,20 @@ func GetComplianceStringsSchema() *walker.Schema {
 	if ComplianceStringsSchema.OptionsMap == nil {
 		ComplianceStringsSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, ComplianceStringsSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ComplianceStringsSchema.Fields {
+		ComplianceStringsSchema.Fields[i].Schema = ComplianceStringsSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ComplianceStringsSchema)
 	return ComplianceStringsSchema
 }

@@ -65,5 +65,20 @@ func GetProcessBaselineSchema() *walker.Schema {
 	if ProcessBaselineSchema.OptionsMap == nil {
 		ProcessBaselineSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PROCESS_BASELINES, ProcessBaselineSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ProcessBaselineSchema.Fields {
+		ProcessBaselineSchema.Fields[i].Schema = ProcessBaselineSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ProcessBaselineSchema)
 	return ProcessBaselineSchema
 }

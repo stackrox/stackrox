@@ -49,6 +49,49 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "active_components_active_contexts_slices",
+				Type:     "*storage.ActiveComponent_ActiveContext",
+				TypeName: "ActiveComponent_ActiveContext",
+				Fields: []walker.Field{
+					{
+						Name:       "activeComponentID",
+						ColumnName: "active_components_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ContainerName",
+						ColumnName: "ContainerName",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+					{
+						Name:       "ImageId",
+						ColumnName: "ImageId",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -58,5 +101,20 @@ func GetActiveComponentSchema() *walker.Schema {
 	if ActiveComponentSchema.OptionsMap == nil {
 		ActiveComponentSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ACTIVE_COMPONENT, ActiveComponentSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ActiveComponentSchema.Fields {
+		ActiveComponentSchema.Fields[i].Schema = ActiveComponentSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ActiveComponentSchema)
 	return ActiveComponentSchema
 }

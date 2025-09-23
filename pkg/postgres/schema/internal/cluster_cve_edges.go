@@ -72,5 +72,20 @@ func GetClusterCVEEdgeSchema() *walker.Schema {
 	if ClusterCVEEdgeSchema.OptionsMap == nil {
 		ClusterCVEEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTER_VULN_EDGE, ClusterCVEEdgeSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ClusterCVEEdgeSchema.Fields {
+		ClusterCVEEdgeSchema.Fields[i].Schema = ClusterCVEEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ClusterCVEEdgeSchema)
 	return ClusterCVEEdgeSchema
 }

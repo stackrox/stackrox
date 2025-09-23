@@ -84,6 +84,42 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "compliance_operator_profile_v2_rules",
+				Type:     "*storage.ComplianceOperatorProfileV2_Rule",
+				TypeName: "ComplianceOperatorProfileV2_Rule",
+				Fields: []walker.Field{
+					{
+						Name:       "complianceOperatorProfileV2ID",
+						ColumnName: "compliance_operator_profile_v2_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "RuleName",
+						ColumnName: "RuleName",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -93,5 +129,20 @@ func GetComplianceOperatorProfileV2Schema() *walker.Schema {
 	if ComplianceOperatorProfileV2Schema.OptionsMap == nil {
 		ComplianceOperatorProfileV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_PROFILES, ComplianceOperatorProfileV2SearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ComplianceOperatorProfileV2Schema.Fields {
+		ComplianceOperatorProfileV2Schema.Fields[i].Schema = ComplianceOperatorProfileV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ComplianceOperatorProfileV2Schema)
 	return ComplianceOperatorProfileV2Schema
 }

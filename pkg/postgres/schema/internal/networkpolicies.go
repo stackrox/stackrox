@@ -58,5 +58,20 @@ func GetNetworkPolicySchema() *walker.Schema {
 	if NetworkPolicySchema.OptionsMap == nil {
 		NetworkPolicySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_POLICIES, NetworkPolicySearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range NetworkPolicySchema.Fields {
+		NetworkPolicySchema.Fields[i].Schema = NetworkPolicySchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(NetworkPolicySchema)
 	return NetworkPolicySchema
 }

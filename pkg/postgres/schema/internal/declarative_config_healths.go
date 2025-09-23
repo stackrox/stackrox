@@ -44,5 +44,20 @@ func GetDeclarativeConfigHealthSchema() *walker.Schema {
 	if DeclarativeConfigHealthSchema.OptionsMap == nil {
 		DeclarativeConfigHealthSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, DeclarativeConfigHealthSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range DeclarativeConfigHealthSchema.Fields {
+		DeclarativeConfigHealthSchema.Fields[i].Schema = DeclarativeConfigHealthSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(DeclarativeConfigHealthSchema)
 	return DeclarativeConfigHealthSchema
 }

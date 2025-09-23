@@ -126,6 +126,77 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "test_structs_nesteds",
+				Type:     "*storage.TestStruct_Nested",
+				TypeName: "TestStruct_Nested",
+				Fields: []walker.Field{
+					{
+						Name:       "testStructKey1",
+						ColumnName: "test_structs_Key1",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Nested",
+						ColumnName: "Nested",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+					{
+						Name:       "IsNested",
+						ColumnName: "IsNested",
+						Type:       "bool",
+						SQLType:    "bool",
+						DataType:   postgres.Bool,
+					},
+					{
+						Name:       "Int64",
+						ColumnName: "Int64",
+						Type:       "int64",
+						SQLType:    "bigint",
+						DataType:   postgres.BigInteger,
+					},
+					{
+						Name:       "Nested2",
+						ColumnName: "Nested2_Nested2",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+					{
+						Name:       "IsNested",
+						ColumnName: "Nested2_IsNested",
+						Type:       "bool",
+						SQLType:    "bool",
+						DataType:   postgres.Bool,
+					},
+					{
+						Name:       "Int64",
+						ColumnName: "Nested2_Int64",
+						Type:       "int64",
+						SQLType:    "bigint",
+						DataType:   postgres.BigInteger,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -135,5 +206,20 @@ func GetTestStructSchema() *walker.Schema {
 	if TestStructSchema.OptionsMap == nil {
 		TestStructSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(101), TestStructSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range TestStructSchema.Fields {
+		TestStructSchema.Fields[i].Schema = TestStructSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(TestStructSchema)
 	return TestStructSchema
 }

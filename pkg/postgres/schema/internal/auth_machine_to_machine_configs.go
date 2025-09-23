@@ -42,6 +42,42 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "auth_machine_to_machine_configs_mappings",
+				Type:     "*storage.AuthMachineToMachineConfig_Mapping",
+				TypeName: "AuthMachineToMachineConfig_Mapping",
+				Fields: []walker.Field{
+					{
+						Name:       "authMachineToMachineConfigID",
+						ColumnName: "auth_machine_to_machine_configs_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Role",
+						ColumnName: "Role",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -51,5 +87,20 @@ func GetAuthMachineToMachineConfigSchema() *walker.Schema {
 	if AuthMachineToMachineConfigSchema.OptionsMap == nil {
 		AuthMachineToMachineConfigSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, AuthMachineToMachineConfigSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range AuthMachineToMachineConfigSchema.Fields {
+		AuthMachineToMachineConfigSchema.Fields[i].Schema = AuthMachineToMachineConfigSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(AuthMachineToMachineConfigSchema)
 	return AuthMachineToMachineConfigSchema
 }

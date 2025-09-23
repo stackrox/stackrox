@@ -114,5 +114,20 @@ func GetTestSingleKeyStructSchema() *walker.Schema {
 	if TestSingleKeyStructSchema.OptionsMap == nil {
 		TestSingleKeyStructSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(100), TestSingleKeyStructSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range TestSingleKeyStructSchema.Fields {
+		TestSingleKeyStructSchema.Fields[i].Schema = TestSingleKeyStructSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(TestSingleKeyStructSchema)
 	return TestSingleKeyStructSchema
 }

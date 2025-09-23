@@ -44,5 +44,20 @@ func GetHashSchema() *walker.Schema {
 	if HashSchema.OptionsMap == nil {
 		HashSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, HashSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range HashSchema.Fields {
+		HashSchema.Fields[i].Schema = HashSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(HashSchema)
 	return HashSchema
 }

@@ -44,5 +44,20 @@ func GetNetworkPolicyApplicationUndoDeploymentRecordSchema() *walker.Schema {
 	if NetworkPolicyApplicationUndoDeploymentRecordSchema.OptionsMap == nil {
 		NetworkPolicyApplicationUndoDeploymentRecordSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, NetworkPolicyApplicationUndoDeploymentRecordSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range NetworkPolicyApplicationUndoDeploymentRecordSchema.Fields {
+		NetworkPolicyApplicationUndoDeploymentRecordSchema.Fields[i].Schema = NetworkPolicyApplicationUndoDeploymentRecordSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(NetworkPolicyApplicationUndoDeploymentRecordSchema)
 	return NetworkPolicyApplicationUndoDeploymentRecordSchema
 }

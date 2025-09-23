@@ -58,5 +58,20 @@ func GetBlobSchema() *walker.Schema {
 	if BlobSchema.OptionsMap == nil {
 		BlobSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_BLOB, BlobSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range BlobSchema.Fields {
+		BlobSchema.Fields[i].Schema = BlobSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(BlobSchema)
 	return BlobSchema
 }

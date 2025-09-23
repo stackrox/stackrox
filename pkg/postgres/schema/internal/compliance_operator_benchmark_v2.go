@@ -56,6 +56,49 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "compliance_operator_benchmark_v2_profiles",
+				Type:     "*storage.ComplianceOperatorBenchmarkV2_Profile",
+				TypeName: "ComplianceOperatorBenchmarkV2_Profile",
+				Fields: []walker.Field{
+					{
+						Name:       "complianceOperatorBenchmarkV2ID",
+						ColumnName: "compliance_operator_benchmark_v2_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ProfileName",
+						ColumnName: "ProfileName",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+					{
+						Name:       "ProfileVersion",
+						ColumnName: "ProfileVersion",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -65,5 +108,20 @@ func GetComplianceOperatorBenchmarkV2Schema() *walker.Schema {
 	if ComplianceOperatorBenchmarkV2Schema.OptionsMap == nil {
 		ComplianceOperatorBenchmarkV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_BENCHMARKS, ComplianceOperatorBenchmarkV2SearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ComplianceOperatorBenchmarkV2Schema.Fields {
+		ComplianceOperatorBenchmarkV2Schema.Fields[i].Schema = ComplianceOperatorBenchmarkV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ComplianceOperatorBenchmarkV2Schema)
 	return ComplianceOperatorBenchmarkV2Schema
 }

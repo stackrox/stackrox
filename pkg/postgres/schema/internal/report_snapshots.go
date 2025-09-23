@@ -114,5 +114,20 @@ func GetReportSnapshotSchema() *walker.Schema {
 	if ReportSnapshotSchema.OptionsMap == nil {
 		ReportSnapshotSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_REPORT_SNAPSHOT, ReportSnapshotSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ReportSnapshotSchema.Fields {
+		ReportSnapshotSchema.Fields[i].Schema = ReportSnapshotSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ReportSnapshotSchema)
 	return ReportSnapshotSchema
 }

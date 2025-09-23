@@ -145,6 +145,95 @@ var (
 				SQLType:    "bytea",
 			},
 		},
+		Children: []*walker.Schema{
+			{
+				Table:    "secrets_files",
+				Type:     "*storage.SecretDataFile",
+				TypeName: "SecretDataFile",
+				Fields: []walker.Field{
+					{
+						Name:       "secretID",
+						ColumnName: "secrets_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Type",
+						ColumnName: "Type",
+						Type:       "storage.SecretType",
+						SQLType:    "integer",
+						DataType:   postgres.Enum,
+					},
+					{
+						Name:       "EndDate",
+						ColumnName: "Cert_EndDate",
+						Type:       "*timestamppb.Timestamp",
+						SQLType:    "timestamp",
+						DataType:   postgres.DateTime,
+					},
+				},
+				Children: []*walker.Schema{
+					{
+						Table:    "secrets_files_registries",
+						Type:     "*storage.ImagePullSecret_Registry",
+						TypeName: "ImagePullSecret_Registry",
+						Fields: []walker.Field{
+							{
+								Name:       "secretID",
+								ColumnName: "secrets_Id",
+								Type:       "string",
+								SQLType:    "uuid",
+								DataType:   postgres.String,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "secretFileIdx",
+								ColumnName: "secrets_files_idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "idx",
+								ColumnName: "idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "Name",
+								ColumnName: "Name",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -154,5 +243,20 @@ func GetSecretSchema() *walker.Schema {
 	if SecretSchema.OptionsMap == nil {
 		SecretSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SECRETS, SecretSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range SecretSchema.Fields {
+		SecretSchema.Fields[i].Schema = SecretSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(SecretSchema)
 	return SecretSchema
 }

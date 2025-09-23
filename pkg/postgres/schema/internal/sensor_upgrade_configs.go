@@ -33,5 +33,20 @@ func GetSensorUpgradeConfigSchema() *walker.Schema {
 	if SensorUpgradeConfigSchema.OptionsMap == nil {
 		SensorUpgradeConfigSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, SensorUpgradeConfigSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range SensorUpgradeConfigSchema.Fields {
+		SensorUpgradeConfigSchema.Fields[i].Schema = SensorUpgradeConfigSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(SensorUpgradeConfigSchema)
 	return SensorUpgradeConfigSchema
 }

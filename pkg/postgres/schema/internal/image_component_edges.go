@@ -65,5 +65,20 @@ func GetImageComponentEdgeSchema() *walker.Schema {
 	if ImageComponentEdgeSchema.OptionsMap == nil {
 		ImageComponentEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_COMPONENT_EDGE, ImageComponentEdgeSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ImageComponentEdgeSchema.Fields {
+		ImageComponentEdgeSchema.Fields[i].Schema = ImageComponentEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ImageComponentEdgeSchema)
 	return ImageComponentEdgeSchema
 }

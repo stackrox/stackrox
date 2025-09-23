@@ -33,5 +33,20 @@ func GetNotifierEncConfigSchema() *walker.Schema {
 	if NotifierEncConfigSchema.OptionsMap == nil {
 		NotifierEncConfigSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, NotifierEncConfigSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range NotifierEncConfigSchema.Fields {
+		NotifierEncConfigSchema.Fields[i].Schema = NotifierEncConfigSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(NotifierEncConfigSchema)
 	return NotifierEncConfigSchema
 }

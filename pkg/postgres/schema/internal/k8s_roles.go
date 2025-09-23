@@ -93,5 +93,20 @@ func GetK8SRoleSchema() *walker.Schema {
 	if K8SRoleSchema.OptionsMap == nil {
 		K8SRoleSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ROLES, K8SRoleSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range K8SRoleSchema.Fields {
+		K8SRoleSchema.Fields[i].Schema = K8SRoleSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(K8SRoleSchema)
 	return K8SRoleSchema
 }

@@ -65,5 +65,20 @@ func GetComplianceRunMetadataSchema() *walker.Schema {
 	if ComplianceRunMetadataSchema.OptionsMap == nil {
 		ComplianceRunMetadataSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_METADATA, ComplianceRunMetadataSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range ComplianceRunMetadataSchema.Fields {
+		ComplianceRunMetadataSchema.Fields[i].Schema = ComplianceRunMetadataSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(ComplianceRunMetadataSchema)
 	return ComplianceRunMetadataSchema
 }

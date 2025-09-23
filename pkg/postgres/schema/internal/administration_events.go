@@ -93,5 +93,20 @@ func GetAdministrationEventSchema() *walker.Schema {
 	if AdministrationEventSchema.OptionsMap == nil {
 		AdministrationEventSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ADMINISTRATION_EVENTS, AdministrationEventSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range AdministrationEventSchema.Fields {
+		AdministrationEventSchema.Fields[i].Schema = AdministrationEventSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(AdministrationEventSchema)
 	return AdministrationEventSchema
 }
