@@ -539,5 +539,20 @@ func GetDeploymentSchema() *walker.Schema {
 	if DeploymentSchema.OptionsMap == nil {
 		DeploymentSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, DeploymentSearchFields))
 	}
+	// Set Schema back-reference on all fields
+	for i := range DeploymentSchema.Fields {
+		DeploymentSchema.Fields[i].Schema = DeploymentSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(DeploymentSchema)
 	return DeploymentSchema
 }

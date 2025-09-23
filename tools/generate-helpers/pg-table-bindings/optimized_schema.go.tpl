@@ -68,5 +68,9 @@ func Get{{.TypeName}}Schema() *walker.Schema {
 		{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, {{.TypeName}}SearchFields))
 		{{- end }}
 	}
+	// Set Schema back-reference on all fields
+	for i := range {{.TypeName}}Schema.Fields {
+		{{.TypeName}}Schema.Fields[i].Schema = {{.TypeName}}Schema
+	}
 	return {{.TypeName}}Schema
 }

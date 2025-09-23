@@ -83,6 +83,19 @@ var (
 			v1.SearchCategory_PODS,
 		}...)
 		schema.ScopingResource = resources.Deployment
+
+		// Ensure all schema field back-references are set correctly
+		var setSchemaReferences func(*walker.Schema)
+		setSchemaReferences = func(s *walker.Schema) {
+			for i := range s.Fields {
+				s.Fields[i].Schema = s
+			}
+			for _, child := range s.Children {
+				setSchemaReferences(child)
+			}
+		}
+		setSchemaReferences(schema)
+
 		RegisterTable(schema, CreateTableDeploymentsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_DEPLOYMENTS, schema)
 		return schema
