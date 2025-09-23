@@ -46,13 +46,12 @@ The `kubebuilder` validation marker ensures the only possible values are the enu
 For a description of the `kubebuilder`-markers we use in `central_types.go` and `securedcluster_types.go`, see the
 [kubebuilder manual](https://book.kubebuilder.io/reference/markers.html).
 
-Note that as of May 2025 we avoid using static default values, as in e.g.
+Note that as of 2025 Q3 we no longer use static default values, as in e.g.
 
 ```go
 //+kubebuilder:default=...
 ```
 
-You might still see examples of these in legacy code. They are being removed as part of ROX-22588 and ROX-30279.
 Instead, we use:
 - a line in the field's description comment to describe the default (see above), and
 - runtime defaulting in the operator code, which you will add next
@@ -200,6 +199,7 @@ Some data types are discouraged, in particular:
 * Constants/Enums: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#constants).
 * Unions: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#unions).
 * Defaulting: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#defaulting) and [Kubernetes Documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#defaulting).
+  Note however that we depart somewhat from the conventions as described in [DEFAULTING.md](DEFAULTING.md).
 * Nullability: See [Kubernetes Documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#defaulting-and-nullable).
 * Late initialization: See [API Conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#late-initialization).
 * Labels, Selector and Annotations: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#label-selector-and-annotation-conventions).
