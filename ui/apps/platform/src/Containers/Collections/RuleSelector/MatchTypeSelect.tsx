@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Select } from '@patternfly/react-core/deprecated';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { ByLabelMatchType, ByNameMatchType, MatchType } from '../types';
+import type { ByLabelMatchType, ByNameMatchType, MatchType } from '../types';
 
 export type MatchTypeSelectProps<T extends MatchType> = {
     onChange: (value: T) => void;

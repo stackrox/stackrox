@@ -16,16 +16,13 @@ import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { collectionsBasePath } from 'routePaths';
 import useRestQuery from 'hooks/useRestQuery';
-import {
-    Collection,
-    deleteCollection,
-    getCollectionCount,
-    listCollections,
-} from 'services/CollectionsService';
+import { deleteCollection, getCollectionCount, listCollections } from 'services/CollectionsService';
+import type { Collection } from 'services/CollectionsService';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import useToasts from 'hooks/patternfly/useToasts';
+import type { Toast } from 'hooks/patternfly/useToasts';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import CollectionsTable from './CollectionsTable';
 

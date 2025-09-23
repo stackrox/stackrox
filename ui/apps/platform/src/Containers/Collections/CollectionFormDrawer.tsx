@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import type { ReactElement } from 'react';
 import {
     Drawer,
     DrawerActions,
@@ -8,11 +9,12 @@ import {
     DrawerPanelContent,
 } from '@patternfly/react-core';
 
-import { Collection } from 'services/CollectionsService';
-import { CollectionPageAction } from './collections.utils';
+import type { Collection } from 'services/CollectionsService';
+import type { CollectionPageAction } from './collections.utils';
 import CollectionResults from './CollectionResults';
 import { isCollectionParseError, parseCollection } from './converter';
-import CollectionForm, { CollectionFormProps } from './CollectionForm';
+import CollectionForm from './CollectionForm';
+import type { CollectionFormProps } from './CollectionForm';
 import UnsupportedCollectionState from './UnsupportedCollectionState';
 import useDryRunConfiguration from './hooks/useDryRunConfiguration';
 
