@@ -38,7 +38,7 @@ function DynamicConfigurationForm({
 }: DynamicConfigurationFormProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAutoLockProcessBaselinesEnabled = isFeatureFlagEnabled(
-        'ROX_AUTOLOCK_PROCESS_BASELINES'
+        'ROX_AUTO_LOCK_PROCESS_BASELINES'
     );
     const { version } = useMetadata();
 
