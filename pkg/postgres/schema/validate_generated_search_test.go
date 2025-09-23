@@ -146,6 +146,41 @@ func compareSchemaStructure(t *testing.T, original, generated *walker.Schema) {
 		_, exists := originalFieldsMap[columnName]
 		assert.True(t, exists, "Generated schema has extra field not in original: %s", columnName)
 	}
+
+	// Compare child schemas if they exist
+	compareChildSchemas(t, original.Children, generated.Children)
+}
+
+// compareChildSchemas compares child schemas recursively
+func compareChildSchemas(t *testing.T, originalChildren, generatedChildren []*walker.Schema) {
+	assert.Equal(t, len(originalChildren), len(generatedChildren),
+		"Number of child schemas should match")
+
+	// Create maps for easier comparison
+	originalChildrenMap := make(map[string]*walker.Schema)
+	for _, child := range originalChildren {
+		originalChildrenMap[child.Table] = child
+	}
+
+	generatedChildrenMap := make(map[string]*walker.Schema)
+	for _, child := range generatedChildren {
+		generatedChildrenMap[child.Table] = child
+	}
+
+	// Compare each child schema
+	for tableName, originalChild := range originalChildrenMap {
+		generatedChild, exists := generatedChildrenMap[tableName]
+		require.True(t, exists, "Generated schema missing child table: %s", tableName)
+
+		// Recursively compare child schema structure
+		compareSchemaStructure(t, originalChild, generatedChild)
+	}
+
+	// Check for extra child schemas in generated
+	for tableName := range generatedChildrenMap {
+		_, exists := originalChildrenMap[tableName]
+		assert.True(t, exists, "Generated schema has extra child table not in original: %s", tableName)
+	}
 }
 
 // TestSearchFieldGeneration tests that the search fields are properly set up
@@ -191,6 +226,53 @@ func TestSearchFieldGeneration(t *testing.T) {
 				assert.Equal(t, expectedField.Category, actualField.Category,
 					"Category mismatch for field: %s", fieldLabel)
 			}
+		})
+	}
+}
+
+// TestDeploymentChildSchemas specifically tests that deployment child schemas are properly generated
+func TestDeploymentChildSchemas(t *testing.T) {
+	// Generate original deployment schema with walker.Walk
+	originalSchema := walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
+
+	// Get our generated deployment schema
+	generatedSchema := internal.GetDeploymentSchema()
+
+	// The generated schema should have the same child schemas as the original
+	require.Equal(t, len(originalSchema.Children), len(generatedSchema.Children),
+		"Deployment schema should have the same number of child schemas")
+
+	// Expected child table names for deployments
+	expectedChildTables := []string{
+		"deployments_containers",
+		"deployments_ports",
+	}
+
+	// Verify each expected child table exists in both schemas
+	for _, expectedTable := range expectedChildTables {
+		t.Run("child_table_"+expectedTable, func(t *testing.T) {
+			// Find in original schema
+			var originalChild *walker.Schema
+			for _, child := range originalSchema.Children {
+				if child.Table == expectedTable {
+					originalChild = child
+					break
+				}
+			}
+			require.NotNil(t, originalChild, "Original schema should have child table: %s", expectedTable)
+
+			// Find in generated schema
+			var generatedChild *walker.Schema
+			for _, child := range generatedSchema.Children {
+				if child.Table == expectedTable {
+					generatedChild = child
+					break
+				}
+			}
+			require.NotNil(t, generatedChild, "Generated schema should have child table: %s", expectedTable)
+
+			// Compare the child schemas
+			compareSchemaStructure(t, originalChild, generatedChild)
 		})
 	}
 }

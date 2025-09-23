@@ -3,7 +3,7 @@
 package schema
 
 import (
-	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -57,15 +57,11 @@ var (
 			return schema
 		}
 		schema = internal.GetDeploymentSchema()
-		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image":             ImagesSchema,
-			"storage.NamespaceMetadata": NamespacesSchema,
-			"storage.ImageV2":           ImagesV2Schema,
-		}
 
-		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
-			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
-		})
+		// For now, also generate the child schemas using walker.Walk to ensure compatibility
+		// TODO: Update generator to include child schemas in generated code
+		originalSchema := walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
+		schema.Children = originalSchema.Children
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
