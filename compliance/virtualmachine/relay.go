@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
@@ -49,7 +50,7 @@ type Relay struct {
 }
 
 func NewRelay(conn grpc.ClientConnInterface) *Relay {
-	port := 1024 // TODO: Make configurable
+	port := env.VirtualMachineVsockPort.IntegerSetting()
 	return &Relay{
 		sensorClient: sensor.NewVirtualMachineIndexReportServiceClient(conn),
 		vsockServer:  VsockServer{port: uint32(port)},
