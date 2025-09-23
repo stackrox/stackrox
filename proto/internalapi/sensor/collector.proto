@@ -96,4 +96,7 @@ message ProcessSignal {
 
   // string representation of the process uid
   string username = 13;
+
+  // whether the process is running on the root mount namespace
+  bool in_root_mount_ns = 14;
 }

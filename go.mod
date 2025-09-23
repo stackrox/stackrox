@@ -4,14 +4,14 @@ go 1.24.0
 
 require (
 	cloud.google.com/go/artifactregistry v1.17.1
-	cloud.google.com/go/compute/metadata v0.8.0
+	cloud.google.com/go/compute/metadata v0.8.4
 	cloud.google.com/go/containeranalysis v0.14.1
-	cloud.google.com/go/securitycenter v1.37.0
+	cloud.google.com/go/securitycenter v1.38.0
 	cloud.google.com/go/storage v1.54.0
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go-extensions v0.2.0
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.19.0
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.11.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.19.1
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.12.0
 	github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry v0.2.3
 	github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs v1.1.0
 	github.com/BurntSushi/toml v1.5.0
@@ -24,7 +24,7 @@ require (
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.19.6
-	github.com/andygrunwald/go-jira v1.16.0
+	github.com/andygrunwald/go-jira v1.17.0
 	github.com/aws/aws-sdk-go-v2 v1.36.6
 	github.com/aws/aws-sdk-go-v2/config v1.29.18
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.71
@@ -73,22 +73,22 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/heimdalr/dag v1.5.0
-	github.com/helm/helm-mapkubeapis v0.5.2
+	github.com/helm/helm-mapkubeapis v0.6.1
 	github.com/heroku/docker-registry-client v0.0.0
-	github.com/jackc/pgx/v5 v5.7.5
+	github.com/jackc/pgx/v5 v5.7.6
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
 	github.com/klauspost/compress v1.18.0
 	github.com/lib/pq v1.10.9
 	github.com/machinebox/graphql v0.2.2
-	github.com/mailru/easyjson v0.9.0
+	github.com/mailru/easyjson v0.9.1
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
-	github.com/olekukonko/tablewriter v1.0.9
+	github.com/olekukonko/tablewriter v1.1.0
 	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/go-digest v1.0.0
@@ -103,9 +103,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240409071808-615f978279ca
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/prometheus/client_golang v1.23.0
+	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.65.0
+	github.com/prometheus/common v0.66.1
 	github.com/quay/claircore v1.5.39
 	github.com/quay/claircore/toolkit v1.2.5-0.20250120211107-bea8a6c197b2
 	github.com/quay/zlog v1.1.9
@@ -118,16 +118,16 @@ require (
 	github.com/sigstore/cosign/v2 v2.5.2
 	github.com/sigstore/rekor v1.3.10
 	github.com/sigstore/sigstore v1.9.5
-	github.com/sourcegraph/conc v0.3.0
+	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
-	github.com/spf13/viper v1.20.1
+	github.com/spf13/viper v1.21.0
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
 	github.com/stackrox/helmtest v0.0.8
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20250224110925-13b5b47fd812
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d
 	github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/tkuchiki/go-timezone v0.2.3
 	github.com/travelaudience/go-promhttp v1.0.1
@@ -137,40 +137,40 @@ require (
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.27.0
 	go.yaml.in/yaml/v3 v3.0.4
-	golang.org/x/crypto v0.41.0
+	golang.org/x/crypto v0.42.0
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
-	golang.org/x/mod v0.27.0
-	golang.org/x/net v0.43.0
+	golang.org/x/mod v0.28.0
+	golang.org/x/net v0.44.0
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sync v0.16.0
+	golang.org/x/sync v0.17.0
 	golang.org/x/sys v0.36.0
-	golang.org/x/term v0.34.0
-	golang.org/x/text v0.28.0
-	golang.org/x/time v0.12.0
-	golang.org/x/tools v0.36.0
+	golang.org/x/term v0.35.0
+	golang.org/x/text v0.29.0
+	golang.org/x/time v0.13.0
+	golang.org/x/tools v0.37.0
 	golang.stackrox.io/grpc-http1 v0.4.0
-	google.golang.org/api v0.248.0
+	google.golang.org/api v0.249.0
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c
-	google.golang.org/grpc v1.75.0
+	google.golang.org/grpc v1.75.1
 	google.golang.org/grpc/examples v0.0.0-20230224211313-3775f633ce20
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/protobuf v1.36.9
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gorm.io/driver/postgres v1.6.0
-	gorm.io/gorm v1.30.3
+	gorm.io/gorm v1.31.0
 	helm.sh/helm/v3 v3.18.6
-	k8s.io/api v0.33.4
-	k8s.io/apiextensions-apiserver v0.33.4
-	k8s.io/apimachinery v0.33.4
-	k8s.io/apiserver v0.33.4
-	k8s.io/cli-runtime v0.33.4
-	k8s.io/client-go v0.33.4
-	k8s.io/kubectl v0.33.4
-	k8s.io/kubelet v0.32.8
+	k8s.io/api v0.33.5
+	k8s.io/apiextensions-apiserver v0.33.5
+	k8s.io/apimachinery v0.33.5
+	k8s.io/apiserver v0.33.5
+	k8s.io/cli-runtime v0.33.5
+	k8s.io/client-go v0.33.5
+	k8s.io/kubectl v0.33.5
+	k8s.io/kubelet v0.32.9
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	kubevirt.io/api v1.6.0
+	kubevirt.io/api v1.6.1
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/controller-tools v0.18.0
 	sigs.k8s.io/e2e-framework v0.6.0
@@ -197,7 +197,7 @@ require (
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
-	github.com/AzureAD/microsoft-authentication-library-for-go v1.4.2 // indirect
+	github.com/AzureAD/microsoft-authentication-library-for-go v1.5.0 // indirect
 	github.com/DataDog/zstd v1.5.7 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.29.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.51.0 // indirect
@@ -424,7 +424,7 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rubenv/sql-migrate v1.8.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sagikazarmark/locafero v0.7.0 // indirect
+	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/sassoftware/relic v7.2.1+incompatible // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.9.0 // indirect
@@ -440,8 +440,8 @@ require (
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spdx/tools-golang v0.5.5 // indirect
-	github.com/spf13/afero v1.12.0 // indirect
-	github.com/spf13/cast v1.7.1 // indirect
+	github.com/spf13/afero v1.15.0 // indirect
+	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd // indirect
 	github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 // indirect
@@ -497,9 +497,9 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/code-generator v0.33.4 // indirect
-	k8s.io/component-base v0.33.4 // indirect
-	k8s.io/component-helpers v0.33.4 // indirect
+	k8s.io/code-generator v0.33.5 // indirect
+	k8s.io/component-base v0.33.5 // indirect
+	k8s.io/component-helpers v0.33.5 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250701173324-9bd5c66d9911 // indirect
@@ -540,18 +540,11 @@ require (
 replace github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20240806130957-77cf33bea65f
 
 // @stackrox/install
-replace (
-	// Enhanced to support removal of arbitrary resources.
-	// This change is already merged upstream and released in https://github.com/helm/helm-mapkubeapis/releases/tag/v0.6.1
-	// but this version requires go 1.24.
-	// TODO(ROX-29652): Bump the dependency above to v0.6.1 or later and remove this "replace" once we're on Go 1.24 or later.
-	github.com/helm/helm-mapkubeapis => github.com/porridge/helm-mapkubeapis v0.0.0-20250220113302-2f740596cb45
-	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
-	// we currently depend on.
-	// It includes a number of features and bug fixes which we faced in StackRox. We use this fork
-	// primarily to iterate faster. See https://issues.redhat.com/browse/ROX-7911
-	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b
-)
+// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
+// we currently depend on.
+// It includes a number of features and bug fixes which we faced in StackRox. We use this fork
+// primarily to iterate faster. See https://issues.redhat.com/browse/ROX-7911
+replace github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b
 
 // @stackrox/sensor-ecosystem
 replace (

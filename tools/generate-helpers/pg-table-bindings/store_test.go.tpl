@@ -323,6 +323,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACWalk() {
 	}
 }
 
+{{ if .SearchCategory -}}
 func (s *{{$namePrefix}}StoreSuite) TestSACGetByQueryFn() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
@@ -341,6 +342,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetByQueryFn() {
 		})
 	}
 }
+{{- end }}
 
 func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)

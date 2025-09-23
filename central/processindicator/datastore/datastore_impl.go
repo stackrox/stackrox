@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -24,6 +25,8 @@ const (
 
 var (
 	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
+
+	addBatchSize = env.ProcessAddBatchSize.IntegerSetting()
 )
 
 type datastoreImpl struct {
@@ -94,7 +97,31 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.UpsertMany(ctx, indicators)
+	localBatchSize := addBatchSize
+
+	for {
+		if len(indicators) == 0 {
+			break
+		}
+
+		if len(indicators) < localBatchSize {
+			localBatchSize = len(indicators)
+		}
+
+		identifierBatch := indicators[:localBatchSize]
+
+		err := ds.storage.UpsertMany(ctx, identifierBatch)
+		if err != nil {
+			log.Warnf("error adding a batch of indicators: %v", err)
+		} else {
+			log.Debugf("successfully added a batch of %d process indicators", len(identifierBatch))
+		}
+
+		// Move the slice forward to start the next batch
+		indicators = indicators[localBatchSize:]
+	}
+
+	return nil
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
@@ -166,12 +193,12 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string) int 
 
 		q := pkgSearch.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
-		deletedIDs, err := ds.storage.DeleteByQuery(ctx, q)
+		err := ds.storage.DeleteByQuery(ctx, q)
 		if err != nil {
 			log.Warnf("error pruning a batch of indicators: %v", err)
 		} else {
-			successfullyPruned = successfullyPruned + len(deletedIDs)
-			log.Debugf("successfully pruned a batch of %d process indicators", len(deletedIDs))
+			successfullyPruned = successfullyPruned + len(identifierBatch)
+			log.Debugf("successfully pruned a batch of %d process indicators", len(identifierBatch))
 		}
 
 		// Move the slice forward to start the next batch
@@ -189,8 +216,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 		return sac.ErrResourceAccessDenied
 	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
-	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
-	return storeErr
+	return ds.storage.DeleteByQuery(ctx, q)
 }
 
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {

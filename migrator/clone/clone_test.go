@@ -156,9 +156,9 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 		},
 	}
 	// For the parameters that should not matter, run pseudo random to get coverage on different cases
-	rand.Seed(8181818)
+	r := rand.New(rand.NewSource(8181818))
 	for _, c := range testCases {
-		reboot := rand.Intn(2) == 1
+		reboot := r.Intn(2) == 1
 		if reboot {
 			c.description = c.description + " with reboot"
 		}
@@ -436,9 +436,9 @@ func doTestRollback(t *testing.T) {
 			breakPoint:  breakAfterGetClone,
 		},
 	}
-	rand.Seed(8056)
+	r := rand.New(rand.NewSource(8056))
 	for _, c := range testCases {
-		reboot := rand.Intn(2) == 1
+		reboot := r.Intn(2) == 1
 		if reboot {
 			c.description = c.description + " with reboot"
 		}

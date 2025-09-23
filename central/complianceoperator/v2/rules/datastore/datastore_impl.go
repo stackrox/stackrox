@@ -41,11 +41,7 @@ func (d *datastoreImpl) SearchRules(ctx context.Context, query *v1.Query) ([]*st
 // DeleteRulesByCluster delete rule by cluster id
 func (d *datastoreImpl) DeleteRulesByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
-	_, err := d.store.DeleteByQuery(ctx, query)
-	if err != nil {
-		return err
-	}
-	return nil
+	return d.store.DeleteByQuery(ctx, query)
 }
 
 // ControlResult represents a result of a control.

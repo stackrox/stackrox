@@ -1,14 +1,15 @@
-import React, { Dispatch, SetStateAction } from 'react';
+import React from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Card, Text } from '@patternfly/react-core';
 import { Tbody, Tr, Td, Table, Th, Thead } from '@patternfly/react-table';
 
 import { riskBasePath } from 'routePaths';
-import { ProcessListeningOnPort } from 'services/ProcessListeningOnPortsService';
+import type { ProcessListeningOnPort } from 'services/ProcessListeningOnPortsService';
 import { l4ProtocolLabels } from 'constants/networkFlow';
-import { ListDeployment } from 'types/deployment.proto';
+import type { ListDeployment } from 'types/deployment.proto';
 import useSet from 'hooks/useSet';
-import { GetSortParams } from 'hooks/useURLSort';
+import type { GetSortParams } from 'hooks/useURLSort';
 
 function EmbeddedTable({
     deploymentId,

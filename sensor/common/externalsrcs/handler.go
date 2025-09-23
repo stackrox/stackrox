@@ -75,6 +75,10 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.NetworkGraphExternalSrcsCap}
 }
 
+func (h *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetPushNetworkEntitiesRequest() != nil
+}
+
 func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	request := msg.GetPushNetworkEntitiesRequest()
 	if request == nil {

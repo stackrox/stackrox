@@ -87,19 +87,11 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		ImagePullSecrets:         imageFlavor.ImagePullSecrets,
 		Operator:                 false,
 		ReleaseBuild:             buildinfo.ReleaseBuild,
-		FeatureFlags:             getFeatureFlags(),
+		FeatureFlags:             features.GetFeatureFlagsAsGenericMap(),
 		TelemetryEnabled:         true,
 
 		AutoSensePodSecurityPolicies: true,
 	}
 
 	return &metaValues
-}
-
-func getFeatureFlags() map[string]interface{} {
-	featureFlagVals := make(map[string]interface{})
-	for _, feature := range features.Flags {
-		featureFlagVals[feature.EnvVar()] = feature.Enabled()
-	}
-	return featureFlagVals
 }

@@ -222,7 +222,7 @@ func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
 
 func (i *tlsIssuerImpl) Capabilities() []centralsensor.SensorCapability {
 	caps := []centralsensor.SensorCapability{i.sensorCapability}
-	if sensorCARotationEnabled.BooleanSetting() {
+	if SensorCARotationEnabled() {
 		caps = append(caps, centralsensor.SensorCARotationSupported)
 	}
 	return caps
@@ -232,6 +232,10 @@ func (i *tlsIssuerImpl) Capabilities() []centralsensor.SensorCapability {
 // initiates the interaction. However, here it is Sensor which sends a request to Central.
 func (i *tlsIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return i.msgToCentralC
+}
+
+func (i *tlsIssuerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetIssueSecuredClusterCertsResponse() != nil
 }
 
 // ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.

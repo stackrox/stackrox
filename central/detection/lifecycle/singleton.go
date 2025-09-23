@@ -3,6 +3,7 @@ package lifecycle
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
@@ -29,6 +30,7 @@ func initialize() {
 		buildtime.SingletonDetector(),
 		deploytime.SingletonDetector(),
 		runtime.SingletonDetector(),
+		clusterDatastore.Singleton(),
 		deploymentDatastore.Singleton(),
 		processDatastore.Singleton(),
 		baselineDataStore.Singleton(),

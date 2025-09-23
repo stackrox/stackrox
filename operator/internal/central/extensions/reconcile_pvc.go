@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/common"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	utils "github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
@@ -122,7 +123,7 @@ func getBackupDBPersistence(pvc *platform.DBPersistentVolumeClaim) (*platform.DB
 // On uninstall the owner reference is removed from the PVC objects.
 func ReconcilePVCExtension(client ctrlClient.Client, direct ctrlClient.Reader, target PVCTarget, defaultClaimName string, opts ...PVCOption) extensions.ReconcileExtension {
 
-	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
+	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger, _ *rendercache.RenderCache) error {
 		persistence, err := getPersistenceByTarget(central.Spec.Central, target)
 		if err != nil {
 			return err
@@ -130,7 +131,7 @@ func ReconcilePVCExtension(client ctrlClient.Client, direct ctrlClient.Reader, t
 
 		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log, opts...)
 	}
-	return wrapExtension(fn, client, direct)
+	return wrapExtension(fn, client, direct, nil)
 }
 
 func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.DBPersistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger, opts ...PVCOption) error {

@@ -319,7 +319,7 @@ function DeploymentPageVulnerabilities({
                                 />
                             </SplitItem>
                         </Split>
-                        <div className="workload-cves-table-container">
+                        <div style={{ overflowX: 'auto' }}>
                             <DeploymentVulnerabilitiesTable
                                 tableState={tableState}
                                 getSortParams={getSortParams}

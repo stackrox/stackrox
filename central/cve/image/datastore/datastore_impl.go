@@ -247,6 +247,11 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	}
 }
 
+func (ds *datastoreImpl) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
+	// do nothing, this is a no-op for the normalized CVE datastore.
+	// Had to add this to satisfy the changes to the CVESuppressor interface.
+}
+
 func getSuppressExpiry(start *time.Time, duration *time.Duration) (*time.Time, error) {
 	if start == nil {
 		return nil, errNilSuppressionStart

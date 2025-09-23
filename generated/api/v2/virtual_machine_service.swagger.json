@@ -36,36 +36,6 @@
         "tags": [
           "VirtualMachineService"
         ]
-      },
-      "post": {
-        "operationId": "VirtualMachineService_CreateVirtualMachine",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2VirtualMachine"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v2CreateVirtualMachineRequest"
-            }
-          }
-        ],
-        "tags": [
-          "VirtualMachineService"
-        ]
       }
     },
     "/v2/virtualmachines/{id}": {
@@ -102,121 +72,18 @@
         "tags": [
           "VirtualMachineService"
         ]
-      },
-      "delete": {
-        "operationId": "VirtualMachineService_DeleteVirtualMachine",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2DeleteVirtualMachineResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "VirtualMachineService"
-        ]
       }
     }
   },
   "definitions": {
-    "CVSSV3AttackVector": {
-      "type": "string",
-      "enum": [
-        "ATTACK_LOCAL",
-        "ATTACK_ADJACENT",
-        "ATTACK_NETWORK",
-        "ATTACK_PHYSICAL"
-      ],
-      "default": "ATTACK_LOCAL"
-    },
-    "CVSSV3Complexity": {
-      "type": "string",
-      "enum": [
-        "COMPLEXITY_LOW",
-        "COMPLEXITY_HIGH"
-      ],
-      "default": "COMPLEXITY_LOW"
-    },
-    "CVSSV3Impact": {
-      "type": "string",
-      "enum": [
-        "IMPACT_NONE",
-        "IMPACT_LOW",
-        "IMPACT_HIGH"
-      ],
-      "default": "IMPACT_NONE"
-    },
-    "CVSSV3Privileges": {
-      "type": "string",
-      "enum": [
-        "PRIVILEGE_NONE",
-        "PRIVILEGE_LOW",
-        "PRIVILEGE_HIGH"
-      ],
-      "default": "PRIVILEGE_NONE"
-    },
-    "CVSSV3Severity": {
+    "VirtualMachineState": {
       "type": "string",
       "enum": [
         "UNKNOWN",
-        "NONE",
-        "LOW",
-        "MEDIUM",
-        "HIGH",
-        "CRITICAL"
+        "STOPPED",
+        "RUNNING"
       ],
       "default": "UNKNOWN"
-    },
-    "CVSSV3UserInteraction": {
-      "type": "string",
-      "enum": [
-        "UI_NONE",
-        "UI_REQUIRED"
-      ],
-      "default": "UI_NONE"
-    },
-    "ScanComponentExecutable": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "dependencies": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "title": "TODO (ROX-30352): Review the use of executable and if it applies to virtual machines"
-    },
-    "VirtualMachineScanNote": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "OS_UNAVAILABLE",
-        "PARTIAL_SCAN_DATA",
-        "OS_CVES_UNAVAILABLE",
-        "OS_CVES_STALE",
-        "LANGUAGE_CVES_UNAVAILABLE",
-        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
-      ],
-      "default": "UNSET"
     },
     "protobufAny": {
       "type": "object",
@@ -246,231 +113,6 @@
         }
       }
     },
-    "v2Advisory": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "link": {
-          "type": "string"
-        }
-      }
-    },
-    "v2CVSSScore": {
-      "type": "object",
-      "properties": {
-        "source": {
-          "$ref": "#/definitions/v2Source"
-        },
-        "url": {
-          "type": "string"
-        },
-        "cvssv3": {
-          "$ref": "#/definitions/v2CVSSV3"
-        }
-      }
-    },
-    "v2CVSSV3": {
-      "type": "object",
-      "properties": {
-        "vector": {
-          "type": "string"
-        },
-        "exploitabilityScore": {
-          "type": "number",
-          "format": "float"
-        },
-        "impactScore": {
-          "type": "number",
-          "format": "float"
-        },
-        "attackVector": {
-          "$ref": "#/definitions/CVSSV3AttackVector"
-        },
-        "attackComplexity": {
-          "$ref": "#/definitions/CVSSV3Complexity"
-        },
-        "privilegesRequired": {
-          "$ref": "#/definitions/CVSSV3Privileges"
-        },
-        "userInteraction": {
-          "$ref": "#/definitions/CVSSV3UserInteraction"
-        },
-        "scope": {
-          "$ref": "#/definitions/v2CVSSV3Scope"
-        },
-        "confidentiality": {
-          "$ref": "#/definitions/CVSSV3Impact"
-        },
-        "integrity": {
-          "$ref": "#/definitions/CVSSV3Impact"
-        },
-        "availability": {
-          "$ref": "#/definitions/CVSSV3Impact"
-        },
-        "score": {
-          "type": "number",
-          "format": "float"
-        },
-        "severity": {
-          "$ref": "#/definitions/CVSSV3Severity"
-        }
-      }
-    },
-    "v2CVSSV3Scope": {
-      "type": "string",
-      "enum": [
-        "UNCHANGED",
-        "CHANGED"
-      ],
-      "default": "UNCHANGED"
-    },
-    "v2CreateVirtualMachineRequest": {
-      "type": "object",
-      "properties": {
-        "virtualMachine": {
-          "$ref": "#/definitions/v2VirtualMachine"
-        }
-      }
-    },
-    "v2DataSource": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "mirror": {
-          "type": "string"
-        }
-      }
-    },
-    "v2DeleteVirtualMachineResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean"
-        }
-      }
-    },
-    "v2EPSS": {
-      "type": "object",
-      "properties": {
-        "epssProbability": {
-          "type": "number",
-          "format": "float"
-        },
-        "epssPercentile": {
-          "type": "number",
-          "format": "float"
-        }
-      },
-      "title": "EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile"
-    },
-    "v2EmbeddedVulnerability": {
-      "type": "object",
-      "properties": {
-        "cve": {
-          "type": "string"
-        },
-        "advisory": {
-          "$ref": "#/definitions/v2Advisory"
-        },
-        "cvss": {
-          "type": "number",
-          "format": "float"
-        },
-        "summary": {
-          "type": "string"
-        },
-        "link": {
-          "type": "string"
-        },
-        "fixedBy": {
-          "type": "string"
-        },
-        "cvssV3": {
-          "$ref": "#/definitions/v2CVSSV3"
-        },
-        "publishedOn": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "lastModified": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "vulnerabilityType": {
-          "$ref": "#/definitions/v2VulnerabilityType",
-          "description": "For internal purposes only."
-        },
-        "vulnerabilityTypes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2VulnerabilityType"
-          }
-        },
-        "suppressed": {
-          "type": "boolean"
-        },
-        "suppressActivation": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "suppressExpiry": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "firstSystemOccurrence": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Time when the CVE was first seen, for this specific distro, in the system."
-        },
-        "firstImageOccurrence": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Time when the CVE was first seen in this image."
-        },
-        "severity": {
-          "$ref": "#/definitions/v2VulnerabilitySeverity"
-        },
-        "state": {
-          "$ref": "#/definitions/v2VulnerabilityState"
-        },
-        "cvssMetrics": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v2CVSSScore"
-          },
-          "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
-        },
-        "nvdCvss": {
-          "type": "number",
-          "format": "float"
-        },
-        "epss": {
-          "$ref": "#/definitions/v2EPSS"
-        }
-      }
-    },
-    "v2License": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
-        },
-        "url": {
-          "type": "string"
-        }
-      }
-    },
     "v2ListVirtualMachinesResponse": {
       "type": "object",
       "properties": {
@@ -482,79 +124,6 @@
           }
         }
       }
-    },
-    "v2ScanComponent": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        },
-        "license": {
-          "$ref": "#/definitions/v2License"
-        },
-        "vulns": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v2EmbeddedVulnerability"
-          }
-        },
-        "source": {
-          "$ref": "#/definitions/v2SourceType"
-        },
-        "location": {
-          "type": "string"
-        },
-        "topCvss": {
-          "type": "number",
-          "format": "float"
-        },
-        "riskScore": {
-          "type": "number",
-          "format": "float"
-        },
-        "fixedBy": {
-          "type": "string",
-          "description": "Component version that fixes all the fixable vulnerabilities in this component."
-        },
-        "executables": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/ScanComponentExecutable"
-          }
-        },
-        "architecture": {
-          "type": "string"
-        }
-      }
-    },
-    "v2Source": {
-      "type": "string",
-      "enum": [
-        "SOURCE_UNKNOWN",
-        "SOURCE_RED_HAT",
-        "SOURCE_OSV",
-        "SOURCE_NVD"
-      ],
-      "default": "SOURCE_UNKNOWN"
-    },
-    "v2SourceType": {
-      "type": "string",
-      "enum": [
-        "OS",
-        "PYTHON",
-        "JAVA",
-        "RUBY",
-        "NODEJS",
-        "GO",
-        "DOTNETCORERUNTIME",
-        "INFRASTRUCTURE"
-      ],
-      "default": "OS"
     },
     "v2VirtualMachine": {
       "type": "object",
@@ -580,76 +149,18 @@
             "type": "string"
           }
         },
-        "scan": {
-          "$ref": "#/definitions/v2VirtualMachineScan"
-        },
         "lastUpdated": {
           "type": "string",
           "format": "date-time"
+        },
+        "vsockCid": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "state": {
+          "$ref": "#/definitions/VirtualMachineState"
         }
       }
-    },
-    "v2VirtualMachineScan": {
-      "type": "object",
-      "properties": {
-        "scannerVersion": {
-          "type": "string"
-        },
-        "scanTime": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "components": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v2ScanComponent"
-          }
-        },
-        "dataSource": {
-          "$ref": "#/definitions/v2DataSource"
-        },
-        "notes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/VirtualMachineScanNote"
-          }
-        }
-      }
-    },
-    "v2VulnerabilitySeverity": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN_VULNERABILITY_SEVERITY",
-        "LOW_VULNERABILITY_SEVERITY",
-        "MODERATE_VULNERABILITY_SEVERITY",
-        "IMPORTANT_VULNERABILITY_SEVERITY",
-        "CRITICAL_VULNERABILITY_SEVERITY"
-      ],
-      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
-    },
-    "v2VulnerabilityState": {
-      "type": "string",
-      "enum": [
-        "OBSERVED",
-        "DEFERRED",
-        "FALSE_POSITIVE"
-      ],
-      "default": "OBSERVED",
-      "description": "VulnerabilityState are the possible applicable to CVE. By default all vulnerabilities are in observed state.\n\n - OBSERVED: This is the default state and indicates that the CVE is not excluded from policy evaluation and risk evaluation.\n\n[Default state]\n - DEFERRED: Indicates that the vulnerability is deferred. A deferred CVE is excluded from policy evaluation and risk evaluation.\n - FALSE_POSITIVE: Indicates that the vulnerability is a false-positive. A false-positive CVE is excluded from policy evaluation and risk evaluation."
-    },
-    "v2VulnerabilityType": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN_VULNERABILITY",
-        "IMAGE_VULNERABILITY",
-        "K8S_VULNERABILITY",
-        "ISTIO_VULNERABILITY",
-        "NODE_VULNERABILITY",
-        "OPENSHIFT_VULNERABILITY",
-        "VIRTUAL_MACHINE_VULNERABILITY"
-      ],
-      "default": "UNKNOWN_VULNERABILITY"
     }
   }
 }

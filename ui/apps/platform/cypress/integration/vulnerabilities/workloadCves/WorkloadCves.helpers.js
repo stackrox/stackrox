@@ -7,6 +7,7 @@ import {
 import { visit } from '../../../helpers/visit';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
+import { compoundFiltersSelectors } from '../../../helpers/compoundFilters';
 
 export function getDateString(date) {
     return format(date, 'MMM DD, YYYY');
@@ -483,4 +484,12 @@ export function visitNamespaceView() {
 
 export function viewCvesByObservationState(observationState) {
     cy.get('button[role="tab"]').contains(observationState).click();
+}
+
+export function assertSearchEntities(entities) {
+    cy.get(compoundFiltersSelectors.entityMenuToggle).click();
+    cy.get(compoundFiltersSelectors.entityMenuItem).should('have.length', entities.length);
+    entities.forEach((entity) => {
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains(entity);
+    });
 }
