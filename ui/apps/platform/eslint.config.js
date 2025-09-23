@@ -5,8 +5,10 @@ const path = require('node:path');
 const parserTypeScriptESLint = require('@typescript-eslint/parser');
 
 const pluginCypress = require('eslint-plugin-cypress');
+const pluginCSS = require('@eslint/css').default;
 const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-extraneous-dependencies
 const pluginJSON = require('@eslint/json').default;
+const pluginMarkdown = require('@eslint/markdown').default; // ECMAScript module requires Node.js 22.12.0 or later
 const pluginESLintComments = require('eslint-plugin-eslint-comments');
 const pluginImport = require('eslint-plugin-import');
 const pluginJestDOM = require('eslint-plugin-jest-dom');
@@ -46,6 +48,26 @@ module.exports = [
         ],
     },
     {
+        // Only for lint commands.
+        // ESLint extension for VSCode does not probe css files.
+        files: ['src/**/*.css'],
+        ignores: ['src/app.tw.css'],
+
+        language: 'css/css',
+
+        plugins: {
+            css: pluginCSS,
+        },
+        rules: {
+            // https://github.com/eslint/css/blob/main/src/index.js
+            ...pluginCSS.configs.recommended.rules,
+
+            'css/no-important': 'off',
+            'css/no-invalid-properties': ['error', { allowUnknownVariables: true }], // allow --pf variables
+            'css/use-baseline': ['error', { available: 'newly' }],
+        },
+    },
+    {
         files: ['*.json', 'cypress/**/*.json', 'src/**/*.json'], // JSON without comments
         ignores: [
             'package-lock.json', // ignore because it is auto-generated
@@ -66,6 +88,20 @@ module.exports = [
 
         // https://github.com/eslint/json/blob/main/src/index.js
         ...pluginJSON.configs.recommended,
+    },
+    {
+        files: ['*.md', 'src/**/*.md'],
+        // Beware that ui/README.md file is outside of scope of application lint.
+
+        language: 'markdown/gfm',
+
+        plugins: {
+            markdown: pluginMarkdown,
+        },
+        rules: {
+            // https://github.com/eslint/markdown/blob/main/src/index.js
+            ...pluginMarkdown.configs.recommended[0].rules, // recommended is array!
+        },
     },
     {
         files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
