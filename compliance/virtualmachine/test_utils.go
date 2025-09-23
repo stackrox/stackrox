@@ -82,3 +82,13 @@ func (c *mockSensorClient) UpsertVirtualMachineIndexReport(_ context.Context, re
 	c.capturedRequests = append(c.capturedRequests, req)
 	return c.response, c.err
 }
+
+func (c *mockSensorClient) withUnsuccessfulResponse() *mockSensorClient {
+	c.response = &sensor.UpsertVirtualMachineIndexReportResponse{Success: false}
+	return c
+}
+
+func (c *mockSensorClient) withError(err error) *mockSensorClient {
+	c.err = err
+	return c
+}
