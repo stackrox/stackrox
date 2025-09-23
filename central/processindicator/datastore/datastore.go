@@ -26,6 +26,7 @@ type DataStore interface {
 
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessIndicator) error) error
 
 	GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)
 	GetProcessIndicators(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, bool, error)

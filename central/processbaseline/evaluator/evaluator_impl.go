@@ -86,29 +86,31 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		}
 	}
 
-	var processes []*storage.ProcessIndicator
-	if hasAtLeastOneLockedBaseline {
-		processes, err = e.indicators.SearchRawProcessIndicators(evaluatorCtx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery())
-		if err != nil {
-			return nil, errors.Wrapf(err, "searching process indicators for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
-		}
-	}
-	for _, process := range processes {
+	fn := func(process *storage.ProcessIndicator) error {
 		processSet, exists := containerNameToBaselinedProcesses[process.GetContainerName()]
 		// If no explicit baseline, then all processes are valid.
 		if !exists {
-			continue
+			return nil
 		}
 		baselineItem := processBaselinePkg.BaselineItemFromProcess(process)
 		if baselineItem == "" {
-			continue
+			return nil
 		}
 		if processbaseline.IsStartupProcess(process) {
-			continue
+			return nil
 		}
 		if !processSet.Contains(processBaselinePkg.BaselineItemFromProcess(process)) {
 			violatingProcesses = append(violatingProcesses, process)
 			containerNameToBaselineResults[process.GetContainerName()].AnomalousProcessesExecuted = true
+		}
+		return nil
+	}
+
+	if hasAtLeastOneLockedBaseline {
+		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery()
+		err := e.indicators.GetByQueryFn(evaluatorCtx, query, fn)
+		if err != nil {
+			return nil, errors.Wrapf(err, "searching process indicators for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
 		}
 	}
 

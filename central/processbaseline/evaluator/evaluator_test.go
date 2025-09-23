@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -8,6 +9,7 @@ import (
 	processBaselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processBaselineResultMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	processIndicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -269,7 +271,13 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 
 			mockBaselines.EXPECT().GetProcessBaseline(gomock.Any(), gomock.Any()).MaxTimes(len(deployment.GetContainers())).Return(c.baseline, c.baseline != nil, c.baselineErr)
 			if c.indicators != nil {
-				mockIndicators.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Return(c.indicators, c.indicatorErr)
+				mockIndicators.EXPECT().GetByQueryFn(gomock.Any(), gomock.Any(), gomock.Any()).Do(
+					func(_ context.Context, _ *v1.Query, fn func(indicator *storage.ProcessIndicator) error) {
+						for _, i := range c.indicators {
+							err := fn(i)
+							require.NoError(t, err)
+						}
+					}).Return(c.indicatorErr)
 			}
 
 			expectedBaselineResult := &storage.ProcessBaselineResults{
