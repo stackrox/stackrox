@@ -14,7 +14,8 @@ Example MCPs configuration template:
 - Install gopls https://go.dev/gopls/#installation
 - Generate `JIRA_PERSONAL_TOKEN` here https://issues.redhat.com/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens
 - Generate `CONFLUENCE_PERSONAL_TOKEN`  here https://spaces.redhat.com/plugins/personalaccesstokens/usertokens.action
-- Generate `GITHUB_TOKEN` folowing these instructions https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+- Generate `GITHUB_TOKEN` folowing this instructions https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+- Export the above as environment variables before launching `claude`
 - Remember to pin image version using a content digest
 - Follow instructions to [configure Claude code](https://docs.claude.com/en/docs/claude-code/mcp) or [Cursor](https://cursor.com/docs/context/mcp) (note: cursor have a different syntax for env resolution)
 
