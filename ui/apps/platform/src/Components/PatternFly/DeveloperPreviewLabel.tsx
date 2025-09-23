@@ -49,7 +49,7 @@ function DeveloperPreviewLabel({ className, ...props }: DeveloperPreviewLabelPro
                 isCompact
                 color="purple"
                 icon={<InfoCircleIcon />}
-                className={`pf-v5-u-font-weight-light pf-v5-u-font-family-sans-serif ${className ?? ''}`}
+                className={className}
                 style={{ cursor: 'pointer' }}
                 {...props}
             >

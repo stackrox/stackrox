@@ -8,7 +8,7 @@ function TechPreviewLabel({ className, ...props }: TechPreviewLabelProps) {
         <Label
             isCompact
             color="orange"
-            className={`pf-v5-u-font-weight-light pf-v5-u-font-family-sans-serif ${className ?? ''}`}
+            className={className}
             {...props}
         >
             Tech preview
