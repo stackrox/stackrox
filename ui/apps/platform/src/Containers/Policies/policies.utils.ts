@@ -640,23 +640,23 @@ export function getLifeCyclesUpdates<
         ClientPolicy,
         'lifecycleStages' | 'eventSource' | 'excludedImageNames' | 'enforcementActions'
     >,
->(values: T, lifecycleStages: ValidPolicyLifeCycle): T {
+>(values: T, selectedStages: ValidPolicyLifeCycle): T {
     /*
      * Set all changed values at once, because separate setFieldValue calls
      * for lifecycleStages and eventSource cause inconsistent incorrect validation.
      */
     const changedValues = cloneDeep(values);
 
-    if (!lifecycleStages.some((stage) => stage === 'RUNTIME')) {
+    if (!selectedStages.some((stage) => stage === 'RUNTIME')) {
         changedValues.eventSource = 'NOT_APPLICABLE';
     }
 
-    if (!lifecycleStages.some((stage) => stage === 'BUILD')) {
+    if (!selectedStages.some((stage) => stage === 'BUILD')) {
         changedValues.excludedImageNames = [];
     }
 
     const removedLifecycleStages = values.lifecycleStages.filter(
-        (stage) => !lifecycleStages.some((validStage) => validStage === stage)
+        (stage) => !selectedStages.some((validStage) => validStage === stage)
     );
     removedLifecycleStages.forEach((lifecycleStage) => {
         changedValues.enforcementActions = filterEnforcementActionsForRemovedLifecycleStage(
@@ -665,7 +665,7 @@ export function getLifeCyclesUpdates<
         );
     });
 
-    changedValues.lifecycleStages = [...lifecycleStages];
+    changedValues.lifecycleStages = [...selectedStages];
     return changedValues;
 }
 

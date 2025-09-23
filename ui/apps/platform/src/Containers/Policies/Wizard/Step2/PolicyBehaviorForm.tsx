@@ -59,8 +59,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     }
 
     function onConfirmChangeLifecycle(lifecycleStages: ValidPolicyLifeCycle | null) {
-        // type guard, because TS is a cruel master
-        if (lifecycleStages && lifecycleStages.length > 0) {
+        if (lifecycleStages) {
             // first, update the lifecycles
             const newValues = getLifeCyclesUpdates(values, lifecycleStages);
 
