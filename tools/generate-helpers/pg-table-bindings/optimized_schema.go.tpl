@@ -55,6 +55,13 @@ var (
 			},
 			{{- end }}
 		},
+		{{- if .ChildSchemas }}
+		Children: []*walker.Schema{
+			{{- range .ChildSchemas }}
+			{{- template "childSchema" . }}
+			{{- end }}
+		},
+		{{- end }}
 	}
 )
 
@@ -72,5 +79,55 @@ func Get{{.TypeName}}Schema() *walker.Schema {
 	for i := range {{.TypeName}}Schema.Fields {
 		{{.TypeName}}Schema.Fields[i].Schema = {{.TypeName}}Schema
 	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences({{.TypeName}}Schema)
 	return {{.TypeName}}Schema
 }
+
+{{- define "childSchema" }}
+			{
+				Table:    "{{.Table}}",
+				Type:     "{{.Type}}",
+				TypeName: "{{.TypeName}}",
+				Fields: []walker.Field{
+					{{- range .Fields }}
+					{
+						Name:       "{{.Name}}",
+						ColumnName: "{{.ColumnName}}",
+						Type:       "{{.Type}}",
+						SQLType:    "{{.SQLType}}",
+						{{- if .DataType }}
+						DataType:   postgres.{{.DataType}},
+						{{- end }}
+						{{- if .SearchFieldName }}
+						Search: walker.SearchField{
+							FieldName: "{{.SearchFieldName}}",
+							Enabled:   true,
+						},
+						{{- end }}
+						{{- if .IsPrimaryKey }}
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+						{{- end }}
+					},
+					{{- end }}
+				},
+				{{- if .ChildSchemas }}
+				Children: []*walker.Schema{
+					{{- range .ChildSchemas }}
+					{{- template "childSchema" . }}
+					{{- end }}
+				},
+				{{- end }}
+			},
+{{- end }}

@@ -3,7 +3,7 @@
 package schema
 
 import (
-	"reflect"
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -57,11 +57,15 @@ var (
 			return schema
 		}
 		schema = internal.GetDeploymentSchema()
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Image":             ImagesSchema,
+			"storage.NamespaceMetadata": NamespacesSchema,
+			"storage.ImageV2":           ImagesV2Schema,
+		}
 
-		// For now, also generate the child schemas using walker.Walk to ensure compatibility
-		// TODO: Update generator to include child schemas in generated code
-		originalSchema := walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
-		schema.Children = originalSchema.Children
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
@@ -79,19 +83,6 @@ var (
 			v1.SearchCategory_PODS,
 		}...)
 		schema.ScopingResource = resources.Deployment
-
-		// Ensure all schema field back-references are set correctly
-		var setSchemaReferences func(*walker.Schema)
-		setSchemaReferences = func(s *walker.Schema) {
-			for i := range s.Fields {
-				s.Fields[i].Schema = s
-			}
-			for _, child := range s.Children {
-				setSchemaReferences(child)
-			}
-		}
-		setSchemaReferences(schema)
-
 		RegisterTable(schema, CreateTableDeploymentsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_DEPLOYMENTS, schema)
 		return schema

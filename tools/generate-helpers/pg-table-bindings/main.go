@@ -327,6 +327,7 @@ type OptimizedSchemaData struct {
 	SearchCategory string
 	Fields         []OptimizedSchemaField
 	SearchFields   []OptimizedSearchField
+	ChildSchemas   []OptimizedSchemaData
 }
 
 type OptimizedSchemaField struct {
@@ -392,6 +393,13 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 	// Clean search category name
 	cleanSearchCategory := strings.TrimPrefix(searchCategory, "v1.")
 
+	// Extract child schemas recursively
+	var childSchemas []OptimizedSchemaData
+	for _, childSchema := range schema.Children {
+		childData := extractSchemaDataRecursively(childSchema, cleanSearchCategory)
+		childSchemas = append(childSchemas, childData)
+	}
+
 	data := OptimizedSchemaData{
 		TypeName:       trimmedType,
 		Table:          schema.Table,
@@ -399,6 +407,7 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 		SearchCategory: cleanSearchCategory,
 		Fields:         fields,
 		SearchFields:   searchFields,
+		ChildSchemas:   childSchemas,
 	}
 
 	templateMap := map[string]interface{}{
@@ -408,6 +417,7 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 		"SearchCategory": data.SearchCategory,
 		"Fields":         data.Fields,
 		"SearchFields":   data.SearchFields,
+		"ChildSchemas":   data.ChildSchemas,
 	}
 
 	internalDir := filepath.Join(props.SchemaDirectory, "internal")
@@ -416,6 +426,44 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 	}
 	fileName := filepath.Join(internalDir, fmt.Sprintf("%s.go", schema.Table))
 	return common.RenderFile(templateMap, optimizedSchemaTemplate, fileName)
+}
+
+func extractFieldsFromSchema(schema *walker.Schema) []OptimizedSchemaField {
+	var fields []OptimizedSchemaField
+	for _, field := range schema.Fields {
+		optimizedField := OptimizedSchemaField{
+			Name:            field.Name,
+			ColumnName:      field.ColumnName,
+			Type:            field.Type,
+			SQLType:         field.SQLType,
+			DataType:        getDataTypeName(field.DataType),
+			IsPrimaryKey:    field.Options.PrimaryKey,
+			SearchFieldName: "", // Child schema fields don't have search names
+		}
+		fields = append(fields, optimizedField)
+	}
+	return fields
+}
+
+func extractSchemaDataRecursively(schema *walker.Schema, searchCategory string) OptimizedSchemaData {
+	fields := extractFieldsFromSchema(schema)
+
+	// Extract child schemas recursively
+	var childSchemas []OptimizedSchemaData
+	for _, childSchema := range schema.Children {
+		childData := extractSchemaDataRecursively(childSchema, searchCategory)
+		childSchemas = append(childSchemas, childData)
+	}
+
+	return OptimizedSchemaData{
+		TypeName:       schema.TypeName,
+		Table:          schema.Table,
+		Type:           schema.Type,
+		SearchCategory: searchCategory,
+		Fields:         fields,
+		SearchFields:   []OptimizedSearchField{}, // Child schemas don't have separate search fields
+		ChildSchemas:   childSchemas,
+	}
 }
 
 func getDataTypeName(dataType interface{}) string {

@@ -3,7 +3,7 @@
 package schema
 
 import (
-	"reflect"
+	"fmt"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -34,12 +34,13 @@ var (
 			return schema
 		}
 		schema = internal.GetNodeSchema()
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Cluster": ClustersSchema,
+		}
 
-		// For now, also generate the child schemas using walker.Walk to ensure compatibility
-		// TODO: Update generator to include child schemas in generated code
-		originalSchema := walker.Walk(reflect.TypeOf((*storage.Node)(nil)), "nodes")
-		schema.Children = originalSchema.Children
-
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_NODE_VULNERABILITIES,
 			v1.SearchCategory_NODE_COMPONENT_CVE_EDGE,
