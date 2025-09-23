@@ -167,7 +167,7 @@ func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
 		}
 	}
 	s.Require().NotNil(rhcosRepo, "the golden repos should exist in node index")
-	s.Equal("", rhcosRepo.GetKey())
+	s.Equal(goldenKey, rhcosRepo.GetKey())
 	s.Equal(goldenName, rhcosRepo.GetName())
 	s.Equal(goldenURI, rhcosRepo.GetUri())
 }
