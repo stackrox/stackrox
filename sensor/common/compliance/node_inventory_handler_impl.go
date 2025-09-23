@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/pkg/rhctag"
+	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -29,9 +30,13 @@ var (
 
 const (
 	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
-	// From ClairCore rhel-vex matcher
-	goldenName = "Red Hat Container Catalog"
-	goldenURI  = `https://catalog.redhat.com/software/containers/explore`
+
+	goldenKey  = rhcc.RepositoryKey
+)
+
+var (
+	goldenName = rhcc.GoldRepo.Name
+	goldenURI  = rhcc.GoldRepo.URI
 )
 
 type nodeInventoryHandlerImpl struct {
@@ -462,7 +467,7 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 				Id: {
 					Id:   Id,
 					Name: goldenName,
-					Key:  "",
+					Key:  goldenKey,
 					Uri:  goldenURI,
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
 				},
@@ -471,7 +476,7 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 				{
 					Id:   Id,
 					Name: goldenName,
-					Key:  "",
+					Key:  goldenKey,
 					Uri:  goldenURI,
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
 				},
