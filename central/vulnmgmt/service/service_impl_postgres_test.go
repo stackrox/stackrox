@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/central/imagev2/datastore/mapper"
 	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -67,7 +67,7 @@ func (s *servicePostgresTestSuite) upsertDeployments(deploymentsByID map[string]
 	for _, image := range fixtures.DeploymentImages() {
 		var err error
 		if features.FlattenImageData.Enabled() {
-			err = s.helper.ImagesV2.UpsertImage(upsertCtx, mapper.ConvertToV2(image))
+			err = s.helper.ImagesV2.UpsertImage(upsertCtx, imageUtils.ConvertToV2(image))
 		} else {
 			err = s.helper.Images.UpsertImage(upsertCtx, image)
 		}
