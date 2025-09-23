@@ -156,6 +156,10 @@ func (r *createCentralTLSExtensionRun) shouldBundleSecretsExist(ctx context.Cont
 }
 
 func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap types.SecretDataMap, _ bool) error {
+	return r.validateCentralTLSData(fileMap, true)
+}
+
+func (r *createCentralTLSExtensionRun) validateCentralTLSData(fileMap types.SecretDataMap, verifyCARotation bool) error {
 	var err error
 	r.ca, err = certgen.LoadCAFromFileMap(fileMap)
 	if err != nil {
@@ -165,7 +169,7 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 		return errors.Wrap(err, "loaded service CA certificate is invalid")
 	}
 
-	if centralCARotationEnabled.BooleanSetting() {
+	if verifyCARotation && centralCARotationEnabled.BooleanSetting() {
 		if err := r.checkCertificateTimeValidity(r.ca.Certificate()); err != nil {
 			return errors.Wrap(err, "primary CA is not valid at the present time")
 		}
@@ -254,7 +258,7 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 	// Since integrity of the central-tls secret is critical to the whole system,
 	// we additionally verify it here. Ideally this would be done on the ReconcileSecret level,
 	// for all its invocations, but unfortunately some verification functions are currently not idempotent.
-	if err := r.validateAndConsumeCentralTLSData(newFileMap, true); err != nil {
+	if err := r.validateCentralTLSData(newFileMap, false); err != nil {
 		return nil, errors.Wrap(err, "post-generation validation failed")
 	}
 
