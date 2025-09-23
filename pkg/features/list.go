@@ -131,6 +131,11 @@ var (
 
 	// Locks process baselines when their deployments leave the observation period
 	AutoLockProcessBaselines = registerFeature("Locks process baselines when their deployments leave the observation period", "ROX_AUTOLOCK_PROCESS_BASELINES")
+
+	// KEVExploit enables the display of CISA KEV Exploit (KEV) data.
+	//
+	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
+	KEVExploit = registerFeature("Display CISA KEV Exploit (KEV) data", "ROX_KEV_EXPLOIT", enabled)
 )
 
 // The following feature flags are related to Scanner V4.

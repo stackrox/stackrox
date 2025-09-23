@@ -84,6 +84,7 @@ func (s *serviceImpl) convertV2VulnReportFiltersToProto(filters *apiV2.Vulnerabi
 		AccessScopeRules:       accessScopeRules,
 		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
 		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
+		IncludeExploitable:     filters.GetIncludeExploitable(),
 		IncludeAdvisory:        filters.GetIncludeAdvisory(),
 	}
 
@@ -225,6 +226,7 @@ func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.Vulnera
 		Fixability:             apiV2.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
 		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
 		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
+		IncludeExploitable:     filters.GetIncludeExploitable(),
 		IncludeAdvisory:        filters.GetIncludeAdvisory(),
 	}
 
