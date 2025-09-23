@@ -20,21 +20,6 @@ var log = logging.LoggerForModule()
 
 type deduperAction int
 
-func (d *deduperAction) String() string {
-	switch *d {
-	case deduperActionAdd:
-		return "add"
-	case deduperActionRemove:
-		return "remove"
-	case deduperActionNoop:
-		return "noop"
-	case deduperActionUpdateProcess:
-		return "update_process"
-	default:
-		return "unknown"
-	}
-}
-
 const (
 	deduperActionAdd deduperAction = iota
 	deduperActionRemove
