@@ -423,14 +423,13 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 		Contents:       contents,
 	}
 	var r *v4.StoreIndexReportResponse
-	var responseMetadata metadata.MD
 	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.StoreImageIndex", func() error {
 		var err error
-		r, err = c.indexer.StoreIndexReport(ctx, req, grpc.Header(&responseMetadata))
+		r, err = c.indexer.StoreIndexReport(ctx, req)
 		return err
 	})
 	if err != nil {
-		return fmt.Errorf("store external index report: %w", err)
+		return fmt.Errorf("storing external index report: %w", err)
 	}
 	zlog.Debug(ctx).Err(err).Str("status", r.Status).Msg("received response from StoreIndexReport")
 

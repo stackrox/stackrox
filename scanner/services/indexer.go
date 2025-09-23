@@ -198,25 +198,24 @@ func (s *indexerService) StoreIndexReport(ctx context.Context, req *v4.StoreInde
 		"hash_id", req.GetHashId(),
 	)
 
-	zlog.Info(ctx).Msg("storing external index report for delegated scan")
-
+	resp := &v4.StoreIndexReportResponse{Status: "ERROR"}
 	if req.GetContents() == nil {
 		zlog.Debug(ctx).Msg("no contents, rejecting")
-		return nil, errox.InvalidArgs.New("empty contents")
+		return resp, errox.InvalidArgs.New("empty contents")
 	}
 
-	zlog.Info(ctx).Msg("has contents, parsing")
+	zlog.Info(ctx).Msg("storing external index report")
 	ir, err := parseIndexReport(req.GetContents())
 	if err != nil {
-		return nil, fmt.Errorf("parsing contents to index report: %w", err)
+		return resp, fmt.Errorf("parsing contents to index report: %w", err)
 	}
 
-	err = s.indexer.StoreIndexReport(ctx, req.GetHashId(), req.GetIndexerVersion(), ir)
+	resp.Status, err = s.indexer.StoreIndexReport(ctx, req.GetHashId(), req.GetIndexerVersion(), ir)
 	if err != nil {
-		return nil, fmt.Errorf("storing external index report: %w", err)
+		return resp, fmt.Errorf("storing external index report: %w", err)
 	}
 
-	return &v4.StoreIndexReportResponse{Status: "completed"}, nil
+	return resp, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

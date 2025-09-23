@@ -284,21 +284,21 @@ func Test_shouldUpdateExternalIndexReport(t *testing.T) {
 			want:                 true,
 		},
 		{
-			name:                 "saved version is v4",
+			name:                 "saved version is empty",
 			incomingIndexVersion: "4.8.3",
-			savedIndexerVersion:  "v4",
+			savedIndexerVersion:  "",
 			want:                 true,
 		},
 		{
-			name:                 "incoming versions are v4",
-			incomingIndexVersion: "v4",
+			name:                 "incoming version is empty",
+			incomingIndexVersion: "",
 			savedIndexerVersion:  "4.8.3",
 			want:                 false,
 		},
 		{
-			name:                 "both versions are v4",
-			incomingIndexVersion: "v4",
-			savedIndexerVersion:  "v4",
+			name:                 "both versions are empty",
+			incomingIndexVersion: "",
+			savedIndexerVersion:  "",
 			want:                 true,
 		},
 		{

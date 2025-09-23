@@ -83,11 +83,12 @@ func (m *MockReportStorer) EXPECT() *MockReportStorerMockRecorder {
 }
 
 // StoreIndexReport mocks base method.
-func (m *MockReportStorer) StoreIndexReport(ctx context.Context, hashID, indexerVersion string, report *claircore.IndexReport) error {
+func (m *MockReportStorer) StoreIndexReport(ctx context.Context, hashID, indexerVersion string, report *claircore.IndexReport) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StoreIndexReport", ctx, hashID, indexerVersion, report)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // StoreIndexReport indicates an expected call of StoreIndexReport.
@@ -185,11 +186,12 @@ func (mr *MockIndexerMockRecorder) Ready(arg0 any) *gomock.Call {
 }
 
 // StoreIndexReport mocks base method.
-func (m *MockIndexer) StoreIndexReport(ctx context.Context, hashID, indexerVersion string, report *claircore.IndexReport) error {
+func (m *MockIndexer) StoreIndexReport(ctx context.Context, hashID, indexerVersion string, report *claircore.IndexReport) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StoreIndexReport", ctx, hashID, indexerVersion, report)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // StoreIndexReport indicates an expected call of StoreIndexReport.

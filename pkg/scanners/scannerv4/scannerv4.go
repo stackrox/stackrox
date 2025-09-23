@@ -21,6 +21,7 @@ import (
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/version"
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
@@ -233,14 +234,13 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 	if features.SBOMGeneration.Enabled() && features.ScannerV4StoreExternalIndexReports.Enabled() {
 		// Store the index report from external scanners. Note that this will use
 		// some time from the scan timeout.
-		imageScanScannerVersion, err := pkgscanner.DecodeVersion(components.IndexerVersion)
+		imageScanScannerVersion := components.IndexerVersion
+		if version.GetVersionKind(components.IndexerVersion) == version.InvalidKind {
+			imageScanScannerVersion = ""
+		}
+		err := s.scannerClient.StoreImageIndex(ctx, digest, imageScanScannerVersion, v4Contents)
 		if err != nil {
-			log.Warnf("Failed to decode image scan scanner version: %v", err)
-		} else {
-			err := s.scannerClient.StoreImageIndex(ctx, digest, imageScanScannerVersion.Indexer, v4Contents)
-			if err != nil {
-				log.Warnf("Failed to store external index report: %v", err)
-			}
+			log.Warnf("Failed to store external index report: %v", err)
 		}
 	}
 

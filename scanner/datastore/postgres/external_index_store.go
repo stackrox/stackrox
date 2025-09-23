@@ -21,7 +21,7 @@ type ExternalIndexStore interface {
 		scannerVersion string,
 		indexReport *claircore.IndexReport,
 		expiration time.Time,
-		versionCmpFn func(iv string) bool,
+		shouldUpdateStoredReportFn func(iv string) bool,
 	) error
 	GCIndexReports(
 		ctx context.Context,

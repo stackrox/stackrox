@@ -140,7 +140,7 @@ type ReportGetter interface {
 
 // ReportStorer stores a claircore.IndexReport.
 type ReportStorer interface {
-	StoreIndexReport(ctx context.Context, hashID string, indexerVersion string, report *claircore.IndexReport) error
+	StoreIndexReport(ctx context.Context, hashID string, indexerVersion string, report *claircore.IndexReport) (string, error)
 }
 
 // Indexer represents an image indexer.
@@ -586,13 +586,13 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 	return d, nil
 }
 
-func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, indexerVersion string, report *claircore.IndexReport) error {
+func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, indexerVersion string, report *claircore.IndexReport) (string, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.StoreIndexReport")
 
 	var err error
 	report.Hash, err = createManifestDigest(hashID)
 	if err != nil {
-		return fmt.Errorf("creating claircore manifest digest: %w", err)
+		return "", fmt.Errorf("creating claircore manifest digest: %w", err)
 	}
 	// Note that the conversion to and from v4.Contents truncates the
 	// claircore.IndexReport's Success and State fields. If the index report
@@ -609,10 +609,14 @@ func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, inde
 		shouldUpdateExternalIndexReport(indexerVersion),
 	)
 	if err != nil {
-		return fmt.Errorf("storing external index report with (hashID %q): %w", hashID, err)
+		if errors.Is(err, postgres.ErrDidNotUpdateRow) {
+			return "NOT_MODIFIED", nil
+		}
+
+		return "", fmt.Errorf("storing external index report with (hashID %q): %w", hashID, err)
 	}
 
-	return nil
+	return "SUCCESS", nil
 }
 
 // shouldUpdateExternalIndexReport returns a function to satisfy the versionCmp

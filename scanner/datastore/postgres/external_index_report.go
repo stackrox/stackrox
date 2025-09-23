@@ -25,7 +25,7 @@ func (e *externalIndexStore) StoreIndexReport(
 	indexerVersion string,
 	indexReport *claircore.IndexReport,
 	expiration time.Time,
-	versionCmpFn func(iv string) bool,
+	shouldUpdateStoredReportFn func(iv string) bool,
 ) error {
 	ctx = zlog.ContextWithValues(
 		ctx,
@@ -62,7 +62,7 @@ func (e *externalIndexStore) StoreIndexReport(
 		return fmt.Errorf("querying external index reports: %w", err)
 	}
 
-	if !versionCmpFn(storedIndexerVersion) {
+	if !shouldUpdateStoredReportFn(storedIndexerVersion) {
 		return fmt.Errorf("stored index report was produced with more recent indexer: %w", ErrDidNotUpdateRow)
 	}
 
