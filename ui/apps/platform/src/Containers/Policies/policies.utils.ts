@@ -629,11 +629,12 @@ export function getServerPolicy(policyUntrimmed: ClientPolicy): Policy {
     return serverPolicy;
 }
 
-export function getLifeCyclesUpdates(
-    values: ClientPolicy,
-    lifecycleStage: LifecycleStage,
-    isChecked: boolean
-) {
+export function getLifeCyclesUpdates<
+    T extends Pick<
+        ClientPolicy,
+        'lifecycleStages' | 'eventSource' | 'excludedImageNames' | 'enforcementActions'
+    >,
+>(values: T, lifecycleStage: LifecycleStage, isChecked: boolean): T {
     /*
      * Set all changed values at once, because separate setFieldValue calls
      * for lifecycleStages and eventSource cause inconsistent incorrect validation.
