@@ -13,8 +13,7 @@ import {
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import { getSearchFilterFromSearchString } from 'utils/searchUtils';
-import { normalizeToArray } from 'utils/arrayUtils';
+import { getSearchFilterFromSearchString, searchValueAsArray } from 'utils/searchUtils';
 import { isVulnerabilitySeverity } from 'types/cve.proto';
 import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
 
@@ -38,6 +37,14 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
 
     const severityValues = findValueByKey(query, 'Severity');
     const cveDiscoveredTimeValues = findValueByKey(query, 'CVE Created Time');
+
+    const validSeverities = severityValues
+        ? searchValueAsArray(severityValues).filter((severity) => isVulnerabilitySeverity(severity))
+        : [];
+
+    const validCveDiscoveredTimes = cveDiscoveredTimeValues
+        ? searchValueAsArray(cveDiscoveredTimeValues)
+        : [];
 
     // Create scope filters excluding vulnerability-specific ones
     const scopeFilters = Object.fromEntries(
@@ -119,16 +126,14 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                 <DescriptionListGroup>
                     <DescriptionListTerm>CVE severity</DescriptionListTerm>
                     <DescriptionListDescription>
-                        {severityValues ? (
+                        {validSeverities.length > 0 ? (
                             <Stack>
-                                {normalizeToArray(severityValues)
-                                    .filter((severity) => isVulnerabilitySeverity(severity))
-                                    .map((severity) => (
-                                        <VulnerabilitySeverityIconText
-                                            key={severity}
-                                            severity={severity}
-                                        />
-                                    ))}
+                                {validSeverities.map((severity) => (
+                                    <VulnerabilitySeverityIconText
+                                        key={severity}
+                                        severity={severity}
+                                    />
+                                ))}
                             </Stack>
                         ) : (
                             'All severities'
@@ -138,9 +143,9 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                 <DescriptionListGroup>
                     <DescriptionListTerm>CVEs discovered time</DescriptionListTerm>
                     <DescriptionListDescription>
-                        {cveDiscoveredTimeValues ? (
+                        {validCveDiscoveredTimes.length > 0 ? (
                             <Stack>
-                                {normalizeToArray(cveDiscoveredTimeValues).map((timeValue) => (
+                                {validCveDiscoveredTimes.map((timeValue) => (
                                     <div key={timeValue}>{formatCveDiscoveredTime(timeValue)}</div>
                                 ))}
                             </Stack>
