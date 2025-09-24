@@ -409,13 +409,13 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations
 		if len(objs) < batchAfter {
-			s.mutex.RLock()
-			defer s.mutex.RUnlock()
+			//s.mutex.RLock()
+			//defer s.mutex.RUnlock()
 
 			return s.upsert(ctx, objs...)
 		}
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
+		//s.mutex.Lock()
+		//defer s.mutex.Unlock()
 
 		if s.copyFromObj == nil {
 			return s.upsert(ctx, objs...)
