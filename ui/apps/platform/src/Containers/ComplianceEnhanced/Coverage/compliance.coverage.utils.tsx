@@ -1,5 +1,7 @@
-import React, { ReactElement } from 'react';
-import { Icon, LabelProps } from '@patternfly/react-core';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Icon } from '@patternfly/react-core';
+import type { LabelProps } from '@patternfly/react-core';
 import {
     BanIcon,
     CheckCircleIcon,
@@ -11,9 +13,9 @@ import {
     WrenchIcon,
 } from '@patternfly/react-icons';
 
-import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
-import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
-import { SearchFilter } from 'types/search';
+import type { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
+import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import type { SearchFilter } from 'types/search';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getPercentage } from 'utils/mathUtils';
 

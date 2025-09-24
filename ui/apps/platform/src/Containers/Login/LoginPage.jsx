@@ -18,12 +18,11 @@ import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import Labeled from 'Components/Labeled';
 import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
 import BrandLogo from 'Components/PatternFly/BrandLogo';
+import { loginWithBasicAuth } from 'services/AuthService';
+import { parseAndDecodeFragment } from 'utils/parseAndDecodeFragment';
 
 import ServerStatusBanner from '../MainPage/Banners/ServerStatusBanner';
 import LoginNotice from './LoginNotice';
-
-import { loginWithBasicAuth } from '../../services/AuthService';
-import { parseAndDecodeFragment } from '../../utils/parseAndDecodeFragment';
 
 const unknownErrorResponse = {
     error: 'Unknown error',
