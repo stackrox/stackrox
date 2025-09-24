@@ -10,6 +10,8 @@ source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
+REGION="${REGION:-us-west4}"
+
 provision_gke_cluster() {
     info "Provisioning a GKE cluster"
 
@@ -44,6 +46,9 @@ assign_env_variables() {
     cluster_name="${cluster_name:0:40}" # (for GKE name limit)
     ci_export CLUSTER_NAME "$cluster_name"
     echo "Assigned cluster name is $cluster_name"
+
+    ci_export REGION "${REGION}"
+    echo "Selected region is $REGION"
 
     choose_release_channel
     choose_cluster_version
@@ -88,6 +93,7 @@ create_cluster() {
     ensure_CI
 
     require_environment "CLUSTER_NAME"
+    require_environment "REGION"
 
     local tags="stackrox-ci"
     local labels="stackrox-ci=true"
@@ -135,7 +141,6 @@ create_cluster() {
     # Regional clusters need more node IPs than zonal clusters due to multi-zone distribution.
     # See https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips#cluster_sizing.
 
-    REGION=us-east4
     NUM_NODES="${NUM_NODES:-3}"
     GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU_CONTAINERD}"
     POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
@@ -288,11 +293,10 @@ ensure_supported_cluster_version() {
 }
 
 refresh_gke_token() {
-    REGION=us-east4
-
     info "Starting a GKE token refresh loop"
 
     require_environment "CLUSTER_NAME"
+    require_environment "REGION"
 
     local real_kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
 
@@ -325,11 +329,10 @@ teardown_gke_cluster() {
     local canceled="${1:-false}"
     local byodb="${BYODB_TEST:-false}"
 
-    REGION=us-east4
-
     info "Tearing down the GKE cluster: ${CLUSTER_NAME:-}, canceled: ${canceled}"
 
     require_environment "CLUSTER_NAME"
+    require_environment "REGION"
     require_executable "gcloud"
 
     if [[ "${canceled}" == "false" ]] &&
