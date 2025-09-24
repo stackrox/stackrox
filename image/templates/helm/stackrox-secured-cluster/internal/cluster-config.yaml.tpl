@@ -30,6 +30,6 @@ clusterConfig:
       enforceOnUpdates: {{ ._rox.admissionControl.dynamic.enforceOnUpdates }}
     registryOverride: {{ ._rox.registryOverride }}
     autoLockProcessBaselinesConfig:
-     enabled: {{ ._rox.autoLockProcessBaselines.enabled }}
+      enabled: {{ ._rox.autoLockProcessBaselines.enabled }}
   configFingerprint: {{ ._rox._configFP }}
   clusterLabels: {{- toYaml ._rox.clusterLabels | nindent 4 }}
