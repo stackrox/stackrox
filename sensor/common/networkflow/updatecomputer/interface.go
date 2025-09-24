@@ -15,15 +15,15 @@ type UpdateComputer interface {
 	// ComputeUpdatedConns updates based on currentState state and implementation-specific tracking
 	ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow
 	ComputeUpdatedEndpointsAndProcesses(
-		enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose,
+		enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor)
 
 	// OnSuccessfulSendConnections contains actions that should be executed after successful sending of connection updates to Central.
 	OnSuccessfulSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS)
 	// OnSuccessfulSendEndpoints contains actions that should be executed after successful sending of endpoint updates to Central.
-	OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose)
+	OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 	// OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
-	OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose)
+	OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 
 	// ResetState resets all internal state (used when clearing historical data).
 	ResetState()

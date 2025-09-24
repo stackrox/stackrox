@@ -291,7 +291,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 		expectedResultNG   EnrichmentResult
 		expectedResultPLOP EnrichmentResult
 		expectedReasonNG   EnrichmentReasonEp
-		prePopulateData    func(*testing.T, map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose)
+		prePopulateData    func(*testing.T, map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 	}{
 		"Fresh endpoint with no process info should yield result EnrichmentResultSuccess for Network Graph and EnrichmentResultInvalidInput for PLOP": {
 			setupEndpoint: func() (*containerEndpoint, *connStatus) {
@@ -324,7 +324,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			expectedResultNG:   EnrichmentResultSuccess,
 			expectedResultPLOP: EnrichmentResultSuccess,
 			expectedReasonNG:   EnrichmentReasonEpDuplicate,
-			prePopulateData: func(t *testing.T, data map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose) {
+			prePopulateData: func(t *testing.T, data map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 				// Pre-populate with newer timestamp to trigger duplicate detection
 				endpointIndicator := indicator.ContainerEndpoint{
 					Entity:   networkgraph.EntityForDeployment("test-deployment"),
@@ -345,7 +345,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 					PodUID:    "test-pod-uid",
 					Namespace: "test-namespace",
 				}
-				data[endpointIndicator] = &indicator.ProcessListeningWithClose{
+				data[endpointIndicator] = &indicator.ProcessListeningWithTimestamp{
 					ProcessListening: &processIndicator,
 					LastSeen:         timestamp.Now(), // a newer timestamp
 				}
@@ -370,7 +370,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 
 			// Setup test data
 			ep, status := tt.setupEndpoint()
-			enrichedEndpointsProcesses := make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose)
+			enrichedEndpointsProcesses := make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 
 			// Pre-populate data if validation function needs it
 			if tt.prePopulateData != nil {

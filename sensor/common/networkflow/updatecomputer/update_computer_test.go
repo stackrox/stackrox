@@ -360,14 +360,14 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 	closedInThePast := closedNow - 1000
 
 	testCases := map[string]struct {
-		initialMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose
-		currentMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose
+		initialMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
+		currentMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
 		expectNumUpdatesEp   map[string]int
 		expectNumUpdatesProc map[string]int
 	}{
 		"Should send new closed endpoints": {
-			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{},
-			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         closedNow,
@@ -377,13 +377,13 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should send update when open endpoints are closed": {
-			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         open,
 				},
 			},
-			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         closedInThePast,
@@ -393,13 +393,13 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should not send an update when open endpoints remain open": {
-			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         open,
 				},
 			},
-			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         open,
@@ -409,13 +409,13 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		"Should not send update when closed TS is updated to a past value": {
-			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         closedNow,
 				},
 			},
-			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         closedInThePast,
@@ -429,13 +429,13 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 1},
 		},
 		"Should send update when closed TS is updated to a younger value": {
-			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         closedInThePast,
 				},
 			},
-			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         closedNow,
@@ -445,19 +445,19 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should produce no updates on empty input": {
-			initialMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{},
-			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{},
+			initialMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
+			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
 			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
 			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		"Should send an update on deletion for legacy but not for TransitionBased": {
-			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         open,
 				},
 			},
-			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{},
+			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
 			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 0},
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
 		},
@@ -469,13 +469,13 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 		},
 		// Process-specific cases
 		"Should replace process on two open-endpoint messages": {
-			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         open,
 				},
 			},
-			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p2,
 					LastSeen:         open,
@@ -486,13 +486,13 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
 		},
 		"A replacement triggered with a close message should close the correct process": {
-			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
 					LastSeen:         open,
 				},
 			},
-			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p2,
 					LastSeen:         closedNow,
@@ -506,7 +506,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 
 	executeAssertions := func(t *testing.T, l UpdateComputer,
 		expectedNumUpdatesEp, expectedNumUpdatesProc int,
-		initialMapping, currentMapping map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose) {
+		initialMapping, currentMapping map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 		t.Helper()
 		// Bring model to the initial state
 		ie, ip := l.ComputeUpdatedEndpointsAndProcesses(initialMapping)

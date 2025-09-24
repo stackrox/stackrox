@@ -45,14 +45,14 @@ func (l *Legacy) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp
 	})
 }
 
-func (l *Legacy) ComputeUpdatedEndpointsAndProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
+func (l *Legacy) ComputeUpdatedEndpointsAndProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
 	currentEps := make(map[indicator.ContainerEndpoint]timestamp.MicroTS, len(l.enrichedEndpointsLastSentState))
 	currentProc := make(map[indicator.ProcessListening]timestamp.MicroTS)
 	// Convert the joint map into the legacy format with two maps
-	for endpoint, withClose := range enrichedEndpointsProcesses {
-		currentEps[endpoint] = withClose.LastSeen
-		if withClose.ProcessListening != nil {
-			currentProc[*withClose.ProcessListening] = withClose.LastSeen
+	for endpoint, procWithTS := range enrichedEndpointsProcesses {
+		currentEps[endpoint] = procWithTS.LastSeen
+		if procWithTS.ProcessListening != nil {
+			currentProc[*procWithTS.ProcessListening] = procWithTS.LastSeen
 		}
 	}
 	return l.computeUpdatedEndpoints(currentEps), l.computeUpdatedProcesses(currentProc)
@@ -92,26 +92,26 @@ func (l *Legacy) OnSuccessfulSendConnections(currentConns map[indicator.NetworkC
 // OnSuccessfulSendEndpoints updates the internal enrichedConnsLastSentState map with the currentState state.
 // Providing nil will skip updates for respective map.
 // Providing empty map will reset the state for given state.
-func (l *Legacy) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose) {
+func (l *Legacy) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 	if enrichedEndpointsProcesses != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
 		l.enrichedConnsLastSentState = make(map[indicator.NetworkConn]timestamp.MicroTS, len(enrichedEndpointsProcesses))
-		for endpoint, withClose := range enrichedEndpointsProcesses {
-			l.enrichedEndpointsLastSentState[endpoint] = withClose.LastSeen
+		for endpoint, procWithTS := range enrichedEndpointsProcesses {
+			l.enrichedEndpointsLastSentState[endpoint] = procWithTS.LastSeen
 		}
 	}
 }
 
 // OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
-func (l *Legacy) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose) {
+func (l *Legacy) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 	if enrichedEndpointsProcesses != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
 		l.enrichedConnsLastSentState = make(map[indicator.NetworkConn]timestamp.MicroTS, len(enrichedEndpointsProcesses))
-		for _, withClose := range enrichedEndpointsProcesses {
-			if withClose.ProcessListening != nil {
-				l.enrichedProcessesLastSentState[*withClose.ProcessListening] = withClose.LastSeen
+		for _, procWithTS := range enrichedEndpointsProcesses {
+			if procWithTS.ProcessListening != nil {
+				l.enrichedProcessesLastSentState[*procWithTS.ProcessListening] = procWithTS.LastSeen
 			}
 		}
 	}

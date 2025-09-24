@@ -293,7 +293,7 @@ func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
 
 // ComputeUpdatedEndpointsAndProcesses computes updates to Central for endpoints and their processes
 func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
-	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 ) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
 	if len(enrichedEndpointsProcesses) == 0 {
 		// Received an empty map with current state. This may happen because:
@@ -411,14 +411,14 @@ func (c *TransitionBased) OnSuccessfulSendConnections(conns map[indicator.Networ
 // OnSuccessfulSendEndpoints updates the internal enrichedConnsLastSentState map with the currentState state.
 // Providing nil will skip updates for respective map.
 // Providing empty map will reset the state for given state.
-func (c *TransitionBased) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose) {
+func (c *TransitionBased) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 	if enrichedEndpointsProcesses != nil {
 		c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
 	}
 }
 
 // OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
-func (c *TransitionBased) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose) {
+func (c *TransitionBased) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 	if enrichedEndpointsProcesses != nil {
 		c.cachedUpdatesProc = make([]*storage.ProcessListeningOnPortFromSensor, 0)
 	}

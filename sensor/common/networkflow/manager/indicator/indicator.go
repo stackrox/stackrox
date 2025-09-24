@@ -110,7 +110,7 @@ type ProcessListening struct {
 	Port          uint16             // 2 bytes
 }
 
-type ProcessListeningWithClose struct {
+type ProcessListeningWithTimestamp struct {
 	ProcessListening *ProcessListening
 	LastSeen         timestamp.MicroTS
 }
