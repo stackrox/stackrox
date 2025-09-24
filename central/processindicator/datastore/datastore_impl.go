@@ -116,14 +116,14 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 	return nil
 }
 
-func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
+func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(pi *storage.ProcessIndicator) error) error {
 	if ok, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Walk(ctx, fn)
+	return ds.storage.WalkByQuery(ctx, q, fn)
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []string) error {

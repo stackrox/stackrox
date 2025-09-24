@@ -35,7 +35,7 @@ type DataStore interface {
 	RemoveProcessIndicators(ctx context.Context, ids []string) error
 	PruneProcessIndicators(ctx context.Context, ids []string) (int, error)
 
-	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessIndicator) error) error
 
 	// IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
 	IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error
