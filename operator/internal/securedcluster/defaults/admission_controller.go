@@ -1,13 +1,9 @@
 package defaults
 
 import (
-	"reflect"
-
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common/defaulting"
-
 	"k8s.io/utils/ptr"
 )
 
@@ -15,7 +11,7 @@ const (
 	FeatureDefaultKeyAdmissionControllerEnforce = "feature-defaults.platform.stackrox.io/admissionControllerEnforce"
 )
 
-var SecuredClusterAdmissionControllerDefaultingFlow = defaulting.SecuredClusterDefaultingFlow{
+var SecuredClusterAdmissionControllerDefaultingFlow = SecuredClusterDefaultingFlow{
 	Name:           "secured-cluster-admission-controller",
 	DefaultingFunc: securedClusterAdmissionControllerDefaulting,
 }
@@ -113,9 +109,4 @@ func securedClusterAdmissionControllerDefaulting(logger logr.Logger, status *pla
 	}
 
 	return nil
-}
-
-// securedClusterStatusUninitialized checks if the provided Securedcluster status is uninitialized.
-func securedClusterStatusUninitialized(status *platform.SecuredClusterStatus) bool {
-	return status == nil || reflect.DeepEqual(status, &platform.SecuredClusterStatus{})
 }

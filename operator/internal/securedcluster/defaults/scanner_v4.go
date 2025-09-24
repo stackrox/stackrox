@@ -1,10 +1,9 @@
-package defaulting
+package defaults
 
 import (
-	"reflect"
-
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/common"
 )
 
 var (
@@ -35,7 +34,7 @@ func SecuredClusterScannerV4ComponentPolicy(logger logr.Logger, status *platform
 	// This includes the case spec.ScannerComponent == "Default".
 
 	// A default entry exists already, use recorded value.
-	recordedValue := platform.LocalScannerV4ComponentPolicy(annotations[FeatureDefaultKeyScannerV4])
+	recordedValue := platform.LocalScannerV4ComponentPolicy(annotations[common.FeatureDefaultKeyScannerV4])
 	if recordedValue == platform.LocalScannerV4AutoSense || recordedValue == platform.LocalScannerV4Disabled {
 		logger.Info("using previously recorded componentPolicy", "componentPolicy", recordedValue)
 		return recordedValue, true
@@ -52,7 +51,7 @@ func SecuredClusterScannerV4ComponentPolicy(logger logr.Logger, status *platform
 	// Upgrade.
 	logger.Info("assuming upgrade")
 
-	if annotations[FeatureDefaultKeyScannerV4] == "" {
+	if annotations[common.FeatureDefaultKeyScannerV4] == "" {
 		// No entry in the statusDefaults yet -> preserve defaulting behavior of versions which did not populate
 		// statusDefaults with a ScannerV4ComponentPolicy.
 		logger.Info("empty feature-default annotation, using default componentPolicy for upgrades",
@@ -68,11 +67,6 @@ func SecuredClusterScannerV4ComponentPolicy(logger logr.Logger, status *platform
 	return defaultForUpgrades, true
 }
 
-// securedClusterStatusUninitialized checks if the provided Securedcluster status is uninitialized.
-func securedClusterStatusUninitialized(status *platform.SecuredClusterStatus) bool {
-	return status == nil || reflect.DeepEqual(status, &platform.SecuredClusterStatus{})
-}
-
 func securedClusterScannerV4Defaulting(logger logr.Logger, status *platform.SecuredClusterStatus, annotations map[string]string, spec *platform.SecuredClusterSpec, defaults *platform.SecuredClusterSpec) error {
 	scannerV4Spec := copyLocalScannerV4ComponentSpec(spec.ScannerV4)
 	componentPolicy, usedDefaulting := SecuredClusterScannerV4ComponentPolicy(logger, status, annotations, scannerV4Spec)
@@ -83,9 +77,9 @@ func securedClusterScannerV4Defaulting(logger logr.Logger, status *platform.Secu
 
 	// User is relying on defaults. Set in-memory default and persist corresponding annotation.
 
-	if annotations[FeatureDefaultKeyScannerV4] != string(componentPolicy) {
+	if annotations[common.FeatureDefaultKeyScannerV4] != string(componentPolicy) {
 		// Update feature default setting.
-		annotations[FeatureDefaultKeyScannerV4] = string(componentPolicy)
+		annotations[common.FeatureDefaultKeyScannerV4] = string(componentPolicy)
 	}
 
 	defaults.ScannerV4 = &platform.LocalScannerV4ComponentSpec{ScannerComponent: &componentPolicy}

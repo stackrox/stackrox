@@ -1,4 +1,4 @@
-package test_helpers
+package defaulting_test_helpers
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ const defaultPrefix = "The default is: "
 const defaultFormat = defaultPrefix + "%s."
 
 func LoadSpecSchema(t *testing.T, resource string) chartutil.Values {
-	data, err := os.ReadFile("../../../../bundle/manifests/platform.stackrox.io_" + resource + ".yaml")
+	data, err := os.ReadFile("../../../bundle/manifests/platform.stackrox.io_" + resource + ".yaml")
 	require.NoError(t, err)
 
 	var crd unstructured.Unstructured

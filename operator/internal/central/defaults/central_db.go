@@ -5,12 +5,11 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common/defaulting"
 	"k8s.io/utils/ptr"
 )
 
 var (
-	CentralDBPersistenceDefaultingFlow = defaulting.CentralDefaultingFlow{
+	CentralDBPersistenceDefaultingFlow = CentralDefaultingFlow{
 		Name:           "central-db",
 		DefaultingFunc: centralDBPersistenceDefaulting,
 	}

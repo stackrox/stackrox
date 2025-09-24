@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common/defaulting/test_helpers"
+	"github.com/stackrox/rox/operator/internal/common/defaulting_test_helpers"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,9 +34,9 @@ func TestSecuredClusterStaticDefaults(t *testing.T) {
 
 func TestSecuredClusterStaticDefaultsMatchesCRD(t *testing.T) {
 	t.Setenv("ROX_ADMISSION_CONTROLLER_CONFIG", "true")
-	SecuredClusterSpecSchema := test_helpers.LoadSpecSchema(t, "securedclusters")
+	SecuredClusterSpecSchema := defaulting_test_helpers.LoadSpecSchema(t, "securedclusters")
 
 	t.Run("Defaults", func(t *testing.T) {
-		test_helpers.CheckStruct(t, staticDefaults, SecuredClusterSpecSchema)
+		defaulting_test_helpers.CheckStruct(t, staticDefaults, SecuredClusterSpecSchema)
 	})
 }

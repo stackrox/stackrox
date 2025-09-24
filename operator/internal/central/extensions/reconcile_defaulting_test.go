@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common/defaulting"
+	"github.com/stackrox/rox/operator/internal/common"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,7 +41,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Status:          platform.CentralStatus{},
 			ExpectedDefault: &platform.ScannerV4Enabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
 		},
 		"upgrade: disabled by default": {
@@ -49,7 +49,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Status:          nonEmptyStatus,
 			ExpectedDefault: &platform.ScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"install: enabled explicitly": {
@@ -73,40 +73,40 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 		"upgrade: pick up previously persisted default (Enabled)": {
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
 			ExpectedDefault: &platform.ScannerV4Enabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
 		},
 		"upgrade: pick up previously persisted default (Disabled)": {
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 			ExpectedDefault: &platform.ScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"upgrade: ignoring bogus persisted default": {
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: "foo",
+				common.FeatureDefaultKeyScannerV4: "foo",
 			},
 			ExpectedDefault: &platform.ScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"previously persisted default is picked up even if status is empty": {
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 			ExpectedDefault: &platform.ScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 	}
