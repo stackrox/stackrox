@@ -35,6 +35,8 @@ class Env {
     // the remote cluster arch can be ppc64le or s390x, default is x86_64
     static final String REMOTE_CLUSTER_ARCH = System.getenv("REMOTE_CLUSTER_ARCH") ?: "x86_64"
 
+    static final String REMOTE_CLUSTER_NAME = System.getenv("REMOTE_CLUSTER_NAME")
+
     // ONLY_SECURED_CLUSTER specifies that the remote cluster being used to execute tests
     // only has secured-cluster deployed and connects to a remote central
     static final String ONLY_SECURED_CLUSTER = System.getenv("ONLY_SECURED_CLUSTER") ?: "false"
@@ -49,6 +51,7 @@ class Env {
     }
 
     static String mustGet(String key) {
+        LOG.info("Env.mustGet(\"${key}\")")
         return INSTANCE.mustGetInternal(key)
     }
 
