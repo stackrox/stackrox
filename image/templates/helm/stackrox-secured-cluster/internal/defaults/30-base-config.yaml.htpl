@@ -118,10 +118,8 @@ collector:
 auditLogs:
   disableCollection: {{ ne ._rox.env.openshift 4 }}
 
-[<- if .FeatureFlags.ROX_AUTO_LOCK_PROCESS_BASELINES >]
 autoLockProcessBaselines:
   enabled: false
-[<- end >]
 
 network:
   enableNetworkPolicies: true
