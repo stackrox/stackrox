@@ -109,7 +109,8 @@ type TransitionBased struct {
 	connectionsDeduper      *set.StringSet
 
 	endpointsDeduperMutex sync.RWMutex
-	endpointsDeduper      map[string]string
+	// TODO(ROX-31012): Save even more memory by changing to `type b8 [8]byte; map[b8]b8
+	endpointsDeduper map[string]string
 
 	// cachedUpdates contains a list of updates to Central that cannot be sent at the given moment.
 	cachedUpdatesConn []*storage.NetworkFlow
