@@ -180,17 +180,24 @@ func deactivateEndpointNoLock(ep *containerEndpoint,
 	// Active endpoint found for historical container =>
 	// (1) setting last-seen - even if not present in enrichedEndpointsProcesses and
 	// (2) removing from active endpoints.
-	if value := enrichedEndpointsProcesses[activeEp.ContainerEndpoint]; value == nil {
-		enrichedEndpointsProcesses[activeEp.ContainerEndpoint] = &indicator.ProcessListeningWithTimestamp{
-			ProcessListening: nil,
-			LastSeen:         now,
-		}
-	} else {
-		enrichedEndpointsProcesses[activeEp.ContainerEndpoint].LastSeen = now
-	}
+	setLastSeenOrAdd(enrichedEndpointsProcesses, activeEp.ContainerEndpoint, now)
 	delete(activeEndpoints, *ep)
 	flowMetrics.SetActiveEndpointsTotalGauge(len(activeEndpoints))
 	return true
+}
+
+// setLastSeenOrAdd checks the map `m` for presence of `key`.
+// If `key` is found, it changes the `LastSeen` to `ts` (close active endpoint, keep process as it was).
+// If `key` is not found, it adds it with empty `ProcessListening` and `LastSeen` set to `ts` (artificially close active endpoint).
+func setLastSeenOrAdd(m map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp, key indicator.ContainerEndpoint, ts timestamp.MicroTS) {
+	if value := m[key]; value == nil {
+		m[key] = &indicator.ProcessListeningWithTimestamp{
+			ProcessListening: nil,
+			LastSeen:         ts,
+		}
+	} else {
+		m[key].LastSeen = ts
+	}
 }
 
 // handleConnectionEnrichmentResult prints user-readable logs explaining the result of the enrichments and returns an action
