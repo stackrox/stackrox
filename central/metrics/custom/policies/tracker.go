@@ -11,8 +11,8 @@ import (
 
 func New(ds policyDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
-		"health",
-		"health",
+		"cfg",
+		"policies",
 		LazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
 			return track(ctx, ds)
@@ -21,11 +21,11 @@ func New(ds policyDS.DataStore) *tracker.TrackerBase[*finding] {
 }
 
 func track(ctx context.Context, ds policyDS.DataStore) iter.Seq[*finding] {
-	f := finding{}
 	return func(yield func(*finding) bool) {
 		if ds == nil {
 			return
 		}
+		var f finding
 		qb := search.NewQueryBuilder()
 		qb.AddBools("Disabled", false)
 		f.enabled = true
