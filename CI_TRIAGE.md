@@ -7,7 +7,7 @@ This guide explains how to set up Claude Code for automated StackRox CI failure 
 To enable automated CI triage capabilities, you need to configure the following MCP (Model Context Protocol) servers in Claude Code:
 
 - [mcp-atlassian](https://github.com/sooperset/mcp-atlassian)
-- [Github MCP](https://github.com/github/github-mcp-server)
+- [Github MCP](https://github.com/github/github-mcp-server/blob/main/docs/installation-guides/install-claude.md)
 - [Prow MCP](https://github.com/redhat-community-ai-tools/prowject)
 Example MCPs configuration template:
 
