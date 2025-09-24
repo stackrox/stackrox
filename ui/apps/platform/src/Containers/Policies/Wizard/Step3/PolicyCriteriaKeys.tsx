@@ -59,7 +59,7 @@ function PolicyCriteriaKeys({ keys }: PolicyCriteriaKeysProps) {
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsXs' }}
                 >
-                    <Text component="h3">{domain}</Text>
+                    {Object.keys(categories).length > 1 && <Text component="h3">{domain}</Text>}
                     <Flex
                         key={domain}
                         direction={{ default: 'column' }}
