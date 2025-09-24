@@ -16,10 +16,11 @@ import type {
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
 import type { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
+import { sanitizeFilename } from 'utils/fileUtils';
+
 import axios from './instance';
 import type { Empty } from './types';
 import { saveFile } from './DownloadService';
-import { sanitizeFilename } from '../utils/fileUtils';
 
 // The following functions are built around the new VM Reporting Enhancements
 export const reportDownloadURL = '/api/reports/jobs/download';
