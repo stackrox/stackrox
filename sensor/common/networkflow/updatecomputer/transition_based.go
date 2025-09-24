@@ -107,8 +107,6 @@ type TransitionBased struct {
 	// State tracking for conditional updates - moved from networkFlowManager
 	connectionsDeduperMutex sync.RWMutex
 	connectionsDeduper      *set.StringSet
-	deduperEstBytesMutex    sync.RWMutex
-	deduperEstBytes         map[EnrichedEntity]uintptr
 
 	endpointsDeduperMutex sync.RWMutex
 	endpointsDeduper      map[string]string
@@ -149,13 +147,9 @@ func hashingAlgoFromEnv(v env.Setting) indicator.HashingAlgo {
 // NewTransitionBased creates a new instance of the transition-based update computer.
 func NewTransitionBased() *TransitionBased {
 	return &TransitionBased{
-		hashingAlgo:        hashingAlgoFromEnv(env.NetworkFlowDeduperHashingAlgorithm),
-		connectionsDeduper: newStringSetPtr(),
-		endpointsDeduper:   make(map[string]string),
-		deduperEstBytes: map[EnrichedEntity]uintptr{
-			ConnectionEnrichedEntity: 0,
-			EndpointEnrichedEntity:   0,
-		},
+		hashingAlgo:                hashingAlgoFromEnv(env.NetworkFlowDeduperHashingAlgorithm),
+		connectionsDeduper:         newStringSetPtr(),
+		endpointsDeduper:           make(map[string]string),
 		cachedUpdatesConn:          make([]*storage.NetworkFlow, 0),
 		cachedUpdatesEp:            make([]*storage.NetworkEndpoint, 0),
 		cachedUpdatesProc:          make([]*storage.ProcessListeningOnPortFromSensor, 0),
@@ -438,13 +432,6 @@ func (c *TransitionBased) ResetState() {
 	concurrency.WithLock(&c.endpointsDeduperMutex, func() {
 		c.endpointsDeduper = make(map[string]string)
 	})
-	concurrency.WithLock(&c.deduperEstBytesMutex, func() {
-		c.deduperEstBytes = map[EnrichedEntity]uintptr{
-			ConnectionEnrichedEntity: 0,
-			EndpointEnrichedEntity:   0,
-			ProcessEnrichedEntity:    0,
-		}
-	})
 
 	c.updateLastCleanup(time.Now())
 
@@ -470,31 +457,8 @@ func (c *TransitionBased) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeV
 	lenSize.WithLabelValues("closedTimestamps", string(ConnectionEnrichedEntity)).Set(float64(value))
 
 	// Calculate byte metrics
-	baseSizeConns := concurrency.WithRLock1(&c.connectionsDeduperMutex, func() uintptr {
-		var totalStringBytes uintptr
-		for _, s := range c.connectionsDeduper.AsSlice() {
-			totalStringBytes += uintptr(len(s))
-		}
-		return 8 + uintptr(c.connectionsDeduper.Cardinality())*16 + totalStringBytes
-	})
-	concurrency.WithLock(&c.deduperEstBytesMutex, func() {
-		c.deduperEstBytes[ConnectionEnrichedEntity] = baseSizeConns * 2 // *2 comes from the overhead for map
-		byteSize.WithLabelValues("deduper", string(ConnectionEnrichedEntity)).Set(float64(c.deduperEstBytes[ConnectionEnrichedEntity]))
-	})
-
-	baseSizeEps := concurrency.WithRLock1(&c.endpointsDeduperMutex, func() uintptr {
-		var totalStringBytes uintptr
-		for k, v := range c.endpointsDeduper {
-			totalStringBytes += uintptr(len(k) + len(v))
-		}
-		return 8 + // map ref
-			uintptr(len(c.endpointsDeduper))*2*16 + // two string refs times number of entries
-			totalStringBytes // string bytes
-	})
-	concurrency.WithLock(&c.deduperEstBytesMutex, func() {
-		c.deduperEstBytes[EndpointEnrichedEntity] = baseSizeEps * 2 // *2 comes from the overhead for map
-		byteSize.WithLabelValues("deduper", string(EndpointEnrichedEntity)).Set(float64(c.deduperEstBytes[EndpointEnrichedEntity]))
-	})
+	byteSize.WithLabelValues("deduper", string(ConnectionEnrichedEntity)).Set(float64(c.calculateConnectionsDeduperByteSize()))
+	byteSize.WithLabelValues("deduper", string(EndpointEnrichedEntity)).Set(float64(c.calculateEndpointsDeduperByteSize()))
 
 	// Size of buffers that hold updates to Central while Sensor is offline
 	lenSize.WithLabelValues("cachedUpdates", string(ConnectionEnrichedEntity)).Set(float64(len(c.cachedUpdatesConn)))
@@ -528,6 +492,41 @@ func (c *TransitionBased) storeClosedConnectionTimestamp(
 			expiresAt: expiresAt,
 		}
 	})
+}
+
+// calculateConnectionsDeduperByteSize calculates the memory usage of the connections deduper.
+// The calculation includes: map reference (8 bytes) + string references (16 bytes per entry) + actual string content.
+func (c *TransitionBased) calculateConnectionsDeduperByteSize() uintptr {
+	baseSize := concurrency.WithRLock1(&c.connectionsDeduperMutex, func() uintptr {
+		var totalStringBytes uintptr
+		for _, s := range c.connectionsDeduper.AsSlice() {
+			totalStringBytes += uintptr(len(s))
+		}
+		return uintptr(8) + // map reference
+			uintptr(c.connectionsDeduper.Cardinality())*16 + // string references (16 bytes each)
+			totalStringBytes // actual string content
+	})
+
+	// Conservative 2x multiplier for set.StringSet overhead (buckets, hash table structure, etc.)
+	// The benchmarked overhead was 199/104 = 1.91x, but we use a slightly higher multiplier to be safe.
+	return baseSize * 2
+}
+
+// calculateEndpointsDeduperByteSize calculates the memory usage of the endpoints deduper.
+func (c *TransitionBased) calculateEndpointsDeduperByteSize() uintptr {
+	baseSize := concurrency.WithRLock1(&c.endpointsDeduperMutex, func() uintptr {
+		var totalStringBytes uintptr
+		for k, v := range c.endpointsDeduper {
+			totalStringBytes += uintptr(len(k) + len(v))
+		}
+
+		return uintptr(8) + // map reference
+			uintptr(len(c.endpointsDeduper))*2*16 + // two string refs per entry (key + value), 16 bytes each
+			totalStringBytes // actual string content
+	})
+	// Conservative 1.8x multiplier for Go map overhead (buckets, hash table structure, etc.)
+	// The benchmarked overhead was 1.67x, but we use a slightly higher multiplier to be safe.
+	return baseSize * 18 / 10
 }
 
 // PeriodicCleanup removes expired items from `closedConnTimestamps`.
