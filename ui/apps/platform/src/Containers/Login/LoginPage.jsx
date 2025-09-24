@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { ClipLoader } from 'react-spinners';
-import { formValueSelector, propTypes as reduxFormPropTypes, reduxForm } from 'redux-form';
+import { formValueSelector, reduxForm, propTypes as reduxFormPropTypes } from 'redux-form';
 import { Alert, Button, Title, TitleSizes } from '@patternfly/react-core';
 
 import { AUTH_STATUS } from 'reducers/auth';

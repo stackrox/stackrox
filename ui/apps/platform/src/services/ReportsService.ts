@@ -5,13 +5,13 @@ import {
     isViewBasedReportSnapshot,
 } from 'services/ReportsService.types';
 import type {
+    ConfiguredReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
-    ViewBasedReportSnapshot,
     ReportRequestViewBased,
     RunReportResponse,
     RunReportResponseViewBased,
-    ConfiguredReportSnapshot,
+    ViewBasedReportSnapshot,
 } from 'services/ReportsService.types';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';

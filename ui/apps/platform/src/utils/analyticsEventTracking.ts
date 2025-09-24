@@ -4,8 +4,8 @@ import type {
     AnalyticsEvent,
     NODE_CVE_FILTER_APPLIED,
     PLATFORM_CVE_FILTER_APPLIED,
-    WORKLOAD_CVE_FILTER_APPLIED,
     POLICY_VIOLATIONS_FILTER_APPLIED,
+    WORKLOAD_CVE_FILTER_APPLIED,
 } from 'hooks/useAnalytics';
 
 type FilterAppliedEvent =

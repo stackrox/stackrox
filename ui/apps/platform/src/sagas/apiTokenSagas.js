@@ -1,4 +1,4 @@
-import { all, take, takeLatest, call, fork, put } from 'redux-saga/effects';
+import { all, call, fork, put, take, takeLatest } from 'redux-saga/effects';
 
 import { integrationsPath } from 'routePaths';
 import {
