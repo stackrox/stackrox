@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/trace"
 )
 
 type Pipeline struct {
@@ -25,7 +24,7 @@ type Pipeline struct {
 }
 
 func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store) *Pipeline {
-	msgCtx, _ := context.WithCancelCause(trace.Background())
+	msgCtx := context.Background()
 
 	p := &Pipeline{
 		detector:        detector,
@@ -83,16 +82,14 @@ func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 
 	if fs.GetOpen() != nil {
 		activity.File = &storage.FileActivity_File{
-			Path:            fs.GetOpen().GetActivity().GetPath(),
-			HostPath:        fs.GetOpen().GetActivity().GetHostPath(),
-			IsExternalMount: fs.GetOpen().GetActivity().GetIsExternalMount(),
+			Path:     fs.GetOpen().GetActivity().GetPath(),
+			HostPath: fs.GetOpen().GetActivity().GetHostPath(),
 		}
 		activity.Type = storage.FileActivity_OPEN
 	} else if fs.GetWrite() != nil {
 		activity.File = &storage.FileActivity_File{
-			Path:            fs.GetWrite().GetActivity().GetPath(),
-			HostPath:        fs.GetWrite().GetActivity().GetHostPath(),
-			IsExternalMount: fs.GetWrite().GetActivity().GetIsExternalMount(),
+			Path:     fs.GetWrite().GetActivity().GetPath(),
+			HostPath: fs.GetWrite().GetActivity().GetHostPath(),
 		}
 		activity.Type = storage.FileActivity_WRITE
 	} else {

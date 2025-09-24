@@ -208,12 +208,11 @@ func (x *FileActivity) GetUnexpectedActivity() string {
 }
 
 type FileActivity_File struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Path            string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	HostPath        string                 `protobuf:"bytes,2,opt,name=host_path,json=hostPath,proto3" json:"host_path,omitempty"`
-	IsExternalMount bool                   `protobuf:"varint,3,opt,name=is_external_mount,json=isExternalMount,proto3" json:"is_external_mount,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	HostPath      string                 `protobuf:"bytes,2,opt,name=host_path,json=hostPath,proto3" json:"host_path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FileActivity_File) Reset() {
@@ -260,18 +259,11 @@ func (x *FileActivity_File) GetHostPath() string {
 	return ""
 }
 
-func (x *FileActivity_File) GetIsExternalMount() bool {
-	if x != nil {
-		return x.IsExternalMount
-	}
-	return false
-}
-
 var File_storage_file_system_proto protoreflect.FileDescriptor
 
 const file_storage_file_system_proto_rawDesc = "" +
 	"\n" +
-	"\x19storage/file_system.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xff\x04\n" +
+	"\x19storage/file_system.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xd3\x04\n" +
 	"\fFileActivity\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
 	"\aprocess\x18\x02 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12.\n" +
@@ -284,11 +276,10 @@ const file_storage_file_system_proto_rawDesc = "" +
 	"\busername\x18\t \x01(\tR\busername\x12\x14\n" +
 	"\x05group\x18\n" +
 	" \x01(\tR\x05group\x12/\n" +
-	"\x13unexpected_activity\x18\v \x01(\tR\x12unexpectedActivity\x1ac\n" +
+	"\x13unexpected_activity\x18\v \x01(\tR\x12unexpectedActivity\x1a7\n" +
 	"\x04File\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
-	"\thost_path\x18\x02 \x01(\tR\bhostPath\x12*\n" +
-	"\x11is_external_mount\x18\x03 \x01(\bR\x0fisExternalMount\"n\n" +
+	"\thost_path\x18\x02 \x01(\tR\bhostPath\"n\n" +
 	"\x04Type\x12\f\n" +
 	"\bCREATION\x10\x00\x12\n" +
 	"\n" +

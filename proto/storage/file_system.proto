@@ -12,7 +12,6 @@ message FileActivity {
   message File {
     string path = 1;
     string host_path = 2;
-    bool is_external_mount = 3;
   }
 
   enum Type {

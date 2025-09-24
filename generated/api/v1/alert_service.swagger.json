@@ -1253,9 +1253,6 @@
         },
         "hostPath": {
           "type": "string"
-        },
-        "isExternalMount": {
-          "type": "boolean"
         }
       }
     },

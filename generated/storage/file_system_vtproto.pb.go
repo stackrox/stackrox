@@ -29,7 +29,6 @@ func (m *FileActivity_File) CloneVT() *FileActivity_File {
 	r := new(FileActivity_File)
 	r.Path = m.Path
 	r.HostPath = m.HostPath
-	r.IsExternalMount = m.IsExternalMount
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -78,9 +77,6 @@ func (this *FileActivity_File) EqualVT(that *FileActivity_File) bool {
 		return false
 	}
 	if this.HostPath != that.HostPath {
-		return false
-	}
-	if this.IsExternalMount != that.IsExternalMount {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -171,16 +167,6 @@ func (m *FileActivity_File) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.IsExternalMount {
-		i--
-		if m.IsExternalMount {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
 	}
 	if len(m.HostPath) > 0 {
 		i -= len(m.HostPath)
@@ -326,9 +312,6 @@ func (m *FileActivity_File) SizeVT() (n int) {
 	l = len(m.HostPath)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.IsExternalMount {
-		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -477,26 +460,6 @@ func (m *FileActivity_File) UnmarshalVT(dAtA []byte) error {
 			}
 			m.HostPath = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsExternalMount", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsExternalMount = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -987,26 +950,6 @@ func (m *FileActivity_File) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.HostPath = stringValue
 			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsExternalMount", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsExternalMount = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
