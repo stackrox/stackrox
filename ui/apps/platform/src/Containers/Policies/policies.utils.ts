@@ -497,6 +497,7 @@ function getFormattedServerPolicyFields(policy: ClientPolicy): Policy['policySec
 
 // Impure function assumes caller has cloned the scope!
 function trimPolicyScope(scope: PolicyScope) {
+    /* eslint-disable no-param-reassign */
     if (typeof scope.cluster === 'string') {
         scope.cluster = scope.cluster.trim();
     }
@@ -517,6 +518,7 @@ function trimPolicyScope(scope: PolicyScope) {
         }
     }
     */
+    /* eslint-enable no-param-reassign */
 
     return scope;
 }
