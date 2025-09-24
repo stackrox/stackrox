@@ -4,6 +4,7 @@ import (
 	"context"
 	"iter"
 
+	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,28 +16,32 @@ func New(ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 		"image_vuln",
 		"image vulnerabilities",
 		lazyLabels,
-		func(ctx context.Context, md tracker.MetricDescriptors) iter.Seq[*finding] {
-			return trackVulnerabilityMetrics(ctx, md, ds)
+		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
+			return track(ctx, ds)
 		},
 	)
 }
 
-func trackVulnerabilityMetrics(ctx context.Context, _ tracker.MetricDescriptors, ds deploymentDS.DataStore) iter.Seq[*finding] {
+func track(ctx context.Context, ds deploymentDS.DataStore) iter.Seq[*finding] {
 	return func(yield func(*finding) bool) {
-		finding := &finding{}
-		_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
-			finding.deployment = deployment
+		var f finding
+		f.err = ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
+			f.deployment = deployment
 			images, err := ds.GetImagesForDeployment(ctx, deployment)
 			if err != nil {
 				return nil // Nothing can be done with this error here.
 			}
-			for _, finding.image = range images {
-				if !forEachImageVuln(yield, finding) {
+			for _, f.image = range images {
+				if !forEachImageVuln(yield, &f) {
 					return tracker.ErrStopIterator
 				}
 			}
 			return nil
 		})
+		// Report walking error.
+		if f.err != nil && !errors.Is(f.err, tracker.ErrStopIterator) {
+			yield(&f)
+		}
 	}
 }
 
