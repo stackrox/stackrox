@@ -45,7 +45,7 @@ The standard Go template whitespace elimination rules apply:
 
 ### Meta-Template Variables (MetaValues)
 
-During meta-templating, variables are accessed via the top-level context (`.`). The available variables are defined in the `MetaValues` struct at `pkg/helm/charts/meta.go` and include:
+During meta-templating, variables are accessed via the top-level context (`.`). The available variables are defined in the `MetaValues` struct in https://github.com/stackrox/stackrox/blob/master/pkg/helm/charts/meta.go and include:
 
 - **Version Information**: `.Versions.ChartVersion`, `.Versions.MainVersion`
 - **Image References**: `.ImageRemote`, `.ImageTag`, `.ScannerImageRemote`
@@ -65,35 +65,42 @@ Feature flags provide a way to customize chart behavior during feature developme
 [<- end >]
 ```
 
-Feature Flags are defined in `pkg/features/list.go` and their default values are used during chart instantiation.
+Feature Flags are defined in https://github.com/stackrox/stackrox/blob/master/pkg/features/list.go and their default values are used during chart instantiation.
 
 ## Chart Instantiation Process
 
-**"Instantiating"** a Helm chart refers to the process of processing meta-templated files (`.htpl`) to produce a standard Helm chart. This is distinct from Helm's own "rendering" process that occurs when installing or templating a chart.
+**Meta-templating vs Helm Rendering**: We use "instantiation" for the meta-templating phase to avoid confusion with Helm's own "rendering" process:
+
+- **Chart Instantiation**: Processing `.htpl` files with `MetaValues` to produce a standard Helm chart.
+- **Helm Rendering**: Using `helm template` or `helm install` to process a Helm chart with Helm values (== a user-provided Helm chart configuration).
+
+This distinction is important when debugging template issues or understanding the two-stage templating process.
 
 ### Code References
 
 The chart instantiation process is implemented in several key files:
 
-1. **Main Entry Point**: `roxctl/helm/output/output.go`
-   ```go
-   renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(cfg.chartTemplatePathPrefix, chartMetaValues)
-   ```
-
-2. **Core Implementation**: `image/embed_charts.go`
+1. **Core Implementation**: https://github.com/stackrox/stackrox/blob/master/image/embed_charts.go
    ```go
    func (i *Image) LoadAndInstantiateChartTemplate(chartPrefixPath ChartPrefix, metaVals *charts.MetaValues) ([]*loader.BufferedFile, error)
    ```
 
-3. **Template Processing**: `pkg/helm/template/chart_template.go`
+2. **Meta-Template Processing**: https://github.com/stackrox/stackrox/blob/master/pkg/helm/template/chart_template.go
    ```go
    func (t *ChartTemplate) InstantiateRaw(metaVals *charts.MetaValues) ([]*loader.BufferedFile, error)
    ```
 
-4. **MetaValues Creation**: `pkg/helm/charts/meta.go`
+3. **MetaValues Creation**: https://github.com/stackrox/stackrox/blob/master/pkg/helm/charts/meta.go
    ```go
    func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues
    ```
+
+4. **Instantiation in roxctl**: https://github.com/stackrox/stackrox/blob/master/roxctl/helm/output/output.go, function `outputHelmChart`.
+
+5. **Instantiation in the Operator**: https://github.com/stackrox/stackrox/blob/master/image/embed_charts.go, function `LoadChart`.
+
+6. **Instantiation in Central handler**: https://github.com/stackrox/stackrox/blob/master/central/helmcharts/service_impl.go, function `servceChart`.
+
 
 ### Using roxctl for Chart Instantiation
 
@@ -116,7 +123,7 @@ roxctl helm output central-services --debug
 
 ### Feature Flag Configuration
 
-By default, `roxctl helm output` uses the default feature flag configuration from `pkg/features/list.go`. You can override specific feature flags using environment variables:
+By default, `roxctl helm output` uses the default feature flag configuration from https://github.com/stackrox/stackrox/blob/master/pkg/features/list.go. You can override specific feature flags using environment variables:
 
 ```bash
 ROX_ADMISSION_CONTROLLER_CONFIG=true ROX_COMPLIANCE_ENHANCEMENTS=false roxctl helm output secured-cluster-services
@@ -125,12 +132,3 @@ ROX_ADMISSION_CONTROLLER_CONFIG=true ROX_COMPLIANCE_ENHANCEMENTS=false roxctl he
 ### Legacy Deployment Integration
 
 For the legacy deployment method using "manifest bundles", the Helm charts are instantiated in a particular style that differs from the standard roxctl output. This process also uses the same meta-templating system but may apply different MetaValues depending on the deployment context.
-
-## Terminology
-
-**Meta-templating vs Helm Rendering**: We use "instantiation" for our meta-templating phase to avoid confusion with Helm's own "rendering" process:
-
-- **Chart Instantiation**: Processing `.htpl` files with MetaValues to produce a standard Helm chart
-- **Helm Rendering**: Using `helm template` or `helm install` to process a Helm chart with values
-
-This distinction is important when debugging template issues or understanding the two-stage templating process.
