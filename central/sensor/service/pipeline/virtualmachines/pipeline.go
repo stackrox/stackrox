@@ -2,6 +2,7 @@ package virtualmachines
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
@@ -42,7 +44,9 @@ type pipelineImpl struct {
 
 func (p *pipelineImpl) OnFinish(_ string) {}
 
-func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability { return nil }
+func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return []centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported}
+}
 
 func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetVirtualMachine() != nil
@@ -75,11 +79,31 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return errors.Errorf("unexpected resource type %T for virtual machine", event.GetResource())
 	}
 
-	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
-		return p.processRemove(ctx, virtualMachine.GetId())
+	switch event.GetAction() {
+	case central.ResourceAction_REMOVE_RESOURCE:
+		return p.runRemovePipeline(ctx, virtualMachine)
+	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
+		return p.runGeneralPipeline(ctx, clusterID, virtualMachine)
+	default:
+		return fmt.Errorf("event action '%s' for virtual machine does not exist", event.GetAction())
 	}
+}
 
-	virtualMachineToStore := internaltostorage.VirtualMachine(virtualMachine)
+func (p *pipelineImpl) runRemovePipeline(ctx context.Context, vm *virtualMachineV1.VirtualMachine) error {
+	return p.processRemove(ctx, vm.GetId())
+}
+
+func (p *pipelineImpl) processRemove(ctx context.Context, id string) error {
+	return p.virtualMachineStore.DeleteVirtualMachines(ctx, id)
+}
+
+func (p *pipelineImpl) runGeneralPipeline(
+	ctx context.Context,
+	clusterID string,
+	vm *virtualMachineV1.VirtualMachine,
+) error {
+
+	virtualMachineToStore := internaltostorage.VirtualMachine(vm)
 
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {
@@ -87,8 +111,4 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	return p.virtualMachineStore.UpsertVirtualMachine(ctx, virtualMachineToStore)
-}
-
-func (p *pipelineImpl) processRemove(ctx context.Context, id string) error {
-	return p.virtualMachineStore.DeleteVirtualMachines(ctx, id)
 }
