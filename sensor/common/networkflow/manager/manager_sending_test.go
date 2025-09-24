@@ -49,6 +49,7 @@ func (b *sendNetflowsSuite) SetupTest() {
 	b.mockCtrl = gomock.NewController(b.T())
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
+	// Need to expose the concrete type of update computer for deduper assertions
 	b.uc = updatecomputer.NewTransitionBased()
 	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, enrichTickerC)
 	b.m.updateComputer = b.uc
