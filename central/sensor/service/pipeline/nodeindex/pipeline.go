@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
@@ -92,6 +93,13 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	log.Debugf("Received node index report for node %s with %d packages from %d content sets",
 		event.GetId(), len(report.GetContents().Packages), len(report.GetContents().Repositories))
 	report = report.CloneVT()
+
+	reportJson, err := jsonutil.ProtoToJSON(report, jsonutil.OptCompact)
+	if err != nil {
+		log.Errorf("error converting IndexReport to json: %+v", err)
+	} else {
+		log.Infof("IndexReport: %+v", reportJson)
+	}
 
 	// Query storage for the node this report comes from
 	nodeId := event.GetId()
