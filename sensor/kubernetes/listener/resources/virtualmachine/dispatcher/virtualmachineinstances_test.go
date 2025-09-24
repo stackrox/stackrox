@@ -188,7 +188,14 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1)
+				).Times(1).Return(
+					&vmInfo.Info{
+						ID:        vmiUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						VSOCKCID:  nil,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -216,7 +223,14 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1)
+				).Times(1).Return(
+					&vmInfo.Info{
+						ID:        vmiUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						VSOCKCID:  nil,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -264,7 +278,14 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1)
+				).Times(1).Return(
+					&vmInfo.Info{
+						ID:        vmiUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						VSOCKCID:  nil,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,

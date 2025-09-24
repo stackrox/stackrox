@@ -2,7 +2,6 @@ package dispatcher
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
-	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -18,7 +17,7 @@ var (
 type virtualMachineStore interface {
 	Has(id virtualmachine.VMID) bool
 	Get(id virtualmachine.VMID) *virtualmachine.Info
-	AddOrUpdate(vm *virtualmachine.Info)
+	AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info
 	Remove(id virtualmachine.VMID)
 	UpdateStateOrCreate(vm *virtualmachine.Info)
 	ClearState(id virtualmachine.VMID)
@@ -97,27 +96,6 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		return nil
 	}
 
-	vmState := virtualMachineV1.VirtualMachine_STOPPED
-	if vm.Running {
-		vmState = virtualMachineV1.VirtualMachine_RUNNING
-	}
-	vmVSockCID := int32(0)
-	if vm.VSOCKCID != nil {
-		vmVSockCID = int32(*vm.VSOCKCID)
-	}
 	// Send an Update event for the VirtualMachine that handles this instance
-	return component.NewEvent(&central.SensorEvent{
-		Id:     string(vm.ID),
-		Action: central.ResourceAction_UPDATE_RESOURCE,
-		Resource: &central.SensorEvent_VirtualMachine{
-			VirtualMachine: &virtualMachineV1.VirtualMachine{
-				Id:        string(vm.ID),
-				Name:      vm.Name,
-				Namespace: vm.Namespace,
-				ClusterId: d.clusterID,
-				VsockCid:  vmVSockCID,
-				State:     vmState,
-			},
-		},
-	})
+	return component.NewEvent(createEvent(central.ResourceAction_UPDATE_RESOURCE, d.clusterID, vm))
 }
