@@ -42,6 +42,25 @@ func ForT(t testing.TB, disableConstraint bool) *TestPostgres {
 	}
 }
 
+// ForTExistingDB - creates and returns a Postgres for the test.  This is used primarily in testing scale where
+// we may have a loaded database we want to connect to.
+func ForTExistingDB(t testing.TB, disableConstraint bool, dbName string) *TestPostgres {
+	//database := strings.ToLower(dbName)
+
+	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, dbName)
+	ctx := context.Background()
+
+	// initialize pool to be used
+	pool, err := postgres.Connect(ctx, sourceWithDatabase)
+	require.NoError(t, err)
+
+	return &TestPostgres{
+		DB:       pool,
+		gormDB:   conn.OpenGormDB(t, sourceWithDatabase, disableConstraint),
+		database: dbName,
+	}
+}
+
 // Teardown removes the postgres test database
 func (tp *TestPostgres) Teardown(t testing.TB) {
 	if tp == nil {

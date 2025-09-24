@@ -1,17 +1,23 @@
 package m212tom213
 
 import (
+	"context"
+	"slices"
+
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	updatedSchema "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/schema"
+	"github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/store"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
+	"golang.org/x/sync/semaphore"
 )
 
 var (
-	batchSize = 2000
+	batchSize = 5000
 	log       = logging.LoggerForModule()
 )
 
@@ -19,10 +25,8 @@ func migrate(database *types.Databases) error {
 	// We are simply promoting a field to a column so the serialized object is unchanged.  Thus, we
 	// have no need to worry about the old schema and can simply perform all our work on the new one.
 	db := database.GormDB
-	db2 := database.GormDB
 	pgutils.CreateTableFromModel(database.DBCtx, db, updatedSchema.CreateTableProcessIndicatorsStmt)
 	db = db.WithContext(database.DBCtx).Table(updatedSchema.ProcessIndicatorsTableName)
-	db2 = db2.WithContext(database.DBCtx).Table(updatedSchema.ProcessIndicatorsTableName)
 
 	var clusters []string
 	db.Model(&updatedSchema.ProcessIndicators{}).Distinct("clusterid").Pluck("clusterid", &clusters)
@@ -53,70 +57,96 @@ func migrate(database *types.Databases) error {
 	//	return err
 	//}
 
+	semaphoreWeight := max(len(clusters), 10)
+	var wg sync.WaitGroup
+	sema := semaphore.NewWeighted(int64(semaphoreWeight))
+	var err error
+
 	for _, cluster := range clusters {
-		err := migrateByCluster(cluster, database)
+		if err := sema.Acquire(database.DBCtx, 1); err != nil {
+			log.Errorf("context cancelled via stop: %v", err)
+			return err
+		}
+
+		log.Debugf("Migrate process indicators for cluster %q", cluster)
+		wg.Add(1)
+
+		go func(c string, err error) {
+			defer sema.Release(1)
+			defer wg.Done()
+			_ = migrateByCluster(cluster, database, err)
+			return
+		}(cluster, err)
 		if err != nil {
 			return err
 		}
 	}
+	wg.Wait()
 
-	return nil
+	return err
 }
 
-func migrateByCluster(cluster string, database *types.Databases) error {
-	log.Infof("Processing %s", cluster)
-	db := database.GormDB
-	var convertedIndicators []*updatedSchema.ProcessIndicators
+func migrateByCluster(cluster string, database *types.Databases, err error) error {
+	ctx, cancel := context.WithTimeout(database.DBCtx, types.DefaultMigrationTimeout)
+	defer cancel()
+	store := postgres.New(database.PostgresDB)
+	//var convertedIndicators []*updatedSchema.ProcessIndicators
+	var storeIndicators []*storage.ProcessIndicator
 	var count int
-	err := db.Transaction(func(tx *gorm.DB) error {
-		rows, err := tx.WithContext(database.DBCtx).Table(updatedSchema.ProcessIndicatorsTableName).Select("serialized").Where(&updatedSchema.ProcessIndicators{ClusterID: cluster}).Rows()
-		//rows, err := tx.Select("serialized").Rows() //.Where(&updatedSchema.ProcessIndicators{ClusterID: cluster}).Rows()
-		defer func() { _ = rows.Close() }()
-		if err != nil {
-			return errors.Wrapf(err, "failed to iterate table %s", updatedSchema.ProcessIndicatorsTableName)
-		}
-		for rows.Next() {
-			var processIndicator *updatedSchema.ProcessIndicators
-			if err = tx.ScanRows(rows, &processIndicator); err != nil {
-				return errors.Wrap(err, "failed to scan rows")
-			}
-			processIndicatorProto, err := updatedSchema.ConvertProcessIndicatorToProto(processIndicator)
-			if err != nil {
-				return errors.Wrapf(err, "failed to convert %+v to proto", processIndicator)
-			}
-
-			// We only need to rewrite the ones where the time is not null
-			if processIndicatorProto.GetContainerStartTime() == nil {
-				continue
-			}
-
-			converted, err := updatedSchema.ConvertProcessIndicatorFromProto(processIndicatorProto)
-			if err != nil {
-				return errors.Wrapf(err, "failed to convert from proto %+v", processIndicatorProto)
-			}
-
-			convertedIndicators = append(convertedIndicators, converted)
-			count++
-		}
-		if rows.Err() != nil {
-			return errors.Wrapf(rows.Err(), "failed to get rows for %s", updatedSchema.ProcessIndicatorsTableName)
-		}
-		return nil
-
-	})
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster).ProtoQuery()
+	storeIndicators, err = store.GetByQuery(ctx, query)
 	if err != nil {
 		return err
 	}
+	log.Infof("Processing %s with %d indicators", cluster, len(storeIndicators))
+	for objBatch := range slices.Chunk(storeIndicators, batchSize) {
+		log.Infof("Processing %d indicators", len(objBatch))
+		if err = store.UpsertMany(ctx, objBatch); err != nil {
+			//if err = db.
+			//	Clauses(clause.OnConflict{UpdateAll: true}).
+			//	Model(updatedSchema.CreateTableProcessIndicatorsStmt.GormModel).
+			//	CreateInBatches(&convertedIndicators, batchSize).Error; err != nil {
+			return errors.Wrap(err, "failed to upsert all converted objects")
+		}
+	}
 
-	if len(convertedIndicators) > 0 {
-		if err = db.
-			Clauses(clause.OnConflict{UpdateAll: true}).
-			Model(updatedSchema.CreateTableProcessIndicatorsStmt.GormModel).
-			CreateInBatches(&convertedIndicators, batchSize).Error; err != nil {
+	//// Using WalkByQuery as risk could potentially return a large amount of data
+	//err = store.GetByQueryFn(ctx, query, func(pi *storage.ProcessIndicator) error {
+	//	// We only need to rewrite the ones where the time is not null
+	//	if pi.GetContainerStartTime() != nil {
+	//		storeIndicators = append(storeIndicators, pi)
+	//		count++
+	//		if len(storeIndicators) > batchSize {
+	//			log.Infof("Processing %d indicators", len(storeIndicators))
+	//			if err = store.UpsertMany(ctx, storeIndicators); err != nil {
+	//				//if err = db.
+	//				//	Clauses(clause.OnConflict{UpdateAll: true}).
+	//				//	Model(updatedSchema.CreateTableProcessIndicatorsStmt.GormModel).
+	//				//	CreateInBatches(&convertedIndicators, batchSize).Error; err != nil {
+	//				return errors.Wrap(err, "failed to upsert all converted objects")
+	//			}
+	//			storeIndicators = storeIndicators[:0]
+	//		}
+	//	}
+	//
+	//	return nil
+	//})
+	//if err != nil {
+	//	return err
+	//}
+
+	if len(storeIndicators) > 0 {
+		log.Infof("Processing %d indicators", len(storeIndicators))
+		if err = store.UpsertMany(ctx, storeIndicators); err != nil {
+			//if err = db.
+			//	Clauses(clause.OnConflict{UpdateAll: true}).
+			//	Model(updatedSchema.CreateTableProcessIndicatorsStmt.GormModel).
+			//	CreateInBatches(&convertedIndicators, batchSize).Error; err != nil {
 			return errors.Wrap(err, "failed to upsert all converted objects")
 		}
 	}
 
 	log.Infof("Populated container start time for %d process indicators", count)
+
 	return nil
 }
