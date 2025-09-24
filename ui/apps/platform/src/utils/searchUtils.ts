@@ -351,6 +351,23 @@ export function hasSearchKeyValue(search: string, key: string, value: string | n
 }
 
 /**
+ * Finds a value in an object by key case-insensitively.
+ *
+ * @param obj The object to search in
+ * @param targetKey The key to search for (case-insensitive)
+ * @returns The value associated with the key, or undefined if not found
+ */
+export function getValueByCaseInsensitiveKey<T extends Record<string, unknown>>(
+    obj: T,
+    targetKey: string
+): T[keyof T] | undefined {
+    const foundKey = Object.keys(obj).find(
+        (key) => key.toLowerCase() === targetKey.toLowerCase()
+    ) as keyof T | undefined;
+    return foundKey ? obj[foundKey] : undefined;
+}
+
+/**
  * Deletes the keys from the `SearchFilter` regardless of case. The backend search
  * API is case-insensitive, so we need to ensure that any keys we delete are also
  * deleted regardless of case.

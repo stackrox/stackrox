@@ -1,6 +1,6 @@
 // import { LOCATION_CHANGE } from 'redux-first-history';
 import { LOCATION_CHANGE } from 'connected-react-router';
-import { take, fork } from 'redux-saga/effects';
+import { fork, take } from 'redux-saga/effects';
 import { matchPath } from 'react-router-dom-v5-compat';
 
 /**

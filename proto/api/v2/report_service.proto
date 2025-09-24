@@ -162,6 +162,7 @@ message ReportSnapshot {
   repeated NotifierConfiguration notifiers = 9;
   SlimUser user = 10;
   bool is_download_available = 11;
+  string area_of_concern = 13;
 }
 
 message ReportStatus {

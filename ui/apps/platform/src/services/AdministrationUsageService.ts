@@ -1,10 +1,12 @@
 import qs from 'qs';
-import axios from './instance';
+
 import type {
     MaxSecuredUnitsUsageResponse,
     SecuredUnitsUsage,
     TimeRange,
-} from '../types/administrationUsage.proto';
+} from 'types/administrationUsage.proto';
+
+import axios from './instance';
 import { saveFile } from './DownloadService';
 
 export function fetchCurrentAdministrationUsage() {

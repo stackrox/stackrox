@@ -1476,6 +1476,7 @@ type ReportSnapshot struct {
 	Notifiers           []*NotifierConfiguration `protobuf:"bytes,9,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
 	User                *SlimUser                `protobuf:"bytes,10,opt,name=user,proto3" json:"user,omitempty"`
 	IsDownloadAvailable bool                     `protobuf:"varint,11,opt,name=is_download_available,json=isDownloadAvailable,proto3" json:"is_download_available,omitempty"`
+	AreaOfConcern       string                   `protobuf:"bytes,13,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -1603,6 +1604,13 @@ func (x *ReportSnapshot) GetIsDownloadAvailable() bool {
 		return x.IsDownloadAvailable
 	}
 	return false
+}
+
+func (x *ReportSnapshot) GetAreaOfConcern() string {
+	if x != nil {
+		return x.AreaOfConcern
+	}
+	return ""
 }
 
 type isReportSnapshot_Filter interface {
@@ -2171,7 +2179,7 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\x06status\x18\x01 \x01(\v2\x10.v2.ReportStatusR\x06status\"8\n" +
 	"\x12CollectionSnapshot\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x9e\x05\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xc6\x05\n" +
 	"\x0eReportSnapshot\x12(\n" +
 	"\x10report_config_id\x18\x01 \x01(\tR\x0ereportConfigId\x12\"\n" +
 	"\rreport_job_id\x18\x02 \x01(\tR\vreportJobId\x12\x12\n" +
@@ -2185,7 +2193,8 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\tnotifiers\x18\t \x03(\v2\x19.v2.NotifierConfigurationR\tnotifiers\x12 \n" +
 	"\x04user\x18\n" +
 	" \x01(\v2\f.v2.SlimUserR\x04user\x122\n" +
-	"\x15is_download_available\x18\v \x01(\bR\x13isDownloadAvailableB\b\n" +
+	"\x15is_download_available\x18\v \x01(\bR\x13isDownloadAvailable\x12&\n" +
+	"\x0farea_of_concern\x18\r \x01(\tR\rareaOfConcernB\b\n" +
 	"\x06filter\"\xc8\x03\n" +
 	"\fReportStatus\x126\n" +
 	"\trun_state\x18\x01 \x01(\x0e2\x19.v2.ReportStatus.RunStateR\brunState\x12=\n" +

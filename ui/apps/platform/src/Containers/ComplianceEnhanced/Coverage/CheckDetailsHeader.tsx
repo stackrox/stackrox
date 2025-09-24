@@ -2,7 +2,7 @@ import React from 'react';
 import { Flex, FlexItem, Title, Skeleton, Alert, Label, LabelGroup } from '@patternfly/react-core';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
+import type { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
 
 import { getClusterResultsStatusObject, sortCheckStats } from './compliance.coverage.utils';
 import ControlLabels from './components/ControlLabels';

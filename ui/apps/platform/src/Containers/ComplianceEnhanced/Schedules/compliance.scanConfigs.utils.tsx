@@ -1,6 +1,6 @@
-import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
+import type { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 import { getProductBranding } from 'constants/productBranding';
-import {
+import type {
     ComplianceScanConfiguration,
     ComplianceScanConfigurationStatus,
     DailySchedule,
@@ -10,7 +10,7 @@ import {
     UnsetSchedule,
     WeeklySchedule,
 } from 'services/ComplianceScanConfigurationService';
-import { NotifierConfiguration } from 'services/ReportsService.types';
+import type { NotifierConfiguration } from 'services/ReportsService.types';
 import { getDayOfMonthWithOrdinal } from 'utils/dateUtils';
 
 export type ScanConfigParameters = {

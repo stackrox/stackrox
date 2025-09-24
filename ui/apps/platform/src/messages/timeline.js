@@ -1,4 +1,4 @@
-import { graphTypes, eventTypes } from 'constants/timelineTypes';
+import { eventTypes, graphTypes } from 'constants/timelineTypes';
 
 export const graphLabels = {
     [graphTypes.POD]: 'Pod',

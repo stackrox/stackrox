@@ -1,8 +1,8 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 
+import { replacedResourceMapping } from 'constants/accessControl';
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
-import { replacedResourceMapping } from '../constants/accessControl';
 
 export const ACCESS_LEVEL = Object.freeze({
     READ_WRITE_ACCESS: 'READ_WRITE_ACCESS',

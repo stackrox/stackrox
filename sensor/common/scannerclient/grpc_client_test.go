@@ -32,7 +32,7 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 			name: "when get index fails then return error",
 			setMock: func(m *mocks.MockScanner) {
 				m.EXPECT().
-					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(&v4.IndexReport{}, status.Error(codes.Unavailable, "index failed"))
 			},
 			args: args{
@@ -51,7 +51,7 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 			name: "when get index succeeds then return index report",
 			setMock: func(m *mocks.MockScanner) {
 				m.EXPECT().
-					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(&v4.IndexReport{
 						State:    "IndexFinished",
 						Contents: &v4.Contents{},
@@ -68,9 +68,8 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 				cfg: &types.Config{},
 			},
 			want: &ImageAnalysis{
-				ScanStatus:     scannerV1.ScanStatus_SUCCEEDED,
-				V4Contents:     &v4.Contents{},
-				IndexerVersion: v4IndexerVersion,
+				ScanStatus: scannerV1.ScanStatus_SUCCEEDED,
+				V4Contents: &v4.Contents{},
 			},
 		},
 	}
@@ -92,4 +91,13 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Note that this tests an unexported function to verify the indexer version is
+// set. If you need to change that logic, feel free to modify this test, but
+// consider how to keep this verification.
+func Test_convertIndexReportToAnalysis(t *testing.T) {
+	scannerVersion := "indexer=4.8.3"
+	imageAnalysis := convertIndexReportToAnalysis(nil, scannerVersion)
+	assert.Equal(t, imageAnalysis.IndexerVersion, scannerVersion)
 }

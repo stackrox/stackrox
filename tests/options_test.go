@@ -54,7 +54,7 @@ func TestOptionsMap(t *testing.T) {
 		"Image Remote", "Image Scan Time", "Image Tag", "Image Top CVSS", "Image User", "Image Volumes",
 		"Max Exposure Level", "Memory Limit (MB)", "Memory Request (MB)", "NVD CVSS", "Namespace", "Namespace ID",
 		"Orchestrator Component", "Platform Component", "Pod Label", "Port", "Port Protocol", "Privileged", "Process Arguments",
-		"Process Name", "Process Path", "Process UID", "Read Only Root Filesystem", "Secret", "Secret Path",
+		"Process Container Start Time", "Process Name", "Process Path", "Process UID", "Read Only Root Filesystem", "Secret", "Secret Path",
 		"Service Account", "Service Account Permission Level", "Volume Destination", "Volume Name", "Volume ReadOnly",
 		"Volume Source", "Volume Type", "Vulnerability State",
 	}

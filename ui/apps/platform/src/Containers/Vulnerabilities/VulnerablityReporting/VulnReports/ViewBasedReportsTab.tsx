@@ -29,8 +29,8 @@ import { ReportJobStatus } from 'Components/ReportJob/types';
 import ViewBasedReportsTable from './ViewBasedReportsTable';
 
 const sortOptions = {
-    sortFields: ['Report Completed Time'],
-    defaultSortOption: { field: 'Report Completed Time', direction: 'desc' } as const,
+    sortFields: ['Report Completion Time'],
+    defaultSortOption: { field: 'Report Completion Time', direction: 'desc' } as const,
 };
 
 function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {

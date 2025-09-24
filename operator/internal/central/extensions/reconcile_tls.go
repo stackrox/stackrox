@@ -222,7 +222,7 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 			return nil, errors.Wrapf(err, "performing CA rotation action: %v", r.caRotationAction)
 		}
 
-		if r.caRotationAction == carotation.PromoteSecondary {
+		if r.caRotationAction != carotation.NoAction {
 			primaryCA, err := certgen.LoadCAFromFileMap(newFileMap)
 			if err != nil {
 				return nil, errors.Wrap(err, "reloading new primary CA failed")

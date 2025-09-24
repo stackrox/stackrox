@@ -5,7 +5,7 @@ import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useResizeObserver from 'hooks/useResizeObserver';
-import { ComplianceProfileScanStats } from 'services/ComplianceResultsStatsService';
+import type { ComplianceProfileScanStats } from 'services/ComplianceResultsStatsService';
 import { defaultChartHeight, defaultChartBarWidth } from 'utils/chartUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 

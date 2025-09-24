@@ -1,6 +1,7 @@
+import type { Traits } from 'types/traits.proto';
+
 import axios from './instance';
 import type { Empty } from './types';
-import type { Traits } from '../types/traits.proto';
 
 const accessScopessUrl = '/v1/simpleaccessscopes';
 

@@ -21,7 +21,7 @@ type ScanComponentExecutable = {
     dependencies: string[];
 };
 
-type SourceType =
+export type SourceType =
     | 'OS'
     | 'PYTHON'
     | 'JAVA'

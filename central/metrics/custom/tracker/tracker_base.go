@@ -1,48 +1,75 @@
 package tracker
 
 import (
+	"cmp"
 	"context"
 	"iter"
 	"maps"
 	"net/http"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
+
+const inactiveGathererTTL = 2 * 24 * time.Hour
 
 var (
 	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
 	ErrStopIterator = errors.New("stopped")
 )
 
-type WithError interface {
+type Finding interface {
 	GetError() error
+	GetIncrement() int
+}
+
+type CommonFinding struct{}
+
+func (f *CommonFinding) GetError() error {
+	return nil
+}
+
+func (f *CommonFinding) GetIncrement() int {
+	return 1
 }
 
 // LazyLabel enables deferred evaluation of a label's value.
 // Computing and storing values for all labels for every finding would be
 // inefficient. Instead, the Getter function computes the value for this
 // specific label only when provided with a finding.
-type LazyLabel[Finding WithError] struct {
+type LazyLabel[F Finding] struct {
 	Label
-	Getter func(Finding) string
+	Getter func(F) string
 }
 
 // MakeLabelOrderMap maps labels to their order according to the order of
 // the labels in the list of getters.
 // Respecting the order is important for computing the aggregation key, which is
 // a concatenation of label values.
-func MakeLabelOrderMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]int {
+func MakeLabelOrderMap[F Finding](getters []LazyLabel[F]) map[Label]int {
 	result := make(map[Label]int, len(getters))
 	for i, getter := range getters {
 		result[getter.Label] = i + 1
+	}
+	return result
+}
+
+// GetLabels returns a slice of labels from the list of lazy getters.
+func GetLabels[F Finding](getters []LazyLabel[F]) []string {
+	result := make([]string, 0, len(getters))
+	for _, l := range getters {
+		result = append(result, string(l.Label))
 	}
 	return result
 }
@@ -58,7 +85,7 @@ type Tracker interface {
 }
 
 // FindingGenerator returns an iterator to the sequence of findings.
-type FindingGenerator[Finding WithError] func(context.Context, MetricDescriptors) iter.Seq[Finding]
+type FindingGenerator[F Finding] func(context.Context, MetricDescriptors) iter.Seq[F]
 
 type gatherer struct {
 	http.Handler
@@ -70,25 +97,26 @@ type gatherer struct {
 // TrackerBase implements a generic finding tracker.
 // Configured with a finding generator and other arguments, it runs a goroutine
 // that periodically aggregates gathered values and updates the gauge values.
-type TrackerBase[Finding WithError] struct {
+type TrackerBase[F Finding] struct {
 	metricPrefix string
 	description  string
 	labelOrder   map[Label]int
-	getters      map[Label]func(Finding) string
-	generator    FindingGenerator[Finding]
+	getters      map[Label]func(F) string
+	generator    FindingGenerator[F]
 
 	// metricsConfig can be changed with an API call.
 	config           *Configuration
 	metricsConfigMux sync.RWMutex
 
-	gatherers sync.Map // map[user ID]*tokenGatherer
+	gatherers sync.Map       // map[user ID]*gatherer
+	cleanupWG sync.WaitGroup // for sync in testing.
 
-	registryFactory func(userID string) metrics.CustomRegistry // for mocking in tests.
+	registryFactory func(userID string) (metrics.CustomRegistry, error) // for mocking in tests.
 }
 
 // makeGettersMap transforms a list of label names with their getters to a map.
-func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]func(Finding) string {
-	result := make(map[Label]func(Finding) string, len(getters))
+func makeGettersMap[F Finding](getters []LazyLabel[F]) map[Label]func(F) string {
+	result := make(map[Label]func(F) string, len(getters))
 	for _, getter := range getters {
 		result[getter.Label] = getter.Getter
 	}
@@ -97,10 +125,10 @@ func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]f
 
 // MakeTrackerBase initializes a tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
-func MakeTrackerBase[Finding WithError](metricPrefix, description string,
-	getters []LazyLabel[Finding], generator FindingGenerator[Finding],
-) *TrackerBase[Finding] {
-	return &TrackerBase[Finding]{
+func MakeTrackerBase[F Finding](metricPrefix, description string,
+	getters []LazyLabel[F], generator FindingGenerator[F],
+) *TrackerBase[F] {
+	return &TrackerBase[F]{
 		metricPrefix:    metricPrefix,
 		description:     description,
 		labelOrder:      MakeLabelOrderMap(getters),
@@ -238,10 +266,10 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if cfg == nil {
 		return
 	}
+	// Pass the cfg so that the same configuration is used there and here.
 	gatherer := tracker.getGatherer(id.UID(), cfg)
-
-	// Return if is still running.
-	if !gatherer.running.CompareAndSwap(false, true) {
+	// getGatherer() returns nil if the gatherer is still running.
+	if gatherer == nil {
 		return
 	}
 	defer gatherer.running.Store(false)
@@ -249,28 +277,92 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
+	begin := time.Now()
 	if err := tracker.track(ctx, gatherer.registry, cfg.metrics); err != nil {
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
-	gatherer.lastGather = time.Now()
+	end := time.Now()
+	gatherer.lastGather = end
+
+	descriptionTitle := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
+	centralclient.Singleton().Telemeter().Track(
+		descriptionTitle+" metrics gathered", nil,
+		telemeter.WithTraits(tracker.makeProps(descriptionTitle, end.Sub(begin))),
+		telemeter.WithNoDuplicates(tracker.metricPrefix))
+}
+
+func (tracker *TrackerBase[Finding]) makeProps(descriptionTitle string, duration time.Duration) map[string]any {
+	props := make(map[string]any, 3)
+	props["Total "+descriptionTitle+" metrics"] = len(tracker.config.metrics)
+	props[descriptionTitle+" metrics labels"] = getLabels(tracker.config.metrics)
+	props[descriptionTitle+" gathering seconds"] = uint32(duration.Round(time.Second).Seconds())
+	return props
+}
+
+func getLabels(metrics MetricDescriptors) []Label {
+	labels := set.NewSet[Label]()
+	for _, metricLabels := range metrics {
+		labels.AddAll(metricLabels...)
+	}
+	return labels.AsSortedSlice(cmp.Less)
 }
 
 // getGatherer returns the existing or a new gatherer for the given userID.
-// When creating a new gatherer, it also registers all known metrics on the
-// gatherer registry.
+// The returned gatherer will be set to a running state for synchronization
+// purposes. When creating a new gatherer, it also registers all known metrics
+// on the gatherer registry.
+// Returns nil on error, or if the gatherer for this userID is still running.
 func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configuration) *gatherer {
-	// TODO(PR #16176): limit the number of different tokens accessing the metrics?
+	defer tracker.cleanupInactiveGatherers()
 	var gr *gatherer
 	if g, ok := tracker.gatherers.Load(userID); !ok {
-		gr = &gatherer{
-			registry: tracker.registryFactory(userID),
+		r, err := tracker.registryFactory(userID)
+		if err != nil {
+			log.Errorw("failed to create custom registry for user", userID, logging.Err(err))
+			return nil
 		}
+		gr = &gatherer{
+			registry: r,
+		}
+		gr.running.Store(true)
 		tracker.gatherers.Store(userID, gr)
 		for metricName := range cfg.metrics {
 			tracker.registerMetric(gr, cfg, metricName)
 		}
 	} else {
 		gr = g.(*gatherer)
+		// Return nil if this gatherer is still running.
+		// Otherwise mark it running.
+		if !gr.running.CompareAndSwap(false, true) {
+			return nil
+		}
 	}
 	return gr
+}
+
+// cleanupInactiveGatherers frees the registries for the userIDs, that haven't
+// shown up for inactiveGathererTTL.
+func (tracker *TrackerBase[Finding]) cleanupInactiveGatherers() {
+	tracker.cleanupWG.Add(1)
+	go func() {
+		defer tracker.cleanupWG.Done()
+		tracker.gatherers.Range(func(userID, gv any) bool {
+			g := gv.(*gatherer)
+			// Make it running to block normal gathering.
+			if !g.running.CompareAndSwap(false, true) {
+				return true
+			}
+			if time.Since(g.lastGather) >= inactiveGathererTTL &&
+				// Do not delete a just created gatherer in test.
+				// lastGather should never be zero for a non-running gatherer
+				// in production run.
+				!g.lastGather.IsZero() {
+				metrics.DeleteCustomRegistry(userID.(string))
+				tracker.gatherers.Delete(userID)
+			} else {
+				g.running.Store(false)
+			}
+			return true
+		})
+	}()
 }

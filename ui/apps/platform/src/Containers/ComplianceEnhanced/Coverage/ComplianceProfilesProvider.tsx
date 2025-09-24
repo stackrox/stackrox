@@ -1,10 +1,9 @@
 import React, { createContext, useCallback, useContext } from 'react';
+import type { ReactNode } from 'react';
 
 import useRestQuery from 'hooks/useRestQuery';
-import {
-    listComplianceScanConfigProfiles,
-    ListComplianceScanConfigsProfileResponse,
-} from 'services/ComplianceScanConfigurationService';
+import { listComplianceScanConfigProfiles } from 'services/ComplianceScanConfigurationService';
+import type { ListComplianceScanConfigsProfileResponse } from 'services/ComplianceScanConfigurationService';
 
 import { createScanConfigFilter } from './compliance.coverage.utils';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
@@ -29,7 +28,7 @@ const defaultContextValue: ComplianceProfilesContextValue = {
 export const ComplianceProfilesContext =
     createContext<ComplianceProfilesContextValue>(defaultContextValue);
 
-function ComplianceProfilesProvider({ children }: { children: React.ReactNode }) {
+function ComplianceProfilesProvider({ children }: { children: ReactNode }) {
     const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
 
     const fetchProfiles = useCallback(

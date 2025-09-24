@@ -10,35 +10,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const scannerVersion = "indexer=4.8.3"
+
 func TestNoPanic(t *testing.T) {
 	assert.NotPanics(t, func() {
-		imageScan(nil, nil)
+		imageScan(nil, nil, "")
 
 		report := &v4.VulnerabilityReport{}
-		imageScan(nil, report)
+		imageScan(nil, report, scannerVersion)
 
 		report.Contents = &v4.Contents{}
-		imageScan(nil, report)
+		imageScan(nil, report, scannerVersion)
 
 		report.Contents.Packages = []*v4.Package{}
-		imageScan(nil, report)
+		imageScan(nil, report, scannerVersion)
 
 		report.Contents.Packages = append(report.Contents.Packages, &v4.Package{
 			Id: "1",
 		})
-		imageScan(nil, report)
+		imageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities = map[string]*v4.StringList{}
-		imageScan(nil, report)
+		imageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities["1"] = &v4.StringList{}
-		imageScan(nil, report)
+		imageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities["1"].Values = []string{}
-		imageScan(nil, report)
+		imageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities["1"].Values = []string{"CVE1"}
-		imageScan(nil, report)
+		imageScan(nil, report, scannerVersion)
 	})
 }
 
@@ -115,10 +117,11 @@ func TestConvert(t *testing.T) {
 		OperatingSystem: "rhel:9",
 	}
 
-	actual := imageScan(inMetadata, inReport)
+	actual := imageScan(inMetadata, inReport, scannerVersion)
 
 	protoassert.SlicesEqual(t, expected.Components, actual.Components)
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
+	assert.Equal(t, scannerVersion, actual.ScannerVersion)
 }
 
 func TestComponents(t *testing.T) {

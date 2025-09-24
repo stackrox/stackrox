@@ -1,5 +1,7 @@
-import React, { ReactElement } from 'react';
-import { FormikContextType, useFormikContext } from 'formik';
+import React from 'react';
+import type { FormEvent, ReactElement } from 'react';
+import { useFormikContext } from 'formik';
+import type { FormikContextType } from 'formik';
 import {
     Divider,
     Flex,
@@ -19,7 +21,7 @@ import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 
 import usePageAction from 'hooks/usePageAction';
-import { PageActions, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import type { PageActions, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 import { helperTextForName, helperTextForNameEdit, helperTextForTime } from './useFormikScanConfig';
 
@@ -36,7 +38,7 @@ function ScanConfigOptions(): ReactElement {
         formik.setFieldValue(id, value);
     }
 
-    function handleTimeChange(_event: React.FormEvent<HTMLInputElement>, time: string): void {
+    function handleTimeChange(_event: FormEvent<HTMLInputElement>, time: string): void {
         formik.setFieldValue('parameters.time', time);
     }
 

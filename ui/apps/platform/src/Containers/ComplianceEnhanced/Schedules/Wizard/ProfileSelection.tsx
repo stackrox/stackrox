@@ -1,5 +1,7 @@
-import React, { ReactElement, RefObject, useCallback, useState } from 'react';
-import { FormikContextType, useFormikContext } from 'formik';
+import React, { useCallback, useState } from 'react';
+import type { FormEvent, ReactElement, RefObject } from 'react';
+import { useFormikContext } from 'formik';
+import type { FormikContextType } from 'formik';
 import {
     Alert,
     Bullseye,
@@ -17,9 +19,9 @@ import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useTableSelection from 'hooks/useTableSelection';
-import { ComplianceProfileSummary } from 'services/ComplianceCommon';
+import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
-import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 // file can be deleted after switching to PF5, more details in the css file
 import './ProfileSelection.css';
@@ -59,7 +61,7 @@ function ProfileSelection({
     const { selected, onSelect } = useTableSelection(profiles, profileIsPreSelected, 'name');
 
     const handleSelect = (
-        event: React.FormEvent<HTMLInputElement>,
+        event: FormEvent<HTMLInputElement>,
         isSelected: boolean,
         rowId: number
     ) => {

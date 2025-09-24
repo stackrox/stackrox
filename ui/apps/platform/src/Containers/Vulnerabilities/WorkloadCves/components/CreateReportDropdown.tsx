@@ -38,7 +38,7 @@ function CreateReportDropdown({ onSelect }: CreateReportDropdownProps) {
                     </MenuToggle>
                 )}
                 shouldFocusToggleOnSelect
-                popperProps={{ position: 'right' }}
+                popperProps={{ position: 'right', appendTo: () => document.body }}
             >
                 <DropdownList>
                     <DropdownItem

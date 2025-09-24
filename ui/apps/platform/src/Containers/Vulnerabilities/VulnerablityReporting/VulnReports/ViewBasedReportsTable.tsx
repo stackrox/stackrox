@@ -20,9 +20,9 @@ export type ViewBasedReportsTableProps<T> = {
 };
 
 const onDownload = (snapshot: ViewBasedReportSnapshot) => () => {
-    const { reportJobId, requestName, reportStatus } = snapshot;
+    const { reportJobId, name, reportStatus } = snapshot;
     const { completedAt } = reportStatus;
-    const filename = `${requestName}-${completedAt}`;
+    const filename = `${name}-${completedAt}`;
     return downloadReportByJobId({
         reportJobId,
         filename,
@@ -49,13 +49,12 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                         <Th width={15}>Request name</Th>
                         <Th>Requester</Th>
                         <Th>Job status</Th>
-                        <Th>Expiration</Th>
-                        <Th sort={getSortParams('Report Completed Time')}>Completed</Th>
+                        <Th sort={getSortParams('Report Completion Time')}>Completed</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={5}
+                    colSpan={4}
                     emptyProps={{
                         title: 'No view-based reports found',
                         message: '', // Figure out what to put as the call-to-action
@@ -63,13 +62,8 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                     filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) =>
                         data.map((snapshot) => {
-                            const {
-                                user,
-                                reportStatus,
-                                isDownloadAvailable,
-                                reportJobId,
-                                requestName,
-                            } = snapshot;
+                            const { user, reportStatus, isDownloadAvailable, reportJobId, name } =
+                                snapshot;
                             const areDownloadActionsDisabled = currentUser.userId !== user.id;
 
                             return (
@@ -84,7 +78,7 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                                                     openModal();
                                                 }}
                                             >
-                                                {requestName}
+                                                {name}
                                             </Button>
                                         </Td>
                                         <Td dataLabel="Requester">{user.name}</Td>
@@ -98,8 +92,6 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                                                 onDownload={onDownload(snapshot)}
                                             />
                                         </Td>
-                                        {/* @TODO: Show the difference between the retention period for view-based downloadable reports and the date when this was created */}
-                                        <Td dataLabel="Expiration">7 days</Td>
                                         <Td dataLabel="Completed">
                                             {reportStatus.completedAt
                                                 ? getDateTime(reportStatus.completedAt)

@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-import { getFetchingActionInfo, FetchingActionState } from 'utils/fetchingReduxRoutines';
+import { FetchingActionState, getFetchingActionInfo } from 'utils/fetchingReduxRoutines';
 
 const loading = (state = {}, action) => {
     const { type } = action;

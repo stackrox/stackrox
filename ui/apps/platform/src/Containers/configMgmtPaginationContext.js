@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { sortParams, pagingParams } from 'constants/searchParams';
+import { pagingParams, sortParams } from 'constants/searchParams';
 
 const configMgmtPaginationContext = React.createContext();
 

@@ -6,8 +6,8 @@ import useURLSearch from 'hooks/useURLSearch';
 import {
     coverageProfileChecksPath,
     coverageProfileClustersPath,
-    CoverageProfilePath,
 } from '../compliance.coverage.routes';
+import type { CoverageProfilePath } from '../compliance.coverage.routes';
 import useScanConfigRouter from '../hooks/useScanConfigRouter';
 
 export type ProfilesTableToggleGroupProps = {

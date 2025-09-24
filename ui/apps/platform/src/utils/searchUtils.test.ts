@@ -1,15 +1,15 @@
 import {
-    getViewStateFromSearch,
-    convertToRestSearch,
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
+    convertToExactMatch,
+    convertToRestSearch,
+    deleteKeysCaseInsensitive,
     getListQueryParams,
     getPaginationParams,
-    searchValueAsArray,
-    convertToExactMatch,
-    hasSearchKeyValue,
     getSearchFilterFromSearchString,
-    deleteKeysCaseInsensitive,
+    getViewStateFromSearch,
+    hasSearchKeyValue,
+    searchValueAsArray,
 } from './searchUtils';
 
 describe('searchUtils', () => {

@@ -7,20 +7,20 @@ import { DEFAULT_VM_PAGE_SIZE } from 'Containers/Vulnerabilities/constants';
 import { workloadEntityTabValues } from 'Containers/Vulnerabilities/types';
 import type { DefaultFilters, WorkloadEntityTab } from 'Containers/Vulnerabilities/types';
 import {
-    parseQuerySearchFilter,
     getVulnStateScopedQueryString,
+    parseQuerySearchFilter,
 } from 'Containers/Vulnerabilities/utils/searchUtils';
 import {
-    getWorkloadCveOverviewSortFields,
     getWorkloadCveOverviewDefaultSortOption,
+    getWorkloadCveOverviewSortFields,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
 import useWorkloadCveViewContext from 'Containers/Vulnerabilities/WorkloadCves/hooks/useWorkloadCveViewContext';
 import VulnerabilitiesOverview from 'Containers/Vulnerabilities/WorkloadCves/Overview/VulnerabilitiesOverview';
 import {
-    imageSearchFilterConfig,
+    deploymentSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
+    imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 

@@ -1,11 +1,11 @@
 import React, { createContext, useCallback } from 'react';
+import type { ReactNode } from 'react';
 
 import useRestQuery from 'hooks/useRestQuery';
-import {
-    listComplianceScanConfigurations,
-    ListComplianceScanConfigurationsResponse,
-} from 'services/ComplianceScanConfigurationService';
-import useURLParameter, { HistoryAction } from 'hooks/useURLParameter';
+import { listComplianceScanConfigurations } from 'services/ComplianceScanConfigurationService';
+import type { ListComplianceScanConfigurationsResponse } from 'services/ComplianceScanConfigurationService';
+import useURLParameter from 'hooks/useURLParameter';
+import type { HistoryAction } from 'hooks/useURLParameter';
 
 type ScanConfigurationsContextValue = {
     scanConfigurationsQuery: {
@@ -38,7 +38,7 @@ const defaultContextValue: ScanConfigurationsContextValue = {
 export const ScanConfigurationsContext =
     createContext<ScanConfigurationsContextValue>(defaultContextValue);
 
-function ScanConfigurationsProvider({ children }: { children: React.ReactNode }) {
+function ScanConfigurationsProvider({ children }: { children: ReactNode }) {
     const [selectedScanConfigName, setSelectedScanConfigName] = useURLParameter(
         'scanSchedule',
         undefined

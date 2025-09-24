@@ -1,5 +1,6 @@
 import React from 'react';
-import { FormikContextType, useFormikContext } from 'formik';
+import { useFormikContext } from 'formik';
+import type { FormikContextType } from 'formik';
 import {
     Alert,
     Badge,
@@ -13,14 +14,14 @@ import {
 } from '@patternfly/react-core';
 
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
-import { ComplianceIntegration } from 'services/ComplianceIntegrationService';
+import type { ComplianceIntegration } from 'services/ComplianceIntegrationService';
 
 import {
     convertFormikParametersToSchedule,
     getBodyDefault,
     getSubjectDefault,
-    ScanConfigFormValues,
 } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 import ScanConfigParametersView from '../components/ScanConfigParametersView';
 import ScanConfigProfilesView from '../components/ScanConfigProfilesView';
 

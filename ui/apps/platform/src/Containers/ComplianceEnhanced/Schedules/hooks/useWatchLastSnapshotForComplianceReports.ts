@@ -2,10 +2,10 @@ import { useCallback } from 'react';
 
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import {
+import { fetchComplianceReportHistory } from 'services/ComplianceScanConfigurationService';
+import type {
     ComplianceReportSnapshot,
     ComplianceScanConfigurationStatus,
-    fetchComplianceReportHistory,
 } from 'services/ComplianceScanConfigurationService';
 import useRestQuery from 'hooks/useRestQuery';
 

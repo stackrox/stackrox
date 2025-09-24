@@ -32,6 +32,9 @@ var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 		v4.Indexer_CreateIndexReport_FullMethodName,
 		v4.Indexer_GetOrCreateIndexReport_FullMethodName,
 	},
+	or.Or(idcheck.CentralOnly()): {
+		v4.Indexer_StoreIndexReport_FullMethodName,
+	},
 })
 
 type indexerService struct {
@@ -113,7 +116,7 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 		"hash_id", req.GetHashId(),
 	)
 	zlog.Info(ctx).Msg("getting index report for container image")
-	ir, err := s.getIndexReport(ctx, req.GetHashId())
+	ir, err := s.getIndexReport(ctx, req.GetHashId(), req.GetIncludeExternal())
 	switch {
 	case errors.Is(err, errox.NotFound):
 		zlog.Warn(ctx).Err(err).Send()
@@ -127,8 +130,8 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 // No logging is performed; however, callers of this method may be
 // interested in logging the error. Returns errox.NotFound when the report does
 // not exist.
-func (s *indexerService) getIndexReport(ctx context.Context, hashID string) (*v4.IndexReport, error) {
-	ccIR, err := getClairIndexReport(ctx, s.indexer, hashID)
+func (s *indexerService) getIndexReport(ctx context.Context, hashID string, includeExternal bool) (*v4.IndexReport, error) {
+	ccIR, err := getClairIndexReport(ctx, s.indexer, hashID, includeExternal)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +150,7 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 	)
 
 	zlog.Info(ctx).Msg("getting index report for container image")
-	ir, err := s.getIndexReport(ctx, req.GetHashId())
+	ir, err := s.getIndexReport(ctx, req.GetHashId(), false)
 	switch {
 	case errors.Is(err, nil):
 		return ir, nil
@@ -175,7 +178,7 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 		"component", "scanner/service/indexer.HasIndexReport",
 		"hash_id", req.GetHashId(),
 	)
-	_, err := getClairIndexReport(ctx, s.indexer, req.GetHashId())
+	_, err := getClairIndexReport(ctx, s.indexer, req.GetHashId(), false)
 	var exists bool
 	switch {
 	case errors.Is(err, nil):
@@ -187,6 +190,32 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 		return nil, err
 	}
 	return &v4.HasIndexReportResponse{Exists: exists}, nil
+}
+
+func (s *indexerService) StoreIndexReport(ctx context.Context, req *v4.StoreIndexReportRequest) (*v4.StoreIndexReportResponse, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/service/indexer.StoreIndexReport",
+		"hash_id", req.GetHashId(),
+	)
+
+	resp := &v4.StoreIndexReportResponse{Status: "ERROR"}
+	if req.GetContents() == nil {
+		zlog.Debug(ctx).Msg("no contents, rejecting")
+		return resp, errox.InvalidArgs.New("empty contents")
+	}
+
+	zlog.Info(ctx).Msg("storing external index report")
+	ir, err := parseIndexReport(req.GetContents())
+	if err != nil {
+		return resp, fmt.Errorf("parsing contents to index report: %w", err)
+	}
+
+	resp.Status, err = s.indexer.StoreIndexReport(ctx, req.GetHashId(), req.GetIndexerVersion(), ir)
+	if err != nil {
+		return resp, fmt.Errorf("storing external index report: %w", err)
+	}
+
+	return resp, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

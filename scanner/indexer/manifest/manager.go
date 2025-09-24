@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"context"
+	"errors"
 	"math/rand/v2"
 	"time"
 
@@ -70,8 +71,9 @@ type Manager struct {
 	gcCtx    context.Context
 	gcCancel context.CancelFunc
 
-	metadataStore postgres.IndexerMetadataStore
-	locker        updates.LockSource
+	metadataStore      postgres.IndexerMetadataStore
+	externalIndexStore postgres.ExternalIndexStore
+	locker             updates.LockSource
 
 	// gcThrottle specifies the number of manifests to delete during a non-full GC run.
 	gcThrottle int
@@ -82,7 +84,7 @@ type Manager struct {
 }
 
 // NewManager creates a manifest manager.
-func NewManager(ctx context.Context, metadataStore postgres.IndexerMetadataStore, locker updates.LockSource) *Manager {
+func NewManager(ctx context.Context, metadataStore postgres.IndexerMetadataStore, externalIndexStore postgres.ExternalIndexStore, locker updates.LockSource) *Manager {
 	gcCtx, gcCancel := context.WithCancel(ctx)
 
 	interval := env.ScannerV4ManifestGCInterval.DurationSetting()
@@ -107,8 +109,9 @@ func NewManager(ctx context.Context, metadataStore postgres.IndexerMetadataStore
 		gcCtx:    gcCtx,
 		gcCancel: gcCancel,
 
-		metadataStore: metadataStore,
-		locker:        locker,
+		metadataStore:      metadataStore,
+		externalIndexStore: externalIndexStore,
+		locker:             locker,
 
 		gcThrottle:   gcThrottle,
 		interval:     interval,
@@ -200,6 +203,7 @@ func (m *Manager) runFullGC(ctx context.Context) error {
 	zlog.Info(ctx).Msg("starting manifest metadata garbage collection")
 
 	var ms []string
+	var irs []string
 	// Set i to any int greater than 0 to start the loop.
 	i := 1
 	for i > 0 {
@@ -207,12 +211,15 @@ func (m *Manager) runFullGC(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			deleted, err := m.runGCNoLock(ctx)
+			deletedManifests, gcManifestsErr := m.runGCManifestsNoLock(ctx)
+			deleteIndexReports, gcIndexReportsErr := m.runGCIndexReportsNoLock(ctx)
+			err := errors.Join(gcManifestsErr, gcIndexReportsErr)
 			if err != nil {
 				return err
 			}
-			i = len(deleted)
-			ms = append(ms, deleted...)
+			i = len(deletedManifests) + len(deleteIndexReports)
+			ms = append(ms, deletedManifests...)
+			irs = append(irs, deleteIndexReports...)
 		}
 	}
 
@@ -220,6 +227,15 @@ func (m *Manager) runFullGC(ctx context.Context) error {
 		zlog.Debug(ctx).Strs("deleted_manifest_metadata", ms).Msg("deleted expired manifest metadata")
 	}
 	zlog.Info(ctx).Int("deleted_manifest_metadata", len(ms)).Msg("deleted expired manifest metadata")
+
+	if len(irs) > 0 {
+		zlog.Debug(ctx).
+			Strs("deleted_external_index_reports", irs).
+			Msg("deleted expired external index reports")
+	}
+	zlog.Info(ctx).
+		Int("deleted_external_index_reports", len(irs)).
+		Msg("deleted expired external index reports")
 
 	return nil
 }
@@ -240,7 +256,9 @@ func (m *Manager) runGC(ctx context.Context) error {
 
 	zlog.Info(ctx).Msg("starting manifest metadata garbage collection")
 
-	ms, err := m.runGCNoLock(ctx)
+	ms, gcManifestsErr := m.runGCManifestsNoLock(ctx)
+	irs, gcIndexReportsErr := m.runGCIndexReportsNoLock(ctx)
+	err := errors.Join(gcManifestsErr, gcIndexReportsErr)
 	if err != nil {
 		return err
 	}
@@ -250,13 +268,28 @@ func (m *Manager) runGC(ctx context.Context) error {
 	}
 	zlog.Info(ctx).Int("deleted_manifest_metadata", len(ms)).Msg("deleted expired manifest metadata")
 
+	if len(irs) > 0 {
+		zlog.Debug(ctx).
+			Strs("deleted_external_index_reports", irs).
+			Msg("deleted expired external index reports")
+	}
+	zlog.Info(ctx).
+		Int("deleted_external_index_reports", len(irs)).
+		Msg("deleted expired external index reports")
+
 	return nil
 }
 
-// runGCNoLock runs the actual garbage collection cycle.
+// runGCManifestsNoLock runs the actual garbage collection cycle.
 // DO NOT CALL THIS UNLESS THE manifest-garbage-collection LOCK IS ACQUIRED.
-func (m *Manager) runGCNoLock(ctx context.Context) ([]string, error) {
+func (m *Manager) runGCManifestsNoLock(ctx context.Context) ([]string, error) {
 	return m.metadataStore.GCManifests(ctx, time.Now(), postgres.WithGCThrottle(m.gcThrottle))
+}
+
+// runGCIndexReportsNoLock runs the actual garbage collection cycle.
+// DO NOT CALL THIS UNLESS THE manifest-garbage-collection LOCK IS ACQUIRED.
+func (m *Manager) runGCIndexReportsNoLock(ctx context.Context) ([]string, error) {
+	return m.externalIndexStore.GCIndexReports(ctx, time.Now(), postgres.WithGCThrottle(m.gcThrottle))
 }
 
 // StopGC ends periodic garbage collection.

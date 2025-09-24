@@ -1,5 +1,5 @@
 import React, { CSSProperties, ReactElement } from 'react';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import RolesForResourceAccess from './RolesForResourceAccess';
 

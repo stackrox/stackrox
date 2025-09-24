@@ -2,7 +2,7 @@
  * Application route paths constants.
  */
 
-import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
+import { rbacConfigTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { ResourceName } from 'types/roleResources';

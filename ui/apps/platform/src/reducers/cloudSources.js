@@ -1,6 +1,8 @@
 import isEqual from 'lodash/isEqual';
+
 import { combineReducers } from 'redux';
-import { createFetchingActions, createFetchingActionTypes } from '../utils/fetchingReduxRoutines';
+
+import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 
 export const types = {
     FETCH_CLOUD_SOURCES: createFetchingActionTypes('cloudSources/FETCH_CLOUD_SOURCES'),

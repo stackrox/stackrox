@@ -1,6 +1,17 @@
-/* globals module require */
+/* globals __dirname module require */
 
+const fs = require('node:fs');
 const path = require('node:path');
+
+// Adapted from getSrcAliases in vite.config.js file.
+const srcPath = path.resolve(__dirname, '..', 'src'); // src is sibling of eslint-plugins folder
+const srcSubfolders = fs
+    .readdirSync(srcPath, { withFileTypes: true })
+    .filter((dirent) => {
+        // Avoid hidden directories, like `.DS_Store`
+        return dirent.isDirectory() && !dirent.name.startsWith('.');
+    })
+    .map(({ name }) => name);
 
 // Limited rules have exceptions via ignores property.
 // When ESLint plugin for Visual Studio Code has support for suppressions, they might supersede limited rules.
@@ -54,33 +65,6 @@ const rules = {
     // However, we can write forbid instead of disallow as the verb in description and message.
 
     // TODO move rule to pluginGeneric after all errors have been fixed.
-    'no-inline-type-imports': {
-        // Although @typescript-eslint/consistent-type-imports has options:
-        // fixStyle: 'separate-type-imports'
-        // fixStyle: 'inline-type-imports'
-        // it not (at the moment) have a similar option to enforce only separate type imports.
-        meta: {
-            type: 'problem',
-            docs: {
-                description: 'Replace inline type import with separate type import statement',
-            },
-            schema: [],
-        },
-        create(context) {
-            return {
-                ImportSpecifier(node) {
-                    if (node.importKind === 'type') {
-                        context.report({
-                            node,
-                            message:
-                                'Replace inline type import with separate type import statement',
-                        });
-                    }
-                },
-            };
-        },
-    },
-    // TODO move rule to pluginGeneric after all errors have been fixed.
     'no-qualified-name-react': {
         // React.Whatever is possible with default import.
         // For consistency and as prerequisite to replace default import with JSX transform.
@@ -100,6 +84,52 @@ const rules = {
                             node,
                             message: `Replace React qualified name with named import: ${node.right.name}`,
                         });
+                    }
+                },
+            };
+        },
+    },
+    'no-relative-path-to-src-in-import': {
+        // Prerequisite so import statements from other containers can have consistent order.
+        // By the way, absence of src in path is magic in project configuration.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace relative path to subfolder of src with path from subfolder',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                Literal(node) {
+                    if (typeof node.value === 'string') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].type === 'ImportDeclaration'
+                        ) {
+                            // Calculate slashes in filename after base to prevent false positive
+                            // for relative path to subfolder like Containers or hooks within a container folder.
+                            const baseSuffix = 'ui/apps/platform/';
+                            const indexAtStartOfSuffix = context.filename.indexOf(baseSuffix);
+                            if (indexAtStartOfSuffix >= 0) {
+                                const indexAfterBase = indexAtStartOfSuffix + baseSuffix.length;
+                                const filenameAfterBase = context.filename.slice(indexAfterBase);
+                                const depth = [...filenameAfterBase.matchAll(/\//g)].length;
+                                const relativePrefix = depth === 0 ? './' : '../'.repeat(depth - 1);
+                                if (
+                                    srcSubfolders.some((srcSubfolder) =>
+                                        node.value.startsWith(`${relativePrefix}${srcSubfolder}/`)
+                                    )
+                                ) {
+                                    context.report({
+                                        node,
+                                        message:
+                                            'Replace relative path to subfolder of src with path from subfolder',
+                                    });
+                                }
+                            }
+                        }
                     }
                 },
             };

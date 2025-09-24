@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-import PrevPaginationButton from '.';
 import PaginationInput from '../PaginationInput';
+import PrevPaginationButton from '.';
 
 const MockPagination = ({ defaultPage = 1 }) => {
     const [currentPage, setPage] = useState(defaultPage);

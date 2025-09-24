@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     AlertActionCloseButton,
@@ -21,10 +22,10 @@ import { complianceEnhancedSchedulesPath } from 'routePaths';
 import useAlert from 'hooks/useAlert';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import {
-    ComplianceScanConfigurationStatus,
     runComplianceReport,
     runComplianceScanConfiguration,
 } from 'services/ComplianceScanConfigurationService';
+import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -51,7 +52,7 @@ function ViewScanConfigDetail({
     scanConfig,
     isLoading,
     error = null,
-}: ViewScanConfigDetailProps): React.ReactElement {
+}: ViewScanConfigDetailProps): ReactElement {
     const { scanConfigId } = useParams() as { scanConfigId: string };
     const { analyticsTrack } = useAnalytics();
 

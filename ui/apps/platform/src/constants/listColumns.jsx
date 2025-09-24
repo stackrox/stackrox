@@ -1,5 +1,5 @@
 import React from 'react';
-import { defaultHeaderClassName, defaultColumnClassName, wrapClassName } from 'Components/Table';
+import { defaultColumnClassName, defaultHeaderClassName, wrapClassName } from 'Components/Table';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import { getDateTime } from 'utils/dateUtils';

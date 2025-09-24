@@ -43,7 +43,7 @@ func (m *MockIndexerMetadataStore) EXPECT() *MockIndexerMetadataStoreMockRecorde
 }
 
 // GCManifests mocks base method.
-func (m *MockIndexerMetadataStore) GCManifests(ctx context.Context, expiration time.Time, opts ...postgres.GCManifestsOption) ([]string, error) {
+func (m *MockIndexerMetadataStore) GCManifests(ctx context.Context, expiration time.Time, opts ...postgres.ReindexGCOption) ([]string, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, expiration}
 	for _, a := range opts {

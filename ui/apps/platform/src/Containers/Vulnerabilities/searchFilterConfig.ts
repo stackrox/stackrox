@@ -15,6 +15,11 @@ import { nodeAttributes } from 'Components/CompoundSearchFilter/attributes/node'
 import { nodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/nodeCVE';
 import { nodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
 import { platformCVEAttributes } from 'Components/CompoundSearchFilter/attributes/platformCVE';
+import {
+    VirtualMachineComponentName,
+    VirtualMachineComponentVersion,
+    VirtualMachineCVEName,
+} from 'Components/CompoundSearchFilter/attributes/virtualMachine';
 
 export const nodeSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Node',
@@ -80,4 +85,16 @@ export const platformCVESearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'CVE',
     searchCategory: 'CLUSTER_VULNERABILITIES',
     attributes: platformCVEAttributes,
+};
+
+export const virtualMachineCVESearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'CVE',
+    searchCategory: 'SEARCH_UNSET', // doesn't matter since we don't have autocomplete for virtual machines
+    attributes: [VirtualMachineCVEName],
+};
+
+export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Component',
+    searchCategory: 'SEARCH_UNSET', // doesn't matter since we don't have autocomplete for virtual machines
+    attributes: [VirtualMachineComponentName, VirtualMachineComponentVersion],
 };
