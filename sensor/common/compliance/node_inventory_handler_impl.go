@@ -31,7 +31,7 @@ var (
 const (
 	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
 
-	goldenKey  = rhcc.RepositoryKey
+	goldenKey = rhcc.RepositoryKey
 )
 
 var (
