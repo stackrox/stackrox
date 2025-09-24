@@ -218,7 +218,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 		lastSeen                          timestamp.MicroTS
 		plopFeatEnabled                   bool
 		offlineEnrichmentFeatEnabled      bool
-		enrichedEndpointsProcesses        map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose
+		enrichedEndpointsProcesses        map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
 		expected                          struct {
 			resultNG   EnrichmentResult
 			resultPLOP EnrichmentResult
@@ -312,7 +312,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			epInActiveEndpoints:               nil,
 			plopFeatEnabled:                   true,
 			offlineEnrichmentFeatEnabled:      true,
-			enrichedEndpointsProcesses:        make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose),
+			enrichedEndpointsProcesses:        make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult
@@ -336,7 +336,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			epInActiveEndpoints:               nil,
 			plopFeatEnabled:                   false,
 			offlineEnrichmentFeatEnabled:      true,
-			enrichedEndpointsProcesses:        make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose),
+			enrichedEndpointsProcesses:        make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult
@@ -360,7 +360,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			epInActiveEndpoints:               nil,
 			plopFeatEnabled:                   true,
 			offlineEnrichmentFeatEnabled:      true,
-			enrichedEndpointsProcesses:        make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose),
+			enrichedEndpointsProcesses:        make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult
@@ -393,7 +393,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			plopFeatEnabled:              true,
 			offlineEnrichmentFeatEnabled: true,
 			lastSeen:                     timestamp.InfiniteFuture, // required for SuccessActive result
-			enrichedEndpointsProcesses:   make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose),
+			enrichedEndpointsProcesses:   make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult
@@ -426,7 +426,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			plopFeatEnabled:              true,
 			offlineEnrichmentFeatEnabled: true,
 			lastSeen:                     now - 10, // message being 10units old should trigger `EnrichmentReasonEpDuplicate`
-			enrichedEndpointsProcesses: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose{
+			enrichedEndpointsProcesses: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				containerEndpointIndicator1: {
 					ProcessListening: nil,
 					LastSeen:         now - 1, // existing state in memory must "be younger" than lastSeen
@@ -464,7 +464,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			plopFeatEnabled:              true,
 			offlineEnrichmentFeatEnabled: false,
 			lastSeen:                     timestamp.InfiniteFuture,
-			enrichedEndpointsProcesses:   make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose),
+			enrichedEndpointsProcesses:   make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult

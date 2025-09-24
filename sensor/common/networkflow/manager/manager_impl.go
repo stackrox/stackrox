@@ -479,13 +479,13 @@ func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListening
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 	enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS,
-	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 ) {
 	now := timestamp.Now()
 	allHostConns := m.getAllHostConnections()
 
 	enrichedConnections = make(map[indicator.NetworkConn]timestamp.MicroTS)
-	enrichedEndpointsProcesses = make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose)
+	enrichedEndpointsProcesses = make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 	for _, hostConns := range allHostConns {
 		m.enrichHostConnections(now, hostConns, enrichedConnections)
 		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpointsProcesses)

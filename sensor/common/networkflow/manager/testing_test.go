@@ -474,7 +474,7 @@ func (ea *enrichmentAssertion) assertEndpointEnrichment(
 	actualResultNG, actualResultPLOP EnrichmentResult,
 	actualReasonNG, actualReasonPLOP EnrichmentReasonEp,
 	actualAction PostEnrichmentAction,
-	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	expected struct {
 		resultNG   EnrichmentResult
 		resultPLOP EnrichmentResult

@@ -21,7 +21,7 @@ func (m *networkFlowManager) executeEndpointAction(
 	ep *containerEndpoint,
 	status *connStatus,
 	hostConns *hostConnections,
-	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	now timestamp.MicroTS,
 ) {
 	switch action {
@@ -48,7 +48,7 @@ func (m *networkFlowManager) executeEndpointAction(
 }
 
 func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS, hostConns *hostConnections,
-	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose) {
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 	concurrency.WithLock(&hostConns.mutex, func() {
 		flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
 		flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "endpoints").Add(float64(len(hostConns.endpoints)))
@@ -72,7 +72,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	now timestamp.MicroTS,
 	ep *containerEndpoint,
 	status *connStatus,
-	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	lastUpdate timestamp.MicroTS,
 ) (resultNG, resultPLOP EnrichmentResult, reasonNG, reasonPLOP EnrichmentReasonEp) {
 	isFresh := status.isFresh(now)
@@ -100,7 +100,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	}
 
 	container := containerResult.Container
-	processIndicator := &indicator.ProcessListeningWithClose{
+	processIndicator := &indicator.ProcessListeningWithTimestamp{
 		ProcessListening: nil,
 		LastSeen:         status.lastSeen,
 	}
@@ -171,7 +171,7 @@ func (m *networkFlowManager) enrichPLOP(
 // It returns error when endpoint is not found in active endpoints.
 func deactivateEndpointNoLock(ep *containerEndpoint,
 	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
-	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithClose,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	now timestamp.MicroTS) bool {
 	activeEp, found := activeEndpoints[*ep]
 	if !found {
@@ -181,7 +181,7 @@ func deactivateEndpointNoLock(ep *containerEndpoint,
 	// (1) setting last-seen - even if not present in enrichedEndpointsProcesses and
 	// (2) removing from active endpoints.
 	if value := enrichedEndpointsProcesses[activeEp.ContainerEndpoint]; value == nil {
-		enrichedEndpointsProcesses[activeEp.ContainerEndpoint] = &indicator.ProcessListeningWithClose{
+		enrichedEndpointsProcesses[activeEp.ContainerEndpoint] = &indicator.ProcessListeningWithTimestamp{
 			ProcessListening: nil,
 			LastSeen:         now,
 		}
