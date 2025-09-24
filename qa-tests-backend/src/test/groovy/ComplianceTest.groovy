@@ -1151,14 +1151,18 @@ class ComplianceTest extends BaseSpecification {
                 complianceRun = recentRuns.find { it.id == complianceRun.id }
             }
 
+            assert complianceRun.state == ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED
+
             // Check whether there were errors
             ComplianceRunResults results =
-                    ComplianceService.getComplianceRunResult(NIST_800_190_ID, clusterId).results
+                    ComplianceService.getComplianceRunResult(NIST_800_190_ID, clusterId, complianceRun.id).results
             assert results != null
             Compliance.ComplianceRunMetadata metadata = results.runMetadata
-            assert metadata.clusterId == clusterId
-            assert metadata.runId == complianceRun.id
-            assert metadata.standardId == NIST_800_190_ID
+            verifyAll(metadata) {
+                clusterId == clusterId
+                runId == complianceRun.id
+                standardId == NIST_800_190_ID
+            }
 
             numErrors += errorsCount(results.clusterResults.controlResultsMap.values())
             for (def deploymentResults : results.deploymentResultsMap.values()) {
