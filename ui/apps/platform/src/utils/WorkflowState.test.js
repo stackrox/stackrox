@@ -1,15 +1,15 @@
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
-import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
+import { pagingParams, searchParams, sortParams } from 'constants/searchParams';
 import {
     entityId1,
     entityId2,
     entityId3,
     getEntityState,
     getListState,
+    pagingParamValues,
     searchParamValues,
     sortParamValues,
-    pagingParamValues,
 } from 'test-utils/workflowUtils';
 import {
     getVulnerabilityManagementEntityTypesByRelationship as getEntityTypesByRelationship,

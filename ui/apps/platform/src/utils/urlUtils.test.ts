@@ -1,4 +1,4 @@
-import { isValidURL, isValidCidrBlock, safeGeneratePath } from './urlUtils';
+import { isValidCidrBlock, isValidURL, safeGeneratePath } from './urlUtils';
 
 describe('urlUtils', () => {
     describe('isValidURL', () => {
