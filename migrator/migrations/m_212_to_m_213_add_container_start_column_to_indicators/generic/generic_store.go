@@ -1,4 +1,4 @@
-package postgres
+package generic
 
 import (
 	"context"
@@ -7,17 +7,16 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pkgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -35,6 +34,7 @@ const (
 
 var (
 	errInvalidOperation = errors.New("invalid operation, function not set up")
+	log                 = logging.LoggerForModule()
 )
 
 // Deleter is an interface that allow deletions of multiple identifiers
@@ -83,7 +83,6 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 
 // genericStore implements subset of Store interface for resources with single ID.
 type genericStore[T any, PT ClonedUnmarshaler[T]] struct {
-	mutex                            sync.RWMutex
 	db                               postgres.DB
 	schema                           *walker.Schema
 	pkGetter                         primaryKeyGetter[T, PT]
@@ -137,52 +136,13 @@ func NewGenericStore[T any, PT ClonedUnmarshaler[T]](
 	}
 }
 
-// NewGloballyScopedGenericStore returns new subStore implementation for given resource.
-// subStore implements subset of Store operations.
-func NewGloballyScopedGenericStore[T any, PT ClonedUnmarshaler[T]](
-	db postgres.DB,
-	schema *walker.Schema,
-	pkGetter primaryKeyGetter[T, PT],
-	insertInto inserter[T, PT],
-	copyFromObj copier[T, PT],
-	setAcquireDBConnDuration durationTimeSetter,
-	setPostgresOperationDurationTime durationTimeSetter,
-	targetResource permissions.ResourceMetadata,
-	defaultSort *v1.QuerySortOption,
-	transformOptionsMap search.OptionsMap,
-) Store[T, PT] {
-	return &genericStore[T, PT]{
-		db:          db,
-		schema:      schema,
-		pkGetter:    pkGetter,
-		insertInto:  insertInto,
-		copyFromObj: copyFromObj,
-		setAcquireDBConnDuration: func() durationTimeSetter {
-			if setAcquireDBConnDuration == nil {
-				return doNothingDurationTimeSetter
-			}
-			return setAcquireDBConnDuration
-		}(),
-		setPostgresOperationDurationTime: func() durationTimeSetter {
-			if setPostgresOperationDurationTime == nil {
-				return doNothingDurationTimeSetter
-			}
-			return setPostgresOperationDurationTime
-		}(),
-		upsertAllowed:       globallyScopedUpsertChecker[T, PT](targetResource),
-		targetResource:      targetResource,
-		defaultSort:         defaultSort,
-		transformOptionsMap: transformOptionsMap,
-	}
-}
-
 // Exists tells whether the ID exists in the store.
 func (s *genericStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Exists)
 
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 
-	count, err := RunCountRequestForSchema(ctx, s.schema, q, s.db)
+	count, err := pkgSearch.RunCountRequestForSchema(ctx, s.schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -192,7 +152,7 @@ func (s *genericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 func (s *genericStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count)
 
-	return RunCountRequestForSchema(ctx, s.schema, q, s.db)
+	return pkgSearch.RunCountRequestForSchema(ctx, s.schema, q, s.db)
 }
 
 func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
@@ -200,12 +160,12 @@ func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search
 
 	q = s.applyQueryDefaults(q)
 
-	return RunSearchRequestForSchema(ctx, s.schema, q, s.db)
+	return pkgSearch.RunSearchRequestForSchema(ctx, s.schema, q, s.db)
 }
 
 func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
 	query = s.applyQueryDefaults(query)
-	return RunCursorQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
+	return pkgSearch.RunCursorQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
@@ -228,7 +188,7 @@ func (s *genericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 
-	data, err := RunGetQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	data, err := pkgSearch.RunGetQueryForSchema[T, PT](ctx, s.schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
@@ -245,7 +205,7 @@ func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query,
 
 	query = s.applyQueryDefaults(query)
 
-	return RunQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
+	return pkgSearch.RunQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
 }
 
 // GetByQuery returns the objects from the store matching the query.
@@ -256,7 +216,7 @@ func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 	query = s.applyQueryDefaults(query)
 
 	rows := make([]*T, 0, paginated.GetLimit(query.GetPagination().GetLimit(), batchAfter))
-	err := RunQueryForSchemaFn(ctx, s.schema, query, s.db, func(obj PT) error {
+	err := pkgSearch.RunQueryForSchemaFn(ctx, s.schema, query, s.db, func(obj PT) error {
 		rows = append(rows, obj)
 		return nil
 	})
@@ -267,7 +227,7 @@ func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 }
 
 func (s *genericStore[T, PT]) fetchIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
-	result, err := RunSearchRequestForSchema(ctx, s.schema, query, s.db)
+	result, err := pkgSearch.RunSearchRequestForSchema(ctx, s.schema, query, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +263,7 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
 
 	resultsByID := make(map[string]PT, len(identifiers))
-	err := RunQueryForSchemaFn(ctx, s.schema, q, s.db, func(msg PT) error {
+	err := pkgSearch.RunQueryForSchemaFn(ctx, s.schema, q, s.db, func(msg PT) error {
 		resultsByID[s.pkGetter(msg)] = msg
 		return nil
 	})
@@ -329,21 +289,21 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
-	return RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
+	return pkgSearch.RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
 }
 
 // DeleteByQueryWithIDs removes the objects from the store based on the passed query returning deleted IDs.
 func (s *genericStore[T, PT]) DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
-	return RunDeleteRequestReturningIDsForSchema(ctx, s.schema, query, s.db)
+	return pkgSearch.RunDeleteRequestReturningIDsForSchema(ctx, s.schema, query, s.db)
 }
 
 // Delete removes the object associated to the specified ID from the store.
 func (s *genericStore[T, PT]) Delete(ctx context.Context, id string) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
-	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
+	return pkgSearch.RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
 }
 
 // DeleteMany removes the objects associated to the specified IDs from the store within a transaction.
@@ -405,17 +365,10 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	}
 
 	return pgutils.Retry(ctx, func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
+		// Skipping locks as we do in the real store because migration is controlling the batches.
 		if len(objs) < batchAfter {
-			s.mutex.RLock()
-			defer s.mutex.RUnlock()
-
 			return s.upsert(ctx, objs...)
 		}
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
 
 		if s.copyFromObj == nil {
 			return s.upsert(ctx, objs...)
@@ -423,19 +376,6 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 
 		return s.copyFrom(ctx, objs...)
 	})
-}
-
-func GetDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
-	if sortOption == "" {
-		return nil
-	}
-
-	defaultSortOption := &v1.QuerySortOption{
-		Field:    sortOption,
-		Reversed: reversed,
-	}
-
-	return defaultSortOption
 }
 
 // region Helper functions
@@ -519,7 +459,7 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 
 		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
-		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
+		if err := pkgSearch.RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
 			if !continueOnError {
 				return errors.Wrap(err, "unable to delete the records")
 			}
@@ -539,17 +479,6 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 	log.Debugf("successfully deleted %d of %d records", deletedCount, numberToDelete)
 
 	return nil
-}
-
-// globallyScopedUpsertChecker returns upsertChecker for globally scoped objects
-func globallyScopedUpsertChecker[T any, PT ClonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
-	return func(ctx context.Context, objs ...PT) error {
-		scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-		if !scopeChecker.IsAllowed() {
-			return sac.ErrResourceAccessDenied
-		}
-		return nil
-	}
 }
 
 func (s *genericStore[T, PT]) applyQueryDefaults(q *v1.Query) *v1.Query {
