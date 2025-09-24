@@ -1,41 +1,79 @@
 import React from 'react';
-import { Title, Divider, Flex } from '@patternfly/react-core';
+import { groupBy } from 'lodash';
+import { Title, Divider, Flex, Text } from '@patternfly/react-core';
+
+import { policyCriteriaCategories, type PolicyCriteriaCategoryKey } from 'messages/common';
 
 import PolicyCriteriaCategory from './PolicyCriteriaCategory';
+import { Descriptor } from './policyCriteriaDescriptors';
 
-function getKeysByCategory(keys) {
-    const categories = {};
-    keys.forEach((key) => {
-        const { category } = key;
-        if (categories[category]) {
-            categories[category].push(key);
-        } else {
-            categories[category] = [key];
-        }
+type CriteriaDomain =
+    | 'Image criteria'
+    | 'Workload criteria'
+    | 'Deployment events'
+    | 'Audit log events';
+
+const criteriaDomains: Record<PolicyCriteriaCategoryKey, CriteriaDomain> = {
+    [policyCriteriaCategories.IMAGE_REGISTRY]: 'Image criteria',
+    [policyCriteriaCategories.IMAGE_CONTENTS]: 'Image criteria',
+    [policyCriteriaCategories.CONTAINER_CONFIGURATION]: 'Workload criteria',
+    [policyCriteriaCategories.DEPLOYMENT_METADATA]: 'Workload criteria',
+    [policyCriteriaCategories.STORAGE]: 'Workload criteria',
+    [policyCriteriaCategories.NETWORKING]: 'Workload criteria',
+    [policyCriteriaCategories.DEPLOYMENT_ACCESS_CONTROL]: 'Workload criteria',
+    [policyCriteriaCategories.PROCESS_ACTIVITY]: 'Deployment events',
+    [policyCriteriaCategories.BASELINE_DEVIATION]: 'Deployment events',
+    [policyCriteriaCategories.USER_ISSUED_CONTAINER_COMMANDS]: 'Deployment events',
+    [policyCriteriaCategories.AUDIT_LOG]: 'Audit log events',
+} as const;
+
+function getCriteriaDomains(
+    keys: Descriptor[]
+): Partial<Record<CriteriaDomain, Record<PolicyCriteriaCategoryKey, Descriptor[]>>> {
+    const keysByDomain = groupBy(keys, ({ category }) => criteriaDomains[category]);
+    const domains = {};
+
+    Object.entries(keysByDomain).forEach(([domain, keys]) => {
+        domains[domain] = groupBy(keys, 'category');
     });
-    return categories;
+
+    return domains;
 }
 
-function PolicyCriteriaKeys({ keys }) {
-    const [categories, setCategories] = React.useState(getKeysByCategory(keys));
+type PolicyCriteriaKeysProps = {
+    keys: Descriptor[];
+};
 
-    React.useEffect(() => {
-        setCategories(getKeysByCategory(keys));
-    }, [keys]);
+function PolicyCriteriaKeys({ keys }: PolicyCriteriaKeysProps) {
+    const domains = getCriteriaDomains(keys);
 
     return (
-        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             <Title headingLevel="h2">Drag out policy fields</Title>
-            <Divider component="div" className="pf-v5-u-mb-sm pf-v5-u-mt-md" />
-            {Object.keys(categories).map((category, idx) => (
-                <div key={category}>
-                    <PolicyCriteriaCategory
-                        category={category}
-                        keys={categories[category]}
-                        isOpenDefault={idx === 0}
-                    />
-                    <Divider component="div" className="pf-v5-u-mb-sm pf-v5-u-mt-sm" />
-                </div>
+            <Divider component="div" />
+            {Object.entries(domains).map(([domain, categories]) => (
+                <Flex
+                    key={domain}
+                    direction={{ default: 'column' }}
+                    spaceItems={{ default: 'spaceItemsXs' }}
+                >
+                    {/* If there is only one category, don't show an extra level domain */}
+                    {Object.keys(categories).length > 1 && <Text component="h3">{domain}</Text>}
+                    <Flex
+                        key={domain}
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsNone' }}
+                    >
+                        {Object.entries(categories).map(([category, keys]) => (
+                            <PolicyCriteriaCategory
+                                key={category}
+                                category={category}
+                                keys={keys}
+                                isOpenDefault={false}
+                            />
+                        ))}
+                    </Flex>
+                </Flex>
             ))}
         </Flex>
     );
