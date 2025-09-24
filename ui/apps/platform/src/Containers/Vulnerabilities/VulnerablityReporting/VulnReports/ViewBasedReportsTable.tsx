@@ -49,13 +49,12 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                         <Th width={15}>Request name</Th>
                         <Th>Requester</Th>
                         <Th>Job status</Th>
-                        <Th>Expiration</Th>
-                        <Th sort={getSortParams('Report Completed Time')}>Completed</Th>
+                        <Th sort={getSortParams('Report Completion Time')}>Completed</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={5}
+                    colSpan={4}
                     emptyProps={{
                         title: 'No view-based reports found',
                         message: '', // Figure out what to put as the call-to-action
@@ -93,8 +92,6 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                                                 onDownload={onDownload(snapshot)}
                                             />
                                         </Td>
-                                        {/* @TODO: Show the difference between the retention period for view-based downloadable reports and the date when this was created */}
-                                        <Td dataLabel="Expiration">7 days</Td>
                                         <Td dataLabel="Completed">
                                             {reportStatus.completedAt
                                                 ? getDateTime(reportStatus.completedAt)
