@@ -27,6 +27,7 @@ type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error)
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessIndicator) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessIndicator) error) error
 
 	GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)
 	GetProcessIndicators(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, bool, error)
@@ -34,8 +35,6 @@ type DataStore interface {
 	RemoveProcessIndicatorsByPod(ctx context.Context, id string) error
 	RemoveProcessIndicators(ctx context.Context, ids []string) error
 	PruneProcessIndicators(ctx context.Context, ids []string) (int, error)
-
-	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error
 
 	// Stop signals all goroutines associated with this object to terminate.
 	Stop()
