@@ -84,7 +84,7 @@ type FindingGenerator[F Finding] func(context.Context, MetricDescriptors) iter.S
 
 type gatherer struct {
 	http.Handler
-	lastGather time.Time
+	lastGather atomic.Value // time.Time
 	running    atomic.Bool
 	registry   metrics.CustomRegistry
 }
@@ -268,13 +268,13 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	}
 	defer gatherer.running.Store(false)
 
-	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
+	if cfg.period == 0 || time.Since(gatherer.lastGather.Load().(time.Time)) < cfg.period {
 		return
 	}
 	if err := tracker.track(ctx, gatherer.registry, cfg.metrics); err != nil {
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
-	gatherer.lastGather = time.Now()
+	gatherer.lastGather.Store(time.Now())
 }
 
 // getGatherer returns the existing or a new gatherer for the given userID.
@@ -290,6 +290,7 @@ func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configurati
 		gr = &gatherer{
 			registry: r,
 		}
+		gr.lastGather.Store(time.Time{})
 		gr.running.Store(true)
 		tracker.gatherers.Store(userID, gr)
 		for metricName := range cfg.metrics {
@@ -312,13 +313,15 @@ func (tracker *TrackerBase[Finding]) cleanupInactiveGatherers() {
 	tracker.cleanupWG.Add(1)
 	go func() {
 		defer tracker.cleanupWG.Done()
-		tracker.gatherers.Range(func(userID, g any) bool {
-			if g, ok := g.(*gatherer); ok && !g.running.Load() &&
-				time.Since(g.lastGather) >= inactiveGathererTTL &&
+		tracker.gatherers.Range(func(userID, gv any) bool {
+			g := gv.(*gatherer)
+			last := g.lastGather.Load().(time.Time)
+			if !g.running.Load() &&
+				time.Since(last) >= inactiveGathererTTL &&
 				// Do not delete a just created gatherer in test.
 				// Not in test the lastGather should never be zero for a
 				// non-running gatherer.
-				!g.lastGather.IsZero() {
+				!last.IsZero() {
 				metrics.DeleteCustomRegistry(userID.(string))
 				tracker.gatherers.Delete(userID)
 			}
