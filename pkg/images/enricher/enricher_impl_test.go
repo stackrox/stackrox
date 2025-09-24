@@ -3,17 +3,12 @@ package enricher
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/integration/mocks"
 	imgTypes "github.com/stackrox/rox/pkg/images/types"
@@ -23,48 +18,17 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/retry"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	scannertypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
-)
-
-var (
-	// emptyCtx used within all tests.
-	emptyCtx = context.Background()
-
-	// errBroken is a generic error.
-	errBroken = errors.New("broken")
 )
 
 func emptyImageGetter(_ context.Context, _ string) (*storage.Image, bool, error) {
 	return nil, false, nil
-}
-
-func emptySignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
-	return nil, nil
-}
-
-func defaultRedHatSignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
-	return []*storage.SignatureIntegration{signatures.DefaultRedHatSignatureIntegration}, nil
-}
-
-func twoSignaturesIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
-	return []*storage.SignatureIntegration{
-		{
-			Id:   "id-1",
-			Name: "name-1",
-		},
-		{
-			Id:   "id-2",
-			Name: "name-2",
-		},
-	}, nil
 }
 
 func imageGetterFromImage(image *storage.Image) ImageGetter {
@@ -79,168 +43,12 @@ func imageGetterPanicOnCall(_ context.Context, _ string) (*storage.Image, bool, 
 
 var _ signatures.SignatureFetcher = (*fakeSigFetcher)(nil)
 
-type fakeSigFetcher struct {
-	sigs      []*storage.Signature
-	fail      bool
-	retryable bool
-}
-
-func (f *fakeSigFetcher) FetchSignatures(_ context.Context, _ *storage.Image, _ string,
-	_ types.Registry) ([]*storage.Signature, error) {
-	if f.fail {
-		err := errors.New("some error")
-		if f.retryable {
-			err = retry.MakeRetryable(err)
-		}
-		return nil, err
-	}
-	return f.sigs, nil
-}
-
 var _ scannertypes.Scanner = (*fakeScanner)(nil)
-
-type fakeScanner struct {
-	requestedScan bool
-	notMatch      bool
-}
-
-func (*fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
-	return semaphore.NewWeighted(1)
-}
-
-func (f *fakeScanner) GetScan(_ *storage.Image) (*storage.ImageScan, error) {
-	f.requestedScan = true
-	return &storage.ImageScan{
-		Components: []*storage.EmbeddedImageScanComponent{
-			{
-				Vulns: []*storage.EmbeddedVulnerability{
-					{
-						Cve: "CVE-2020-1234",
-					},
-				},
-			},
-		},
-	}, nil
-}
-
-func (f *fakeScanner) Match(*storage.ImageName) bool {
-	return !f.notMatch
-}
-
-func (*fakeScanner) Test() error {
-	return nil
-}
-
-func (*fakeScanner) Type() string {
-	return "type"
-}
-
-func (*fakeScanner) Name() string {
-	return "name"
-}
-
-func (*fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	return &v1.VulnDefinitionsInfo{}, nil
-}
 
 var (
 	_ scannertypes.ImageScannerWithDataSource = (*fakeRegistryScanner)(nil)
 	_ types.ImageRegistry                     = (*fakeRegistryScanner)(nil)
 )
-
-type fakeRegistryScanner struct {
-	scanner           *fakeScanner
-	requestedMetadata bool
-	notMatch          bool
-}
-
-type opts struct {
-	requestedScan     bool
-	requestedMetadata bool
-	notMatch          bool
-}
-
-func newFakeRegistryScanner(opts opts) *fakeRegistryScanner {
-	return &fakeRegistryScanner{
-		scanner: &fakeScanner{
-			requestedScan: opts.requestedScan,
-			notMatch:      opts.notMatch,
-		},
-		requestedMetadata: opts.requestedMetadata,
-		notMatch:          opts.notMatch,
-	}
-}
-
-func (f *fakeRegistryScanner) Metadata(*storage.Image) (*storage.ImageMetadata, error) {
-	f.requestedMetadata = true
-	return &storage.ImageMetadata{}, nil
-}
-
-func (f *fakeRegistryScanner) Config(_ context.Context) *types.Config {
-	return nil
-}
-
-func (f *fakeRegistryScanner) Match(*storage.ImageName) bool {
-	return !f.notMatch
-}
-
-func (*fakeRegistryScanner) Test() error {
-	return nil
-}
-
-func (*fakeRegistryScanner) Type() string {
-	return "type"
-}
-
-func (*fakeRegistryScanner) Name() string {
-	return "name"
-}
-
-func (*fakeRegistryScanner) HTTPClient() *http.Client {
-	return nil
-}
-
-func (f *fakeRegistryScanner) GetScanner() scannertypes.Scanner {
-	return f.scanner
-}
-
-func (f *fakeRegistryScanner) DataSource() *storage.DataSource {
-	return &storage.DataSource{
-		Id:   "id",
-		Name: f.Name(),
-	}
-}
-
-func (f *fakeRegistryScanner) Source() *storage.ImageIntegration {
-	return &storage.ImageIntegration{
-		Id:   "id",
-		Name: f.Name(),
-	}
-}
-
-type fakeCVESuppressor struct{}
-
-func (f *fakeCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) {
-	for _, c := range image.GetScan().GetComponents() {
-		for _, v := range c.GetVulns() {
-			if v.Cve == "CVE-2020-1234" {
-				v.Suppressed = true
-			}
-		}
-	}
-}
-
-type fakeCVESuppressorV2 struct{}
-
-func (f *fakeCVESuppressorV2) EnrichImageWithSuppressedCVEs(image *storage.Image) {
-	for _, c := range image.GetScan().GetComponents() {
-		for _, v := range c.GetVulns() {
-			if v.Cve == "CVE-2020-1234" {
-				v.State = storage.VulnerabilityState_DEFERRED
-			}
-		}
-	}
-}
 
 func TestEnricherFlow(t *testing.T) {
 	cases := []struct {
@@ -887,186 +695,6 @@ func TestFillScanStats(t *testing.T) {
 		})
 	}
 }
-func TestFillScanStatsV2(t *testing.T) {
-	cases := []struct {
-		image                            *storage.ImageV2
-		expectedCveCount                 int32
-		expectedUnknownCveCount          int32
-		expectedFixableUnknownCveCount   int32
-		expectedCriticalCveCount         int32
-		expectedFixableCriticalCveCount  int32
-		expectedImportantCveCount        int32
-		expectedFixableImportantCveCount int32
-		expectedModerateCveCount         int32
-		expectedFixableModerateCveCount  int32
-		expectedLowCveCount              int32
-		expectedFixableLowCveCount       int32
-		expectedFixableCveCount          int32
-	}{
-		{
-			image: &storage.ImageV2{
-				Id: "image-1",
-				Scan: &storage.ImageScan{
-					Components: []*storage.EmbeddedImageScanComponent{
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve:      "cve-1",
-									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedCveCount:                 1,
-			expectedUnknownCveCount:          0,
-			expectedFixableUnknownCveCount:   0,
-			expectedCriticalCveCount:         1,
-			expectedFixableCriticalCveCount:  1,
-			expectedImportantCveCount:        0,
-			expectedFixableImportantCveCount: 0,
-			expectedModerateCveCount:         0,
-			expectedFixableModerateCveCount:  0,
-			expectedLowCveCount:              0,
-			expectedFixableLowCveCount:       0,
-			expectedFixableCveCount:          1,
-		},
-		{
-			image: &storage.ImageV2{
-				Id: "image-1",
-				Scan: &storage.ImageScan{
-					Components: []*storage.EmbeddedImageScanComponent{
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-2",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-									Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedCveCount:                 2,
-			expectedUnknownCveCount:          1,
-			expectedFixableUnknownCveCount:   1,
-			expectedCriticalCveCount:         1,
-			expectedFixableCriticalCveCount:  1,
-			expectedImportantCveCount:        0,
-			expectedFixableImportantCveCount: 0,
-			expectedModerateCveCount:         0,
-			expectedFixableModerateCveCount:  0,
-			expectedLowCveCount:              0,
-			expectedFixableLowCveCount:       0,
-			expectedFixableCveCount:          2,
-		},
-		{
-			image: &storage.ImageV2{
-				Id: "image-1",
-				Scan: &storage.ImageScan{
-					Components: []*storage.EmbeddedImageScanComponent{
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve:      "cve-1",
-									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve:      "cve-2",
-									Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve:      "cve-3",
-									Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve:      "cve-4",
-									Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve:      "cve-5",
-									Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedCveCount:                 5,
-			expectedUnknownCveCount:          1,
-			expectedFixableUnknownCveCount:   0,
-			expectedCriticalCveCount:         1,
-			expectedFixableCriticalCveCount:  0,
-			expectedImportantCveCount:        1,
-			expectedFixableImportantCveCount: 0,
-			expectedModerateCveCount:         1,
-			expectedFixableModerateCveCount:  0,
-			expectedLowCveCount:              1,
-			expectedFixableLowCveCount:       0,
-			expectedFixableCveCount:          0,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(t.Name(), func(t *testing.T) {
-			FillScanStatsV2(c.image)
-			assert.Equal(t, c.expectedCveCount, c.image.GetCveCount())
-			assert.Equal(t, c.expectedUnknownCveCount, c.image.GetUnknownCveCount())
-			assert.Equal(t, c.expectedFixableUnknownCveCount, c.image.GetFixableUnknownCveCount())
-			assert.Equal(t, c.expectedCriticalCveCount, c.image.GetCriticalCveCount())
-			assert.Equal(t, c.expectedFixableCriticalCveCount, c.image.GetFixableCriticalCveCount())
-			assert.Equal(t, c.expectedImportantCveCount, c.image.GetImportantCveCount())
-			assert.Equal(t, c.expectedFixableImportantCveCount, c.image.GetFixableImportantCveCount())
-			assert.Equal(t, c.expectedModerateCveCount, c.image.GetModerateCveCount())
-			assert.Equal(t, c.expectedFixableModerateCveCount, c.image.GetFixableModerateCveCount())
-			assert.Equal(t, c.expectedLowCveCount, c.image.GetLowCveCount())
-			assert.Equal(t, c.expectedFixableLowCveCount, c.image.GetFixableLowCveCount())
-			assert.Equal(t, c.expectedFixableCveCount, c.image.GetFixableCveCount())
-		})
-	}
-}
 
 func TestEnrichWithSignature_Success(t *testing.T) {
 	cases := map[string]struct {
@@ -1338,37 +966,6 @@ func TestEnrichWithSignatureVerificationData_Failure(t *testing.T) {
 		EnrichmentContext{FetchOpt: ForceRefetch}, img)
 	require.Error(t, err)
 	assert.False(t, updated)
-}
-func createSignature(sig, payload string) *storage.Signature {
-	return &storage.Signature{Signature: &storage.Signature_Cosign{
-		Cosign: &storage.CosignSignature{
-			RawSignature:     []byte(sig),
-			SignaturePayload: []byte(payload),
-		},
-	}}
-}
-
-func createSignatureVerificationResult(verifier string, status storage.ImageSignatureVerificationResult_Status,
-	verifiedImageNames ...string) *storage.ImageSignatureVerificationResult {
-	return &storage.ImageSignatureVerificationResult{
-		VerifierId:              verifier,
-		Status:                  status,
-		VerifiedImageReferences: verifiedImageNames,
-	}
-}
-
-func fakeSignatureIntegrationGetter(id string, fail bool) SignatureIntegrationGetter {
-	return func(ctx context.Context) ([]*storage.SignatureIntegration, error) {
-		if fail {
-			return nil, errors.New("fake error")
-		}
-		return []*storage.SignatureIntegration{
-			{
-				Id:   id,
-				Name: id,
-			},
-		}, nil
-	}
 }
 
 func TestDelegateEnrichImage(t *testing.T) {
@@ -1777,8 +1374,4 @@ func newEnricher(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) I
 		newCache(),
 		emptyImageGetter,
 		mockReporter, emptySignatureIntegrationGetter, nil)
-}
-
-func newCache() cache.ImageMetadata {
-	return cache.ImageMetadata(expiringcache.NewExpiringCache[string, *storage.ImageMetadata](1 * time.Minute))
 }

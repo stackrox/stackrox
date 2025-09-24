@@ -81,9 +81,8 @@ func (ds *datastoreImpl) DeleteCloudSource(ctx context.Context, id string) error
 		return errors.Wrapf(err, "failed to delete cloud source %q", id)
 	}
 
-	_, err := ds.discoveredClusterDS.DeleteDiscoveredClusters(discoveredClusterCtx,
+	return ds.discoveredClusterDS.DeleteDiscoveredClusters(discoveredClusterCtx,
 		searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.IntegrationID, id).ProtoQuery())
-	return err
 }
 
 func validateCloudSource(cloudSource *storage.CloudSource) error {

@@ -731,16 +731,10 @@ module.exports = [
         ignores: [
             'src/Components/**',
             'src/Containers/AccessControl/**',
-            'src/Containers/Administration/**',
-            'src/Containers/Audit/**',
             'src/Containers/Clusters/**',
-            'src/Containers/Collections/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ComplianceEnhanced/**',
-            'src/Containers/ConfigManagement/**',
-            'src/Containers/Dashboard/**',
             'src/Containers/Docs/**',
-            'src/Containers/ExceptionConfiguration/**',
             'src/Containers/Images/**',
             'src/Containers/Integrations/**',
             'src/Containers/Login/**',
@@ -772,6 +766,7 @@ module.exports = [
             '@typescript-eslint/consistent-type-imports': 'error',
             'limited/no-inline-type-imports': 'error',
             'limited/no-qualified-name-react': 'error',
+            'limited/no-relative-path-to-src-in-import': 'error',
         },
     },
     {

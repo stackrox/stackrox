@@ -1,10 +1,11 @@
 import static Services.getViolationsWithTimeout
 import static util.Helpers.withRetry
 
+import io.fabric8.kubernetes.api.model.Pod
 import orchestratormanager.OrchestratorTypes
 
-import io.fabric8.kubernetes.api.model.Pod
-
+import io.stackrox.annotations.Retry
+import io.stackrox.proto.internalapi.central.DevelopmentServiceOuterClass.ReconciliationStatsByClusterResponse.ReconciliationStatsForCluster
 import io.stackrox.proto.storage.AlertOuterClass
 
 import common.Constants
@@ -68,23 +69,51 @@ class ReconciliationTest extends BaseSpecification {
         if (MetadataService.isReleaseBuild()) {
             return
         }
-        def clusterId = ClusterService.getClusterId()
-        def reconciliationStatsForCluster = null
-        withRetry(30, 2) {
-            BaseService.useBasicAuth()
-            reconciliationStatsForCluster = DevelopmentService.
-                getReconciliationStatsByCluster().getStatsList().find { it.clusterId == clusterId }
-            assert reconciliationStatsForCluster
-            assert reconciliationStatsForCluster.getReconciliationDone()
-        }
-        log.info "Reconciliation stats: ${reconciliationStatsForCluster.deletedObjectsByTypeMap}"
+
+        def startTime = System.currentTimeMillis()
+        def reconciliationStatsForCluster = waitForReconciliationWithDeletions()
+        def elapsed = System.currentTimeMillis() - startTime
+
+        log.info "Final reconciliation stats after ${elapsed}ms: " +
+                "${reconciliationStatsForCluster.deletedObjectsByTypeMap}"
+
+        // Verify all expected resource types have minimum required deletions
         for (def entry: reconciliationStatsForCluster.getDeletedObjectsByTypeMap().entrySet()) {
             def expectedMinDeletions = EXPECTED_MIN_DELETIONS_BY_KEY.get(entry.getKey())
             assert expectedMinDeletions != null : "Please add object type " +
                 "${entry.getKey()} to the map of known reconciled resources in ReconciliationTest.groovy"
             assert entry.getValue() >= expectedMinDeletions: "Number of deletions too low for " +
-                    "object type ${entry.getKey()} (got ${entry.getValue()})"
+                    "object type ${entry.getKey()} (got ${entry.getValue()}, expected >= ${expectedMinDeletions})"
         }
+
+        // Additional verification: log missing types for debugging
+        def missingTypes = EXPECTED_MIN_DELETIONS_BY_KEY.keySet() -
+                reconciliationStatsForCluster.getDeletedObjectsByTypeMap().keySet()
+        if (!missingTypes.isEmpty()) {
+            log.warn "Missing deletion stats for resource types: ${missingTypes} (may not have existed to delete)"
+        }
+    }
+
+    @Retry(attempts = 30, delay = 5)
+    private ReconciliationStatsForCluster waitForReconciliationWithDeletions() {
+        BaseService.useBasicAuth()
+        def clusterId = ClusterService.getClusterId()
+        def reconciliationStatsForCluster = DevelopmentService.
+                getReconciliationStatsByCluster().getStatsList().find { it.clusterId == clusterId }
+
+        assert reconciliationStatsForCluster : "No reconciliation stats found for cluster ${clusterId}"
+        assert reconciliationStatsForCluster.getReconciliationDone() : "Reconciliation not marked as done"
+
+        def deletions = reconciliationStatsForCluster.getDeletedObjectsByTypeMap()
+        log.info "Reconciliation check: reconciliationDone=true, deletions=${deletions}"
+
+        // Wait for actual deletions to be detected, not just reconciliation completion
+        // This addresses the race condition where reconciliationDone=true but deletions haven't been detected yet
+        if (deletions.isEmpty() || deletions.values().every { it == 0 }) {
+            throw new AssertionError("Reconciliation done but no deletions detected yet")
+        }
+
+        return reconciliationStatsForCluster
     }
 
     @Tag("SensorBounce")

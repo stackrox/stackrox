@@ -1,19 +1,31 @@
 import { useMemo } from 'react';
+import { useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
 
+import useURLSearch from 'hooks/useURLSearch';
 import type { VulnerabilityState } from 'types/cve.proto';
+import { ALL_NAMESPACES_KEY } from 'ConsolePlugin/constants';
 import {
     getOverviewPagePath,
     getWorkloadEntityPagePath,
+    parseQuerySearchFilter,
 } from 'Containers/Vulnerabilities/utils/searchUtils';
 import type { WorkloadCveView } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
 
 const acsSecurityVulnerabilitiesBase = '/acs/security/vulnerabilities';
 
 export function useDefaultWorkloadCveViewContext(): WorkloadCveView {
-    return useMemo(
-        () => ({
+    const [activeNamespace] = useActiveNamespace();
+    const { searchFilter } = useURLSearch();
+
+    return useMemo(() => {
+        const querySearchFilter = parseQuerySearchFilter(searchFilter);
+        return {
             baseSearchFilter: {
                 'Image CVE Count': ['>0'],
+                Namespace:
+                    activeNamespace === ALL_NAMESPACES_KEY
+                        ? querySearchFilter.Namespace
+                        : [activeNamespace],
             },
             pageTitle: '',
             overviewEntityTabs: ['CVE', 'Image', 'Deployment'],
@@ -47,7 +59,6 @@ export function useDefaultWorkloadCveViewContext(): WorkloadCveView {
                 }) =>
                     `/k8s/ns/${workload.namespace}/${workload.type.toLowerCase()}s/${workload.name}/security`,
             },
-        }),
-        []
-    );
+        };
+    }, [activeNamespace, searchFilter]);
 }

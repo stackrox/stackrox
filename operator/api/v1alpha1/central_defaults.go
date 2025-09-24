@@ -71,8 +71,12 @@ func MergeCentralDefaultsIntoSpec(central *Central) error {
 			scannerV4.ScannerComponent = nil
 		}
 	}
-	if err := mergo.Merge(&central.Spec, central.Defaults, mergo.WithTransformers(nonDereferencingLeafTransformer{})); err != nil {
+	if err := (&central.Spec).Apply(central.Defaults); err != nil {
 		return errors.Wrap(err, "merging Central Defaults into Spec")
 	}
 	return nil
+}
+
+func (s *CentralSpec) Apply(defaults CentralSpec) error {
+	return mergo.Merge(s, defaults, mergo.WithTransformers(nonDereferencingLeafTransformer{}))
 }

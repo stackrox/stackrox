@@ -13,8 +13,10 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/carotation"
 	"github.com/stackrox/rox/operator/internal/common"
+	"github.com/stackrox/rox/operator/internal/common/confighash"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
@@ -35,23 +37,22 @@ const (
 )
 
 var (
-	// centralCARotationEnabled is a feature flag for the Central CA rotation feature. Defaults to false because
-	// the feature is still under active development.
-	// TODO: Remove when epic ROX-20262 is complete.
-	centralCARotationEnabled = env.RegisterBooleanSetting(envCentralCARotationEnabled, false)
+	// centralCARotationEnabled is a feature flag for the Central CA rotation feature.
+	centralCARotationEnabled = env.RegisterBooleanSetting(envCentralCARotationEnabled, true)
 )
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
 // secrets ahead of time.
-func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralTLS, client, direct)
+func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.Reader, renderCache *rendercache.RenderCache) extensions.ReconcileExtension {
+	return wrapExtension(reconcileCentralTLS, client, direct, renderCache)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger, renderCache *rendercache.RenderCache) error {
 	run := &createCentralTLSExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
 		currentTime:         time.Now(),
+		renderCache:         renderCache,
 	}
 
 	return run.Execute(ctx)
@@ -65,10 +66,13 @@ type createCentralTLSExtensionRun struct {
 	centralObj            *platform.Central
 	currentTime           time.Time
 	extraIssueCertOptions []mtls.IssueCertOption
+	renderCache           *rendercache.RenderCache
 }
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
+		r.renderCache.Delete(r.centralObj)
+
 		for _, prefix := range []string{"central", "central-db", "scanner", "scanner-db", "scanner-v4-matcher", "scanner-v4-indexer", "scanner-v4-db"} {
 			if err := r.DeleteSecret(ctx, prefix+"-tls"); err != nil {
 				return errors.Wrapf(err, "reconciling %s-tls secret failed", prefix)
@@ -101,6 +105,11 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	}
 	if err := r.reconcileScannerV4DBTLSSecret(ctx); err != nil {
 		return errors.Wrap(err, "reconciling scanner-v4-db-tls secret")
+	}
+
+	if r.ca != nil {
+		// Add the hash of the CA to the render cache for the pod template annotation post renderer
+		r.renderCache.SetCAHash(r.centralObj, confighash.ComputeCAHash(r.ca.CertPEM()))
 	}
 
 	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.

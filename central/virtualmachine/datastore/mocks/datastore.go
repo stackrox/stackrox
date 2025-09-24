@@ -56,20 +56,6 @@ func (mr *MockDataStoreMockRecorder) CountVirtualMachines(ctx any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountVirtualMachines", reflect.TypeOf((*MockDataStore)(nil).CountVirtualMachines), ctx)
 }
 
-// CreateVirtualMachine mocks base method.
-func (m *MockDataStore) CreateVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateVirtualMachine", ctx, virtualMachine)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateVirtualMachine indicates an expected call of CreateVirtualMachine.
-func (mr *MockDataStoreMockRecorder) CreateVirtualMachine(ctx, virtualMachine any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVirtualMachine", reflect.TypeOf((*MockDataStore)(nil).CreateVirtualMachine), ctx, virtualMachine)
-}
-
 // DeleteVirtualMachines mocks base method.
 func (m *MockDataStore) DeleteVirtualMachines(ctx context.Context, ids ...string) error {
 	m.ctrl.T.Helper()

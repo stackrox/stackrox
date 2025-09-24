@@ -97,6 +97,8 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupTest() {
 	suite.treeMgr.EXPECT().Initialize(gomock.Any())
 	dataPusher := newNetworkEntityPusher(suite.connMgr)
 	suite.ds = newEntityDataStore(suite.store, suite.graphConfig, suite.treeMgr, dataPusher)
+	suite.Eventually(suite.mockCtrl.Satisfied, 5*time.Second, 100*time.Millisecond,
+		"Initialize should be called within 5 seconds")
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {

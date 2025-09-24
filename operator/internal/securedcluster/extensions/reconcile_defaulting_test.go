@@ -6,9 +6,8 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common/defaulting"
-	"github.com/stackrox/rox/operator/internal/securedcluster/values/defaults"
-
+	"github.com/stackrox/rox/operator/internal/common"
+	"github.com/stackrox/rox/operator/internal/securedcluster/defaults"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,7 +25,7 @@ type scannerV4DefaultingTestCase struct {
 	Spec                platform.SecuredClusterSpec
 	Status              platform.SecuredClusterStatus
 	ExpectedAnnotations map[string]string
-	ExpectedDefaults    *platform.LocalScannerV4ComponentSpec
+	ExpectedDefault     *platform.LocalScannerV4ComponentPolicy
 }
 
 type admissionControllerDefaultingTestCase struct {
@@ -238,23 +237,19 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 	cases := map[string]scannerV4DefaultingTestCase{
 		"install: auto-sense by default": {
-			Spec:   platform.SecuredClusterSpec{},
-			Status: platform.SecuredClusterStatus{},
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4AutoSense,
-			},
+			Spec:            platform.SecuredClusterSpec{},
+			Status:          platform.SecuredClusterStatus{},
+			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
 		},
 		"upgrade: disabled by default": {
-			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4Disabled,
-			},
+			Spec:            platform.SecuredClusterSpec{},
+			Status:          nonEmptyStatus,
+			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"install: auto-sense explicitly": {
@@ -263,8 +258,8 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 					ScannerComponent: &platform.LocalScannerV4AutoSense,
 				},
 			},
-			Status:           platform.SecuredClusterStatus{},
-			ExpectedDefaults: nil,
+			Status:          platform.SecuredClusterStatus{},
+			ExpectedDefault: nil,
 		},
 		"install: disabled explicitly": {
 			Spec: platform.SecuredClusterSpec{
@@ -272,58 +267,50 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 					ScannerComponent: &platform.LocalScannerV4Disabled,
 				},
 			},
-			Status:           platform.SecuredClusterStatus{},
-			ExpectedDefaults: nil,
+			Status:          platform.SecuredClusterStatus{},
+			ExpectedDefault: nil,
 		},
 		"upgrade: pick up previously persisted default (AutoSense)": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4AutoSense,
-			},
+			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
 		},
 		"upgrade: pick up previously persisted default (Disabled)": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4Disabled,
-			},
+			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"upgrade: ignoring bogus persisted default": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: "foo",
+				common.FeatureDefaultKeyScannerV4: "foo",
 			},
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4Disabled,
-			},
+			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"previously persisted default is picked up even if status is empty": {
 			Spec: platform.SecuredClusterSpec{},
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4Disabled,
-			},
+			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 	}
@@ -368,7 +355,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			securedClusterDefaults := extractSecuredClusterDefaults(t, unstructuredSecuredCluster)
 
 			// Verify that reconcileFeatureDefaults has modified the scanner v4 defaults as expected.
-			assert.Equal(t, securedClusterDefaults.ScannerV4, c.ExpectedDefaults, "SecuredCluster Defaults do not match expected Defaults")
+			assert.Equal(t, securedClusterDefaults.ScannerV4.ScannerComponent, c.ExpectedDefault, "Central Defaults do not match expected Defaults")
 
 			// Verify that the expected annotations have been persisted via the provided client.
 			for annotationKey, annotationVal := range c.ExpectedAnnotations {

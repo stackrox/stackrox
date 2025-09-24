@@ -950,9 +950,7 @@ EOT
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    # Temporarily disabled, because 4.8.0 has been released with a bug where sensor has ROX_SCANNER_V4=true set.
-    # TODO(ROX-30062)
-    # run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
     _begin "upgrade-stackrox"
 
@@ -964,9 +962,7 @@ EOT
     verify_scannerV2_deployed
     verify_scannerV4_deployed
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    # Temporarily disabled, because 4.8.0 has been released with a bug where sensor has ROX_SCANNER_V4=true set.
-    # TODO(ROX-30062)
-    # run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
 
     _end
 }

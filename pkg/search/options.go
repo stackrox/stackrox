@@ -466,6 +466,10 @@ var (
 	// AuthProvider fields.
 	AuthProviderName = newFieldLabel("AuthProvider Name")
 
+	// Virtual Machine fields.
+	VirtualMachineID   = newFieldLabel("Virtual Machine ID")
+	VirtualMachineName = newFieldLabel("Virtual Machine Name")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")
@@ -607,6 +611,10 @@ func newDerivedFieldLabelWithType(s string, derivedFrom FieldLabel, derivationTy
 
 func (f FieldLabel) String() string {
 	return string(f)
+}
+
+func (f FieldLabel) ToUpper() string {
+	return strings.ToUpper(string(f))
 }
 
 func (f FieldLabel) Alias() string {

@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -212,7 +211,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntity, _, mockDetector := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
+	m, mockEntity, _, mockDetector := createManager(mockCtrl, enrichTickerC)
 	states := []struct {
 		testName                    string
 		notify                      common.SensorComponentEvent
@@ -375,7 +374,7 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntity, _, mockDetector := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
+	m, mockEntity, _, mockDetector := createManager(mockCtrl, enrichTickerC)
 	go m.enrichConnections(enrichTickerC)
 	mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
 		return clusterentities.ContainerMetadata{

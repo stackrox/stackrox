@@ -18,7 +18,7 @@ function ClusterMetadata({ status }: ClusterMetadataProps) {
     return (
         <DescriptionList>
             <DescriptionListGroup>
-                <DescriptionListTerm>ClusterStatus</DescriptionListTerm>
+                <DescriptionListTerm>Kubernetes version</DescriptionListTerm>
                 <DescriptionListDescription>
                     {formatKubernetesVersion(status?.orchestratorMetadata)}
                 </DescriptionListDescription>

@@ -39,6 +39,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/networking/v1"
 	v12 "k8s.io/api/rbac/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
 	// import gcp
@@ -70,7 +73,13 @@ const (
 	certID = "00000000-0000-4000-A000-000000000000"
 
 	// defaultNamespaceCreateTimeout maximum time the test will retry to create a namespace
-	defaultNamespaceCreateTimeout = 10 * time.Minute
+	defaultNamespaceCreateTimeout = 2 * time.Minute
+
+	// crdDeleteMaxWaitTime maximum time the helper will wait for CRDs to be deleted
+	crdDeleteMaxWaitTime = 5 * time.Minute
+
+	// crdDeleteCheckInterval interval for checking CRD deletion status
+	crdDeleteCheckInterval = 10 * time.Second
 )
 
 // K8sResourceInfo is a test file in YAML or a struct
@@ -240,6 +249,11 @@ func (c *TestContext) Stop() {
 // Resources object is used to interact with the cluster and apply new resources.
 func (c *TestContext) Resources() *resources.Resources {
 	return c.r
+}
+
+// GetKubernetesClient returns a Kubernetes client interface for direct API access.
+func (c *TestContext) GetKubernetesClient() client.Interface {
+	return client.MustCreateInterfaceFromRest(c.r.GetConfig())
 }
 
 func (c *TestContext) deleteNs(ctx context.Context, t *testing.T, name string) error {
@@ -1000,7 +1014,10 @@ func (c *TestContext) ApplyWithManifestDir(ctx context.Context, dirPath string, 
 		return nil, err
 	}
 	return func() error {
-		return decoder.DeleteWithManifestDir(ctx, c.r, dirPath, pattern, []resources.DeleteOption{})
+		if err := decoder.DeleteWithManifestDir(ctx, c.r, dirPath, pattern, []resources.DeleteOption{}); err != nil {
+			return errors.Wrap(err, "failed to delete manifest resources")
+		}
+		return c.waitForCRDsDeletion(ctx, dirPath, pattern)
 	}, nil
 }
 
@@ -1264,4 +1281,59 @@ func newTestRun(options ...TestRunFunc) (*testRun, error) {
 	}
 
 	return t, nil
+}
+
+// waitForCRDsDeletion waits for CustomResourceDefinitions to be fully deleted from the cluster.
+func (c *TestContext) waitForCRDsDeletion(ctx context.Context, dirPath string, pattern string) error {
+	allCRDs, err := decoder.DecodeAllFiles(ctx, os.DirFS(dirPath), pattern)
+	if err != nil {
+		return errors.Wrapf(err, "failed to decode CRDs in %q with pattern %q", dirPath, pattern)
+	}
+
+	crdNames := set.StringSet{}
+	for _, crd := range allCRDs {
+		crdNames.Add(crd.GetName())
+	}
+
+	return execWithRetry(crdDeleteMaxWaitTime, crdDeleteCheckInterval, func() error {
+		for crdName := range crdNames {
+			exists, err := c.crdExists(ctx, crdName)
+
+			if err != nil {
+				return errors.Wrapf(err, "error checking existence of CRD %s", crdName)
+			}
+
+			if !exists {
+				crdNames.Remove(crdName)
+			}
+		}
+
+		if crdNames.Cardinality() > 0 {
+			return errors.Errorf("CRDs %v still exist", crdNames.AsSlice())
+		}
+
+		return nil
+	})
+}
+
+// crdExists checks if a CustomResourceDefinition exists in the cluster.
+func (c *TestContext) crdExists(ctx context.Context, crdName string) (bool, error) {
+	k8sClient := c.GetKubernetesClient()
+
+	resource := schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1",
+		Resource: "customresourcedefinitions",
+	}
+	_, err := k8sClient.Dynamic().Resource(resource).Get(ctx, crdName, metav1.GetOptions{})
+
+	if err == nil {
+		return true, nil
+	}
+
+	if k8sErrors.IsNotFound(err) {
+		return false, nil
+	}
+
+	return false, err
 }

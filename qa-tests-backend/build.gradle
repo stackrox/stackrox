@@ -21,9 +21,9 @@ repositories {
 
 def grpcVersion = '1.69.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protobufVersion = '4.32.0'
+def protobufVersion = '4.32.1'
 def nettyTcNativeVersion = '2.0.61.Final'
-def fabric8Version = '7.3.1'
+def fabric8Version = '7.4.0'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -62,8 +62,8 @@ sourceSets.each { ss ->
 
 dependencies {
     // grpc and protobuf
-    implementation 'com.google.code.gson:gson:2.13.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.61.1"
+    implementation 'com.google.code.gson:gson:2.13.2'
+    implementation "com.google.api.grpc:proto-google-common-protos:2.61.2"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -108,7 +108,7 @@ dependencies {
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
-    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.5"
+    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.6"
 
     // Required to make codenarc work with JDK 14.
     // See https://github.com/gradle/gradle/issues/12646.
@@ -117,7 +117,7 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.23")
     }
 
-    implementation 'org.javers:javers-core:7.8.4'
+    implementation 'org.javers:javers-core:7.8.6'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15.2'
 
     implementation 'commons-codec:commons-codec:1.19.0'

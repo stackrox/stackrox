@@ -237,7 +237,7 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 }
 
 func (s *clusterInitBackendTestSuite) TestCRSDefaultExpiration() {
-	expectedNotAfter := time.Now().UTC().Add(1 * time.Hour)
+	expectedNotAfter := time.Now().UTC().Add(24 * time.Hour)
 
 	crsWithMeta, err := s.backend.IssueCRS(s.ctx, "crs-default-expiration", time.Time{}.UTC())
 	s.Require().NoError(err)

@@ -1,15 +1,12 @@
-import React, { ChangeEvent } from 'react';
+import React from 'react';
+import type { ChangeEvent } from 'react';
 import { Divider } from '@patternfly/react-core';
-import {
-    Select,
-    SelectGroup,
-    SelectOption,
-    SelectOptionObject,
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectGroup, SelectOption } from '@patternfly/react-core/deprecated';
+import type { SelectOptionObject } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { flattenFilterValue } from 'utils/searchUtils';
-import { Cluster } from './types';
+import type { Cluster } from './types';
 
 import './NamespaceSelect.css';
 

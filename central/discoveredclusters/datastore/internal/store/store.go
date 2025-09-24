@@ -20,5 +20,5 @@ type Store interface {
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.DiscoveredCluster, error)
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.DiscoveredCluster) error) error
 	UpsertMany(ctx context.Context, objs []*storage.DiscoveredCluster) error
-	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, query *v1.Query) error
 }
