@@ -13,4 +13,4 @@ tests:
       autoLockProcessBaelines:
         enabled: false
     expect: |
-      helmClusterConfig | .clusterConfig.dynamicConfig.autoLockProcessBaselinesConfig.enabled | assertThat(. == null)
+      helmClusterConfig | .clusterConfig.dynamicConfig.autoLockProcessBaselinesConfig.enabled | assertThat(. == false)
