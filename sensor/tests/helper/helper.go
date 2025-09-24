@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -466,9 +467,9 @@ type GetLastMessageTypeMatcher func(m *central.MsgFromSensor) bool
 
 // GetLastMessageWithEventIDAndType returns the last state sent to central that matches this ID.
 func GetLastMessageWithEventIDAndType(messages []*central.MsgFromSensor, id string, fn GetLastMessageTypeMatcher) *central.MsgFromSensor {
-	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].GetEvent().GetId() == id && fn(messages[i]) {
-			return messages[i]
+	for _, msg := range slices.Backward(messages) {
+		if msg.GetEvent().GetId() == id && fn(msg) {
+			return msg
 		}
 	}
 	return nil
@@ -714,9 +715,9 @@ func (c *TestContext) EventIDNotReceived(t *testing.T, id string, typeFn GetLast
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
 func GetLastMessageMatching(messages []*central.MsgFromSensor, matchFn MatchResource) *central.MsgFromSensor {
-	for i := len(messages) - 1; i >= 0; i-- {
-		if matchFn(messages[i]) {
-			return messages[i]
+	for _, msg := range slices.Backward(messages) {
+		if matchFn(msg) {
+			return msg
 		}
 	}
 	return nil
@@ -1153,45 +1154,42 @@ func GetFirstMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, na
 
 // GetLastMessageWithDeploymentID find most recent sensor messages by namespace and deployment name
 func GetLastMessageWithDeploymentID(messages []*central.MsgFromSensor, id string) *central.MsgFromSensor {
-	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		deployment := messages[i].GetEvent().GetDeployment()
+	for _, msg := range slices.Backward(messages) {
+		deployment := msg.GetEvent().GetDeployment()
 		if deployment.GetId() == id {
-			lastMessage = messages[i]
-			break
+			return msg
 		}
 	}
-	return lastMessage
+	return nil
 }
 
 // GetLastMessageWithDeploymentName find most recent sensor messages by namespace and deployment name
 func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, name string) *central.MsgFromSensor {
-	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		deployment := messages[i].GetEvent().GetDeployment()
+	for _, msg := range slices.Backward(messages) {
+		deployment := msg.GetEvent().GetDeployment()
 		if deployment.GetName() == name && deployment.GetNamespace() == ns {
-			lastMessage = messages[i]
-			break
+			return msg
 		}
 	}
-	return lastMessage
+	return nil
 }
 
 // GetAllAlertsWithDeploymentID find all alert messages by deployment ID. If onlyEmptyAlertResults is set to true it will return only AlertResults with no Alerts
 func GetAllAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, onlyEmptyAlertResults bool) []*central.MsgFromSensor {
 	var alerts []*central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() != id {
+	for _, msg := range slices.Backward(messages) {
+		alertResults := msg.GetEvent().GetAlertResults()
+		if alertResults.GetDeploymentId() != id {
 			continue
 		}
 
 		if !onlyEmptyAlertResults {
-			alerts = append(alerts, messages[i])
+			alerts = append(alerts, msg)
 			continue
 		}
 
-		if len(messages[i].GetEvent().GetAlertResults().GetAlerts()) == 0 {
-			alerts = append(alerts, messages[i])
+		if len(alertResults.GetAlerts()) == 0 {
+			alerts = append(alerts, msg)
 		}
 	}
 	return alerts
@@ -1199,23 +1197,21 @@ func GetAllAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, 
 
 // GetLastAlertsWithDeploymentID find most recent alert message by deployment ID. If onlyEmptyAlertResults is set to true it will return only AlertResults with no Alerts
 func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, onlyEmptyAlertResults bool) *central.MsgFromSensor {
-	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() != id {
+	for _, msg := range slices.Backward(messages) {
+		alertResults := msg.GetEvent().GetAlertResults()
+		if alertResults.GetDeploymentId() != id {
 			continue
 		}
 
 		if !onlyEmptyAlertResults {
-			lastMessage = messages[i]
-			break
+			return msg
 		}
 
-		if len(messages[i].GetEvent().GetAlertResults().GetAlerts()) == 0 {
-			lastMessage = messages[i]
-			break
+		if len(alertResults.GetAlerts()) == 0 {
+			return msg
 		}
 	}
-	return lastMessage
+	return nil
 }
 
 // GetUniquePodNamesFromPrefix find all unique pod names from sensor events
