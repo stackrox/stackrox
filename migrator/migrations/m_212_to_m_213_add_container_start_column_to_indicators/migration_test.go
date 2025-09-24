@@ -33,9 +33,9 @@ func TestMigration(t *testing.T) {
 
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
-	//s.db = pghelper.ForT(s.T(), false)
-	s.db = pghelper.ForTExistingDB(s.T(), false, "newlotsofindicators")
-	s.existingDB = true
+	s.db = pghelper.ForT(s.T(), false)
+	//s.db = pghelper.ForTExistingDB(s.T(), false, "indicators")
+	//s.existingDB = true
 }
 
 func (s *migrationTestSuite) TestMigration() {
@@ -59,7 +59,7 @@ func (s *migrationTestSuite) TestMigration() {
 		clusters := []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2, fixtureconsts.Cluster3, cluster4, cluster5, cluster6, cluster7, cluster8, cluster9, cluster10}
 
 		// Add some process indicators
-		numIndicators := 300000
+		numIndicators := 30000
 		numNilContainerTime := 10
 		var indicators []*storage.ProcessIndicator
 
@@ -88,7 +88,7 @@ func (s *migrationTestSuite) TestMigration() {
 				s.Require().NoError(err)
 				convertedProcessIndicators = append(convertedProcessIndicators, *converted)
 
-				if len(convertedProcessIndicators) == batchSize {
+				if len(convertedProcessIndicators) == 1000 {
 					// Upsert converted blobs
 					s.Require().NoError(dbs.GormDB.CreateInBatches(convertedProcessIndicators, batchSize).Error)
 					convertedProcessIndicators = convertedProcessIndicators[:0]

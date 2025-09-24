@@ -32,32 +32,7 @@ func migrate(database *types.Databases) error {
 	db.Model(&updatedSchema.ProcessIndicators{}).Distinct("clusterid").Pluck("clusterid", &clusters)
 	log.Infof("clusters found: %v", clusters)
 
-	//err := db.Transaction(func(tx *gorm.DB) error {
-	//	db.Model(&updatedSchema.ProcessIndicators{}).Distinct("clusterid").Pluck("clusterid", &clusters)
-	//
-	//	rows, err := tx.Distinct(updatedSchema.ProcessIndicators.Rows()
-	//	defer func() { _ = rows.Close() }()
-	//	if err != nil {
-	//		return errors.Wrapf(err, "failed to iterate table %s", updatedSchema.ProcessIndicatorsTableName)
-	//	}
-	//	for rows.Next() {
-	//		var cluster string
-	//		if err = tx.ScanRows(rows, &cluster); err != nil {
-	//			return errors.Wrap(err, "failed to scan distinct cluster rows")
-	//		}
-	//		log.Infof("Found cluster %s", cluster)
-	//		clusters = append(clusters, cluster)
-	//	}
-	//	if rows.Err() != nil {
-	//		return errors.Wrapf(rows.Err(), "failed to get distinct clusters for %s", updatedSchema.ProcessIndicatorsTableName)
-	//	}
-	//	return nil
-	//})
-	//if err != nil {
-	//	return err
-	//}
-
-	semaphoreWeight := max(len(clusters), 10)
+	semaphoreWeight := min(len(clusters), 10)
 	var wg sync.WaitGroup
 	sema := semaphore.NewWeighted(int64(semaphoreWeight))
 	var err error
@@ -92,7 +67,6 @@ func migrateByCluster(cluster string, database *types.Databases, err error) erro
 	store := postgres.New(database.PostgresDB)
 	//var convertedIndicators []*updatedSchema.ProcessIndicators
 	var storeIndicators []*storage.ProcessIndicator
-	var count int
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster).ProtoQuery()
 	storeIndicators, err = store.GetByQuery(ctx, query)
 	if err != nil {
@@ -100,53 +74,19 @@ func migrateByCluster(cluster string, database *types.Databases, err error) erro
 	}
 	log.Infof("Processing %s with %d indicators", cluster, len(storeIndicators))
 	for objBatch := range slices.Chunk(storeIndicators, batchSize) {
-		log.Infof("Processing %d indicators", len(objBatch))
 		if err = store.UpsertMany(ctx, objBatch); err != nil {
-			//if err = db.
-			//	Clauses(clause.OnConflict{UpdateAll: true}).
-			//	Model(updatedSchema.CreateTableProcessIndicatorsStmt.GormModel).
-			//	CreateInBatches(&convertedIndicators, batchSize).Error; err != nil {
 			return errors.Wrap(err, "failed to upsert all converted objects")
 		}
 	}
-
-	//// Using WalkByQuery as risk could potentially return a large amount of data
-	//err = store.GetByQueryFn(ctx, query, func(pi *storage.ProcessIndicator) error {
-	//	// We only need to rewrite the ones where the time is not null
-	//	if pi.GetContainerStartTime() != nil {
-	//		storeIndicators = append(storeIndicators, pi)
-	//		count++
-	//		if len(storeIndicators) > batchSize {
-	//			log.Infof("Processing %d indicators", len(storeIndicators))
-	//			if err = store.UpsertMany(ctx, storeIndicators); err != nil {
-	//				//if err = db.
-	//				//	Clauses(clause.OnConflict{UpdateAll: true}).
-	//				//	Model(updatedSchema.CreateTableProcessIndicatorsStmt.GormModel).
-	//				//	CreateInBatches(&convertedIndicators, batchSize).Error; err != nil {
-	//				return errors.Wrap(err, "failed to upsert all converted objects")
-	//			}
-	//			storeIndicators = storeIndicators[:0]
-	//		}
-	//	}
-	//
-	//	return nil
-	//})
-	//if err != nil {
-	//	return err
-	//}
 
 	if len(storeIndicators) > 0 {
 		log.Infof("Processing %d indicators", len(storeIndicators))
 		if err = store.UpsertMany(ctx, storeIndicators); err != nil {
-			//if err = db.
-			//	Clauses(clause.OnConflict{UpdateAll: true}).
-			//	Model(updatedSchema.CreateTableProcessIndicatorsStmt.GormModel).
-			//	CreateInBatches(&convertedIndicators, batchSize).Error; err != nil {
 			return errors.Wrap(err, "failed to upsert all converted objects")
 		}
 	}
 
-	log.Infof("Populated container start time for %d process indicators", count)
+	log.Infof("Populated container start time for process indicators in cluster %s", cluster)
 
 	return nil
 }
