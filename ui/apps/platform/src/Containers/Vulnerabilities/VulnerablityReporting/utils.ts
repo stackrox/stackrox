@@ -9,6 +9,7 @@ import {
 import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 import { getDate } from 'utils/dateUtils';
 import { ReportStatus } from 'types/reportJob';
+import { addDays, differenceInDays } from 'date-fns';
 import {
     CVESDiscoveredSince,
     CVESDiscoveredStartDate,
@@ -243,4 +244,42 @@ export function getCVEsDiscoveredSinceText(reportParameters: ReportParametersFor
             ? getDate(reportParameters.cvesDiscoveredStartDate)
             : cvesDiscoveredSinceLabelMap[reportParameters.cvesDiscoveredSince];
     return text;
+}
+
+/**
+ * Calculates the expiration status for a view-based report based on completion time and retention settings.
+ *
+ * @param completedAt - ISO timestamp when the report was completed (null if not completed)
+ * @param retentionDays - Number of days the report is retained (undefined if config unavailable)
+ * @returns String representing the expiration status
+ */
+export function calculateReportExpiration(
+    completedAt: string | null,
+    retentionDays: number | undefined
+): string {
+    if (!completedAt) {
+        return 'Pending';
+    }
+    if (typeof retentionDays !== 'number') {
+        return 'Unknown';
+    }
+
+    const completedDate = new Date(completedAt);
+    completedDate.setHours(0, 0, 0, 0);
+
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+
+    const daysRemaining = differenceInDays(addDays(completedDate, retentionDays), currentDate);
+
+    if (daysRemaining < 0) {
+        return 'Expired';
+    }
+    if (daysRemaining === 0) {
+        return 'Expires today';
+    }
+    if (daysRemaining === 1) {
+        return '1 day';
+    }
+    return `${daysRemaining} days`;
 }

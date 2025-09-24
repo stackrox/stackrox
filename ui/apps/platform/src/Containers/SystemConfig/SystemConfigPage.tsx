@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode, useEffect, useState } from 'react';
+import React, { ReactElement, ReactNode, useState } from 'react';
 import {
     Alert,
     Bullseye,
@@ -20,8 +20,6 @@ import {
     fetchDefaultRedHatLayeredProductsRule,
     fetchSystemConfig,
 } from 'services/SystemConfigService';
-import { SystemConfig } from 'types/config.proto';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import SystemConfigDetails from './Details/SystemConfigDetails';
 import SystemConfigForm from './Form/SystemConfigForm';
@@ -52,28 +50,21 @@ const SystemConfigPage = (): ReactElement => {
         isLoading: defaultRedHatLayeredProductsRuleIsLoading,
     } = useRestQuery(fetchDefaultRedHatLayeredProductsRule);
 
-    const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
+    const {
+        data: systemConfig,
+        isLoading,
+        error,
+        refetch: refetchSystemConfig,
+    } = useRestQuery(fetchSystemConfig);
 
-    useEffect(() => {
-        setIsLoading(true);
-        fetchSystemConfig()
-            .then((data) => {
-                setSystemConfig(data);
-                setErrorMessage('');
-            })
-            .catch((error) => {
-                setSystemConfig(null);
-                setErrorMessage(getAxiosErrorMessage(error));
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
-    }, []);
+    const errorMessage = error?.message || '';
 
     function onClickEdit() {
         setIsEditing(true);
+    }
+
+    function handleSystemConfigUpdate() {
+        refetchSystemConfig();
     }
 
     function setIsNotEditing() {
@@ -93,7 +84,7 @@ const SystemConfigPage = (): ReactElement => {
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <SystemConfigForm
                     systemConfig={systemConfig}
-                    setSystemConfig={setSystemConfig}
+                    setSystemConfig={handleSystemConfigUpdate}
                     setIsNotEditing={setIsNotEditing}
                     isCustomizingPlatformComponentsEnabled={isCustomizingPlatformComponentsEnabled}
                     defaultRedHatLayeredProductsRule={defaultRedHatLayeredProductsRule || ''}
