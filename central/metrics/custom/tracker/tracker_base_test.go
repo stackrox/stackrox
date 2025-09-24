@@ -154,7 +154,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		{ // Reset lastGather
 			identity, _ := authn.IdentityFromContext(ctx)
 			g, _ := tracker.gatherers.Load(identity.UID())
-			g.(*gatherer).lastGather.Store(time.Time{})
+			g.(*gatherer).lastGather = time.Time{}
 		}
 		tracker.Gather(ctx)
 
@@ -326,7 +326,7 @@ func TestTrackerBase_getGatherer(t *testing.T) {
 	require.NotNil(t, g)
 	tracker.cleanupWG.Wait()
 
-	g.lastGather.Store(time.Now().Add(-inactiveGathererTTL))
+	g.lastGather = time.Now().Add(-inactiveGathererTTL)
 	g.running.Store(false)
 	_, ok := tracker.gatherers.Load("Admin")
 	assert.True(t, ok)
@@ -366,9 +366,9 @@ func TestTrackerBase_cleanup(t *testing.T) {
 	tracker.cleanupWG.Wait()
 
 	// Set lastGather times.
-	activeGatherer.lastGather.Store(time.Now())
+	activeGatherer.lastGather = time.Now()
 	activeGatherer.running.Store(false)
-	inactiveGatherer.lastGather.Store(time.Now().Add(-inactiveGathererTTL))
+	inactiveGatherer.lastGather = time.Now().Add(-inactiveGathererTTL)
 	inactiveGatherer.running.Store(false)
 
 	// Sanity: both gatherers present.
