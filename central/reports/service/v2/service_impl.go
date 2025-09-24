@@ -509,8 +509,10 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 	)
 	// Fill in pagination.
 	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
-
+	log.Infof("pagination is %d", req.GetReportParamQuery().GetPagination())
+	log.Infof("view based report query is %s", req)
 	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	log.Infof("view based report history search results %v", results)
 	if err != nil {
 		return nil, err
 	}
