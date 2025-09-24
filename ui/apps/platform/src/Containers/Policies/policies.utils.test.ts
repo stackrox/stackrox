@@ -608,14 +608,10 @@ describe('policies.utils', () => {
                                 negate: false,
                                 values: [
                                     {
-                                        source: 'SECRET_KEY',
-                                        key: 'SOMEVAR',
-                                        value: 'val_with=equals',
+                                        value: 'SECRET_KEY=SOMEVAR=val_with=equals',
                                     },
                                     {
-                                        source: 'SECRET_KEY',
-                                        key: 'OTHERVAR',
-                                        value: 'normal_value',
+                                        value: 'SECRET_KEY=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
