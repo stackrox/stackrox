@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState, ReactNode } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
     Button,
     Divider,
@@ -18,11 +19,13 @@ import { ExclamationCircleIcon, ListIcon, SyncAltIcon } from '@patternfly/react-
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 
-import { CollectionRequest, dryRunCollection } from 'services/CollectionsService';
-import { ListDeployment } from 'types/deployment.proto';
+import { dryRunCollection } from 'services/CollectionsService';
+import type { CollectionRequest } from 'services/CollectionsService';
+import type { ListDeployment } from 'types/deployment.proto';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
-import { CollectionConfigError, parseConfigError } from './errorUtils';
-import { SelectorEntityType } from './types';
+import { parseConfigError } from './errorUtils';
+import type { CollectionConfigError } from './errorUtils';
+import type { SelectorEntityType } from './types';
 
 function fetchMatchingDeployments(
     dryRunConfig: CollectionRequest,

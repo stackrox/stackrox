@@ -6,9 +6,8 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common/defaulting"
-	"github.com/stackrox/rox/operator/internal/securedcluster/values/defaults"
-
+	"github.com/stackrox/rox/operator/internal/common"
+	"github.com/stackrox/rox/operator/internal/securedcluster/defaults"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -242,7 +241,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Status:          platform.SecuredClusterStatus{},
 			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
 		},
 		"upgrade: disabled by default": {
@@ -250,7 +249,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Status:          nonEmptyStatus,
 			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"install: auto-sense explicitly": {
@@ -275,43 +274,43 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
 			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
 		},
 		"upgrade: pick up previously persisted default (Disabled)": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"upgrade: ignoring bogus persisted default": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: "foo",
+				common.FeatureDefaultKeyScannerV4: "foo",
 			},
 			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"previously persisted default is picked up even if status is empty": {
 			Spec: platform.SecuredClusterSpec{},
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 	}

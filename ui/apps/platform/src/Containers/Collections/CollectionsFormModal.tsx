@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Bullseye,
@@ -17,11 +18,12 @@ import { useMediaQuery } from 'react-responsive';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { collectionsBasePath } from 'routePaths';
-import { Collection } from 'services/CollectionsService';
+import type { Collection } from 'services/CollectionsService';
 import useCollection from './hooks/useCollection';
-import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
+import CollectionFormDrawer from './CollectionFormDrawer';
+import type { CollectionFormDrawerProps } from './CollectionFormDrawer';
 import CollectionLoadError from './CollectionLoadError';
-import { CollectionPageAction } from './collections.utils';
+import type { CollectionPageAction } from './collections.utils';
 
 export type CollectionFormModalAction = Extract<
     { type: 'create' } | { type: 'view'; collectionId: string },
