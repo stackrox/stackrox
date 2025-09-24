@@ -20,6 +20,10 @@ func (f testFinding) GetError() error {
 	}
 }
 
+func (f testFinding) GetIncrement() int {
+	return 1
+}
+
 var testLabelGetters = []LazyLabel[testFinding]{
 	testLabel("test"),
 	testLabel("Cluster"),
