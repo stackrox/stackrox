@@ -2,7 +2,7 @@
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 ARG TARGET_ARCH=amd64
 
-FROM --platform=linux/${TARGET_ARCH} quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} AS builder
+FROM quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} AS builder
 
 # Build the manager binary
 ARG roxpath
@@ -53,7 +53,7 @@ RUN git init && git add .
 ENV CGO_ENABLED=0
 
 # Build the operator binary.
-RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
+RUN GOOS=$(go env GOOS) GOARCH=${TARGET_ARCH} scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
 
 ARG TARGET_ARCH
 FROM --platform=linux/${TARGET_ARCH} registry.access.redhat.com/ubi8-micro:latest

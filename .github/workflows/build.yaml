@@ -598,10 +598,6 @@ jobs:
           free-disk-space: 30
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Set up QEMU
-        if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
