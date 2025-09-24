@@ -96,7 +96,7 @@ func (l *Legacy) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indica
 	if enrichedEndpointsProcesses != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
-		l.enrichedConnsLastSentState = make(map[indicator.NetworkConn]timestamp.MicroTS, len(enrichedEndpointsProcesses))
+		l.enrichedEndpointsLastSentState = make(map[indicator.ContainerEndpoint]timestamp.MicroTS, len(enrichedEndpointsProcesses))
 		for endpoint, procWithTS := range enrichedEndpointsProcesses {
 			l.enrichedEndpointsLastSentState[endpoint] = procWithTS.LastSeen
 		}
@@ -108,7 +108,7 @@ func (l *Legacy) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indica
 	if enrichedEndpointsProcesses != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
-		l.enrichedConnsLastSentState = make(map[indicator.NetworkConn]timestamp.MicroTS, len(enrichedEndpointsProcesses))
+		l.enrichedProcessesLastSentState = make(map[indicator.ProcessListening]timestamp.MicroTS, len(enrichedEndpointsProcesses))
 		for _, procWithTS := range enrichedEndpointsProcesses {
 			if procWithTS.ProcessListening != nil {
 				l.enrichedProcessesLastSentState[*procWithTS.ProcessListening] = procWithTS.LastSeen
