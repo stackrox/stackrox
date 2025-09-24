@@ -629,6 +629,11 @@ jobs:
         run: |
           make -C operator/ bundle bundle-build
 
+      - name: Operator unit tests
+        if: matrix.arch == 'amd64'
+        run: |
+          GOOS=linux scripts/lib.sh retry 6 true make -C operator/ test
+
       - name: Build Operator image
         run: |
           CGO_ENABLED=0 GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
