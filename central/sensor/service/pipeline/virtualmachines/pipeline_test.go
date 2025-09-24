@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protomock"
@@ -20,7 +21,11 @@ import (
 
 func TestCapabilities(t *testing.T) {
 	pipeline := &pipelineImpl{}
-	assert.Nil(t, pipeline.Capabilities())
+	assert.ElementsMatch(
+		t,
+		[]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported},
+		pipeline.Capabilities(),
+	)
 }
 
 func TestMatch(t *testing.T) {
