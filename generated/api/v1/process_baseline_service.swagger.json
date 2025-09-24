@@ -166,6 +166,39 @@
           "ProcessBaselineService"
         ]
       }
+    },
+    "/v1/processbaselines/lock/namespace": {
+      "put": {
+        "summary": "`LockProcessBaselinesByNamespace` locks process baselines by namespace,\nand returns the updated baseline objects.",
+        "operationId": "ProcessBaselineService_LockProcessBaselinesByNamespace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateProcessBaselinesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1LockProcessBaselinesByNamespaceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProcessBaselineService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -285,6 +318,23 @@
           "format": "int32"
         },
         "dryRun": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1LockProcessBaselinesByNamespaceRequest": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "locked": {
           "type": "boolean"
         }
       }
