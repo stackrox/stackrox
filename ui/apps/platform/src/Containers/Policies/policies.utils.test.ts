@@ -69,7 +69,7 @@ describe('policies.utils', () => {
                                 fieldName: 'Dockerfile Line',
                                 booleanOperator: 'OR',
                                 negate: false,
-                                values: [{ value: 'ENV=ENV=myapp=test' }, { value: 'USER=root' }],
+                                values: [{ value: 'ENV=myapp=test' }, { value: 'USER=root' }],
                             },
                             {
                                 fieldName: 'Image Signature Verified By',
@@ -78,6 +78,19 @@ describe('policies.utils', () => {
                                 values: [
                                     {
                                         value: 'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        value: 'SECRET_KEY=SOMEVAR=val_with=equals',
+                                    },
+                                    {
+                                        value: 'SECRET_KEY=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
@@ -177,7 +190,7 @@ describe('policies.utils', () => {
                                 booleanOperator: 'OR',
                                 negate: false,
                                 values: [
-                                    { value: 'ENV=ENV=myapp=test' },
+                                    { key: 'ENV', value: 'myapp=test' },
                                     { key: 'USER', value: 'root' },
                                 ],
                             },
@@ -190,6 +203,23 @@ describe('policies.utils', () => {
                                         arrayValue: [
                                             'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
                                         ],
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        source: 'SECRET_KEY',
+                                        key: 'SOMEVAR',
+                                        value: 'val_with=equals',
+                                    },
+                                    {
+                                        source: 'SECRET_KEY',
+                                        key: 'OTHERVAR',
+                                        value: 'normal_value',
                                     },
                                 ],
                             },
@@ -242,7 +272,7 @@ describe('policies.utils', () => {
                                 fieldName: 'Dockerfile Line',
                                 booleanOperator: 'OR',
                                 negate: false,
-                                values: [{ value: 'ENV=ENV=myapp=test' }, { value: 'USER=root' }],
+                                values: [{ value: 'ENV=myapp=test' }, { value: 'USER=root' }],
                             },
                             {
                                 fieldName: 'Image Signature Verified By',
@@ -251,6 +281,19 @@ describe('policies.utils', () => {
                                 values: [
                                     {
                                         value: 'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        value: 'SECRET_KEY=SOMEVAR=val_with=equals',
+                                    },
+                                    {
+                                        value: 'SECRET_KEY=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
@@ -344,7 +387,7 @@ describe('policies.utils', () => {
                                 fieldName: 'Dockerfile Line',
                                 booleanOperator: 'OR',
                                 negate: false,
-                                values: [{ value: 'ENV=ENV=myapp=test' }, { value: 'USER=root' }],
+                                values: [{ value: 'ENV=myapp=test' }, { value: 'USER=root' }],
                             },
                             {
                                 fieldName: 'Image Signature Verified By',
@@ -353,6 +396,19 @@ describe('policies.utils', () => {
                                 values: [
                                     {
                                         value: 'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        value: 'SECRET_KEY=SOMEVAR=val_with=equals',
+                                    },
+                                    {
+                                        value: 'SECRET_KEY=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
@@ -452,7 +508,7 @@ describe('policies.utils', () => {
                                 booleanOperator: 'OR',
                                 negate: false,
                                 values: [
-                                    { value: 'ENV=ENV=myapp=test' },
+                                    { key: 'ENV', value: 'myapp=test' },
                                     { key: 'USER', value: 'root' },
                                 ],
                             },
@@ -465,6 +521,23 @@ describe('policies.utils', () => {
                                         arrayValue: [
                                             'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
                                         ],
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        source: 'SECRET_KEY',
+                                        key: 'SOMEVAR',
+                                        value: 'val_with=equals',
+                                    },
+                                    {
+                                        source: 'SECRET_KEY',
+                                        key: 'OTHERVAR',
+                                        value: 'normal_value',
                                     },
                                 ],
                             },
@@ -517,7 +590,7 @@ describe('policies.utils', () => {
                                 fieldName: 'Dockerfile Line',
                                 booleanOperator: 'OR',
                                 negate: false,
-                                values: [{ value: 'ENV=ENV=myapp=test' }, { value: 'USER=root' }],
+                                values: [{ value: 'ENV=myapp=test' }, { value: 'USER=root' }],
                             },
                             {
                                 fieldName: 'Image Signature Verified By',
@@ -526,6 +599,23 @@ describe('policies.utils', () => {
                                 values: [
                                     {
                                         value: 'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        source: 'SECRET_KEY',
+                                        key: 'SOMEVAR',
+                                        value: 'val_with=equals',
+                                    },
+                                    {
+                                        source: 'SECRET_KEY',
+                                        key: 'OTHERVAR',
+                                        value: 'normal_value',
                                     },
                                 ],
                             },

@@ -337,7 +337,7 @@ export function parseNumericComparisons(str): [string, string] {
     return [matches[1], matches[2]];
 }
 
-export function parseValueStr(value, fieldName): ValueObj {
+export function parseValueStr(value: string, fieldName: string): ValueObj {
     // TODO: work with API to update contract for returning number comparison fields
     //   until that improves, we short-circuit those fields here
 
@@ -356,19 +356,23 @@ export function parseValueStr(value, fieldName): ValueObj {
     if (typeof value === 'string' && isCompoundField(fieldName)) {
         // handle all other string fields
         const valueArr = value.split('=');
-        // for nested policy criteria fields
-        if (valueArr.length === 2) {
+
+        // for the Environment Variable policy criteria
+        if (fieldName === 'Environment Variable') {
+            const [source, key, ...values] = valueArr;
             return {
-                key: valueArr[0],
-                value: valueArr[1],
+                source,
+                key,
+                value: values.join('='),
             };
         }
-        // for the Environment Variable policy criteria
-        if (valueArr.length === 3) {
+
+        // for nested policy criteria fields
+        if (valueArr.length > 1) {
+            const [key, ...values] = valueArr;
             return {
-                source: valueArr[0],
-                key: valueArr[1],
-                value: valueArr[2],
+                key,
+                value: values.join('='),
             };
         }
     }
@@ -493,7 +497,6 @@ function getFormattedServerPolicyFields(policy: ClientPolicy): Policy['policySec
 
 // Impure function assumes caller has cloned the scope!
 function trimPolicyScope(scope: PolicyScope) {
-    /* eslint-disable no-param-reassign */
     if (typeof scope.cluster === 'string') {
         scope.cluster = scope.cluster.trim();
     }
@@ -514,7 +517,6 @@ function trimPolicyScope(scope: PolicyScope) {
         }
     }
     */
-    /* eslint-enable no-param-reassign */
 
     return scope;
 }
