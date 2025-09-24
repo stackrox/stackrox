@@ -1489,6 +1489,9 @@
             "$ref": "#/definitions/ProcessSignalLineageInfo"
           },
           "title": "Process LineageInfo"
+        },
+        "inRootMountNs": {
+          "type": "boolean"
         }
       }
     },
