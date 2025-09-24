@@ -12,7 +12,7 @@ import (
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
-	"github.com/stackrox/rox/pkg/scannerv4/enricher/notaffected"
+	pkgnotaffected "github.com/stackrox/rox/pkg/scannerv4/enricher/notaffected"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -210,7 +210,7 @@ func TestEnrich(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if kind != notaffected.Type {
+	if kind != pkgnotaffected.Type {
 		t.Errorf("expected kind %q, got %q", csaf.Type, kind)
 	}
 

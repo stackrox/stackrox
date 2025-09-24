@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/klauspost/compress/zstd"
@@ -187,6 +188,20 @@ func knownNotAffectedOpts() []updates.ManagerOption {
 		updates.WithEnabled([]string{}),
 		updates.WithFactories(map[string]driver.UpdaterSetFactory{
 			"stackrox.rhel-not-affected": notaffected.NewFactory(),
+		}),
+		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
+			"stackrox.rhel-not-affected": func(i any) error {
+				cfg, ok := i.(*notaffected.Config)
+				if !ok {
+					return errors.New("internal error: config assertion failed")
+				}
+				if v := os.Getenv("STACKROX_SCANNER_V4_KNOWN_NOT_AFFECTED_MAX_CVES_PER_RECORD"); v != "" {
+					if n, err := strconv.Atoi(v); err == nil && n > 0 {
+						cfg.MaxCVEsPerRecord = n
+					}
+				}
+				return nil
+			},
 		}),
 	}
 }

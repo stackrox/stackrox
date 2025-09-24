@@ -53,6 +53,9 @@ scanner/cmd/scannerctl/fixtures/images.json
 scanner/e2etests/testdata/image_tests.json
 scanner/e2etests/testdata/image_tests.orig.json
 scanner/enricher/csaf/testdata/*
+scanner/enricher/notaffected/testdata/cve-2024-57083.jsonl
+scanner/enricher/notaffected/testdata/cve-2024-7246.jsonl
+scanner/enricher/notaffected/testdata/cve-2025-7783.jsonl
 scanner/enricher/nvd/testdata/feed.json
 scripts/ci/lib.sh
 sensor/tests/data/policies.json
