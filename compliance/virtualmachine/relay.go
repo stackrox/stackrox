@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/mdlayher/vsock"
@@ -147,7 +148,9 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 	// is around 1 min 40 s. Given that each virtual machine sends an index report every 4 hours, these retries seem
 	// reasonable and are unlikely to cause issues.
 	err := retry.WithRetry(func() error {
-		resp, err := sensorClient.UpsertVirtualMachineIndexReport(ctx, req)
+		sendToSensorCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		resp, err := sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)
 
 		if resp != nil && !resp.Success {
 			// This can't happen as of this writing (Success is only false when an error is returned) but is
