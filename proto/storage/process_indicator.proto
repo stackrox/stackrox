@@ -93,6 +93,8 @@ message ProcessSignal {
   // Process LineageInfo
   repeated LineageInfo lineage_info = 12;
 
+  bool in_root_mount_ns = 13;
+
   message LineageInfo {
     uint32 parent_uid = 1;
     string parent_exec_file_path = 2; // @gotags: policy:"Process Ancestor"

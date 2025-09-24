@@ -313,6 +313,7 @@ type ProcessSignal struct {
 	Scraped bool `protobuf:"varint,11,opt,name=scraped,proto3" json:"scraped,omitempty"`
 	// Process LineageInfo
 	LineageInfo   []*ProcessSignal_LineageInfo `protobuf:"bytes,12,rep,name=lineage_info,json=lineageInfo,proto3" json:"lineage_info,omitempty"`
+	InRootMountNs bool                         `protobuf:"varint,13,opt,name=in_root_mount_ns,json=inRootMountNs,proto3" json:"in_root_mount_ns,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -432,6 +433,13 @@ func (x *ProcessSignal) GetLineageInfo() []*ProcessSignal_LineageInfo {
 	return nil
 }
 
+func (x *ProcessSignal) GetInRootMountNs() bool {
+	if x != nil {
+		return x.InRootMountNs
+	}
+	return false
+}
+
 type ProcessSignal_LineageInfo struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	ParentUid          uint32                 `protobuf:"varint,1,opt,name=parent_uid,json=parentUid,proto3" json:"parent_uid,omitempty"`
@@ -511,7 +519,7 @@ const file_storage_process_indicator_proto_rawDesc = "" +
 	"\x17NetworkProcessUniqueKey\x12!\n" +
 	"\fprocess_name\x18\x01 \x01(\tR\vprocessName\x123\n" +
 	"\x16process_exec_file_path\x18\x02 \x01(\tR\x13processExecFilePath\x12!\n" +
-	"\fprocess_args\x18\x03 \x01(\tR\vprocessArgs\"\xd6\x03\n" +
+	"\fprocess_args\x18\x03 \x01(\tR\vprocessArgs\"\xff\x03\n" +
 	"\rProcessSignal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
 	"\fcontainer_id\x18\x02 \x01(\tR\vcontainerId\x12.\n" +
@@ -525,7 +533,8 @@ const file_storage_process_indicator_proto_rawDesc = "" +
 	"\alineage\x18\n" +
 	" \x03(\tB\x02\x18\x01R\alineage\x12\x18\n" +
 	"\ascraped\x18\v \x01(\bR\ascraped\x12E\n" +
-	"\flineage_info\x18\f \x03(\v2\".storage.ProcessSignal.LineageInfoR\vlineageInfo\x1a_\n" +
+	"\flineage_info\x18\f \x03(\v2\".storage.ProcessSignal.LineageInfoR\vlineageInfo\x12'\n" +
+	"\x10in_root_mount_ns\x18\r \x01(\bR\rinRootMountNs\x1a_\n" +
 	"\vLineageInfo\x12\x1d\n" +
 	"\n" +
 	"parent_uid\x18\x01 \x01(\rR\tparentUid\x121\n" +

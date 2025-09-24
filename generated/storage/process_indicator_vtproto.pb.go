@@ -121,6 +121,7 @@ func (m *ProcessSignal) CloneVT() *ProcessSignal {
 	r.Uid = m.Uid
 	r.Gid = m.Gid
 	r.Scraped = m.Scraped
+	r.InRootMountNs = m.InRootMountNs
 	if rhs := m.Lineage; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
@@ -329,6 +330,9 @@ func (this *ProcessSignal) EqualVT(that *ProcessSignal) bool {
 				return false
 			}
 		}
+	}
+	if this.InRootMountNs != that.InRootMountNs {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -646,6 +650,16 @@ func (m *ProcessSignal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.InRootMountNs {
+		i--
+		if m.InRootMountNs {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x68
+	}
 	if len(m.LineageInfo) > 0 {
 		for iNdEx := len(m.LineageInfo) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.LineageInfo[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
@@ -912,6 +926,9 @@ func (m *ProcessSignal) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.InRootMountNs {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2124,6 +2141,26 @@ func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InRootMountNs", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.InRootMountNs = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3445,6 +3482,26 @@ func (m *ProcessSignal) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InRootMountNs", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.InRootMountNs = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
