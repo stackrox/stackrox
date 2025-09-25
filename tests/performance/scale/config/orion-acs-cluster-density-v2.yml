@@ -20,6 +20,7 @@ tests :
     - name: collector-cpu
       metricName: stackrox_container_cpu
       labels.container: collector
+      threshold: 5
       metric_of_interest: value
       not:
         jobConfig.name: "garbage-collection"
@@ -29,6 +30,7 @@ tests :
     - name: collector-mem
       metricName: stackrox_container_memory_working_set_bytes
       labels.container: collector
+      threshold: 5
       metric_of_interest: value
       not:
         jobConfig.name: "garbage-collection"
@@ -39,6 +41,7 @@ tests :
     - name: admission-cpu
       metricName: stackrox_container_cpu
       labels.container: admission-control
+      threshold: 5
       metric_of_interest: value
       not:
         jobConfig.name: "garbage-collection"
@@ -48,6 +51,7 @@ tests :
     - name: admission-mem
       metricName: stackrox_container_memory_working_set_bytes
       labels.container: admission-control
+      threshold: 5
       metric_of_interest: value
       not:
         jobConfig.name: "garbage-collection"
@@ -58,6 +62,7 @@ tests :
     - name: central-cpu
       metricName: stackrox_container_cpu
       labels.container: central
+      threshold: 5
       metric_of_interest: value
       not:
         jobConfig.name: "garbage-collection"
@@ -67,6 +72,7 @@ tests :
     - name: central-mem
       metricName: stackrox_container_memory_working_set_bytes
       labels.container: central
+      threshold: 5
       metric_of_interest: value
       not:
         jobConfig.name: "garbage-collection"
@@ -77,6 +83,7 @@ tests :
     - name: central-db-cpu
       metricName: stackrox_container_cpu
       labels.container: central-db
+      threshold: 5
       metric_of_interest: value
       not:
         jobConfig.name: "garbage-collection"
@@ -86,6 +93,7 @@ tests :
     - name: central-db-mem
       metricName: stackrox_container_memory_working_set_bytes
       labels.container: central-db
+      threshold: 5
       metric_of_interest: value
       not:
         jobConfig.name: "garbage-collection"
@@ -96,6 +104,7 @@ tests :
     - name: sensor-cpu
       metricName: stackrox_container_cpu
       labels.container: sensor
+      threshold: 5
       metric_of_interest: value
       not:
         jobConfig.name: "garbage-collection"
@@ -105,6 +114,7 @@ tests :
     - name: sensor-mem
       metricName: stackrox_container_memory_working_set_bytes
       labels.container: sensor
+      threshold: 5
       metric_of_interest: value
       not:
         jobConfig.name: "garbage-collection"
