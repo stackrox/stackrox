@@ -17,9 +17,8 @@ import { nodeComponentAttributes } from 'Components/CompoundSearchFilter/attribu
 import { platformCVEAttributes } from 'Components/CompoundSearchFilter/attributes/platformCVE';
 import {
     VirtualMachineComponentName,
-    VirtualMachineComponentCVSS,
+    VirtualMachineComponentVersion,
     VirtualMachineCVEName,
-    VirtualMachineCVSS,
 } from 'Components/CompoundSearchFilter/attributes/virtualMachine';
 
 export const nodeSearchFilterConfig: CompoundSearchFilterEntity = {
@@ -91,11 +90,11 @@ export const platformCVESearchFilterConfig: CompoundSearchFilterEntity = {
 export const virtualMachineCVESearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'CVE',
     searchCategory: 'SEARCH_UNSET', // doesn't matter since we don't have autocomplete for virtual machines
-    attributes: [VirtualMachineCVEName, VirtualMachineCVSS],
+    attributes: [VirtualMachineCVEName],
 };
 
 export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Component',
     searchCategory: 'SEARCH_UNSET', // doesn't matter since we don't have autocomplete for virtual machines
-    attributes: [VirtualMachineComponentName, VirtualMachineComponentCVSS],
+    attributes: [VirtualMachineComponentName, VirtualMachineComponentVersion],
 };

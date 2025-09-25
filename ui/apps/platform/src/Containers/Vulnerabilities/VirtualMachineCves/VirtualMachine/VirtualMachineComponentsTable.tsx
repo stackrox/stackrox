@@ -3,7 +3,7 @@ import { Td, Thead, Tr, Tbody, Th, Table } from '@patternfly/react-table';
 
 import type { CveComponentRow } from '../aggregateUtils';
 import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
-import FixedByVersion from '../../WorkloadCves/components/FixedByVersion';
+import FixedByVersion from '../../components/FixedByVersion';
 
 export type VirtualMachineComponentsTableProps = {
     components: CveComponentRow[];

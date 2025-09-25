@@ -7,21 +7,14 @@ export const VirtualMachineCVEName: CompoundSearchFilterAttribute = {
     inputType: 'text',
 };
 
-export const VirtualMachineCVSS: CompoundSearchFilterAttribute = {
-    displayName: 'CVSS',
-    filterChipLabel: 'CVE CVSS',
-    searchTerm: 'CVSS',
-    inputType: 'condition-number',
-};
-
 export const VirtualMachineComponentName: CompoundSearchFilterAttribute = {
     displayName: 'Name',
-    filterChipLabel: 'Component',
+    filterChipLabel: 'Component name',
     searchTerm: 'Component',
     inputType: 'text',
 };
 
-export const VirtualMachineComponentCVSS: CompoundSearchFilterAttribute = {
+export const VirtualMachineComponentVersion: CompoundSearchFilterAttribute = {
     displayName: 'Version',
     filterChipLabel: 'Component version',
     searchTerm: 'Component Version',

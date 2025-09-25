@@ -2,9 +2,12 @@ import { severityRankings } from 'constants/vulnerabilities';
 import type { VirtualMachine } from 'services/VirtualMachineService';
 import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
+import type { SearchFilter } from 'types/search';
 import type { Advisory, CVSSV3Severity, EmbeddedVulnerability } from 'types/vulnerability.proto';
+import { searchValueAsArray } from 'utils/searchUtils';
 
-import type { FixableStatus, VulnerabilitySeverityLabel } from '../types';
+import { isVulnerabilitySeverityLabel } from '../types';
+import type { FixableStatus } from '../types';
 import { severityLabelToSeverity } from '../utils/searchUtils';
 
 // Most if not all functions in this file will be removed once backend filtering is implemented.
@@ -100,17 +103,9 @@ export function getVirtualMachineCveTableData(virtualMachine?: VirtualMachine): 
     return Array.from(map.values()).sort(defaultCveTableSort);
 }
 
-type VirtualMachineCveSearchFilter = Partial<{
-    CVE: string[];
-    SEVERITY: VulnerabilitySeverityLabel[];
-    FIXABLE: FixableStatus[];
-    Component: string[];
-    'Component Version': string[];
-}>;
-
 export function applyVirtualMachineCveTableFilters(
     cveTableData: CveTableRow[],
-    searchFilter: VirtualMachineCveSearchFilter
+    searchFilter: SearchFilter
 ): CveTableRow[] {
     if (!searchFilter || Object.keys(searchFilter).length === 0) {
         return cveTableData;
@@ -119,17 +114,22 @@ export function applyVirtualMachineCveTableFilters(
     // normalize filters
     // - convert text filters to lowercase (CVE, Component, Component Version)
     // - map  severity ui labels to severity data values (enum)
-    const cveFilters = searchFilter.CVE?.map((cve) => cve.toLowerCase());
-    const componentFilters = searchFilter.Component?.map((component) => component.toLowerCase());
-    const componentVersionFilters = searchFilter['Component Version']?.map((version) =>
-        version.toLowerCase()
+    const cveFilters = searchValueAsArray(searchFilter.CVE).map((cve) => cve.toLowerCase());
+    const componentFilters = searchValueAsArray(searchFilter.Component).map((component) =>
+        component.toLowerCase()
     );
-    const severityFilters = searchFilter.SEVERITY?.map((label) => severityLabelToSeverity(label));
-    const fixableFilters: FixableStatus[] | undefined = searchFilter.FIXABLE;
+    const componentVersionFilters = searchValueAsArray(searchFilter['Component Version']).map(
+        (version) => version.toLowerCase()
+    );
+    const severityFilters = searchValueAsArray(searchFilter.SEVERITY)
+        .filter(isVulnerabilitySeverityLabel)
+        .map(severityLabelToSeverity);
+
+    const fixableFilters = searchValueAsArray(searchFilter.FIXABLE);
 
     return cveTableData.filter((cveTableRow) => {
         // "CVE" filter, case insensitive and substring
-        if (cveFilters) {
+        if (cveFilters.length > 0) {
             const cveNameLowerCase = cveTableRow.cve.toLowerCase();
             if (!cveFilters.some((filter) => cveNameLowerCase.includes(filter))) {
                 return false;
@@ -137,14 +137,14 @@ export function applyVirtualMachineCveTableFilters(
         }
 
         // "SEVERITY" filter, exact
-        if (severityFilters) {
+        if (severityFilters.length > 0) {
             if (!severityFilters.includes(cveTableRow.severity)) {
                 return false;
             }
         }
 
         // "FIXABLE" filter, exact
-        if (fixableFilters) {
+        if (fixableFilters.length > 0) {
             const rowFixable: FixableStatus = cveTableRow.isFixable ? 'Fixable' : 'Not fixable';
             if (!fixableFilters.includes(rowFixable)) {
                 return false;
@@ -152,7 +152,7 @@ export function applyVirtualMachineCveTableFilters(
         }
 
         // "Component" filter, case insensitive and substring
-        if (componentFilters) {
+        if (componentFilters.length > 0) {
             const components = cveTableRow.affectedComponents ?? [];
             const hasMatch = components.some((comp) => {
                 const compNameLowerCase = comp.name.toLowerCase();
@@ -164,7 +164,7 @@ export function applyVirtualMachineCveTableFilters(
         }
 
         // "Component Version" filter, case insensitive and substring
-        if (componentVersionFilters) {
+        if (componentVersionFilters.length > 0) {
             const components = cveTableRow.affectedComponents ?? [];
             const hasMatch = components.some((comp) => {
                 const versionLowerCase = (comp.version ?? '').toLowerCase();

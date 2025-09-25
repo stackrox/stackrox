@@ -77,6 +77,11 @@ function VirtualMachinePageVulnerabilities({
         searchFilter,
     });
 
+    function onClearFilters() {
+        setSearchFilter({});
+        setPage(1);
+    }
+
     return (
         <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
             <AdvancedFiltersToolbar
@@ -93,7 +98,7 @@ function VirtualMachinePageVulnerabilities({
                     <SplitItem isFilled>
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">
-                                {filteredVirtualMachineTableData.length ? (
+                                {!isLoading ? (
                                     `${pluralize(filteredVirtualMachineTableData.length, 'result')} found`
                                 ) : (
                                     <Skeleton screenreaderText="Loading node vulnerability count" />
@@ -114,7 +119,10 @@ function VirtualMachinePageVulnerabilities({
                         />
                     </SplitItem>
                 </Split>
-                <VirtualMachineVulnerabilitiesTable tableState={tableState} />
+                <VirtualMachineVulnerabilitiesTable
+                    tableState={tableState}
+                    onClearFilters={onClearFilters}
+                />
             </div>
         </PageSection>
     );
