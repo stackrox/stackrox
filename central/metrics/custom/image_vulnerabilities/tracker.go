@@ -29,7 +29,7 @@ func track(ctx context.Context, ds deploymentDS.DataStore) iter.Seq[*finding] {
 			f.deployment = deployment
 			images, err := ds.GetImagesForDeployment(ctx, deployment)
 			if err != nil {
-				return nil // Nothing can be done with this error here.
+				return err
 			}
 			for _, f.image = range images {
 				if !forEachImageVuln(yield, &f) {
