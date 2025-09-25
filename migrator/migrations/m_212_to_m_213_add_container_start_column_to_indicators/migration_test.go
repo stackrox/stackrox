@@ -47,22 +47,15 @@ func (s *migrationTestSuite) TestMigration() {
 		DBCtx:      s.ctx,
 	}
 
+	clusters := []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2, fixtureconsts.Cluster3}
+	numIndicators := 300
+	numNilContainerTime := 10
+
 	if !s.existingDB {
 		// Create the old schema for testing
 		pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableProcessIndicatorsStmt)
-		cluster4 := uuid.NewV4().String()
-		cluster5 := uuid.NewV4().String()
-		cluster6 := uuid.NewV4().String()
-		cluster7 := uuid.NewV4().String()
-		cluster8 := uuid.NewV4().String()
-		cluster9 := uuid.NewV4().String()
-		cluster10 := uuid.NewV4().String()
-
-		clusters := []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2, fixtureconsts.Cluster3, cluster4, cluster5, cluster6, cluster7, cluster8, cluster9, cluster10}
-
+		
 		// Add some process indicators
-		numIndicators := 300
-		numNilContainerTime := 10
 		var indicators []*storage.ProcessIndicator
 
 		log.Info("Building base indicators")
@@ -112,7 +105,7 @@ func (s *migrationTestSuite) TestMigration() {
 	err := s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM process_indicators WHERE containerstarttime IS NULL;").Scan(&n)
 	s.NoError(err)
 	log.Infof("Found %d indicators", n)
-	//s.Require().Equal(numIndicators*len(clusters), n)
+	s.Require().Equal(numIndicators*len(clusters), n)
 
 	// Now run the migration
 	log.Info("Start migration")
@@ -123,5 +116,5 @@ func (s *migrationTestSuite) TestMigration() {
 	err = s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM process_indicators WHERE containerstarttime IS NULL;").Scan(&n)
 	s.NoError(err)
 	log.Infof("Found %d indicators with nil time", n)
-	//s.Require().Equal(numNilContainerTime*len(clusters), n)
+	s.Require().Equal(numNilContainerTime*len(clusters), n)
 }
