@@ -10,13 +10,13 @@ option java_package = "io.stackrox.proto.storage";
 // This proto is deprecated and replaced by ImageComponentV2
 message ImageComponent {
   option deprecated = true;
-  string id = 1; // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID" sql:"pk,id"
+  string id = 1; // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,hidden" sql:"pk,id"
   string name = 2; // @gotags: search:"Component"
   string version = 3; // @gotags: search:"Component Version"
   License license = 4;
-  int64 priority = 5; // @gotags: search:"Component Risk Priority"
+  int64 priority = 5; // @gotags: search:"Component Risk Priority,hidden"
   SourceType source = 6; // @gotags: search:"Component Source"
-  float risk_score = 7; // @gotags: search:"Component Risk Score"
+  float risk_score = 7; // @gotags: search:"Component Risk Score,hidden"
   oneof set_top_cvss {
     float top_cvss = 8; // @gotags: search:"Component Top CVSS"
   }
@@ -27,12 +27,12 @@ message ImageComponent {
 
 message ImageComponentV2 {
   // ID will be form of Name+version+arch+imageID
-  string id = 1; // @gotags: search:"Component ID" sql:"pk,id"
+  string id = 1; // @gotags: search:"Component ID,hidden" sql:"pk,id"
   string name = 2; // @gotags: search:"Component"
   string version = 3; // @gotags: search:"Component Version"
-  int64 priority = 4; // @gotags: search:"Component Risk Priority"
+  int64 priority = 4; // @gotags: search:"Component Risk Priority,hidden"
   SourceType source = 5; // @gotags: search:"Component Source"
-  float risk_score = 6; // @gotags: search:"Component Risk Score"
+  float risk_score = 6; // @gotags: search:"Component Risk Score,hidden"
   oneof set_top_cvss {
     float top_cvss = 7; // @gotags: search:"Component Top CVSS"
   }
@@ -46,7 +46,7 @@ message ImageComponentV2 {
     int32 layer_index = 11;
   }
 
-  string location = 12; // @gotags: search:"Component Location"
+  string location = 12; // @gotags: search:"Component Location,hidden"
 
   string architecture = 13;
 

@@ -243,7 +243,7 @@ func (SecurityContext_SeccompProfile_ProfileType) EnumDescriptor() ([]byte, []in
 // Next available tag: 36
 type Deployment struct {
 	state                         protoimpl.MessageState `protogen:"open.v1"`
-	Id                            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Deployment ID" sql:"pk,type(uuid)"
+	Id                            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
 	Name                          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment"`                                                                                                       // @gotags: search:"Deployment"
 	Hash                          uint64                 `protobuf:"varint,26,opt,name=hash,proto3" json:"hash,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                                                     // @gotags: hash:"ignore" sensorhash:"ignore"
 	Type                          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty" search:"Deployment Type"`                                                                                                       // @gotags: search:"Deployment Type"
@@ -254,12 +254,12 @@ type Deployment struct {
 	Labels                        map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Label"`                         // @gotags: search:"Deployment Label"
 	PodLabels                     map[string]string      `protobuf:"bytes,19,rep,name=pod_labels,json=podLabels,proto3" json:"pod_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Pod Label"` // @gotags: search:"Pod Label"
 	LabelSelector                 *LabelSelector         `protobuf:"bytes,20,opt,name=label_selector,json=labelSelector,proto3" json:"label_selector,omitempty"`
-	Created                       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created,proto3" json:"created,omitempty" search:"Created" hash:"ignore"`                             // @gotags: search:"Created" hash:"ignore"
-	ClusterId                     string                 `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`        // @gotags: search:"Cluster ID" sql:"type(uuid)"
+	Created                       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created,proto3" json:"created,omitempty" search:"Created,hidden" hash:"ignore"`                             // @gotags: search:"Created,hidden" hash:"ignore"
+	ClusterId                     string                 `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`        // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
 	ClusterName                   string                 `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"` // @gotags: search:"Cluster"
 	Containers                    []*Container           `protobuf:"bytes,11,rep,name=containers,proto3" json:"containers,omitempty"`
 	Annotations                   map[string]string      `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Annotation"` // @gotags: search:"Deployment Annotation"
-	Priority                      int64                  `protobuf:"varint,15,opt,name=priority,proto3" json:"priority,omitempty" search:"Deployment Risk Priority" hash:"ignore"`                                                                                // @gotags: search:"Deployment Risk Priority" hash:"ignore"
+	Priority                      int64                  `protobuf:"varint,15,opt,name=priority,proto3" json:"priority,omitempty" search:"Deployment Risk Priority,hidden" hash:"ignore"`                                                                                // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
 	Inactive                      bool                   `protobuf:"varint,16,opt,name=inactive,proto3" json:"inactive,omitempty"`
 	ImagePullSecrets              []string               `protobuf:"bytes,17,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty" search:"Image Pull Secret"`                                                                        // @gotags: search:"Image Pull Secret"
 	ServiceAccount                string                 `protobuf:"bytes,18,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" search:"Service Account"`                                                                                // @gotags: search:"Service Account"
@@ -272,7 +272,7 @@ type Deployment struct {
 	Tolerations                   []*Toleration          `protobuf:"bytes,22,rep,name=tolerations,proto3" json:"tolerations,omitempty" search:"-"`                                                                                                            // @gotags: search:"-"
 	Ports                         []*PortConfig          `protobuf:"bytes,24,rep,name=ports,proto3" json:"ports,omitempty" policy:"Ports"`                                                                                                                        // @gotags: policy:"Ports"
 	StateTimestamp                int64                  `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp,proto3" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                               // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
-	RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score" policy:",ignore" sql:"index=btree"`                                                                                             // @gotags: search:"Deployment Risk Score" policy:",ignore" sql:"index=btree"
+	RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                                                                             // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
 	PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
 	unknownFields                 protoimpl.UnknownFields
 	sizeCache                     protoimpl.SizeCache
@@ -529,11 +529,11 @@ func (x *Deployment) GetPlatformComponent() bool {
 type ContainerImage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Deprecated: Marked as deprecated in storage/deployment.proto.
-	Id             string     `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" search:"Image Sha" sql:"fk(Image:id),no-fk-constraint,index=hash"` // @gotags: search:"Image Sha" sql:"fk(Image:id),no-fk-constraint,index=hash"
+	Id             string     `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" search:"Image Sha,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"` // @gotags: search:"Image Sha,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"
 	Name           *ImageName `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	NotPullable    bool       `protobuf:"varint,10,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
 	IsClusterLocal bool       `protobuf:"varint,11,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
-	IdV2           string     `protobuf:"bytes,12,opt,name=id_v2,json=idV2,proto3" json:"id_v2,omitempty" search:"Image ID" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"` // @gotags: search:"Image ID" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"
+	IdV2           string     `protobuf:"bytes,12,opt,name=id_v2,json=idV2,proto3" json:"id_v2,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"` // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -972,11 +972,11 @@ func (x *ReadinessProbe) GetDefined() bool {
 type Pod struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Pod UID
-	Id            string               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Pod ID" sql:"pk,type(uuid)"`                                         // @gotags: search:"Pod ID" sql:"pk,type(uuid)"
-	Name          string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Pod Name"`                                     // @gotags: search:"Pod Name"
-	DeploymentId  string               `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Deployment ID" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"
+	Id            string               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Pod ID,hidden" sql:"pk,type(uuid)"`                                         // @gotags: search:"Pod ID,hidden" sql:"pk,type(uuid)"
+	Name          string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Pod Name,hidden"`                                     // @gotags: search:"Pod Name,hidden"
+	DeploymentId  string               `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"
 	Namespace     string               `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                           // @gotags: search:"Namespace"
-	ClusterId     string               `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`          // @gotags: search:"Cluster ID" sql:"type(uuid)"
+	ClusterId     string               `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`          // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
 	LiveInstances []*ContainerInstance `protobuf:"bytes,6,rep,name=live_instances,json=liveInstances,proto3" json:"live_instances,omitempty"`
 	// Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)
 	// There is one bucket (list) per container name.
@@ -1087,7 +1087,7 @@ type ContainerInstance struct {
 	// The start time of the container
 	Started *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=started,proto3" json:"started,omitempty"`
 	// Image ID
-	ImageDigest string `protobuf:"bytes,5,opt,name=image_digest,json=imageDigest,proto3" json:"image_digest,omitempty" search:"Container Image Digest"` // @gotags: search:"Container Image Digest"
+	ImageDigest string `protobuf:"bytes,5,opt,name=image_digest,json=imageDigest,proto3" json:"image_digest,omitempty" search:"Container Image Digest,hidden"` // @gotags: search:"Container Image Digest,hidden"
 	// The finish time of the container, if it finished.
 	Finished *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=finished,proto3" json:"finished,omitempty"`
 	// The exit code of the container. Only valid when finished is populated.

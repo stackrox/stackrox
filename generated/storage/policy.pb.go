@@ -392,7 +392,7 @@ func (Comparator) EnumDescriptor() ([]byte, []int) {
 // Next tag: 28
 type Policy struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Policy ID" sql:"pk,index=btree" crYaml:"-"` // @gotags: search:"Policy ID" sql:"pk,index=btree" crYaml:"-"
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"` // @gotags: search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"
 	// Name of the policy.  Must be unique.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy" sql:"unique" crYaml:"policyName"` // @gotags: search:"Policy" sql:"unique" crYaml:"policyName"
 	// Free-form text description of this policy.
@@ -423,11 +423,11 @@ type Policy struct {
 	Notifiers   []string               `protobuf:"bytes,14,rep,name=notifiers,proto3" json:"notifiers,omitempty" crYaml:",omitempty"`                        // @gotags: crYaml:",omitempty"
 	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Policy Last Updated" crYaml:"-"` // @gotags: search:"Policy Last Updated" crYaml:"-"
 	// For internal use only.
-	SORTName string `protobuf:"bytes,16,opt,name=SORT_name,json=SORTName,proto3" json:"SORT_name,omitempty" search:"SORT_Policy,analyzer=keyword" crYaml:"-"` // @gotags: search:"SORT_Policy,analyzer=keyword" crYaml:"-"
+	SORTName string `protobuf:"bytes,16,opt,name=SORT_name,json=SORTName,proto3" json:"SORT_name,omitempty" search:"SORT_Policy,hidden,analyzer=keyword" crYaml:"-"` // @gotags: search:"SORT_Policy,hidden,analyzer=keyword" crYaml:"-"
 	// For internal use only.
-	SORTLifecycleStage string `protobuf:"bytes,17,opt,name=SORT_lifecycleStage,json=SORTLifecycleStage,proto3" json:"SORT_lifecycleStage,omitempty" search:"SORT_Lifecycle Stage" crYaml:"-"` // @gotags: search:"SORT_Lifecycle Stage" crYaml:"-"
+	SORTLifecycleStage string `protobuf:"bytes,17,opt,name=SORT_lifecycleStage,json=SORTLifecycleStage,proto3" json:"SORT_lifecycleStage,omitempty" search:"SORT_Lifecycle Stage,hidden" crYaml:"-"` // @gotags: search:"SORT_Lifecycle Stage,hidden" crYaml:"-"
 	// For internal use only.
-	SORTEnforcement bool   `protobuf:"varint,18,opt,name=SORT_enforcement,json=SORTEnforcement,proto3" json:"SORT_enforcement,omitempty" search:"SORT_Enforcement" crYaml:"-"` // @gotags: search:"SORT_Enforcement" crYaml:"-"
+	SORTEnforcement bool   `protobuf:"varint,18,opt,name=SORT_enforcement,json=SORTEnforcement,proto3" json:"SORT_enforcement,omitempty" search:"SORT_Enforcement,hidden" crYaml:"-"` // @gotags: search:"SORT_Enforcement,hidden" crYaml:"-"
 	PolicyVersion   string `protobuf:"bytes,19,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty" crYaml:"-"`        // @gotags: crYaml:"-"
 	// PolicySections define the violation criteria for this policy.
 	PolicySections     []*PolicySection             `protobuf:"bytes,20,rep,name=policy_sections,json=policySections,proto3" json:"policy_sections,omitempty" crYaml:"policySections,omitempty"`               // @gotags: crYaml:"policySections,omitempty"

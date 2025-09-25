@@ -40,22 +40,22 @@ message Node {
   string kubelet_version = 15;
   string kube_proxy_version = 16;
 
-  google.protobuf.Timestamp last_updated = 25; // @gotags: search:"Last Updated"
+  google.protobuf.Timestamp last_updated = 25; // @gotags: search:"Last Updated,hidden"
   // Time we received an update from Kubernetes.
   google.protobuf.Timestamp k8s_updated = 26; // @gotags: sensorhash:"ignore"
 
   NodeScan scan = 18; // @gotags: policy:"Node Scan"
   oneof set_components {
-    int32 components = 19; // @gotags: search:"Component Count"
+    int32 components = 19; // @gotags: search:"Component Count,hidden"
   }
   oneof set_cves {
-    int32 cves = 20; // @gotags: search:"CVE Count"
+    int32 cves = 20; // @gotags: search:"CVE Count,hidden"
   }
   oneof set_fixable {
-    int32 fixable_cves = 21; // @gotags: search:"Fixable CVE Count"
+    int32 fixable_cves = 21; // @gotags: search:"Fixable CVE Count,hidden"
   }
-  int64 priority = 22; // @gotags: search:"Node Risk Priority"
-  float risk_score = 23; // @gotags: search:"Node Risk Score"
+  int64 priority = 22; // @gotags: search:"Node Risk Priority,hidden"
+  float risk_score = 23; // @gotags: search:"Node Risk Score,hidden"
   oneof set_top_cvss {
     float top_cvss = 24; // @gotags: search:"Node Top CVSS"
   }

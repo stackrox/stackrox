@@ -14,7 +14,7 @@ option java_package = "io.stackrox.proto.storage";
 
 // Next available tag: 36
 message Deployment {
-  string id = 1; // @gotags: search:"Deployment ID" sql:"pk,type(uuid)"
+  string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment"
   reserved 3;
   uint64 hash = 26; // @gotags: hash:"ignore" sensorhash:"ignore"
@@ -26,13 +26,13 @@ message Deployment {
   map<string, string> labels = 7; // @gotags: search:"Deployment Label"
   map<string, string> pod_labels = 19; // @gotags: search:"Pod Label"
   LabelSelector label_selector = 20;
-  google.protobuf.Timestamp created = 8; // @gotags: search:"Created" hash:"ignore"
-  string cluster_id = 9; // @gotags: search:"Cluster ID" sql:"type(uuid)"
+  google.protobuf.Timestamp created = 8; // @gotags: search:"Created,hidden" hash:"ignore"
+  string cluster_id = 9; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   string cluster_name = 10; // @gotags: search:"Cluster"
   repeated Container containers = 11;
   reserved 12;
   map<string, string> annotations = 14; // @gotags: search:"Deployment Annotation"
-  int64 priority = 15; // @gotags: search:"Deployment Risk Priority" hash:"ignore"
+  int64 priority = 15; // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
   bool inactive = 16;
   repeated string image_pull_secrets = 17; // @gotags: search:"Image Pull Secret"
   string service_account = 18; // @gotags: search:"Service Account"
@@ -46,7 +46,7 @@ message Deployment {
   repeated PortConfig ports = 24; // @gotags: policy:"Ports"
 
   int64 state_timestamp = 27; // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
-  float risk_score = 29; // @gotags: search:"Deployment Risk Score" policy:",ignore" sql:"index=btree"
+  float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
 
   reserved 30; // was tags
 
@@ -58,13 +58,13 @@ message ContainerImage {
   // These tags maintain backwards compatibility with the previously embedded storage.Image
   // Tags after 10 may be used as needed
   reserved 2, 3, 5, 6, 7, 8, 9;
-  string id = 4 [deprecated = true]; // @gotags: search:"Image Sha" sql:"fk(Image:id),no-fk-constraint,index=hash"
+  string id = 4 [deprecated = true]; // @gotags: search:"Image Sha,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"
   ImageName name = 1;
   bool not_pullable = 10;
 
   bool is_cluster_local = 11;
 
-  string id_v2 = 12; // @gotags: search:"Image ID" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"
+  string id_v2 = 12; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"
 }
 
 message Container {
@@ -117,11 +117,11 @@ message ReadinessProbe {
 // Pod represents information for a currently running pod or deleted pod in an active deployment.
 message Pod {
   // Pod UID
-  string id = 1; // @gotags: search:"Pod ID" sql:"pk,type(uuid)"
-  string name = 2; // @gotags: search:"Pod Name"
-  string deployment_id = 3; // @gotags: search:"Deployment ID" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"
+  string id = 1; // @gotags: search:"Pod ID,hidden" sql:"pk,type(uuid)"
+  string name = 2; // @gotags: search:"Pod Name,hidden"
+  string deployment_id = 3; // @gotags: search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"
   string namespace = 4; // @gotags: search:"Namespace"
-  string cluster_id = 5; // @gotags: search:"Cluster ID" sql:"type(uuid)"
+  string cluster_id = 5; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   repeated ContainerInstance live_instances = 6;
   // Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)
   // There is one bucket (list) per container name.
@@ -152,7 +152,7 @@ message ContainerInstance {
   google.protobuf.Timestamp started = 4;
 
   // Image ID
-  string image_digest = 5; // @gotags: search:"Container Image Digest"
+  string image_digest = 5; // @gotags: search:"Container Image Digest,hidden"
 
   // The finish time of the container, if it finished.
   google.protobuf.Timestamp finished = 7;

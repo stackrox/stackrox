@@ -673,9 +673,9 @@ type NetworkEntityInfo_ExternalSource struct {
 	//	*NetworkEntityInfo_ExternalSource_Cidr
 	Source isNetworkEntityInfo_ExternalSource_Source `protobuf_oneof:"source"`
 	// `default` indicates whether the external source is user-generated or system-generated.
-	Default bool `protobuf:"varint,3,opt,name=default,proto3" json:"default,omitempty" search:"Default External Source"` // @gotags: search:"Default External Source"
+	Default bool `protobuf:"varint,3,opt,name=default,proto3" json:"default,omitempty" search:"Default External Source,hidden"` // @gotags: search:"Default External Source,hidden"
 	// `discovered` indicates whether the external source is harvested from monitored traffic.
-	Discovered    bool `protobuf:"varint,4,opt,name=discovered,proto3" json:"discovered,omitempty" search:"Discovered External Source"` // @gotags: search:"Discovered External Source"
+	Discovered    bool `protobuf:"varint,4,opt,name=discovered,proto3" json:"discovered,omitempty" search:"Discovered External Source,hidden"` // @gotags: search:"Discovered External Source,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -752,7 +752,7 @@ type isNetworkEntityInfo_ExternalSource_Source interface {
 }
 
 type NetworkEntityInfo_ExternalSource_Cidr struct {
-	Cidr string `protobuf:"bytes,2,opt,name=cidr,proto3,oneof" sql:"type(cidr),index" search:"External Source Address"` // @gotags: sql:"type(cidr),index" search:"External Source Address"
+	Cidr string `protobuf:"bytes,2,opt,name=cidr,proto3,oneof" sql:"type(cidr),index" search:"External Source Address,hidden"` // @gotags: sql:"type(cidr),index" search:"External Source Address,hidden"
 }
 
 func (*NetworkEntityInfo_ExternalSource_Cidr) isNetworkEntityInfo_ExternalSource_Source() {}

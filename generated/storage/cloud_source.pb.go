@@ -73,8 +73,8 @@ func (CloudSource_Type) EnumDescriptor() ([]byte, []int) {
 type CloudSource struct {
 	state               protoimpl.MessageState   `protogen:"open.v1"`
 	Id                  string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                    // @gotags: sql:"pk,type(uuid)"
-	Name                string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Integration Name"`                                // @gotags: sql:"unique" search:"Integration Name"
-	Type                CloudSource_Type         `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CloudSource_Type" json:"type,omitempty" search:"Integration Type"` // @gotags: search:"Integration Type"
+	Name                string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Integration Name,hidden"`                                // @gotags: sql:"unique" search:"Integration Name,hidden"
+	Type                CloudSource_Type         `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CloudSource_Type" json:"type,omitempty" search:"Integration Type,hidden"` // @gotags: search:"Integration Type,hidden"
 	Credentials         *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials,proto3" json:"credentials,omitempty"`
 	SkipTestIntegration bool                     `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration,proto3" json:"skip_test_integration,omitempty"`
 	// Types that are valid to be assigned to Config:
