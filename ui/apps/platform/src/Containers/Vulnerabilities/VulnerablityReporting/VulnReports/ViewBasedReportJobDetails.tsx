@@ -13,9 +13,17 @@ import {
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import { getSearchFilterFromSearchString, searchValueAsArray } from 'utils/searchUtils';
+import {
+    getSearchFilterFromSearchString,
+    getValueByCaseInsensitiveKey,
+    searchValueAsArray,
+} from 'utils/searchUtils';
 import { isVulnerabilitySeverity } from 'types/cve.proto';
 import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
+
+const toTitleCase = (str: string) => {
+    return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+};
 
 export type ViewBasedReportJobDetailsProps = {
     reportSnapshot: ViewBasedReportSnapshot;
@@ -25,18 +33,8 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
     const query = getSearchFilterFromSearchString(reportSnapshot.viewBasedVulnReportFilters.query);
 
     // Extract vulnerability-specific filters
-    const findValueByKey = (
-        obj: Partial<Record<string, string | string[]>>,
-        targetKey: string
-    ): string | string[] | undefined => {
-        const foundKey = Object.keys(obj).find(
-            (key) => key.toLowerCase() === targetKey.toLowerCase()
-        );
-        return foundKey ? obj[foundKey] : undefined;
-    };
-
-    const severityValues = findValueByKey(query, 'Severity');
-    const cveDiscoveredTimeValues = findValueByKey(query, 'CVE Created Time');
+    const severityValues = getValueByCaseInsensitiveKey(query, 'Severity');
+    const cveDiscoveredTimeValues = getValueByCaseInsensitiveKey(query, 'CVE Created Time');
 
     const validSeverities = severityValues
         ? searchValueAsArray(severityValues).filter((severity) => isVulnerabilitySeverity(severity))
@@ -59,7 +57,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
         }
         if (typeof value === 'string') {
             return (
-                <ChipGroup categoryName={key}>
+                <ChipGroup categoryName={toTitleCase(key)}>
                     <Chip key={value} isReadOnly>
                         {value}
                     </Chip>
@@ -67,7 +65,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
             );
         }
         return (
-            <ChipGroup categoryName={key}>
+            <ChipGroup categoryName={toTitleCase(key)}>
                 {value.map((currentChip) => (
                     <Chip key={currentChip} isReadOnly>
                         {currentChip}
