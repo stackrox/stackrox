@@ -4,6 +4,7 @@ package apiparams
 // Any changes to this struct should be reflected in the central/docs/api_custom_routes/image_service_swagger.yaml
 type SBOMRequestBody struct {
 	Cluster   string `json:"cluster"`
+	Namespace string `json:"namespace"`
 	ImageName string `json:"imageName"`
 	Force     bool   `json:"force"`
 }

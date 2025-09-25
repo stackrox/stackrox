@@ -1708,6 +1708,7 @@ image:
       - cluster
       - force
       - image
+      - namespace
       - retries
       - retry-delay
     INHERITED_FLAGS:

@@ -141,6 +141,7 @@ func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMReque
 			return nil, err
 		}
 		enrichmentCtx.ClusterID = clusterID
+		enrichmentCtx.Namespace = params.Namespace
 	}
 
 	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, params.ImageName)
