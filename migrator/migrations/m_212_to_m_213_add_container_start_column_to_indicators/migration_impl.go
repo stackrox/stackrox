@@ -49,8 +49,7 @@ func migrate(database *types.Databases) error {
 		go func(c string, err error) {
 			defer sema.Release(1)
 			defer wg.Done()
-			_ = migrateByCluster(cluster, database, err)
-			return
+			err = migrateByCluster(cluster, database, err)
 		}(cluster, err)
 		if err != nil {
 			return err
@@ -61,20 +60,21 @@ func migrate(database *types.Databases) error {
 	return err
 }
 
-func migrateByCluster(cluster string, database *types.Databases, err error) error {
+func migrateByCluster(cluster string, database *types.Databases, migrateError error) error {
 	ctx, cancel := context.WithTimeout(database.DBCtx, types.DefaultMigrationTimeout)
 	defer cancel()
 	store := postgres.New(database.PostgresDB)
-	//var convertedIndicators []*updatedSchema.ProcessIndicators
 	var storeIndicators []*storage.ProcessIndicator
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster).ProtoQuery()
-	storeIndicators, err = store.GetByQuery(ctx, query)
+	storeIndicators, err := store.GetByQuery(ctx, query)
 	if err != nil {
+		migrateError = err
 		return err
 	}
 	log.Infof("Processing %s with %d indicators", cluster, len(storeIndicators))
 	for objBatch := range slices.Chunk(storeIndicators, batchSize) {
 		if err = store.UpsertMany(ctx, objBatch); err != nil {
+			migrateError = err
 			return errors.Wrap(err, "failed to upsert all converted objects")
 		}
 	}
@@ -82,6 +82,7 @@ func migrateByCluster(cluster string, database *types.Databases, err error) erro
 	if len(storeIndicators) > 0 {
 		log.Infof("Processing %d indicators", len(storeIndicators))
 		if err = store.UpsertMany(ctx, storeIndicators); err != nil {
+			migrateError = err
 			return errors.Wrap(err, "failed to upsert all converted objects")
 		}
 	}
