@@ -140,15 +140,15 @@ type AdministrationEvent struct {
 	// The id is a UUIDv5 generated deterministically from the tuple (type, level, domain,
 	// resource_type, resource_id, message). It is used for deduplication of events.
 	Id             string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                              // @gotags: sql:"pk,type(uuid)"
-	Type           AdministrationEventType       `protobuf:"varint,2,opt,name=type,proto3,enum=storage.AdministrationEventType" json:"type,omitempty" search:"Event Type,hidden"`    // @gotags: search:"Event Type,hidden"
-	Level          AdministrationEventLevel      `protobuf:"varint,3,opt,name=level,proto3,enum=storage.AdministrationEventLevel" json:"level,omitempty" search:"Event Level,hidden"` // @gotags: search:"Event Level,hidden"
+	Type           AdministrationEventType       `protobuf:"varint,2,opt,name=type,proto3,enum=storage.AdministrationEventType" json:"type,omitempty" search:"Event Type"`    // @gotags: search:"Event Type"
+	Level          AdministrationEventLevel      `protobuf:"varint,3,opt,name=level,proto3,enum=storage.AdministrationEventLevel" json:"level,omitempty" search:"Event Level"` // @gotags: search:"Event Level"
 	Message        string                        `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
 	Hint           string                        `protobuf:"bytes,5,opt,name=hint,proto3" json:"hint,omitempty"`
-	Domain         string                        `protobuf:"bytes,6,opt,name=domain,proto3" json:"domain,omitempty" search:"Event Domain,hidden"` // @gotags: search:"Event Domain,hidden"
+	Domain         string                        `protobuf:"bytes,6,opt,name=domain,proto3" json:"domain,omitempty" search:"Event Domain"` // @gotags: search:"Event Domain"
 	Resource       *AdministrationEvent_Resource `protobuf:"bytes,7,opt,name=resource,proto3" json:"resource,omitempty"`
-	NumOccurrences int64                         `protobuf:"varint,8,opt,name=num_occurrences,json=numOccurrences,proto3" json:"num_occurrences,omitempty" search:"Event Occurrence,hidden"`  // @gotags: search:"Event Occurrence,hidden"
-	LastOccurredAt *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt,proto3" json:"last_occurred_at,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
-	CreatedAt      *timestamppb.Timestamp        `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time,hidden"`                 // @gotags: search:"Created Time,hidden"
+	NumOccurrences int64                         `protobuf:"varint,8,opt,name=num_occurrences,json=numOccurrences,proto3" json:"num_occurrences,omitempty" search:"Event Occurrence"`  // @gotags: search:"Event Occurrence"
+	LastOccurredAt *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt,proto3" json:"last_occurred_at,omitempty" search:"Last Updated"` // @gotags: search:"Last Updated"
+	CreatedAt      *timestamppb.Timestamp        `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"`                 // @gotags: search:"Created Time"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -255,7 +255,7 @@ func (x *AdministrationEvent) GetCreatedAt() *timestamppb.Timestamp {
 
 type AdministrationEvent_Resource struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty" search:"Resource Type,hidden"` // @gotags: search:"Resource Type,hidden"
+	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty" search:"Resource Type"` // @gotags: search:"Resource Type"
 	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields

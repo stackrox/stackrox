@@ -83,12 +83,12 @@ message NetworkEntityInfo {
   message ExternalSource {
     string name = 1;
     oneof source {
-      string cidr = 2; // @gotags: sql:"type(cidr),index" search:"External Source Address,hidden"
+      string cidr = 2; // @gotags: sql:"type(cidr),index" search:"External Source Address"
     }
     // `default` indicates whether the external source is user-generated or system-generated.
-    bool default = 3; // @gotags: search:"Default External Source,hidden"
+    bool default = 3; // @gotags: search:"Default External Source"
     // `discovered` indicates whether the external source is harvested from monitored traffic.
-    bool discovered = 4; // @gotags: search:"Discovered External Source,hidden"
+    bool discovered = 4; // @gotags: search:"Discovered External Source"
   }
 
   Type type = 1; // @gotags: sql:"index"

@@ -10,7 +10,7 @@ option java_package = "io.stackrox.proto.storage";
 
 // Next tag: 28
 message ImageV2 {
-  string id = 1; // @gotags: search:"Image ID,hidden" sql:"pk"
+  string id = 1; // @gotags: search:"Image ID" sql:"pk"
   string sha = 2; // @gotags: search:"Image Sha"
   ImageName name = 3;
 
@@ -21,51 +21,51 @@ message ImageV2 {
   ImageSignature signature = 7;
 
   // Caching component count to avoid re-calculating it by joining on the component table.
-  int32 component_count = 8; // @gotags: search:"Component Count,hidden"
+  int32 component_count = 8; // @gotags: search:"Component Count"
 
   // Caching cve count to avoid re-calculating it by joining on the cve table.
-  int32 cve_count = 9; // @gotags: search:"Image CVE Count,hidden"
+  int32 cve_count = 9; // @gotags: search:"Image CVE Count"
 
   // Caching fixable cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_cve_count = 10; // @gotags: search:"Fixable CVE Count,hidden"
+  int32 fixable_cve_count = 10; // @gotags: search:"Fixable CVE Count"
 
   // Caching unknown cve count to avoid re-calculating it by joining on the cve table.
-  int32 unknown_cve_count = 11; // @gotags: search:"Unknown CVE Count,hidden"
+  int32 unknown_cve_count = 11; // @gotags: search:"Unknown CVE Count"
 
   // Caching fixable unknown cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_unknown_cve_count = 12; // @gotags: search:"Fixable Unknown CVE Count,hidden"
+  int32 fixable_unknown_cve_count = 12; // @gotags: search:"Fixable Unknown CVE Count"
 
   // Caching critical cve count to avoid re-calculating it by joining on the cve table.
-  int32 critical_cve_count = 13; // @gotags: search:"Critical CVE Count,hidden"
+  int32 critical_cve_count = 13; // @gotags: search:"Critical CVE Count"
 
   // Caching fixable critical cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_critical_cve_count = 14; // @gotags: search:"Fixable Critical CVE Count,hidden"
+  int32 fixable_critical_cve_count = 14; // @gotags: search:"Fixable Critical CVE Count"
 
   // Caching important cve count to avoid re-calculating it by joining on the cve table.
-  int32 important_cve_count = 15; // @gotags: search:"Important CVE Count,hidden"
+  int32 important_cve_count = 15; // @gotags: search:"Important CVE Count"
 
   // Caching fixable important cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_important_cve_count = 16; // @gotags: search:"Fixable Important CVE Count,hidden"
+  int32 fixable_important_cve_count = 16; // @gotags: search:"Fixable Important CVE Count"
 
   // Caching moderate cve count to avoid re-calculating it by joining on the cve table.
-  int32 moderate_cve_count = 17; // @gotags: search:"Moderate CVE Count,hidden"
+  int32 moderate_cve_count = 17; // @gotags: search:"Moderate CVE Count"
 
   // Caching fixable moderate cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_moderate_cve_count = 18; // @gotags: search:"Fixable Moderate CVE Count,hidden"
+  int32 fixable_moderate_cve_count = 18; // @gotags: search:"Fixable Moderate CVE Count"
 
   // Caching low cve count to avoid re-calculating it by joining on the cve table.
-  int32 low_cve_count = 19; // @gotags: search:"Low CVE Count,hidden"
+  int32 low_cve_count = 19; // @gotags: search:"Low CVE Count"
 
   // Caching fixable low cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_low_cve_count = 20; // @gotags: search:"Fixable Low CVE Count,hidden"
+  int32 fixable_low_cve_count = 20; // @gotags: search:"Fixable Low CVE Count"
 
-  google.protobuf.Timestamp last_updated = 21; // @gotags: search:"Last Updated,hidden"
+  google.protobuf.Timestamp last_updated = 21; // @gotags: search:"Last Updated"
 
   bool not_pullable = 22;
   bool is_cluster_local = 23;
 
-  int64 priority = 24; // @gotags: search:"Image Risk Priority,hidden"
-  float risk_score = 25; // @gotags: search:"Image Risk Score,hidden"
+  int64 priority = 24; // @gotags: search:"Image Risk Priority"
+  float risk_score = 25; // @gotags: search:"Image Risk Score"
 
   // Caching top cvss to avoid re-calculating it by joining on the cve table.
   float top_cvss = 26; // @gotags: search:"Image Top CVSS"

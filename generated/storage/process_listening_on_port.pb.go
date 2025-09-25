@@ -249,7 +249,7 @@ type ProcessListeningOnPortStorage struct {
 	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                             // @gotags: sql:"pk,type(uuid)"
 	Port               uint32                 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty" search:"Port"`                                                        // @gotags: search:"Port"
 	Protocol           L4Protocol             `protobuf:"varint,3,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty" search:"Port Protocol"`                        // @gotags: search:"Port Protocol"
-	CloseTimestamp     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty" search:"Closed Time,hidden"`               // @gotags: search:"Closed Time,hidden"
+	CloseTimestamp     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty" search:"Closed Time"`               // @gotags: search:"Closed Time"
 	ProcessIndicatorId string                 `protobuf:"bytes,5,opt,name=process_indicator_id,json=processIndicatorId,proto3" json:"process_indicator_id,omitempty" search:"Process ID" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"` // @gotags: search:"Process ID" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"
 	// XXX: Make it a partial index on only active, not closed, PLOP
 	Closed bool `protobuf:"varint,6,opt,name=closed,proto3" json:"closed,omitempty" search:"Closed" sql:"index=btree"` // @gotags: search:"Closed" sql:"index=btree"
@@ -257,7 +257,7 @@ type ProcessListeningOnPortStorage struct {
 	// able to find references process in the database
 	Process       *ProcessIndicatorUniqueKey `protobuf:"bytes,7,opt,name=process,proto3" json:"process,omitempty"`
 	DeploymentId  string                     `protobuf:"bytes,8,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"` // @gotags: search:"Deployment ID" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"
-	PodUid        string                     `protobuf:"bytes,9,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty" search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"`                   // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
+	PodUid        string                     `protobuf:"bytes,9,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty" search:"Pod UID" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"`                   // @gotags: search:"Pod UID" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
 	ClusterId     string                     `protobuf:"bytes,10,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`         // @gotags: search:"Cluster ID" sql:"type(uuid)"
 	Namespace     string                     `protobuf:"bytes,11,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                          // @gotags: search:"Namespace"
 	unknownFields protoimpl.UnknownFields

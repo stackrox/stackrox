@@ -247,7 +247,7 @@ type Node struct {
 	OsImage          string                 `protobuf:"bytes,12,opt,name=os_image,json=osImage,proto3" json:"os_image,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
 	KubeletVersion   string                 `protobuf:"bytes,15,opt,name=kubelet_version,json=kubeletVersion,proto3" json:"kubelet_version,omitempty"`
 	KubeProxyVersion string                 `protobuf:"bytes,16,opt,name=kube_proxy_version,json=kubeProxyVersion,proto3" json:"kube_proxy_version,omitempty"`
-	LastUpdated      *timestamppb.Timestamp `protobuf:"bytes,25,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
+	LastUpdated      *timestamppb.Timestamp `protobuf:"bytes,25,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated"` // @gotags: search:"Last Updated"
 	// Time we received an update from Kubernetes.
 	K8SUpdated *timestamppb.Timestamp `protobuf:"bytes,26,opt,name=k8s_updated,json=k8sUpdated,proto3" json:"k8s_updated,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
 	Scan       *NodeScan              `protobuf:"bytes,18,opt,name=scan,proto3" json:"scan,omitempty" policy:"Node Scan"`                               // @gotags: policy:"Node Scan"
@@ -263,8 +263,8 @@ type Node struct {
 	//
 	//	*Node_FixableCves
 	SetFixable isNode_SetFixable `protobuf_oneof:"set_fixable"`
-	Priority   int64             `protobuf:"varint,22,opt,name=priority,proto3" json:"priority,omitempty" search:"Node Risk Priority,hidden"`                     // @gotags: search:"Node Risk Priority,hidden"
-	RiskScore  float32           `protobuf:"fixed32,23,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Node Risk Score,hidden"` // @gotags: search:"Node Risk Score,hidden"
+	Priority   int64             `protobuf:"varint,22,opt,name=priority,proto3" json:"priority,omitempty" search:"Node Risk Priority"`                     // @gotags: search:"Node Risk Priority"
+	RiskScore  float32           `protobuf:"fixed32,23,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Node Risk Score"` // @gotags: search:"Node Risk Score"
 	// Types that are valid to be assigned to SetTopCvss:
 	//
 	//	*Node_TopCvss
@@ -535,7 +535,7 @@ type isNode_SetComponents interface {
 }
 
 type Node_Components struct {
-	Components int32 `protobuf:"varint,19,opt,name=components,proto3,oneof" search:"Component Count,hidden"` // @gotags: search:"Component Count,hidden"
+	Components int32 `protobuf:"varint,19,opt,name=components,proto3,oneof" search:"Component Count"` // @gotags: search:"Component Count"
 }
 
 func (*Node_Components) isNode_SetComponents() {}
@@ -545,7 +545,7 @@ type isNode_SetCves interface {
 }
 
 type Node_Cves struct {
-	Cves int32 `protobuf:"varint,20,opt,name=cves,proto3,oneof" search:"CVE Count,hidden"` // @gotags: search:"CVE Count,hidden"
+	Cves int32 `protobuf:"varint,20,opt,name=cves,proto3,oneof" search:"CVE Count"` // @gotags: search:"CVE Count"
 }
 
 func (*Node_Cves) isNode_SetCves() {}
@@ -555,7 +555,7 @@ type isNode_SetFixable interface {
 }
 
 type Node_FixableCves struct {
-	FixableCves int32 `protobuf:"varint,21,opt,name=fixable_cves,json=fixableCves,proto3,oneof" search:"Fixable CVE Count,hidden"` // @gotags: search:"Fixable CVE Count,hidden"
+	FixableCves int32 `protobuf:"varint,21,opt,name=fixable_cves,json=fixableCves,proto3,oneof" search:"Fixable CVE Count"` // @gotags: search:"Fixable CVE Count"
 }
 
 func (*Node_FixableCves) isNode_SetFixable() {}

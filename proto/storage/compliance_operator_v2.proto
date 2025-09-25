@@ -36,7 +36,7 @@ enum RuleSeverity {
 
 message ProfileShim {
   string profile_id = 1;
-  string profile_ref_id = 2; // @gotags: search:"Profile Ref ID,hidden" sql:"fk(ComplianceOperatorProfileV2:profile_ref_id),no-fk-constraint,type(uuid)"
+  string profile_ref_id = 2; // @gotags: search:"Profile Ref ID" sql:"fk(ComplianceOperatorProfileV2:profile_ref_id),no-fk-constraint,type(uuid)"
 }
 
 // Next Tag: 15
@@ -44,11 +44,11 @@ message ComplianceOperatorProfileV2 {
   // The primary key is name-profile_version as that is guaranteed unique in the operator and how
   // the profile is referenced in scans and settings
   string id = 1; // @gotags: sql:"pk"
-  string profile_id = 2; // @gotags: search:"Compliance Profile ID,hidden"
-  string name = 3; // @gotags: search:"Compliance Profile Name,hidden"
-  string profile_version = 4; // @gotags: search:"Compliance Profile Version,hidden"
-  string product_type = 5; // @gotags: search:"Compliance Profile Product Type,hidden"
-  string standard = 6; // @gotags: search:"Compliance Standard,hidden"
+  string profile_id = 2; // @gotags: search:"Compliance Profile ID"
+  string name = 3; // @gotags: search:"Compliance Profile Name"
+  string profile_version = 4; // @gotags: search:"Compliance Profile Version"
+  string product_type = 5; // @gotags: search:"Compliance Profile Product Type"
+  string standard = 6; // @gotags: search:"Compliance Standard"
   map<string, string> labels = 7;
   map<string, string> annotations = 8;
   string description = 9;
@@ -59,16 +59,16 @@ message ComplianceOperatorProfileV2 {
   string product = 11;
   string title = 12;
   repeated string values = 13;
-  string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-  string profile_ref_id = 15; // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
+  string cluster_id = 14; // @gotags: search:"Cluster ID" sql:"type(uuid)"
+  string profile_ref_id = 15; // @gotags: search:"Profile Ref ID" sql:"type(uuid)"
 }
 
 message ComplianceOperatorRuleV2 {
   string id = 1; // @gotags: sql:"pk"
   string rule_id = 2;
-  string name = 3; // @gotags: search:"Compliance Rule Name,hidden"
-  string rule_type = 4; // @gotags: search:"Compliance Rule Type,hidden"
-  RuleSeverity severity = 5; // @gotags: search:"Compliance Rule Severity,hidden"
+  string name = 3; // @gotags: search:"Compliance Rule Name"
+  string rule_type = 4; // @gotags: search:"Compliance Rule Type"
+  RuleSeverity severity = 5; // @gotags: search:"Compliance Rule Severity"
   map<string, string> labels = 6;
   map<string, string> annotations = 7;
   string title = 8;
@@ -81,22 +81,22 @@ message ComplianceOperatorRuleV2 {
   repeated Fix fixes = 11;
   string warning = 12;
   repeated RuleControls controls = 13;
-  string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-  string rule_ref_id = 15; // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
+  string cluster_id = 14; // @gotags: search:"Cluster ID" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  string rule_ref_id = 15; // @gotags: search:"Rule Ref ID" sql:"type(uuid)"
   string parent_rule = 16;
   string instructions = 17;
 }
 
 // Next Tag: 4
 message RuleControls {
-  string standard = 1; // @gotags: search:"Compliance Standard,hidden"
+  string standard = 1; // @gotags: search:"Compliance Standard"
   repeated string controls = 2 [deprecated = true];
-  string control = 3; // @gotags: search:"Compliance Control,hidden"
+  string control = 3; // @gotags: search:"Compliance Control"
 }
 
 // Next Tag: 18
 message ComplianceOperatorScanConfigurationV2 {
-  string id = 1; // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
+  string id = 1; // @gotags: search:"Compliance Scan Config ID" sql:"pk,type(uuid)"
   string scan_config_name = 2; // @gotags: search:"Compliance Scan Config Name" sql:"unique"
   bool auto_apply_remediations = 3;
   bool auto_update_remediations = 4;
@@ -104,7 +104,7 @@ message ComplianceOperatorScanConfigurationV2 {
   map<string, string> labels = 6;
   map<string, string> annotations = 7;
   message ProfileName {
-    string profile_name = 1; // @gotags: search:"Compliance Config Profile Name,hidden" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
+    string profile_name = 1; // @gotags: search:"Compliance Config Profile Name" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
   }
   repeated ProfileName profiles = 8;
   repeated NodeRole node_roles = 9;
@@ -118,7 +118,7 @@ message ComplianceOperatorScanConfigurationV2 {
   SlimUser modified_by = 14; // @gotags: sql:"ignore_labels(User ID)"
   string description = 15;
   message Cluster {
-    string cluster_id = 1; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+    string cluster_id = 1; // @gotags: search:"Cluster ID" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
   }
   repeated Cluster clusters = 16;
   repeated NotifierConfiguration notifiers = 17;
@@ -129,23 +129,23 @@ message ComplianceOperatorScanConfigurationV2 {
 // unable to be applied to a cluster for whatever reason.
 message ComplianceOperatorClusterScanConfigStatus {
   string id = 6; // @gotags: sql:"pk,type(uuid)"
-  string cluster_id = 1; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-  string scan_config_id = 2; // @gotags: search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"
+  string cluster_id = 1; // @gotags: search:"Cluster ID" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  string scan_config_id = 2; // @gotags: search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"
   repeated string errors = 3;
-  google.protobuf.Timestamp last_updated_time = 4; // @gotags: search:"Compliance Scan Config Last Updated Time,hidden"
+  google.protobuf.Timestamp last_updated_time = 4; // @gotags: search:"Compliance Scan Config Last Updated Time"
   string cluster_name = 5;
 }
 
 // Next Tag: 7
 message ComplianceOperatorBenchmarkV2 {
   string id = 1; // @gotags: sql:"pk,id,type(uuid)"
-  string name = 2; // @gotags: search:"Compliance Benchmark Name,hidden"
-  string version = 3; // @gotags: search:"Compliance Benchmark Version,hidden"
+  string name = 2; // @gotags: search:"Compliance Benchmark Name"
+  string version = 3; // @gotags: search:"Compliance Benchmark Version"
   string description = 4;
   string provider = 5;
   // This is extracted from the annotation.
   // Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
-  string short_name = 7; // @gotags: search:"Compliance Benchmark Short Name,hidden"
+  string short_name = 7; // @gotags: search:"Compliance Benchmark Short Name"
 
   message Profile {
     string profile_name = 1; // @gotags: search:"Compliance Profile Name" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
@@ -170,27 +170,27 @@ message ComplianceOperatorCheckResultV2 {
     NOT_APPLICABLE = 6;
     INCONSISTENT = 7;
   }
-  string id = 1; // @gotags: search:"Compliance Check UID,hidden" sql:"pk"
-  string check_id = 2; // @gotags: search:"Compliance Check ID,hidden"
-  string check_name = 3; // @gotags: search:"Compliance Check Name,hidden"
-  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-  CheckStatus status = 5; // @gotags: search:"Compliance Check Status,hidden"
-  RuleSeverity severity = 6; // @gotags: search:"Compliance Rule Severity,hidden"
+  string id = 1; // @gotags: search:"Compliance Check UID" sql:"pk"
+  string check_id = 2; // @gotags: search:"Compliance Check ID"
+  string check_name = 3; // @gotags: search:"Compliance Check Name"
+  string cluster_id = 4; // @gotags: search:"Cluster ID" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  CheckStatus status = 5; // @gotags: search:"Compliance Check Status"
+  RuleSeverity severity = 6; // @gotags: search:"Compliance Rule Severity"
   string description = 7;
   string instructions = 8;
   map<string, string> labels = 9;
   map<string, string> annotations = 10;
-  google.protobuf.Timestamp created_time = 11; // @gotags: search:"Compliance Check Result Created Time,hidden"
+  google.protobuf.Timestamp created_time = 11; // @gotags: search:"Compliance Check Result Created Time"
   repeated string valuesUsed = 12;
   repeated string warnings = 13;
   string scan_name = 14;
   string cluster_name = 15;
   string scan_config_name = 16; // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
-  string rationale = 17; // @gotags: search:"Compliance Check Rationale,hidden"
-  string scan_ref_id = 18; // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
-  string rule_ref_id = 19; // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
+  string rationale = 17; // @gotags: search:"Compliance Check Rationale"
+  string scan_ref_id = 18; // @gotags: search:"Scan Ref ID" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
+  string rule_ref_id = 19; // @gotags: search:"Rule Ref ID" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
   // last_started_time is the last time the Scan resource was triggered
-  google.protobuf.Timestamp last_started_time = 20; // @gotags: search:"Compliance Check Last Started Time,hidden"
+  google.protobuf.Timestamp last_started_time = 20; // @gotags: search:"Compliance Check Last Started Time"
 }
 
 //Next Tag: 4
@@ -206,7 +206,7 @@ message ScanStatus {
 message ComplianceOperatorScanV2 {
   string id = 1; // @gotags: sql:"pk"
   string scan_config_name = 2; // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
-  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+  string cluster_id = 3; // @gotags: search:"Cluster ID" sql:"type(uuid)"
   string errors = 4;
   ProfileShim profile = 5;
   map<string, string> labels = 6;
@@ -215,13 +215,13 @@ message ComplianceOperatorScanV2 {
   NodeRole node_selector = 9;
   ScanStatus status = 10;
   google.protobuf.Timestamp created_time = 11;
-  google.protobuf.Timestamp last_executed_time = 12; // @gotags: search:"Compliance Scan Last Executed Time,hidden"
-  string scan_name = 13; // @gotags: search:"Compliance Scan Name,hidden"
+  google.protobuf.Timestamp last_executed_time = 12; // @gotags: search:"Compliance Scan Last Executed Time"
+  string scan_name = 13; // @gotags: search:"Compliance Scan Name"
   string warnings = 14;
   string product_type = 15;
-  string scan_ref_id = 16; // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
+  string scan_ref_id = 16; // @gotags: search:"Scan Ref ID" sql:"type(uuid)"
   // last_started_time is the last time the Scan resource was triggered
-  google.protobuf.Timestamp last_started_time = 17; // @gotags: search:"Compliance Scan Last Started Time,hidden"
+  google.protobuf.Timestamp last_started_time = 17; // @gotags: search:"Compliance Scan Last Started Time"
 }
 
 // ComplianceOperatorScanSettingBindingV2 associates a scan setting with one or more compliance profiles
@@ -229,7 +229,7 @@ message ComplianceOperatorScanV2 {
 message ComplianceOperatorScanSettingBindingV2 {
   string id = 1; // @gotags: sql:"pk,id"
   string name = 2; // @gotags: search:"Compliance Scan Setting Binding Name"
-  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  string cluster_id = 3; // @gotags: search:"Cluster ID" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
 
   repeated string profile_names = 4;
   string scan_setting_name = 5; // @gotags: search:"Compliance Scan Config Name"
@@ -263,8 +263,8 @@ message ComplianceOperatorStatus {
 // ComplianceOperatorSuiteV2 represents scan status
 message ComplianceOperatorSuiteV2 {
   string id = 1; // @gotags: sql:"pk,id,type(uuid)"
-  string name = 2; // @gotags: search:"Compliance Suite Name,hidden"
-  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  string name = 2; // @gotags: search:"Compliance Suite Name"
+  string cluster_id = 3; // @gotags: search:"Cluster ID" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
 
   ComplianceOperatorStatus status = 4;
 }
@@ -272,8 +272,8 @@ message ComplianceOperatorSuiteV2 {
 // Next Tag: 9
 message ComplianceOperatorRemediationV2 {
   string id = 1; // @gotags: sql:"pk,id,type(uuid)"
-  string name = 2; // @gotags: search:"Compliance Remediation Name,hidden"
-  string compliance_check_result_name = 3; // @gotags: search:"Compliance Check Name,hidden"
+  string name = 2; // @gotags: search:"Compliance Remediation Name"
+  string compliance_check_result_name = 3; // @gotags: search:"Compliance Check Name"
   // apply is used by the compliance operator to apply a remediation
   bool apply = 4;
   // current holds the object which currently remediates the check result. It is saved in a "current" field because
@@ -284,7 +284,7 @@ message ComplianceOperatorRemediationV2 {
   // See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
   string outdated_object = 6;
   string enforcement_type = 7;
-  string cluster_id = 8; // @gotags: search:"Cluster ID,hidden"
+  string cluster_id = 8; // @gotags: search:"Cluster ID"
 }
 
 // Next Tag: 9
@@ -297,8 +297,8 @@ message ComplianceOperatorReportSnapshotV2 {
   SlimUser user = 6;
 
   message Scan {
-    string scan_ref_id = 1; // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"
-    google.protobuf.Timestamp last_started_time = 2; // @gotags: search:"Compliance Scan Last Started Time,hidden" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"
+    string scan_ref_id = 1; // @gotags: search:"Scan Ref ID" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"
+    google.protobuf.Timestamp last_started_time = 2; // @gotags: search:"Compliance Scan Last Started Time" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"
   }
 
   repeated Scan scans = 7;

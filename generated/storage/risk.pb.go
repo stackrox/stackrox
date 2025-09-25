@@ -93,7 +93,7 @@ type Risk struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
 	Subject       *RiskSubject           `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
-	Score         float32                `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty" search:"Risk Score,hidden"` // @gotags: search:"Risk Score,hidden"
+	Score         float32                `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty" search:"Risk Score"` // @gotags: search:"Risk Score"
 	Results       []*Risk_Result         `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -161,8 +161,8 @@ type RiskSubject struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                     // @gotags: search:"Namespace"
-	ClusterId     string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`    // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	Type          RiskSubjectType        `protobuf:"varint,4,opt,name=type,proto3,enum=storage.RiskSubjectType" json:"type,omitempty" search:"Risk Subject Type,hidden"` // @gotags: search:"Risk Subject Type,hidden"
+	ClusterId     string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`    // @gotags: search:"Cluster ID" sql:"type(uuid)"
+	Type          RiskSubjectType        `protobuf:"varint,4,opt,name=type,proto3,enum=storage.RiskSubjectType" json:"type,omitempty" search:"Risk Subject Type"` // @gotags: search:"Risk Subject Type"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
