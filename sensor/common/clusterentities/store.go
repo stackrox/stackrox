@@ -202,6 +202,10 @@ func (e *Store) ApplyDataFromHeritageOnce() {
 	if e.heritageApplied.IsDone() {
 		return
 	}
+	if !e.pastSensors.IsEnabled() {
+		log.Info("Won't apply heritage data to cluster-entities Store - feature is disabled")
+		e.heritageApplied.Signal()
+	}
 	if e.applyHeritageData(e.pastSensors) {
 		e.heritageApplied.Signal()
 	}
@@ -214,12 +218,6 @@ type dataGetter interface {
 
 // applyHeritageData adds heritage data about past sensors to the store. Returns true on success, and false otherwise.
 func (e *Store) applyHeritageData(dg dataGetter) bool {
-	if !dg.IsEnabled() {
-		log.Info("Won't apply heritage data to cluster-entities Store - feature is disabled")
-		// Returning true to avoid retries.
-		return true
-	}
-
 	// Applying heritage data would pollute the data about current sensor (it would be impossible to tell
 	// the current container ID from the past ones), so we must wait until current sensor metadata is stored.
 	// Only then we can add heritage data to the store.

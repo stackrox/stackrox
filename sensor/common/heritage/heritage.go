@@ -153,11 +153,11 @@ func (h *Manager) GetData(ctx context.Context) []*SensorMetadata {
 func (h *Manager) SetCurrentSensorData(currentIP, currentContainerID string) {
 	h.currentSensor.PodIP = currentIP
 	h.currentSensor.ContainerID = currentContainerID
-	if h.maxSize == 0 {
-		return // feature disabled
-	}
 	now := time.Now()
 	h.currentSensor.UpdateTimestamps(now)
+	if !h.IsEnabled() {
+		return // feature disabled
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
