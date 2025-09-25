@@ -5,6 +5,7 @@ ARG TARGET_ARCH=amd64
 FROM docker.io/library/golang:1.24 AS builder
 
 # Build the manager binary
+ARG TARGET_ARCH
 ARG roxpath
 
 WORKDIR ${roxpath}/
