@@ -38,11 +38,7 @@ var (
 // If clusterFilter is nil or empty, all clusters are included.
 // Otherwise, only clusters whose names are in the filter are included.
 func shouldIncludeCluster(clusterName string, clusterFilter set.StringSet) bool {
-	if clusterFilter.Cardinality() == 0 {
-		return true
-	}
-
-	return clusterFilter.Contains(clusterName)
+	return clusterFilter.Cardinality() == 0 || clusterFilter.Contains(clusterName)
 }
 
 // newClusterGatherer returns a new ClusterGatherer which will query connected Sensors for telemetry info and collect
