@@ -773,6 +773,17 @@ func AssertNoViolations() func(result *central.AlertResults) error {
 	}
 }
 
+// AssertNoEmptyAlertResults creates a matcher function that checks that no empty alert results are sent.
+func AssertNoEmptyAlertResults() func(result *central.AlertResults) error {
+	return func(result *central.AlertResults) error {
+		if len(result.GetAlerts()) == 0 {
+			return errors.New("found empty alert results")
+		}
+
+		return nil
+	}
+}
+
 func alertResultMatchesFn(result *central.AlertResults, violations ...string) error {
 	expectedSet := set.NewStringSet(violations...)
 	actualSet := set.NewStringSet()
