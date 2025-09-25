@@ -7,13 +7,13 @@ option java_package = "io.stackrox.proto.storage";
 
 message CloudSource {
   string id = 1; // @gotags: sql:"pk,type(uuid)"
-  string name = 2; // @gotags: sql:"unique" search:"Integration Name,hidden"
+  string name = 2; // @gotags: sql:"unique" search:"Integration Name"
   enum Type {
     TYPE_UNSPECIFIED = 0;
     TYPE_PALADIN_CLOUD = 1;
     TYPE_OCM = 2;
   }
-  Type type = 3; // @gotags: search:"Integration Type,hidden"
+  Type type = 3; // @gotags: search:"Integration Type"
 
   message Credentials {
     string secret = 1; // @gotags: scrub:"always"

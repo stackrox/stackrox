@@ -130,9 +130,9 @@ type DiscoveredCluster struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
 	Id            string                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
 	Metadata      *DiscoveredCluster_Metadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Status        DiscoveredCluster_Status    `protobuf:"varint,3,opt,name=status,proto3,enum=storage.DiscoveredCluster_Status" json:"status,omitempty" search:"Cluster Status,hidden"` // @gotags: search:"Cluster Status,hidden"
-	SourceId      string                      `protobuf:"bytes,4,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty" search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"`                    // @gotags: search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"
-	LastUpdatedAt *timestamppb.Timestamp      `protobuf:"bytes,5,opt,name=last_updated_at,json=lastUpdatedAt,proto3" json:"last_updated_at,omitempty" search:"Last Updated,hidden"`   // @gotags: search:"Last Updated,hidden"
+	Status        DiscoveredCluster_Status    `protobuf:"varint,3,opt,name=status,proto3,enum=storage.DiscoveredCluster_Status" json:"status,omitempty" search:"Cluster Status"` // @gotags: search:"Cluster Status"
+	SourceId      string                      `protobuf:"bytes,4,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty" search:"Integration ID" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"`                    // @gotags: search:"Integration ID" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"
+	LastUpdatedAt *timestamppb.Timestamp      `protobuf:"bytes,5,opt,name=last_updated_at,json=lastUpdatedAt,proto3" json:"last_updated_at,omitempty" search:"Last Updated"`   // @gotags: search:"Last Updated"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -205,11 +205,11 @@ func (x *DiscoveredCluster) GetLastUpdatedAt() *timestamppb.Timestamp {
 type DiscoveredCluster_Metadata struct {
 	state             protoimpl.MessageState                  `protogen:"open.v1"`
 	Id                string                                  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name              string                                  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Cluster,hidden"`                                    // @gotags: search:"Cluster,hidden"
-	Type              ClusterMetadata_Type                    `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type,hidden"` // @gotags: search:"Cluster Type,hidden"
+	Name              string                                  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Cluster"`                                    // @gotags: search:"Cluster"
+	Type              ClusterMetadata_Type                    `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type"` // @gotags: search:"Cluster Type"
 	ProviderType      DiscoveredCluster_Metadata_ProviderType `protobuf:"varint,4,opt,name=provider_type,json=providerType,proto3,enum=storage.DiscoveredCluster_Metadata_ProviderType" json:"provider_type,omitempty"`
 	Region            string                                  `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
-	FirstDiscoveredAt *timestamppb.Timestamp                  `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt,proto3" json:"first_discovered_at,omitempty" search:"Cluster Discovered Time,hidden"` // @gotags: search:"Cluster Discovered Time,hidden"
+	FirstDiscoveredAt *timestamppb.Timestamp                  `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt,proto3" json:"first_discovered_at,omitempty" search:"Cluster Discovered Time"` // @gotags: search:"Cluster Discovered Time"
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }

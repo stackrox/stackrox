@@ -15,7 +15,7 @@ option java_package = "io.stackrox.proto.storage";
 
 //Next tag: 28
 message Policy {
-  string id = 1; // @gotags: search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"
+  string id = 1; // @gotags: search:"Policy ID" sql:"pk,index=btree" crYaml:"-"
   // Name of the policy.  Must be unique.
   string name = 2; // @gotags: search:"Policy" sql:"unique" crYaml:"policyName"
   // Free-form text description of this policy.
@@ -52,11 +52,11 @@ message Policy {
   google.protobuf.Timestamp last_updated = 15; // @gotags: search:"Policy Last Updated" crYaml:"-"
 
   // For internal use only.
-  string SORT_name = 16; // @gotags: search:"SORT_Policy,hidden,analyzer=keyword" crYaml:"-"
+  string SORT_name = 16; // @gotags: search:"SORT_Policy,analyzer=keyword" crYaml:"-"
   // For internal use only.
-  string SORT_lifecycleStage = 17; // @gotags: search:"SORT_Lifecycle Stage,hidden" crYaml:"-"
+  string SORT_lifecycleStage = 17; // @gotags: search:"SORT_Lifecycle Stage" crYaml:"-"
   // For internal use only.
-  bool SORT_enforcement = 18; // @gotags: search:"SORT_Enforcement,hidden" crYaml:"-"
+  bool SORT_enforcement = 18; // @gotags: search:"SORT_Enforcement" crYaml:"-"
 
   string policy_version = 19; // @gotags: crYaml:"-"
   // PolicySections define the violation criteria for this policy.

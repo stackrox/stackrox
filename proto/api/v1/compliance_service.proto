@@ -28,8 +28,8 @@ message ComplianceStandardMetadata {
     NODE = 4;
   }
 
-  string id = 1; // @gotags: search:"Standard ID,hidden"
-  string name = 2; // @gotags: search:"Standard,hidden"
+  string id = 1; // @gotags: search:"Standard ID"
+  string name = 2; // @gotags: search:"Standard"
   string description = 3;
   int32 num_implemented_checks = 4;
   repeated Scope scopes = 5;
@@ -46,9 +46,9 @@ message ComplianceControlGroup {
 }
 
 message ComplianceControl {
-  string id = 1; // @gotags: search:"Control ID,hidden"
-  string standard_id = 2; // @gotags: search:"Standard ID,hidden"
-  string group_id = 3; // @gotags: search:"Control Group ID,hidden"
+  string id = 1; // @gotags: search:"Control ID"
+  string standard_id = 2; // @gotags: search:"Standard ID"
+  string group_id = 3; // @gotags: search:"Control Group ID"
   string name = 4; // @gotags: search:"Control"
   string description = 5;
 

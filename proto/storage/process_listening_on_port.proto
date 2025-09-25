@@ -50,7 +50,7 @@ message ProcessListeningOnPortStorage {
 
   uint32 port = 2; // @gotags: search:"Port"
   L4Protocol protocol = 3; // @gotags: search:"Port Protocol"
-  google.protobuf.Timestamp close_timestamp = 4; // @gotags: search:"Closed Time,hidden"
+  google.protobuf.Timestamp close_timestamp = 4; // @gotags: search:"Closed Time"
 
   string process_indicator_id = 5; // @gotags: search:"Process ID" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"
 
@@ -63,7 +63,7 @@ message ProcessListeningOnPortStorage {
 
   string deployment_id = 8; // @gotags: search:"Deployment ID" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"
 
-  string pod_uid = 9; // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
+  string pod_uid = 9; // @gotags: search:"Pod UID" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
 
   string cluster_id = 10; // @gotags: search:"Cluster ID" sql:"type(uuid)"
 

@@ -376,7 +376,7 @@ func (x *ComplianceControlResult) GetValue() *ComplianceResultValue {
 // Next available tag: 5
 type ComplianceDomain struct {
 	state         protoimpl.MessageState                  `protogen:"open.v1"`
-	Id            string                                  `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" sql:"pk" search:"Compliance Domain ID,hidden"` // @gotags: sql:"pk" search:"Compliance Domain ID,hidden"
+	Id            string                                  `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" sql:"pk" search:"Compliance Domain ID"` // @gotags: sql:"pk" search:"Compliance Domain ID"
 	Cluster       *ComplianceDomain_Cluster               `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	Nodes         map[string]*ComplianceDomain_Node       `protobuf:"bytes,2,rep,name=nodes,proto3" json:"nodes,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Deployments   map[string]*ComplianceDomain_Deployment `protobuf:"bytes,3,rep,name=deployments,proto3" json:"deployments,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -445,11 +445,11 @@ func (x *ComplianceDomain) GetDeployments() map[string]*ComplianceDomain_Deploym
 // Next available tag: 5
 type ComplianceRunMetadata struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	RunId           string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty" sql:"pk" search:"Compliance Run ID,hidden"`                // @gotags: sql:"pk" search:"Compliance Run ID,hidden"
-	StandardId      string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden"` // @gotags: search:"Standard ID,hidden"
-	ClusterId       string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`    // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	RunId           string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty" sql:"pk" search:"Compliance Run ID"`                // @gotags: sql:"pk" search:"Compliance Run ID"
+	StandardId      string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID"` // @gotags: search:"Standard ID"
+	ClusterId       string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`    // @gotags: search:"Cluster ID" sql:"type(uuid)"
 	StartTimestamp  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_timestamp,json=startTimestamp,proto3" json:"start_timestamp,omitempty"`
-	FinishTimestamp *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=finish_timestamp,json=finishTimestamp,proto3" json:"finish_timestamp,omitempty" search:"Compliance Run Finished Timestamp,hidden"` // @gotags: search:"Compliance Run Finished Timestamp,hidden"
+	FinishTimestamp *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=finish_timestamp,json=finishTimestamp,proto3" json:"finish_timestamp,omitempty" search:"Compliance Run Finished Timestamp"` // @gotags: search:"Compliance Run Finished Timestamp"
 	Success         bool                   `protobuf:"varint,6,opt,name=success,proto3" json:"success,omitempty"`
 	ErrorMessage    string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	DomainId        string                 `protobuf:"bytes,8,opt,name=domain_id,json=domainId,proto3" json:"domain_id,omitempty"`
