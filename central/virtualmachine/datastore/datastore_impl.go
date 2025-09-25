@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"math"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,16 +9,14 @@ import (
 	virtualMachineStore "github.com/stackrox/rox/central/virtualmachine/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 const (
 	defaultPageSize = 100
+	preAllocateCap  = 65535
 )
-
-var log = logging.LoggerForModule()
 
 type datastoreImpl struct {
 	store virtualMachineStore.VirtualMachineStore
@@ -92,18 +89,20 @@ func (ds *datastoreImpl) SearchRawVirtualMachines(
 			},
 		}
 	}
-	log.Info("SearchRawVirtualMachines query", searchQuery)
 	pageSize := searchQuery.GetPagination().GetLimit()
-	if pageSize <= 0 || pageSize == math.MaxInt32 {
+	if pageSize <= 0 {
 		pageSize = defaultPageSize
 	}
-	log.Info("SearchRawVirtualMachines page size", pageSize)
+	// Limit pre-allocation size (some code paths set the pagination limit to
+	// math.MaxInt32) and risk of OOMKills.
+	if pageSize > preAllocateCap {
+		pageSize = preAllocateCap
+	}
 	results := make([]*storage.VirtualMachine, 0, pageSize)
 	err := ds.store.WalkByQuery(ctx, searchQuery, func(vm *storage.VirtualMachine) error {
 		results = append(results, vm)
 		return nil
 	})
-	log.Info("SearchRawVirtualMachines outcome", err)
 	if err != nil {
 		return nil, err
 	}

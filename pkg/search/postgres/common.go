@@ -1207,7 +1207,6 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
 	defer cancel()
-	log.Info("RunCursorQueryForSchemaFn")
 
 	cursor, err := pgutils.Retry2(ctx, func() (*cursorSession, error) {
 		return retryableGetCursorSession(ctx, schema, q, db)
