@@ -18,10 +18,11 @@ type mockHeritageManager struct {
 	currentPodIP       string
 	currentContainerID string
 	setCalled          bool
+	isEnabled          bool
 }
 
 func (m *mockHeritageManager) IsEnabled() bool {
-	return true
+	return m.isEnabled
 }
 
 func (m *mockHeritageManager) GetData(ctx context.Context) []*heritage.SensorMetadata {
@@ -88,30 +89,43 @@ func TestStore_applyHeritageData(t *testing.T) {
 	tests := map[string]struct {
 		currentDeployID   string
 		currentEntityData *EntityData
+		featEnabled       bool
 		want              bool
 	}{
 		"should return true when current metadata is available": {
 			currentDeployID:   deployID,
 			currentEntityData: createSensorEntityData("current123", "10.2.2.2"),
+			featEnabled:       true,
 			want:              true,
 		},
 		"should return false when current entity data is missing": {
 			currentDeployID:   deployID,
 			currentEntityData: nil,
+			featEnabled:       true,
 			want:              false,
 		},
 		"should return false when deployment ID is missing": {
 			currentDeployID:   "",
 			currentEntityData: createSensorEntityData("current123", "10.2.2.2"),
+			featEnabled:       true,
 			want:              false,
+		},
+		"should return true when feature is disabled": {
+			currentDeployID:   "",
+			currentEntityData: nil,
+			featEnabled:       false,
+			want:              true,
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			mockHM := &mockHeritageManager{data: []*heritage.SensorMetadata{
-				{ContainerID: "past123", PodIP: "10.1.1.1", SensorStart: time.Now().Add(-time.Hour)},
-			}}
+			mockHM := &mockHeritageManager{
+				data: []*heritage.SensorMetadata{
+					{ContainerID: "past123", PodIP: "10.1.1.1", SensorStart: time.Now().Add(-time.Hour)},
+				},
+				isEnabled: tt.featEnabled,
+			}
 			store := NewStore(0, mockHM, false)
 			store.RememberCurrentSensorMetadata(tt.currentDeployID, tt.currentEntityData)
 			got := store.applyHeritageData(mockHM)
