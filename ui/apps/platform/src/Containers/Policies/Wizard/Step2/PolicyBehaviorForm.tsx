@@ -166,7 +166,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     >
                         <p>
                             <strong>Build-stage</strong> policies can only inspect images. They are
-                            evaluated in the CI pipeline.
+                            evaluated in the build pipeline.
                         </p>
                         <p>
                             <strong>Deploy-stage</strong> policies can inspect workloads and/or
@@ -177,10 +177,10 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             <strong>Build and Deploy stage</strong> policies are a convenient option
                             to inspect images in both the build pipeline and during workload
                             admission, and apply enforcement to either or both stages (in a single
-                            policy.)
+                            policy).
                         </p>
                         <p>
-                            <strong>Runtime</strong> policies operate on one of two domains:
+                            <strong>Runtime-stage</strong> policies operate on one of two domains:
                             Workload Activity or Kubernetes Resource Operations. The two domains are
                             associated with different “Event Sources”.
                         </p>
@@ -196,7 +196,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         isRequired
                         touched={touched}
                         helperText={
-                            'Choose the lifecycle stage to which your policy is applicable. Image-only policies can be associated with both Build and Deploy stages.'
+                            'Choose the lifecycle stage to which your policy is applicable.'
                         }
                     >
                         <Flex direction={{ default: 'row' }} className="pf-v5-u-pb-sm">
