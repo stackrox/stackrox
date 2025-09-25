@@ -3,16 +3,13 @@ package postgres
 import (
 	"context"
 	"slices"
-	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pgSearch "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/generic"
 	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/schema"
 	"github.com/stackrox/rox/pkg/logging"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -20,7 +17,6 @@ import (
 )
 
 const (
-	baseTable = "process_indicators"
 	storeName = "ProcessIndicator"
 )
 
@@ -55,8 +51,8 @@ func New(db postgres.DB) Store {
 		pkGetter,
 		insertIntoProcessIndicators,
 		copyFromProcessIndicators,
-		metricsSetAcquireDBConnDuration,
-		metricsSetPostgresOperationDurationTime,
+		nil,
+		nil,
 		isUpsertAllowed,
 		targetResource,
 		nil,
@@ -70,13 +66,6 @@ func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
-func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, storeName)
-}
-
-func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, storeName)
-}
 func isUpsertAllowed(_ context.Context, _ ...*storeType) error {
 	return nil
 }

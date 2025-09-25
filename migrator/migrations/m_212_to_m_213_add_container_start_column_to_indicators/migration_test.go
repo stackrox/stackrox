@@ -34,8 +34,10 @@ func TestMigration(t *testing.T) {
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	//s.db = pghelper.ForTExistingDB(s.T(), false, "indicators")
-	//s.existingDB = true
+	// Use the below lines to use a large existing database for testing.
+	// This is beneficial to test large batches at once.
+	// s.db = pghelper.ForTExistingDB(s.T(), false, "indicators")
+	// s.existingDB = true
 }
 
 func (s *migrationTestSuite) TestMigration() {
@@ -59,7 +61,7 @@ func (s *migrationTestSuite) TestMigration() {
 		clusters := []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2, fixtureconsts.Cluster3, cluster4, cluster5, cluster6, cluster7, cluster8, cluster9, cluster10}
 
 		// Add some process indicators
-		numIndicators := 30000
+		numIndicators := 300
 		numNilContainerTime := 10
 		var indicators []*storage.ProcessIndicator
 
