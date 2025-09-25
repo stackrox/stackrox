@@ -134,6 +134,10 @@ func (h *Manager) populateCacheFromConfigMapNoLock(ctx context.Context) error {
 	return nil
 }
 
+func (h *Manager) IsEnabled() bool {
+	return h.maxSize > 0
+}
+
 func (h *Manager) GetData(ctx context.Context) []*SensorMetadata {
 	h.cacheMutex.Lock()
 	defer h.cacheMutex.Unlock()

@@ -148,6 +148,7 @@ type Store struct {
 type HeritageManager interface {
 	GetData(ctx context.Context) []*heritage.SensorMetadata
 	SetCurrentSensorData(currentIP, currentContainerID string)
+	IsEnabled() bool
 }
 
 // NewStore returns store that remembers past IPs of an endpoint for a given number of ticks
@@ -208,6 +209,7 @@ func (e *Store) ApplyDataFromHeritageOnce() {
 
 type dataGetter interface {
 	GetData(ctx context.Context) []*heritage.SensorMetadata
+	IsEnabled() bool
 }
 
 // applyHeritageData adds heritage data about past sensors to the store. Returns true on success, and false otherwise.
@@ -223,6 +225,11 @@ func (e *Store) applyHeritageData(dg dataGetter) bool {
 	apiReadCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
+	if !dg.IsEnabled() {
+		log.Info("Won't apply heritage data to clusterentities Store - feature is disabled")
+		// Returning true to avoid retries.
+		return true
+	}
 	past := dg.GetData(apiReadCtx)
 	if len(past) == 0 {
 		log.Warnf("Can't apply heritage data - incomplete heritage data.")

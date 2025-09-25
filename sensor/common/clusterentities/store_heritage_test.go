@@ -20,6 +20,10 @@ type mockHeritageManager struct {
 	setCalled          bool
 }
 
+func (m *mockHeritageManager) IsEnabled() bool {
+	return true
+}
+
 func (m *mockHeritageManager) GetData(ctx context.Context) []*heritage.SensorMetadata {
 	return m.data
 }
