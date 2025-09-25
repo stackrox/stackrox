@@ -333,7 +333,6 @@ build/Dockerfile.gen: Dockerfile
 .PHONY: docker-build
 docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
-		--load \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
 		-f $< \
