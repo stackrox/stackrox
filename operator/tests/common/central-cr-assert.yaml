@@ -30,6 +30,17 @@ collectors:
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-matcher
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-db
 # Please keep the above lists in sync with pods-debug.yaml
+resourceRefs:
+- apiVersion: platform.stackrox.io/v1alpha1
+  kind: Central
+  name: stackrox-central-services
+  ref: central_cr
+assertAll:
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.status=='True')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Initialized').exists(c, c.status=='True')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='False')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='ProxyConfigFailed').exists(c, c.status=='False')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='ReleaseFailed').exists(c, c.status=='False')"
 timeout: 1500
 ---
 apiVersion: platform.stackrox.io/v1alpha1
