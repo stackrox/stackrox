@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	"github.com/stackrox/rox/central/virtualmachine/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -78,19 +77,6 @@ func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListV
 		return nil, errors.Wrap(err, "parsing input query")
 	}
 	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
-	if len(searchQuery.GetPagination().GetSortOptions()) == 0 {
-		if searchQuery.GetPagination() == nil {
-			searchQuery.Pagination = &v1.QueryPagination{}
-		}
-		searchQuery.Pagination.SortOptions = []*v1.QuerySortOption{
-			{
-				Field: search.VirtualMachineName.String(),
-			},
-			{
-				Field: search.Namespace.String(),
-			},
-		}
-	}
 
 	vms, err := s.datastore.SearchRawVirtualMachines(ctx, searchQuery)
 	if err != nil {
