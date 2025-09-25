@@ -9,6 +9,7 @@ import (
 	virtualMachineStore "github.com/stackrox/rox/central/virtualmachine/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -16,6 +17,8 @@ import (
 const (
 	defaultPageSize = 100
 )
+
+var log = logging.LoggerForModule()
 
 type datastoreImpl struct {
 	store virtualMachineStore.VirtualMachineStore
@@ -88,6 +91,7 @@ func (ds *datastoreImpl) SearchRawVirtualMachines(
 			},
 		}
 	}
+	log.Info("SearchRawVirtualMachines query", searchQuery)
 	pageSize := searchQuery.GetPagination().GetLimit()
 	if pageSize <= 0 {
 		pageSize = defaultPageSize
@@ -97,6 +101,7 @@ func (ds *datastoreImpl) SearchRawVirtualMachines(
 		results = append(results, vm)
 		return nil
 	})
+	log.Info("SearchRawVirtualMachines outcome", err)
 	if err != nil {
 		return nil, err
 	}
