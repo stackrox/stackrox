@@ -2,8 +2,9 @@ BASE_PATH ?= $(CURDIR)
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
-# Set the container runtime command - prefer podman, fallback to docker
-DOCKER_CMD = $(shell command -v podman >/dev/null 2>&1 && echo podman || echo docker)
+# Set the container runtime command - prefer docker, fallback to podman.
+# If none of them are available, fallback to docker.
+DOCKER_CMD = $(shell command -v docker >/dev/null 2>&1 && echo docker || (command -v podman >/dev/null 2>&1 && echo podman || echo docker))
 
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
 # generate gRPC proto messages, services, and gateways for the API.
