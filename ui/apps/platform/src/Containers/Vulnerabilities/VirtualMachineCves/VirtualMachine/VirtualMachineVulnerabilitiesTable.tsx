@@ -20,7 +20,7 @@ export type VirtualMachineVulnerabilitiesTableProps = {
 function VirtualMachineVulnerabilitiesTable({
     tableState,
 }: VirtualMachineVulnerabilitiesTableProps) {
-    const COL_SPAN = 7;
+    const colSpan = 7;
     const expandedRowSet = useSet<string>();
 
     return (
@@ -43,7 +43,7 @@ function VirtualMachineVulnerabilitiesTable({
             </Thead>
             <TbodyUnified
                 tableState={tableState}
-                colSpan={7}
+                colSpan={colSpan}
                 errorProps={{
                     title: 'There was an error loading results',
                 }}
@@ -94,7 +94,7 @@ function VirtualMachineVulnerabilitiesTable({
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />
-                                    <Td colSpan={COL_SPAN - 1}>
+                                    <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
                                             <VirtualMachineComponentsTable
                                                 components={vulnerability.affectedComponents}

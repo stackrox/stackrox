@@ -45,10 +45,11 @@ export type CveTableRow = {
     affectedComponents: CveComponentRow[];
 };
 
+function defaultCveTableSort(a: CveTableRow, b: CveTableRow): number {
+    return severityRankings[b.severity] - severityRankings[a.severity] || b.cvss - a.cvss;
+}
+
 function worstSeverity(a: VulnerabilitySeverity, b: VulnerabilitySeverity): VulnerabilitySeverity {
-    if (!b) {
-        return a;
-    }
     return severityRankings[a] >= severityRankings[b] ? a : b;
 }
 
@@ -93,11 +94,5 @@ export function getVirtualMachineCveTableData(virtualMachine?: VirtualMachine): 
         });
     });
 
-    // sort CVEs using collator to handle numeric values
-    // without numeric sorting, localeCompare would put CVE-2024-10 before CVE-2024-9
-    const collator = new Intl.Collator('en', {
-        numeric: true, // compare digit runs as numbers
-        sensitivity: 'base', // ignore case/accents (probably not needed for CVEs)
-    });
-    return Array.from(map.values()).sort((a, b) => collator.compare(a.cve, b.cve));
+    return Array.from(map.values()).sort(defaultCveTableSort);
 }

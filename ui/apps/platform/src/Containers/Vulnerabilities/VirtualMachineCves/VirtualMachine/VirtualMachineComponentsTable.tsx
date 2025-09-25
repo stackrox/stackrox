@@ -1,9 +1,8 @@
 import React from 'react';
 import { Td, Thead, Tr, Tbody, Th, Table } from '@patternfly/react-table';
 
-import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-
 import type { CveComponentRow } from '../aggregateUtils';
+import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
 
 export type VirtualMachineComponentsTableProps = {
     components: CveComponentRow[];
@@ -30,15 +29,7 @@ function VirtualMachineComponentsTable({ components }: VirtualMachineComponentsT
                             <Td dataLabel="Version">{version}</Td>
                             <Td dataLabel="CVE fixed in">{fixedBy}</Td>
                             <Td dataLabel="Advisory">
-                                <ExternalLink>
-                                    <a
-                                        href={advisory.link}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        {advisory.name}
-                                    </a>
-                                </ExternalLink>
+                                <AdvisoryLinkOrText advisory={advisory} />
                             </Td>
                         </Tr>
                     );
