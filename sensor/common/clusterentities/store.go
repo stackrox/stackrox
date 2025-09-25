@@ -205,6 +205,7 @@ func (e *Store) ApplyDataFromHeritageOnce() {
 	if !e.pastSensors.IsEnabled() {
 		log.Info("Won't apply heritage data to cluster-entities Store - feature is disabled")
 		e.heritageApplied.Signal()
+		return
 	}
 	if e.applyHeritageData(e.pastSensors) {
 		e.heritageApplied.Signal()
