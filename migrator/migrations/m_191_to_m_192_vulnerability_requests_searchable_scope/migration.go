@@ -15,7 +15,7 @@ var (
 	migration = types.Migration{
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)},
-		Run: migrate,
+		Run:            migrate,
 	}
 )
 

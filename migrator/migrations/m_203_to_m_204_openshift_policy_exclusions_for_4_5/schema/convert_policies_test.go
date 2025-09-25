@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 func TestPolicySerialization(t *testing.T) {
