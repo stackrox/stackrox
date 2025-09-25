@@ -12,67 +12,67 @@ var (
 	// K8SRoleBindingSearchFields contains pre-computed search fields for role_bindings
 	K8SRoleBindingSearchFields = map[search.FieldLabel]*search.Field{
 		search.FieldLabel("Cluster"): {
-			FieldPath: ".cluster_name",
+			FieldPath: "k8srolebinding.cluster_name",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Cluster ID"): {
-			FieldPath: ".cluster_id",
+			FieldPath: "k8srolebinding.cluster_id",
 			Store:     true,
 			Hidden:    true,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Cluster Role"): {
-			FieldPath: ".cluster_role",
+			FieldPath: "k8srolebinding.cluster_role",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Namespace"): {
-			FieldPath: ".namespace",
+			FieldPath: "k8srolebinding.namespace",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Role Binding"): {
-			FieldPath: ".name",
+			FieldPath: "k8srolebinding.name",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Role Binding Annotation"): {
-			FieldPath: ".annotations",
+			FieldPath: "k8srolebinding.annotations",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Role Binding ID"): {
-			FieldPath: ".id",
+			FieldPath: "k8srolebinding.id",
 			Store:     false,
 			Hidden:    true,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Role Binding Label"): {
-			FieldPath: ".labels",
+			FieldPath: "k8srolebinding.labels",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Role ID"): {
-			FieldPath: ".role_id",
+			FieldPath: "k8srolebinding.role_id",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Subject"): {
-			FieldPath: ".subjects.name",
+			FieldPath: "k8srolebinding.subjects.name",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Subject Kind"): {
-			FieldPath: ".subjects.kind",
+			FieldPath: "k8srolebinding.subjects.kind",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
@@ -91,10 +91,6 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Role Binding ID",
-					Enabled:   true,
-				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -105,10 +101,6 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Role Binding",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "Namespace",
@@ -116,10 +108,6 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Namespace",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "ClusterId",
@@ -127,10 +115,6 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Cluster ID",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "ClusterName",
@@ -138,10 +122,6 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Cluster",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "ClusterRole",
@@ -149,10 +129,6 @@ var (
 				Type:       "bool",
 				SQLType:    "bool",
 				DataType:   postgres.Bool,
-				Search: walker.SearchField{
-					FieldName: "Cluster Role",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "Labels",
@@ -160,10 +136,6 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
-				Search: walker.SearchField{
-					FieldName: "Role Binding Label",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "Annotations",
@@ -171,10 +143,6 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
-				Search: walker.SearchField{
-					FieldName: "Role Binding Annotation",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "RoleId",
@@ -182,10 +150,6 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Role ID",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "serialized",

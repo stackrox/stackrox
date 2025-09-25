@@ -12,73 +12,73 @@ var (
 	// ClusterSearchFields contains pre-computed search fields for clusters
 	ClusterSearchFields = map[search.FieldLabel]*search.Field{
 		search.FieldLabel("Admission Control Status"): {
-			FieldPath: ".health_status.admission_control_health_status",
+			FieldPath: "cluster.health_status.admission_control_health_status",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Cluster"): {
-			FieldPath: ".name",
+			FieldPath: "cluster.name",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Cluster ID"): {
-			FieldPath: ".id",
+			FieldPath: "cluster.id",
 			Store:     true,
 			Hidden:    true,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Cluster Kubernetes Version"): {
-			FieldPath: ".status.orchestrator_metadata.version",
+			FieldPath: "cluster.status.orchestrator_metadata.version",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Cluster Label"): {
-			FieldPath: ".labels",
+			FieldPath: "cluster.labels",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Cluster Platform Type"): {
-			FieldPath: ".type",
+			FieldPath: "cluster.type",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Cluster Status"): {
-			FieldPath: ".health_status.overall_health_status",
+			FieldPath: "cluster.health_status.overall_health_status",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Cluster Type"): {
-			FieldPath: ".status.provider_metadata.cluster.type",
+			FieldPath: "cluster.status.provider_metadata.cluster.type",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Collector Status"): {
-			FieldPath: ".health_status.collector_health_status",
+			FieldPath: "cluster.health_status.collector_health_status",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Last Contact"): {
-			FieldPath: ".health_status.last_contact.seconds",
+			FieldPath: "cluster.health_status.last_contact.seconds",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Scanner Status"): {
-			FieldPath: ".health_status.scanner_health_status",
+			FieldPath: "cluster.health_status.scanner_health_status",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
 		},
 		search.FieldLabel("Sensor Status"): {
-			FieldPath: ".health_status.sensor_health_status",
+			FieldPath: "cluster.health_status.sensor_health_status",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_CLUSTERS,
@@ -97,10 +97,6 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Cluster ID",
-					Enabled:   true,
-				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -111,10 +107,6 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Cluster",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "Type",
@@ -122,10 +114,6 @@ var (
 				Type:       "storage.ClusterType",
 				SQLType:    "integer",
 				DataType:   postgres.Enum,
-				Search: walker.SearchField{
-					FieldName: "Cluster Platform Type",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "Labels",
@@ -133,10 +121,6 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
-				Search: walker.SearchField{
-					FieldName: "Cluster Label",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "Type",

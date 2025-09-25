@@ -537,6 +537,8 @@ func generateSearchFields(protoType, trimmedType string) []OptimizedSearchField 
 		protoObj = &storage.Role{}
 	case "K8SRoleBinding":
 		protoObj = &storage.K8SRoleBinding{}
+	case "K8sRoleBinding":
+		protoObj = &storage.K8SRoleBinding{}
 	// Add more cases as needed for other types
 	default:
 		// For types we don't have explicit cases for, return empty for now
@@ -555,9 +557,19 @@ func generateSearchFields(protoType, trimmedType string) []OptimizedSearchField 
 	// Convert OptionsMap to our OptimizedSearchField format
 	var searchFields []OptimizedSearchField
 	for fieldLabel, field := range optionsMap.Original() {
+		// Convert field path to maintain backward compatibility with walker.Walk format
+		// Old format was: k8srolebinding.role_id, new format is: .role_id
+		// Need to convert .field_name to tablename.field_name for backward compatibility
+		fieldPath := field.FieldPath
+		if strings.HasPrefix(fieldPath, ".") && len(fieldPath) > 1 {
+			// Remove the leading dot and prefix with table name
+			tableName := getTableNameFromType(trimmedType)
+			fieldPath = tableName + fieldPath
+		}
+
 		searchField := OptimizedSearchField{
 			FieldLabel:     string(fieldLabel),
-			FieldPath:      field.FieldPath,
+			FieldPath:      fieldPath,
 			Store:          field.Store,
 			Hidden:         field.Hidden,
 			SearchCategory: getSearchCategoryName(searchCategory),
@@ -599,6 +611,8 @@ func getSearchCategoryForType(typeName string) v1.SearchCategory {
 		return v1.SearchCategory_ROLES
 	case "K8SRoleBinding":
 		return v1.SearchCategory_ROLEBINDINGS
+	case "K8sRoleBinding":
+		return v1.SearchCategory_ROLEBINDINGS
 	// Add more mappings as needed
 	default:
 		return v1.SearchCategory_SEARCH_UNSET
@@ -628,6 +642,36 @@ func getSearchCategoryName(category v1.SearchCategory) string {
 		return "SearchCategory_ROLEBINDINGS"
 	default:
 		return "SearchCategory_SEARCH_UNSET"
+	}
+}
+
+func getTableNameFromType(typeName string) string {
+	// Map type names to their corresponding table names for backward compatibility
+	switch typeName {
+	case "Alert":
+		return "alert"
+	case "Cluster":
+		return "cluster"
+	case "Deployment":
+		return "deployment"
+	case "Image":
+		return "image"
+	case "Policy":
+		return "policy"
+	case "Node":
+		return "node"
+	case "Secret":
+		return "secret"
+	case "Role":
+		return "k8srole"
+	case "K8SRoleBinding":
+		return "k8srolebinding"
+	case "K8sRoleBinding":
+		return "k8srolebinding"
+	// Add more mappings as needed
+	default:
+		// Fallback: convert to lowercase and snake_case
+		return pgutils.NamingStrategy.TableName(typeName)
 	}
 }
 

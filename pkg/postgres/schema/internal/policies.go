@@ -12,74 +12,74 @@ var (
 	// PolicySearchFields contains pre-computed search fields for policies
 	PolicySearchFields = map[search.FieldLabel]*search.Field{
 		search.FieldLabel("Category"): {
-			FieldPath: ".categories",
+			FieldPath: "policy.categories",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("Description"): {
-			FieldPath: ".description",
+			FieldPath: "policy.description",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("Disabled"): {
-			FieldPath: ".disabled",
+			FieldPath: "policy.disabled",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("Enforcement"): {
-			FieldPath: ".enforcement_actions",
+			FieldPath: "policy.enforcement_actions",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("Lifecycle Stage"): {
-			FieldPath: ".lifecycle_stages",
+			FieldPath: "policy.lifecycle_stages",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("Policy"): {
-			FieldPath: ".name",
+			FieldPath: "policy.name",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("Policy ID"): {
-			FieldPath: ".id",
+			FieldPath: "policy.id",
 			Store:     true,
 			Hidden:    true,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("Policy Last Updated"): {
-			FieldPath: ".last_updated.seconds",
+			FieldPath: "policy.last_updated.seconds",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("SORT_Enforcement"): {
-			FieldPath: ".SORT_enforcement",
+			FieldPath: "policy.SORT_enforcement",
 			Store:     false,
 			Hidden:    true,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("SORT_Lifecycle Stage"): {
-			FieldPath: ".SORT_lifecycleStage",
+			FieldPath: "policy.SORT_lifecycleStage",
 			Store:     false,
 			Hidden:    true,
 			Category:  v1.SearchCategory_POLICIES,
 		},
 		search.FieldLabel("SORT_Policy"): {
-			FieldPath: ".SORT_name",
+			FieldPath: "policy.SORT_name",
 			Store:     false,
 			Hidden:    true,
 			Category:  v1.SearchCategory_POLICIES,
 			Analyzer:  "keyword",
 		},
 		search.FieldLabel("Severity"): {
-			FieldPath: ".severity",
+			FieldPath: "policy.severity",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_POLICIES,
@@ -98,10 +98,6 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Policy ID",
-					Enabled:   true,
-				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -112,10 +108,6 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Policy",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "Description",
@@ -123,10 +115,6 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
-				Search: walker.SearchField{
-					FieldName: "Description",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "Disabled",
@@ -134,10 +122,6 @@ var (
 				Type:       "bool",
 				SQLType:    "bool",
 				DataType:   postgres.Bool,
-				Search: walker.SearchField{
-					FieldName: "Disabled",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "Categories",
@@ -145,10 +129,6 @@ var (
 				Type:       "[]string",
 				SQLType:    "text[]",
 				DataType:   postgres.StringArray,
-				Search: walker.SearchField{
-					FieldName: "Category",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "LifecycleStages",
@@ -156,10 +136,6 @@ var (
 				Type:       "[]storage.LifecycleStage",
 				SQLType:    "int[]",
 				DataType:   postgres.EnumArray,
-				Search: walker.SearchField{
-					FieldName: "Lifecycle Stage",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "Severity",
@@ -167,10 +143,6 @@ var (
 				Type:       "storage.Severity",
 				SQLType:    "integer",
 				DataType:   postgres.Enum,
-				Search: walker.SearchField{
-					FieldName: "Severity",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "EnforcementActions",
@@ -178,10 +150,6 @@ var (
 				Type:       "[]storage.EnforcementAction",
 				SQLType:    "int[]",
 				DataType:   postgres.EnumArray,
-				Search: walker.SearchField{
-					FieldName: "Enforcement",
-					Enabled:   true,
-				},
 			},
 			{
 				Name:       "LastUpdated",
