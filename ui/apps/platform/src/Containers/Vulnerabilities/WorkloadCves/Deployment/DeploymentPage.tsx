@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     PageSection,
     Breadcrumb,
@@ -29,8 +29,11 @@ import { detailsTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import DeploymentPageDetails from './DeploymentPageDetails';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import CreateReportDropdown from '../components/CreateReportDropdown';
+import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 
 const deploymentMetadataQuery = gql`
     ${deploymentMetadataFragment}
@@ -63,6 +66,16 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
 
     const deploymentName = metadataRequest.data?.deployment?.name;
     const deploymentNotFound = metadataRequest.data && !metadataRequest.data.deployment;
+
+    // Report-specific state management
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
+    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
+
+    const buildDeploymentQuery = () => `Deployment ID:${deploymentId}`;
+    const onReportSelect = () => {
+        setIsCreateViewBasedReportModalOpen(true);
+    };
 
     return (
         <>
@@ -99,7 +112,18 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                                 message="The system was unable to load metadata for this deployment"
                             />
                         )}
-                        <DeploymentPageHeader data={metadataRequest.data?.deployment} />
+                        <DeploymentPageHeader
+                            data={metadataRequest.data?.deployment}
+                            additionalActions={
+                                isViewBasedReportsEnabled ? (
+                                    <CreateReportDropdown
+                                        onSelect={onReportSelect}
+                                        buildQuery={buildDeploymentQuery}
+                                        areaOfConcern="Deployments"
+                                    />
+                                ) : undefined
+                            }
+                        />
                     </PageSection>
                     <PageSection
                         className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
@@ -158,6 +182,14 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                         </Tabs>
                     </PageSection>
                 </>
+            )}
+            {isViewBasedReportsEnabled && (
+                <CreateViewBasedReportModal
+                    isOpen={isCreateViewBasedReportModalOpen}
+                    setIsOpen={setIsCreateViewBasedReportModalOpen}
+                    query={buildDeploymentQuery()}
+                    areaOfConcern="Deployments"
+                />
             )}
         </>
     );

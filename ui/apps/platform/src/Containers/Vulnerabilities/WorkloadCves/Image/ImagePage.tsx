@@ -49,8 +49,11 @@ import ImageDetailBadges, {
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
+import CreateReportDropdown from '../components/CreateReportDropdown';
+import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -124,6 +127,16 @@ function ImagePage({
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const [sbomTargetImage, setSbomTargetImage] = useState<string>();
 
+    // Report-specific state management
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
+    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
+
+    const buildImageQuery = () => `Image ID:${imageId}`;
+    const onReportSelect = () => {
+        setIsCreateViewBasedReportModalOpen(true);
+    };
+
     const imageData = data && data.image;
     const imageName = imageData?.name;
     const imageDisplayName =
@@ -178,34 +191,47 @@ function ImagePage({
                                     )}
                                     <ImageDetailBadges imageData={imageData} />
                                 </Flex>
-                                {hasWriteAccessForImage && (
-                                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                                        <OptionalSbomButtonTooltip
-                                            message={getSbomGenerationStatusMessage({
-                                                isScannerV4Enabled,
-                                                hasScanMessage,
-                                            })}
-                                        >
-                                            <Button
-                                                variant="secondary"
-                                                onClick={() => {
-                                                    setSbomTargetImage(imageData.name?.fullName);
-                                                }}
-                                                isAriaDisabled={
-                                                    !isScannerV4Enabled || hasScanMessage
-                                                }
-                                            >
-                                                Generate SBOM
-                                            </Button>
-                                        </OptionalSbomButtonTooltip>
-                                        {sbomTargetImage && (
-                                            <GenerateSbomModal
-                                                onClose={() => setSbomTargetImage(undefined)}
-                                                imageName={sbomTargetImage}
+                                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                                    {isViewBasedReportsEnabled && (
+                                        <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                                            <CreateReportDropdown
+                                                onSelect={onReportSelect}
+                                                buildQuery={buildImageQuery}
+                                                areaOfConcern="Images"
                                             />
-                                        )}
-                                    </FlexItem>
-                                )}
+                                        </FlexItem>
+                                    )}
+                                    {hasWriteAccessForImage && (
+                                        <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                                            <OptionalSbomButtonTooltip
+                                                message={getSbomGenerationStatusMessage({
+                                                    isScannerV4Enabled,
+                                                    hasScanMessage,
+                                                })}
+                                            >
+                                                <Button
+                                                    variant="secondary"
+                                                    onClick={() => {
+                                                        setSbomTargetImage(
+                                                            imageData.name?.fullName
+                                                        );
+                                                    }}
+                                                    isAriaDisabled={
+                                                        !isScannerV4Enabled || hasScanMessage
+                                                    }
+                                                >
+                                                    Generate SBOM
+                                                </Button>
+                                            </OptionalSbomButtonTooltip>
+                                            {sbomTargetImage && (
+                                                <GenerateSbomModal
+                                                    onClose={() => setSbomTargetImage(undefined)}
+                                                    imageName={sbomTargetImage}
+                                                />
+                                            )}
+                                        </FlexItem>
+                                    )}
+                                </Flex>
                             </Flex>
                             {hasScanMessage && (
                                 <Alert
@@ -315,6 +341,14 @@ function ImagePage({
             </PageSection>
             <Divider component="div" />
             {mainContent}
+            {isViewBasedReportsEnabled && (
+                <CreateViewBasedReportModal
+                    isOpen={isCreateViewBasedReportModalOpen}
+                    setIsOpen={setIsCreateViewBasedReportModalOpen}
+                    query={buildImageQuery()}
+                    areaOfConcern="Images"
+                />
+            )}
         </>
     );
 }
