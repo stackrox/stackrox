@@ -32,6 +32,8 @@ var (
 	allowedGlobalResources = []string{
 		"/StorageClass/stackrox-gke-ssd",
 		"/CustomResourceDefinition/securitypolicies.config.stackrox.io",
+		"/ClusterRole/create-token-reviews",
+		"/ClusterRoleBinding/central-token-review",
 	}
 )
 
