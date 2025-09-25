@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// #nosec G101 -- This is a false positive.
 const kubernetesServiceAccountTokenIssuer = "kubernetes/serviceaccount"
 
 var (
