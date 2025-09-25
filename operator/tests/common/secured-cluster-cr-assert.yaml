@@ -24,7 +24,7 @@ assertAll:
 - celExpr: "sc_cr.status.conditions.filter(c, c.type=='Initialized').exists(c, c.status=='True')"
 - celExpr: "sc_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='False')"
 - celExpr: "sc_cr.status.conditions.filter(c, c.type=='ProxyConfigFailed').exists(c, c.status=='False')"
-- celExpr: "sc_cr.status.conditions.filter(c, c.type=='ReleaseFailed').exists(c, c.status=='True')"
+- celExpr: "sc_cr.status.conditions.filter(c, c.type=='ReleaseFailed').exists(c, c.status=='False')"
 timeout: 1500
 ---
 apiVersion: platform.stackrox.io/v1alpha1
