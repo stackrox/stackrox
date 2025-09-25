@@ -248,40 +248,36 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             component="p"
                         />
                     )}
-                    {isRuntime && (
-                        <FormGroup
-                            fieldId="policy-event-source"
-                            label="Event sources (Runtime lifecycle only)"
-                            isRequired={isRuntime}
-                            className="pf-v5-u-pt-lg"
-                        >
-                            <Flex direction={{ default: 'row' }}>
-                                <Radio
-                                    label="Deployment"
-                                    isChecked={values.eventSource === 'DEPLOYMENT_EVENT'}
-                                    id="policy-event-source-deployment"
-                                    name="eventSource"
-                                    onChange={() =>
-                                        setFieldValue('eventSource', 'DEPLOYMENT_EVENT')
-                                    }
-                                    isDisabled={!isRuntime || hasActiveViolations}
-                                />
-                                <Radio
-                                    label="Audit logs"
-                                    isChecked={values.eventSource === 'AUDIT_LOG_EVENT'}
-                                    id="policy-event-source-audit-logs"
-                                    name="eventSource"
-                                    onChange={onChangeAuditLogEventSource}
-                                    isDisabled={!isRuntime || hasActiveViolations}
-                                />
-                            </Flex>
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem>{eventSourceHelperText}</HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
-                        </FormGroup>
-                    )}
+                    <FormGroup
+                        fieldId="policy-event-source"
+                        label="Event sources (Runtime lifecycle only)"
+                        isRequired={isRuntime}
+                        className="pf-v5-u-pt-lg"
+                    >
+                        <Flex direction={{ default: 'row' }}>
+                            <Radio
+                                label="Deployment"
+                                isChecked={values.eventSource === 'DEPLOYMENT_EVENT'}
+                                id="policy-event-source-deployment"
+                                name="eventSource"
+                                onChange={() => setFieldValue('eventSource', 'DEPLOYMENT_EVENT')}
+                                isDisabled={!isRuntime || hasActiveViolations}
+                            />
+                            <Radio
+                                label="Audit logs"
+                                isChecked={values.eventSource === 'AUDIT_LOG_EVENT'}
+                                id="policy-event-source-audit-logs"
+                                name="eventSource"
+                                onChange={onChangeAuditLogEventSource}
+                                isDisabled={!isRuntime || hasActiveViolations}
+                            />
+                        </Flex>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>{eventSourceHelperText}</HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
+                    </FormGroup>
                 </div>
             </Form>
         </Flex>
