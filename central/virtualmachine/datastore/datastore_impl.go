@@ -72,12 +72,28 @@ func (ds *datastoreImpl) SearchRawVirtualMachines(
 	query *v1.Query,
 ) ([]*storage.VirtualMachine, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "SearchRawVirtualMachines")
-	pageSize := query.GetPagination().GetLimit()
+	// Sort by default by virtual machine name and namespace (does not apply if sort options are provided).
+	// TODO(ROX-31024): Move default sorting over multiple columns to store
+	searchQuery := query.CloneVT()
+	if len(searchQuery.GetPagination().GetSortOptions()) == 0 {
+		if searchQuery.GetPagination() == nil {
+			searchQuery.Pagination = &v1.QueryPagination{}
+		}
+		searchQuery.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.VirtualMachineName.String(),
+			},
+			{
+				Field: search.Namespace.String(),
+			},
+		}
+	}
+	pageSize := searchQuery.GetPagination().GetLimit()
 	if pageSize <= 0 {
 		pageSize = defaultPageSize
 	}
 	results := make([]*storage.VirtualMachine, 0, pageSize)
-	err := ds.store.WalkByQuery(ctx, query, func(vm *storage.VirtualMachine) error {
+	err := ds.store.WalkByQuery(ctx, searchQuery, func(vm *storage.VirtualMachine) error {
 		results = append(results, vm)
 		return nil
 	})

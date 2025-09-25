@@ -73,14 +73,9 @@ func (s *serviceImpl) GetVirtualMachine(ctx context.Context, request *v2.GetVirt
 }
 
 func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListVirtualMachinesRequest) (*v2.ListVirtualMachinesResponse, error) {
-	searchQuery := search.EmptyQuery()
-	requestQuery := request.GetQuery().GetQuery()
-	if requestQuery != "" {
-		parsedQuery, err := search.ParseQuery(requestQuery)
-		if err != nil {
-			return nil, errors.Wrap(err, "parsing input query")
-		}
-		searchQuery = parsedQuery
+	searchQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing input query")
 	}
 	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
 	if len(searchQuery.GetPagination().GetSortOptions()) == 0 {
