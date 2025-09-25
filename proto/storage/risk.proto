@@ -24,8 +24,8 @@ message Risk {
 
 message RiskSubject {
   string id = 1;
-  string namespace = 2; // @gotags: search:"Namespace,store"
-  string cluster_id = 3; // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+  string namespace = 2; // @gotags: search:"Namespace"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   RiskSubjectType type = 4; // @gotags: search:"Risk Subject Type,hidden"
 }
 

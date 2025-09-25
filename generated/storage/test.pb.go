@@ -612,7 +612,7 @@ func (*TestSingleUUIDKeyStruct_OneofTwoInt) isTestSingleUUIDKeyStruct_OneofTwo()
 type TestStruct struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	Key1        string                 `protobuf:"bytes,1,opt,name=key1,proto3" json:"key1,omitempty" sql:"pk,id" search:"Test Key"`                                                                               // @gotags: sql:"pk,id" search:"Test Key"
-	Key2        string                 `protobuf:"bytes,2,opt,name=key2,proto3" json:"key2,omitempty" search:"Test Key 2,store,hidden"`                                                                               // @gotags: search:"Test Key 2,store,hidden"
+	Key2        string                 `protobuf:"bytes,2,opt,name=key2,proto3" json:"key2,omitempty" search:"Test Key 2,hidden"`                                                                               // @gotags: search:"Test Key 2,hidden"
 	StringSlice []string               `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test String Slice"`                                              // @gotags: search:"Test String Slice"
 	Bool        bool                   `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`                                                                              // @gotags: search:"Test Bool"
 	Uint64      uint64                 `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"`                                                                          // @gotags: search:"Test Uint64"

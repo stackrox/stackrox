@@ -71,9 +71,9 @@ func (COStatus) EnumDescriptor() ([]byte, []int) {
 // Next Tag: 8
 type ComplianceIntegration struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
-	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Operator Integration ID,hidden,store" sql:"pk,type(uuid)"`                                // @gotags: search:"Compliance Operator Integration ID,hidden,store" sql:"pk,type(uuid)"
-	Version             string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Compliance Operator Version,hidden,store"`                      // @gotags: search:"Compliance Operator Version,hidden,store"
-	ClusterId           string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"` // @gotags: search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"
+	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Operator Integration ID,hidden" sql:"pk,type(uuid)"`                                // @gotags: search:"Compliance Operator Integration ID,hidden" sql:"pk,type(uuid)"
+	Version             string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Compliance Operator Version,hidden"`                      // @gotags: search:"Compliance Operator Version,hidden"
+	ClusterId           string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"` // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"
 	ComplianceNamespace string                 `protobuf:"bytes,4,opt,name=compliance_namespace,json=complianceNamespace,proto3" json:"compliance_namespace,omitempty"`
 	// Collection of errors that occurred while trying to obtain compliance health info.
 	StatusErrors      []string `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
