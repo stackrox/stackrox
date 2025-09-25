@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/pkg/errors"
@@ -93,7 +94,7 @@ func (ds *datastoreImpl) SearchRawVirtualMachines(
 	}
 	log.Info("SearchRawVirtualMachines query", searchQuery)
 	pageSize := searchQuery.GetPagination().GetLimit()
-	if pageSize <= 0 {
+	if pageSize <= 0 || pageSize == math.MaxInt32 {
 		pageSize = defaultPageSize
 	}
 	log.Info("SearchRawVirtualMachines page size", pageSize)
