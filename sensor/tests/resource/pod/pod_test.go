@@ -156,9 +156,7 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 			return nil
 		}, "deployment should be deleted", time.Minute)
 		// Check that alert with empty results is sent.
-		testC.AssertViolationStateByIDWithTimeout(t, id, func(alertResults *central.AlertResults) error {
-			return nil
-		}, "Should have received empty AlertResults", true, false, time.Minute)
+		testC.AssertViolationStateByIDWithTimeout(t, id, helper.AssertNoViolations(), "Should have received empty AlertResults", true, false, time.Minute)
 		testC.GetFakeCentral().ClearReceivedBuffer()
 	}))
 }
@@ -184,12 +182,8 @@ func (s *PodHierarchySuite) Test_DeletePod() {
 			}
 			return nil
 		}, "rogue pod should be deleted", 5*time.Minute)
-		testC.LastViolationStateByIDWithTimeout(t, id, func(alertResults *central.AlertResults) error {
-			if alertResults.GetAlerts() != nil {
-				return errors.New("AlertResults should be empty")
-			}
-			return nil
-		}, "Should have an empty violation", true, 5*time.Minute)
+		// Check that alert with empty results is sent.
+		testC.AssertViolationStateByIDWithTimeout(t, id, helper.AssertNoViolations(), "Should have received empty AlertResults", true, false, 5*time.Minute)
 		testC.GetFakeCentral().ClearReceivedBuffer()
 	}))
 }
