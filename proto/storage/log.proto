@@ -9,6 +9,6 @@ option java_package = "io.stackrox.proto.storage";
 
 message LogImbue {
   string id = 1; // @gotags: sql:"pk"
-  google.protobuf.Timestamp timestamp = 2; // @gotags: search:"Log Imbue Creation Time"
+  google.protobuf.Timestamp timestamp = 2; // @gotags: search:"Log Imbue Creation Time,hidden"
   bytes log = 3;
 }

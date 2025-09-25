@@ -104,9 +104,9 @@ func (SecretType) EnumDescriptor() ([]byte, []int) {
 // ////////////////////////////////////////
 type Secret struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Secret ID" sql:"pk,type(uuid)"`                                      // @gotags: search:"Secret ID" sql:"pk,type(uuid)"
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Secret ID,hidden" sql:"pk,type(uuid)"`                                      // @gotags: search:"Secret ID,hidden" sql:"pk,type(uuid)"
 	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Secret"`                                  // @gotags: search:"Secret"
-	ClusterId   string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`       // @gotags: search:"Cluster ID" sql:"type(uuid)"
+	ClusterId   string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
 	ClusterName string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"` // @gotags: search:"Cluster"
 	Namespace   string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                        // @gotags: search:"Namespace"
 	Type        string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`

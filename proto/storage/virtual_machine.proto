@@ -9,7 +9,7 @@ message VirtualMachine {
   string id = 1; // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID"
   string namespace = 2; // @gotags: search:"Namespace"
   string name = 3; // @gotags: search:"Virtual Machine Name"
-  string cluster_id = 4; // @gotags: search:"Cluster ID"  sql:"type(uuid)"
+  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden"  sql:"type(uuid)"
   string cluster_name = 5;
   map<string, string> facts = 6;
 

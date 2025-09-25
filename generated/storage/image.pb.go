@@ -270,7 +270,7 @@ func (ImageSignatureVerificationResult_Status) EnumDescriptor() ([]byte, []int) 
 // Deprecated: Marked as deprecated in storage/image.proto.
 type Image struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" search:"Image Sha" sql:"pk"` // @gotags: search:"Image Sha" sql:"pk"
+	Id    string                 `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" search:"Image Sha,hidden" sql:"pk"` // @gotags: search:"Image Sha,hidden" sql:"pk"
 	Name  *ImageName             `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with
 	// different locations.
@@ -292,11 +292,11 @@ type Image struct {
 	//
 	//	*Image_FixableCves
 	SetFixable     isImage_SetFixable     `protobuf_oneof:"set_fixable"`
-	LastUpdated    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated"` // @gotags: search:"Last Updated"
+	LastUpdated    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
 	NotPullable    bool                   `protobuf:"varint,10,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
 	IsClusterLocal bool                   `protobuf:"varint,17,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
-	Priority       int64                  `protobuf:"varint,11,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority"`                     // @gotags: search:"Image Risk Priority"
-	RiskScore      float32                `protobuf:"fixed32,12,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Image Risk Score"` // @gotags: search:"Image Risk Score"
+	Priority       int64                  `protobuf:"varint,11,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                     // @gotags: search:"Image Risk Priority,hidden"
+	RiskScore      float32                `protobuf:"fixed32,12,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Image Risk Score,hidden"` // @gotags: search:"Image Risk Score,hidden"
 	// Types that are valid to be assigned to SetTopCvss:
 	//
 	//	*Image_TopCvss
@@ -496,7 +496,7 @@ type isImage_SetComponents interface {
 }
 
 type Image_Components struct {
-	Components int32 `protobuf:"varint,7,opt,name=components,proto3,oneof" search:"Component Count"` // @gotags: search:"Component Count"
+	Components int32 `protobuf:"varint,7,opt,name=components,proto3,oneof" search:"Component Count,hidden"` // @gotags: search:"Component Count,hidden"
 }
 
 func (*Image_Components) isImage_SetComponents() {}
@@ -516,7 +516,7 @@ type isImage_SetFixable interface {
 }
 
 type Image_FixableCves struct {
-	FixableCves int32 `protobuf:"varint,9,opt,name=fixable_cves,json=fixableCves,proto3,oneof" search:"Fixable CVE Count"` // @gotags: search:"Fixable CVE Count"
+	FixableCves int32 `protobuf:"varint,9,opt,name=fixable_cves,json=fixableCves,proto3,oneof" search:"Fixable CVE Count,hidden"` // @gotags: search:"Fixable CVE Count,hidden"
 }
 
 func (*Image_FixableCves) isImage_SetFixable() {}
@@ -849,7 +849,7 @@ type EmbeddedImageScanComponent struct {
 	//
 	//	*EmbeddedImageScanComponent_TopCvss
 	SetTopCvss isEmbeddedImageScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	RiskScore  float32                                 `protobuf:"fixed32,10,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score" hash:"ignore"` // @gotags: search:"Component Risk Score" hash:"ignore"
+	RiskScore  float32                                 `protobuf:"fixed32,10,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden" hash:"ignore"` // @gotags: search:"Component Risk Score,hidden" hash:"ignore"
 	// Component version that fixes all the fixable vulnerabilities in this component.
 	FixedBy string `protobuf:"bytes,11,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
 	// Values are cleared after moving to cache, remove them from the grpc return as well
@@ -1168,7 +1168,7 @@ func (x *ImageMetadata) GetVersion() uint64 {
 type ImageSignature struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Signatures    []*Signature           `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"`
-	Fetched       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=fetched,proto3" json:"fetched,omitempty" search:"Image Signature Fetched Time"` // @gotags: search:"Image Signature Fetched Time"
+	Fetched       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=fetched,proto3" json:"fetched,omitempty" search:"Image Signature Fetched Time,hidden"` // @gotags: search:"Image Signature Fetched Time,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

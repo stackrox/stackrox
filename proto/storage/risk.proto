@@ -8,7 +8,7 @@ option java_package = "io.stackrox.proto.storage";
 message Risk {
   string id = 1; // @gotags: sql:"pk"
   RiskSubject subject = 2;
-  float score = 3; // @gotags: search:"Risk Score"
+  float score = 3; // @gotags: search:"Risk Score,hidden"
 
   message Result {
     message Factor {
@@ -25,8 +25,8 @@ message Risk {
 message RiskSubject {
   string id = 1;
   string namespace = 2; // @gotags: search:"Namespace"
-  string cluster_id = 3; // @gotags: search:"Cluster ID" sql:"type(uuid)"
-  RiskSubjectType type = 4; // @gotags: search:"Risk Subject Type"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+  RiskSubjectType type = 4; // @gotags: search:"Risk Subject Type,hidden"
 }
 
 // Next tag: 9

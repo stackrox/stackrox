@@ -1450,7 +1450,7 @@ func (x *SensorDeploymentIdentification) GetK8SNodeName() string {
 // Next tag: 33
 type Cluster struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Cluster ID" sql:"pk,type(uuid)"`                                                                                    // @gotags: search:"Cluster ID" sql:"pk,type(uuid)"
+	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Cluster ID,hidden" sql:"pk,type(uuid)"`                                                                                    // @gotags: search:"Cluster ID,hidden" sql:"pk,type(uuid)"
 	Name               string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Cluster" sql:"unique"`                                                                                // @gotags: search:"Cluster" sql:"unique"
 	Type               ClusterType            `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty" search:"Cluster Platform Type"`                                                      // @gotags: search:"Cluster Platform Type"
 	Labels             map[string]string      `protobuf:"bytes,27,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Cluster Label"` // @gotags: search:"Cluster Label"

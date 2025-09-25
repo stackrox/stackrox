@@ -1057,7 +1057,7 @@ type CVE struct {
 	CvssV3             *CVSSV3                        `protobuf:"bytes,11,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
 	Suppressed         bool                           `protobuf:"varint,12,opt,name=suppressed,proto3" json:"suppressed,omitempty" search:"CVE Snoozed"` // @gotags: search:"CVE Snoozed"
 	SuppressActivation *timestamppb.Timestamp         `protobuf:"bytes,16,opt,name=suppress_activation,json=suppressActivation,proto3" json:"suppress_activation,omitempty"`
-	SuppressExpiry     *timestamppb.Timestamp         `protobuf:"bytes,17,opt,name=suppress_expiry,json=suppressExpiry,proto3" json:"suppress_expiry,omitempty" search:"CVE Snooze Expiry"` // @gotags: search:"CVE Snooze Expiry"
+	SuppressExpiry     *timestamppb.Timestamp         `protobuf:"bytes,17,opt,name=suppress_expiry,json=suppressExpiry,proto3" json:"suppress_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
 	DistroSpecifics    map[string]*CVE_DistroSpecific `protobuf:"bytes,19,rep,name=distro_specifics,json=distroSpecifics,proto3" json:"distro_specifics,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Severity           VulnerabilitySeverity          `protobuf:"varint,20,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"` // @gotags: search:"Severity"
 	unknownFields      protoimpl.UnknownFields
@@ -1420,7 +1420,7 @@ func (x *Advisory) GetLink() string {
 // Deprecated: Marked as deprecated in storage/cve.proto.
 type ImageCVE struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID" sql:"pk,id"
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
 	CveBaseInfo     *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
 	OperatingSystem string                 `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
 	// cvss stores ACS preferred cvss score
@@ -1432,7 +1432,7 @@ type ImageCVE struct {
 	// Deprecated: Marked as deprecated in storage/cve.proto.
 	SnoozeStart *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
 	// Deprecated: Marked as deprecated in storage/cve.proto.
-	SnoozeExpiry *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry"` // @gotags: search:"CVE Snooze Expiry"
+	SnoozeExpiry *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
 	// nvdcvss stores cvss score for a cve from NVD
 	Nvdcvss float32 `protobuf:"fixed32,10,opt,name=nvdcvss,proto3" json:"nvdcvss,omitempty" search:"NVD CVSS"` // @gotags: search:"NVD CVSS"
 	// cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
@@ -1563,7 +1563,7 @@ type ImageCVEV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// keeping id similar construction for now during investigation.  It will include component and index
 	// within the component
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID" sql:"pk,id"` // @gotags: search:"CVE ID" sql:"pk,id"
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // @gotags: search:"CVE ID,hidden" sql:"pk,id"
 	// was hash index, making it btree
 	//
 	// Deprecated: Marked as deprecated in storage/cve.proto.
@@ -1576,7 +1576,7 @@ type ImageCVEV2 struct {
 	// nvdcvss stores cvss score for a cve from NVD
 	Nvdcvss              float32                `protobuf:"fixed32,7,opt,name=nvdcvss,proto3" json:"nvdcvss,omitempty" search:"NVD CVSS"` // @gotags: search:"NVD CVSS"
 	NvdScoreVersion      CvssScoreVersion       `protobuf:"varint,8,opt,name=nvd_score_version,json=nvdScoreVersion,proto3,enum=storage.CvssScoreVersion" json:"nvd_score_version,omitempty"`
-	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp"` // @gotags: search:"First Image Occurrence Timestamp"
+	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
 	State                VulnerabilityState     `protobuf:"varint,10,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State" sql:"index=btree"`                           // @gotags: search:"Vulnerability State" sql:"index=btree"
 	IsFixable            bool                   `protobuf:"varint,11,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable"`                                  // @gotags: search:"Fixable"
 	// Whether there is a version the CVE is fixed in the component.
@@ -1742,14 +1742,14 @@ type isImageCVEV2_HasFixedBy interface {
 }
 
 type ImageCVEV2_FixedBy struct {
-	FixedBy string `protobuf:"bytes,12,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Fixed By"` // @gotags: search:"Fixed By"
+	FixedBy string `protobuf:"bytes,12,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Fixed By,hidden"` // @gotags: search:"Fixed By,hidden"
 }
 
 func (*ImageCVEV2_FixedBy) isImageCVEV2_HasFixedBy() {}
 
 type NodeCVE struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID" sql:"pk,id"
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
 	CveBaseInfo     *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
 	OperatingSystem string                 `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
 	Cvss            float32                `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS"`                                            // @gotags: search:"CVSS"
@@ -1757,9 +1757,9 @@ type NodeCVE struct {
 	ImpactScore     float32                `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`           // @gotags: search:"Impact Score"
 	Snoozed         bool                   `protobuf:"varint,7,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`                                       // @gotags: search:"CVE Snoozed"
 	SnoozeStart     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
-	SnoozeExpiry    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry"`  // @gotags: search:"CVE Snooze Expiry"
-	Orphaned        bool                   `protobuf:"varint,10,opt,name=orphaned,proto3" json:"orphaned,omitempty" search:"CVE Orphaned"`                            // @gotags: search:"CVE Orphaned"
-	OrphanedTime    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=orphaned_time,json=orphanedTime,proto3" json:"orphaned_time,omitempty" search:"CVE Orphaned Time"` // @gotags: search:"CVE Orphaned Time"
+	SnoozeExpiry    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"`  // @gotags: search:"CVE Snooze Expiry,hidden"
+	Orphaned        bool                   `protobuf:"varint,10,opt,name=orphaned,proto3" json:"orphaned,omitempty" search:"CVE Orphaned,hidden"`                            // @gotags: search:"CVE Orphaned,hidden"
+	OrphanedTime    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=orphaned_time,json=orphanedTime,proto3" json:"orphaned_time,omitempty" search:"CVE Orphaned Time,hidden"` // @gotags: search:"CVE Orphaned Time,hidden"
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1873,14 +1873,14 @@ func (x *NodeCVE) GetOrphanedTime() *timestamppb.Timestamp {
 
 type ClusterCVE struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID" sql:"pk,id"` // This field is composite of cve and type. // @gotags: search:"CVE ID" sql:"pk,id"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and type. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
 	CveBaseInfo   *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
 	Cvss          float32                `protobuf:"fixed32,3,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS"`                                           // @gotags: search:"CVSS"
 	Severity      VulnerabilitySeverity  `protobuf:"varint,4,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"` // @gotags: search:"Severity"
 	ImpactScore   float32                `protobuf:"fixed32,5,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
 	Snoozed       bool                   `protobuf:"varint,6,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`                                      // @gotags: search:"CVE Snoozed"
 	SnoozeStart   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
-	SnoozeExpiry  *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry"` // @gotags: search:"CVE Snooze Expiry"
+	SnoozeExpiry  *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
 	Type          CVE_CVEType            `protobuf:"varint,9,opt,name=type,proto3,enum=storage.CVE_CVEType" json:"type,omitempty" search:"CVE Type"`           // @gotags: search:"CVE Type"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
