@@ -39,6 +39,7 @@ func TestStore_ApplyHeritageDataOnce(t *testing.T) {
 	tests := map[string]struct {
 		setupPastData        []*heritage.SensorMetadata
 		setupCurrentMetadata bool
+		featEnabled          bool
 		expectedSignalDone   bool
 	}{
 		"should signal done when heritage data applied successfully once": {
@@ -46,11 +47,13 @@ func TestStore_ApplyHeritageDataOnce(t *testing.T) {
 				{ContainerID: "past123", PodIP: "10.1.1.1", SensorStart: time.Now().Add(-time.Hour)},
 			},
 			setupCurrentMetadata: true,
+			featEnabled:          true,
 			expectedSignalDone:   true,
 		},
 		"should not signal done when no heritage data available": {
 			setupPastData:        []*heritage.SensorMetadata{},
 			setupCurrentMetadata: true,
+			featEnabled:          true,
 			expectedSignalDone:   false,
 		},
 		"should not signal done when missing current sensor metadata": {
@@ -58,13 +61,20 @@ func TestStore_ApplyHeritageDataOnce(t *testing.T) {
 				{ContainerID: "past123", PodIP: "10.1.1.1", SensorStart: time.Now().Add(-time.Hour)},
 			},
 			setupCurrentMetadata: false,
+			featEnabled:          true,
 			expectedSignalDone:   false,
+		},
+		"should signal when feature disabled": {
+			setupPastData:        []*heritage.SensorMetadata{},
+			setupCurrentMetadata: true,
+			featEnabled:          false,
+			expectedSignalDone:   true,
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			mockHM := &mockHeritageManager{data: tt.setupPastData}
+			mockHM := &mockHeritageManager{data: tt.setupPastData, isEnabled: tt.featEnabled}
 			store := NewStore(0, mockHM, true)
 
 			// Setup current sensor metadata if required
@@ -89,32 +99,22 @@ func TestStore_applyHeritageData(t *testing.T) {
 	tests := map[string]struct {
 		currentDeployID   string
 		currentEntityData *EntityData
-		featEnabled       bool
 		want              bool
 	}{
 		"should return true when current metadata is available": {
 			currentDeployID:   deployID,
 			currentEntityData: createSensorEntityData("current123", "10.2.2.2"),
-			featEnabled:       true,
 			want:              true,
 		},
 		"should return false when current entity data is missing": {
 			currentDeployID:   deployID,
 			currentEntityData: nil,
-			featEnabled:       true,
 			want:              false,
 		},
 		"should return false when deployment ID is missing": {
 			currentDeployID:   "",
 			currentEntityData: createSensorEntityData("current123", "10.2.2.2"),
-			featEnabled:       true,
 			want:              false,
-		},
-		"should return true when feature is disabled": {
-			currentDeployID:   "",
-			currentEntityData: nil,
-			featEnabled:       false,
-			want:              true,
 		},
 	}
 
@@ -124,7 +124,7 @@ func TestStore_applyHeritageData(t *testing.T) {
 				data: []*heritage.SensorMetadata{
 					{ContainerID: "past123", PodIP: "10.1.1.1", SensorStart: time.Now().Add(-time.Hour)},
 				},
-				isEnabled: tt.featEnabled,
+				isEnabled: true,
 			}
 			store := NewStore(0, mockHM, false)
 			store.RememberCurrentSensorMetadata(tt.currentDeployID, tt.currentEntityData)
