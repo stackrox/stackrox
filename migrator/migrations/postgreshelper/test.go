@@ -45,8 +45,6 @@ func ForT(t testing.TB, disableConstraint bool) *TestPostgres {
 // ForTExistingDB - creates and returns a Postgres for the test.  This is used primarily in testing scale where
 // we may have a loaded database we want to connect to.
 func ForTExistingDB(t testing.TB, disableConstraint bool, dbName string) *TestPostgres {
-	//database := strings.ToLower(dbName)
-
 	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, dbName)
 	ctx := context.Background()
 
