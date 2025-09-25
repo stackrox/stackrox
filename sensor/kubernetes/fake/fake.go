@@ -2,6 +2,8 @@ package fake
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"os"
 	"time"
 
@@ -101,6 +103,7 @@ type WorkloadManager struct {
 	containerPool             *pool
 	registeredHostConnections []manager.HostNetworkInfo
 	workload                  *Workload
+	originatorCache           *OriginatorCache
 
 	// signals services
 	servicesInitialized concurrency.Signal
@@ -212,20 +215,36 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	mgr := &WorkloadManager{
 		db:                  db,
 		workload:            &workload,
-		processPool:         config.processPool,
+		originatorCache:     NewOriginatorCache(),
 		labelsPool:          config.labelsPool,
 		endpointPool:        config.endpointPool,
 		ipPool:              config.ipPool,
 		externalIpPool:      config.externalIpPool,
 		containerPool:       config.containerPool,
+		processPool:         config.processPool,
 		servicesInitialized: concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResources()
+
+	if warn := validateWorkload(&workload); warn != nil {
+		log.Warnf("Validaing workload: %s", warn)
+	}
 
 	log.Info("Created Workload manager for workload")
 	log.Infof("Workload: %s", string(data))
 	log.Infof("Rendered workload: %+v", workload)
 	return mgr
+}
+
+func validateWorkload(workload *Workload) error {
+	if workload.NetworkWorkload.OpenPortReuseProbability < 0.0 || workload.NetworkWorkload.OpenPortReuseProbability > 1.0 {
+		corrected := math.Min(1.0, math.Max(0.0, workload.NetworkWorkload.OpenPortReuseProbability))
+		workload.NetworkWorkload.OpenPortReuseProbability = corrected
+		return fmt.Errorf("incorrect probability value %.2f for 'openPortReuseProbability', "+
+			"rounding to %.2f", workload.NetworkWorkload.OpenPortReuseProbability, corrected)
+	}
+	// More validation checks can be added in the future
+	return nil
 }
 
 // SetSignalHandlers sets the handlers that will accept runtime data to be mocked from collector
@@ -334,5 +353,5 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		go w.manageNetworkPolicy(context.Background(), resource)
 	}
 
-	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
+	go w.manageFlows(context.Background())
 }

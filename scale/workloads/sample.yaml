@@ -58,4 +58,7 @@ networkWorkload:
   batchSize: 500
   # whether to generate endpoints that will never be marked as closed
   generateUnclosedEndpoints: true
+  # a probability of reusing an existing open endpoint by a different process without closing the endpoint
+  # i.e., multiple processes listening on the same port.
+  openPortReuseProbability: 0.05
 
