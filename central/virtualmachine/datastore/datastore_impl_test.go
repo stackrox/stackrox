@@ -440,6 +440,69 @@ func (s *VirtualMachineDataStoreTestSuite) TestSearchRawVirtualMachines() {
 	}
 }
 
+func (s *VirtualMachineDataStoreTestSuite) TestSearchRawVirtualMachinesSort() {
+	s.populateDatabaseForSearch()
+	testCases := map[string]struct {
+		query                *v1.Query
+		expectedMachineIDs   []string
+		expectedDistribution map[string]map[string]int
+	}{
+		"No sort option results in results sorted by name and namespace": {
+			query: queryForClusterID(testconsts.Cluster1),
+			expectedMachineIDs: []string{
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceA, 1),
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceB, 1),
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceA, 2),
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceB, 2),
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceA, 3),
+			},
+		},
+		"Sort by ID is done when requested": {
+			query: addPagination(
+				queryForClusterID(testconsts.Cluster1),
+				sortBy(search.VirtualMachineID),
+			),
+			expectedMachineIDs: []string{
+				// UUID starting with 09...
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceA, 2),
+				// UUID starting with 5b...
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceA, 1),
+				// UUID starting with 77...
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceB, 2),
+				// UUID starting with b4...
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceA, 3),
+				// UUID starting with fc...
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceB, 1),
+			},
+		},
+		"Custom sort options are applied (not the default)": {
+			query: addPagination(
+				queryForClusterID(testconsts.Cluster1),
+				sortBy(search.Namespace, search.VirtualMachineName),
+			),
+			expectedMachineIDs: []string{
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceA, 1),
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceA, 2),
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceA, 3),
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceB, 1),
+				generateVirtualMachineID(testconsts.Cluster1, testconsts.NamespaceB, 2),
+			},
+		},
+	}
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			ctx := sac.WithAllAccess(s.T().Context())
+			virtualMachines, err := s.datastore.SearchRawVirtualMachines(ctx, tc.query)
+			s.NoError(err)
+			vmIDs := make([]string, len(virtualMachines))
+			for ix, vm := range virtualMachines {
+				vmIDs[ix] = vm.GetId()
+			}
+			s.Equal(tc.expectedMachineIDs, vmIDs)
+		})
+	}
+}
+
 func (s *VirtualMachineDataStoreTestSuite) TestSearchRawVirtualMachinesSliceHandling() {
 	for i := 0; i < 50; i++ {
 		for _, testCluster := range []string{testconsts.Cluster1, testconsts.Cluster2} {
@@ -726,6 +789,7 @@ func createNamespacedTestVM(
 	vmID := generateVirtualMachineID(clusterID, namespace, index)
 	return &storage.VirtualMachine{
 		Id:        vmID,
+		Name:      fmt.Sprintf("Virtual Machine %d", index),
 		ClusterId: clusterID,
 		Namespace: namespace,
 	}
@@ -787,6 +851,16 @@ func addPagination(query *v1.Query, pagination *v1.Pagination) *v1.Query {
 	returnedQuery := query.CloneVT()
 	paginated.FillPagination(returnedQuery, pagination, math.MaxInt32)
 	return returnedQuery
+}
+
+func sortBy(fields ...search.FieldLabel) *v1.Pagination {
+	result := &v1.Pagination{}
+	for _, field := range fields {
+		result.SortOptions = append(result.SortOptions, &v1.SortOption{
+			Field: field.String(),
+		})
+	}
+	return result
 }
 
 func countSearchResultsObjectsPerClusterAndNamespace(t *testing.T, results []*storage.VirtualMachine) map[string]map[string]int {
