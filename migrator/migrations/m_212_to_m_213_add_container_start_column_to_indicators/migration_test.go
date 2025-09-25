@@ -54,7 +54,7 @@ func (s *migrationTestSuite) TestMigration() {
 	if !s.existingDB {
 		// Create the old schema for testing
 		pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableProcessIndicatorsStmt)
-		
+
 		// Add some process indicators
 		var indicators []*storage.ProcessIndicator
 
