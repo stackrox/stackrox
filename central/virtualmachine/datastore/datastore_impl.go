@@ -96,6 +96,7 @@ func (ds *datastoreImpl) SearchRawVirtualMachines(
 	if pageSize <= 0 {
 		pageSize = defaultPageSize
 	}
+	log.Info("SearchRawVirtualMachines page size", pageSize)
 	results := make([]*storage.VirtualMachine, 0, pageSize)
 	err := ds.store.WalkByQuery(ctx, searchQuery, func(vm *storage.VirtualMachine) error {
 		results = append(results, vm)

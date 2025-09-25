@@ -204,7 +204,9 @@ func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search
 }
 
 func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	log.Info("walkByQuery - before applying defaults")
 	query = s.applyQueryDefaults(query)
+	log.Info("walkByQuery - after applying defaults")
 	return RunCursorQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
 }
 
