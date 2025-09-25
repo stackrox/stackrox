@@ -1,44 +1,28 @@
-# We only want unicast addresses
-{{ $ip1 := randInt 0 223 }}
-{{ $ip2 := randInt 0 255 }}
-{{ $ip3 := randInt 0 255 }}
-{{ $ip4 := randInt 0 255 }}
-
-{{ $ip := printf "%d.%d.%d.%d/16" $ip1 $ip2 $ip3 $ip4 }}
-{{ $berserker_address := printf "%d.%d.%d.%d" $ip1 $ip2 $ip3 $ip4 }}
-
-kind: Deployment
+---
+kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: connection-load-{{.Replica}}
+  name: endpoint-load-{{.Replica}}
 spec:
-  replicas: {{.podReplicas}}
   selector:
     matchLabels:
-      app: connection-load-{{.Replica}}
+      app: endpoint-load-{{.Replica}}
   template:
     metadata:
       labels:
-        app: connection-load-{{.Replica}}
+        app: endpoint-load-{{.Replica}}
     spec:
       imagePullSecrets:
       - name: {{.JobName}}-{{.Replica}}
       containers:
-      - image: quay.io/rhacs-eng/qa:berserker-network-1.0-85-g1b7ab034aa
+      - image: quay.io/rhacs-eng/qa:berserker-1.0-40-ge3bd96aa5a
         resources:
           requests:
             memory: "100Mi"
             cpu: "25m"
           limits:
-            memory: "100Mi"
+            memory: "180Mi"
             cpu: "25m"
-        env:
-          - name: IP_BASE
-            value: "{{ $ip }}"
-          - name: BERSERKER__WORKLOAD__ADDRESS
-            value: "{{ $berserker_address }}"
-          - name: RUST_LOG
-            value: "error"
         volumeMounts:
         - name: config
           mountPath: "/etc/berserker"
@@ -50,17 +34,16 @@ spec:
         - containerPort: 8443
           protocol: TCP
         name: berserker
-        securityContext:
-          privileged: true
+        env:
+        - name: RUST_LOG
+          value: "error"
       volumes:
       - name: config
         configMap:
-          name: {{.JobName}}-berserker-connections-config
+          name: {{.JobName}}-berserker-config
           items:
-          - key: network-server.toml
-            path: network-server.toml
-          - key: network-client.toml
-            path: network-client.toml
+          - key: workload.toml
+            path: workload.toml
       # Add not-ready/unreachable tolerations for 15 minutes so that node
       # failure doesn't trigger pod deletion.
       tolerations:
