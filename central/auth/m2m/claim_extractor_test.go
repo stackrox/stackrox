@@ -9,16 +9,17 @@ import (
 )
 
 func Test_newClaimsExtractorFromConfig(t *testing.T) {
+	testNotImplementedErr := errox.NotImplemented
+
 	t.Run("GitHub Actions", func(t *testing.T) {
 		e := newClaimExtractorFromConfig(&storage.AuthMachineToMachineConfig{
 			Id:     "id1",
 			Issuer: "test",
 			Type:   storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 		})
-		testErr := errox.NotImplemented
 		_, err := e.ExtractClaims(&IDToken{
 			Claims: func(a any) error {
-				return testErr
+				return testNotImplementedErr
 			},
 		})
 		assert.ErrorIs(t, err, errox.NotImplemented)
@@ -45,10 +46,9 @@ func Test_newClaimsExtractorFromConfig(t *testing.T) {
 			Id:   "id1",
 			Type: storage.AuthMachineToMachineConfig_GENERIC,
 		})
-		testErr := errox.NotImplemented
 		_, err := e.ExtractClaims(&IDToken{
 			Claims: func(a any) error {
-				return testErr
+				return testNotImplementedErr
 			},
 		})
 		assert.ErrorIs(t, err, errox.NotImplemented)

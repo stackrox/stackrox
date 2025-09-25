@@ -16,7 +16,7 @@ import (
 func IssuerFromRawIDToken(rawIDToken string) (string, error) {
 	if strings.HasPrefix(rawIDToken, "sha256~") {
 		// Not a JWT. Assume Kubernetes opaque token.
-		return KubernetesTokenIssuer, nil
+		return KubernetesDefaultSvcTokenIssuer, nil
 	}
 
 	standardClaims := &jwt.RegisteredClaims{}

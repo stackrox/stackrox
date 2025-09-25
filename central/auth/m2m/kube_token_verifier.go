@@ -19,7 +19,7 @@ import (
 )
 
 // #nosec G101 -- This is a false positive.
-const KubernetesTokenIssuer = "https://kubernetes.default.svc"
+const KubernetesDefaultSvcTokenIssuer = "https://kubernetes.default.svc"
 
 // kubeTokenVerifier verifies tokens using the Kubernetes TokenReview API.
 type kubeTokenVerifier struct {

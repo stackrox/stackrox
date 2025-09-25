@@ -24,7 +24,7 @@ func TestIssuerFromRawIDToken(t *testing.T) {
 
 		issuer, err := IssuerFromRawIDToken(rawIDToken)
 		assert.NoError(t, err)
-		assert.Equal(t, KubernetesTokenIssuer, issuer)
+		assert.Equal(t, KubernetesDefaultSvcTokenIssuer, issuer)
 	})
 
 	t.Run("error", func(t *testing.T) {

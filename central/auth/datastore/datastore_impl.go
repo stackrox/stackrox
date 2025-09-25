@@ -222,7 +222,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	var tokenExchangerErrors []error
 	var kubeSAConfig *storage.AuthMachineToMachineConfig
 	upsertTokenExchanger := func(config *storage.AuthMachineToMachineConfig) error {
-		if config.GetIssuer() == m2m.KubernetesTokenIssuer {
+		if config.GetIssuer() == m2m.KubernetesDefaultSvcTokenIssuer {
 			kubeSAConfig = config
 			return nil
 		}
@@ -235,7 +235,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	if err := d.forEachAuthM2MConfigNoLock(ctx, upsertTokenExchanger); err != nil {
 		return pkgErrors.Wrap(err, "Failed to list auth m2m configs")
 	}
-	if err := d.configureConfigControllerAccess(m2m.KubernetesTokenIssuer, kubeSAConfig); err != nil {
+	if err := d.configureConfigControllerAccess(m2m.KubernetesDefaultSvcTokenIssuer, kubeSAConfig); err != nil {
 		return pkgErrors.Wrap(err, "failed to configure config controller access")
 	}
 

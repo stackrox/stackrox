@@ -63,8 +63,8 @@ func TestKubeOpaqueTokenVerifier_VerifyIDToken_CreateError(t *testing.T) {
 	token, err := verifier.VerifyIDToken(context.Background(), rawToken)
 	require.Nil(t, token)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "performing TokenReview request")
-	require.Contains(t, err.Error(), "create failed")
+	require.ErrorContains(t, err, "performing TokenReview request")
+	require.ErrorContains(t, err, "create failed")
 }
 
 func TestKubeOpaqueTokenVerifier_VerifyIDToken_NotAuthenticated(t *testing.T) {
@@ -84,5 +84,5 @@ func TestKubeOpaqueTokenVerifier_VerifyIDToken_NotAuthenticated(t *testing.T) {
 	token, err := verifier.VerifyIDToken(context.Background(), rawToken)
 	require.Nil(t, token)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "token not authenticated: invalid token")
+	require.ErrorContains(t, err, "token not authenticated: invalid token")
 }

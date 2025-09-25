@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+const kubernetesServiceAccountTokenIssuer = "kubernetes/serviceaccount"
+
 var (
 	once sync.Once
 
@@ -86,9 +88,9 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *st
 
 	if config.GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
 		// Kubernetes token can be issued by 3 issuers. Let's add all of them.
-		t.tokenExchangers[KubernetesTokenIssuer] = tokenExchanger
-		t.tokenExchangers["kubernetes/serviceaccount"] = tokenExchanger
-		if config.GetIssuer() != KubernetesTokenIssuer && config.GetIssuer() != "kubernetes/serviceaccount" {
+		t.tokenExchangers[KubernetesDefaultSvcTokenIssuer] = tokenExchanger
+		t.tokenExchangers[kubernetesServiceAccountTokenIssuer] = tokenExchanger
+		if config.GetIssuer() != KubernetesDefaultSvcTokenIssuer && config.GetIssuer() != kubernetesServiceAccountTokenIssuer {
 			t.tokenExchangers[config.GetIssuer()] = tokenExchanger
 			return nil
 		}
@@ -107,18 +109,22 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *st
 
 // GetTokenExchanger retrieves a TokenExchanger based on the issuer.
 func (t *tokenExchangerSet) GetTokenExchanger(issuer string) (TokenExchanger, bool) {
+	tokenExchanger, exists := t.tokenExchangers[issuer]
+	if exists {
+		return tokenExchanger, exists
+	}
+
 	// This is the issuer of the tokens, sometimes found in the secrets of type
 	// kubernetes.io/service-account-token
 	// We call TokenReview API to verify the token.
-	if issuer == "kubernetes/serviceaccount" {
+	if issuer == kubernetesServiceAccountTokenIssuer {
 		for _, tokenExchanger := range t.tokenExchangers {
 			if tokenExchanger.Config().GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
 				return tokenExchanger, true
 			}
 		}
 	}
-	tokenExchanger, exists := t.tokenExchangers[issuer]
-	return tokenExchanger, exists
+	return nil, false
 }
 
 // RemoveTokenExchanger removes the token exchanger for the specific configuration ID.
