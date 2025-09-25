@@ -112,6 +112,10 @@ func (s *fullStoreImpl) ReconcileClusterCVEParts(ctx context.Context, cveType st
 }
 
 func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ...*storage.ClusterCVE) error {
+	if len(objs) == 0 {
+		return nil
+	}
+
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -199,6 +203,10 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 }
 
 func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType storage.CVE_CVEType, clusters []string, objs ...*storage.ClusterCVEEdge) error {
+	if len(objs) == 0 {
+		return nil
+	}
+
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
