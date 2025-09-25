@@ -493,11 +493,11 @@ func (s *VirtualMachineDataStoreTestSuite) TestSearchRawVirtualMachinesSort() {
 		s.Run(name, func() {
 			ctx := sac.WithAllAccess(s.T().Context())
 			virtualMachines, err := s.datastore.SearchRawVirtualMachines(ctx, tc.query)
+			s.NoError(err)
 			vmIDs := make([]string, len(virtualMachines))
 			for ix, vm := range virtualMachines {
 				vmIDs[ix] = vm.GetId()
 			}
-			s.T().Log(tc.expectedMachineIDs)
 			s.Equal(tc.expectedMachineIDs, vmIDs)
 		})
 	}
