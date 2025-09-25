@@ -68,18 +68,18 @@ func (mr *MockManagerMockRecorder) HandleDeploymentAlerts(deploymentID, alerts, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeploymentAlerts", reflect.TypeOf((*MockManager)(nil).HandleDeploymentAlerts), deploymentID, alerts, stage)
 }
 
-// HandleFileAlerts mocks base method.
-func (m *MockManager) HandleFileAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
+// HandleHostAlerts mocks base method.
+func (m *MockManager) HandleHostAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleFileAlerts", clusterID, alerts, stage)
+	ret := m.ctrl.Call(m, "HandleHostAlerts", clusterID, alerts, stage)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// HandleFileAlerts indicates an expected call of HandleFileAlerts.
-func (mr *MockManagerMockRecorder) HandleFileAlerts(clusterID, alerts, stage any) *gomock.Call {
+// HandleHostAlerts indicates an expected call of HandleHostAlerts.
+func (mr *MockManagerMockRecorder) HandleHostAlerts(clusterID, alerts, stage any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleFileAlerts", reflect.TypeOf((*MockManager)(nil).HandleFileAlerts), clusterID, alerts, stage)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleHostAlerts", reflect.TypeOf((*MockManager)(nil).HandleHostAlerts), clusterID, alerts, stage)
 }
 
 // HandleResourceAlerts mocks base method.

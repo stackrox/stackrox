@@ -678,7 +678,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("FileActivity_File", []string{
 		"hostPath: String!",
-		"isExternalMount: Boolean!",
 		"path: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.FileActivity_Type(0)))
@@ -1196,6 +1195,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"execFilePath: String!",
 		"gid: Int!",
 		"id: ID!",
+		"inRootMountNs: Boolean!",
 		"lineage: [String!]!",
 		"lineageInfo: [ProcessSignal_LineageInfo]!",
 		"name: String!",
@@ -8138,11 +8138,6 @@ func (resolver *fileActivity_FileResolver) HostPath(ctx context.Context) string 
 	return value
 }
 
-func (resolver *fileActivity_FileResolver) IsExternalMount(ctx context.Context) bool {
-	value := resolver.data.GetIsExternalMount()
-	return value
-}
-
 func (resolver *fileActivity_FileResolver) Path(ctx context.Context) string {
 	value := resolver.data.GetPath()
 	return value
@@ -13099,6 +13094,11 @@ func (resolver *processSignalResolver) Gid(ctx context.Context) int32 {
 func (resolver *processSignalResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *processSignalResolver) InRootMountNs(ctx context.Context) bool {
+	value := resolver.data.GetInRootMountNs()
+	return value
 }
 
 func (resolver *processSignalResolver) Lineage(ctx context.Context) []string {
