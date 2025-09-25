@@ -412,7 +412,7 @@ func (s *serviceImpl) convertViewBasedProtoReportSnapshotstoV2(snapshots []*stor
 			Filter: &apiV2.ReportSnapshot_ViewBasedVulnReportFilters{
 				ViewBasedVulnReportFilters: viewBasedFilters,
 			},
-			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
+			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath("view-based", snapshot.GetReportId())),
 		}
 		v2snaps = append(v2snaps, snapshotv2)
 	}
