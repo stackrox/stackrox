@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/mdlayher/vsock"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/compliance/virtualmachine/metrics"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/env"
@@ -101,6 +102,8 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 		}
 	}()
 
+	metrics.IndexReportsReceived.Inc()
+
 	log.Debugf("Handling vsock connection from %s", conn.RemoteAddr())
 
 	vsockCID, err := extractVsockCIDFromConnection(conn)
@@ -180,6 +183,12 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 		retry.Tries(10), // With current wait values in exponential backoff logic, this takes around 50 s
 		retry.OnlyRetryableErrors(),
 		retry.WithExponentialBackoff())
+
+	if err != nil {
+		metrics.IndexReportsNotRelayed.Inc()
+	} else {
+		metrics.IndexReportsRelayed.Inc()
+	}
 
 	return err
 }
