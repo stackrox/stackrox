@@ -11,37 +11,6 @@ inputs:
 runs:
   using: composite
   steps:
-    # auth prepares the gcp environment to authenticate.
-    - name: Auth gcloud
-      uses: 'google-github-actions/auth@v3'
-      with:
-        credentials_json: '${{ inputs.gcp-account }}'
-        export_environment_variables: true
-        create_credentials_file: true
-        cleanup_credentials: true
-
-    - name: Check gcloud CLI
-      id: gcloud-check
-      continue-on-error: true
-      shell: bash
-      run: |
-        which gcloud
-
-    # setup-gcloud authenticates gcloud
-    - name: Install gcloud CLI
-      uses: 'google-github-actions/setup-gcloud@v2'
-      with:
-        skip_install: ${{ steps.gcloud-check.outcome != 'failure' }}
-
-    - name: Shim gsutil as gcloud storage
-      continue-on-error: true
-      shell: bash
-      run: |
-        tee -a ~/.boto <<EOF
-        [GSUtil]
-        use_gcloud_storage=True
-        EOF
-
     - name: Check disk space
       id: disk-check
       continue-on-error: true
@@ -135,6 +104,9 @@ runs:
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
       shell: bash
+
+    - name: Set up gcloud CLI
+      uses: 'google-github-actions/setup-gcloud@v2'
 
     - name: Record job info
       uses: gacts/run-and-post-run@674528335da98a7afc80915ff2b4b860a0b3553a # v1.4.0
