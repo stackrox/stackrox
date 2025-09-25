@@ -808,6 +808,12 @@ spec:
             "revision": "$(tasks.wait-for-collector-image.results.GIT_REF)"
           },
           {
+            "name": "collector-slim",
+            "containerImage": "$(params.collector-slim-image-build-repo)@$(tasks.wait-for-collector-slim-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-collector-slim-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-collector-slim-image.results.GIT_REF)"
+          },
+          {
             "name": "main",
             "containerImage": "$(params.main-image-build-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)",
             "repository": "$(tasks.wait-for-main-image.results.GIT_REPO)",

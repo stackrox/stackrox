@@ -41,9 +41,7 @@ check_all_components_are_part_of_custom_snapshot() {
     local expected_components_from_images
     local expected_components
     expected_components_from_images="$(yq eval '.spec.tasks[] | select(.name == "wait-for-*-image") | .name | sub("(wait-for-|-image)", "")' ${pipeline_path})"
-    # `collector-slim` is excluded because there's no separate component for it. There's only `collector` which is
-    # intended to be released in two repos (as normal and as slim).
-    expected_components=$(echo "${expected_components_from_images} operator-bundle" | tr " " "\n" | grep -vF collector-slim | sort)
+    expected_components=$(echo "${expected_components_from_images} operator-bundle" | tr " " "\n" | sort)
 
     echo
     echo "➤ ${pipeline_path} // checking ${task_name}: COMPONENTS contents shall include all ACS images."
