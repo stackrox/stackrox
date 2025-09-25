@@ -43,7 +43,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: create-token-reviews
-  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "create-token-reviews") | nindent 4 }}
   annotations:
@@ -60,7 +59,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: central-token-review
-  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "central-token-review") | nindent 4 }}
   annotations:
