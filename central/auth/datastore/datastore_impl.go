@@ -222,7 +222,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	var tokenExchangerErrors []error
 	var kubeSAConfig *storage.AuthMachineToMachineConfig
 	upsertTokenExchanger := func(config *storage.AuthMachineToMachineConfig) error {
-		if config.GetIssuer() == m2m.KubernetesDefaultSvcTokenIssuer {
+		if config.GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
 			kubeSAConfig = config
 			return nil
 		}
