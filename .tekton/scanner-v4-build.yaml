@@ -66,9 +66,9 @@ spec:
     - name: prefetch-dependencies
       computeResources:
         limits:
-          memory: 4Gi
+          memory: 8Gi
         requests:
-          memory: 4Gi
+          memory: 8Gi
   - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build
