@@ -84,6 +84,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             expect(values).to.have.length(GROUPS_AVAILABLE_FOR_DEPLOY_POLICY);
         });
 
+        clickPolicyKeyGroup('Image registry');
         cy.get(`${selectors.step3.policyCriteria.key}:first`).scrollIntoView();
         cy.get(`${selectors.step3.policyCriteria.key}:first`).should('be.visible');
     });
@@ -123,6 +124,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         it('should allow the user to add/delete a policy field card in the same policy section', () => {
             goToPoliciesAndCloneToStep3();
 
+            clickPolicyKeyGroup('Image registry');
             // add policy field card
             cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
                 addPolicyFieldCard(0);
@@ -143,6 +145,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         it('should allow the user to add multiple non-duplicate policy field cards in the same policy section', () => {
             goToPoliciesAndCloneToStep3();
 
+            clickPolicyKeyGroup('Image registry');
             cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
                 addPolicyFieldCard(0);
                 addPolicyFieldCard(1);
@@ -156,6 +159,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         it('should not be able to add duplicate policy field cards in the same policy section', () => {
             goToPoliciesAndCloneToStep3();
 
+            clickPolicyKeyGroup('Image registry');
             cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
                 addPolicyFieldCard(0);
                 addPolicyFieldCard(0);
@@ -172,6 +176,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
+                clickPolicyKeyGroup('Image registry');
                 // add field values for Image Registry
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
@@ -212,6 +217,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
+                clickPolicyKeyGroup('Image registry');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
@@ -240,6 +246,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
+                clickPolicyKeyGroup('Image registry');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
@@ -316,6 +323,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
+                clickPolicyKeyGroup('Image registry');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
@@ -373,6 +381,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
 
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
+                clickPolicyKeyGroup('Image registry');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image signature')`
                 );
