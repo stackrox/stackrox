@@ -19,7 +19,14 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { ClientPolicy } from 'types/policy.proto';
 
-import { getLifeCyclesUpdates, initialPolicy } from '../../policies.utils';
+import {
+    getLifeCyclesUpdates,
+    initialPolicy,
+    isRuntimePolicy,
+    isBuildPolicy,
+    isBuildAndDeployPolicy,
+    isDeployPolicy,
+} from '../../policies.utils';
 import type { ValidPolicyLifeCycle } from '../../policies.utils';
 
 type PolicyBehaviorFormProps = {
@@ -106,13 +113,10 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
 
     const eventSourceHelperText = getEventSourceHelperText(values.eventSource);
 
-    const isBuild = values.lifecycleStages.includes('BUILD') && values.lifecycleStages.length === 1;
-    const isDeploy =
-        values.lifecycleStages.includes('DEPLOY') && values.lifecycleStages.length === 1;
-    const isBuildAndDeploy =
-        values.lifecycleStages.includes('BUILD') && values.lifecycleStages.includes('DEPLOY');
-    const isRuntime =
-        values.lifecycleStages.includes('RUNTIME') && values.lifecycleStages.length === 1;
+    const isBuild = isBuildPolicy(values.lifecycleStages);
+    const isDeploy = isDeployPolicy(values.lifecycleStages);
+    const isBuildAndDeploy = isBuildAndDeployPolicy(values.lifecycleStages);
+    const isRuntime = isRuntimePolicy(values.lifecycleStages);
 
     return (
         <Flex
