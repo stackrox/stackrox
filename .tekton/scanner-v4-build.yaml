@@ -61,6 +61,15 @@ spec:
     name: scanner-v4-pipeline
 
   taskRunSpecs:
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+    # Bump memory for Go dependencies prefetch which tends to be OOM-killed at the default setting of 3Gi.
+    - name: prefetch-dependencies
+      computeResources:
+        limits:
+          memory: 6Gi
+        requests:
+          memory: 6Gi
   - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build

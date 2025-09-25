@@ -66,6 +66,15 @@ spec:
     name: main-pipeline
 
   taskRunSpecs:
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+    # Bump memory for Go dependencies prefetch which tends to be OOM-killed at the default setting of 3Gi.
+    - name: prefetch-dependencies
+      computeResources:
+        limits:
+          memory: 6Gi
+        requests:
+          memory: 6Gi
   # For all sbom-syft-generate steps:
   # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
   # exits with 137 (OOMKilled):
