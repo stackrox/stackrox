@@ -45,11 +45,11 @@ func migrate(database *types.Databases) error {
 		log.Debugf("Migrate process indicators for cluster %q", cluster)
 		wg.Add(1)
 
-		go func(c string, err error) {
+		go func(c string, err *error) {
 			defer sema.Release(1)
 			defer wg.Done()
-			err = migrateByCluster(cluster, database)
-		}(cluster, migrationError)
+			*err = migrateByCluster(cluster, database)
+		}(cluster, &migrationError)
 		if migrationError != nil {
 			return migrationError
 		}
