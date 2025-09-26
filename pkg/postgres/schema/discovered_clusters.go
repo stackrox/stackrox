@@ -4,15 +4,14 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -29,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.DiscoveredCluster)(nil)), "discovered_clusters")
+		schema = internal.GetDiscoveredClusterSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.CloudSource": CloudSourcesSchema,
 		}
@@ -37,7 +36,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DISCOVERED_CLUSTERS, "discoveredcluster", (*storage.DiscoveredCluster)(nil)))
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableDiscoveredClustersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_DISCOVERED_CLUSTERS, schema)

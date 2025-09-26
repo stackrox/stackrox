@@ -3,10 +3,8 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -24,7 +22,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.SignatureIntegration)(nil)), "signature_integrations")
+		schema = internal.GetSignatureIntegrationSchema()
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableSignatureIntegrationsStmt)
 		return schema

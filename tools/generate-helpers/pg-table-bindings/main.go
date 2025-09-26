@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -14,11 +16,13 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/spf13/cobra"
-	_ "github.com/stackrox/rox/generated/storage"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/generate-helpers/common"
@@ -45,6 +49,9 @@ var migrationToolFile string
 //go:embed migration_tool_test.go.tpl
 var migrationToolTestFile string
 
+//go:embed optimized_schema.go.tpl
+var optimizedSchemaFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
@@ -53,6 +60,7 @@ var (
 	storeTestTemplate         = newTemplate(storeTestFile)
 	migrationToolTemplate     = newTemplate(migrationToolFile)
 	migrationToolTestTemplate = newTemplate(migrationToolTestFile)
+	optimizedSchemaTemplate   = newTemplate(optimizedSchemaFile)
 )
 
 type properties struct {
@@ -111,6 +119,9 @@ type properties struct {
 
 	// Provides options map for sort option transforms
 	TransformSortOptions string
+
+	// Generate optimized schema files
+	GenerateOptimizedSchema bool
 }
 
 type parsedReference struct {
@@ -145,6 +156,7 @@ func main() {
 	c.Flags().StringVar(&props.DefaultSortField, "default-sort", "", "if set, provides a default sort for search if one is not present")
 	c.Flags().BoolVar(&props.ReverseDefaultSort, "reverse-default-sort", false, "if true, reverses the default sort")
 	c.Flags().StringVar(&props.TransformSortOptions, "transform-sort-options", "", "if set, provides an option map for sort transforms")
+	c.Flags().BoolVar(&props.GenerateOptimizedSchema, "generate-optimized-schema", true, "if true, generates optimized schema files with pre-computed search fields")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
@@ -231,6 +243,12 @@ func main() {
 			return err
 		}
 
+		if props.GenerateOptimizedSchema {
+			if err := generateOptimizedSchema(schema, props, trimmedType, searchCategory); err != nil {
+				return err
+			}
+		}
+
 		if props.ConversionFuncs {
 			if err := generateConversionFuncs(schema, props.SchemaDirectory); err != nil {
 				return err
@@ -300,3 +318,360 @@ func v1SearchCategoryString(category string) string {
 	}
 	return fmt.Sprintf("v1.SearchCategory_%s", category)
 }
+
+// OptimizedSchemaData represents the data for generating optimized schema files
+type OptimizedSchemaData struct {
+	TypeName       string
+	Table          string
+	Type           string
+	SearchCategory string
+	Fields         []OptimizedSchemaField
+	SearchFields   []OptimizedSearchField
+	ChildSchemas   []OptimizedSchemaData
+}
+
+type OptimizedSchemaField struct {
+	Name         string
+	ColumnName   string
+	Type         string
+	SQLType      string
+	DataType     string
+	IsPrimaryKey bool
+	SearchFieldName string // The field name for search if this field is searchable
+}
+
+type OptimizedSearchField struct {
+	FieldLabel     string
+	FieldPath      string
+	Store          bool
+	Hidden         bool
+	SearchCategory string
+	Analyzer       string
+}
+
+func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedType, searchCategory string) error {
+	// Generate the optimized schema file in the same directory
+
+	// Generate search fields using reflection on the protobuf type first
+	searchFields := generateSearchFields(props.Type, trimmedType)
+
+	// Create a map from field path to search field name for lookup
+	fieldPathToSearchName := make(map[string]string)
+	for _, searchField := range searchFields {
+		fieldPathToSearchName[searchField.FieldPath] = searchField.FieldLabel
+	}
+
+	// Extract fields from walker schema
+	var fields []OptimizedSchemaField
+	for _, field := range schema.Fields {
+		// Find the search field name for this field by matching the column name
+		searchFieldName := ""
+		// Try multiple variations of the field path to match
+		possiblePaths := []string{
+			"." + strings.ToLower(field.ColumnName),
+			"." + pgutils.NamingStrategy.ColumnName("", field.ColumnName),
+		}
+		for _, path := range possiblePaths {
+			if fieldName, exists := fieldPathToSearchName[path]; exists {
+				searchFieldName = fieldName
+				break
+			}
+		}
+
+		optimizedField := OptimizedSchemaField{
+			Name:            field.Name,
+			ColumnName:      field.ColumnName,
+			Type:            field.Type,
+			SQLType:         field.SQLType,
+			DataType:        getDataTypeName(field.DataType),
+			IsPrimaryKey:    field.Options.PrimaryKey,
+			SearchFieldName: searchFieldName,
+		}
+		fields = append(fields, optimizedField)
+	}
+
+	// Clean search category name
+	cleanSearchCategory := strings.TrimPrefix(searchCategory, "v1.")
+
+	// Extract child schemas recursively
+	var childSchemas []OptimizedSchemaData
+	for _, childSchema := range schema.Children {
+		childData := extractSchemaDataRecursively(childSchema, cleanSearchCategory)
+		childSchemas = append(childSchemas, childData)
+	}
+
+	data := OptimizedSchemaData{
+		TypeName:       trimmedType,
+		Table:          schema.Table,
+		Type:           schema.Type, // Use schema.Type instead of props.Type to preserve pointer asterisk
+		SearchCategory: cleanSearchCategory,
+		Fields:         fields,
+		SearchFields:   searchFields,
+		ChildSchemas:   childSchemas,
+	}
+
+	templateMap := map[string]interface{}{
+		"TypeName":       data.TypeName,
+		"Table":          data.Table,
+		"Type":           data.Type,
+		"SearchCategory": data.SearchCategory,
+		"Fields":         data.Fields,
+		"SearchFields":   data.SearchFields,
+		"ChildSchemas":   data.ChildSchemas,
+	}
+
+	internalDir := filepath.Join(props.SchemaDirectory, "internal")
+	if err := os.MkdirAll(internalDir, 0755); err != nil {
+		return fmt.Errorf("failed to create internal directory: %w", err)
+	}
+	fileName := filepath.Join(internalDir, fmt.Sprintf("%s.go", schema.Table))
+	return common.RenderFile(templateMap, optimizedSchemaTemplate, fileName)
+}
+
+func extractFieldsFromSchema(schema *walker.Schema) []OptimizedSchemaField {
+	var fields []OptimizedSchemaField
+	for _, field := range schema.Fields {
+		optimizedField := OptimizedSchemaField{
+			Name:            field.Name,
+			ColumnName:      field.ColumnName,
+			Type:            field.Type,
+			SQLType:         field.SQLType,
+			DataType:        getDataTypeName(field.DataType),
+			IsPrimaryKey:    field.Options.PrimaryKey,
+			SearchFieldName: "", // Child schema fields don't have search names
+		}
+		fields = append(fields, optimizedField)
+	}
+	return fields
+}
+
+func extractSchemaDataRecursively(schema *walker.Schema, searchCategory string) OptimizedSchemaData {
+	fields := extractFieldsFromSchema(schema)
+
+	// Extract child schemas recursively
+	var childSchemas []OptimizedSchemaData
+	for _, childSchema := range schema.Children {
+		childData := extractSchemaDataRecursively(childSchema, searchCategory)
+		childSchemas = append(childSchemas, childData)
+	}
+
+	return OptimizedSchemaData{
+		TypeName:       schema.TypeName,
+		Table:          schema.Table,
+		Type:           schema.Type,
+		SearchCategory: searchCategory,
+		Fields:         fields,
+		SearchFields:   []OptimizedSearchField{}, // Child schemas don't have separate search fields
+		ChildSchemas:   childSchemas,
+	}
+}
+
+func getDataTypeName(dataType interface{}) string {
+	if dataType == nil {
+		return "" // nil should map to empty string, not "String"
+	}
+
+	// Convert the DataType value to string and map to Go constant names
+	dataTypeStr := fmt.Sprintf("%v", dataType)
+	switch dataTypeStr {
+	case "":
+		return "" // empty DataType should remain empty
+	case "bytes":
+		return "Bytes"
+	case "bool":
+		return "Bool"
+	case "numeric":
+		return "Numeric"
+	case "string":
+		return "String"
+	case "datetime":
+		return "DateTime"
+	case "map":
+		return "Map"
+	case "enum":
+		return "Enum"
+	case "stringarray":
+		return "StringArray"
+	case "enumarray":
+		return "EnumArray"
+	case "integer":
+		return "Integer"
+	case "intarray":
+		return "IntArray"
+	case "biginteger":
+		return "BigInteger"
+	case "uuid":
+		return "UUID"
+	case "cidr":
+		return "CIDR"
+	default:
+		return "String" // fallback
+	}
+}
+
+func generateSearchFields(protoType, trimmedType string) []OptimizedSearchField {
+	if protoType == "" {
+		return []OptimizedSearchField{}
+	}
+
+	// Get the protobuf type using reflection from the storage package
+
+	// Try to find the actual type by name in the storage package
+	var protoObj interface{}
+	switch trimmedType {
+	case "Alert":
+		protoObj = &storage.Alert{}
+	case "Cluster":
+		protoObj = &storage.Cluster{}
+	case "Deployment":
+		protoObj = &storage.Deployment{}
+	case "Image":
+		protoObj = &storage.Image{}
+	case "Policy":
+		protoObj = &storage.Policy{}
+	case "Node":
+		protoObj = &storage.Node{}
+	case "Secret":
+		protoObj = &storage.Secret{}
+	case "Role":
+		protoObj = &storage.Role{}
+	case "K8SRoleBinding":
+		protoObj = &storage.K8SRoleBinding{}
+	case "K8sRoleBinding":
+		protoObj = &storage.K8SRoleBinding{}
+	// Add more cases as needed for other types
+	default:
+		// For types we don't have explicit cases for, return empty for now
+		log.Printf("No explicit case for type %s, returning empty search fields", trimmedType)
+		return []OptimizedSearchField{}
+	}
+
+	if protoObj == nil {
+		return []OptimizedSearchField{}
+	}
+
+	// Use the existing search.Walk functionality to get search fields
+	searchCategory := getSearchCategoryForType(trimmedType)
+	optionsMap := search.Walk(searchCategory, "", protoObj)
+
+	// Convert OptionsMap to our OptimizedSearchField format
+	var searchFields []OptimizedSearchField
+	for fieldLabel, field := range optionsMap.Original() {
+		// Convert field path to maintain backward compatibility with walker.Walk format
+		// Old format was: k8srolebinding.role_id, new format is: .role_id
+		// Need to convert .field_name to tablename.field_name for backward compatibility
+		fieldPath := field.FieldPath
+		if strings.HasPrefix(fieldPath, ".") && len(fieldPath) > 1 {
+			// Remove the leading dot and prefix with table name
+			tableName := getTableNameFromType(trimmedType)
+			fieldPath = tableName + fieldPath
+		}
+
+		searchField := OptimizedSearchField{
+			FieldLabel:     string(fieldLabel),
+			FieldPath:      fieldPath,
+			Store:          field.Store,
+			Hidden:         field.Hidden,
+			SearchCategory: getSearchCategoryName(searchCategory),
+		}
+
+		// Add analyzer if present
+		if field.Analyzer != "" {
+			searchField.Analyzer = field.Analyzer
+		}
+
+		searchFields = append(searchFields, searchField)
+	}
+
+	// Sort searchFields by FieldLabel to ensure stable order between generations
+	sort.Slice(searchFields, func(i, j int) bool {
+		return searchFields[i].FieldLabel < searchFields[j].FieldLabel
+	})
+
+	return searchFields
+}
+
+func getSearchCategoryForType(typeName string) v1.SearchCategory {
+	switch typeName {
+	case "Alert":
+		return v1.SearchCategory_ALERTS
+	case "Cluster":
+		return v1.SearchCategory_CLUSTERS
+	case "Deployment":
+		return v1.SearchCategory_DEPLOYMENTS
+	case "Image":
+		return v1.SearchCategory_IMAGES
+	case "Policy":
+		return v1.SearchCategory_POLICIES
+	case "Node":
+		return v1.SearchCategory_NODES
+	case "Secret":
+		return v1.SearchCategory_SECRETS
+	case "Role":
+		return v1.SearchCategory_ROLES
+	case "K8SRoleBinding":
+		return v1.SearchCategory_ROLEBINDINGS
+	case "K8sRoleBinding":
+		return v1.SearchCategory_ROLEBINDINGS
+	// Add more mappings as needed
+	default:
+		return v1.SearchCategory_SEARCH_UNSET
+	}
+}
+
+func getSearchCategoryName(category v1.SearchCategory) string {
+	// Convert category back to string name for template
+	switch category {
+	case v1.SearchCategory_ALERTS:
+		return "SearchCategory_ALERTS"
+	case v1.SearchCategory_CLUSTERS:
+		return "SearchCategory_CLUSTERS"
+	case v1.SearchCategory_DEPLOYMENTS:
+		return "SearchCategory_DEPLOYMENTS"
+	case v1.SearchCategory_IMAGES:
+		return "SearchCategory_IMAGES"
+	case v1.SearchCategory_POLICIES:
+		return "SearchCategory_POLICIES"
+	case v1.SearchCategory_NODES:
+		return "SearchCategory_NODES"
+	case v1.SearchCategory_SECRETS:
+		return "SearchCategory_SECRETS"
+	case v1.SearchCategory_ROLES:
+		return "SearchCategory_ROLES"
+	case v1.SearchCategory_ROLEBINDINGS:
+		return "SearchCategory_ROLEBINDINGS"
+	default:
+		return "SearchCategory_SEARCH_UNSET"
+	}
+}
+
+func getTableNameFromType(typeName string) string {
+	// Map type names to their corresponding table names for backward compatibility
+	switch typeName {
+	case "Alert":
+		return "alert"
+	case "Cluster":
+		return "cluster"
+	case "Deployment":
+		return "deployment"
+	case "Image":
+		return "image"
+	case "Policy":
+		return "policy"
+	case "Node":
+		return "node"
+	case "Secret":
+		return "secret"
+	case "Role":
+		return "k8srole"
+	case "K8SRoleBinding":
+		return "k8srolebinding"
+	case "K8sRoleBinding":
+		return "k8srolebinding"
+	// Add more mappings as needed
+	default:
+		// Fallback: convert to lowercase and snake_case
+		return pgutils.NamingStrategy.TableName(typeName)
+	}
+}
+
