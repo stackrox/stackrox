@@ -112,7 +112,6 @@ export type ReportHistoryResponse = {
 
 export type ViewBasedReportSnapshot = Snapshot & {
     viewBasedVulnReportFilters: ViewBasedVulnerabilityReportFilters;
-    requestName: string;
     areaOfConcern: string;
 };
 
