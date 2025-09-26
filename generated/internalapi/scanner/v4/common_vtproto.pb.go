@@ -67,6 +67,13 @@ func (m *Contents) CloneVT() *Contents {
 		}
 		r.Repositories = tmpContainer
 	}
+	if rhs := m.EnvironmentsDEPRECATED; rhs != nil {
+		tmpContainer := make(map[string]*Environment_List, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.EnvironmentsDEPRECATED = tmpContainer
+	}
 	if rhs := m.Environments; rhs != nil {
 		tmpContainer := make(map[string]*Environment_List, len(rhs))
 		for k, v := range rhs {
@@ -285,11 +292,11 @@ func (this *Contents) EqualVT(that *Contents) bool {
 			}
 		}
 	}
-	if len(this.Environments) != len(that.Environments) {
+	if len(this.EnvironmentsDEPRECATED) != len(that.EnvironmentsDEPRECATED) {
 		return false
 	}
-	for i, vx := range this.Environments {
-		vy, ok := that.Environments[i]
+	for i, vx := range this.EnvironmentsDEPRECATED {
+		vy, ok := that.EnvironmentsDEPRECATED[i]
 		if !ok {
 			return false
 		}
@@ -359,6 +366,26 @@ func (this *Contents) EqualVT(that *Contents) bool {
 			}
 			if q == nil {
 				q = &Repository{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
+	}
+	if len(this.Environments) != len(that.Environments) {
+		return false
+	}
+	for i, vx := range this.Environments {
+		vy, ok := that.Environments[i]
+		if !ok {
+			return false
+		}
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &Environment_List{}
+			}
+			if q == nil {
+				q = &Environment_List{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -626,6 +653,28 @@ func (m *Contents) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.Environments) > 0 {
+		for k := range m.Environments {
+			v := m.Environments[k]
+			baseI := i
+			size, err := v.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x12
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x42
+		}
+	}
 	if len(m.Repositories) > 0 {
 		for k := range m.Repositories {
 			v := m.Repositories[k]
@@ -692,9 +741,9 @@ func (m *Contents) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0x2a
 		}
 	}
-	if len(m.Environments) > 0 {
-		for k := range m.Environments {
-			v := m.Environments[k]
+	if len(m.EnvironmentsDEPRECATED) > 0 {
+		for k := range m.EnvironmentsDEPRECATED {
+			v := m.EnvironmentsDEPRECATED[k]
 			baseI := i
 			size, err := v.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
@@ -1233,8 +1282,8 @@ func (m *Contents) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
-	if len(m.Environments) > 0 {
-		for k, v := range m.Environments {
+	if len(m.EnvironmentsDEPRECATED) > 0 {
+		for k, v := range m.EnvironmentsDEPRECATED {
 			_ = k
 			_ = v
 			l = 0
@@ -1274,6 +1323,19 @@ func (m *Contents) SizeVT() (n int) {
 	}
 	if len(m.Repositories) > 0 {
 		for k, v := range m.Repositories {
+			_ = k
+			_ = v
+			l = 0
+			if v != nil {
+				l = v.SizeVT()
+			}
+			l += 1 + protohelpers.SizeOfVarint(uint64(l))
+			mapEntrySize := 1 + len(k) + protohelpers.SizeOfVarint(uint64(len(k))) + l
+			n += mapEntrySize + 1 + protohelpers.SizeOfVarint(uint64(mapEntrySize))
+		}
+	}
+	if len(m.Environments) > 0 {
+		for k, v := range m.Environments {
 			_ = k
 			_ = v
 			l = 0
@@ -1621,7 +1683,7 @@ func (m *Contents) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Environments", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EnvironmentsDEPRECATED", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1648,8 +1710,8 @@ func (m *Contents) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Environments == nil {
-				m.Environments = make(map[string]*Environment_List)
+			if m.EnvironmentsDEPRECATED == nil {
+				m.EnvironmentsDEPRECATED = make(map[string]*Environment_List)
 			}
 			var mapkey string
 			var mapvalue *Environment_List
@@ -1746,7 +1808,7 @@ func (m *Contents) UnmarshalVT(dAtA []byte) error {
 					iNdEx += skippy
 				}
 			}
-			m.Environments[mapkey] = mapvalue
+			m.EnvironmentsDEPRECATED[mapkey] = mapvalue
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
@@ -2134,6 +2196,135 @@ func (m *Contents) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.Repositories[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Environments", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Environments == nil {
+				m.Environments = make(map[string]*Environment_List)
+			}
+			var mapkey string
+			var mapvalue *Environment_List
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return protohelpers.ErrInvalidLength
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return protohelpers.ErrInvalidLength
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapmsglen int
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapmsglen |= int(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					if mapmsglen < 0 {
+						return protohelpers.ErrInvalidLength
+					}
+					postmsgIndex := iNdEx + mapmsglen
+					if postmsgIndex < 0 {
+						return protohelpers.ErrInvalidLength
+					}
+					if postmsgIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = &Environment_List{}
+					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+						return err
+					}
+					iNdEx = postmsgIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return protohelpers.ErrInvalidLength
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Environments[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3706,7 +3897,7 @@ func (m *Contents) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Environments", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EnvironmentsDEPRECATED", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3733,8 +3924,8 @@ func (m *Contents) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Environments == nil {
-				m.Environments = make(map[string]*Environment_List)
+			if m.EnvironmentsDEPRECATED == nil {
+				m.EnvironmentsDEPRECATED = make(map[string]*Environment_List)
 			}
 			var mapkey string
 			var mapvalue *Environment_List
@@ -3835,7 +4026,7 @@ func (m *Contents) UnmarshalVTUnsafe(dAtA []byte) error {
 					iNdEx += skippy
 				}
 			}
-			m.Environments[mapkey] = mapvalue
+			m.EnvironmentsDEPRECATED[mapkey] = mapvalue
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
@@ -4235,6 +4426,139 @@ func (m *Contents) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.Repositories[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Environments", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Environments == nil {
+				m.Environments = make(map[string]*Environment_List)
+			}
+			var mapkey string
+			var mapvalue *Environment_List
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return protohelpers.ErrInvalidLength
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return protohelpers.ErrInvalidLength
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					if intStringLenmapkey == 0 {
+						mapkey = ""
+					} else {
+						mapkey = unsafe.String(&dAtA[iNdEx], intStringLenmapkey)
+					}
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapmsglen int
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapmsglen |= int(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					if mapmsglen < 0 {
+						return protohelpers.ErrInvalidLength
+					}
+					postmsgIndex := iNdEx + mapmsglen
+					if postmsgIndex < 0 {
+						return protohelpers.ErrInvalidLength
+					}
+					if postmsgIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = &Environment_List{}
+					if err := mapvalue.UnmarshalVTUnsafe(dAtA[iNdEx:postmsgIndex]); err != nil {
+						return err
+					}
+					iNdEx = postmsgIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return protohelpers.ErrInvalidLength
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Environments[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
