@@ -3,6 +3,7 @@ package manager
 import (
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -172,6 +173,7 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 	// evaluated as objects come into the queue and an object may have been successfully processed after
 	if msg.GetEvent().GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		delete(d.successfullyProcessed, key)
+		dedupingHashCounterVec.With(prometheus.Labels{"cluster": "find cluster", "ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())}).Add(-1)
 		return
 	}
 
@@ -179,6 +181,9 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 	// Only remove from this map if the hash matches as received could contain a more recent event
 	if ok && val.val == msg.GetEvent().GetSensorHash() {
 		delete(d.received, key)
+	}
+	if !ok {
+		dedupingHashCounterVec.With(prometheus.Labels{"cluster": "find cluster", "ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())}).Inc()
 	}
 	d.successfullyProcessed[key] = &entry{
 		val:       msg.GetEvent().GetSensorHash(),
