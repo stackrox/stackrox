@@ -87,10 +87,10 @@ describe('policies.utils', () => {
                                 negate: false,
                                 values: [
                                     {
-                                        value: 'SECRET_KEY=SOMEVAR=val_with=equals',
+                                        value: 'RAW=SOMEVAR=val_with=equals',
                                     },
                                     {
-                                        value: 'SECRET_KEY=OTHERVAR=normal_value',
+                                        value: 'RAW=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
@@ -212,12 +212,12 @@ describe('policies.utils', () => {
                                 negate: false,
                                 values: [
                                     {
-                                        source: 'SECRET_KEY',
+                                        source: 'RAW',
                                         key: 'SOMEVAR',
                                         value: 'val_with=equals',
                                     },
                                     {
-                                        source: 'SECRET_KEY',
+                                        source: 'RAW',
                                         key: 'OTHERVAR',
                                         value: 'normal_value',
                                     },
@@ -290,10 +290,10 @@ describe('policies.utils', () => {
                                 negate: false,
                                 values: [
                                     {
-                                        value: 'SECRET_KEY=SOMEVAR=val_with=equals',
+                                        value: 'RAW=SOMEVAR=val_with=equals',
                                     },
                                     {
-                                        value: 'SECRET_KEY=OTHERVAR=normal_value',
+                                        value: 'RAW=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
@@ -405,10 +405,10 @@ describe('policies.utils', () => {
                                 negate: false,
                                 values: [
                                     {
-                                        value: 'SECRET_KEY=SOMEVAR=val_with=equals',
+                                        value: 'RAW=SOMEVAR=val_with=equals',
                                     },
                                     {
-                                        value: 'SECRET_KEY=OTHERVAR=normal_value',
+                                        value: 'RAW=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
@@ -530,12 +530,12 @@ describe('policies.utils', () => {
                                 negate: false,
                                 values: [
                                     {
-                                        source: 'SECRET_KEY',
+                                        source: 'RAW',
                                         key: 'SOMEVAR',
                                         value: 'val_with=equals',
                                     },
                                     {
-                                        source: 'SECRET_KEY',
+                                        source: 'RAW',
                                         key: 'OTHERVAR',
                                         value: 'normal_value',
                                     },
@@ -608,10 +608,10 @@ describe('policies.utils', () => {
                                 negate: false,
                                 values: [
                                     {
-                                        value: 'SECRET_KEY=SOMEVAR=val_with=equals',
+                                        value: 'RAW=SOMEVAR=val_with=equals',
                                     },
                                     {
-                                        value: 'SECRET_KEY=OTHERVAR=normal_value',
+                                        value: 'RAW=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
