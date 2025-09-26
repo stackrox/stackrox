@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -53,7 +54,9 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
-	virtualMachines, err := p.virtualMachineStore.GetAllVirtualMachines(ctx)
+	virtualMachines, err := p.virtualMachineStore.SearchRawVirtualMachines(ctx, &v1.Query{
+		Selects: []*v1.QuerySelect{},
+	})
 	if err != nil {
 		return errors.Wrap(err, "retrieving virtual machines for reconciliation")
 	}
