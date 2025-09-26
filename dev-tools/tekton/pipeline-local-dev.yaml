@@ -311,18 +311,9 @@ spec:
           ARCH=$(go env GOARCH)
           go build -ldflags="$LDFLAGS" -tags "$GOTAGS" -o bin/roxctl-linux-${ARCH} ./roxctl
 
-          # Copy binaries to image directory
+          # Copy binaries to image directory using make target
           echo "Copying binaries to image directory..."
-          mkdir -p image/rhel/bin
-          cp bin/central image/rhel/bin/central
-          cp bin/migrator image/rhel/bin/migrator
-          cp bin/compliance image/rhel/bin/compliance
-          cp bin/kubernetes-sensor image/rhel/bin/kubernetes-sensor
-          cp bin/sensor-upgrader image/rhel/bin/sensor-upgrader
-          cp bin/admission-control image/rhel/bin/admission-control
-          cp bin/config-controller image/rhel/bin/config-controller
-          cp bin/init-tls-certs image/rhel/bin/init-tls-certs
-          cp bin/roxctl-linux-${ARCH} image/rhel/bin/roxctl-linux-${ARCH}
+          make copy-go-binaries-to-image-dir GOARCH=${ARCH}
 
           # Copy UI assets (built in previous step)
           echo "Copying UI assets..."
