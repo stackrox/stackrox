@@ -66,6 +66,9 @@ func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *
 		defer conn.Release()
 
 		tx, err := conn.Begin(ctx)
+		if err != nil {
+			return err
+		}
 
 		_, err = tx.Exec(ctx, "DELETE FROM versions")
 		if err != nil {
