@@ -15,10 +15,12 @@ import VirtualMachineComponentsTable from './VirtualMachineComponentsTable';
 
 export type VirtualMachineVulnerabilitiesTableProps = {
     tableState: TableUIState<CveTableRow>;
+    onClearFilters: () => void;
 };
 
 function VirtualMachineVulnerabilitiesTable({
     tableState,
+    onClearFilters,
 }: VirtualMachineVulnerabilitiesTableProps) {
     const colSpan = 7;
     const expandedRowSet = useSet<string>();
@@ -50,6 +52,7 @@ function VirtualMachineVulnerabilitiesTable({
                 emptyProps={{
                     message: 'No CVEs were detected for this virtual machine',
                 }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((vulnerability, rowIndex) => {
                         const isExpanded = expandedRowSet.has(vulnerability.cve);
