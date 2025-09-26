@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/enricher/kev"
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln"
@@ -41,24 +42,68 @@ import (
 	"github.com/stackrox/rox/scanner/sbom"
 )
 
-// matcherNames specifies the ClairCore matchers to use.
-//
-// Note: Do NOT hardcode the names. It's very easy to mess up...
-var matcherNames = []string{
-	(*alpine.Matcher)(nil).Name(),
-	(*aws.Matcher)(nil).Name(),
-	(*debian.Matcher)(nil).Name(),
-	(*gobin.Matcher)(nil).Name(),
-	(*java.Matcher)(nil).Name(),
-	(*oracle.Matcher)(nil).Name(),
-	(*photon.Matcher)(nil).Name(),
-	(*python.Matcher)(nil).Name(),
-	rhcc.Matcher.Name(),
-	(*rhel.Matcher)(nil).Name(),
-	(*ruby.Matcher)(nil).Name(),
-	(*suse.Matcher)(nil).Name(),
-	(*ubuntu.Matcher)(nil).Name(),
-}
+var (
+	// matcherNames specifies the ClairCore matchers to use.
+	//
+	// Note: Do NOT hardcode the names. It's very easy to mess up...
+	matcherNames = []string{
+		(*alpine.Matcher)(nil).Name(),
+		(*aws.Matcher)(nil).Name(),
+		(*debian.Matcher)(nil).Name(),
+		(*gobin.Matcher)(nil).Name(),
+		(*java.Matcher)(nil).Name(),
+		(*oracle.Matcher)(nil).Name(),
+		(*photon.Matcher)(nil).Name(),
+		(*python.Matcher)(nil).Name(),
+		rhcc.Matcher.Name(),
+		(*rhel.Matcher)(nil).Name(),
+		(*ruby.Matcher)(nil).Name(),
+		(*suse.Matcher)(nil).Name(),
+		(*ubuntu.Matcher)(nil).Name(),
+	}
+
+	enrichers = []struct {
+		name    string
+		enabled bool
+		init    func() driver.Enricher
+	}{
+		{
+			name:    "fixedby",
+			enabled: true,
+			init: func() driver.Enricher {
+				return &fixedby.Enricher{}
+			},
+		},
+		{
+			name:    "nvd",
+			enabled: true,
+			init: func() driver.Enricher {
+				return &nvd.Enricher{}
+			},
+		},
+		{
+			name:    "epss",
+			enabled: features.EPSSScore.Enabled(),
+			init: func() driver.Enricher {
+				return &epss.Enricher{}
+			},
+		},
+		{
+			name:    "csaf",
+			enabled: features.ScannerV4RedHatCSAF.Enabled() && !features.ScannerV4RedHatCVEs.Enabled(),
+			init: func() driver.Enricher {
+				return &csaf.Enricher{}
+			},
+		},
+		{
+			name:    "kev",
+			enabled: features.CISAKEV.Enabled(),
+			init: func() driver.Enricher {
+				return &kev.Enricher{}
+			},
+		},
+	}
+)
 
 func init() {
 	// ClairCore does not register the Node.js factory by default.
@@ -135,29 +180,19 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Transport: httputil.DenyTransport,
 	}
 
-	enrichers := []driver.Enricher{
-		&fixedby.Enricher{},
-		&nvd.Enricher{},
+	enabledEnrichers := make([]driver.Enricher, 0, len(enrichers))
+	for _, e := range enrichers {
+		zlog.Info(ctx).Bool("enabled", e.enabled).Msgf("%s enricher", e.name)
+		if !e.enabled {
+			continue
+		}
+		enabledEnrichers = append(enabledEnrichers, e.init())
 	}
-	var (
-		epssEnabled bool
-		csafEnabled bool
-	)
-	if features.EPSSScore.Enabled() {
-		epssEnabled = true
-		enrichers = append(enrichers, &epss.Enricher{})
-	}
-	if features.ScannerV4RedHatCSAF.Enabled() && !features.ScannerV4RedHatCVEs.Enabled() {
-		csafEnabled = true
-		enrichers = append(enrichers, &csaf.Enricher{})
-	}
-	zlog.Info(ctx).Bool("enabled", epssEnabled).Msg("EPSS enrichment")
-	zlog.Info(ctx).Bool("enabled", csafEnabled).Msg("CSAF enrichment")
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
 		MatcherNames:             matcherNames,
-		Enrichers:                enrichers,
+		Enrichers:                enabledEnrichers,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   ccClient,
