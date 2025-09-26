@@ -374,7 +374,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
                 dragFieldIntoSection(
-                    `${selectors.step3.policyCriteria.key}:contains('Image signature')`
+                    `${selectors.step3.policyCriteria.key}:contains('Required image signature')`
                 );
                 cy.wait('@getSignatureIntegrations');
             });
