@@ -45,8 +45,6 @@ export const VIEW_BASED_REPORT_REQUESTED = 'View Based Report Requested';
 export const VIEW_BASED_REPORT_TABLE_INTERACTION = 'View Based Report Table Interaction';
 export const VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED = 'View Based Report Download Attempted';
 export const VIEW_BASED_REPORT_JOB_DETAILS_VIEWED = 'View Based Report Job Details Viewed';
-export const CONFIGURED_REPORT_DOWNLOAD_ATTEMPTED = 'Configured Report Download Attempted';
-export const CONFIGURED_REPORT_JOB_DETAILS_VIEWED = 'Configured Report Job Details Viewed';
 export const IMAGE_SBOM_GENERATED = 'Image SBOM Generated';
 
 // node and platform CVEs
@@ -311,28 +309,6 @@ export type AnalyticsEvent =
      */
     | {
           event: typeof VIEW_BASED_REPORT_JOB_DETAILS_VIEWED;
-          properties: {
-              reportStatus: string;
-              isOwnReport: AnalyticsBoolean;
-          };
-      }
-    /**
-     * Tracks download attempts for configured reports.
-     */
-    | {
-          event: typeof CONFIGURED_REPORT_DOWNLOAD_ATTEMPTED;
-          properties: {
-              success: AnalyticsBoolean;
-              reportAgeInDays?: number;
-              fileSizeBytes?: number;
-              errorType?: string;
-          };
-      }
-    /**
-     * Tracks when users view job details for configured reports.
-     */
-    | {
-          event: typeof CONFIGURED_REPORT_JOB_DETAILS_VIEWED;
           properties: {
               reportStatus: string;
               isOwnReport: AnalyticsBoolean;
