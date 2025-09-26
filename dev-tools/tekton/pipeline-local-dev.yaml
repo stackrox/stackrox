@@ -91,13 +91,23 @@ spec:
     workspaces:
     - name: shared-data
       workspace: shared-data
+    params:
+    - name: builder-image
+      value: $(params.builder-image)
+    - name: cache-bucket
+      value: $(params.cache-bucket)
+    - name: minio-host
+      value: $(params.minio-host)
     taskSpec:
       workspaces:
       - name: shared-data
       params:
       - name: builder-image
+        type: string
       - name: cache-bucket
+        type: string
       - name: minio-host
+        type: string
       steps:
       # Fetch NPM cache
       - name: fetch-npm-cache
@@ -181,13 +191,23 @@ spec:
     workspaces:
     - name: shared-data
       workspace: shared-data
+    params:
+    - name: builder-image
+      value: $(params.builder-image)
+    - name: cache-bucket
+      value: $(params.cache-bucket)
+    - name: minio-host
+      value: $(params.minio-host)
     taskSpec:
       workspaces:
       - name: shared-data
       params:
       - name: builder-image
+        type: string
       - name: cache-bucket
+        type: string
       - name: minio-host
+        type: string
       steps:
       # Fetch Go module cache
       - name: fetch-gomod-cache
