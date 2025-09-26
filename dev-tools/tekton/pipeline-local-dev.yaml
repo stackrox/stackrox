@@ -274,7 +274,7 @@ spec:
           export CGO_ENABLED=1
           export GOTAGS="release"
           export GOOS=linux
-          export GOARCH=amd64
+          # Use native architecture instead of hardcoding amd64
 
           # Create output directory
           mkdir -p bin
@@ -305,7 +305,9 @@ spec:
           go build -o bin/init-tls-certs ./sensor/init-tls-certs
 
           echo "Building roxctl..."
-          go build -o bin/roxctl-linux-amd64 ./roxctl
+          # Build roxctl with proper architecture suffix
+          ARCH=$(go env GOARCH)
+          go build -o bin/roxctl-linux-${ARCH} ./roxctl
 
           # Copy UI assets (built in previous step)
           echo "Copying UI assets..."
