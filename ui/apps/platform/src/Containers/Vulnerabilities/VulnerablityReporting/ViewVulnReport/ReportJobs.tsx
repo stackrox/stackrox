@@ -41,10 +41,6 @@ import useURLSort from 'hooks/useURLSort';
 import { downloadReportByJobId, deleteDownloadableReport } from 'services/ReportsService';
 import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
 import useAuthStatus from 'hooks/useAuthStatus';
-import useAnalytics, {
-    CONFIGURED_REPORT_DOWNLOAD_ATTEMPTED,
-    CONFIGURED_REPORT_JOB_DETAILS_VIEWED,
-} from 'hooks/useAnalytics';
 
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
@@ -71,9 +67,19 @@ const sortOptions = {
 
 const headingLevel = 'h2';
 
+const onDownload = (snapshot: ConfiguredReportSnapshot) => () => {
+    const { reportJobId, name, reportStatus } = snapshot;
+    const { completedAt } = reportStatus;
+    const filename = `${name}-${completedAt}`;
+    return downloadReportByJobId({
+        reportJobId,
+        filename,
+        fileExtension: 'zip',
+    });
+};
+
 function ReportJobs({ reportId }: ReportJobsProps) {
     const { currentUser } = useAuthStatus();
-    const { analyticsTrack } = useAnalytics();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const [filteredStatuses, setFilteredStatuses] = useState<RunState[]>([]);
@@ -110,56 +116,6 @@ function ReportJobs({ reportId }: ReportJobsProps) {
         setPage(1);
     };
 
-    const onDownload = (snapshot: ConfiguredReportSnapshot) => () => {
-        const { reportJobId, name, reportStatus } = snapshot;
-        const { completedAt } = reportStatus;
-        const filename = `${name}-${completedAt}`;
-
-        // Calculate report age
-        const reportAgeInDays = completedAt
-            ? Math.floor((Date.now() - new Date(completedAt).getTime()) / (1000 * 60 * 60 * 24))
-            : undefined;
-
-        return downloadReportByJobId({
-            reportJobId,
-            filename,
-            fileExtension: 'zip',
-        })
-            .then(({ fileSizeBytes }) => {
-                // Track successful download
-                analyticsTrack({
-                    event: CONFIGURED_REPORT_DOWNLOAD_ATTEMPTED,
-                    properties: {
-                        success: 1,
-                        reportAgeInDays,
-                        fileSizeBytes,
-                    },
-                });
-            })
-            .catch((error) => {
-                // Track failed download
-                analyticsTrack({
-                    event: CONFIGURED_REPORT_DOWNLOAD_ATTEMPTED,
-                    properties: {
-                        success: 0,
-                        reportAgeInDays,
-                        errorType: 'download_failed',
-                    },
-                });
-                throw error; // Re-throw to maintain original behavior
-            });
-    };
-
-    const onJobDetailsView = (snapshot: ConfiguredReportSnapshot) => {
-        // Track job details view
-        analyticsTrack({
-            event: CONFIGURED_REPORT_JOB_DETAILS_VIEWED,
-            properties: {
-                reportStatus: snapshot.reportStatus.runState || 'UNKNOWN',
-                isOwnReport: currentUser.userId === snapshot.user.id ? 1 : 0,
-            },
-        });
-    };
 
     useInterval(fetchReportSnapshots, 10000);
 
@@ -338,13 +294,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                         expand={{
                                             rowIndex,
                                             isExpanded,
-                                            onToggle: () => {
-                                                expandedRowSet.toggle(reportJobId);
-                                                // Track job details view when expanding
-                                                if (!isExpanded) {
-                                                    onJobDetailsView(reportSnapshot);
-                                                }
-                                            },
+                                            onToggle: () => expandedRowSet.toggle(reportJobId),
                                         }}
                                     />
                                     <Td dataLabel="Completed">
