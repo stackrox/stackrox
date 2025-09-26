@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const testdataRhcosPackageDB = "sqlite:usr/share/rpm"
+
 func TestNodeIndexerSuite(t *testing.T) {
 	suite.Run(t, new(nodeIndexerSuite))
 }
@@ -136,16 +138,26 @@ func (s *nodeIndexerSuite) TestRunRepositoryScannerAnyPath() {
 func (s *nodeIndexerSuite) TestRunPackageScanner() {
 	layer := s.mustCreateLayer("testdata")
 
-	packages, err := runPackageScanner(context.Background(), layer)
+	packages, err := runPackageScanner(context.Background(), testdataRhcosPackageDB, layer)
 	s.NoError(err)
 
 	s.Len(packages, 106)
 }
 
+func (s *nodeIndexerSuite) TestRunPackageScannerWithUnmatchedFilter() {
+	layer := s.mustCreateLayer("testdata")
+
+	packages, err := runPackageScanner(context.Background(), "invalidPackageDB", layer)
+	s.NoError(err)
+
+	// All packages are filtered out.
+	s.Len(packages, 0)
+}
+
 func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 	layer := s.mustCreateLayer(s.T().TempDir())
 
-	packages, err := runPackageScanner(context.Background(), layer)
+	packages, err := runPackageScanner(context.Background(), testdataRhcosPackageDB, layer)
 	s.NoError(err)
 
 	// The scanner must not error out, but produce 0 results
@@ -205,6 +217,7 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 	cfg := DefaultNodeIndexerConfig()
 	cfg.HostPath = "testdata"
 	cfg.Repo2CPEMappingURL = server.URL
+	cfg.PackageDBFilter = testdataRhcosPackageDB
 	indexer := NewNodeIndexer(cfg)
 
 	report, err := indexer.IndexNode(context.Background())
@@ -222,6 +235,7 @@ func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
 	cfg.Client = server.Client()
 	cfg.HostPath = "doesnotexist"
 	cfg.Repo2CPEMappingURL = server.URL
+	cfg.PackageDBFilter = testdataRhcosPackageDB
 	indexer := NewNodeIndexer(cfg)
 
 	report, err := indexer.IndexNode(context.Background())
