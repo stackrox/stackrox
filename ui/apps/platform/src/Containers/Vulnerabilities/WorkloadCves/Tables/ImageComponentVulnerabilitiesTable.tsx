@@ -5,6 +5,7 @@ import { gql } from '@apollo/client';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSort from 'hooks/useTableSort';
 
+import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
 import {
     ImageComponentVulnerability,
     ImageMetadataContext,
@@ -15,8 +16,6 @@ import {
 import FixedByVersion from '../components/FixedByVersion';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
-
-import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, ImageComponentVulnerability };
