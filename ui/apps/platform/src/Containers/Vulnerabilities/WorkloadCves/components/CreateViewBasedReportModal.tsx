@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { runViewBasedReport } from 'services/ReportsService';
 import { vulnerabilityViewBasedReportsPath } from 'routePaths';
-import useAnalytics, { VIEW_BASED_REPORT_REQUESTED } from 'hooks/useAnalytics';
+import useAnalytics, { VIEW_BASED_REPORT_GENERATED } from 'hooks/useAnalytics';
 
 type Message =
     | {
@@ -60,7 +60,7 @@ function CreateViewBasedReportModal({
                 const filterCount = hasFilters ? query.split('&').length : 0;
 
                 analyticsTrack({
-                    event: VIEW_BASED_REPORT_REQUESTED,
+                    event: VIEW_BASED_REPORT_GENERATED,
                     properties: {
                         areaOfConcern,
                         hasFilters: hasFilters ? 1 : 0,
