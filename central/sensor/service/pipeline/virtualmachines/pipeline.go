@@ -66,7 +66,7 @@ func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	store := storeMap.Get((*central.SensorEvent_VirtualMachine)(nil))
 	return reconciliation.Perform(store, clusterVMIDs, "virtualmachines", func(id string) error {
-		return p.processRemove(ctx, id)
+		return p.virtualMachineStore.DeleteVirtualMachines(ctx, id)
 	})
 }
 
@@ -81,28 +81,19 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return p.runRemovePipeline(ctx, virtualMachine)
+		return p.virtualMachineStore.DeleteVirtualMachines(ctx, virtualMachine.GetId())
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
-		return p.runGeneralPipeline(ctx, clusterID, virtualMachine)
+		return p.runUpsertPipeline(ctx, clusterID, virtualMachine)
 	default:
 		return fmt.Errorf("event action '%s' for virtual machine does not exist", event.GetAction())
 	}
 }
 
-func (p *pipelineImpl) runRemovePipeline(ctx context.Context, vm *virtualMachineV1.VirtualMachine) error {
-	return p.processRemove(ctx, vm.GetId())
-}
-
-func (p *pipelineImpl) processRemove(ctx context.Context, id string) error {
-	return p.virtualMachineStore.DeleteVirtualMachines(ctx, id)
-}
-
-func (p *pipelineImpl) runGeneralPipeline(
+func (p *pipelineImpl) runUpsertPipeline(
 	ctx context.Context,
 	clusterID string,
 	vm *virtualMachineV1.VirtualMachine,
 ) error {
-
 	virtualMachineToStore := internaltostorage.VirtualMachine(vm)
 
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
