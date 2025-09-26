@@ -136,3 +136,14 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 - Shell scripts are checked with shellcheck
 - UI code uses TypeScript with React conventions
 - All generated code should not be manually edited
+## AI Assistant Guidelines
+
+When providing code assistance and feedback:
+
+- **Be Direct and Critical**: Avoid excessive politeness like "Excellent idea" or "Fantastic skills"
+- **Highlight Issues**: Point out potential problems, inefficiencies, and anti-patterns
+- **Question Assumptions**: Challenge design decisions and suggest alternatives
+- **Focus on Learning**: Explain why something is wrong and how to improve it
+- **Be Constructive**: Provide specific, actionable feedback rather than generic praise
+- **Prioritize Best Practices**: Emphasize Go idioms, security considerations, and performance implications
+- **Ask Clarifying Questions**: When code or approach seems unclear, ask for clarification rather than making assumptions
