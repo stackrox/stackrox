@@ -138,6 +138,7 @@ func (s *matcherService) RegisterServiceHandler(_ context.Context, _ *runtime.Se
 func (s *matcherService) notes(ctx context.Context, vr *v4.VulnerabilityReport) []v4.VulnerabilityReport_Note {
 	dists := vr.GetContents().GetDistributions()
 	if len(dists) == 0 {
+		dists = make(map[string]*v4.Distribution, len(vr.GetContents().GetDistributionsDEPRECATED()))
 		// Fallback to the deprecated slice, if needed.
 		for _, dist := range vr.GetContents().GetDistributionsDEPRECATED() {
 			dists[dist.GetId()] = dist
@@ -178,11 +179,15 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
-	zlog.Info(ctx).Msgf("generating SBOM from index report (%d dists, %d envs, %d pkgs, %d repos)",
+	zlog.Info(ctx).Msgf("generating SBOM from index report (%d dists (%d deprecated), %d envs (%d deprecated), %d pkgs (%d deprecated), %d repos (%d deprecated))",
 		len(req.GetContents().GetDistributions()),
+		len(req.GetContents().GetDistributionsDEPRECATED()),
 		len(req.GetContents().GetEnvironments()),
+		len(req.GetContents().GetEnvironmentsDEPRECATED()),
 		len(req.GetContents().GetPackages()),
+		len(req.GetContents().GetPackagesDEPRECATED()),
 		len(req.GetContents().GetRepositories()),
+		len(req.GetContents().GetRepositoriesDEPRECATED()),
 	)
 
 	// The remote indexer is not used. This creates flexibility and enables SBOMs to be generated
