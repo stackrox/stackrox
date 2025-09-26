@@ -5,12 +5,14 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -242,8 +244,8 @@ func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.Strin
 	if entry, exists := oe.processSets[contentHash]; exists {
 		// Check for hash collision and verify content actually matches
 		if !entry.processes.Equal(processes) {
-			log.Panic("SHA256 hash collision detected for process set %v vs existing %v",
-				processes.AsSlice(), entry.processes.AsSlice())
+			utils.Should(errors.Errorf("SHA256 hash collision detected for process set %v vs existing %v",
+				processes.AsSlice(), entry.processes.AsSlice()))
 		}
 		entry.refCount++
 		return contentHash
