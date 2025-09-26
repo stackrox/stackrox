@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, Title, LabelGroup, Label, Split } from '@patternfly/react-core';
+import { Flex, Title, LabelGroup, Label } from '@patternfly/react-core';
 
 import { getDateTime } from 'utils/dateUtils';
 import DeveloperPreviewLabel from 'Components/PatternFly/DeveloperPreviewLabel';
@@ -54,10 +54,10 @@ function VirtualMachinePageHeader({ data }: VirtualMachinePageHeaderProps) {
 
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
-            <Split hasGutter>
+            <Flex alignItems={{ default: 'alignItemsCenter' }}>
                 <Title headingLevel="h1">{data.name}</Title>
                 <DeveloperPreviewLabel />
-            </Split>
+            </Flex>
             <LabelGroup numLabels={5}>
                 <Label>GuestOS: {data.guestOS}</Label>
                 <Label>In: {data.namespace}</Label>

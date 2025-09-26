@@ -34,8 +34,8 @@ import {
     NodeEntityTab,
     PlatformEntityTab,
     QuerySearchFilter,
-    VulnerabilitySeverityLabel,
     VirtualMachineEntityTab,
+    VulnerabilitySeverityLabel,
     WorkloadEntityTab,
     isFixableStatus,
     isVulnerabilitySeverityLabel,
@@ -117,6 +117,22 @@ export function getNodeEntityPagePath(
             return `${vulnerabilitiesNodeCvesPath}/nodes/${id}${queryString}`;
         default:
             return ensureExhaustive(nodeCveEntity);
+    }
+}
+
+export function getVirtualMachineEntityPagePath(
+    virtualMachineCveEntity: VirtualMachineEntityTab,
+    id: string,
+    queryOptions?: qs.ParsedQs
+): string {
+    const queryString = getQueryString(queryOptions);
+    switch (virtualMachineCveEntity) {
+        case 'CVE':
+            return `${vulnerabilitiesVirtualMachineCvesPath}/cves/${id}${queryString}`;
+        case 'VirtualMachine':
+            return `${vulnerabilitiesVirtualMachineCvesPath}/virtualmachines/${id}${queryString}`;
+        default:
+            return ensureExhaustive(virtualMachineCveEntity);
     }
 }
 
