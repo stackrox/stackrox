@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Modal } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { differenceInDays } from 'date-fns';
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import useAuthStatus from 'hooks/useAuthStatus';
@@ -42,7 +43,7 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
 
         // Calculate report age
         const reportAgeInDays = completedAt
-            ? Math.floor((Date.now() - new Date(completedAt).getTime()) / (1000 * 60 * 60 * 24))
+            ? differenceInDays(new Date(), new Date(completedAt))
             : undefined;
 
         return downloadReportByJobId({
