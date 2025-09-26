@@ -38,6 +38,7 @@ subjects:
 - kind: ServiceAccount
   name: central
   namespace: {{.Release.Namespace}}
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -71,4 +72,3 @@ subjects:
 - kind: ServiceAccount
   name: central
   namespace: {{.Release.Namespace}}
-{{- end }}
