@@ -315,8 +315,8 @@ func Test_makeProps(t *testing.T) {
 
 	tracker := MakeTrackerBase("test", "test",
 		testLabelGetters,
-		makeTestGatherFunc(testData),
-		func(string) metrics.CustomRegistry { return rf })
+		makeTestGatherFunc(testData))
+	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
 
 	md := makeTestMetricDescriptors(t)
 	tracker.Reconfigure(&Configuration{
@@ -324,7 +324,7 @@ func Test_makeProps(t *testing.T) {
 		toAdd:   slices.Collect(maps.Keys(md)),
 		period:  time.Hour,
 	})
-	titCat := strings.ToTitle(tracker.category[0:1]) + tracker.category[1:]
+	titCat := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
 	props := tracker.makeProps(titCat, 12345*time.Millisecond)
 	get := func(key string) any {
 		if v, ok := props[key]; ok {

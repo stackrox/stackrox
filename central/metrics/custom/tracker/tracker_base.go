@@ -281,11 +281,11 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	end := time.Now()
 	gatherer.lastGather = end
 
-	titCat := strings.ToTitle(tracker.category[0:1]) + tracker.category[1:]
-	centralclient.InstanceConfig().Telemeter().Track(
+	titCat := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
+	centralclient.Singleton().Telemeter().Track(
 		titCat+" metrics gathered", nil,
 		telemeter.WithTraits(tracker.makeProps(titCat, end.Sub(begin))),
-		telemeter.WithNoDuplicates(tracker.category))
+		telemeter.WithNoDuplicates(tracker.metricPrefix))
 }
 
 func (tracker *TrackerBase[Finding]) makeProps(titCat string, duration time.Duration) map[string]any {
