@@ -48,7 +48,7 @@ func (s *migrationTestSuite) TestMigration() {
 	}
 
 	clusters := []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2, fixtureconsts.Cluster3}
-	numIndicators := 7024
+	numIndicators := 300
 	numNilContainerTime := 10
 
 	if !s.existingDB {

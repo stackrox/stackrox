@@ -25,12 +25,11 @@ func migrate(database *types.Databases) error {
 	// We are simply promoting a field to a column so the serialized object is unchanged.  Thus, we
 	// have no need to worry about the old schema and can simply perform all our work on the new one.
 	db := database.GormDB
-	clusterDB := db.WithContext(database.DBCtx).Table(updatedSchema.ClustersTableName)
 	pgutils.CreateTableFromModel(database.DBCtx, db, updatedSchema.CreateTableProcessIndicatorsStmt)
-	db = db.WithContext(database.DBCtx).Table(updatedSchema.ProcessIndicatorsTableName)
+	db = db.WithContext(database.DBCtx).Table(updatedSchema.ClustersTableName)
 
 	var clusters []string
-	if err := clusterDB.Model(&updatedSchema.Clusters{}).Pluck("id", &clusters).Error; err != nil {
+	if err := db.Model(&updatedSchema.Clusters{}).Pluck("id", &clusters).Error; err != nil {
 		return err
 	}
 	log.Infof("clusters found: %v", clusters)
