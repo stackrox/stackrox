@@ -24,7 +24,7 @@ spec:
   - name: builder-image
     type: string
     description: Builder image with Go toolchain
-    default: "quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9"
+    default: "stackrox-build-0.4.9-9-ge7836f2caf"
   - name: cache-bucket
     type: string
     description: S3 bucket for build cache
@@ -258,10 +258,10 @@ spec:
           value: "$(workspaces.shared-data.path)/gomod-cache"
         - name: GOCACHE
           value: "$(workspaces.shared-data.path)/gobuild-cache"
-        - name: GOARCH
-          value: "amd64"
         - name: GOOS
           value: "linux"
+        - name: GOARCH
+          value: "arm64"
         script: |
           #!/bin/bash
           set -ex
@@ -269,45 +269,44 @@ spec:
           # Build all StackRox binaries needed for the main image
           echo "Building StackRox binaries for main image..."
 
-          # Use simple go build instead of complex make target
-          # Set up basic environment
+          # Set up build environment for go-build.sh
           export CGO_ENABLED=1
           export GOTAGS="release"
           export GOOS=linux
-          # Use native architecture instead of hardcoding amd64
+          export GOARCH=arm64
 
           # Create output directory
           mkdir -p bin
 
-          # Build all binaries required by image/rhel/Dockerfile
+          # Build all binaries required by image/rhel/Dockerfile using scripts/go-build.sh
           echo "Building central..."
-          go build -o bin/central ./central
+          ./scripts/go-build.sh build-file ./central bin/central
 
           echo "Building migrator..."
-          go build -o bin/migrator ./migrator
+          ./scripts/go-build.sh build-file ./migrator bin/migrator
 
           echo "Building compliance..."
-          go build -o bin/compliance ./compliance/cmd/compliance
+          ./scripts/go-build.sh build-file ./compliance/cmd/compliance bin/compliance
 
           echo "Building kubernetes-sensor..."
-          go build -o bin/kubernetes-sensor ./sensor/kubernetes
+          ./scripts/go-build.sh build-file ./sensor/kubernetes bin/kubernetes-sensor
 
           echo "Building sensor-upgrader..."
-          go build -o bin/sensor-upgrader ./sensor/upgrader
+          ./scripts/go-build.sh build-file ./sensor/upgrader bin/sensor-upgrader
 
           echo "Building admission-control..."
-          go build -o bin/admission-control ./sensor/admission-control
+          ./scripts/go-build.sh build-file ./sensor/admission-control bin/admission-control
 
           echo "Building config-controller..."
-          go build -o bin/config-controller ./config-controller
+          ./scripts/go-build.sh build-file ./config-controller bin/config-controller
 
           echo "Building init-tls-certs..."
-          go build -o bin/init-tls-certs ./sensor/init-tls-certs
+          ./scripts/go-build.sh build-file ./sensor/init-tls-certs bin/init-tls-certs
 
           echo "Building roxctl..."
           # Build roxctl with proper architecture suffix
           ARCH=$(go env GOARCH)
-          go build -o bin/roxctl-linux-${ARCH} ./roxctl
+          ./scripts/go-build.sh build-file ./roxctl bin/roxctl-linux-${ARCH}
 
           # Copy UI assets (built in previous step)
           echo "Copying UI assets..."
