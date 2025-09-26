@@ -169,13 +169,17 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		log.Warnf("Failed to encode Scanner version: %v", err)
 	}
 
-	log.Debugf("Vuln report received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
+	log.Debugf("Vuln report received for %q (hash %q): %d dists (%d deprecated), %d envs (%d deprecated), %d pkgs (%d deprecated), %d repos (%d deprecated), %d pkg vulns, %d vulns",
 		image.GetName().GetFullName(),
 		vr.GetHashId(),
 		len(vr.GetContents().GetDistributions()),
+		len(vr.GetContents().GetDistributionsDEPRECATED()),
 		len(vr.GetContents().GetEnvironments()),
+		len(vr.GetContents().GetEnvironmentsDEPRECATED()),
 		len(vr.GetContents().GetPackages()),
+		len(vr.GetContents().GetPackagesDEPRECATED()),
 		len(vr.GetContents().GetRepositories()),
+		len(vr.GetContents().GetRepositoriesDEPRECATED()),
 		len(vr.GetPackageVulnerabilities()),
 		len(vr.GetVulnerabilities()),
 	)
@@ -254,13 +258,17 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 		log.Warnf("Failed to encode Scanner version: %v", err)
 	}
 
-	log.Debugf("Vuln report (match) received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
+	log.Debugf("Vuln report (match) received for %q (hash %q): %d dists (%d deprecated), %d envs (%d deprecated), %d pkgs (%d deprecated), %d repos (%d deprecated), %d pkg vulns, %d vulns",
 		image.GetName().GetFullName(),
 		vr.GetHashId(),
 		len(vr.GetContents().GetDistributions()),
+		len(vr.GetContents().GetDistributionsDEPRECATED()),
 		len(vr.GetContents().GetEnvironments()),
+		len(vr.GetContents().GetEnvironmentsDEPRECATED()),
 		len(vr.GetContents().GetPackages()),
+		len(vr.GetContents().GetPackagesDEPRECATED()),
 		len(vr.GetContents().GetRepositories()),
+		len(vr.GetContents().GetRepositoriesDEPRECATED()),
 		len(vr.GetPackageVulnerabilities()),
 		len(vr.GetVulnerabilities()),
 	)
