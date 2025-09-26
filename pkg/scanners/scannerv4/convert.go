@@ -33,6 +33,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 
 	pkgs := report.GetContents().GetPackages()
 	if len(pkgs) == 0 {
+		pkgs = make(map[string]*v4.Package, len(report.GetContents().GetPackagesDEPRECATED()))
 		// Fallback to the deprecated slice, if needed.
 		for _, pkg := range report.GetContents().GetPackagesDEPRECATED() {
 			pkgs[pkg.GetId()] = pkg
@@ -88,7 +89,12 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 }
 
 func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
-	envList, ok := report.GetContents().GetEnvironments()[id]
+	environments := report.GetContents().GetEnvironments()
+	if environments == nil {
+		// Fallback to deprecated environments.
+		environments = report.GetContents().GetEnvironmentsDEPRECATED()
+	}
+	envList, ok := environments[id]
 	if !ok {
 		return nil
 	}
@@ -360,6 +366,7 @@ func os(report *v4.VulnerabilityReport) string {
 	dists := report.GetContents().GetDistributions()
 	if len(dists) == 0 {
 		// Fallback to the deprecated slice, if needed.
+		dists = make(map[string]*v4.Distribution, len(report.GetContents().GetDistributionsDEPRECATED()))
 		for _, dist := range report.GetContents().GetDistributionsDEPRECATED() {
 			dists[dist.GetId()] = dist
 		}

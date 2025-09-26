@@ -2329,6 +2329,73 @@ func Test_convertToNormalizedSeverity(t *testing.T) {
 	assert.Equal(t, int(claircore.Critical), 5)
 }
 
+func Test_v4Environments(t *testing.T) {
+	testcases := []struct {
+		name               string
+		envs               map[string][]*claircore.Environment
+		repos              map[string]*claircore.Repository
+		expected           map[string]*v4.Environment_List
+		expectedDeprecated map[string]*v4.Environment_List
+	}{
+		{
+			name: "basic",
+			envs: map[string][]*claircore.Environment{
+				"0": {
+					{
+						PackageDB:     "root/buildinfo/Dockerfile-ubi8-minimal-8.10-1295.1749680713",
+						IntroducedIn:  claircore.MustParseDigest("sha256:001c8f2552be07ef548604a8c45411bbb3a2694efbcb9be4f6d99723b97c7179"),
+						RepositoryIDs: []string{"rhel-8-for-x86_64-baseos-rpms", "rhel-8-for-x86_64-appstream-rpms"},
+					},
+				},
+			},
+			repos: map[string]*claircore.Repository{
+				"rhel-8-for-x86_64-baseos-rpms": {
+					ID:   "0",
+					Name: "rhel-8-for-x86_64-baseos-rpms",
+					Key:  "rhel-cpe-repository",
+					CPE:  cpe.MustUnbind("cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*"),
+				},
+				"rhel-8-for-x86_64-appstream-rpms": {
+					ID:   "1",
+					Name: "rhel-8-for-x86_64-appstream-rpms",
+					Key:  "rhel-cpe-repository",
+					CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:enterprise_linux:8:*:appstream:*:*:*:*:*"),
+				},
+			},
+			expected: map[string]*v4.Environment_List{
+				"0": {
+					Environments: []*v4.Environment{
+						{
+							PackageDb:     "root/buildinfo/Dockerfile-ubi8-minimal-8.10-1295.1749680713",
+							IntroducedIn:  "sha256:001c8f2552be07ef548604a8c45411bbb3a2694efbcb9be4f6d99723b97c7179",
+							RepositoryIds: []string{"rhel-8-for-x86_64-baseos-rpms", "rhel-8-for-x86_64-appstream-rpms"},
+						},
+					},
+				},
+			},
+			expectedDeprecated: map[string]*v4.Environment_List{
+				"0": {
+					Environments: []*v4.Environment{
+						{
+							PackageDb:     "root/buildinfo/Dockerfile-ubi8-minimal-8.10-1295.1749680713",
+							IntroducedIn:  "sha256:001c8f2552be07ef548604a8c45411bbb3a2694efbcb9be4f6d99723b97c7179",
+							RepositoryIds: []string{"0", "1"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			envs, envsDeprecated := v4Environments(tc.envs, tc.repos)
+			protoassert.MapEqual(t, tc.expected, envs)
+			protoassert.MapEqual(t, tc.expectedDeprecated, envsDeprecated)
+		})
+	}
+}
+
 func Test_vulnerabilityName(t *testing.T) {
 	testcases := map[string]struct {
 		name             string

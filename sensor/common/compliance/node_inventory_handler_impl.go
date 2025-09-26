@@ -494,6 +494,18 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 					},
 				},
 			},
+			EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
+				Id: {
+					Environments: []*v4.Environment{
+						{
+							PackageDb: "",
+							// IntroducedIn must be a valid sha256, but the value is not important.
+							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+							RepositoryIds: []string{Id},
+						},
+					},
+				},
+			},
 		},
 	}
 }

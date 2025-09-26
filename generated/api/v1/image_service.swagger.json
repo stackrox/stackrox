@@ -1915,6 +1915,12 @@
             "$ref": "#/definitions/v4Repository"
           }
         },
+        "environmentsDEPRECATED": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/EnvironmentList"
+          }
+        },
         "environments": {
           "type": "object",
           "additionalProperties": {

@@ -41,6 +41,8 @@ const (
 	redhatCVEURLPrefix = "https://access.redhat.com/security/cve/"
 	// TODO(ROX-26672): Remove this when we stop tracking RHSAs as the vuln name.
 	redhatErrataURLPrefix = "https://access.redhat.com/errata/"
+
+	rhelRepositoryKey = "rhel-cpe-repository"
 )
 
 var (
@@ -198,7 +200,7 @@ func toProtoV4Contents(
 	if err != nil {
 		return nil, err
 	}
-	environments := v4Environments(envs)
+	environments, deprecatedEnrivonments := v4Environments(envs, repos)
 	return &v4.Contents{
 		Packages:                packages,
 		PackagesDEPRECATED:      deprecatedPackages,
@@ -207,6 +209,7 @@ func toProtoV4Contents(
 		Repositories:            repositories,
 		RepositoriesDEPRECATED:  deprecatedRepositories,
 		Environments:            environments,
+		EnvironmentsDEPRECATED:  deprecatedEnrivonments,
 	}, nil
 }
 
@@ -325,22 +328,27 @@ func v4Repository(r *claircore.Repository) (*v4.Repository, error) {
 	}, nil
 }
 
-func v4Environments(ccEnvs map[string][]*claircore.Environment) map[string]*v4.Environment_List {
+func v4Environments(ccEnvs map[string][]*claircore.Environment, ccRepos map[string]*claircore.Repository) (map[string]*v4.Environment_List, map[string]*v4.Environment_List) {
 	if len(ccEnvs) == 0 {
-		return nil
+		return nil, nil
 	}
 	environments := make(map[string]*v4.Environment_List, len(ccEnvs))
+	environmentsDeprecated := make(map[string]*v4.Environment_List, len(ccEnvs))
 	for id, envs := range ccEnvs {
 		l, ok := environments[id]
+		lDeprecated := environmentsDeprecated[id]
 		if !ok {
 			l = &v4.Environment_List{}
 			environments[id] = l
+			lDeprecated = &v4.Environment_List{}
+			environmentsDeprecated[id] = lDeprecated
 		}
 		for _, env := range envs {
 			l.Environments = append(l.Environments, v4Environment(env))
+			lDeprecated.Environments = append(lDeprecated.Environments, v4EnvironmentDeprecated(env, ccRepos))
 		}
 	}
-	return environments
+	return environments, environmentsDeprecated
 }
 
 func v4Environment(e *claircore.Environment) *v4.Environment {
@@ -352,6 +360,35 @@ func v4Environment(e *claircore.Environment) *v4.Environment {
 		IntroducedIn:   toDigestString(e.IntroducedIn),
 		DistributionId: e.DistributionID,
 		RepositoryIds:  append([]string(nil), e.RepositoryIDs...),
+	}
+}
+
+func v4EnvironmentDeprecated(e *claircore.Environment, repos map[string]*claircore.Repository) *v4.Environment {
+	if e == nil {
+		return nil
+	}
+	repoIDs := make([]string, 0, len(e.RepositoryIDs))
+	for _, id := range e.RepositoryIDs {
+		repo, ok := repos[id]
+		if !ok {
+			continue
+		}
+		// In Claircore v1.5.40+, the repositories are no longer all keyed by ID.
+		// RPMs in RHEL-based containers are now keyed by name.
+		// In older ACS versions, we assumed all repos were keyed by ID,
+		// so if the key is not the ID, we check if it's actually the name
+		// and this is, in fact, a RHEL RPM.
+		if repo.Key == rhelRepositoryKey {
+			repoIDs = append(repoIDs, repo.ID)
+			continue
+		}
+		repoIDs = append(repoIDs, id)
+	}
+	return &v4.Environment{
+		PackageDb:      e.PackageDB,
+		IntroducedIn:   toDigestString(e.IntroducedIn),
+		DistributionId: e.DistributionID,
+		RepositoryIds:  repoIDs,
 	}
 }
 
@@ -839,21 +876,25 @@ func ccRepository(r *v4.Repository) (string, *claircore.Repository, error) {
 }
 
 func ccEnvironments(contents *v4.Contents) (map[string][]*claircore.Environment, error) {
-	if len(contents.GetEnvironments()) == 0 {
-		return nil, nil
+	environments := contents.GetEnvironments()
+	if len(environments) == 0 {
+		environments = contents.GetEnvironmentsDEPRECATED()
+		if len(environments) == 0 {
+			return nil, nil
+		}
 	}
-	environments := make(map[string][]*claircore.Environment, len(contents.GetEnvironments()))
-	for id, envs := range contents.GetEnvironments() {
-		environments[id] = make([]*claircore.Environment, 0, len(envs.GetEnvironments()))
+	ccEnvironments := make(map[string][]*claircore.Environment, len(environments))
+	for id, envs := range environments {
+		ccEnvironments[id] = make([]*claircore.Environment, 0, len(envs.GetEnvironments()))
 		for _, env := range envs.GetEnvironments() {
 			ccEnv, err := ccEnvironment(env)
 			if err != nil {
 				return nil, err
 			}
-			environments[id] = append(environments[id], ccEnv)
+			ccEnvironments[id] = append(ccEnvironments[id], ccEnv)
 		}
 	}
-	return environments, nil
+	return ccEnvironments, nil
 }
 
 func ccEnvironment(env *v4.Environment) (*claircore.Environment, error) {

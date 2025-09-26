@@ -34,9 +34,11 @@ type Contents struct {
 	DistributionsDEPRECATED []*Distribution          `protobuf:"bytes,2,rep,name=distributionsDEPRECATED,proto3" json:"distributionsDEPRECATED,omitempty"`
 	Distributions           map[string]*Distribution `protobuf:"bytes,6,rep,name=distributions,proto3" json:"distributions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
-	RepositoriesDEPRECATED []*Repository                `protobuf:"bytes,3,rep,name=repositoriesDEPRECATED,proto3" json:"repositoriesDEPRECATED,omitempty"`
-	Repositories           map[string]*Repository       `protobuf:"bytes,7,rep,name=repositories,proto3" json:"repositories,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Environments           map[string]*Environment_List `protobuf:"bytes,4,rep,name=environments,proto3" json:"environments,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	RepositoriesDEPRECATED []*Repository          `protobuf:"bytes,3,rep,name=repositoriesDEPRECATED,proto3" json:"repositoriesDEPRECATED,omitempty"`
+	Repositories           map[string]*Repository `protobuf:"bytes,7,rep,name=repositories,proto3" json:"repositories,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
+	EnvironmentsDEPRECATED map[string]*Environment_List `protobuf:"bytes,4,rep,name=environmentsDEPRECATED,proto3" json:"environmentsDEPRECATED,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Environments           map[string]*Environment_List `protobuf:"bytes,8,rep,name=environments,proto3" json:"environments,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -112,6 +114,14 @@ func (x *Contents) GetRepositoriesDEPRECATED() []*Repository {
 func (x *Contents) GetRepositories() map[string]*Repository {
 	if x != nil {
 		return x.Repositories
+	}
+	return nil
+}
+
+// Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
+func (x *Contents) GetEnvironmentsDEPRECATED() map[string]*Environment_List {
+	if x != nil {
+		return x.EnvironmentsDEPRECATED
 	}
 	return nil
 }
@@ -570,7 +580,7 @@ type Environment_List struct {
 
 func (x *Environment_List) Reset() {
 	*x = Environment_List{}
-	mi := &file_internalapi_scanner_v4_common_proto_msgTypes[10]
+	mi := &file_internalapi_scanner_v4_common_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -582,7 +592,7 @@ func (x *Environment_List) String() string {
 func (*Environment_List) ProtoMessage() {}
 
 func (x *Environment_List) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_scanner_v4_common_proto_msgTypes[10]
+	mi := &file_internalapi_scanner_v4_common_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -610,15 +620,16 @@ var File_internalapi_scanner_v4_common_proto protoreflect.FileDescriptor
 const file_internalapi_scanner_v4_common_proto_rawDesc = "" +
 	"\n" +
 	"#internalapi/scanner/v4/common.proto\x12\n" +
-	"scanner.v4\"\x8c\a\n" +
+	"scanner.v4\"\xe3\b\n" +
 	"\bContents\x12G\n" +
 	"\x12packagesDEPRECATED\x18\x01 \x03(\v2\x13.scanner.v4.PackageB\x02\x18\x01R\x12packagesDEPRECATED\x12>\n" +
 	"\bpackages\x18\x05 \x03(\v2\".scanner.v4.Contents.PackagesEntryR\bpackages\x12V\n" +
 	"\x17distributionsDEPRECATED\x18\x02 \x03(\v2\x18.scanner.v4.DistributionB\x02\x18\x01R\x17distributionsDEPRECATED\x12M\n" +
 	"\rdistributions\x18\x06 \x03(\v2'.scanner.v4.Contents.DistributionsEntryR\rdistributions\x12R\n" +
 	"\x16repositoriesDEPRECATED\x18\x03 \x03(\v2\x16.scanner.v4.RepositoryB\x02\x18\x01R\x16repositoriesDEPRECATED\x12J\n" +
-	"\frepositories\x18\a \x03(\v2&.scanner.v4.Contents.RepositoriesEntryR\frepositories\x12J\n" +
-	"\fenvironments\x18\x04 \x03(\v2&.scanner.v4.Contents.EnvironmentsEntryR\fenvironments\x1aP\n" +
+	"\frepositories\x18\a \x03(\v2&.scanner.v4.Contents.RepositoriesEntryR\frepositories\x12l\n" +
+	"\x16environmentsDEPRECATED\x18\x04 \x03(\v20.scanner.v4.Contents.EnvironmentsDEPRECATEDEntryB\x02\x18\x01R\x16environmentsDEPRECATED\x12J\n" +
+	"\fenvironments\x18\b \x03(\v2&.scanner.v4.Contents.EnvironmentsEntryR\fenvironments\x1aP\n" +
 	"\rPackagesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12)\n" +
 	"\x05value\x18\x02 \x01(\v2\x13.scanner.v4.PackageR\x05value:\x028\x01\x1aZ\n" +
@@ -627,7 +638,10 @@ const file_internalapi_scanner_v4_common_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x18.scanner.v4.DistributionR\x05value:\x028\x01\x1aW\n" +
 	"\x11RepositoriesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
-	"\x05value\x18\x02 \x01(\v2\x16.scanner.v4.RepositoryR\x05value:\x028\x01\x1a]\n" +
+	"\x05value\x18\x02 \x01(\v2\x16.scanner.v4.RepositoryR\x05value:\x028\x01\x1ag\n" +
+	"\x1bEnvironmentsDEPRECATEDEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x122\n" +
+	"\x05value\x18\x02 \x01(\v2\x1c.scanner.v4.Environment.ListR\x05value:\x028\x01\x1a]\n" +
 	"\x11EnvironmentsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x122\n" +
 	"\x05value\x18\x02 \x01(\v2\x1c.scanner.v4.Environment.ListR\x05value:\x028\x01\"\x86\x03\n" +
@@ -689,7 +703,7 @@ func file_internalapi_scanner_v4_common_proto_rawDescGZIP() []byte {
 	return file_internalapi_scanner_v4_common_proto_rawDescData
 }
 
-var file_internalapi_scanner_v4_common_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_internalapi_scanner_v4_common_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_internalapi_scanner_v4_common_proto_goTypes = []any{
 	(*Contents)(nil),          // 0: scanner.v4.Contents
 	(*Package)(nil),           // 1: scanner.v4.Package
@@ -700,8 +714,9 @@ var file_internalapi_scanner_v4_common_proto_goTypes = []any{
 	nil,                       // 6: scanner.v4.Contents.PackagesEntry
 	nil,                       // 7: scanner.v4.Contents.DistributionsEntry
 	nil,                       // 8: scanner.v4.Contents.RepositoriesEntry
-	nil,                       // 9: scanner.v4.Contents.EnvironmentsEntry
-	(*Environment_List)(nil),  // 10: scanner.v4.Environment.List
+	nil,                       // 9: scanner.v4.Contents.EnvironmentsDEPRECATEDEntry
+	nil,                       // 10: scanner.v4.Contents.EnvironmentsEntry
+	(*Environment_List)(nil),  // 11: scanner.v4.Environment.List
 }
 var file_internalapi_scanner_v4_common_proto_depIdxs = []int32{
 	1,  // 0: scanner.v4.Contents.packagesDEPRECATED:type_name -> scanner.v4.Package
@@ -710,19 +725,21 @@ var file_internalapi_scanner_v4_common_proto_depIdxs = []int32{
 	7,  // 3: scanner.v4.Contents.distributions:type_name -> scanner.v4.Contents.DistributionsEntry
 	4,  // 4: scanner.v4.Contents.repositoriesDEPRECATED:type_name -> scanner.v4.Repository
 	8,  // 5: scanner.v4.Contents.repositories:type_name -> scanner.v4.Contents.RepositoriesEntry
-	9,  // 6: scanner.v4.Contents.environments:type_name -> scanner.v4.Contents.EnvironmentsEntry
-	2,  // 7: scanner.v4.Package.normalized_version:type_name -> scanner.v4.NormalizedVersion
-	1,  // 8: scanner.v4.Package.source:type_name -> scanner.v4.Package
-	1,  // 9: scanner.v4.Contents.PackagesEntry.value:type_name -> scanner.v4.Package
-	3,  // 10: scanner.v4.Contents.DistributionsEntry.value:type_name -> scanner.v4.Distribution
-	4,  // 11: scanner.v4.Contents.RepositoriesEntry.value:type_name -> scanner.v4.Repository
-	10, // 12: scanner.v4.Contents.EnvironmentsEntry.value:type_name -> scanner.v4.Environment.List
-	5,  // 13: scanner.v4.Environment.List.environments:type_name -> scanner.v4.Environment
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	9,  // 6: scanner.v4.Contents.environmentsDEPRECATED:type_name -> scanner.v4.Contents.EnvironmentsDEPRECATEDEntry
+	10, // 7: scanner.v4.Contents.environments:type_name -> scanner.v4.Contents.EnvironmentsEntry
+	2,  // 8: scanner.v4.Package.normalized_version:type_name -> scanner.v4.NormalizedVersion
+	1,  // 9: scanner.v4.Package.source:type_name -> scanner.v4.Package
+	1,  // 10: scanner.v4.Contents.PackagesEntry.value:type_name -> scanner.v4.Package
+	3,  // 11: scanner.v4.Contents.DistributionsEntry.value:type_name -> scanner.v4.Distribution
+	4,  // 12: scanner.v4.Contents.RepositoriesEntry.value:type_name -> scanner.v4.Repository
+	11, // 13: scanner.v4.Contents.EnvironmentsDEPRECATEDEntry.value:type_name -> scanner.v4.Environment.List
+	11, // 14: scanner.v4.Contents.EnvironmentsEntry.value:type_name -> scanner.v4.Environment.List
+	5,  // 15: scanner.v4.Environment.List.environments:type_name -> scanner.v4.Environment
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_scanner_v4_common_proto_init() }
@@ -736,7 +753,7 @@ func file_internalapi_scanner_v4_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_scanner_v4_common_proto_rawDesc), len(file_internalapi_scanner_v4_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
