@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"runtime"
+	"runtime/debug"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -16,8 +17,8 @@ var (
 
 // benchmarkMemoryUsage is a parameterized benchmark function
 func benchmarkMemoryUsage(b *testing.B, evaluatorFactory func() Evaluator, baselines []*storage.ProcessBaseline, scenarioName string, showDeduplication bool) {
-	runtime.GC()
-	runtime.GC()
+	oldGCPercent := debug.SetGCPercent(-1)
+	defer debug.SetGCPercent(oldGCPercent)
 
 	var m1, m2 runtime.MemStats
 	runtime.ReadMemStats(&m1)
