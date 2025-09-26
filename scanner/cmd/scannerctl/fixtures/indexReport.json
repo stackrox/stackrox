@@ -1,0 +1,49 @@
+{
+  "state": "IndexFinished",
+  "success": true,
+  "contents": {
+    "packages": {
+      "0": {
+        "id": "0",
+        "name": "vim-common",
+        "version": "2:8.2.2637-22.el9_6",
+        "kind": "binary",
+        "source": {
+          "name": "vim",
+          "version": "8.2.2637-22.el9_6",
+          "kind": "source",
+          "cpe": "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
+        },
+        "packageDb": "sqlite:var/lib/rpm",
+        "repositoryHint": "hash=sha256%3Af5f037f5b0ad0f3c56645caf830ce08a963d036f1fcb6b4d5b544fccc1dd859b&key=199e2f91fd431d51&repoid=rhel-9-for-x86_64-appstream-rpms",
+        "arch": "x86_64",
+        "cpe": "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
+      }
+    },
+    "repositories": {
+      "0": {
+        "id": "0",
+        "name": "rhel-9-for-x86_64-appstream-rpms",
+        "key": "rhel-cpe-repository",
+        "cpe": "cpe:2.3:a:redhat:enterprise_linux:9:*:appstream:*:*:*:*:*"
+      },
+      "1": {
+        "id": "1",
+        "name": "rhel-9-for-x86_64-baseos-rpms",
+        "key": "rhel-cpe-repository",
+        "cpe": "cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*"
+      }
+    },
+    "environments": {
+      "0": {
+        "environments": [
+          {
+            "packageDb": "sqlite:usr/share/rpm",
+            "introducedIn": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "repositoryIds": ["0", "1"]
+          }
+        ]
+      }
+    }
+  }
+}
