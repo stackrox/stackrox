@@ -155,10 +155,16 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
+
+	var scannerVersion pkgscanner.Version
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
-	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt)
+	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt, client.Version(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
+	}
+	scannerVersionStr, err := scannerVersion.Encode()
+	if err != nil {
+		log.Warnf("Failed to encode Scanner version: %v", err)
 	}
 
 	log.Debugf("Vuln report received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
@@ -172,7 +178,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(image.GetMetadata(), vr), nil
+	return imageScan(image.GetMetadata(), vr, scannerVersionStr), nil
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
@@ -222,9 +228,15 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
-	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents)
+
+	var scannerVersion pkgscanner.Version
+	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents, client.Version(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("get vulnerability report (reference: %q): %w", digest.Name(), err)
+	}
+	scannerVersionStr, err := scannerVersion.Encode()
+	if err != nil {
+		log.Warnf("Failed to encode Scanner version: %v", err)
 	}
 
 	log.Debugf("Vuln report (match) received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
@@ -238,7 +250,7 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(image.GetMetadata(), vr), nil
+	return imageScan(image.GetMetadata(), vr, scannerVersionStr), nil
 }
 
 func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
