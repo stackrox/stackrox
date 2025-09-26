@@ -116,7 +116,6 @@ function ReportJobs({ reportId }: ReportJobsProps) {
         setPage(1);
     };
 
-
     useInterval(fetchReportSnapshots, 10000);
 
     return (
