@@ -18382,6 +18382,30 @@
                 "integer": 2
               }
             ]
+          },
+          {
+            "name": "VirtualMachineScan.Note",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineCVEInfo.ScoreVersion",
+            "enum_fields": [
+              {
+                "name": "V2"
+              },
+              {
+                "name": "V3",
+                "integer": 1
+              },
+              {
+                "name": "UNKNOWN",
+                "integer": 2
+              }
+            ]
           }
         ],
         "messages": [
@@ -18433,6 +18457,11 @@
                 "id": 10,
                 "name": "state",
                 "type": "State"
+              },
+              {
+                "id": 11,
+                "name": "scan",
+                "type": "VirtualMachineScan"
               }
             ],
             "maps": [
@@ -18445,9 +18474,181 @@
                 }
               }
             ]
+          },
+          {
+            "name": "VirtualMachineScan",
+            "fields": [
+              {
+                "id": 1,
+                "name": "scan_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 2,
+                "name": "operating_system",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "components",
+                "type": "EmbeddedVirtualMachineScanComponent",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineScanComponent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "top_cvss",
+                "type": "float",
+                "oneof_parent": "set_top_cvss"
+              },
+              {
+                "id": 4,
+                "name": "risk_score",
+                "type": "float"
+              },
+              {
+                "id": 5,
+                "name": "vulnerabilities",
+                "type": "VirtualMachineVulnerability",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineVulnerability",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve_base_info",
+                "type": "VirtualMachineCVEInfo"
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineCVEInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "summary",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "link",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "published_on",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "created_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "last_modified",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "score_version",
+                "type": "ScoreVersion"
+              },
+              {
+                "id": 8,
+                "name": "cvss_v2",
+                "type": "CVSSV2"
+              },
+              {
+                "id": 9,
+                "name": "cvss_v3",
+                "type": "CVSSV3"
+              },
+              {
+                "id": 10,
+                "name": "references",
+                "type": "Reference",
+                "is_repeated": true
+              },
+              {
+                "id": 11,
+                "name": "cvss_metrics",
+                "type": "CVSSScore",
+                "is_repeated": true
+              },
+              {
+                "id": 12,
+                "name": "epss",
+                "type": "VirtualMachineEPSS"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Reference",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "URI",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "tags",
+                    "type": "string",
+                    "is_repeated": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineEPSS",
+            "fields": [
+              {
+                "id": 1,
+                "name": "epss_probability",
+                "type": "float"
+              },
+              {
+                "id": 2,
+                "name": "epss_percentile",
+                "type": "float"
+              }
+            ]
           }
         ],
         "imports": [
+          {
+            "path": "storage/cve.proto"
+          },
           {
             "path": "google/protobuf/timestamp.proto"
           }

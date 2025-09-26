@@ -123,6 +123,99 @@ func (VirtualMachine_State) EnumDescriptor() ([]byte, []int) {
 	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{0, 1}
 }
 
+type VirtualMachineScan_Note int32
+
+const (
+	VirtualMachineScan_UNSET VirtualMachineScan_Note = 0
+)
+
+// Enum value maps for VirtualMachineScan_Note.
+var (
+	VirtualMachineScan_Note_name = map[int32]string{
+		0: "UNSET",
+	}
+	VirtualMachineScan_Note_value = map[string]int32{
+		"UNSET": 0,
+	}
+)
+
+func (x VirtualMachineScan_Note) Enum() *VirtualMachineScan_Note {
+	p := new(VirtualMachineScan_Note)
+	*p = x
+	return p
+}
+
+func (x VirtualMachineScan_Note) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VirtualMachineScan_Note) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_virtual_machine_proto_enumTypes[2].Descriptor()
+}
+
+func (VirtualMachineScan_Note) Type() protoreflect.EnumType {
+	return &file_storage_virtual_machine_proto_enumTypes[2]
+}
+
+func (x VirtualMachineScan_Note) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VirtualMachineScan_Note.Descriptor instead.
+func (VirtualMachineScan_Note) EnumDescriptor() ([]byte, []int) {
+	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{1, 0}
+}
+
+// ScoreVersion can be deprecated ROX-26066
+type VirtualMachineCVEInfo_ScoreVersion int32
+
+const (
+	VirtualMachineCVEInfo_V2      VirtualMachineCVEInfo_ScoreVersion = 0 // No unset for automatic backwards compatibility
+	VirtualMachineCVEInfo_V3      VirtualMachineCVEInfo_ScoreVersion = 1
+	VirtualMachineCVEInfo_UNKNOWN VirtualMachineCVEInfo_ScoreVersion = 2
+)
+
+// Enum value maps for VirtualMachineCVEInfo_ScoreVersion.
+var (
+	VirtualMachineCVEInfo_ScoreVersion_name = map[int32]string{
+		0: "V2",
+		1: "V3",
+		2: "UNKNOWN",
+	}
+	VirtualMachineCVEInfo_ScoreVersion_value = map[string]int32{
+		"V2":      0,
+		"V3":      1,
+		"UNKNOWN": 2,
+	}
+)
+
+func (x VirtualMachineCVEInfo_ScoreVersion) Enum() *VirtualMachineCVEInfo_ScoreVersion {
+	p := new(VirtualMachineCVEInfo_ScoreVersion)
+	*p = x
+	return p
+}
+
+func (x VirtualMachineCVEInfo_ScoreVersion) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VirtualMachineCVEInfo_ScoreVersion) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_virtual_machine_proto_enumTypes[3].Descriptor()
+}
+
+func (VirtualMachineCVEInfo_ScoreVersion) Type() protoreflect.EnumType {
+	return &file_storage_virtual_machine_proto_enumTypes[3]
+}
+
+func (x VirtualMachineCVEInfo_ScoreVersion) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VirtualMachineCVEInfo_ScoreVersion.Descriptor instead.
+func (VirtualMachineCVEInfo_ScoreVersion) EnumDescriptor() ([]byte, []int) {
+	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{4, 0}
+}
+
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 type VirtualMachine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -136,6 +229,7 @@ type VirtualMachine struct {
 	Notes         []VirtualMachine_Note  `protobuf:"varint,8,rep,packed,name=notes,proto3,enum=storage.VirtualMachine_Note" json:"notes,omitempty"`
 	VsockCid      int32                  `protobuf:"varint,9,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
 	State         VirtualMachine_State   `protobuf:"varint,10,opt,name=state,proto3,enum=storage.VirtualMachine_State" json:"state,omitempty"`
+	Scan          *VirtualMachineScan    `protobuf:"bytes,11,opt,name=scan,proto3" json:"scan,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -240,11 +334,472 @@ func (x *VirtualMachine) GetState() VirtualMachine_State {
 	return VirtualMachine_UNKNOWN
 }
 
+func (x *VirtualMachine) GetScan() *VirtualMachineScan {
+	if x != nil {
+		return x.Scan
+	}
+	return nil
+}
+
+type VirtualMachineScan struct {
+	state           protoimpl.MessageState                 `protogen:"open.v1"`
+	ScanTime        *timestamppb.Timestamp                 `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
+	OperatingSystem string                                 `protobuf:"bytes,2,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
+	Notes           []VirtualMachineScan_Note              `protobuf:"varint,3,rep,packed,name=notes,proto3,enum=storage.VirtualMachineScan_Note" json:"notes,omitempty"`
+	Components      []*EmbeddedVirtualMachineScanComponent `protobuf:"bytes,4,rep,name=components,proto3" json:"components,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *VirtualMachineScan) Reset() {
+	*x = VirtualMachineScan{}
+	mi := &file_storage_virtual_machine_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VirtualMachineScan) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VirtualMachineScan) ProtoMessage() {}
+
+func (x *VirtualMachineScan) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_virtual_machine_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VirtualMachineScan.ProtoReflect.Descriptor instead.
+func (*VirtualMachineScan) Descriptor() ([]byte, []int) {
+	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *VirtualMachineScan) GetScanTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ScanTime
+	}
+	return nil
+}
+
+func (x *VirtualMachineScan) GetOperatingSystem() string {
+	if x != nil {
+		return x.OperatingSystem
+	}
+	return ""
+}
+
+func (x *VirtualMachineScan) GetNotes() []VirtualMachineScan_Note {
+	if x != nil {
+		return x.Notes
+	}
+	return nil
+}
+
+func (x *VirtualMachineScan) GetComponents() []*EmbeddedVirtualMachineScanComponent {
+	if x != nil {
+		return x.Components
+	}
+	return nil
+}
+
+type EmbeddedVirtualMachineScanComponent struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Name    string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Version string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	// Types that are valid to be assigned to SetTopCvss:
+	//
+	//	*EmbeddedVirtualMachineScanComponent_TopCvss
+	SetTopCvss      isEmbeddedVirtualMachineScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
+	RiskScore       float32                                          `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
+	Vulnerabilities []*VirtualMachineVulnerability                   `protobuf:"bytes,5,rep,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *EmbeddedVirtualMachineScanComponent) Reset() {
+	*x = EmbeddedVirtualMachineScanComponent{}
+	mi := &file_storage_virtual_machine_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EmbeddedVirtualMachineScanComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EmbeddedVirtualMachineScanComponent) ProtoMessage() {}
+
+func (x *EmbeddedVirtualMachineScanComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_virtual_machine_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EmbeddedVirtualMachineScanComponent.ProtoReflect.Descriptor instead.
+func (*EmbeddedVirtualMachineScanComponent) Descriptor() ([]byte, []int) {
+	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *EmbeddedVirtualMachineScanComponent) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *EmbeddedVirtualMachineScanComponent) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *EmbeddedVirtualMachineScanComponent) GetSetTopCvss() isEmbeddedVirtualMachineScanComponent_SetTopCvss {
+	if x != nil {
+		return x.SetTopCvss
+	}
+	return nil
+}
+
+func (x *EmbeddedVirtualMachineScanComponent) GetTopCvss() float32 {
+	if x != nil {
+		if x, ok := x.SetTopCvss.(*EmbeddedVirtualMachineScanComponent_TopCvss); ok {
+			return x.TopCvss
+		}
+	}
+	return 0
+}
+
+func (x *EmbeddedVirtualMachineScanComponent) GetRiskScore() float32 {
+	if x != nil {
+		return x.RiskScore
+	}
+	return 0
+}
+
+func (x *EmbeddedVirtualMachineScanComponent) GetVulnerabilities() []*VirtualMachineVulnerability {
+	if x != nil {
+		return x.Vulnerabilities
+	}
+	return nil
+}
+
+type isEmbeddedVirtualMachineScanComponent_SetTopCvss interface {
+	isEmbeddedVirtualMachineScanComponent_SetTopCvss()
+}
+
+type EmbeddedVirtualMachineScanComponent_TopCvss struct {
+	TopCvss float32 `protobuf:"fixed32,3,opt,name=top_cvss,json=topCvss,proto3,oneof"`
+}
+
+func (*EmbeddedVirtualMachineScanComponent_TopCvss) isEmbeddedVirtualMachineScanComponent_SetTopCvss() {
+}
+
+type VirtualMachineVulnerability struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CveBaseInfo   *VirtualMachineCVEInfo `protobuf:"bytes,1,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VirtualMachineVulnerability) Reset() {
+	*x = VirtualMachineVulnerability{}
+	mi := &file_storage_virtual_machine_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VirtualMachineVulnerability) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VirtualMachineVulnerability) ProtoMessage() {}
+
+func (x *VirtualMachineVulnerability) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_virtual_machine_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VirtualMachineVulnerability.ProtoReflect.Descriptor instead.
+func (*VirtualMachineVulnerability) Descriptor() ([]byte, []int) {
+	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *VirtualMachineVulnerability) GetCveBaseInfo() *VirtualMachineCVEInfo {
+	if x != nil {
+		return x.CveBaseInfo
+	}
+	return nil
+}
+
+// VirtualMachineCVEInfo is a clone of the CVEInfo message from cve.proto, stripped from its search tags
+type VirtualMachineCVEInfo struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Cve     string                 `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty"`
+	Summary string                 `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`
+	Link    string                 `protobuf:"bytes,3,opt,name=link,proto3" json:"link,omitempty"`
+	// This indicates the timestamp when the cve was first published in the cve feeds.
+	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty"`
+	// Time when the CVE was first seen in the system.
+	CreatedAt    *timestamppb.Timestamp             `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LastModified *timestamppb.Timestamp             `protobuf:"bytes,6,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
+	ScoreVersion VirtualMachineCVEInfo_ScoreVersion `protobuf:"varint,7,opt,name=score_version,json=scoreVersion,proto3,enum=storage.VirtualMachineCVEInfo_ScoreVersion" json:"score_version,omitempty"`
+	// CVSSV2 CVSSV3 ScoreVersion can be deprecated ROX-26066
+	CvssV2     *CVSSV2                            `protobuf:"bytes,8,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty"`
+	CvssV3     *CVSSV3                            `protobuf:"bytes,9,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
+	References []*VirtualMachineCVEInfo_Reference `protobuf:"bytes,10,rep,name=references,proto3" json:"references,omitempty"`
+	// cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
+	CvssMetrics   []*CVSSScore        `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics,proto3" json:"cvss_metrics,omitempty"`
+	Epss          *VirtualMachineEPSS `protobuf:"bytes,12,opt,name=epss,proto3" json:"epss,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VirtualMachineCVEInfo) Reset() {
+	*x = VirtualMachineCVEInfo{}
+	mi := &file_storage_virtual_machine_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VirtualMachineCVEInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VirtualMachineCVEInfo) ProtoMessage() {}
+
+func (x *VirtualMachineCVEInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_virtual_machine_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VirtualMachineCVEInfo.ProtoReflect.Descriptor instead.
+func (*VirtualMachineCVEInfo) Descriptor() ([]byte, []int) {
+	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *VirtualMachineCVEInfo) GetCve() string {
+	if x != nil {
+		return x.Cve
+	}
+	return ""
+}
+
+func (x *VirtualMachineCVEInfo) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *VirtualMachineCVEInfo) GetLink() string {
+	if x != nil {
+		return x.Link
+	}
+	return ""
+}
+
+func (x *VirtualMachineCVEInfo) GetPublishedOn() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PublishedOn
+	}
+	return nil
+}
+
+func (x *VirtualMachineCVEInfo) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *VirtualMachineCVEInfo) GetLastModified() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastModified
+	}
+	return nil
+}
+
+func (x *VirtualMachineCVEInfo) GetScoreVersion() VirtualMachineCVEInfo_ScoreVersion {
+	if x != nil {
+		return x.ScoreVersion
+	}
+	return VirtualMachineCVEInfo_V2
+}
+
+func (x *VirtualMachineCVEInfo) GetCvssV2() *CVSSV2 {
+	if x != nil {
+		return x.CvssV2
+	}
+	return nil
+}
+
+func (x *VirtualMachineCVEInfo) GetCvssV3() *CVSSV3 {
+	if x != nil {
+		return x.CvssV3
+	}
+	return nil
+}
+
+func (x *VirtualMachineCVEInfo) GetReferences() []*VirtualMachineCVEInfo_Reference {
+	if x != nil {
+		return x.References
+	}
+	return nil
+}
+
+func (x *VirtualMachineCVEInfo) GetCvssMetrics() []*CVSSScore {
+	if x != nil {
+		return x.CvssMetrics
+	}
+	return nil
+}
+
+func (x *VirtualMachineCVEInfo) GetEpss() *VirtualMachineEPSS {
+	if x != nil {
+		return x.Epss
+	}
+	return nil
+}
+
+// VirtualMachineEPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
+// This structure is a clone of the EPSS message from cve.proto, stripped from its search tags.
+type VirtualMachineEPSS struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	EpssProbability float32                `protobuf:"fixed32,1,opt,name=epss_probability,json=epssProbability,proto3" json:"epss_probability,omitempty"`
+	EpssPercentile  float32                `protobuf:"fixed32,2,opt,name=epss_percentile,json=epssPercentile,proto3" json:"epss_percentile,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *VirtualMachineEPSS) Reset() {
+	*x = VirtualMachineEPSS{}
+	mi := &file_storage_virtual_machine_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VirtualMachineEPSS) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VirtualMachineEPSS) ProtoMessage() {}
+
+func (x *VirtualMachineEPSS) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_virtual_machine_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VirtualMachineEPSS.ProtoReflect.Descriptor instead.
+func (*VirtualMachineEPSS) Descriptor() ([]byte, []int) {
+	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *VirtualMachineEPSS) GetEpssProbability() float32 {
+	if x != nil {
+		return x.EpssProbability
+	}
+	return 0
+}
+
+func (x *VirtualMachineEPSS) GetEpssPercentile() float32 {
+	if x != nil {
+		return x.EpssPercentile
+	}
+	return 0
+}
+
+type VirtualMachineCVEInfo_Reference struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	URI           string                 `protobuf:"bytes,1,opt,name=URI,proto3" json:"URI,omitempty"`
+	Tags          []string               `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VirtualMachineCVEInfo_Reference) Reset() {
+	*x = VirtualMachineCVEInfo_Reference{}
+	mi := &file_storage_virtual_machine_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VirtualMachineCVEInfo_Reference) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VirtualMachineCVEInfo_Reference) ProtoMessage() {}
+
+func (x *VirtualMachineCVEInfo_Reference) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_virtual_machine_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VirtualMachineCVEInfo_Reference.ProtoReflect.Descriptor instead.
+func (*VirtualMachineCVEInfo_Reference) Descriptor() ([]byte, []int) {
+	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *VirtualMachineCVEInfo_Reference) GetURI() string {
+	if x != nil {
+		return x.URI
+	}
+	return ""
+}
+
+func (x *VirtualMachineCVEInfo_Reference) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
 var File_storage_virtual_machine_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf2\x04\n" +
+	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\"\xa3\x05\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
@@ -257,7 +812,8 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\x05notes\x18\b \x03(\x0e2\x1c.storage.VirtualMachine.NoteR\x05notes\x12\x1b\n" +
 	"\tvsock_cid\x18\t \x01(\x05R\bvsockCid\x123\n" +
 	"\x05state\x18\n" +
-	" \x01(\x0e2\x1d.storage.VirtualMachine.StateR\x05state\x1a8\n" +
+	" \x01(\x0e2\x1d.storage.VirtualMachine.StateR\x05state\x12/\n" +
+	"\x04scan\x18\v \x01(\v2\x1b.storage.VirtualMachineScanR\x04scan\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -270,7 +826,53 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTOPPED\x10\x01\x12\v\n" +
-	"\aRUNNING\x10\x02b\x06proto3"
+	"\aRUNNING\x10\x02\"\x91\x02\n" +
+	"\x12VirtualMachineScan\x127\n" +
+	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12)\n" +
+	"\x10operating_system\x18\x02 \x01(\tR\x0foperatingSystem\x126\n" +
+	"\x05notes\x18\x03 \x03(\x0e2 .storage.VirtualMachineScan.NoteR\x05notes\x12L\n" +
+	"\n" +
+	"components\x18\x04 \x03(\v2,.storage.EmbeddedVirtualMachineScanComponentR\n" +
+	"components\"\x11\n" +
+	"\x04Note\x12\t\n" +
+	"\x05UNSET\x10\x00\"\xef\x01\n" +
+	"#EmbeddedVirtualMachineScanComponent\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1b\n" +
+	"\btop_cvss\x18\x03 \x01(\x02H\x00R\atopCvss\x12\x1d\n" +
+	"\n" +
+	"risk_score\x18\x04 \x01(\x02R\triskScore\x12N\n" +
+	"\x0fvulnerabilities\x18\x05 \x03(\v2$.storage.VirtualMachineVulnerabilityR\x0fvulnerabilitiesB\x0e\n" +
+	"\fset_top_cvss\"a\n" +
+	"\x1bVirtualMachineVulnerability\x12B\n" +
+	"\rcve_base_info\x18\x01 \x01(\v2\x1e.storage.VirtualMachineCVEInfoR\vcveBaseInfo\"\xca\x05\n" +
+	"\x15VirtualMachineCVEInfo\x12\x10\n" +
+	"\x03cve\x18\x01 \x01(\tR\x03cve\x12\x18\n" +
+	"\asummary\x18\x02 \x01(\tR\asummary\x12\x12\n" +
+	"\x04link\x18\x03 \x01(\tR\x04link\x12=\n" +
+	"\fpublished_on\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\vpublishedOn\x129\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12?\n" +
+	"\rlast_modified\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\flastModified\x12P\n" +
+	"\rscore_version\x18\a \x01(\x0e2+.storage.VirtualMachineCVEInfo.ScoreVersionR\fscoreVersion\x12(\n" +
+	"\acvss_v2\x18\b \x01(\v2\x0f.storage.CVSSV2R\x06cvssV2\x12(\n" +
+	"\acvss_v3\x18\t \x01(\v2\x0f.storage.CVSSV3R\x06cvssV3\x12H\n" +
+	"\n" +
+	"references\x18\n" +
+	" \x03(\v2(.storage.VirtualMachineCVEInfo.ReferenceR\n" +
+	"references\x125\n" +
+	"\fcvss_metrics\x18\v \x03(\v2\x12.storage.CVSSScoreR\vcvssMetrics\x12/\n" +
+	"\x04epss\x18\f \x01(\v2\x1b.storage.VirtualMachineEPSSR\x04epss\x1a1\n" +
+	"\tReference\x12\x10\n" +
+	"\x03URI\x18\x01 \x01(\tR\x03URI\x12\x12\n" +
+	"\x04tags\x18\x02 \x03(\tR\x04tags\"+\n" +
+	"\fScoreVersion\x12\x06\n" +
+	"\x02V2\x10\x00\x12\x06\n" +
+	"\x02V3\x10\x01\x12\v\n" +
+	"\aUNKNOWN\x10\x02\"h\n" +
+	"\x12VirtualMachineEPSS\x12)\n" +
+	"\x10epss_probability\x18\x01 \x01(\x02R\x0fepssProbability\x12'\n" +
+	"\x0fepss_percentile\x18\x02 \x01(\x02R\x0eepssPercentileb\x06proto3"
 
 var (
 	file_storage_virtual_machine_proto_rawDescOnce sync.Once
@@ -284,25 +886,51 @@ func file_storage_virtual_machine_proto_rawDescGZIP() []byte {
 	return file_storage_virtual_machine_proto_rawDescData
 }
 
-var file_storage_virtual_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_storage_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_storage_virtual_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_storage_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_storage_virtual_machine_proto_goTypes = []any{
-	(VirtualMachine_Note)(0),      // 0: storage.VirtualMachine.Note
-	(VirtualMachine_State)(0),     // 1: storage.VirtualMachine.State
-	(*VirtualMachine)(nil),        // 2: storage.VirtualMachine
-	nil,                           // 3: storage.VirtualMachine.FactsEntry
-	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
+	(VirtualMachine_Note)(0),                    // 0: storage.VirtualMachine.Note
+	(VirtualMachine_State)(0),                   // 1: storage.VirtualMachine.State
+	(VirtualMachineScan_Note)(0),                // 2: storage.VirtualMachineScan.Note
+	(VirtualMachineCVEInfo_ScoreVersion)(0),     // 3: storage.VirtualMachineCVEInfo.ScoreVersion
+	(*VirtualMachine)(nil),                      // 4: storage.VirtualMachine
+	(*VirtualMachineScan)(nil),                  // 5: storage.VirtualMachineScan
+	(*EmbeddedVirtualMachineScanComponent)(nil), // 6: storage.EmbeddedVirtualMachineScanComponent
+	(*VirtualMachineVulnerability)(nil),         // 7: storage.VirtualMachineVulnerability
+	(*VirtualMachineCVEInfo)(nil),               // 8: storage.VirtualMachineCVEInfo
+	(*VirtualMachineEPSS)(nil),                  // 9: storage.VirtualMachineEPSS
+	nil,                                         // 10: storage.VirtualMachine.FactsEntry
+	(*VirtualMachineCVEInfo_Reference)(nil),     // 11: storage.VirtualMachineCVEInfo.Reference
+	(*timestamppb.Timestamp)(nil),               // 12: google.protobuf.Timestamp
+	(*CVSSV2)(nil),                              // 13: storage.CVSSV2
+	(*CVSSV3)(nil),                              // 14: storage.CVSSV3
+	(*CVSSScore)(nil),                           // 15: storage.CVSSScore
 }
 var file_storage_virtual_machine_proto_depIdxs = []int32{
-	3, // 0: storage.VirtualMachine.facts:type_name -> storage.VirtualMachine.FactsEntry
-	4, // 1: storage.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
-	0, // 2: storage.VirtualMachine.notes:type_name -> storage.VirtualMachine.Note
-	1, // 3: storage.VirtualMachine.state:type_name -> storage.VirtualMachine.State
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	10, // 0: storage.VirtualMachine.facts:type_name -> storage.VirtualMachine.FactsEntry
+	12, // 1: storage.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
+	0,  // 2: storage.VirtualMachine.notes:type_name -> storage.VirtualMachine.Note
+	1,  // 3: storage.VirtualMachine.state:type_name -> storage.VirtualMachine.State
+	5,  // 4: storage.VirtualMachine.scan:type_name -> storage.VirtualMachineScan
+	12, // 5: storage.VirtualMachineScan.scan_time:type_name -> google.protobuf.Timestamp
+	2,  // 6: storage.VirtualMachineScan.notes:type_name -> storage.VirtualMachineScan.Note
+	6,  // 7: storage.VirtualMachineScan.components:type_name -> storage.EmbeddedVirtualMachineScanComponent
+	7,  // 8: storage.EmbeddedVirtualMachineScanComponent.vulnerabilities:type_name -> storage.VirtualMachineVulnerability
+	8,  // 9: storage.VirtualMachineVulnerability.cve_base_info:type_name -> storage.VirtualMachineCVEInfo
+	12, // 10: storage.VirtualMachineCVEInfo.published_on:type_name -> google.protobuf.Timestamp
+	12, // 11: storage.VirtualMachineCVEInfo.created_at:type_name -> google.protobuf.Timestamp
+	12, // 12: storage.VirtualMachineCVEInfo.last_modified:type_name -> google.protobuf.Timestamp
+	3,  // 13: storage.VirtualMachineCVEInfo.score_version:type_name -> storage.VirtualMachineCVEInfo.ScoreVersion
+	13, // 14: storage.VirtualMachineCVEInfo.cvss_v2:type_name -> storage.CVSSV2
+	14, // 15: storage.VirtualMachineCVEInfo.cvss_v3:type_name -> storage.CVSSV3
+	11, // 16: storage.VirtualMachineCVEInfo.references:type_name -> storage.VirtualMachineCVEInfo.Reference
+	15, // 17: storage.VirtualMachineCVEInfo.cvss_metrics:type_name -> storage.CVSSScore
+	9,  // 18: storage.VirtualMachineCVEInfo.epss:type_name -> storage.VirtualMachineEPSS
+	19, // [19:19] is the sub-list for method output_type
+	19, // [19:19] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_storage_virtual_machine_proto_init() }
@@ -310,13 +938,17 @@ func file_storage_virtual_machine_proto_init() {
 	if File_storage_virtual_machine_proto != nil {
 		return
 	}
+	file_storage_cve_proto_init()
+	file_storage_virtual_machine_proto_msgTypes[2].OneofWrappers = []any{
+		(*EmbeddedVirtualMachineScanComponent_TopCvss)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_virtual_machine_proto_rawDesc), len(file_storage_virtual_machine_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   2,
+			NumEnums:      4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
