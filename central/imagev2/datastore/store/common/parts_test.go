@@ -165,8 +165,8 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 	imageID := uuid.NewV5FromNonUUIDs(imageName, imageSha).String()
 
 	imageV2 := &storage.ImageV2{
-		Id:  imageID,
-		Sha: imageSha,
+		Id:     imageID,
+		Digest: imageSha,
 		Name: &storage.ImageName{
 			FullName: imageName,
 		},
@@ -175,11 +175,13 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 				Created: ts,
 			},
 		},
-		ComponentCount:         3,
-		CveCount:               4,
-		FixableCveCount:        2,
-		UnknownCveCount:        4,
-		FixableUnknownCveCount: 2,
+		ScanStats: &storage.ImageV2_ScanStats{
+			ComponentCount:         3,
+			CveCount:               4,
+			FixableCveCount:        2,
+			UnknownCveCount:        4,
+			FixableUnknownCveCount: 2,
+		},
 		Scan: &storage.ImageScan{
 			ScanTime: ts,
 			Components: []*storage.EmbeddedImageScanComponent{
@@ -285,8 +287,8 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 
 	splitExpected := ImagePartsV2{
 		Image: &storage.ImageV2{
-			Id:  imageID,
-			Sha: imageSha,
+			Id:     imageID,
+			Digest: imageSha,
 			Name: &storage.ImageName{
 				FullName: imageName,
 			},
@@ -298,11 +300,13 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 			Scan: &storage.ImageScan{
 				ScanTime: ts,
 			},
-			ComponentCount:         3,
-			CveCount:               4,
-			FixableCveCount:        2,
-			UnknownCveCount:        4,
-			FixableUnknownCveCount: 2,
+			ScanStats: &storage.ImageV2_ScanStats{
+				ComponentCount:         3,
+				CveCount:               4,
+				FixableCveCount:        2,
+				UnknownCveCount:        4,
+				FixableUnknownCveCount: 2,
+			},
 		},
 		Children: []ComponentPartsV2{
 			{
@@ -440,8 +444,8 @@ func getTestCVEID(t *testing.T, testCVE *storage.EmbeddedVulnerability, componen
 
 func dedupedImageV2(imageID, imageName, imageSha string) *storage.ImageV2 {
 	return &storage.ImageV2{
-		Id:  imageID,
-		Sha: imageSha,
+		Id:     imageID,
+		Digest: imageSha,
 		Name: &storage.ImageName{
 			FullName: imageName,
 		},
@@ -450,11 +454,13 @@ func dedupedImageV2(imageID, imageName, imageSha string) *storage.ImageV2 {
 				Created: ts,
 			},
 		},
-		ComponentCount:         3,
-		CveCount:               4,
-		FixableCveCount:        2,
-		UnknownCveCount:        4,
-		FixableUnknownCveCount: 2,
+		ScanStats: &storage.ImageV2_ScanStats{
+			ComponentCount:         3,
+			CveCount:               4,
+			FixableCveCount:        2,
+			UnknownCveCount:        4,
+			FixableUnknownCveCount: 2,
+		},
 		Scan: &storage.ImageScan{
 			ScanTime: ts,
 			Components: []*storage.EmbeddedImageScanComponent{

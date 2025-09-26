@@ -431,8 +431,8 @@ func splitFlattenedIDs(ids []string) []string {
 func fixableSearchTestImagesV2() []*storage.ImageV2 {
 	return []*storage.ImageV2{
 		{
-			Id:  uuid.NewV5FromNonUUIDs("registry.test.io/image-1:latest", "sha256:image-1").String(),
-			Sha: "sha256:image-1",
+			Id:     uuid.NewV5FromNonUUIDs("registry.test.io/image-1:latest", "sha256:image-1").String(),
+			Digest: "sha256:image-1",
 			Name: &storage.ImageName{
 				Registry: "registry.test.io",
 				Remote:   "image-1",
@@ -465,8 +465,8 @@ func fixableSearchTestImagesV2() []*storage.ImageV2 {
 			},
 		},
 		{
-			Id:  uuid.NewV5FromNonUUIDs("registry.test.io/image-2:latest", "sha256:image-2").String(),
-			Sha: "sha256:image-2",
+			Id:     uuid.NewV5FromNonUUIDs("registry.test.io/image-2:latest", "sha256:image-2").String(),
+			Digest: "sha256:image-2",
 			Name: &storage.ImageName{
 				Registry: "registry.test.io",
 				Remote:   "image-2",
@@ -496,8 +496,8 @@ func fixableSearchTestImagesV2() []*storage.ImageV2 {
 			},
 		},
 		{
-			Id:  uuid.NewV5FromNonUUIDs("registry.test.io/image-3:latest", "sha256:image-3").String(),
-			Sha: "sha256:image-3",
+			Id:     uuid.NewV5FromNonUUIDs("registry.test.io/image-3:latest", "sha256:image-3").String(),
+			Digest: "sha256:image-3",
 			Name: &storage.ImageName{
 				Registry: "registry.test.io",
 				Remote:   "image-3",
@@ -524,8 +524,8 @@ func fixableSearchTestImagesV2() []*storage.ImageV2 {
 			},
 		},
 		{
-			Id:  uuid.NewV5FromNonUUIDs("registry.test.io/image-4:latest", "sha256:image-4").String(),
-			Sha: "sha256:image-4",
+			Id:     uuid.NewV5FromNonUUIDs("registry.test.io/image-4:latest", "sha256:image-4").String(),
+			Digest: "sha256:image-4",
 			Name: &storage.ImageName{
 				Registry: "registry.test.io",
 				Remote:   "image-4",

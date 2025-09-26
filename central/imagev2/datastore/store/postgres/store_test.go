@@ -418,8 +418,8 @@ func (s *ImagesV2StoreSuite) TestGetMany() {
 
 func getTestImageV2(name, sha string) *storage.ImageV2 {
 	return &storage.ImageV2{
-		Id:  uuid.NewV5FromNonUUIDs(name, sha).String(),
-		Sha: sha,
+		Id:     uuid.NewV5FromNonUUIDs(name, sha).String(),
+		Digest: sha,
 		Name: &storage.ImageName{
 			FullName: name,
 		},
@@ -507,7 +507,7 @@ func getTestImageV2(name, sha string) *storage.ImageV2 {
 
 func convertToImageV1(imageV2 *storage.ImageV2) *storage.Image {
 	return &storage.Image{
-		Id:        imageV2.GetSha(),
+		Id:        imageV2.GetDigest(),
 		Name:      imageV2.GetName(),
 		Scan:      imageV2.GetScan(),
 		RiskScore: imageV2.GetRiskScore(),

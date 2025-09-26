@@ -98,7 +98,7 @@ func (s *ImageV2DataStoreTestSuite) TestSearch() {
 	s.NoError(err)
 	s.Len(results, 1)
 
-	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageSHA, image.GetSha()).ProtoQuery()
+	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageSHA, image.GetDigest()).ProtoQuery()
 	results, err = s.datastore.Search(ctx, q)
 	s.NoError(err)
 	s.Len(results, 1)
@@ -181,7 +181,7 @@ func (s *ImageV2DataStoreTestSuite) TestUpdateVulnState() {
 
 	cloned := image.CloneVT()
 	cloned.Name.FullName = "registry.test.io/cloned:latest"
-	cloned.Id = uuid.NewV5FromNonUUIDs(cloned.GetName().GetFullName(), cloned.GetSha()).String()
+	cloned.Id = uuid.NewV5FromNonUUIDs(cloned.GetName().GetFullName(), cloned.GetDigest()).String()
 	s.NoError(s.datastore.UpsertImage(ctx, cloned))
 	_, found, err = s.datastore.GetImage(ctx, cloned.GetId())
 	s.NoError(err)
@@ -341,7 +341,7 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 
 	testImage2 := testImage.CloneVT()
 	testImage2.Name.FullName = "registry.test.io/cloned:latest"
-	testImage2.Id = uuid.NewV5FromNonUUIDs(testImage2.GetName().GetFullName(), testImage2.GetSha()).String()
+	testImage2.Id = uuid.NewV5FromNonUUIDs(testImage2.GetName().GetFullName(), testImage2.GetDigest()).String()
 	for _, component := range testImage2.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
 			// Clone brings over the time, need to empty that out
@@ -470,12 +470,12 @@ func (s *ImageV2DataStoreTestSuite) TestGetManyImageMetadata() {
 
 	testImage2 := testImage1.CloneVT()
 	testImage2.Name.FullName = "registry.test.io/img2:latest"
-	testImage2.Id = uuid.NewV5FromNonUUIDs(testImage2.GetName().GetFullName(), testImage2.GetSha()).String()
+	testImage2.Id = uuid.NewV5FromNonUUIDs(testImage2.GetName().GetFullName(), testImage2.GetDigest()).String()
 	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
 
 	testImage3 := testImage1.CloneVT()
 	testImage3.Name.FullName = "registry.test.io/img3:latest"
-	testImage3.Id = uuid.NewV5FromNonUUIDs(testImage3.GetName().GetFullName(), testImage3.GetSha()).String()
+	testImage3.Id = uuid.NewV5FromNonUUIDs(testImage3.GetName().GetFullName(), testImage3.GetDigest()).String()
 	s.NoError(s.datastore.UpsertImage(ctx, testImage3))
 
 	storedImages, err := s.datastore.GetManyImageMetadata(ctx, []string{testImage1.Id, testImage2.Id, testImage3.Id})
@@ -503,8 +503,8 @@ func getTestImageV2(name string) *storage.ImageV2 {
 	imageID := uuid.NewV5FromNonUUIDs(imageName, imageSha).String()
 
 	return &storage.ImageV2{
-		Id:  imageID,
-		Sha: imageSha,
+		Id:     imageID,
+		Digest: imageSha,
 		Name: &storage.ImageName{
 			Registry: "registry.test.io",
 			Remote:   name,

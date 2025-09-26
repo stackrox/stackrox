@@ -328,3 +328,68 @@ func (resolver *imageV2Resolver) SignatureCount(ctx context.Context) (int32, err
 	}
 	return int32(len(image.GetSignature().GetSignatures())), nil
 }
+
+func (resolver *imageV2Resolver) ComponentCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetComponentCount()
+}
+
+func (resolver *imageV2Resolver) CveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetCveCount()
+}
+
+func (resolver *imageV2Resolver) FixableCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetFixableCveCount()
+}
+
+func (resolver *imageV2Resolver) UnknownCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetUnknownCveCount()
+}
+
+func (resolver *imageV2Resolver) FixableUnknownCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetFixableUnknownCveCount()
+}
+
+func (resolver *imageV2Resolver) CriticalCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetCriticalCveCount()
+}
+
+func (resolver *imageV2Resolver) FixableCriticalCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetFixableCriticalCveCount()
+}
+
+func (resolver *imageV2Resolver) ImportantCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetImportantCveCount()
+}
+
+func (resolver *imageV2Resolver) FixableImportantCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetFixableImportantCveCount()
+}
+
+func (resolver *imageV2Resolver) ModerateCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetModerateCveCount()
+}
+
+func (resolver *imageV2Resolver) FixableModerateCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetFixableModerateCveCount()
+}
+
+func (resolver *imageV2Resolver) LowCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetLowCveCount()
+}
+
+func (resolver *imageV2Resolver) FixableLowCveCount(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	return resolver.data.GetScanStats().GetFixableLowCveCount()
+}

@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -225,7 +225,7 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.ImageV2
 	defer ds.keyedMutex.Unlock(image.GetId())
 
 	ds.updateComponentRisk(image)
-	enricher.FillScanStatsV2(image)
+	utils.FillScanStatsV2(image)
 
 	if err := ds.storage.Upsert(ctx, image); err != nil {
 		return err

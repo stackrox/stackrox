@@ -90,6 +90,10 @@ var (
 				FieldName:  "Scan",
 			},
 			{
+				ParentType: reflect.TypeOf(storage.ImageV2{}),
+				FieldName:  "ScanStats",
+			},
+			{
 				ParentType: reflect.TypeOf(storage.ImageScan{}),
 				FieldName:  "Components",
 			},

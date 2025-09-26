@@ -5,9 +5,11 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -408,6 +410,194 @@ func TestIsRedHatImage(t *testing.T) {
 			img := &storage.Image{Names: names}
 			got := utils.IsRedHatImage(img)
 			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestFillScanStatsV2(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	cases := []struct {
+		image                            *storage.ImageV2
+		expectedCveCount                 int32
+		expectedUnknownCveCount          int32
+		expectedFixableUnknownCveCount   int32
+		expectedCriticalCveCount         int32
+		expectedFixableCriticalCveCount  int32
+		expectedImportantCveCount        int32
+		expectedFixableImportantCveCount int32
+		expectedModerateCveCount         int32
+		expectedFixableModerateCveCount  int32
+		expectedLowCveCount              int32
+		expectedFixableLowCveCount       int32
+		expectedFixableCveCount          int32
+	}{
+		{
+			image: &storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Scan: &storage.ImageScan{
+					Components: []*storage.EmbeddedImageScanComponent{
+						{
+							Vulns: []*storage.EmbeddedVulnerability{
+								{
+									Cve: "cve-1",
+									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+										FixedBy: "blah",
+									},
+									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								},
+							},
+						},
+						{
+							Vulns: []*storage.EmbeddedVulnerability{
+								{
+									Cve:      "cve-1",
+									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedCveCount:                 1,
+			expectedUnknownCveCount:          0,
+			expectedFixableUnknownCveCount:   0,
+			expectedCriticalCveCount:         1,
+			expectedFixableCriticalCveCount:  1,
+			expectedImportantCveCount:        0,
+			expectedFixableImportantCveCount: 0,
+			expectedModerateCveCount:         0,
+			expectedFixableModerateCveCount:  0,
+			expectedLowCveCount:              0,
+			expectedFixableLowCveCount:       0,
+			expectedFixableCveCount:          1,
+		},
+		{
+			image: &storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Scan: &storage.ImageScan{
+					Components: []*storage.EmbeddedImageScanComponent{
+						{
+							Vulns: []*storage.EmbeddedVulnerability{
+								{
+									Cve: "cve-1",
+									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+										FixedBy: "blah",
+									},
+									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								},
+							},
+						},
+						{
+							Vulns: []*storage.EmbeddedVulnerability{
+								{
+									Cve: "cve-2",
+									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+										FixedBy: "blah",
+									},
+									Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedCveCount:                 2,
+			expectedUnknownCveCount:          1,
+			expectedFixableUnknownCveCount:   1,
+			expectedCriticalCveCount:         1,
+			expectedFixableCriticalCveCount:  1,
+			expectedImportantCveCount:        0,
+			expectedFixableImportantCveCount: 0,
+			expectedModerateCveCount:         0,
+			expectedFixableModerateCveCount:  0,
+			expectedLowCveCount:              0,
+			expectedFixableLowCveCount:       0,
+			expectedFixableCveCount:          2,
+		},
+		{
+			image: &storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Scan: &storage.ImageScan{
+					Components: []*storage.EmbeddedImageScanComponent{
+						{
+							Vulns: []*storage.EmbeddedVulnerability{
+								{
+									Cve:      "cve-1",
+									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								},
+							},
+						},
+						{
+							Vulns: []*storage.EmbeddedVulnerability{
+								{
+									Cve:      "cve-2",
+									Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+								},
+							},
+						},
+						{
+							Vulns: []*storage.EmbeddedVulnerability{
+								{
+									Cve:      "cve-3",
+									Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+								},
+							},
+						},
+						{
+							Vulns: []*storage.EmbeddedVulnerability{
+								{
+									Cve:      "cve-4",
+									Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+								},
+							},
+						},
+						{
+							Vulns: []*storage.EmbeddedVulnerability{
+								{
+									Cve:      "cve-5",
+									Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedCveCount:                 5,
+			expectedUnknownCveCount:          1,
+			expectedFixableUnknownCveCount:   0,
+			expectedCriticalCveCount:         1,
+			expectedFixableCriticalCveCount:  0,
+			expectedImportantCveCount:        1,
+			expectedFixableImportantCveCount: 0,
+			expectedModerateCveCount:         1,
+			expectedFixableModerateCveCount:  0,
+			expectedLowCveCount:              1,
+			expectedFixableLowCveCount:       0,
+			expectedFixableCveCount:          0,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(t.Name(), func(t *testing.T) {
+			utils.FillScanStatsV2(c.image)
+			assert.Equal(t, c.expectedCveCount, c.image.GetScanStats().GetCveCount())
+			assert.Equal(t, c.expectedUnknownCveCount, c.image.GetScanStats().GetUnknownCveCount())
+			assert.Equal(t, c.expectedFixableUnknownCveCount, c.image.GetScanStats().GetFixableUnknownCveCount())
+			assert.Equal(t, c.expectedCriticalCveCount, c.image.GetScanStats().GetCriticalCveCount())
+			assert.Equal(t, c.expectedFixableCriticalCveCount, c.image.GetScanStats().GetFixableCriticalCveCount())
+			assert.Equal(t, c.expectedImportantCveCount, c.image.GetScanStats().GetImportantCveCount())
+			assert.Equal(t, c.expectedFixableImportantCveCount, c.image.GetScanStats().GetFixableImportantCveCount())
+			assert.Equal(t, c.expectedModerateCveCount, c.image.GetScanStats().GetModerateCveCount())
+			assert.Equal(t, c.expectedFixableModerateCveCount, c.image.GetScanStats().GetFixableModerateCveCount())
+			assert.Equal(t, c.expectedLowCveCount, c.image.GetScanStats().GetLowCveCount())
+			assert.Equal(t, c.expectedFixableLowCveCount, c.image.GetScanStats().GetFixableLowCveCount())
+			assert.Equal(t, c.expectedFixableCveCount, c.image.GetScanStats().GetFixableCveCount())
 		})
 	}
 }

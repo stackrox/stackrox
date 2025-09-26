@@ -70,8 +70,8 @@ func getImageWithComponentsV2(componentsPerImage []*storage.EmbeddedImageScanCom
 	imageSha := "sha256:SHA2"
 	imageID := uuid.NewV5FromNonUUIDs(imageName, imageSha).String()
 	return &storage.ImageV2{
-		Id:  imageID,
-		Sha: imageSha,
+		Id:     imageID,
+		Digest: imageSha,
 		Name: &storage.ImageName{
 			Registry: "stackrox.io",
 			Remote:   "srox/mongo",
@@ -144,6 +144,8 @@ func getImageWithComponentsV2(componentsPerImage []*storage.EmbeddedImageScanCom
 			ScanTime:   protocompat.TimestampNow(),
 			Components: componentsPerImage,
 		},
-		ComponentCount: int32(len(componentsPerImage)),
+		ScanStats: &storage.ImageV2_ScanStats{
+			ComponentCount: int32(len(componentsPerImage)),
+		},
 	}
 }
