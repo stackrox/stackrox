@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 
 import useRestQuery from 'hooks/useRestQuery';
 import { listDeployments } from 'services/DeploymentsService';
-import type { SearchFilter, ApiSortOption } from 'types/search';
+import type { ApiSortOption, SearchFilter } from 'types/search';
 
 export function useWorkloadId({ ns, name }: { ns: string | undefined; name: string | undefined }) {
     const deploymentIdQuery = useCallback(() => {
