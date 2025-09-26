@@ -1,4 +1,5 @@
-import React, { FormEvent } from 'react';
+import React from 'react';
+import type { FormEvent } from 'react';
 import {
     Button,
     FormGroup,
@@ -13,9 +14,9 @@ import { SelectOption } from '@patternfly/react-core/deprecated';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
-import { FormikErrors } from 'formik';
+import type { FormikErrors } from 'formik';
 import useIndexKey from 'hooks/useIndexKey';
-import {
+import type {
     ByNameMatchType,
     ByNameResourceSelector,
     ScopedResourceSelector,

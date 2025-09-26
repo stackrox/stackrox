@@ -9,12 +9,12 @@ import configMgmtEntityRelationship from 'Containers/ConfigManagement/entityTabR
 import Raven from 'raven-js';
 
 import {
-    workflowPaths,
+    policiesPath,
     riskPath,
     secretsPath,
     urlEntityListTypes,
     urlEntityTypes,
-    policiesPath,
+    workflowPaths,
 } from '../routePaths';
 
 export function getTypeKeyFromParamValue(value, listOnly) {

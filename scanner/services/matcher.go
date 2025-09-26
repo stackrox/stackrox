@@ -79,7 +79,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 		ir, err = getClairIndexReport(ctx, s.indexer, req.GetHashId())
 	} else {
 		zlog.Info(ctx).Msg("has contents, parsing")
-		ir, err = s.parseIndexReport(req.GetContents())
+		ir, err = parseIndexReport(req.GetContents())
 	}
 	if err != nil {
 		return nil, err
@@ -100,16 +100,6 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 	return report, nil
 }
 
-// parseIndexReport will generate an index report from a Contents payload.
-func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
-	ir, err := mappers.ToClairCoreIndexReport(contents)
-	if err != nil {
-		// Validation should have captured all conversion errors.
-		return nil, fmt.Errorf("internal error: %w", err)
-	}
-	return ir, nil
-}
-
 func (s *matcherService) GetMetadata(ctx context.Context, _ *protocompat.Empty) (*v4.Metadata, error) {
 	lastVulnUpdate, err := s.matcher.GetLastVulnerabilityUpdate(ctx)
 	if err != nil {
@@ -121,7 +111,6 @@ func (s *matcherService) GetMetadata(ctx context.Context, _ *protocompat.Empty) 
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
 	return &v4.Metadata{
-		// TODO(ROX-21362): Set scanner version.
 		LastVulnerabilityUpdate: timestamp,
 	}, nil
 }
@@ -188,7 +177,7 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 	// The remote indexer is not used. This creates flexibility and enables SBOMs to be generated
 	// from index reports not stored in the local indexer (such as from node scans and from things not
 	// indexed by indexer, such as Central scans from third party scanners).
-	ir, err := s.parseIndexReport(req.GetContents())
+	ir, err := parseIndexReport(req.GetContents())
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("parsing index report")
 		return nil, err

@@ -1,4 +1,4 @@
-import reducer, { selectors, getHasReadPermission, getHasReadWritePermission } from './roles';
+import reducer, { getHasReadPermission, getHasReadWritePermission, selectors } from './roles';
 
 describe('roles reducer', () => {
     it('should return the initial state', () => {

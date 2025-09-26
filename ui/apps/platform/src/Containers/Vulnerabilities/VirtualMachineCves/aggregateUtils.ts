@@ -1,5 +1,8 @@
+import { severityRankings } from 'constants/vulnerabilities';
 import type { VirtualMachine } from 'services/VirtualMachineService';
-import type { CVSSV3Severity } from 'types/vulnerability.proto';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
+import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
+import type { Advisory, CVSSV3Severity, EmbeddedVulnerability } from 'types/vulnerability.proto';
 
 // Most if not all functions in this file will be removed once backend filtering is implemented.
 
@@ -23,4 +26,73 @@ export function getVirtualMachineSeveritiesCount(
     });
 
     return severityCounts;
+}
+
+export type CveComponentRow = {
+    name: ScanComponent['name'];
+    sourceType: SourceType;
+    version: ScanComponent['version'];
+    fixedBy: EmbeddedVulnerability['fixedBy'];
+    advisory: Advisory;
+};
+
+export type CveTableRow = {
+    cve: EmbeddedVulnerability['cve'];
+    severity: VulnerabilitySeverity; // worst severity across components for this CVE
+    isFixable: boolean; // true if any vulnerability is fixable across components
+    cvss: number; // max score across components
+    epssProbability: number; // should be the same across all components
+    affectedComponents: CveComponentRow[];
+};
+
+function defaultCveTableSort(a: CveTableRow, b: CveTableRow): number {
+    return severityRankings[b.severity] - severityRankings[a.severity] || b.cvss - a.cvss;
+}
+
+function worstSeverity(a: VulnerabilitySeverity, b: VulnerabilitySeverity): VulnerabilitySeverity {
+    return severityRankings[a] >= severityRankings[b] ? a : b;
+}
+
+export function getVirtualMachineCveTableData(virtualMachine?: VirtualMachine): CveTableRow[] {
+    if (!virtualMachine) {
+        return [];
+    }
+
+    const map = new Map<string, CveTableRow>();
+
+    virtualMachine.scan?.components?.forEach((component) => {
+        component.vulns?.forEach((vulnerability) => {
+            const { advisory, cve, cvss, epss, fixedBy, severity } = vulnerability;
+
+            let row = map.get(cve);
+            if (!row) {
+                row = {
+                    cve,
+                    severity,
+                    isFixable: !!fixedBy,
+                    cvss,
+                    epssProbability: epss.epssProbability,
+                    affectedComponents: [],
+                };
+                map.set(cve, row);
+            }
+
+            // update row with worse severity/score
+            row.severity = worstSeverity(row.severity, severity);
+            row.cvss = Math.max(row.cvss, cvss);
+
+            // display fixable if any vulnerability is fixable
+            row.isFixable = row.isFixable || !!fixedBy;
+
+            row.affectedComponents.push({
+                name: component.name,
+                sourceType: component.source,
+                version: component.version,
+                fixedBy,
+                advisory,
+            });
+        });
+    });
+
+    return Array.from(map.values()).sort(defaultCveTableSort);
 }

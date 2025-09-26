@@ -10,6 +10,7 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import { VulnerabilityState } from 'types/cve.proto';
 import CvssFormatted from 'Components/CvssFormatted';
 
+import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ImageNameLink from '../components/ImageNameLink';
 import {
@@ -22,8 +23,6 @@ import {
 import FixedByVersion from '../components/FixedByVersion';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
-
-import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, DeploymentComponentVulnerability };

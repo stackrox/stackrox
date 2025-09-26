@@ -34,9 +34,9 @@ type ProcessIndicator struct {
 	PodUid string `protobuf:"bytes,11,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty" search:"Pod UID,hidden" sql:"index=hash,type(uuid)"` // @gotags: search:"Pod UID,hidden" sql:"index=hash,type(uuid)"
 	// A process signal message passed from Collector to Sensor
 	Signal             *ProcessSignal         `protobuf:"bytes,6,opt,name=signal,proto3" json:"signal,omitempty"`
-	ClusterId          string                 `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"` // @gotags: search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"
-	Namespace          string                 `protobuf:"bytes,8,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store,hidden" policy:",prefer-parent"`                  // @gotags: search:"Namespace,store,hidden" policy:",prefer-parent"
-	ContainerStartTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty"`
+	ClusterId          string                 `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"`                              // @gotags: search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"
+	Namespace          string                 `protobuf:"bytes,8,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store,hidden" policy:",prefer-parent"`                                               // @gotags: search:"Namespace,store,hidden" policy:",prefer-parent"
+	ContainerStartTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty" search:"Process Container Start Time"` // @gotags: search:"Process Container Start Time"
 	ImageId            string                 `protobuf:"bytes,12,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache

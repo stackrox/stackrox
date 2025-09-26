@@ -254,3 +254,77 @@ func TestRandomExpiry(t *testing.T) {
 		assert.True(t, expiry.Before(threeMinutes))
 	}
 }
+
+// Testing the unexported shouldUpdateExternalIndexReport function because its
+// output is particularly important to get right since it determines whether
+// a record will be updated on conflict.
+func Test_shouldUpdateExternalIndexReport(t *testing.T) {
+	tests := []struct {
+		name                 string
+		incomingIndexVersion string
+		savedIndexerVersion  string
+		want                 bool
+	}{
+		{
+			name:                 "incoming version is newer",
+			incomingIndexVersion: "4.8.3",
+			savedIndexerVersion:  "4.7.5",
+			want:                 true,
+		},
+		{
+			name:                 "saved version is newer",
+			incomingIndexVersion: "4.7.5",
+			savedIndexerVersion:  "4.8.3",
+			want:                 false,
+		},
+		{
+			name:                 "both versions are valid and the same",
+			incomingIndexVersion: "4.8.3",
+			savedIndexerVersion:  "4.8.3",
+			want:                 true,
+		},
+		{
+			name:                 "saved version is empty",
+			incomingIndexVersion: "4.8.3",
+			savedIndexerVersion:  "",
+			want:                 true,
+		},
+		{
+			name:                 "incoming version is empty",
+			incomingIndexVersion: "",
+			savedIndexerVersion:  "4.8.3",
+			want:                 false,
+		},
+		{
+			name:                 "both versions are empty",
+			incomingIndexVersion: "",
+			savedIndexerVersion:  "",
+			want:                 true,
+		},
+		{
+			name:                 "incoming version is considered invalid",
+			incomingIndexVersion: "vX.Y.Z",
+			savedIndexerVersion:  "4.8.3",
+			want:                 false,
+		},
+		{
+			name:                 "saved version is considered invalid",
+			incomingIndexVersion: "4.8.3",
+			savedIndexerVersion:  "vX.Y.Z",
+			want:                 true,
+		},
+		{
+			name:                 "both versions are considered invalid",
+			incomingIndexVersion: "vX.Y.Z",
+			savedIndexerVersion:  "vX.Y.Z",
+			want:                 true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := shouldUpdateExternalIndexReport(tt.incomingIndexVersion)
+			got := f(tt.savedIndexerVersion)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

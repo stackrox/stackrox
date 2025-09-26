@@ -34,13 +34,9 @@ var lazyLabels = []tracker.LazyLabel[*finding]{
 }
 
 type finding struct {
-	err error
+	tracker.CommonFinding
 	*storage.Alert
 	*storage.Alert_Violation
-}
-
-func (f *finding) GetError() error {
-	return f.err
 }
 
 func getEntityName(f *finding) string {

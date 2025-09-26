@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Pagination,
     Toolbar,
@@ -8,13 +9,13 @@ import {
 } from '@patternfly/react-core';
 
 import {
-    AdministrationEventLevel,
     getAdministrationEventsFilter,
     replaceSearchFilterDomain,
     replaceSearchFilterLevel,
     replaceSearchFilterResourceType,
 } from 'services/AdministrationEventsService';
-import { SearchFilter } from 'types/search';
+import type { AdministrationEventLevel } from 'services/AdministrationEventsService';
+import type { SearchFilter } from 'types/search';
 
 import SearchFilterDomain from './SearchFilterDomain';
 import SearchFilterLevel from './SearchFilterLevel';

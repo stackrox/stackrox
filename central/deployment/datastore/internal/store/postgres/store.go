@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"time"
 
@@ -335,10 +336,10 @@ func insertIntoDeploymentsPortsExposureInfos(batch *pgx.Batch, obj *storage.Port
 }
 
 func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Deployment) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -367,64 +368,61 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		"serialized",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
+			serialized, marshalErr := obj.MarshalVT()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(obj.GetId()),
+				obj.GetName(),
+				obj.GetType(),
+				obj.GetNamespace(),
+				pgutils.NilOrUUID(obj.GetNamespaceId()),
+				obj.GetOrchestratorComponent(),
+				pgutils.EmptyOrMap(obj.GetLabels()),
+				pgutils.EmptyOrMap(obj.GetPodLabels()),
+				protocompat.NilOrTime(obj.GetCreated()),
+				pgutils.NilOrUUID(obj.GetClusterId()),
+				obj.GetClusterName(),
+				pgutils.EmptyOrMap(obj.GetAnnotations()),
+				obj.GetPriority(),
+				obj.GetImagePullSecrets(),
+				obj.GetServiceAccount(),
+				obj.GetServiceAccountPermissionLevel(),
+				obj.GetRiskScore(),
+				obj.GetPlatformComponent(),
+				serialized,
+			})
+
+			// Add the ID to be deleted.
+			deletes = append(deletes, obj.GetId())
 		}
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(obj.GetId()),
-			obj.GetName(),
-			obj.GetType(),
-			obj.GetNamespace(),
-			pgutils.NilOrUUID(obj.GetNamespaceId()),
-			obj.GetOrchestratorComponent(),
-			pgutils.EmptyOrMap(obj.GetLabels()),
-			pgutils.EmptyOrMap(obj.GetPodLabels()),
-			protocompat.NilOrTime(obj.GetCreated()),
-			pgutils.NilOrUUID(obj.GetClusterId()),
-			obj.GetClusterName(),
-			pgutils.EmptyOrMap(obj.GetAnnotations()),
-			obj.GetPriority(),
-			obj.GetImagePullSecrets(),
-			obj.GetServiceAccount(),
-			obj.GetServiceAccountPermissionLevel(),
-			obj.GetRiskScore(),
-			obj.GetPlatformComponent(),
-			serialized,
-		})
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
 
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = deletes[:0]
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
 		}
+		// clear the inserts and vals for the next batch
+		deletes = deletes[:0]
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
-	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
+	for _, obj := range objs {
 		if err := copyFromDeploymentsContainers(ctx, s, tx, obj.GetId(), obj.GetContainers()...); err != nil {
 			return err
 		}
@@ -437,10 +435,10 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 }
 
 func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, objs ...*storage.Container) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -462,47 +460,47 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 		"resources_memorymblimit",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	idx := 0
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(deploymentID),
-			idx,
-			obj.GetImage().GetId(),
-			obj.GetImage().GetName().GetRegistry(),
-			obj.GetImage().GetName().GetRemote(),
-			obj.GetImage().GetName().GetTag(),
-			obj.GetImage().GetName().GetFullName(),
-			pgutils.NilOrString(obj.GetImage().GetIdV2()),
-			obj.GetSecurityContext().GetPrivileged(),
-			obj.GetSecurityContext().GetDropCapabilities(),
-			obj.GetSecurityContext().GetAddCapabilities(),
-			obj.GetSecurityContext().GetReadOnlyRootFilesystem(),
-			obj.GetResources().GetCpuCoresRequest(),
-			obj.GetResources().GetCpuCoresLimit(),
-			obj.GetResources().GetMemoryMbRequest(),
-			obj.GetResources().GetMemoryMbLimit(),
-		})
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(deploymentID),
+				idx,
+				obj.GetImage().GetId(),
+				obj.GetImage().GetName().GetRegistry(),
+				obj.GetImage().GetName().GetRemote(),
+				obj.GetImage().GetName().GetTag(),
+				obj.GetImage().GetName().GetFullName(),
+				pgutils.NilOrString(obj.GetImage().GetIdV2()),
+				obj.GetSecurityContext().GetPrivileged(),
+				obj.GetSecurityContext().GetDropCapabilities(),
+				obj.GetSecurityContext().GetAddCapabilities(),
+				obj.GetSecurityContext().GetReadOnlyRootFilesystem(),
+				obj.GetResources().GetCpuCoresRequest(),
+				obj.GetResources().GetCpuCoresLimit(),
+				obj.GetResources().GetMemoryMbRequest(),
+				obj.GetResources().GetMemoryMbLimit(),
+			})
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+			idx++
 		}
+
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
 		if err := copyFromDeploymentsContainersEnvs(ctx, s, tx, deploymentID, idx, obj.GetConfig().GetEnv()...); err != nil {
 			return err
 		}
@@ -518,10 +516,10 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 }
 
 func copyFromDeploymentsContainersEnvs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -533,42 +531,44 @@ func copyFromDeploymentsContainersEnvs(ctx context.Context, s pgSearch.Deleter, 
 		"envvarsource",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	idx := 0
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(deploymentID),
-			deploymentContainerIdx,
-			idx,
-			obj.GetKey(),
-			obj.GetValue(),
-			obj.GetEnvVarSource(),
-		})
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(deploymentID),
+				deploymentContainerIdx,
+				idx,
+				obj.GetKey(),
+				obj.GetValue(),
+				obj.GetEnvVarSource(),
+			})
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_envs"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+			idx++
 		}
+
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_envs"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	return nil
 }
 
 func copyFromDeploymentsContainersVolumes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.Volume) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -582,44 +582,46 @@ func copyFromDeploymentsContainersVolumes(ctx context.Context, s pgSearch.Delete
 		"type",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	idx := 0
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(deploymentID),
-			deploymentContainerIdx,
-			idx,
-			obj.GetName(),
-			obj.GetSource(),
-			obj.GetDestination(),
-			obj.GetReadOnly(),
-			obj.GetType(),
-		})
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(deploymentID),
+				deploymentContainerIdx,
+				idx,
+				obj.GetName(),
+				obj.GetSource(),
+				obj.GetDestination(),
+				obj.GetReadOnly(),
+				obj.GetType(),
+			})
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_volumes"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+			idx++
 		}
+
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_volumes"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	return nil
 }
 
 func copyFromDeploymentsContainersSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.EmbeddedSecret) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -630,41 +632,43 @@ func copyFromDeploymentsContainersSecrets(ctx context.Context, s pgSearch.Delete
 		"path",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	idx := 0
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(deploymentID),
-			deploymentContainerIdx,
-			idx,
-			obj.GetName(),
-			obj.GetPath(),
-		})
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(deploymentID),
+				deploymentContainerIdx,
+				idx,
+				obj.GetName(),
+				obj.GetPath(),
+			})
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_secrets"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+			idx++
 		}
+
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_secrets"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	return nil
 }
 
 func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, objs ...*storage.PortConfig) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -675,36 +679,36 @@ func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postg
 		"exposure",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	idx := 0
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(deploymentID),
-			idx,
-			obj.GetContainerPort(),
-			obj.GetProtocol(),
-			obj.GetExposure(),
-		})
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(deploymentID),
+				idx,
+				obj.GetContainerPort(),
+				obj.GetProtocol(),
+				obj.GetExposure(),
+			})
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+			idx++
 		}
+
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
 		if err := copyFromDeploymentsPortsExposureInfos(ctx, s, tx, deploymentID, idx, obj.GetExposureInfos()...); err != nil {
 			return err
 		}
@@ -714,10 +718,10 @@ func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postg
 }
 
 func copyFromDeploymentsPortsExposureInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentPortIdx int, objs ...*storage.PortConfig_ExposureInfo) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -732,35 +736,37 @@ func copyFromDeploymentsPortsExposureInfos(ctx context.Context, s pgSearch.Delet
 		"externalhostnames",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	idx := 0
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(deploymentID),
-			deploymentPortIdx,
-			idx,
-			obj.GetLevel(),
-			obj.GetServiceName(),
-			obj.GetServicePort(),
-			obj.GetNodePort(),
-			obj.GetExternalIps(),
-			obj.GetExternalHostnames(),
-		})
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(deploymentID),
+				deploymentPortIdx,
+				idx,
+				obj.GetLevel(),
+				obj.GetServiceName(),
+				obj.GetServicePort(),
+				obj.GetNodePort(),
+				obj.GetExternalIps(),
+				obj.GetExternalHostnames(),
+			})
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports_exposure_infos"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+			idx++
 		}
+
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports_exposure_infos"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	return nil

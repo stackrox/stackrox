@@ -22,14 +22,6 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-const (
-	// v4IndexerVersion represents an arbitrary indexer version, at this time
-	// a non-empty value will be interpreted as a Scanner V4 index by Central.
-	//
-	// TODO(ROX-21362): Replace this with the actual version from the indexer API.
-	v4IndexerVersion = "v4"
-)
-
 var (
 	log = logging.LoggerForModule()
 )
@@ -210,7 +202,7 @@ func (c *v2Client) Close() error {
 	return nil
 }
 
-func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
+func convertIndexReportToAnalysis(ir *v4.IndexReport, indexerVersion string) *ImageAnalysis {
 	var st scannerV1.ScanStatus
 	switch ir.GetState() {
 	case "Terminal", "IndexError":
@@ -220,11 +212,11 @@ func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
 	default:
 		st = scannerV1.ScanStatus_ANALYZING
 	}
+
 	return &ImageAnalysis{
-		ScanStatus: st,
-		V4Contents: ir.GetContents(),
-		// TODO(ROX-21362): Replace this with the actual version from the indexer API.
-		IndexerVersion: v4IndexerVersion,
+		ScanStatus:     st,
+		V4Contents:     ir.GetContents(),
+		IndexerVersion: indexerVersion,
 	}
 }
 
@@ -234,19 +226,25 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		return nil, errors.Wrap(err, "getting image digest for analysis")
 	}
 
+	var scannerVersion pkgscanner.Version
 	auth := authn.Basic{
 		Username: cfg.Username,
 		Password: cfg.Password,
 	}
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: cfg.GetInsecure()}
-	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, &auth, opt)
+	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, &auth, opt, client.Version(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
 	}
 
-	log.Debugf("Received index report from local Scanner V4 indexer for image: %q", image.GetName().GetFullName())
-
-	return convertIndexReportToAnalysis(ir), nil
+	imageAnalysis := convertIndexReportToAnalysis(ir, scannerVersion.Indexer)
+	log.Debugf("Converted index report from local Scanner V4 indexer to an image analysis: "+
+		"image: %q, status: %q, indexerVersion: %q",
+		image.GetName().GetFullName(),
+		imageAnalysis.ScanStatus,
+		imageAnalysis.IndexerVersion,
+	)
+	return imageAnalysis, nil
 }
 
 // Close closes and cleanup the client connection.

@@ -1,6 +1,6 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
-import { createFetchingActions, createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
+import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 
 // Helper functions
 
