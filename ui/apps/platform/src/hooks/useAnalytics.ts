@@ -41,8 +41,8 @@ export const COLLECTION_CREATED = 'Collection Created';
 export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
-export const VIEW_BASED_REPORT_REQUESTED = 'View Based Report Requested';
-export const VIEW_BASED_REPORT_TABLE_INTERACTION = 'View Based Report Table Interaction';
+export const VIEW_BASED_REPORT_GENERATED = 'View Based Report Generated';
+export const VIEW_BASED_REPORT_FILTER_APPLIED = 'View Based Report Filter Applied';
 export const VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED = 'View Based Report Download Attempted';
 export const VIEW_BASED_REPORT_JOB_DETAILS_VIEWED = 'View Based Report Job Details Viewed';
 export const IMAGE_SBOM_GENERATED = 'Image SBOM Generated';
@@ -271,10 +271,10 @@ export type AnalyticsEvent =
      */
     | typeof VULNERABILITY_REPORT_SENT_MANUALLY
     /**
-     * Tracks each time the user requests a view-based CSV report.
+     * Tracks each time the user generates a view-based CSV report.
      */
     | {
-          event: typeof VIEW_BASED_REPORT_REQUESTED;
+          event: typeof VIEW_BASED_REPORT_GENERATED;
           properties: {
               areaOfConcern: string;
               hasFilters: AnalyticsBoolean;
@@ -282,10 +282,10 @@ export type AnalyticsEvent =
           };
       }
     /**
-     * Tracks user interactions with the view-based reports table.
+     * Tracks when filters are applied to the view-based reports table.
      */
     | {
-          event: typeof VIEW_BASED_REPORT_TABLE_INTERACTION;
+          event: typeof VIEW_BASED_REPORT_FILTER_APPLIED;
           properties: {
               action: 'filter';
               filterType: string;

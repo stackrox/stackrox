@@ -26,7 +26,7 @@ import ReportJobStatusFilter, {
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
 import { ReportJobStatus } from 'Components/ReportJob/types';
-import useAnalytics, { VIEW_BASED_REPORT_TABLE_INTERACTION } from 'hooks/useAnalytics';
+import useAnalytics, { VIEW_BASED_REPORT_FILTER_APPLIED } from 'hooks/useAnalytics';
 import ViewBasedReportsTable from './ViewBasedReportsTable';
 
 const sortOptions = {
@@ -116,7 +116,7 @@ function ViewBasedReportsTab() {
 
         // Track filter interaction with complete filter state
         analyticsTrack({
-            event: VIEW_BASED_REPORT_TABLE_INTERACTION,
+            event: VIEW_BASED_REPORT_FILTER_APPLIED,
             properties: {
                 action: 'filter',
                 filterType: 'Report Job Status',
@@ -131,7 +131,7 @@ function ViewBasedReportsTab() {
 
         // Track filter interaction with filter value
         analyticsTrack({
-            event: VIEW_BASED_REPORT_TABLE_INTERACTION,
+            event: VIEW_BASED_REPORT_FILTER_APPLIED,
             properties: {
                 action: 'filter',
                 filterType: 'My Jobs',
