@@ -1,0 +1,62 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: stackrox-local-dev-
+  namespace: stackrox-builds
+spec:
+  pipelineRef:
+    name: stackrox-local-dev
+
+  # Pod template for all tasks
+  taskRunTemplate:
+    podTemplate:
+      env:
+      - name: DOCKER_CONFIG
+        value: /tmp/.docker
+      - name: HOME
+        value: /tmp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 0
+        fsGroup: 0
+
+  # Workspace for shared data
+  workspaces:
+  - name: shared-data
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi  # Reduced from 40Gi for local development
+
+  # Parameters - customize as needed
+  params:
+  - name: repo-url
+    value: "https://github.com/stackrox/stackrox.git"
+  - name: revision
+    value: "master"
+  - name: registry
+    value: "localhost:5000"
+  - name: image-tag
+    value: "latest"
+  - name: builder-image
+    value: "quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9"
+  - name: cache-bucket
+    value: "local-dev-cache"
+  - name: minio-host
+    value: "minio.default.svc:9000"
+
+  # Task-specific overrides
+  taskRunSpecs:
+  # Build tasks need privileged access for buildah
+  - pipelineTaskName: build-image
+    podTemplate:
+      securityContext:
+        runAsUser: 0
+  - pipelineTaskName: tag-image
+    podTemplate:
+      securityContext:
+        runAsUser: 0

@@ -1,0 +1,293 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: stackrox-local-dev
+  namespace: stackrox-builds
+spec:
+  description: Fast StackRox main image build for local development
+  params:
+  - name: repo-url
+    type: string
+    description: Git repository URL
+    default: "https://github.com/stackrox/stackrox.git"
+  - name: revision
+    type: string
+    description: Git revision (branch, tag, or SHA)
+    default: "master"
+  - name: registry
+    type: string
+    description: Container registry for pushing images
+    default: "localhost:5000"
+  - name: image-tag
+    type: string
+    description: Image tag
+    default: "latest"
+  - name: builder-image
+    type: string
+    description: Builder image with Go toolchain
+    default: "quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9"
+  - name: cache-bucket
+    type: string
+    description: S3 bucket for build cache
+    default: "local-dev-cache"
+  - name: minio-host
+    type: string
+    description: MinIO/S3 host for caching
+    default: "minio.default.svc:9000"
+
+  workspaces:
+  - name: shared-data
+    description: Workspace for source code and build artifacts
+
+  tasks:
+  # Setup AWS credentials for S3 cache access
+  - name: setup-aws-credentials
+    taskRef:
+      name: setup-aws-credentials
+    workspaces:
+    - name: shared-data
+      workspace: shared-data
+
+  # Fetch source code
+  - name: fetch-source
+    taskRef:
+      name: git-clone-custom
+    params:
+    - name: url
+      value: $(params.repo-url)
+    - name: revision
+      value: $(params.revision)
+    - name: subdirectory
+      value: source
+    - name: builder-image
+      value: $(params.builder-image)
+    workspaces:
+    - name: output
+      workspace: shared-data
+
+  # Get git commit for image tagging
+  - name: get-git-commit
+    runAfter: [fetch-source]
+    workspaces:
+    - name: source
+      workspace: shared-data
+    taskSpec:
+      workspaces:
+      - name: source
+      results:
+      - name: git-commit
+        description: Short git commit SHA
+      steps:
+      - name: get-commit
+        image: $(params.builder-image)
+        workingDir: $(workspaces.source.path)/source
+        script: |
+          #!/bin/bash
+          set -e
+          git rev-parse --short HEAD | tee $(results.git-commit.path)
+
+  # Build Go binaries with caching
+  - name: build-go-binaries
+    runAfter: [setup-aws-credentials, fetch-source]
+    workspaces:
+    - name: shared-data
+      workspace: shared-data
+    taskSpec:
+      workspaces:
+      - name: shared-data
+      params:
+      - name: builder-image
+      - name: cache-bucket
+      - name: minio-host
+      steps:
+      # Fetch Go module cache
+      - name: fetch-gomod-cache
+        ref:
+          name: cache-fetch
+        params:
+        - name: PATTERNS
+          value:
+          - "**/go.mod"
+          - "!scannerv2**"
+        - name: SOURCE
+          value: "s3://$(params.cache-bucket)/gomod-cache/{{hash}}"
+        - name: CACHE_PATH
+          value: "$(workspaces.shared-data.path)/gomod-cache"
+        - name: WORKING_DIR
+          value: "$(workspaces.shared-data.path)/source"
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: "$(workspaces.shared-data.path)/.aws/credentials"
+        - name: AWS_CONFIG_FILE
+          value: "$(workspaces.shared-data.path)/.aws/config"
+        - name: BLOB_QUERY_PARAMS
+          value: "?endpoint=http://$(params.minio-host)&disable_https=true&use_path_style=true"
+        - name: INSECURE
+          value: "true"
+
+      # Fetch Go build cache
+      - name: fetch-gobuild-cache
+        ref:
+          name: cache-fetch
+        params:
+        - name: PATTERNS
+          value:
+          - "**/go.mod"
+          - "!scannerv2**"
+        - name: SOURCE
+          value: "s3://$(params.cache-bucket)/gobuild-cache/{{hash}}"
+        - name: CACHE_PATH
+          value: "$(workspaces.shared-data.path)/gobuild-cache"
+        - name: WORKING_DIR
+          value: "$(workspaces.shared-data.path)/source"
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: "$(workspaces.shared-data.path)/.aws/credentials"
+        - name: AWS_CONFIG_FILE
+          value: "$(workspaces.shared-data.path)/.aws/config"
+        - name: BLOB_QUERY_PARAMS
+          value: "?endpoint=http://$(params.minio-host)&disable_https=true&use_path_style=true"
+        - name: INSECURE
+          value: "true"
+
+      # Build Go binaries
+      - name: build-binaries
+        image: $(params.builder-image)
+        workingDir: $(workspaces.shared-data.path)/source
+        env:
+        - name: GOMODCACHE
+          value: "$(workspaces.shared-data.path)/gomod-cache"
+        - name: GOCACHE
+          value: "$(workspaces.shared-data.path)/gobuild-cache"
+        - name: GOARCH
+          value: "amd64"
+        - name: GOOS
+          value: "linux"
+        script: |
+          #!/bin/bash
+          set -ex
+
+          # Build main StackRox binary (simplified)
+          echo "Building StackRox main binary..."
+          make main-build
+
+          # Copy UI assets (required for main image)
+          echo "Copying UI assets..."
+          if [ -d "ui/build" ]; then
+            cp -r ui/build image/rhel/ui/
+          else
+            echo "Warning: UI build not found, creating placeholder"
+            mkdir -p image/rhel/ui
+            echo "<!-- Placeholder UI -->" > image/rhel/ui/index.html
+          fi
+
+          echo "Build completed successfully"
+
+      # Upload Go module cache
+      - name: upload-gomod-cache
+        ref:
+          name: cache-upload
+        params:
+        - name: PATTERNS
+          value:
+          - "**/go.mod"
+          - "!scannerv2**"
+        - name: SOURCE
+          value: "s3://$(params.cache-bucket)/gomod-cache/{{hash}}"
+        - name: CACHE_PATH
+          value: "$(workspaces.shared-data.path)/gomod-cache"
+        - name: WORKING_DIR
+          value: "$(workspaces.shared-data.path)/source"
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: "$(workspaces.shared-data.path)/.aws/credentials"
+        - name: AWS_CONFIG_FILE
+          value: "$(workspaces.shared-data.path)/.aws/config"
+        - name: BLOB_QUERY_PARAMS
+          value: "?endpoint=http://$(params.minio-host)&disable_https=true&use_path_style=true"
+        - name: INSECURE
+          value: "true"
+
+      # Upload Go build cache
+      - name: upload-gobuild-cache
+        ref:
+          name: cache-upload
+        params:
+        - name: PATTERNS
+          value:
+          - "**/go.mod"
+          - "!scannerv2**"
+        - name: SOURCE
+          value: "s3://$(params.cache-bucket)/gobuild-cache/{{hash}}"
+        - name: CACHE_PATH
+          value: "$(workspaces.shared-data.path)/gobuild-cache"
+        - name: WORKING_DIR
+          value: "$(workspaces.shared-data.path)/source"
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: "$(workspaces.shared-data.path)/.aws/credentials"
+        - name: AWS_CONFIG_FILE
+          value: "$(workspaces.shared-data.path)/.aws/config"
+        - name: BLOB_QUERY_PARAMS
+          value: "?endpoint=http://$(params.minio-host)&disable_https=true&use_path_style=true"
+        - name: INSECURE
+          value: "true"
+
+  # Build container image
+  - name: build-image
+    runAfter: [get-git-commit, build-go-binaries]
+    taskRef:
+      name: buildah
+    params:
+    - name: IMAGE
+      value: $(params.registry)/stackrox/main:$(tasks.get-git-commit.results.git-commit)
+    - name: PUSH_EXTRA_ARGS
+      value: "--tls-verify=false"
+    - name: CONTEXT
+      value: ./source
+    - name: DOCKERFILE
+      value: ./source/image/rhel/Dockerfile
+    workspaces:
+    - name: source
+      workspace: shared-data
+
+  # Also tag with custom tag for easy reference
+  - name: tag-image
+    runAfter: [build-image]
+    workspaces:
+    - name: shared-data
+      workspace: shared-data
+    taskSpec:
+      workspaces:
+      - name: shared-data
+      params:
+      - name: registry
+      - name: image-tag
+      - name: git-commit
+      steps:
+      - name: tag-image
+        image: quay.io/buildah/stable
+        script: |
+          #!/bin/bash
+          set -ex
+
+          # Tag with custom tag
+          buildah tag $(params.registry)/stackrox/main:$(params.git-commit) $(params.registry)/stackrox/main:$(params.image-tag)
+
+          # Push custom tag
+          buildah push --tls-verify=false $(params.registry)/stackrox/main:$(params.image-tag)
+
+          echo "Successfully tagged and pushed:"
+          echo "  $(params.registry)/stackrox/main:$(params.git-commit)"
+          echo "  $(params.registry)/stackrox/main:$(params.image-tag)"
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
+      volumes:
+      - name: varlibcontainers
+        emptyDir: {}
+    params:
+    - name: registry
+      value: $(params.registry)
+    - name: image-tag
+      value: $(params.image-tag)
+    - name: git-commit
+      value: $(tasks.get-git-commit.results.git-commit)

@@ -1,0 +1,111 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: buildah
+  namespace: stackrox-builds
+spec:
+  description: Buildah task builds source into a container image and pushes it to a registry
+  params:
+  - name: IMAGE
+    description: Reference of the image buildah will produce
+    type: string
+  - name: BUILDER_IMAGE
+    description: The location of the buildah builder image
+    type: string
+    default: quay.io/buildah/stable:v1
+  - name: STORAGE_DRIVER
+    description: Set buildah storage driver
+    type: string
+    default: overlay
+  - name: DOCKERFILE
+    description: Path to the Dockerfile to build
+    type: string
+    default: ./Dockerfile
+  - name: CONTEXT
+    description: Path to the directory to use as context
+    type: string
+    default: .
+  - name: TLSVERIFY
+    description: Verify the TLS on the registry endpoint
+    type: string
+    default: "true"
+  - name: FORMAT
+    description: The format of the built container, oci or docker
+    type: string
+    default: "oci"
+  - name: BUILD_EXTRA_ARGS
+    description: Extra parameters passed for the build command
+    type: string
+    default: ""
+  - name: PUSH_EXTRA_ARGS
+    description: Extra parameters passed for the push command
+    type: string
+    default: ""
+  - name: SKIP_PUSH
+    description: Skip pushing the built image
+    type: string
+    default: "false"
+
+  workspaces:
+  - name: source
+    description: Workspace containing the source to build
+
+  results:
+  - name: IMAGE_DIGEST
+    description: Digest of the image just built
+  - name: IMAGE_URL
+    description: Image repository where the built image was pushed
+
+  steps:
+  - name: build-and-push
+    image: $(params.BUILDER_IMAGE)
+    workingDir: $(workspaces.source.path)
+    script: |
+      #!/bin/bash
+      set -e
+
+      echo "Building image: $(params.IMAGE)"
+      echo "Dockerfile: $(params.DOCKERFILE)"
+      echo "Context: $(params.CONTEXT)"
+      echo "Format: $(params.FORMAT)"
+      echo "TLS Verify: $(params.TLSVERIFY)"
+
+      # Build the image
+      buildah --storage-driver=$(params.STORAGE_DRIVER) bud \
+        $(params.BUILD_EXTRA_ARGS) \
+        --format=$(params.FORMAT) \
+        --tls-verify=$(params.TLSVERIFY) \
+        -f $(params.DOCKERFILE) \
+        -t $(params.IMAGE) \
+        $(params.CONTEXT)
+
+      # Push the image if not skipped
+      if [ "$(params.SKIP_PUSH)" = "false" ]; then
+        echo "Pushing image: $(params.IMAGE)"
+        buildah --storage-driver=$(params.STORAGE_DRIVER) push \
+          --tls-verify=$(params.TLSVERIFY) \
+          --digestfile /tmp/image-digest \
+          $(params.PUSH_EXTRA_ARGS) \
+          $(params.IMAGE) \
+          docker://$(params.IMAGE)
+
+        # Output results
+        cat /tmp/image-digest | tee $(results.IMAGE_DIGEST.path)
+        printf '%s' "$(params.IMAGE)" | tee $(results.IMAGE_URL.path)
+
+        echo "Successfully pushed image: $(params.IMAGE)"
+      else
+        echo "Skipping image push as requested"
+        printf '%s' "" | tee $(results.IMAGE_DIGEST.path)
+        printf '%s' "$(params.IMAGE)" | tee $(results.IMAGE_URL.path)
+      fi
+
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - name: varlibcontainers
+      mountPath: /var/lib/containers
+
+  volumes:
+  - name: varlibcontainers
+    emptyDir: {}

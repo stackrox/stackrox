@@ -1,0 +1,119 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: git-clone-custom
+  namespace: stackrox-builds
+spec:
+  description: Custom git clone implementation using StackRox builder image
+  params:
+  - name: url
+    description: Repository URL to clone from
+    type: string
+  - name: revision
+    description: Revision to checkout (branch, tag, SHA, or ref)
+    type: string
+    default: ""
+  - name: subdirectory
+    description: Subdirectory inside the workspace to clone the repo into
+    type: string
+    default: ""
+  - name: depth
+    description: Perform a shallow clone where only the most recent commit(s) will be fetched
+    type: string
+    default: "1"
+  - name: submodules
+    description: Initialize and fetch git submodules
+    type: string
+    default: "true"
+  - name: builder-image
+    description: Image with git and build tools
+    type: string
+    default: "quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9"
+
+  workspaces:
+  - name: output
+    description: The git repo will be cloned onto this workspace
+
+  results:
+  - name: commit
+    description: The precise commit SHA that was fetched by this Task
+  - name: url
+    description: The precise URL that was fetched by this Task
+  - name: committer-date
+    description: The epoch timestamp of the commit that was fetched by this Task
+
+  steps:
+  - name: clone
+    image: $(params.builder-image)
+    workingDir: $(workspaces.output.path)
+    script: |
+      #!/usr/bin/env bash
+      set -eu
+
+      CHECKOUT_DIR="$(workspaces.output.path)/$(params.subdirectory)"
+
+      # Clean checkout directory
+      if [ -d "$CHECKOUT_DIR" ]; then
+        echo "Cleaning up existing checkout directory"
+        rm -rf "$CHECKOUT_DIR"
+      fi
+
+      # Create parent directory if needed
+      mkdir -p "$(dirname "$CHECKOUT_DIR")"
+
+      # Configure git (required for some operations)
+      git config --global user.email "tekton@stackrox.io"
+      git config --global user.name "Tekton Pipeline"
+      git config --global init.defaultBranch main
+
+      # Clone repository
+      echo "Cloning $(params.url) into $CHECKOUT_DIR"
+      if [ "$(params.depth)" = "0" ]; then
+        git clone "$(params.url)" "$CHECKOUT_DIR"
+      else
+        git clone --depth "$(params.depth)" "$(params.url)" "$CHECKOUT_DIR"
+      fi
+
+      cd "$CHECKOUT_DIR"
+
+      # Checkout specific revision if provided
+      if [ -n "$(params.revision)" ]; then
+        echo "Checking out revision: $(params.revision)"
+
+        # First try as a branch
+        if git checkout "$(params.revision)" 2>/dev/null; then
+          echo "Checked out branch: $(params.revision)"
+        elif git checkout "origin/$(params.revision)" 2>/dev/null; then
+          echo "Checked out remote branch: origin/$(params.revision)"
+        elif git checkout "$(params.revision)" 2>/dev/null; then
+          echo "Checked out tag/SHA: $(params.revision)"
+        else
+          # Try fetching first if shallow clone
+          if [ "$(params.depth)" != "0" ]; then
+            echo "Attempting to fetch revision: $(params.revision)"
+            git fetch origin "$(params.revision)" || git fetch origin
+            git checkout "$(params.revision)" || git checkout "origin/$(params.revision)"
+          else
+            echo "ERROR: Failed to checkout revision: $(params.revision)"
+            exit 1
+          fi
+        fi
+      fi
+
+      # Initialize submodules if requested
+      if [ "$(params.submodules)" = "true" ]; then
+        echo "Initializing and updating submodules"
+        git submodule update --init --recursive
+      fi
+
+      # Get results
+      RESULT_SHA="$(git rev-parse HEAD)"
+      printf "%s" "${RESULT_SHA}" > "$(results.commit.path)"
+      printf "%s" "$(params.url)" > "$(results.url.path)"
+      git log -1 --pretty=%ct > "$(results.committer-date.path)"
+
+      echo "Successfully cloned repository"
+      echo "Commit: ${RESULT_SHA}"
+      echo "URL: $(params.url)"
+      echo "Working directory contents:"
+      ls -la

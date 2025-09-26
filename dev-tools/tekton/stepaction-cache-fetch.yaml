@@ -1,0 +1,118 @@
+apiVersion: tekton.dev/v1alpha1
+kind: StepAction
+metadata:
+  name: cache-fetch
+  namespace: stackrox-builds
+spec:
+  description: Fetch build cache from S3-compatible storage
+  params:
+  - name: PATTERNS
+    description: File patterns to generate cache key hash
+    type: array
+  - name: SOURCE
+    description: Cache source URI with {{hash}} placeholder
+    type: string
+  - name: CACHE_PATH
+    description: Local path to extract cache
+    type: string
+  - name: WORKING_DIR
+    description: Working directory for pattern matching
+    type: string
+  - name: AWS_SHARED_CREDENTIALS_FILE
+    description: AWS credentials file path
+    type: string
+  - name: AWS_CONFIG_FILE
+    description: AWS config file path
+    type: string
+  - name: BLOB_QUERY_PARAMS
+    description: Additional query parameters for blob storage
+    type: string
+    default: ""
+  - name: INSECURE
+    description: Allow insecure connections
+    type: string
+    default: "false"
+
+  results:
+  - name: fetched
+    description: Whether cache was successfully fetched (true/false)
+
+  image: quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9
+  script: |
+    #!/bin/bash
+    set -e
+
+    echo "=== Cache Fetch ==="
+    echo "Working directory: $(params.WORKING_DIR)"
+    echo "Cache path: $(params.CACHE_PATH)"
+    echo "Source: $(params.SOURCE)"
+    echo "Patterns: $(params.PATTERNS[*])"
+
+    cd "$(params.WORKING_DIR)"
+
+    # Generate hash from file patterns
+    HASH=""
+    for pattern in $(params.PATTERNS[*]); do
+      if [[ "$pattern" == !* ]]; then
+        # Skip exclusion patterns for now
+        continue
+      fi
+
+      # Find files matching pattern and add to hash
+      if find . -name "$pattern" -type f 2>/dev/null | head -1 | grep -q .; then
+        find . -name "$pattern" -type f -exec sha256sum {} \; | sort >> /tmp/hash_input
+      fi
+    done
+
+    if [ ! -f /tmp/hash_input ]; then
+      echo "No files found matching patterns, skipping cache"
+      echo "false" > $(results.fetched.path)
+      exit 0
+    fi
+
+    HASH=$(sha256sum /tmp/hash_input | cut -d' ' -f1)
+    echo "Generated hash: $HASH"
+
+    # Replace {{hash}} in source URL
+    SOURCE_URL=$(echo "$(params.SOURCE)" | sed "s/{{hash}}/$HASH/g")
+    echo "Cache source URL: $SOURCE_URL"
+
+    # Set up AWS environment
+    export AWS_SHARED_CREDENTIALS_FILE="$(params.AWS_SHARED_CREDENTIALS_FILE)"
+    export AWS_CONFIG_FILE="$(params.AWS_CONFIG_FILE)"
+
+    # Create cache directory
+    mkdir -p "$(params.CACHE_PATH)"
+
+    # Try to fetch cache
+    if [ "$(params.INSECURE)" = "true" ]; then
+      AWS_ARGS="--no-verify-ssl"
+    else
+      AWS_ARGS=""
+    fi
+
+    # Parse S3 URL
+    if [[ "$SOURCE_URL" =~ s3://([^/]+)/(.+) ]]; then
+      BUCKET="${BASH_REMATCH[1]}"
+      KEY="${BASH_REMATCH[2]}"
+
+      echo "Attempting to fetch cache from s3://$BUCKET/$KEY"
+
+      # Try to download cache
+      if aws s3 cp "s3://$BUCKET/$KEY" "$(params.CACHE_PATH)/cache.tar.gz" $AWS_ARGS $(params.BLOB_QUERY_PARAMS) 2>/dev/null; then
+        echo "Cache found, extracting..."
+        cd "$(params.CACHE_PATH)"
+        tar -xzf cache.tar.gz
+        rm cache.tar.gz
+        echo "Cache successfully fetched and extracted"
+        echo "true" > $(results.fetched.path)
+      else
+        echo "Cache not found, will build from scratch"
+        echo "false" > $(results.fetched.path)
+      fi
+    else
+      echo "Invalid S3 URL format: $SOURCE_URL"
+      echo "false" > $(results.fetched.path)
+    fi
+
+    echo "=== Cache Fetch Complete ==="

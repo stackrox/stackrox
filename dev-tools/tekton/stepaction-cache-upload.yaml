@@ -1,0 +1,141 @@
+apiVersion: tekton.dev/v1alpha1
+kind: StepAction
+metadata:
+  name: cache-upload
+  namespace: stackrox-builds
+spec:
+  description: Upload build cache to S3-compatible storage
+  params:
+  - name: PATTERNS
+    description: File patterns to generate cache key hash
+    type: array
+  - name: SOURCE
+    description: Cache source URI with {{hash}} placeholder
+    type: string
+  - name: CACHE_PATH
+    description: Local path containing cache to upload
+    type: string
+  - name: WORKING_DIR
+    description: Working directory for pattern matching
+    type: string
+  - name: AWS_SHARED_CREDENTIALS_FILE
+    description: AWS credentials file path
+    type: string
+  - name: AWS_CONFIG_FILE
+    description: AWS config file path
+    type: string
+  - name: BLOB_QUERY_PARAMS
+    description: Additional query parameters for blob storage
+    type: string
+    default: ""
+  - name: INSECURE
+    description: Allow insecure connections
+    type: string
+    default: "false"
+  - name: FORCE_CACHE_UPLOAD
+    description: Force upload even if cache was fetched
+    type: string
+    default: "false"
+
+  results:
+  - name: uploaded
+    description: Whether cache was successfully uploaded (true/false)
+
+  image: quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9
+  script: |
+    #!/bin/bash
+    set -e
+
+    echo "=== Cache Upload ==="
+    echo "Working directory: $(params.WORKING_DIR)"
+    echo "Cache path: $(params.CACHE_PATH)"
+    echo "Source: $(params.SOURCE)"
+    echo "Patterns: $(params.PATTERNS[*])"
+
+    cd "$(params.WORKING_DIR)"
+
+    # Generate hash from file patterns (same as fetch)
+    HASH=""
+    for pattern in $(params.PATTERNS[*]); do
+      if [[ "$pattern" == !* ]]; then
+        # Skip exclusion patterns for now
+        continue
+      fi
+
+      # Find files matching pattern and add to hash
+      if find . -name "$pattern" -type f 2>/dev/null | head -1 | grep -q .; then
+        find . -name "$pattern" -type f -exec sha256sum {} \; | sort >> /tmp/hash_input
+      fi
+    done
+
+    if [ ! -f /tmp/hash_input ]; then
+      echo "No files found matching patterns, skipping cache upload"
+      echo "false" > $(results.uploaded.path)
+      exit 0
+    fi
+
+    HASH=$(sha256sum /tmp/hash_input | cut -d' ' -f1)
+    echo "Generated hash: $HASH"
+
+    # Replace {{hash}} in source URL
+    SOURCE_URL=$(echo "$(params.SOURCE)" | sed "s/{{hash}}/$HASH/g")
+    echo "Cache destination URL: $SOURCE_URL"
+
+    # Check if we should skip upload (cache was fetched and force is false)
+    if [ "$(params.FORCE_CACHE_UPLOAD)" = "false" ]; then
+      # Check if we can skip upload by looking for a marker file
+      if [ -f "$(params.CACHE_PATH)/.cache_fetched" ]; then
+        echo "Cache was fetched and force upload is false, skipping upload"
+        echo "false" > $(results.uploaded.path)
+        exit 0
+      fi
+    fi
+
+    # Check if cache directory exists and has content
+    if [ ! -d "$(params.CACHE_PATH)" ] || [ -z "$(ls -A "$(params.CACHE_PATH)" 2>/dev/null)" ]; then
+      echo "Cache directory is empty, nothing to upload"
+      echo "false" > $(results.uploaded.path)
+      exit 0
+    fi
+
+    # Set up AWS environment
+    export AWS_SHARED_CREDENTIALS_FILE="$(params.AWS_SHARED_CREDENTIALS_FILE)"
+    export AWS_CONFIG_FILE="$(params.AWS_CONFIG_FILE)"
+
+    # Create cache archive
+    echo "Creating cache archive..."
+    cd "$(params.CACHE_PATH)"
+    tar -czf /tmp/cache.tar.gz .
+    cd -
+
+    # Upload cache
+    if [ "$(params.INSECURE)" = "true" ]; then
+      AWS_ARGS="--no-verify-ssl"
+    else
+      AWS_ARGS=""
+    fi
+
+    # Parse S3 URL
+    if [[ "$SOURCE_URL" =~ s3://([^/]+)/(.+) ]]; then
+      BUCKET="${BASH_REMATCH[1]}"
+      KEY="${BASH_REMATCH[2]}"
+
+      echo "Uploading cache to s3://$BUCKET/$KEY"
+
+      # Upload cache
+      if aws s3 cp "/tmp/cache.tar.gz" "s3://$BUCKET/$KEY" $AWS_ARGS $(params.BLOB_QUERY_PARAMS); then
+        echo "Cache successfully uploaded"
+        echo "true" > $(results.uploaded.path)
+      else
+        echo "Failed to upload cache"
+        echo "false" > $(results.uploaded.path)
+      fi
+
+      # Clean up
+      rm -f /tmp/cache.tar.gz
+    else
+      echo "Invalid S3 URL format: $SOURCE_URL"
+      echo "false" > $(results.uploaded.path)
+    fi
+
+    echo "=== Cache Upload Complete ==="
