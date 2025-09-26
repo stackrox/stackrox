@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Divider, DropdownItem } from '@patternfly/react-core';
 import { generatePath, useNavigate } from 'react-router-dom-v5-compat';
 
-import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';

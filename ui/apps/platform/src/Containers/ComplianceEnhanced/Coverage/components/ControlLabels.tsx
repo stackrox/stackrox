@@ -1,14 +1,15 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 import { Label, LabelGroup } from '@patternfly/react-core';
 
-import { ComplianceControl } from 'services/ComplianceCommon';
+import type { ComplianceControl } from 'services/ComplianceCommon';
 
 type ControlLabelsProps = {
     controls: ComplianceControl[];
     numLabels?: number;
 };
 
-function ControlLabels({ controls, numLabels = Infinity }: ControlLabelsProps): React.ReactElement {
+function ControlLabels({ controls, numLabels = Infinity }: ControlLabelsProps): ReactElement {
     return (
         <LabelGroup numLabels={numLabels}>
             {controls.map(({ control, standard }) => (
