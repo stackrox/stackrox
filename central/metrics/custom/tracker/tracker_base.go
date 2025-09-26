@@ -263,6 +263,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	}
 	// Pass the cfg so that the same configuration is used there and here.
 	gatherer := tracker.getGatherer(id.UID(), cfg)
+	// getGatherer() returns nil if the gatherer is still running.
 	if gatherer == nil {
 		return
 	}
@@ -320,8 +321,8 @@ func (tracker *TrackerBase[Finding]) cleanupInactiveGatherers() {
 			}
 			if time.Since(g.lastGather) >= inactiveGathererTTL &&
 				// Do not delete a just created gatherer in test.
-				// Not in test the lastGather should never be zero for a
-				// non-running gatherer.
+				// lastGather should never be zero for a non-running gatherer
+				// in production run.
 				!g.lastGather.IsZero() {
 				metrics.DeleteCustomRegistry(userID.(string))
 				tracker.gatherers.Delete(userID)
