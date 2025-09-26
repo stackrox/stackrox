@@ -2,7 +2,6 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   generateName: stackrox-local-dev-
-  namespace: stackrox-builds
 spec:
   pipelineRef:
     name: stackrox-local-dev

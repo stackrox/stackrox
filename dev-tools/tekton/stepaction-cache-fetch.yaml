@@ -2,7 +2,6 @@ apiVersion: tekton.dev/v1alpha1
 kind: StepAction
 metadata:
   name: cache-fetch
-  namespace: stackrox-builds
 spec:
   description: Fetch build cache from S3-compatible storage
   params:
@@ -38,21 +37,47 @@ spec:
     description: Whether cache was successfully fetched (true/false)
 
   image: quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9
+  env:
+  - name: PARAM_WORKING_DIR
+    value: $(params.WORKING_DIR)
+  - name: PARAM_CACHE_PATH
+    value: $(params.CACHE_PATH)
+  - name: PARAM_SOURCE
+    value: $(params.SOURCE)
+  - name: PARAM_AWS_SHARED_CREDENTIALS_FILE
+    value: $(params.AWS_SHARED_CREDENTIALS_FILE)
+  - name: PARAM_AWS_CONFIG_FILE
+    value: $(params.AWS_CONFIG_FILE)
+  - name: PARAM_BLOB_QUERY_PARAMS
+    value: $(params.BLOB_QUERY_PARAMS)
+  - name: PARAM_INSECURE
+    value: $(params.INSECURE)
+  - name: PARAM_PATTERNS_0
+    value: $(params.PATTERNS[0])
+  - name: PARAM_PATTERNS_1
+    value: $(params.PATTERNS[1])
+  - name: PARAM_PATTERNS_2
+    value: $(params.PATTERNS[2])
+  - name: PARAM_PATTERNS_3
+    value: $(params.PATTERNS[3])
   script: |
     #!/bin/bash
     set -e
 
     echo "=== Cache Fetch ==="
-    echo "Working directory: $(params.WORKING_DIR)"
-    echo "Cache path: $(params.CACHE_PATH)"
-    echo "Source: $(params.SOURCE)"
-    echo "Patterns: $(params.PATTERNS[*])"
+    echo "Working directory: $PARAM_WORKING_DIR"
+    echo "Cache path: $PARAM_CACHE_PATH"
+    echo "Source: $PARAM_SOURCE"
+    echo "Patterns: $PARAM_PATTERNS_0 $PARAM_PATTERNS_1 $PARAM_PATTERNS_2 $PARAM_PATTERNS_3"
 
-    cd "$(params.WORKING_DIR)"
+    cd "$PARAM_WORKING_DIR"
 
     # Generate hash from file patterns
     HASH=""
-    for pattern in $(params.PATTERNS[*]); do
+    for pattern in "$PARAM_PATTERNS_0" "$PARAM_PATTERNS_1" "$PARAM_PATTERNS_2" "$PARAM_PATTERNS_3"; do
+      if [ -z "$pattern" ]; then
+        continue
+      fi
       if [[ "$pattern" == !* ]]; then
         # Skip exclusion patterns for now
         continue
@@ -74,18 +99,18 @@ spec:
     echo "Generated hash: $HASH"
 
     # Replace {{hash}} in source URL
-    SOURCE_URL=$(echo "$(params.SOURCE)" | sed "s/{{hash}}/$HASH/g")
+    SOURCE_URL=$(echo "$PARAM_SOURCE" | sed "s/{{hash}}/$HASH/g")
     echo "Cache source URL: $SOURCE_URL"
 
     # Set up AWS environment
-    export AWS_SHARED_CREDENTIALS_FILE="$(params.AWS_SHARED_CREDENTIALS_FILE)"
-    export AWS_CONFIG_FILE="$(params.AWS_CONFIG_FILE)"
+    export AWS_SHARED_CREDENTIALS_FILE="$PARAM_AWS_SHARED_CREDENTIALS_FILE"
+    export AWS_CONFIG_FILE="$PARAM_AWS_CONFIG_FILE"
 
     # Create cache directory
-    mkdir -p "$(params.CACHE_PATH)"
+    mkdir -p "$PARAM_CACHE_PATH"
 
     # Try to fetch cache
-    if [ "$(params.INSECURE)" = "true" ]; then
+    if [ "$PARAM_INSECURE" = "true" ]; then
       AWS_ARGS="--no-verify-ssl"
     else
       AWS_ARGS=""
@@ -99,9 +124,9 @@ spec:
       echo "Attempting to fetch cache from s3://$BUCKET/$KEY"
 
       # Try to download cache
-      if aws s3 cp "s3://$BUCKET/$KEY" "$(params.CACHE_PATH)/cache.tar.gz" $AWS_ARGS $(params.BLOB_QUERY_PARAMS) 2>/dev/null; then
+      if aws s3 cp "s3://$BUCKET/$KEY" "$PARAM_CACHE_PATH/cache.tar.gz" $AWS_ARGS $PARAM_BLOB_QUERY_PARAMS 2>/dev/null; then
         echo "Cache found, extracting..."
-        cd "$(params.CACHE_PATH)"
+        cd "$PARAM_CACHE_PATH"
         tar -xzf cache.tar.gz
         rm cache.tar.gz
         echo "Cache successfully fetched and extracted"

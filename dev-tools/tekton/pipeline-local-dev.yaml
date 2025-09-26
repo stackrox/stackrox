@@ -2,7 +2,6 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: stackrox-local-dev
-  namespace: stackrox-builds
 spec:
   description: Fast StackRox main image build for local development
   params:

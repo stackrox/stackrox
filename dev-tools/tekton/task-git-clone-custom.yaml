@@ -2,7 +2,6 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: git-clone-custom
-  namespace: stackrox-builds
 spec:
   description: Custom git clone implementation using StackRox builder image
   params:

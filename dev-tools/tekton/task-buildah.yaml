@@ -2,7 +2,6 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: buildah
-  namespace: stackrox-builds
 spec:
   description: Buildah task builds source into a container image and pushes it to a registry
   params:
