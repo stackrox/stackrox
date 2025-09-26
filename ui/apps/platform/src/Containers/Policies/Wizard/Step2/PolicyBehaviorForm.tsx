@@ -10,6 +10,8 @@ import {
     FormHelperText,
     HelperText,
     HelperTextItem,
+    Button,
+    AlertActionLink,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
@@ -154,8 +156,9 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             >
                 <Alert
                     variant="info"
+                    isExpandable
                     isInline
-                    title="Lifecycle stages"
+                    title="Learn about how policies work in each lifecycle stage"
                     component="p"
                     className="pf-v5-u-mb-md"
                 >
