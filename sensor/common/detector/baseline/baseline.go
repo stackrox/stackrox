@@ -269,8 +269,8 @@ func (oe *optimizedBaselineEvaluator) IsOutsideLockedBaseline(pi *storage.Proces
 	oe.lock.RLock()
 	defer oe.lock.RUnlock()
 
-	containerMap := oe.deploymentBaselines[pi.GetDeploymentId()]
-	if containerMap == nil {
+	containerMap, found := oe.deploymentBaselines[pi.GetDeploymentId()]
+	if !found || containerMap == nil {
 		return false // No baseline exists, consider within baseline
 	}
 
