@@ -269,44 +269,47 @@ spec:
           # Build all StackRox binaries needed for the main image
           echo "Building StackRox binaries for main image..."
 
-          # Set up build environment for go-build.sh
-          export CGO_ENABLED=1
+          # Set up build environment with simple static values
+          export CGO_ENABLED=0
           export GOTAGS="release"
           export GOOS=linux
           export GOARCH=arm64
 
+          # Simple static build flags without complex status.sh dependency
+          LDFLAGS="-s -w -X github.com/stackrox/rox/pkg/version.MainVersion=local-dev"
+
           # Create output directory
           mkdir -p bin
 
-          # Build all binaries required by image/rhel/Dockerfile using scripts/go-build.sh
+          # Build all binaries required by image/rhel/Dockerfile with direct go build
           echo "Building central..."
-          ./scripts/go-build.sh build-file ./central bin/central
+          go build -ldflags="$LDFLAGS" -tags "$GOTAGS" -o bin/central ./central
 
           echo "Building migrator..."
-          ./scripts/go-build.sh build-file ./migrator bin/migrator
+          go build -ldflags="$LDFLAGS" -tags "$GOTAGS" -o bin/migrator ./migrator
 
           echo "Building compliance..."
-          ./scripts/go-build.sh build-file ./compliance/cmd/compliance bin/compliance
+          go build -ldflags="$LDFLAGS" -tags "$GOTAGS" -o bin/compliance ./compliance/cmd/compliance
 
           echo "Building kubernetes-sensor..."
-          ./scripts/go-build.sh build-file ./sensor/kubernetes bin/kubernetes-sensor
+          go build -ldflags="$LDFLAGS" -tags "$GOTAGS" -o bin/kubernetes-sensor ./sensor/kubernetes
 
           echo "Building sensor-upgrader..."
-          ./scripts/go-build.sh build-file ./sensor/upgrader bin/sensor-upgrader
+          go build -ldflags="$LDFLAGS" -tags "$GOTAGS" -o bin/sensor-upgrader ./sensor/upgrader
 
           echo "Building admission-control..."
-          ./scripts/go-build.sh build-file ./sensor/admission-control bin/admission-control
+          go build -ldflags="$LDFLAGS" -tags "$GOTAGS" -o bin/admission-control ./sensor/admission-control
 
           echo "Building config-controller..."
-          ./scripts/go-build.sh build-file ./config-controller bin/config-controller
+          go build -ldflags="$LDFLAGS" -tags "$GOTAGS" -o bin/config-controller ./config-controller
 
           echo "Building init-tls-certs..."
-          ./scripts/go-build.sh build-file ./sensor/init-tls-certs bin/init-tls-certs
+          go build -ldflags="$LDFLAGS" -tags "$GOTAGS" -o bin/init-tls-certs ./sensor/init-tls-certs
 
           echo "Building roxctl..."
           # Build roxctl with proper architecture suffix
           ARCH=$(go env GOARCH)
-          ./scripts/go-build.sh build-file ./roxctl bin/roxctl-linux-${ARCH}
+          go build -ldflags="$LDFLAGS" -tags "$GOTAGS" -o bin/roxctl-linux-${ARCH} ./roxctl
 
           # Copy UI assets (built in previous step)
           echo "Copying UI assets..."
