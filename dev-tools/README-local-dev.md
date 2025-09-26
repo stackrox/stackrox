@@ -19,10 +19,10 @@ go build -o bin/installer ./installer
 
 ## Features
 
-- **🚀 Fast builds**: 5-task pipeline vs 13-task original (simplified for speed)
+- **🚀 Fast builds**: 6-task pipeline vs 13-task original (simplified for speed)
 - **📦 Local registry**: Pushes to localhost:5000 by default
-- **🔄 Aggressive caching**: S3/MinIO caching for Go modules and build cache
-- **🎯 Main image focus**: Builds only main StackRox image (can expand later)
+- **🔄 Aggressive caching**: S3/MinIO caching for Go modules, NPM dependencies, and build cache
+- **🎯 Main image focus**: Builds complete StackRox main image with UI assets
 - **🧰 Developer-friendly**: Single command with smart defaults
 - **🔗 Helm integration**: Automatic integration via `local-dev` flavor
 
@@ -36,9 +36,9 @@ go build -o bin/installer ./installer
    - Configurable via `ROX_LOCAL_REGISTRY` and `ROX_LOCAL_TAG`
 
 2. **Tekton Pipeline** (`dev-tools/tekton/`)
-   - Streamlined 5-task pipeline for fast iteration
+   - Streamlined 6-task pipeline for fast iteration
    - S3-compatible caching with MinIO backend
-   - Official StackRox builder images
+   - Official StackRox builder images with Node.js/NPM support
    - Git commit + custom tag support
 
 3. **Wrapper Script** (`dev-tools/local-build.sh`)
@@ -53,6 +53,7 @@ go build -o bin/installer ./installer
 - **Skip documentation generation**: Saves 2-3 minutes
 - **Go module caching**: Saves 3-5 minutes on subsequent builds
 - **Go build caching**: Saves 2-4 minutes on incremental builds
+- **NPM dependency caching**: Saves 1-3 minutes on UI builds
 - **Reduced workspace**: 20Gi vs 40Gi (sufficient for main image)
 
 ## Usage
@@ -133,14 +134,16 @@ kubectl logs -f pipelinerun/stackrox-local-dev-xxxxx -n stackrox-builds
 1. **setup-aws-credentials** - Configure MinIO credentials for caching
 2. **fetch-source** - Clone git repository with custom task
 3. **get-git-commit** - Extract commit SHA for image tagging
-4. **build-go-binaries** - Compile StackRox binaries with caching
-5. **build-image** - Create container image with buildah
-6. **tag-image** - Tag with both commit SHA and custom tag
+4. **build-ui** - Build UI assets with NPM dependency caching
+5. **build-go-binaries** - Compile StackRox binaries with caching
+6. **build-image** - Create container image with buildah
+7. **tag-image** - Tag with both commit SHA and custom tag
 
 ### Caching Strategy
 
 - **Go modules**: Cached by go.mod file content hash
 - **Go build cache**: Cached by source file patterns
+- **NPM dependencies**: Cached by package.json and package-lock.json hash
 - **Cache storage**: MinIO S3-compatible object storage
 - **Cache invalidation**: Automatic based on dependency changes
 

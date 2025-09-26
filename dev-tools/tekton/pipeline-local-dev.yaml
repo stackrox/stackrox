@@ -86,9 +86,99 @@ spec:
           set -e
           git rev-parse --short HEAD | tee $(results.git-commit.path)
 
+  # Build UI with NPM caching
+  - name: build-ui
+    runAfter: [setup-aws-credentials, fetch-source]
+    workspaces:
+    - name: shared-data
+      workspace: shared-data
+    taskSpec:
+      workspaces:
+      - name: shared-data
+      params:
+      - name: builder-image
+      - name: cache-bucket
+      - name: minio-host
+      steps:
+      # Fetch NPM cache
+      - name: fetch-npm-cache
+        ref:
+          name: cache-fetch
+        params:
+        - name: PATTERNS
+          value:
+          - "**/ui/apps/platform/package.json"
+          - "**/ui/apps/platform/package-lock.json"
+        - name: SOURCE
+          value: "s3://$(params.cache-bucket)/npm-cache/{{hash}}"
+        - name: CACHE_PATH
+          value: "$(workspaces.shared-data.path)/npm-cache"
+        - name: WORKING_DIR
+          value: "$(workspaces.shared-data.path)/source"
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: "$(workspaces.shared-data.path)/.aws/credentials"
+        - name: AWS_CONFIG_FILE
+          value: "$(workspaces.shared-data.path)/.aws/config"
+        - name: BLOB_QUERY_PARAMS
+          value: "?endpoint=http://$(params.minio-host)&disable_https=true&use_path_style=true"
+        - name: INSECURE
+          value: "true"
+
+      # Install NPM dependencies and build UI
+      - name: build-ui
+        image: $(params.builder-image)
+        workingDir: $(workspaces.shared-data.path)/source
+        script: |
+          #!/bin/bash
+          set -ex
+
+          # Configure npm cache
+          npm config set cache $(workspaces.shared-data.path)/npm-cache
+
+          # Build UI
+          echo "Installing UI dependencies and building..."
+          cd ui/apps/platform
+          npm ci
+          npm run build
+
+          echo "UI build completed successfully"
+
+      # Upload NPM cache
+      - name: upload-npm-cache
+        ref:
+          name: cache-upload
+        params:
+        - name: PATTERNS
+          value:
+          - "**/ui/apps/platform/package.json"
+          - "**/ui/apps/platform/package-lock.json"
+        - name: TARGET
+          value: "s3://$(params.cache-bucket)/npm-cache/{{hash}}"
+        - name: CACHE_PATH
+          value: "$(workspaces.shared-data.path)/npm-cache"
+        - name: WORKING_DIR
+          value: "$(workspaces.shared-data.path)/source"
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: "$(workspaces.shared-data.path)/.aws/credentials"
+        - name: AWS_CONFIG_FILE
+          value: "$(workspaces.shared-data.path)/.aws/config"
+        - name: BLOB_QUERY_PARAMS
+          value: "?endpoint=http://$(params.minio-host)&disable_https=true&use_path_style=true"
+        - name: INSECURE
+          value: "true"
+        - name: FETCHED
+          value: "$(steps.fetch-npm-cache.results.fetched)"
+    params:
+    - name: builder-image
+      value: $(params.builder-image)
+    - name: cache-bucket
+      value: $(params.cache-bucket)
+    - name: minio-host
+      value: $(params.minio-host)
+
   # Build Go binaries with caching
   - name: build-go-binaries
-    runAfter: [setup-aws-credentials, fetch-source]
+    runAfter: [setup-aws-credentials, build-ui]
     workspaces:
     - name: shared-data
       workspace: shared-data
@@ -169,10 +259,12 @@ spec:
           echo "Building StackRox main binary..."
           make main-build
 
-          # Copy UI assets (required for main image)
+          # Copy UI assets (built in previous step)
           echo "Copying UI assets..."
-          if [ -d "ui/build" ]; then
-            cp -r ui/build image/rhel/ui/
+          if [ -d "ui/apps/platform/build" ]; then
+            mkdir -p image/rhel/ui
+            cp -r ui/apps/platform/build/* image/rhel/ui/
+            echo "UI assets copied successfully"
           else
             echo "Warning: UI build not found, creating placeholder"
             mkdir -p image/rhel/ui

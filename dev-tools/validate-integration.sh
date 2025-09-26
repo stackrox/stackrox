@@ -151,9 +151,19 @@ else
     exit 1
 fi
 
-# Test 5: Validate Tekton resources syntax
+# Test 5: UI package.json presence for caching
 echo ""
-echo "Test 5: Tekton resource validation"
+echo "Test 5: UI build dependencies check"
+if [ -f "ui/apps/platform/package.json" ]; then
+    echo "✅ UI package.json found for cache key generation"
+else
+    echo "❌ UI package.json not found - UI caching will fail"
+    exit 1
+fi
+
+# Test 6: Validate Tekton resources syntax
+echo ""
+echo "Test 6: Tekton resource validation"
 for file in dev-tools/tekton/*.yaml; do
     # Skip PipelineRun with generateName (can't be validated with apply)
     if [[ "$(basename "$file")" == "pipelinerun-local-dev.yaml" ]]; then
@@ -171,9 +181,9 @@ for file in dev-tools/tekton/*.yaml; do
     fi
 done
 
-# Test 6: Wrapper script help
+# Test 7: Wrapper script help
 echo ""
-echo "Test 6: Wrapper script functionality"
+echo "Test 7: Wrapper script functionality"
 if ./dev-tools/local-build.sh --help >/dev/null 2>&1; then
     echo "✅ Wrapper script help works"
 else
