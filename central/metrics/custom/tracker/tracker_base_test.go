@@ -405,7 +405,7 @@ func Test_makeProps(t *testing.T) {
 	tracker := MakeTrackerBase("test", "telemetry test",
 		testLabelGetters,
 		makeTestGatherFunc(testData))
-	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
+	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 	md := makeTestMetricDescriptors(t)
 	tracker.Reconfigure(&Configuration{
