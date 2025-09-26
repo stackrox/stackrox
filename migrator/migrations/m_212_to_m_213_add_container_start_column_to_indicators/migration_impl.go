@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	updatedSchema "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/schema"
-	"github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/store"
+	updatedStore "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/store"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -62,7 +62,7 @@ func migrate(database *types.Databases) error {
 func migrateByCluster(cluster string, database *types.Databases) error {
 	ctx, cancel := context.WithTimeout(database.DBCtx, types.DefaultMigrationTimeout)
 	defer cancel()
-	store := postgres.New(database.PostgresDB)
+	store := updatedStore.New(database.PostgresDB)
 	var storeIndicators []*storage.ProcessIndicator
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster).ProtoQuery()
 	storeIndicators, err := store.GetByQuery(ctx, query)
