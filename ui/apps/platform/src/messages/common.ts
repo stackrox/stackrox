@@ -145,8 +145,10 @@ export const policyCriteriaCategories = Object.freeze({
     STORAGE: 'Storage',
     NETWORKING: 'Networking',
     PROCESS_ACTIVITY: 'Process activity',
-    KUBERNETES_ACCESS: 'Kubernetes access',
-    KUBERNETES_EVENTS: 'Kubernetes events',
+    BASELINE_DEVIATION: 'Baseline deviation',
+    DEPLOYMENT_ACCESS_CONTROL: 'Deployment access control',
+    USER_ISSUED_CONTAINER_COMMANDS: 'User issued container commands',
+    AUDIT_LOG: 'Audit log',
 });
 
 // For any update to severityRatings, please also update cve.proto,
