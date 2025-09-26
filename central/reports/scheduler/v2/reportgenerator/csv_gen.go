@@ -32,8 +32,18 @@ var (
 )
 
 // GenerateCSV takes in the results of vuln report query, converts to CSV and returns zipped data
-func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, reportFilters *storage.VulnerabilityReportFilters) (*bytes.Buffer, error) {
-	csvHeaderClone := addOptionalColumnstoHeader(reportFilters)
+func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, reportSnapshot *storage.ReportSnapshot) (*bytes.Buffer, error) {
+	reportFilters := reportSnapshot.GetVulnReportFilters()
+	csvHeaderClone := make([]string, len(csvHeader))
+	copy(csvHeaderClone, csvHeader)
+	if reportSnapshot.GetViewBasedVulnReportFilters() != nil {
+		csvHeaderClone = append(csvHeaderClone, "NVDCVSS")
+		csvHeaderClone = append(csvHeaderClone, "EPSS Probability Percentage")
+		csvHeaderClone = append(csvHeaderClone, "Advisory Name")
+		csvHeaderClone = append(csvHeaderClone, "Advisory Link")
+	} else {
+		csvHeaderClone = addOptionalColumnstoHeader(csvHeaderClone, reportFilters)
+	}
 	csvWriter := csv.NewGenericWriter(csvHeaderClone, true)
 	for _, r := range cveResponses {
 		row := csv.Value{
@@ -50,7 +60,11 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, repor
 			r.GetDiscoveredAtImage(),
 			r.Link,
 		}
-		addOptionalColumnstoRow(reportFilters, &row, csvWriter, r)
+		if reportSnapshot.GetVulnReportFilters() != nil {
+			addOptionalColumnstoRow(reportFilters, &row, csvWriter, r)
+		} else {
+			addOtherColumns(&row, csvWriter, r)
+		}
 		csvWriter.AddValue(row)
 	}
 
@@ -83,9 +97,7 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, repor
 	return &zipBuf, nil
 }
 
-func addOptionalColumnstoHeader(optionalColumns *storage.VulnerabilityReportFilters) []string {
-	csvHeaderClone := make([]string, len(csvHeader))
-	copy(csvHeaderClone, csvHeader)
+func addOptionalColumnstoHeader(csvHeaderClone []string, optionalColumns *storage.VulnerabilityReportFilters) []string {
 	if optionalColumns.GetIncludeNvdCvss() {
 		csvHeaderClone = append(csvHeaderClone, "NVDCVSS")
 	}
@@ -116,4 +128,17 @@ func addOptionalColumnstoRow(optionalColumns *storage.VulnerabilityReportFilters
 		csvWriter.AppendToValue(row, resp.GetAdvisoryLink())
 
 	}
+}
+
+func addOtherColumns(row *csv.Value, csvWriter *csv.GenericWriter, resp *ImageCVEQueryResponse) {
+	csvWriter.AppendToValue(row, strconv.FormatFloat(resp.GetNVDCVSS(), 'f', 2, 64))
+	epssScore := resp.GetEPSSProbability()
+	if epssScore != nil {
+		csvWriter.AppendToValue(row, strconv.FormatFloat(*resp.GetEPSSProbability()*100, 'f', 3, 64))
+	} else {
+		csvWriter.AppendToValue(row, "Not Available")
+	}
+	csvWriter.AppendToValue(row, resp.GetAdvisoryName())
+	csvWriter.AppendToValue(row, resp.GetAdvisoryLink())
+
 }
