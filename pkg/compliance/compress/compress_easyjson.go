@@ -32,6 +32,11 @@ func easyjson24245084DecodeGithubComStackroxRoxPkgComplianceCompress(in *jlexer.
 	for !in.IsDelim('}') {
 		key := in.UnsafeFieldName(false)
 		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
 		switch key {
 		case "ResultMap":
 			if in.IsNull() {
@@ -135,6 +140,11 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 	for !in.IsDelim('}') {
 		key := in.UnsafeFieldName(false)
 		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
 		switch key {
 		case "node_check_results":
 			if in.IsNull() {
@@ -273,6 +283,11 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 	for !in.IsDelim('}') {
 		key := in.UnsafeFieldName(false)
 		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
 		switch key {
 		case "evidence":
 			if in.IsNull() {
@@ -306,11 +321,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 				in.Delim(']')
 			}
 		case "overall_state":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				out.OverallState = storage.ComplianceState(in.Int32())
-			}
+			out.OverallState = storage.ComplianceState(in.Int32())
 		default:
 			in.SkipRecursive()
 		}
@@ -369,25 +380,18 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorageComplianceResultV
 	for !in.IsDelim('}') {
 		key := in.UnsafeFieldName(false)
 		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
 		switch key {
 		case "state":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				out.State = storage.ComplianceState(in.Int32())
-			}
+			out.State = storage.ComplianceState(in.Int32())
 		case "message":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				out.Message = string(in.String())
-			}
+			out.Message = string(in.String())
 		case "message_id":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				out.MessageId = int32(in.Int32())
-			}
+			out.MessageId = int32(in.Int32())
 		default:
 			in.SkipRecursive()
 		}
