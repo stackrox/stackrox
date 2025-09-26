@@ -2,7 +2,6 @@ package baseline
 
 import (
 	"crypto/sha256"
-	"fmt"
 	"slices"
 	"strings"
 
@@ -110,9 +109,9 @@ func (w *baselineEvaluator) IsOutsideLockedBaseline(pi *storage.ProcessIndicator
 // optimizedBaselineEvaluator implements memory-optimized baseline evaluation using process set deduplication
 type optimizedBaselineEvaluator struct {
 	// deployment -> container name -> content hash (direct access)
-	deploymentBaselines map[string]map[string]string
+	deploymentBaselines map[string]map[string]HashKey
 	// content hash -> reference count and StringSet for deduplication
-	processSets map[string]*processSetEntry
+	processSets map[HashKey]*processSetEntry
 	// lock for thread safety
 	lock sync.RWMutex
 }
@@ -125,13 +124,13 @@ type processSetEntry struct {
 // newOptimizedBaselineEvaluator creates the optimized baseline evaluator implementation
 func newOptimizedBaselineEvaluator() Evaluator {
 	return &optimizedBaselineEvaluator{
-		deploymentBaselines: make(map[string]map[string]string),
-		processSets:         make(map[string]*processSetEntry),
+		deploymentBaselines: make(map[string]map[string]HashKey),
+		processSets:         make(map[HashKey]*processSetEntry),
 	}
 }
 
 // removeReference decrements reference count and cleans up if necessary
-func (oe *optimizedBaselineEvaluator) removeReference(contentHash string) {
+func (oe *optimizedBaselineEvaluator) removeReference(contentHash HashKey) {
 	entry, exists := oe.processSets[contentHash]
 	if !exists {
 		return // Entry doesn't exist or is nil
@@ -148,16 +147,14 @@ func (oe *optimizedBaselineEvaluator) removeReference(contentHash string) {
 	}
 }
 
-// computeProcessSetHash creates a deterministic hash for a process set
-func computeProcessSetHash(processes set.StringSet) string {
-	// Convert to sorted slice for deterministic hashing
-	processSlice := processes.AsSlice()
-	slices.Sort(processSlice)
+type HashKey [32]byte
 
-	// Create hash of concatenated processes
-	content := strings.Join(processSlice, "\n")
-	hash := sha256.Sum256([]byte(content))
-	return fmt.Sprintf("%x", hash)
+// computeProcessSetHash creates a deterministic hash for a process set
+func computeProcessSetHash(processes set.StringSet) HashKey {
+    processSlice := processes.AsSlice()
+    slices.Sort(processSlice)
+    content := strings.Join(processSlice, "\n")
+    return sha256.Sum256([]byte(content))
 }
 
 // RemoveDeployment removes a deployment from the optimized baseline evaluator
@@ -206,7 +203,7 @@ func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBasel
 
 	// Update deployment mapping
 	if oe.deploymentBaselines[deploymentID] == nil {
-		oe.deploymentBaselines[deploymentID] = make(map[string]string)
+		oe.deploymentBaselines[deploymentID] = make(map[string]HashKey)
 	}
 
 	// If this deployment/container already has a process set, decrement its ref count
@@ -238,7 +235,7 @@ func (oe *optimizedBaselineEvaluator) removeBaseline(baseline *storage.ProcessBa
 }
 
 // findOrCreateProcessSet finds an existing process set with the same content or creates a new one
-func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.StringSet) string {
+func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.StringSet) HashKey {
 	contentHash := computeProcessSetHash(processes)
 
 	// Check if we already have this process set
