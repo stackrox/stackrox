@@ -5,6 +5,8 @@ var (
 	MainVersion string //XDef:STABLE_MAIN_VERSION
 	// CollectorVersion is the collector version to be used by default.
 	CollectorVersion string //XDef:STABLE_COLLECTOR_VERSION
+	// FactVersion is the fact version to be used by default.
+	FactVersion string //XDef:STABLE_FACT_VERSION
 	// ScannerVersion is the scanner version to be used with this Rox version.
 	ScannerVersion string //XDef:STABLE_SCANNER_VERSION
 	// GitShortSha is the (short) Git SHA that was built.
