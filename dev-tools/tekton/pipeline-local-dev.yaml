@@ -266,9 +266,46 @@ spec:
           #!/bin/bash
           set -ex
 
-          # Build main StackRox binary (simplified)
-          echo "Building StackRox main binary..."
-          make main-build
+          # Build all StackRox binaries needed for the main image
+          echo "Building StackRox binaries for main image..."
+
+          # Use simple go build instead of complex make target
+          # Set up basic environment
+          export CGO_ENABLED=1
+          export GOTAGS="release"
+          export GOOS=linux
+          export GOARCH=amd64
+
+          # Create output directory
+          mkdir -p bin
+
+          # Build all binaries required by image/rhel/Dockerfile
+          echo "Building central..."
+          go build -o bin/central ./central
+
+          echo "Building migrator..."
+          go build -o bin/migrator ./migrator
+
+          echo "Building compliance..."
+          go build -o bin/compliance ./compliance/cmd/compliance
+
+          echo "Building kubernetes-sensor..."
+          go build -o bin/kubernetes-sensor ./sensor/kubernetes
+
+          echo "Building sensor-upgrader..."
+          go build -o bin/sensor-upgrader ./sensor/upgrader
+
+          echo "Building admission-control..."
+          go build -o bin/admission-control ./sensor/admission-control
+
+          echo "Building config-controller..."
+          go build -o bin/config-controller ./config-controller
+
+          echo "Building init-tls-certs..."
+          go build -o bin/init-tls-certs ./sensor/init-tls-certs
+
+          echo "Building roxctl..."
+          go build -o bin/roxctl-linux-amd64 ./roxctl
 
           # Copy UI assets (built in previous step)
           echo "Copying UI assets..."
