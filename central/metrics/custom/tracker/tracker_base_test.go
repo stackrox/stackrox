@@ -313,7 +313,7 @@ func Test_makeProps(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
 
-	tracker := MakeTrackerBase("test", "test",
+	tracker := MakeTrackerBase("test", "telemetry test",
 		testLabelGetters,
 		makeTestGatherFunc(testData))
 	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
@@ -324,8 +324,8 @@ func Test_makeProps(t *testing.T) {
 		toAdd:   slices.Collect(maps.Keys(md)),
 		period:  time.Hour,
 	})
-	titCat := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
-	props := tracker.makeProps(titCat, 12345*time.Millisecond)
+	descriptionTitle := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
+	props := tracker.makeProps(descriptionTitle, 12345*time.Millisecond)
 	get := func(key string) any {
 		if v, ok := props[key]; ok {
 			return v
@@ -334,7 +334,7 @@ func Test_makeProps(t *testing.T) {
 	}
 
 	assert.Len(t, props, 3)
-	assert.ElementsMatch(t, get("Test metrics labels"), []Label{"Cluster", "Namespace", "Severity"})
-	assert.Equal(t, len(md), get("Total Test metrics"))
-	assert.Equal(t, uint32(12), get("Test gathering seconds"))
+	assert.ElementsMatch(t, get("Telemetry test metrics labels"), []Label{"Cluster", "Namespace", "Severity"})
+	assert.Equal(t, len(md), get("Total Telemetry test metrics"))
+	assert.Equal(t, uint32(12), get("Telemetry test gathering seconds"))
 }
