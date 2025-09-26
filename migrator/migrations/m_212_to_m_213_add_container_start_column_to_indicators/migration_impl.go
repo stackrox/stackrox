@@ -35,7 +35,7 @@ func migrate(database *types.Databases) error {
 	semaphoreWeight := min(len(clusters), 10)
 	var wg sync.WaitGroup
 	sema := semaphore.NewWeighted(int64(semaphoreWeight))
-	var migrationError error
+
 	for _, cluster := range clusters {
 		if err := sema.Acquire(database.DBCtx, 1); err != nil {
 			log.Errorf("context cancelled via stop: %v", err)
@@ -44,6 +44,7 @@ func migrate(database *types.Databases) error {
 
 		log.Debugf("Migrate process indicators for cluster %q", cluster)
 		wg.Add(1)
+		var migrationError error
 
 		go func(c string, err *error) {
 			defer sema.Release(1)
