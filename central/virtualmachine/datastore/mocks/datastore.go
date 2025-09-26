@@ -91,6 +91,21 @@ func (mr *MockDataStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, id)
 }
 
+// GetAllVirtualMachines mocks base method.
+func (m *MockDataStore) GetAllVirtualMachines(ctx context.Context) ([]*storage.VirtualMachine, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllVirtualMachines", ctx)
+	ret0, _ := ret[0].([]*storage.VirtualMachine)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllVirtualMachines indicates an expected call of GetAllVirtualMachines.
+func (mr *MockDataStoreMockRecorder) GetAllVirtualMachines(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllVirtualMachines", reflect.TypeOf((*MockDataStore)(nil).GetAllVirtualMachines), ctx)
+}
+
 // GetVirtualMachine mocks base method.
 func (m *MockDataStore) GetVirtualMachine(ctx context.Context, id string) (*storage.VirtualMachine, bool, error) {
 	m.ctrl.T.Helper()

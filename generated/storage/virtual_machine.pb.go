@@ -126,16 +126,19 @@ func (VirtualMachine_State) EnumDescriptor() ([]byte, []int) {
 type VirtualMachineScan_Note int32
 
 const (
-	VirtualMachineScan_UNSET VirtualMachineScan_Note = 0
+	VirtualMachineScan_UNSET          VirtualMachineScan_Note = 0
+	VirtualMachineScan_OS_UNAVAILABLE VirtualMachineScan_Note = 1
 )
 
 // Enum value maps for VirtualMachineScan_Note.
 var (
 	VirtualMachineScan_Note_name = map[int32]string{
 		0: "UNSET",
+		1: "OS_UNAVAILABLE",
 	}
 	VirtualMachineScan_Note_value = map[string]int32{
-		"UNSET": 0,
+		"UNSET":          0,
+		"OS_UNAVAILABLE": 1,
 	}
 )
 
@@ -826,16 +829,17 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTOPPED\x10\x01\x12\v\n" +
-	"\aRUNNING\x10\x02\"\x91\x02\n" +
+	"\aRUNNING\x10\x02\"\xa5\x02\n" +
 	"\x12VirtualMachineScan\x127\n" +
 	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12)\n" +
 	"\x10operating_system\x18\x02 \x01(\tR\x0foperatingSystem\x126\n" +
 	"\x05notes\x18\x03 \x03(\x0e2 .storage.VirtualMachineScan.NoteR\x05notes\x12L\n" +
 	"\n" +
 	"components\x18\x04 \x03(\v2,.storage.EmbeddedVirtualMachineScanComponentR\n" +
-	"components\"\x11\n" +
+	"components\"%\n" +
 	"\x04Note\x12\t\n" +
-	"\x05UNSET\x10\x00\"\xef\x01\n" +
+	"\x05UNSET\x10\x00\x12\x12\n" +
+	"\x0eOS_UNAVAILABLE\x10\x01\"\xef\x01\n" +
 	"#EmbeddedVirtualMachineScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1b\n" +

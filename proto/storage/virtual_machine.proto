@@ -40,6 +40,7 @@ message VirtualMachineScan {
   string operating_system = 2;
   enum Note {
     UNSET = 0;
+    OS_UNAVAILABLE = 1;
   }
   repeated Note notes = 3;
   repeated EmbeddedVirtualMachineScanComponent components = 4;

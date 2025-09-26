@@ -43,6 +43,22 @@ func (ds *datastoreImpl) GetVirtualMachine(ctx context.Context, id string) (*sto
 	return ds.store.Get(ctx, id)
 }
 
+// GetVirtualMachine delegates to the underlying store.
+func (ds *datastoreImpl) GetAllVirtualMachines(ctx context.Context) ([]*storage.VirtualMachine, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "GetAllVirtualMachines")
+
+	vms := []*storage.VirtualMachine{}
+	err := ds.store.Walk(ctx, func(vm *storage.VirtualMachine) error {
+		vms = append(vms, vm)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return vms, nil
+}
+
 // UpsertVirtualMachine sets the virtualMachine in the underlying data structure.
 func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "UpsertVirtualMachine")
