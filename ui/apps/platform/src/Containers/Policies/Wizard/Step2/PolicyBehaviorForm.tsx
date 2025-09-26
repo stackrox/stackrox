@@ -10,6 +10,8 @@ import {
     FormHelperText,
     HelperText,
     HelperTextItem,
+    Button,
+    AlertActionLink,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
@@ -19,7 +21,14 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { ClientPolicy } from 'types/policy.proto';
 
-import { getLifeCyclesUpdates, initialPolicy } from '../../policies.utils';
+import {
+    getLifeCyclesUpdates,
+    initialPolicy,
+    isRuntimePolicy,
+    isBuildPolicy,
+    isBuildAndDeployPolicy,
+    isDeployPolicy,
+} from '../../policies.utils';
 import type { ValidPolicyLifeCycle } from '../../policies.utils';
 
 type PolicyBehaviorFormProps = {
@@ -28,11 +37,11 @@ type PolicyBehaviorFormProps = {
 
 function getEventSourceHelperText(eventSource) {
     if (eventSource === 'DEPLOYMENT_EVENT') {
-        return 'Event sources that include process and network activity, pod exec and pod port forwarding.';
+        return 'Monitor live deployments for process activity, baseline deviation, and user issued container commands.';
     }
 
     if (eventSource === 'AUDIT_LOG_EVENT') {
-        return 'Event sources that match Kubernetes audit log records.';
+        return 'Inspect the Kubernetes audit log for access to sensitive Kubernetes resources.';
     }
 
     return '';
@@ -106,13 +115,10 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
 
     const eventSourceHelperText = getEventSourceHelperText(values.eventSource);
 
-    const isBuild = values.lifecycleStages.includes('BUILD') && values.lifecycleStages.length === 1;
-    const isDeploy =
-        values.lifecycleStages.includes('DEPLOY') && values.lifecycleStages.length === 1;
-    const isBuildAndDeploy =
-        values.lifecycleStages.includes('BUILD') && values.lifecycleStages.includes('DEPLOY');
-    const isRuntime =
-        values.lifecycleStages.includes('RUNTIME') && values.lifecycleStages.length === 1;
+    const isBuild = isBuildPolicy(values.lifecycleStages);
+    const isDeploy = isDeployPolicy(values.lifecycleStages);
+    const isBuildAndDeploy = isBuildAndDeployPolicy(values.lifecycleStages);
+    const isRuntime = isRuntimePolicy(values.lifecycleStages);
 
     return (
         <Flex
@@ -150,29 +156,36 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             >
                 <Alert
                     variant="info"
+                    isExpandable
                     isInline
-                    title="Lifecycle stages"
+                    title="Learn about how policies work in each lifecycle stage"
                     component="p"
                     className="pf-v5-u-mb-md"
                 >
                     <Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsSm' }}
+                        className="pf-v5-u-pt-sm"
                     >
                         <p>
-                            Build-time policies apply to image fields such as CVEs and Dockerfile
-                            instructions.
+                            <strong>Build-stage</strong> policies can only inspect images. They are
+                            evaluated in the build pipeline.
                         </p>
                         <p>
-                            Deploy-time policies can include all build-time policy criteria but they
-                            can also include data from your cluster configurations, such as running
-                            in privileged mode or mounting the Docker socket.
+                            <strong>Deploy-stage</strong> policies can inspect workloads and/or
+                            their images. They are evaluated while creating or updating a workload
+                            resource, and re-evaluated periodically or on demand.
                         </p>
                         <p>
-                            Runtime policies can include all build-time and deploy-time policy
-                            criteria but they <strong>must</strong> include at least one policy
-                            criterion from process, network flow, audit log events, or Kubernetes
-                            events criteria categories.
+                            <strong>Build and Deploy stage</strong> policies are a convenient option
+                            to inspect images in both the build pipeline and during workload
+                            admission, and apply enforcement to either or both stages (in a single
+                            policy).
+                        </p>
+                        <p>
+                            <strong>Runtime-stage</strong> policies operate on one of two domains:
+                            Workload Activity or Kubernetes Resource Operations. The two domains are
+                            associated with different “Event Sources”.
                         </p>
                     </Flex>
                 </Alert>
@@ -186,7 +199,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         isRequired
                         touched={touched}
                         helperText={
-                            'Choose lifecycle stage to which your policy is applicable. You can select more than one stage.'
+                            'Choose the lifecycle stage to which your policy is applicable.'
                         }
                     >
                         <Flex direction={{ default: 'row' }} className="pf-v5-u-pb-sm">
@@ -244,40 +257,36 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             component="p"
                         />
                     )}
-                    {isRuntime && (
-                        <FormGroup
-                            fieldId="policy-event-source"
-                            label="Event sources (Runtime lifecycle only)"
-                            isRequired={isRuntime}
-                            className="pf-v5-u-pt-lg"
-                        >
-                            <Flex direction={{ default: 'row' }}>
-                                <Radio
-                                    label="Deployment"
-                                    isChecked={values.eventSource === 'DEPLOYMENT_EVENT'}
-                                    id="policy-event-source-deployment"
-                                    name="eventSource"
-                                    onChange={() =>
-                                        setFieldValue('eventSource', 'DEPLOYMENT_EVENT')
-                                    }
-                                    isDisabled={!isRuntime || hasActiveViolations}
-                                />
-                                <Radio
-                                    label="Audit logs"
-                                    isChecked={values.eventSource === 'AUDIT_LOG_EVENT'}
-                                    id="policy-event-source-audit-logs"
-                                    name="eventSource"
-                                    onChange={onChangeAuditLogEventSource}
-                                    isDisabled={!isRuntime || hasActiveViolations}
-                                />
-                            </Flex>
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem>{eventSourceHelperText}</HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
-                        </FormGroup>
-                    )}
+                    <FormGroup
+                        fieldId="policy-event-source"
+                        label="Event sources (Runtime lifecycle only)"
+                        isRequired={isRuntime}
+                        className="pf-v5-u-pt-lg"
+                    >
+                        <Flex direction={{ default: 'row' }}>
+                            <Radio
+                                label="Deployment"
+                                isChecked={values.eventSource === 'DEPLOYMENT_EVENT'}
+                                id="policy-event-source-deployment"
+                                name="eventSource"
+                                onChange={() => setFieldValue('eventSource', 'DEPLOYMENT_EVENT')}
+                                isDisabled={!isRuntime || hasActiveViolations}
+                            />
+                            <Radio
+                                label="Audit logs"
+                                isChecked={values.eventSource === 'AUDIT_LOG_EVENT'}
+                                id="policy-event-source-audit-logs"
+                                name="eventSource"
+                                onChange={onChangeAuditLogEventSource}
+                                isDisabled={!isRuntime || hasActiveViolations}
+                            />
+                        </Flex>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>{eventSourceHelperText}</HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
+                    </FormGroup>
                 </div>
             </Form>
         </Flex>
