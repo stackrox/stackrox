@@ -230,6 +230,14 @@ func LocalDevImageFlavor() ImageFlavor {
 	registry := getEnvWithDefault("ROX_LOCAL_REGISTRY", "localhost:5000")
 	tag := getEnvWithDefault("ROX_LOCAL_TAG", "latest")
 
+	// Use simple versions for local development to avoid build-time version parsing issues
+	v := version.Versions{
+		MainVersion:      tag,
+		CollectorVersion: tag,
+		ScannerVersion:   tag,
+		ChartVersion:     "0.0.0",
+	}
+
 	return ImageFlavor{
 		MainRegistry:       registry,
 		MainImageName:      "main",
@@ -258,7 +266,7 @@ func LocalDevImageFlavor() ImageFlavor {
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true, // Common for local development
 		},
-		Versions: version.GetAllVersionsDevelopment(),
+		Versions: v,
 	}
 }
 
