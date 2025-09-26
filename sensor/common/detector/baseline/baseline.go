@@ -189,7 +189,7 @@ func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBasel
 
 	// Check if baseline should be unlocked (has UserLockedTimestamp = nil)
 	if baseline.GetUserLockedTimestamp() == nil {
-		oe.removeBaseline(deploymentID, containerName, baseline)
+		oe.removeBaseline(baseline)
 		return
 	}
 
@@ -218,8 +218,10 @@ func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBasel
 	log.Debugf("Successfully added locked process baseline %s", baseline.GetId())
 }
 
-func (oe *optimizedBaselineEvaluator) removeBaseline(deploymentID string, containerName string, baseline *storage.ProcessBaseline) {
+func (oe *optimizedBaselineEvaluator) removeBaseline(baseline *storage.ProcessBaseline) {
 	log.Debugf("Removing (id:%s, UserLockedTimestamp:%v, elements:%v)", baseline.GetId(), baseline.GetUserLockedTimestamp(), baseline.GetElements())
+	deploymentID := baseline.GetKey().GetDeploymentId()
+	containerName := baseline.GetKey().GetContainerName()
 	if oe.deploymentBaselines[deploymentID] != nil {
 		if oldContentHash, exists := oe.deploymentBaselines[deploymentID][containerName]; exists {
 			oe.removeReference(oldContentHash)
