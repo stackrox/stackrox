@@ -16,6 +16,8 @@ const (
 	ImageFlavorNameRHACSRelease = "rhacs"
 	// ImageFlavorNameOpenSource is a name for image flavor (image defaults) for images released to quay.io/stackrox-io.
 	ImageFlavorNameOpenSource = "opensource"
+	// ImageFlavorNameLocalDev is a name for image flavor (image defaults) for local development with configurable registry.
+	ImageFlavorNameLocalDev = "local-dev"
 )
 
 var (

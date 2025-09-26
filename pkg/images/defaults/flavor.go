@@ -2,6 +2,7 @@ package defaults
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -42,6 +43,11 @@ var (
 			imageFlavorName:         ImageFlavorNameOpenSource,
 			isVisibleInReleaseBuild: true,
 			constructorFunc:         OpenSourceImageFlavor,
+		},
+		{
+			imageFlavorName:         ImageFlavorNameLocalDev,
+			isVisibleInReleaseBuild: false,
+			constructorFunc:         LocalDevImageFlavor,
 		},
 	}
 
@@ -216,6 +222,52 @@ func OpenSourceImageFlavor() ImageFlavor {
 		},
 		Versions: v,
 	}
+}
+
+// LocalDevImageFlavor returns image values for `local-dev` flavor.
+// This flavor is designed for local development with configurable registry and tag via environment variables.
+func LocalDevImageFlavor() ImageFlavor {
+	registry := getEnvWithDefault("ROX_LOCAL_REGISTRY", "localhost:5000")
+	tag := getEnvWithDefault("ROX_LOCAL_TAG", "latest")
+
+	return ImageFlavor{
+		MainRegistry:       registry,
+		MainImageName:      "main",
+		MainImageTag:       tag,
+		CentralDBImageTag:  tag,
+		CentralDBImageName: "central-db",
+
+		CollectorRegistry:  registry,
+		CollectorImageName: "collector",
+		CollectorImageTag:  tag,
+
+		ScannerImageName:       "scanner",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        tag,
+		ScannerDBImageName:     "scanner-db",
+		ScannerDBSlimImageName: "scanner-db-slim",
+
+		ScannerV4ImageName:   "scanner-v4",
+		ScannerV4DBImageName: "scanner-v4-db",
+		ScannerV4ImageTag:    tag,
+
+		ChartRepo: ChartRepo{
+			URL:     "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png",
+		},
+		ImagePullSecrets: ImagePullSecrets{
+			AllowNone: true, // Common for local development
+		},
+		Versions: version.GetAllVersionsDevelopment(),
+	}
+}
+
+// getEnvWithDefault returns the environment variable value or the default if not set or empty.
+func getEnvWithDefault(envVar, defaultValue string) string {
+	if value := os.Getenv(envVar); value != "" {
+		return value
+	}
+	return defaultValue
 }
 
 // GetVisibleImageFlavorNames returns a string slice with image flavor names that should be displayed to the user
