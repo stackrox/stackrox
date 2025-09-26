@@ -63,7 +63,13 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						Running:   false,
-					})).Times(1)
+					})).Times(1).Return(
+					&virtualmachine.Info{
+						ID:        vmUID,
+						Name:      vmName,
+						Namespace: vmNamespace,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmUID,
@@ -74,6 +80,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -88,7 +95,13 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						Running:   false,
-					})).Times(1)
+					})).Times(1).Return(
+					&virtualmachine.Info{
+						ID:        vmUID,
+						Name:      vmName,
+						Namespace: vmNamespace,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmUID,
@@ -99,6 +112,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -113,7 +127,13 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						Running:   false,
-					})).Times(1)
+					})).Times(1).Return(
+					&virtualmachine.Info{
+						ID:        vmUID,
+						Name:      vmName,
+						Namespace: vmNamespace,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmUID,
@@ -124,6 +144,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -143,6 +164,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
