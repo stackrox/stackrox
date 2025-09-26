@@ -67,6 +67,25 @@ func constructNetworkFlowAlert(
 	return alert
 }
 
+func constructFileAlert(
+	policy *storage.Policy,
+	activity *storage.FileActivity,
+	violations booleanpolicy.Violations,
+) *storage.Alert {
+	if len(violations.AlertViolations) == 0 {
+		return nil
+	}
+	return &storage.Alert{
+		Id:             uuid.NewV4().String(),
+		Policy:         policy.CloneVT(),
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity:         convert.ToAlertHost(activity),
+		Violations:     violations.AlertViolations,
+		Time:           protocompat.TimestampNow(),
+		EntityType:     storage.Alert_HOST,
+	}
+}
+
 func constructGenericRuntimeAlert(
 	policy *storage.Policy,
 	deployment *storage.Deployment,
