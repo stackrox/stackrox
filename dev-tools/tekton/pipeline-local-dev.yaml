@@ -183,7 +183,7 @@ spec:
 
   # Build Go binaries with caching
   - name: build-go-binaries
-    runAfter: [setup-aws-credentials, build-ui]
+    runAfter: [setup-aws-credentials, fetch-source]
     workspaces:
     - name: shared-data
       workspace: shared-data
@@ -330,7 +330,7 @@ spec:
 
   # Build container image
   - name: build-image
-    runAfter: [get-git-commit, build-go-binaries]
+    runAfter: [get-git-commit, build-go-binaries, build-ui]
     taskRef:
       name: buildah
     params:
