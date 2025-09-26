@@ -16,10 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
-const (
-	storeName = "ProcessIndicator"
-)
-
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ProcessIndicatorsSchema
