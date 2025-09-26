@@ -70,7 +70,7 @@ import AffectedImages from '../SummaryCards/AffectedImages';
 import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
 } from '../../components/BySeveritySummaryCard';
-import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
+import { resourceCountByCveSeverityAndStatusFragment } from '../../components/CvesByStatusSummaryCard';
 import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';

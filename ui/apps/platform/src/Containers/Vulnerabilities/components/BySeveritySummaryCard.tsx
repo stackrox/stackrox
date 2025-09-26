@@ -14,7 +14,7 @@ const severitiesDescendingCriticality = [
     'UNKNOWN_VULNERABILITY_SEVERITY',
 ] as const;
 
-const severityToQuerySeverityKeys = {
+export const severityToQuerySeverityKeys = {
     CRITICAL_VULNERABILITY_SEVERITY: 'critical',
     IMPORTANT_VULNERABILITY_SEVERITY: 'important',
     MODERATE_VULNERABILITY_SEVERITY: 'moderate',
