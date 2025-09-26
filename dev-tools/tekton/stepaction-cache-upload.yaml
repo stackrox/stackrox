@@ -35,6 +35,10 @@ spec:
     description: Force upload even if cache was fetched
     type: string
     default: "false"
+  - name: FETCHED
+    description: Whether cache was fetched previously (true/false)
+    type: string
+    default: "false"
 
   results:
   - name: uploaded
@@ -58,6 +62,8 @@ spec:
     value: $(params.INSECURE)
   - name: PARAM_FORCE_CACHE_UPLOAD
     value: $(params.FORCE_CACHE_UPLOAD)
+  - name: PARAM_FETCHED
+    value: $(params.FETCHED)
   - name: PARAM_PATTERNS_0
     value: $(params.PATTERNS[0])
   - name: PARAM_PATTERNS_1
@@ -109,13 +115,10 @@ spec:
     echo "Cache destination URL: $TARGET_URL"
 
     # Check if we should skip upload (cache was fetched and force is false)
-    if [ "$PARAM_FORCE_CACHE_UPLOAD" = "false" ]; then
-      # Check if we can skip upload by looking for a marker file
-      if [ -f "$PARAM_CACHE_PATH/.cache_fetched" ]; then
-        echo "Cache was fetched and force upload is false, skipping upload"
-        echo "false" > $(results.uploaded.path)
-        exit 0
-      fi
+    if [ "$PARAM_FORCE_CACHE_UPLOAD" = "false" ] && [ "$PARAM_FETCHED" = "true" ]; then
+      echo "Cache was fetched and force upload is false, skipping upload"
+      echo "false" > $(results.uploaded.path)
+      exit 0
     fi
 
     # Check if cache directory exists and has content

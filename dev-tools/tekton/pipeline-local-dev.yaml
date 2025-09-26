@@ -118,7 +118,7 @@ spec:
           value:
           - "**/ui/apps/platform/package.json"
           - "**/ui/apps/platform/package-lock.json"
-        - name: SOURCE
+        - name: TARGET
           value: "s3://$(params.cache-bucket)/npm-cache/{{hash}}"
         - name: CACHE_PATH
           value: "$(workspaces.shared-data.path)/npm-cache"
@@ -218,7 +218,7 @@ spec:
           value:
           - "**/go.mod"
           - "!scannerv2**"
-        - name: SOURCE
+        - name: TARGET
           value: "s3://$(params.cache-bucket)/gomod-cache/{{hash}}"
         - name: CACHE_PATH
           value: "$(workspaces.shared-data.path)/gomod-cache"
@@ -242,7 +242,7 @@ spec:
           value:
           - "**/go.mod"
           - "!scannerv2**"
-        - name: SOURCE
+        - name: TARGET
           value: "s3://$(params.cache-bucket)/gobuild-cache/{{hash}}"
         - name: CACHE_PATH
           value: "$(workspaces.shared-data.path)/gobuild-cache"
@@ -301,7 +301,7 @@ spec:
           value:
           - "**/go.mod"
           - "!scannerv2**"
-        - name: SOURCE
+        - name: TARGET
           value: "s3://$(params.cache-bucket)/gomod-cache/{{hash}}"
         - name: CACHE_PATH
           value: "$(workspaces.shared-data.path)/gomod-cache"
@@ -325,7 +325,7 @@ spec:
           value:
           - "**/go.mod"
           - "!scannerv2**"
-        - name: SOURCE
+        - name: TARGET
           value: "s3://$(params.cache-bucket)/gobuild-cache/{{hash}}"
         - name: CACHE_PATH
           value: "$(workspaces.shared-data.path)/gobuild-cache"
