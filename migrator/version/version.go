@@ -59,13 +59,28 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 // UpdateVersionPostgres - updates the version allowing for outer transaction
 func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *storage.Version) {
 	err := pgutils.Retry(ctx, func() error {
-		_, err := db.Exec(ctx, "DELETE FROM versions")
+		conn, err := db.Acquire(ctx)
+		if err != nil {
+			return err
+		}
+		defer conn.Release()
+
+		tx, err := conn.Begin(ctx)
+
+		_, err = tx.Exec(ctx, "DELETE FROM versions")
 		if err != nil {
 			return err
 		}
 
-		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
-		return err
+		_, err = tx.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
+		if err != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				return errors.Wrap(rollbackErr, "could not rollback transaction")
+			}
+			return errors.Wrap(err, "version update failed")
+		}
+
+		return tx.Commit(ctx)
 	})
 	utils.Must(errors.Wrap(err, "failed to write migration version"))
 }

@@ -29,7 +29,9 @@ func migrate(database *types.Databases) error {
 	db = db.WithContext(database.DBCtx).Table(updatedSchema.ProcessIndicatorsTableName)
 
 	var clusters []string
-	db.Model(&updatedSchema.ProcessIndicators{}).Distinct("clusterid").Pluck("clusterid", &clusters)
+	if err := db.Model(&updatedSchema.Clusters{}).Pluck("id", &clusters).Error; err != nil {
+		return err
+	}
 	log.Infof("clusters found: %v", clusters)
 
 	semaphoreWeight := min(len(clusters), 10)
@@ -74,6 +76,7 @@ func migrateByCluster(cluster string, database *types.Databases) error {
 		return err
 	}
 	log.Infof("Processing %s with %d indicators", cluster, len(storeIndicators))
+
 	for objBatch := range slices.Chunk(storeIndicators, batchSize) {
 		if err = store.UpsertMany(ctx, objBatch); err != nil {
 			return errors.Wrap(err, "failed to upsert all converted objects")
