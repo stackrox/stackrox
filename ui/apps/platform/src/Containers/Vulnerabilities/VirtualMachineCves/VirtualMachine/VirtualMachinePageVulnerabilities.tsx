@@ -24,10 +24,19 @@ import { getTableUIState } from 'utils/getTableUIState';
 
 import { getHasSearchApplied } from 'utils/searchUtils';
 import {
-    getVirtualMachineCveTableData,
     applyVirtualMachineCveTableFilters,
+    getVirtualMachineCveTableData,
+    getVirtualMachineCveSeverityStatusCounts,
 } from '../aggregateUtils';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
+import CvesByStatusSummaryCard from '../../components/CvesByStatusSummaryCard';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
+import {
+    getHiddenSeverities,
+    getHiddenStatuses,
+    parseQuerySearchFilter,
+} from '../../utils/searchUtils';
 import VirtualMachineVulnerabilitiesTable from './VirtualMachineVulnerabilitiesTable';
 
 export type VirtualMachinePageVulnerabilitiesProps = {
@@ -51,6 +60,9 @@ function VirtualMachinePageVulnerabilities({
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { page, perPage, setPage, setPerPage } = pagination;
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const hiddenStatuses = getHiddenStatuses(querySearchFilter);
+    const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const isFiltered = getHasSearchApplied(searchFilter);
 
     const virtualMachineTableData = useMemo(() => getVirtualMachineCveTableData(data), [data]);
@@ -93,6 +105,29 @@ function VirtualMachinePageVulnerabilities({
                     setPage(1, 'replace');
                 }}
             />
+            <SummaryCardLayout isLoading={isLoading} error={error}>
+                <SummaryCard
+                    loadingText={'Loading virtual machine CVEs by severity summary'}
+                    data={filteredVirtualMachineTableData}
+                    renderer={({ data }) => (
+                        <BySeveritySummaryCard
+                            title="CVEs by severity"
+                            severityCounts={getVirtualMachineCveSeverityStatusCounts(data)}
+                            hiddenSeverities={hiddenSeverities}
+                        />
+                    )}
+                />
+                <SummaryCard
+                    loadingText={'Loading virtual machine CVEs by status summary'}
+                    data={filteredVirtualMachineTableData}
+                    renderer={({ data }) => (
+                        <CvesByStatusSummaryCard
+                            cveStatusCounts={getVirtualMachineCveSeverityStatusCounts(data)}
+                            hiddenStatuses={hiddenStatuses}
+                        />
+                    )}
+                />
+            </SummaryCardLayout>
             <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
                 <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                     <SplitItem isFilled>

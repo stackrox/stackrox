@@ -6,6 +6,8 @@ import type { SearchFilter } from 'types/search';
 import type { Advisory, EmbeddedVulnerability } from 'types/vulnerability.proto';
 import { searchValueAsArray } from 'utils/searchUtils';
 
+import { severityToQuerySeverityKeys } from '../components/BySeveritySummaryCard';
+import type { ResourceCountByCveSeverityAndStatus } from '../components/CvesByStatusSummaryCard';
 import { isVulnerabilitySeverityLabel } from '../types';
 import type { FixableStatus } from '../types';
 import { severityLabelToSeverity } from '../utils/searchUtils';
@@ -48,6 +50,26 @@ export type CveTableRow = {
     epssProbability: number; // should be the same across all components
     affectedComponents: CveComponentRow[];
 };
+
+export function getVirtualMachineCveSeverityStatusCounts(
+    cveTableData: CveTableRow[]
+): ResourceCountByCveSeverityAndStatus {
+    const counts: ResourceCountByCveSeverityAndStatus = {
+        critical: { total: 0, fixable: 0 },
+        important: { total: 0, fixable: 0 },
+        moderate: { total: 0, fixable: 0 },
+        low: { total: 0, fixable: 0 },
+        unknown: { total: 0, fixable: 0 },
+    };
+
+    cveTableData.forEach((cveTableRow) => {
+        const severityKey = severityToQuerySeverityKeys[cveTableRow.severity];
+        counts[severityKey].total += 1;
+        counts[severityKey].fixable += cveTableRow.isFixable ? 1 : 0;
+    });
+
+    return counts;
+}
 
 function defaultCveTableSort(a: CveTableRow, b: CveTableRow): number {
     return severityRankings[b.severity] - severityRankings[a.severity] || b.cvss - a.cvss;
