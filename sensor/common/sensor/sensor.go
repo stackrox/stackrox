@@ -65,6 +65,7 @@ type Sensor struct {
 	detector      detector.Detector
 	imageService  image.Service
 	components    []common.SensorComponent
+	processor     *ComponentProcessor
 	apiServices   []pkgGRPC.APIService
 
 	server          pkgGRPC.API
@@ -102,6 +103,9 @@ func NewSensor(
 	certLoader centralclient.CertLoader,
 	components ...common.SensorComponent,
 ) *Sensor {
+	allComponents := append(components, detector, configHandler) // Explicitly add the config handler
+	processor := NewComponentProcessor(context.Background(), allComponents)
+
 	return &Sensor{
 		clusterID:          clusterID,
 		centralEndpoint:    env.CentralEndpoint.Setting(),
@@ -111,7 +115,8 @@ func NewSensor(
 		configHandler: configHandler,
 		detector:      detector,
 		imageService:  imageService,
-		components:    append(components, detector, configHandler), // Explicitly add the config handler
+		components:    allComponents,
+		processor:     processor,
 
 		centralConnectionFactory: centralConnectionFactory,
 		certLoader:               certLoader,
@@ -378,7 +383,7 @@ func (s *Sensor) Stop() {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(s.clusterID, false, false, s.components...)
+	s.centralCommunication = NewCentralCommunication(s.clusterID, false, false, s.processor, s.components...)
 
 	syncDone := concurrency.NewSignal()
 	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
@@ -474,7 +479,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		centralCommunication := NewCentralCommunication(s.clusterID, s.reconnect.Load(), s.reconcile.Load(), s.components...)
+		centralCommunication := NewCentralCommunication(s.clusterID, s.reconnect.Load(), s.reconcile.Load(), s.processor, s.components...)
 		syncDone := concurrency.NewSignal()
 		concurrency.WithLock(s.centralCommunicationLock, func() {
 			s.centralCommunication = centralCommunication
