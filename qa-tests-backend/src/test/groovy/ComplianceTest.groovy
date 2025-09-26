@@ -1142,6 +1142,9 @@ class ComplianceTest extends BaseSpecification {
             def complianceRuns = ComplianceManagementService.triggerComplianceRuns(NIST_800_190_ID, clusterId)
             def complianceRun = complianceRuns.get(0)
 
+            complianceRuns = ComplianceManagementService.triggerComplianceRuns(NIST_800_190_ID, clusterId)
+            def nextRun = complianceRuns.get(0)
+
             // Kill the sensor and wait for the compliance run to complete
             orchestrator.deleteContainer(sensorPod, "stackrox")
             Timer t = new Timer(30, 1)
@@ -1151,14 +1154,26 @@ class ComplianceTest extends BaseSpecification {
                 complianceRun = recentRuns.find { it.id == complianceRun.id }
             }
 
+            t = new Timer(30, 1)
+            while (nextRun.state != ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED &&
+                    t.IsValid()) {
+                def recentRuns = ComplianceManagementService.getRecentRuns(NIST_800_190_ID)
+                nextRun = recentRuns.find { it.id == nextRun.id }
+            }
+
+            assert complianceRun.state == ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED
+            assert nextRun.state == ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED
+
             // Check whether there were errors
             ComplianceRunResults results =
-                    ComplianceService.getComplianceRunResult(NIST_800_190_ID, clusterId).results
+                    ComplianceService.getComplianceRunResult(NIST_800_190_ID, clusterId, complianceRun.id).results
             assert results != null
             Compliance.ComplianceRunMetadata metadata = results.runMetadata
-            assert metadata.clusterId == clusterId
-            assert metadata.runId == complianceRun.id
-            assert metadata.standardId == NIST_800_190_ID
+            verifyAll(metadata) {
+                clusterId == clusterId
+                runId == complianceRun.id
+                standardId == NIST_800_190_ID
+            }
 
             numErrors += errorsCount(results.clusterResults.controlResultsMap.values())
             for (def deploymentResults : results.deploymentResultsMap.values()) {
