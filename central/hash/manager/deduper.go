@@ -3,6 +3,7 @@ package manager
 import (
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/alert"
@@ -12,6 +13,7 @@ import (
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // Deduper is an interface to deduping logic used to determine whether an event should be processed
@@ -94,15 +96,16 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	case *central.SensorEvent_Namespace:
 		return false
 	case *central.SensorEvent_AlertResults:
-		if alert.IsRuntimeAlertResult(msg.GetEvent().GetAlertResults()) {
+		alertResults := msg.GetEvent().GetAlertResults()
+		if alert.IsRuntimeAlertResult(alertResults) {
 			return true
 		}
 		// This can occur for a very short-lived deployment where alerts are not generated
 		// but the deployment is being removed
-		if alert.IsAlertResultResolved(msg.GetEvent().GetAlertResults()) {
+		if alert.IsAlertResultResolved(alertResults) {
 			return true
 		}
-		if alert.AnyAttemptedAlert(msg.GetEvent().GetAlertResults().GetAlerts()...) {
+		if alert.AnyAttemptedAlert(alertResults.GetAlerts()...) {
 			return true
 		}
 		return false
@@ -152,8 +155,10 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 		return true
 
 	// Virtual Machines
-	case *central.SensorEvent_VirtualMachineIndexReport, *central.SensorEvent_VirtualMachine:
+	case *central.SensorEvent_VirtualMachineIndexReport:
 		return true
+	case *central.SensorEvent_VirtualMachine:
+		return false
 
 	// Compliance Operator V2
 	case *central.SensorEvent_ComplianceOperatorResultV2,
@@ -166,6 +171,7 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 		return true
 
 	default:
+		utils.Should(errors.Errorf("unexpected sensor event type %q.  Please add to the switch and evaluate if it should be added to hashes or not", eventPkg.GetEventTypeWithoutPrefix(eventMsg.Event.GetResource())))
 		return true
 	}
 }
