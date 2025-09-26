@@ -1,0 +1,16 @@
+---
+description: Secure coding rules for Go projects 🦫
+globs:
+  - "**/*.go"
+  - "**/go.mod"
+  - "**/go.sum"
+alwaysApply: false
+---
+
+- Use Go modules for dependency management.
+- Validate all input entries.
+- Use html/template for output to prevent XSS.
+- Use parameterized queries to prevent SQL injection.
+- Avoid using `fmt.Sprintf()` to build SQL or shell commands.
+- Encrypt sensitive information and enforce HTTPS.
+- Log errors securely, avoiding leaks of sensitive data like credentials or tokens.
