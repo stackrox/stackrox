@@ -31,14 +31,29 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			r.Contents.Packages[p.GetId()] = p
 		})
 	}
+	addPackageDEPRECATED := func(p *v4.Package) opts {
+		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
+			r.Contents.PackagesDEPRECATED = append(r.Contents.PackagesDEPRECATED, p)
+		})
+	}
 	addDistribution := func(d *v4.Distribution) opts {
 		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
 			r.Contents.Distributions[d.GetId()] = d
 		})
 	}
+	addDistributionDEPRECATED := func(d *v4.Distribution) opts {
+		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
+			r.Contents.DistributionsDEPRECATED = append(r.Contents.DistributionsDEPRECATED, d)
+		})
+	}
 	addRepository := func(d *v4.Repository) opts {
 		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
 			r.Contents.Repositories[d.GetId()] = d
+		})
+	}
+	addRepositoryDEPRECATED := func(d *v4.Repository) opts {
+		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
+			r.Contents.RepositoriesDEPRECATED = append(r.Contents.RepositoriesDEPRECATED, d)
 		})
 	}
 	addEnvironment := func(pkgId string, d *v4.Environment) opts {
@@ -50,6 +65,19 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			if !ok {
 				envs = &v4.Environment_List{}
 				r.Contents.Environments[pkgId] = envs
+			}
+			envs.Environments = append(envs.Environments, d)
+		})
+	}
+	addEnvironmentDEPRECATED := func(pkgId string, d *v4.Environment) opts {
+		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
+			if r.Contents.EnvironmentsDEPRECATED == nil {
+				r.Contents.EnvironmentsDEPRECATED = make(map[string]*v4.Environment_List)
+			}
+			envs, ok := r.Contents.EnvironmentsDEPRECATED[pkgId]
+			if !ok {
+				envs = &v4.Environment_List{}
+				r.Contents.EnvironmentsDEPRECATED[pkgId] = envs
 			}
 			envs.Environments = append(envs.Environments, d)
 		})
@@ -75,6 +103,8 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addPackage(nil),
+				addPackageDEPRECATED(&v4.Package{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addPackageDEPRECATED(nil),
 			},
 		},
 		"when one of the packages doesn't have id": {
@@ -82,6 +112,8 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addPackage(&v4.Package{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addPackageDEPRECATED(&v4.Package{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addPackageDEPRECATED(&v4.Package{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when one of the packages has an invalid CPE": {
@@ -89,17 +121,25 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addPackage(&v4.Package{Id: "bar", Cpe: "something weird"}),
+				addPackageDEPRECATED(&v4.Package{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addPackageDEPRECATED(&v4.Package{Id: "bar", Cpe: "something weird"}),
 			},
 		},
 		"when a package does not have a source package": {
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addPackageDEPRECATED(&v4.Package{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when a package has a source package with another source package": {
 			wantErr: `Contents.Packages element "foo": package ID="foo" has a source with a source`,
 			argOpts: []opts{
 				addPackage(&v4.Package{
+					Id:     "foo",
+					Cpe:    "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+					Source: &v4.Package{Id: "foobar", Source: &v4.Package{}},
+				}),
+				addPackageDEPRECATED(&v4.Package{
 					Id:     "foo",
 					Cpe:    "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 					Source: &v4.Package{Id: "foobar", Source: &v4.Package{}},
@@ -111,6 +151,8 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{
 				addDistribution(&v4.Distribution{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addDistribution(nil),
+				addDistributionDEPRECATED(&v4.Distribution{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addDistributionDEPRECATED(nil),
 			},
 		},
 		"when one of the distributions doesn't have id": {
@@ -118,6 +160,8 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{
 				addDistribution(&v4.Distribution{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addDistribution(&v4.Distribution{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addDistributionDEPRECATED(&v4.Distribution{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addDistributionDEPRECATED(&v4.Distribution{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when one of the distributions has an invalid CPE": {
@@ -125,6 +169,8 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{
 				addDistribution(&v4.Distribution{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addDistribution(&v4.Distribution{Id: "bar", Cpe: "something weird"}),
+				addDistributionDEPRECATED(&v4.Distribution{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addDistributionDEPRECATED(&v4.Distribution{Id: "bar", Cpe: "something weird"}),
 			},
 		},
 		"when one of the repositories is empty": {
@@ -132,6 +178,8 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{
 				addRepository(&v4.Repository{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addRepository(nil),
+				addRepositoryDEPRECATED(&v4.Repository{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addRepositoryDEPRECATED(nil),
 			},
 		},
 		"when one of the repositories doesn't have an id": {
@@ -139,6 +187,8 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{
 				addRepository(&v4.Repository{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addRepository(&v4.Repository{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addRepositoryDEPRECATED(&v4.Repository{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addRepositoryDEPRECATED(&v4.Repository{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when one of the repositories has an invalid CPE": {
@@ -146,6 +196,8 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{
 				addRepository(&v4.Repository{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addRepository(&v4.Repository{Id: "bar", Cpe: "something weird"}),
+				addRepositoryDEPRECATED(&v4.Repository{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addRepositoryDEPRECATED(&v4.Repository{Id: "bar", Cpe: "something weird"}),
 			},
 		},
 		"when one of the envs reference an invalid valid layer digest": {
@@ -156,6 +208,12 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 				addEnvironment("bar", &v4.Environment{
 					IntroducedIn: "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
 				}),
+				addEnvironmentDEPRECATED("foo", &v4.Environment{
+					IntroducedIn: "sha256:0f2e5032c45d68a9585f035970708802bbc7e2688e1552a4c3d8a7c38c3090c3",
+				}),
+				addEnvironmentDEPRECATED("bar", &v4.Environment{
+					IntroducedIn: "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
+				}),
 			},
 		},
 		"when all the envs reference valid layer digests": {
@@ -164,6 +222,12 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 					IntroducedIn: "sha256:0f2e5032c45d68a9585f035970708802bbc7e2688e1552a4c3d8a7c38c3090c3",
 				}),
 				addEnvironment("bar", &v4.Environment{
+					IntroducedIn: "unexpected layer digest",
+				}),
+				addEnvironmentDEPRECATED("foo", &v4.Environment{
+					IntroducedIn: "sha256:0f2e5032c45d68a9585f035970708802bbc7e2688e1552a4c3d8a7c38c3090c3",
+				}),
+				addEnvironmentDEPRECATED("bar", &v4.Environment{
 					IntroducedIn: "unexpected layer digest",
 				}),
 			},
