@@ -44,15 +44,18 @@ func migrate(database *types.Databases) error {
 
 		log.Debugf("Migrate process indicators for cluster %q", cluster)
 		wg.Add(1)
-		var migrationError error
+		var errorList []error
 
-		go func(c string, err *error) {
+		go func(c string) {
 			defer sema.Release(1)
 			defer wg.Done()
-			*err = migrateByCluster(cluster, database)
-		}(cluster, &migrationError)
-		if migrationError != nil {
-			return migrationError
+			err := migrateByCluster(cluster, database)
+			if err != nil {
+				errorList = append(errorList, err)
+			}
+		}(cluster)
+		if len(errorList) > 0 {
+			return errorList[0]
 		}
 	}
 	wg.Wait()
