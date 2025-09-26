@@ -68,7 +68,6 @@ func (s *migrationTestSuite) TestMigration() {
 
 		for _, cluster := range clusters {
 			var convertedProcessIndicators []oldSchema.ProcessIndicators
-			//log.Info("Writing cluster")
 			for i, processIndicator := range indicators {
 				// spreading these across some deployments to set up search test
 				processIndicator.ClusterId = cluster
@@ -92,7 +91,6 @@ func (s *migrationTestSuite) TestMigration() {
 			if len(convertedProcessIndicators) > 0 {
 				s.Require().NoError(dbs.GormDB.CreateInBatches(convertedProcessIndicators, batchSize).Error)
 			}
-			//log.Info("Wrote cluster")
 		}
 
 		log.Info("Created the indicators")
