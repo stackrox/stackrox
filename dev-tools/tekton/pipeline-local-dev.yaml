@@ -115,10 +115,8 @@ spec:
           name: cache-fetch
         params:
         - name: PATTERNS
-          value:
-          - "**/ui/apps/platform/package.json"
-          - "**/ui/apps/platform/package-lock.json"
-        - name: TARGET
+          value: "**/ui/apps/platform/package.json,**/ui/apps/platform/package-lock.json"
+        - name: SOURCE
           value: "s3://$(params.cache-bucket)/npm-cache/{{hash}}"
         - name: CACHE_PATH
           value: "$(workspaces.shared-data.path)/npm-cache"
@@ -158,9 +156,7 @@ spec:
           name: cache-upload
         params:
         - name: PATTERNS
-          value:
-          - "**/ui/apps/platform/package.json"
-          - "**/ui/apps/platform/package-lock.json"
+          value: "**/ui/apps/platform/package.json,**/ui/apps/platform/package-lock.json"
         - name: TARGET
           value: "s3://$(params.cache-bucket)/npm-cache/{{hash}}"
         - name: CACHE_PATH
@@ -215,10 +211,8 @@ spec:
           name: cache-fetch
         params:
         - name: PATTERNS
-          value:
-          - "**/go.mod"
-          - "!scannerv2**"
-        - name: TARGET
+          value: "**/go.mod,!scannerv2**"
+        - name: SOURCE
           value: "s3://$(params.cache-bucket)/gomod-cache/{{hash}}"
         - name: CACHE_PATH
           value: "$(workspaces.shared-data.path)/gomod-cache"
@@ -239,10 +233,8 @@ spec:
           name: cache-fetch
         params:
         - name: PATTERNS
-          value:
-          - "**/go.mod"
-          - "!scannerv2**"
-        - name: TARGET
+          value: "**/go.mod,!scannerv2**"
+        - name: SOURCE
           value: "s3://$(params.cache-bucket)/gobuild-cache/{{hash}}"
         - name: CACHE_PATH
           value: "$(workspaces.shared-data.path)/gobuild-cache"
@@ -298,9 +290,7 @@ spec:
           name: cache-upload
         params:
         - name: PATTERNS
-          value:
-          - "**/go.mod"
-          - "!scannerv2**"
+          value: "**/go.mod,!scannerv2**"
         - name: TARGET
           value: "s3://$(params.cache-bucket)/gomod-cache/{{hash}}"
         - name: CACHE_PATH
@@ -322,9 +312,7 @@ spec:
           name: cache-upload
         params:
         - name: PATTERNS
-          value:
-          - "**/go.mod"
-          - "!scannerv2**"
+          value: "**/go.mod,!scannerv2**"
         - name: TARGET
           value: "s3://$(params.cache-bucket)/gobuild-cache/{{hash}}"
         - name: CACHE_PATH

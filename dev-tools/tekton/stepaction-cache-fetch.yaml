@@ -6,8 +6,8 @@ spec:
   description: Fetch build cache from S3-compatible storage
   params:
   - name: PATTERNS
-    description: File patterns to generate cache key hash
-    type: array
+    description: Comma-delimited file patterns to generate cache key hash
+    type: string
   - name: SOURCE
     description: Cache source URI with {{hash}} placeholder
     type: string
@@ -52,14 +52,8 @@ spec:
     value: $(params.BLOB_QUERY_PARAMS)
   - name: PARAM_INSECURE
     value: $(params.INSECURE)
-  - name: PARAM_PATTERNS_0
-    value: $(params.PATTERNS[0])
-  - name: PARAM_PATTERNS_1
-    value: $(params.PATTERNS[1])
-  - name: PARAM_PATTERNS_2
-    value: $(params.PATTERNS[2])
-  - name: PARAM_PATTERNS_3
-    value: $(params.PATTERNS[3])
+  - name: PARAM_PATTERNS
+    value: $(params.PATTERNS)
   script: |
     #!/bin/bash
     set -e
@@ -68,16 +62,16 @@ spec:
     echo "Working directory: $PARAM_WORKING_DIR"
     echo "Cache path: $PARAM_CACHE_PATH"
     echo "Source: $PARAM_SOURCE"
-    echo "Patterns: $PARAM_PATTERNS_0 $PARAM_PATTERNS_1 $PARAM_PATTERNS_2 $PARAM_PATTERNS_3"
+    echo "Patterns: $PARAM_PATTERNS"
 
     cd "$PARAM_WORKING_DIR"
 
     # Generate hash from file patterns
     HASH=""
-    for pattern in "$PARAM_PATTERNS_0" "$PARAM_PATTERNS_1" "$PARAM_PATTERNS_2" "$PARAM_PATTERNS_3"; do
-      if [ -z "$pattern" ]; then
-        continue
-      fi
+    IFS=',' read -ra PATTERN_ARRAY <<< "$PARAM_PATTERNS"
+    for pattern in "${PATTERN_ARRAY[@]}"; do
+      # Remove leading/trailing whitespace
+      pattern=$(echo "$pattern" | xargs)
       if [[ "$pattern" == !* ]]; then
         # Skip exclusion patterns for now
         continue
@@ -91,7 +85,7 @@ spec:
 
     if [ ! -f /tmp/hash_input ]; then
       echo "No files found matching patterns, skipping cache"
-      echo "false" > $(results.fetched.path)
+      echo "false" > "$(step.results.fetched.path)"
       exit 0
     fi
 
@@ -130,14 +124,14 @@ spec:
         tar -xzf cache.tar.gz
         rm cache.tar.gz
         echo "Cache successfully fetched and extracted"
-        echo "true" > $(results.fetched.path)
+        echo "true" > "$(step.results.fetched.path)"
       else
         echo "Cache not found, will build from scratch"
-        echo "false" > $(results.fetched.path)
+        echo "false" > "$(step.results.fetched.path)"
       fi
     else
       echo "Invalid S3 URL format: $SOURCE_URL"
-      echo "false" > $(results.fetched.path)
+      echo "false" > "$(step.results.fetched.path)"
     fi
 
     echo "=== Cache Fetch Complete ==="
