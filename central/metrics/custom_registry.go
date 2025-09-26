@@ -116,3 +116,11 @@ func (cr *customRegistry) Reset(metricName string) {
 		gauge.(*prometheus.GaugeVec).Reset()
 	}
 }
+
+// GetCustomRegistriesCount returns the total number of currently known custom
+// registries.
+func GetCustomRegistriesCount() int {
+	registriesMux.Lock()
+	defer registriesMux.Unlock()
+	return len(userRegistries)
+}

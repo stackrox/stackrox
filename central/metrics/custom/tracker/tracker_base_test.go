@@ -5,6 +5,7 @@ import (
 	"iter"
 	"maps"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -395,4 +396,34 @@ func makeAdminContext(t *testing.T) context.Context {
 	)
 	ctx := basic.ContextWithAdminIdentity(t, authProvider)
 	return ctx
+}
+
+func Test_makeProps(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	rf := mocks.NewMockCustomRegistry(ctrl)
+
+	tracker := MakeTrackerBase("test", "telemetry test",
+		testLabelGetters,
+		makeTestGatherFunc(testData))
+	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
+
+	md := makeTestMetricDescriptors(t)
+	tracker.Reconfigure(&Configuration{
+		metrics: md,
+		toAdd:   slices.Collect(maps.Keys(md)),
+		period:  time.Hour,
+	})
+	descriptionTitle := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
+	props := tracker.makeProps(descriptionTitle, 12345*time.Millisecond)
+	get := func(key string) any {
+		if v, ok := props[key]; ok {
+			return v
+		}
+		return nil
+	}
+
+	assert.Len(t, props, 3)
+	assert.ElementsMatch(t, get("Telemetry test metrics labels"), []Label{"Cluster", "Namespace", "Severity"})
+	assert.Equal(t, len(md), get("Total Telemetry test metrics"))
+	assert.Equal(t, uint32(12), get("Telemetry test gathering seconds"))
 }

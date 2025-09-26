@@ -1,20 +1,25 @@
 package tracker
 
 import (
+	"cmp"
 	"context"
 	"iter"
 	"maps"
 	"net/http"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 const inactiveGathererTTL = 2 * 24 * time.Hour
@@ -272,10 +277,34 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
+	begin := time.Now()
 	if err := tracker.track(ctx, gatherer.registry, cfg.metrics); err != nil {
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
-	gatherer.lastGather = time.Now()
+	end := time.Now()
+	gatherer.lastGather = end
+
+	descriptionTitle := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
+	centralclient.Singleton().Telemeter().Track(
+		descriptionTitle+" metrics gathered", nil,
+		telemeter.WithTraits(tracker.makeProps(descriptionTitle, end.Sub(begin))),
+		telemeter.WithNoDuplicates(tracker.metricPrefix))
+}
+
+func (tracker *TrackerBase[Finding]) makeProps(descriptionTitle string, duration time.Duration) map[string]any {
+	props := make(map[string]any, 3)
+	props["Total "+descriptionTitle+" metrics"] = len(tracker.config.metrics)
+	props[descriptionTitle+" metrics labels"] = getLabels(tracker.config.metrics)
+	props[descriptionTitle+" gathering seconds"] = uint32(duration.Round(time.Second).Seconds())
+	return props
+}
+
+func getLabels(metrics MetricDescriptors) []Label {
+	labels := set.NewSet[Label]()
+	for _, metricLabels := range metrics {
+		labels.AddAll(metricLabels...)
+	}
+	return labels.AsSortedSlice(cmp.Less)
 }
 
 // getGatherer returns the existing or a new gatherer for the given userID.
