@@ -48,17 +48,29 @@ func (s *migrationTestSuite) TestMigration() {
 	}
 
 	clusters := []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2, fixtureconsts.Cluster3}
-	numIndicators := 300
+	numIndicators := 7024
 	numNilContainerTime := 10
 
 	if !s.existingDB {
 		// Create the old schema for testing
+		pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableClustersStmt)
 		pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableProcessIndicatorsStmt)
 
 		// Add some process indicators
 		var indicators []*storage.ProcessIndicator
+		var convertedClusters []oldSchema.Clusters
 
 		log.Info("Building base indicators")
+		for i := 0; i < len(clusters); i++ {
+			cluster := &storage.Cluster{}
+			s.NoError(testutils.FullInit(cluster, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+			cluster.Id = clusters[i]
+			converted, err := oldSchema.ConvertClusterFromProto(cluster)
+			s.Require().NoError(err)
+			convertedClusters = append(convertedClusters, *converted)
+		}
+		s.Require().NoError(dbs.GormDB.CreateInBatches(convertedClusters, batchSize).Error)
+
 		for i := 0; i < numIndicators; i++ {
 			processIndicator := &storage.ProcessIndicator{}
 			s.NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
