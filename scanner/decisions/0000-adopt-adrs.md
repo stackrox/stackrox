@@ -2,10 +2,11 @@
 
 - **Author(s):** J. Victor Martins <jvdm@sdf.org>
 - **Created:** [2023-08-23 Wed]
+- **Updated:** [2023-10-21 Tue]
 
 ## Status
 
-Accepted.
+Updated.
 
 ## Context
 
@@ -33,5 +34,11 @@ Currently, decisions about Stackrox Scanner are made using informal slack thread
 - **Flexibility between ADRs and Design Docs:** A better understanding of when a design document will add value, providing flexibility to adapt to the evaluated problem.
 - **Public vs. Private:** Private ADRs need to exist when the decision is sensitive to happen in public. Even though the number of private decisions will be significantly lower, having two ADR locations will still be painful.
 
-[^1]: Design Documents can clarify decisions when the problem or context is too complex or ambiguous. Its purpose is to lay out options, compare them, find pros and cons, obtain data, and provide a recommendation based on the problem. Not all decisions require the same level of detail or overhead; we can also determine whether we need that by reviewing the ADR. Yes, the additional information could be added directly to the ADR, but leaving the Design Document format open has advantages. It can be modified and adapted to suit the problem it is evaluating. Also, PR-like reviews are not ideal for editing and discussing design docs. While ADRs are records that should not change with time (only if another ADR supersedes it etc.).
+## ADR Lifecycle
 
+1. **Creation:** Use the [template](./template.md) to create the ADR in [scanner/decisions](.).
+2. **Review & feedback:** Push your changes, create a pull request, and request feedback from the relevant team members.
+3. **Merge:** Once the ADR has been signed off, merge the PR. Ensure the `Status` is accurate before merging.
+4. **Modification:** If there is a required change, or if a change has already been made such that the ADR doesn't reflect reality, an ADR shall be modified to reflect the change. Make the required changes and start from step 2.
+
+[^1]: Design Documents can clarify decisions when the problem or context is too complex or ambiguous. Its purpose is to lay out options, compare them, find pros and cons, obtain data, and provide a recommendation based on the problem. Not all decisions require the same level of detail or overhead; we can also determine whether we need that by reviewing the ADR. Yes, the additional information could be added directly to the ADR, but leaving the Design Document format open has advantages. It can be modified and adapted to suit the problem it is evaluating. Also, PR-like reviews are not ideal for editing and discussing design docs.
