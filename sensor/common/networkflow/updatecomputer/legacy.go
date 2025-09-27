@@ -45,7 +45,20 @@ func (l *Legacy) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp
 	})
 }
 
-func (l *Legacy) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
+func (l *Legacy) ComputeUpdatedEndpointsAndProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
+	currentEps := make(map[indicator.ContainerEndpoint]timestamp.MicroTS, len(l.enrichedEndpointsLastSentState))
+	currentProc := make(map[indicator.ProcessListening]timestamp.MicroTS)
+	// Convert the joint map into the legacy format with two maps
+	for endpoint, procWithTS := range enrichedEndpointsProcesses {
+		currentEps[endpoint] = procWithTS.LastSeen
+		if procWithTS.ProcessListening != nil {
+			currentProc[*procWithTS.ProcessListening] = procWithTS.LastSeen
+		}
+	}
+	return l.computeUpdatedEndpoints(currentEps), l.computeUpdatedProcesses(currentProc)
+}
+
+func (l *Legacy) computeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
 	return concurrency.WithRLock1(&l.lastSentStateMutex, func() []*storage.NetworkEndpoint {
 		return computeUpdates(current, l.enrichedEndpointsLastSentState, func(ep indicator.ContainerEndpoint, ts timestamp.MicroTS) *storage.NetworkEndpoint {
 			return (&ep).ToProto(ts)
@@ -53,7 +66,7 @@ func (l *Legacy) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint
 	})
 }
 
-func (l *Legacy) ComputeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
+func (l *Legacy) computeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
 		if len(current) > 0 {
 			logging.GetRateLimitedLogger().Warn(loggingRateLimiter,
@@ -68,29 +81,39 @@ func (l *Legacy) ComputeUpdatedProcesses(current map[indicator.ProcessListening]
 	})
 }
 
-// OnSuccessfulSend updates the internal LastSentState maps with the currentState state.
-// Providing nil will skip updates for respective map.
-// Providing empty map will reset the state for given state.
-func (l *Legacy) OnSuccessfulSend(currentConns map[indicator.NetworkConn]timestamp.MicroTS,
-	currentEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
-	currentProcesses map[indicator.ProcessListening]timestamp.MicroTS,
-) {
-	l.lastSentStateMutex.Lock()
-	defer l.lastSentStateMutex.Unlock()
-
-	// Update connections state
+func (l *Legacy) OnSuccessfulSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
 	if currentConns != nil {
+		l.lastSentStateMutex.Lock()
+		defer l.lastSentStateMutex.Unlock()
 		l.enrichedConnsLastSentState = maps.Clone(currentConns)
 	}
+}
 
-	// Update endpoints state
-	if currentEndpoints != nil {
-		l.enrichedEndpointsLastSentState = maps.Clone(currentEndpoints)
+// OnSuccessfulSendEndpoints updates the internal enrichedConnsLastSentState map with the currentState state.
+// Providing nil will skip updates for respective map.
+// Providing empty map will reset the state for given state.
+func (l *Legacy) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	if enrichedEndpointsProcesses != nil {
+		l.lastSentStateMutex.Lock()
+		defer l.lastSentStateMutex.Unlock()
+		l.enrichedEndpointsLastSentState = make(map[indicator.ContainerEndpoint]timestamp.MicroTS, len(enrichedEndpointsProcesses))
+		for endpoint, procWithTS := range enrichedEndpointsProcesses {
+			l.enrichedEndpointsLastSentState[endpoint] = procWithTS.LastSeen
+		}
 	}
+}
 
-	// Update processes state
-	if currentProcesses != nil {
-		l.enrichedProcessesLastSentState = maps.Clone(currentProcesses)
+// OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
+func (l *Legacy) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	if enrichedEndpointsProcesses != nil {
+		l.lastSentStateMutex.Lock()
+		defer l.lastSentStateMutex.Unlock()
+		l.enrichedProcessesLastSentState = make(map[indicator.ProcessListening]timestamp.MicroTS, len(enrichedEndpointsProcesses))
+		for _, procWithTS := range enrichedEndpointsProcesses {
+			if procWithTS.ProcessListening != nil {
+				l.enrichedProcessesLastSentState[*procWithTS.ProcessListening] = procWithTS.LastSeen
+			}
+		}
 	}
 }
 

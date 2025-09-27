@@ -291,9 +291,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 		expectedResultNG   EnrichmentResult
 		expectedResultPLOP EnrichmentResult
 		expectedReasonNG   EnrichmentReasonEp
-		prePopulateData    func(*testing.T,
-			map[indicator.ContainerEndpoint]timestamp.MicroTS,
-			map[indicator.ProcessListening]timestamp.MicroTS)
+		prePopulateData    func(*testing.T, map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 	}{
 		"Fresh endpoint with no process info should yield result EnrichmentResultSuccess for Network Graph and EnrichmentResultInvalidInput for PLOP": {
 			setupEndpoint: func() (*containerEndpoint, *connStatus) {
@@ -326,15 +324,13 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			expectedResultNG:   EnrichmentResultSuccess,
 			expectedResultPLOP: EnrichmentResultSuccess,
 			expectedReasonNG:   EnrichmentReasonEpDuplicate,
-			prePopulateData: func(t *testing.T, enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
-				processesListening map[indicator.ProcessListening]timestamp.MicroTS) {
+			prePopulateData: func(t *testing.T, data map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 				// Pre-populate with newer timestamp to trigger duplicate detection
 				endpointIndicator := indicator.ContainerEndpoint{
 					Entity:   networkgraph.EntityForDeployment("test-deployment"),
 					Port:     80,
 					Protocol: net.TCP.ToProtobuf(),
 				}
-				enrichedEndpoints[endpointIndicator] = timestamp.Now() // newer timestamp
 				processIndicator := indicator.ProcessListening{
 					ContainerName: "test-container",
 					DeploymentID:  "test-deployment",
@@ -349,7 +345,10 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 					PodUID:    "test-pod-uid",
 					Namespace: "test-namespace",
 				}
-				processesListening[processIndicator] = timestamp.Now() // newer timestamp
+				data[endpointIndicator] = &indicator.ProcessListeningWithTimestamp{
+					ProcessListening: &processIndicator,
+					LastSeen:         timestamp.Now(), // a newer timestamp
+				}
 			},
 		},
 	}
@@ -371,18 +370,17 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 
 			// Setup test data
 			ep, status := tt.setupEndpoint()
-			enrichedEndpoints := make(map[indicator.ContainerEndpoint]timestamp.MicroTS)
-			processesListening := make(map[indicator.ProcessListening]timestamp.MicroTS)
+			enrichedEndpointsProcesses := make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 
 			// Pre-populate data if validation function needs it
 			if tt.prePopulateData != nil {
-				tt.prePopulateData(t, enrichedEndpoints, processesListening)
+				tt.prePopulateData(t, enrichedEndpointsProcesses)
 			}
 
 			// Execute the enrichment
 			now := timestamp.Now()
 			resultNG, resultPLOP, reasonNG, _ := m.enrichContainerEndpoint(
-				now, ep, status, enrichedEndpoints, processesListening, now)
+				now, ep, status, enrichedEndpointsProcesses, now)
 
 			// Assert results
 			assert.Equal(t, tt.expectedResultNG, resultNG, "Network graph enrichment result mismatch")
