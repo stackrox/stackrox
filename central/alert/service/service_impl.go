@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -16,7 +17,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -379,17 +379,16 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 		return err
 	}
 
-	b := batcher.New(len(alerts), alertResolveBatchSize)
-	for start, end, valid := b.Next(); valid; start, end, valid = b.Next() {
-		for _, alert := range alerts[start:end] {
+	for alertBatch := range slices.Chunk(alerts, alertResolveBatchSize) {
+		for _, alert := range alertBatch {
 			alert.State = state
 		}
-		err := s.dataStore.UpsertAlerts(ctx, alerts[start:end])
+		err := s.dataStore.UpsertAlerts(ctx, alertBatch)
 		if err != nil {
 			log.Error(err)
 			return err
 		}
-		for _, alert := range alerts[start:end] {
+		for _, alert := range alertBatch {
 			s.notifier.ProcessAlert(ctx, alert)
 		}
 	}

@@ -264,7 +264,6 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	if strings.HasPrefix(validImportRoot, "migrator") {
 		allowedPackages = appendPackageWithChildren(allowedPackages,
 			"pkg/auth",
-			"pkg/batcher",
 			"pkg/binenc",
 			"pkg/booleanpolicy/policyversion",
 			"pkg/buildinfo",
