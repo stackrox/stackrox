@@ -68,36 +68,12 @@ spec:
       # Clone repository
       echo "Cloning $(params.url) into $CHECKOUT_DIR"
       if [ "$(params.depth)" = "0" ]; then
-        git clone "$(params.url)" "$CHECKOUT_DIR"
+        git clone --revision "$(params.revision)" "$(params.url)" "$CHECKOUT_DIR"
       else
-        git clone --depth "$(params.depth)" "$(params.url)" "$CHECKOUT_DIR"
+        git clone --depth "$(params.depth)" --revision "$(params.revision)" "$(params.url)" "$CHECKOUT_DIR"
       fi
 
       cd "$CHECKOUT_DIR"
-
-      # Checkout specific revision if provided
-      if [ -n "$(params.revision)" ]; then
-        echo "Checking out revision: $(params.revision)"
-
-        # First try as a branch
-        if git checkout "$(params.revision)" 2>/dev/null; then
-          echo "Checked out branch: $(params.revision)"
-        elif git checkout "origin/$(params.revision)" 2>/dev/null; then
-          echo "Checked out remote branch: origin/$(params.revision)"
-        elif git checkout "$(params.revision)" 2>/dev/null; then
-          echo "Checked out tag/SHA: $(params.revision)"
-        else
-          # Try fetching first if shallow clone
-          if [ "$(params.depth)" != "0" ]; then
-            echo "Attempting to fetch revision: $(params.revision)"
-            git fetch origin "$(params.revision)" || git fetch origin
-            git checkout "$(params.revision)" || git checkout "origin/$(params.revision)"
-          else
-            echo "ERROR: Failed to checkout revision: $(params.revision)"
-            exit 1
-          fi
-        fi
-      fi
 
       # Initialize submodules if requested
       if [ "$(params.submodules)" = "true" ]; then
