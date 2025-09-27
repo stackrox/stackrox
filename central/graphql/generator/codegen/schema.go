@@ -91,6 +91,9 @@ func schemaExpand(p reflect.Type) string {
 	case reflect.Bool:
 		return "Boolean!"
 	case reflect.Slice:
+		if p.Elem().Kind() == reflect.Uint8 {
+			return "String!" // bytes as base64 string (non-null)
+		}
 		inner := schemaExpand(p.Elem())
 		if inner != "" {
 			return fmt.Sprintf("[%s]!", inner)
