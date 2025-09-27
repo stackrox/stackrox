@@ -23,6 +23,7 @@ type ExternalIndexStore interface {
 		expiration time.Time,
 		shouldUpdateStoredReportFn func(iv string) bool,
 	) error
+	GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error)
 	GCIndexReports(
 		ctx context.Context,
 		expiration time.Time,

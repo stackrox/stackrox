@@ -78,6 +78,27 @@ func (e *externalIndexStore) StoreIndexReport(
 	return nil
 }
 
+func (e *externalIndexStore) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/externalIndexStore.GetIndexReport")
+
+	const selectIndexReport = `
+		SELECT index_report FROM external_index_report
+			WHERE hash_id = $1`
+
+	row := e.pool.QueryRow(ctx, selectIndexReport, hashID)
+	var ir claircore.IndexReport
+	err := row.Scan(&ir)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+
+		return nil, false, fmt.Errorf("checking if index report exists: %w", err)
+	}
+
+	return &ir, true, nil
+}
+
 func (e *externalIndexStore) GCIndexReports(
 	ctx context.Context,
 	expiration time.Time,

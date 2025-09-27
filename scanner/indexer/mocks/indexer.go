@@ -43,9 +43,9 @@ func (m *MockReportGetter) EXPECT() *MockReportGetterMockRecorder {
 }
 
 // GetIndexReport mocks base method.
-func (m *MockReportGetter) GetIndexReport(arg0 context.Context, arg1 string) (*claircore.IndexReport, bool, error) {
+func (m *MockReportGetter) GetIndexReport(arg0 context.Context, arg1 string, arg2 bool) (*claircore.IndexReport, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIndexReport", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetIndexReport", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*claircore.IndexReport)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -53,9 +53,9 @@ func (m *MockReportGetter) GetIndexReport(arg0 context.Context, arg1 string) (*c
 }
 
 // GetIndexReport indicates an expected call of GetIndexReport.
-func (mr *MockReportGetterMockRecorder) GetIndexReport(arg0, arg1 any) *gomock.Call {
+func (mr *MockReportGetterMockRecorder) GetIndexReport(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockReportGetter)(nil).GetIndexReport), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockReportGetter)(nil).GetIndexReport), arg0, arg1, arg2)
 }
 
 // MockReportStorer is a mock of ReportStorer interface.
@@ -136,9 +136,9 @@ func (mr *MockIndexerMockRecorder) Close(arg0 any) *gomock.Call {
 }
 
 // GetIndexReport mocks base method.
-func (m *MockIndexer) GetIndexReport(arg0 context.Context, arg1 string) (*claircore.IndexReport, bool, error) {
+func (m *MockIndexer) GetIndexReport(arg0 context.Context, arg1 string, arg2 bool) (*claircore.IndexReport, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIndexReport", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetIndexReport", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*claircore.IndexReport)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -146,9 +146,9 @@ func (m *MockIndexer) GetIndexReport(arg0 context.Context, arg1 string) (*clairc
 }
 
 // GetIndexReport indicates an expected call of GetIndexReport.
-func (mr *MockIndexerMockRecorder) GetIndexReport(arg0, arg1 any) *gomock.Call {
+func (mr *MockIndexerMockRecorder) GetIndexReport(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockIndexer)(nil).GetIndexReport), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockIndexer)(nil).GetIndexReport), arg0, arg1, arg2)
 }
 
 // IndexContainerImage mocks base method.
