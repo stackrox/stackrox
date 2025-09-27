@@ -10,6 +10,8 @@ FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
 ARG DEBUG_BUILD=no
 
 WORKDIR /
+RUN pwd
+RUN ls
 COPY download.sh /download.sh
 RUN /download.sh
 
