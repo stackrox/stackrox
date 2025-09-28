@@ -8,13 +8,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	//"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
-
 
 // NewBaselineEvaluator creates a new baseline evaluator, using optimized implementation if feature flag is enabled
 func NewBaselineEvaluator() Evaluator {
@@ -69,10 +67,13 @@ type HashKey [32]byte
 
 // computeProcessSetHash creates a deterministic hash for a process set
 func computeProcessSetHash(processes set.StringSet) HashKey {
-    processSlice := processes.AsSlice()
-    slices.Sort(processSlice)
-    content := strings.Join(processSlice, "\n")
-    return sha256.Sum256([]byte(content))
+	// Convert to sorted slice for deterministic hashing
+	processSlice := processes.AsSlice()
+	slices.Sort(processSlice)
+
+	// Create hash of concatenated processes
+	content := strings.Join(processSlice, "\n")
+	return sha256.Sum256([]byte(content))
 }
 
 // RemoveDeployment removes a deployment from the optimized baseline evaluator
