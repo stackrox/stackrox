@@ -3,7 +3,7 @@ import type { VirtualMachine } from 'services/VirtualMachineService';
 import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
 import type { SearchFilter } from 'types/search';
-import type { Advisory, CVSSV3Severity, EmbeddedVulnerability } from 'types/vulnerability.proto';
+import type { Advisory, EmbeddedVulnerability } from 'types/vulnerability.proto';
 import { searchValueAsArray } from 'utils/searchUtils';
 
 import { severityToQuerySeverityKeys } from '../components/BySeveritySummaryCard';
@@ -16,20 +16,18 @@ import { severityLabelToSeverity } from '../utils/searchUtils';
 
 export function getVirtualMachineSeveritiesCount(
     virtualMachine: VirtualMachine
-): Record<CVSSV3Severity, number> {
-    const severityCounts: Record<CVSSV3Severity, number> = {
-        CRITICAL: 0,
-        HIGH: 0,
-        MEDIUM: 0,
-        LOW: 0,
-        UNKNOWN: 0,
-        NONE: 0,
+): Record<VulnerabilitySeverity, number> {
+    const severityCounts: Record<VulnerabilitySeverity, number> = {
+        CRITICAL_VULNERABILITY_SEVERITY: 0,
+        IMPORTANT_VULNERABILITY_SEVERITY: 0,
+        MODERATE_VULNERABILITY_SEVERITY: 0,
+        LOW_VULNERABILITY_SEVERITY: 0,
+        UNKNOWN_VULNERABILITY_SEVERITY: 0,
     };
 
     virtualMachine.scan.components.forEach((component) => {
         component.vulns.forEach((vuln) => {
-            const { severity } = vuln.cvssV3;
-            severityCounts[severity] += 1;
+            severityCounts[vuln.severity] += 1;
         });
     });
 
