@@ -1,0 +1,4 @@
+name: ${ROLE_KEY}
+description: declarative role used in testing
+permissionSet: ${PERMISSION_SET_KEY}
+accessScope: ${ACCESS_SCOPE_KEY}
