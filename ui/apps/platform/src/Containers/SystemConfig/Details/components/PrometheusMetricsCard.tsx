@@ -9,12 +9,6 @@ import {
     CardBody,
     CardHeader,
     CardTitle,
-    DataList,
-    DataListCell,
-    DataListCheck,
-    DataListItem,
-    DataListItemCells,
-    DataListItemRow,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -31,11 +25,13 @@ import {
     LabelGroup,
     TextInput,
 } from '@patternfly/react-core';
+import { Table, Tr, Td, Thead, Tbody, Th } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 import { FormikErrors, FormikValues } from 'formik';
 
 const metricPrefixes = {
     imageVulnerabilities: 'rox_central_image_vuln_',
+    nodeVulnerabilities: 'rox_central_node_vuln_',
     policyViolations: 'rox_central_policy_violation_',
 };
 
@@ -100,7 +96,8 @@ function labelGroup(labels: PrometheusMetricsLabels): ReactElement {
     );
 }
 
-function predefinedMetricListItem(
+function predefinedMetricTableRow(
+    rowIndex: number,
     enabled: boolean,
     category: PrometheusMetricsCategory,
     metric: string,
@@ -109,44 +106,36 @@ function predefinedMetricListItem(
         | undefined
 ): ReactElement {
     return (
-        <DataListItem key={`${category}-${metric}`}>
-            <DataListItemRow>
-                {onCustomChange ? (
-                    <DataListCheck
-                        key={`${category}-${metric}-checkbox`}
-                        id={`${category}-${metric}-checkbox`}
-                        aria-labelledby={`${category}-${metric}-label`}
-                        name={`${category}-${metric}`}
-                        isChecked={enabled}
-                        onChange={(_, checked) =>
+        <Tr key={`${category}-${metric}-row`}>
+            {onCustomChange ? (
+                <Td
+                    key={`${category}-${metric}-checkbox`}
+                    id={`${category}-${metric}-checkbox`}
+                    aria-labelledby={`${category}-${metric}-label`}
+                    name={`${category}-${metric}`}
+                    select={{
+                        rowIndex,
+                        onSelect: (_event, checked) =>
                             onCustomChange(
                                 checked ? predefinedMetrics[category][metric] : undefined,
                                 `privateConfig.metrics.${category}.descriptors.${metric}`
-                            )
-                        }
-                    />
-                ) : null}
-                <DataListItemCells
-                    dataListCells={[
-                        <DataListCell
-                            key={`${category}-${metric}-label`}
-                            id={`${category}-${metric}-label`}
-                        >
-                            <label htmlFor={`${category}-${metric}-checkbox`}>
-                                {metricPrefixes[category]}
-                                <strong>{metric}</strong>
-                            </label>
-                        </DataListCell>,
-                        <DataListCell key={`${category}-${metric}-predefined`}>
-                            Predefined
-                        </DataListCell>,
-                        <DataListCell key={`${category}-${metric}-descriptors`}>
-                            {labelGroup(predefinedMetrics[category][metric])}
-                        </DataListCell>,
-                    ]}
+                            ),
+                        isSelected: enabled,
+                        isDisabled: false,
+                    }}
                 />
-            </DataListItemRow>
-        </DataListItem>
+            ) : null}
+            <Td key={`${category}-${metric}-label`} id={`${category}-${metric}-label`}>
+                <label htmlFor={`${category}-${metric}-checkbox`}>
+                    {metricPrefixes[category]}
+                    <strong>{metric}</strong>
+                </label>
+            </Td>
+            <Td key={`${category}-${metric}-predefined`}>Predefined</Td>
+            <Td key={`${category}-${metric}-descriptors`}>
+                {labelGroup(predefinedMetrics[category][metric])}
+            </Td>
+        </Tr>
     );
 }
 
@@ -162,67 +151,82 @@ function hasMetric(
     return cfgLabels.length === ll.length && cfgLabels.every((label) => ll.includes(label));
 }
 
-function prometheusMetricsDataList(
-    descriptors: Record<string, PrometheusMetricsLabels> | undefined,
-    category: PrometheusMetricsCategory,
+type PrometheusMetricsTableProps = {
+    descriptors: Record<string, PrometheusMetricsLabels> | undefined;
+    category: PrometheusMetricsCategory;
     onCustomChange:
         | ((value: unknown, id: string) => Promise<void> | Promise<FormikErrors<FormikValues>>)
-        | undefined
-): ReactElement {
-    return (
-        <DataList aria-label={`${category}-metrics-descriptors`} isCompact>
-            {Object.entries(predefinedMetrics[category]).map(
-                ([predefinedMetric, originalLabels]) => {
-                    // In view mode show only enabled predefined metrics.
-                    // In edit mode show all predefined metrics unless they're
-                    // overridden.
+        | undefined;
+};
 
-                    const isEnabledOriginal = hasMetric(
-                        descriptors,
-                        predefinedMetric,
-                        originalLabels
-                    );
-                    const enabled = descriptors !== undefined && predefinedMetric in descriptors;
-                    if (isEnabledOriginal || (onCustomChange && !enabled)) {
-                        return predefinedMetricListItem(
-                            isEnabledOriginal,
-                            category,
+function PrometheusMetricsTable({
+    descriptors,
+    category,
+    onCustomChange,
+}: PrometheusMetricsTableProps): ReactElement {
+    return (
+        <Table aria-label={`${category}-metrics-descriptors`} variant="compact">
+            <Thead>
+                <Tr key={`${category}-metrics-descriptor-header`}>
+                    {onCustomChange ? <Th select={undefined} /> : null}
+                    <Th width={30}>Metric name</Th>
+                    <Th width={10}>Origin</Th>
+                    <Th>Labels</Th>
+                </Tr>
+            </Thead>
+            <Tbody>
+                {Object.entries(predefinedMetrics[category]).map(
+                    ([predefinedMetric, originalLabels], rowIndex) => {
+                        // In view mode show only enabled predefined metrics.
+                        // In edit mode show all predefined metrics unless they're
+                        // overridden.
+
+                        const isEnabledOriginal = hasMetric(
+                            descriptors,
                             predefinedMetric,
-                            onCustomChange
+                            originalLabels
                         );
+                        const enabled =
+                            descriptors !== undefined && predefinedMetric in descriptors;
+                        if (isEnabledOriginal || (onCustomChange && !enabled)) {
+                            return predefinedMetricTableRow(
+                                rowIndex,
+                                isEnabledOriginal,
+                                category,
+                                predefinedMetric,
+                                onCustomChange
+                            );
+                        }
+                        return null;
                     }
-                    return null;
-                }
-            )}
-            {Object.entries(descriptors || {}).map(([metric, labels]) => {
-                // Predefined are rendered above.
-                if (hasMetric(predefinedMetrics[category], metric, labels)) {
-                    return null;
-                }
-                return (
-                    <DataListItem key={`${category}-${metric}`} id={`${category}-${metric}`}>
-                        <DataListItemRow>
+                )}
+                {Object.entries(descriptors || {}).map(([metric, labels]) => {
+                    // Predefined are rendered above.
+                    if (hasMetric(predefinedMetrics[category], metric, labels)) {
+                        return null;
+                    }
+                    return (
+                        <Tr key={`${category}-${metric}`} id={`${category}-${metric}`}>
                             {onCustomChange ? (
-                                <DataListCheck
+                                <Td
                                     id={metric}
                                     aria-labelledby={metric}
                                     name={metric}
-                                    isChecked
-                                    isDisabled
+                                    selected
+                                    disabled
                                 />
                             ) : null}
-                            <DataListItemCells
-                                dataListCells={[
-                                    <DataListCell>{metric}</DataListCell>,
-                                    <DataListCell>Custom</DataListCell>,
-                                    <DataListCell>{labelGroup(labels)}</DataListCell>,
-                                ]}
-                            />
-                        </DataListItemRow>
-                    </DataListItem>
-                );
-            })}
-        </DataList>
+                            <Td>
+                                {metricPrefixes[category]}
+                                <strong>{metric}</strong>
+                            </Td>
+                            <Td>Custom</Td>
+                            <Td>{labelGroup(labels)}</Td>
+                        </Tr>
+                    );
+                })}
+            </Tbody>
+        </Table>
     );
 }
 
@@ -263,29 +267,30 @@ export function PrometheusMetricsCard({
                 <Divider component="div" />
                 <CardBody>
                     {hasMetrics ? (
-                        <DescriptionList
-                            isCompact
-                            isHorizontal
-                            columnModifier={{
-                                default: '1Col',
-                            }}
-                        >
-                            {period ? (
-                                <DescriptionListGroup key={`${category}-period`}>
-                                    <DescriptionListTerm>Gathering period</DescriptionListTerm>
-                                    <DescriptionListDescription>
-                                        {period}&nbsp;
-                                        {pluralize('minute', period)}
-                                    </DescriptionListDescription>
-                                </DescriptionListGroup>
-                            ) : null}
-                            <DescriptionListGroup key={`${category}-metrics`}>
-                                <DescriptionListTerm>Metrics</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {prometheusMetricsDataList(descriptors, category, undefined)}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                        </DescriptionList>
+                        <>
+                            <DescriptionList
+                                isCompact
+                                isHorizontal
+                                columnModifier={{
+                                    default: '1Col',
+                                }}
+                            >
+                                {period ? (
+                                    <DescriptionListGroup key={`${category}-period`}>
+                                        <DescriptionListTerm>Gathering period</DescriptionListTerm>
+                                        <DescriptionListDescription>
+                                            {period}&nbsp;
+                                            {pluralize('minute', period)}
+                                        </DescriptionListDescription>
+                                    </DescriptionListGroup>
+                                ) : null}
+                            </DescriptionList>
+                            <PrometheusMetricsTable
+                                descriptors={descriptors}
+                                category={category}
+                                onCustomChange={undefined}
+                            />
+                        </>
                     ) : (
                         <EmptyState variant="xs">
                             <EmptyStateHeader>No metrics has been configured</EmptyStateHeader>
@@ -358,11 +363,11 @@ export function PrometheusMetricsForm({
                             </GridItem>
                             <GridItem md={12}>
                                 <FormGroup label="Metrics configuration" role="group">
-                                    {prometheusMetricsDataList(
-                                        pcfg?.metrics?.[category]?.descriptors,
-                                        category,
-                                        onCustomChange
-                                    )}
+                                    <PrometheusMetricsTable
+                                        descriptors={pcfg?.metrics?.[category]?.descriptors}
+                                        category={category}
+                                        onCustomChange={onCustomChange}
+                                    />
                                 </FormGroup>
                             </GridItem>
                         </Grid>
