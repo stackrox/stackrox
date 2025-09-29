@@ -19,6 +19,8 @@ import {
     VirtualMachineComponentName,
     VirtualMachineComponentVersion,
     VirtualMachineCVEName,
+    VirtualMachineID,
+    VirtualMachineName,
 } from 'Components/CompoundSearchFilter/attributes/virtualMachine';
 
 export const nodeSearchFilterConfig: CompoundSearchFilterEntity = {
@@ -85,6 +87,12 @@ export const platformCVESearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'CVE',
     searchCategory: 'CLUSTER_VULNERABILITIES',
     attributes: platformCVEAttributes,
+};
+
+export const virtualMachinesSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Virtual Machine',
+    searchCategory: 'SEARCH_UNSET', // TODO: will be updated with ROX-30825, dependent on PR#16758
+    attributes: [VirtualMachineName, VirtualMachineID],
 };
 
 export const virtualMachineCVESearchFilterConfig: CompoundSearchFilterEntity = {
