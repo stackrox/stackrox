@@ -37,7 +37,7 @@ type PolicyBehaviorFormProps = {
 
 function getEventSourceHelperText(eventSource) {
     if (eventSource === 'DEPLOYMENT_EVENT') {
-        return 'Monitor live deployments for process activity, baseline deviation, and user issued container commands.';
+        return 'Monitor deployments for process activity, baseline deviation, and user issued container commands.';
     }
 
     if (eventSource === 'AUDIT_LOG_EVENT') {
@@ -168,11 +168,11 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         className="pf-v5-u-pt-sm"
                     >
                         <p>
-                            <strong>Build-stage</strong> policies can only inspect images. They are
+                            <strong>Build stage</strong> policies can only inspect images. They are
                             evaluated in the build pipeline.
                         </p>
                         <p>
-                            <strong>Deploy-stage</strong> policies can inspect workloads and/or
+                            <strong>Deploy stage</strong> policies can inspect workloads and/or
                             their images. They are evaluated while creating or updating a workload
                             resource, and re-evaluated periodically or on demand.
                         </p>
@@ -183,7 +183,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             policy).
                         </p>
                         <p>
-                            <strong>Runtime-stage</strong> policies operate on one of two domains:
+                            <strong>Runtime</strong> policies operate on one of two domains:
                             Workload Activity or Kubernetes Resource Operations. The two domains are
                             associated with different “Event Sources”.
                         </p>
