@@ -31,6 +31,7 @@ import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import type { VulnerabilityState } from 'types/cve.proto';
 
@@ -50,12 +51,11 @@ import ImageDetailBadges, {
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
+import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../../utils/searchUtils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
-import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../../utils/searchUtils';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -138,14 +138,14 @@ function ImagePage({
     const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
-    const onReportSelect = (value: string | number | undefined) => {
-        // For now, only handle CSV export. Add other report types here as needed.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const onReportSelect = (_value: string | number | undefined) => {
         setIsCreateViewBasedReportModalOpen(true);
     };
 
     const buildImageQuery = () => {
-        // Create a scoped query that includes the image ID filter plus any applied search filters
-        const imageScopedFilter = { 'Image ID': imageId };
+        // Create a scoped query that includes the image SHA filter plus any applied search filters
+        const imageScopedFilter = { 'Image SHA': [imageId] };
         const combinedFilter = { ...baseSearchFilter, ...imageScopedFilter, ...querySearchFilter };
         return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
     };
@@ -264,7 +264,7 @@ function ImagePage({
                 >
                     <Tabs
                         activeKey={activeTabKey}
-                        onSelect={(e, key) => {
+                        onSelect={(_e, key) => {
                             setActiveTabKey(key);
                             pagination.setPage(1);
                         }}
@@ -293,9 +293,9 @@ function ImagePage({
                                 searchFilter={searchFilter}
                                 setSearchFilter={setSearchFilter}
                                 additionalToolbarItems={
-                                    isViewBasedReportsEnabled ? (
+                                    isViewBasedReportsEnabled && (
                                         <CreateReportDropdown onSelect={onReportSelect} />
-                                    ) : undefined
+                                    )
                                 }
                             />
                         </Tab>
