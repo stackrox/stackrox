@@ -3,6 +3,7 @@ package virtualmachines
 import (
 	"context"
 	"fmt"
+	"github.com/stackrox/rox/pkg/search"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -53,7 +54,7 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
-	virtualMachines, err := p.virtualMachineStore.GetAllVirtualMachines(ctx)
+	virtualMachines, err := p.virtualMachineStore.SearchRawVirtualMachines(ctx, search.EmptyQuery())
 	if err != nil {
 		return errors.Wrap(err, "retrieving virtual machines for reconciliation")
 	}
