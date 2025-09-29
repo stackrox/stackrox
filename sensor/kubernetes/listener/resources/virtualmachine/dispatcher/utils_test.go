@@ -56,39 +56,45 @@ func TestGetVirtualMachineVSockCID(t *testing.T) {
 	zeroCID := uint32(0)
 	someCID := uint32(0xca7d09)
 	tests := []struct {
-		name     string
-		vm       *sensorVirtualMachine.Info
-		expected int32
+		name        string
+		vm          *sensorVirtualMachine.Info
+		expected    int32
+		expectedSet bool
 	}{
 		{
-			name:     "nil input",
-			vm:       nil,
-			expected: expectedZero,
+			name:        "nil input",
+			vm:          nil,
+			expected:    expectedZero,
+			expectedSet: false,
 		},
 		{
-			name:     "virtual machine with partial data is not assumed to have a VSock",
-			vm:       &sensorVirtualMachine.Info{},
-			expected: expectedZero,
+			name:        "virtual machine with partial data is not assumed to have a VSock",
+			vm:          &sensorVirtualMachine.Info{},
+			expected:    expectedZero,
+			expectedSet: false,
 		},
 		{
 			name: "hypervisor",
 			vm: &sensorVirtualMachine.Info{
 				VSOCKCID: &zeroCID,
 			},
-			expected: expectedZero,
+			expected:    expectedZero,
+			expectedSet: true,
 		},
 		{
 			name: "virtual machine",
 			vm: &sensorVirtualMachine.Info{
 				VSOCKCID: &someCID,
 			},
-			expected: int32(someCID),
+			expected:    int32(someCID),
+			expectedSet: true,
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(it *testing.T) {
-			state := getVirtualMachineVSockCID(tc.vm)
-			assert.Equal(it, tc.expected, state)
+			vSockCID, vSockCIDSet := getVirtualMachineVSockCID(tc.vm)
+			assert.Equal(it, tc.expected, vSockCID)
+			assert.Equal(it, tc.expectedSet, vSockCIDSet)
 		})
 	}
 }
@@ -132,12 +138,13 @@ func TestCreateEvent(t *testing.T) {
 				Action: central.ResourceAction_CREATE_RESOURCE,
 				Resource: &central.SensorEvent_VirtualMachine{
 					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vm1ID,
-						Namespace: ns1,
-						Name:      vm1Name,
-						ClusterId: fixtureconsts.Cluster2,
-						VsockCid:  0,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
+						Id:          vm1ID,
+						Namespace:   ns1,
+						Name:        vm1Name,
+						ClusterId:   fixtureconsts.Cluster2,
+						VsockCid:    0,
+						VsockCidSet: false,
+						State:       virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			},
@@ -158,12 +165,67 @@ func TestCreateEvent(t *testing.T) {
 				Action: central.ResourceAction_CREATE_RESOURCE,
 				Resource: &central.SensorEvent_VirtualMachine{
 					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vm2ID,
-						Namespace: ns1,
-						Name:      vm2Name,
-						ClusterId: fixtureconsts.Cluster2,
-						VsockCid:  wireVM2VSockCID,
-						State:     virtualMachineV1.VirtualMachine_RUNNING,
+						Id:          vm2ID,
+						Namespace:   ns1,
+						Name:        vm2Name,
+						ClusterId:   fixtureconsts.Cluster2,
+						VsockCid:    wireVM2VSockCID,
+						VsockCidSet: true,
+						State:       virtualMachineV1.VirtualMachine_RUNNING,
+					},
+				},
+			},
+		},
+		{
+			name:      "sync stopped virtual machine",
+			action:    central.ResourceAction_SYNC_RESOURCE,
+			clusterID: fixtureconsts.Cluster2,
+			inputVM: &sensorVirtualMachine.Info{
+				ID:        sensorVirtualMachine.VMID(vm1ID),
+				Name:      vm1Name,
+				Namespace: ns1,
+				VSOCKCID:  nil,
+				Running:   false,
+			},
+			expected: &central.SensorEvent{
+				Id:     vm1ID,
+				Action: central.ResourceAction_SYNC_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachine{
+					VirtualMachine: &virtualMachineV1.VirtualMachine{
+						Id:          vm1ID,
+						Namespace:   ns1,
+						Name:        vm1Name,
+						ClusterId:   fixtureconsts.Cluster2,
+						VsockCid:    0,
+						VsockCidSet: false,
+						State:       virtualMachineV1.VirtualMachine_STOPPED,
+					},
+				},
+			},
+		},
+		{
+			name:      "sync running virtual machine",
+			action:    central.ResourceAction_SYNC_RESOURCE,
+			clusterID: fixtureconsts.Cluster2,
+			inputVM: &sensorVirtualMachine.Info{
+				ID:        sensorVirtualMachine.VMID(vm2ID),
+				Name:      vm2Name,
+				Namespace: ns1,
+				VSOCKCID:  &vm2VSockCID,
+				Running:   true,
+			},
+			expected: &central.SensorEvent{
+				Id:     vm2ID,
+				Action: central.ResourceAction_SYNC_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachine{
+					VirtualMachine: &virtualMachineV1.VirtualMachine{
+						Id:          vm2ID,
+						Namespace:   ns1,
+						Name:        vm2Name,
+						ClusterId:   fixtureconsts.Cluster2,
+						VsockCid:    wireVM2VSockCID,
+						VsockCidSet: true,
+						State:       virtualMachineV1.VirtualMachine_RUNNING,
 					},
 				},
 			},
@@ -184,12 +246,67 @@ func TestCreateEvent(t *testing.T) {
 				Action: central.ResourceAction_UPDATE_RESOURCE,
 				Resource: &central.SensorEvent_VirtualMachine{
 					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vm2ID,
-						Namespace: ns1,
-						Name:      vm2Name,
-						ClusterId: fixtureconsts.Cluster2,
-						VsockCid:  wireVM2VSockCID,
-						State:     virtualMachineV1.VirtualMachine_RUNNING,
+						Id:          vm2ID,
+						Namespace:   ns1,
+						Name:        vm2Name,
+						ClusterId:   fixtureconsts.Cluster2,
+						VsockCid:    wireVM2VSockCID,
+						VsockCidSet: true,
+						State:       virtualMachineV1.VirtualMachine_RUNNING,
+					},
+				},
+			},
+		},
+		{
+			name:      "remove stopped virtual machine",
+			action:    central.ResourceAction_REMOVE_RESOURCE,
+			clusterID: fixtureconsts.Cluster2,
+			inputVM: &sensorVirtualMachine.Info{
+				ID:        sensorVirtualMachine.VMID(vm1ID),
+				Name:      vm1Name,
+				Namespace: ns1,
+				VSOCKCID:  nil,
+				Running:   false,
+			},
+			expected: &central.SensorEvent{
+				Id:     vm1ID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachine{
+					VirtualMachine: &virtualMachineV1.VirtualMachine{
+						Id:          vm1ID,
+						Namespace:   ns1,
+						Name:        vm1Name,
+						ClusterId:   fixtureconsts.Cluster2,
+						VsockCid:    0,
+						VsockCidSet: false,
+						State:       virtualMachineV1.VirtualMachine_STOPPED,
+					},
+				},
+			},
+		},
+		{
+			name:      "remove running virtual machine",
+			action:    central.ResourceAction_REMOVE_RESOURCE,
+			clusterID: fixtureconsts.Cluster2,
+			inputVM: &sensorVirtualMachine.Info{
+				ID:        sensorVirtualMachine.VMID(vm2ID),
+				Name:      vm2Name,
+				Namespace: ns1,
+				VSOCKCID:  &vm2VSockCID,
+				Running:   true,
+			},
+			expected: &central.SensorEvent{
+				Id:     vm2ID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachine{
+					VirtualMachine: &virtualMachineV1.VirtualMachine{
+						Id:          vm2ID,
+						Namespace:   ns1,
+						Name:        vm2Name,
+						ClusterId:   fixtureconsts.Cluster2,
+						VsockCid:    wireVM2VSockCID,
+						VsockCidSet: true,
+						State:       virtualMachineV1.VirtualMachine_RUNNING,
 					},
 				},
 			},

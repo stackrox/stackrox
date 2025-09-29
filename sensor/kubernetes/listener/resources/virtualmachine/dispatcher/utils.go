@@ -29,31 +29,33 @@ func getVirtualMachineState(vm *sensorVirtualMachine.Info) virtualMachineV1.Virt
 	return virtualMachineV1.VirtualMachine_STOPPED
 }
 
-func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) int32 {
+func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) (int32, bool) {
 	if vm == nil {
-		return int32(0)
+		return int32(0), false
 	}
 	if vm.VSOCKCID == nil {
-		return int32(0)
+		return int32(0), false
 	}
-	return int32(*vm.VSOCKCID)
+	return int32(*vm.VSOCKCID), true
 }
 
 func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info) *central.SensorEvent {
 	if vm == nil {
 		return nil
 	}
+	vSockCID, vSockCIDSet := getVirtualMachineVSockCID(vm)
 	return &central.SensorEvent{
 		Id:     string(vm.ID),
 		Action: action,
 		Resource: &central.SensorEvent_VirtualMachine{
 			VirtualMachine: &virtualMachineV1.VirtualMachine{
-				Id:        string(vm.ID),
-				Namespace: vm.Namespace,
-				Name:      vm.Name,
-				ClusterId: clusterID,
-				VsockCid:  getVirtualMachineVSockCID(vm),
-				State:     getVirtualMachineState(vm),
+				Id:          string(vm.ID),
+				Namespace:   vm.Namespace,
+				Name:        vm.Name,
+				ClusterId:   clusterID,
+				VsockCid:    vSockCID,
+				VsockCidSet: vSockCIDSet,
+				State:       getVirtualMachineState(vm),
 			},
 		},
 	}
