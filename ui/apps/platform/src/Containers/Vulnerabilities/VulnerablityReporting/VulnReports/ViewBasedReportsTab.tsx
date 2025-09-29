@@ -14,6 +14,7 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import { ensureBoolean, ensureStringArray } from 'utils/ensure';
 import { toggleItemInArray } from 'utils/arrayUtils';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -64,6 +65,7 @@ function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
 
 function ViewBasedReportsTab() {
     const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -102,7 +104,7 @@ function ViewBasedReportsTab() {
         isPolling: true,
     });
 
-    const onReportJobStatusFilterChange = (_checked: boolean, selectedStatus: ReportJobStatus) => {
+    const onReportJobStatusFilterChange = (checked: boolean, selectedStatus: ReportJobStatus) => {
         const newFilters = toggleItemInArray(
             reportJobStatusFilters,
             selectedStatus,
@@ -114,30 +116,28 @@ function ViewBasedReportsTab() {
         });
         setPage(1);
 
-        // Track filter interaction with complete filter state
-        analyticsTrack({
-            event: VIEW_BASED_REPORT_FILTER_APPLIED,
-            properties: {
-                action: 'filter',
-                filterType: 'Report Job Status',
-                filterValue: newFilters,
-            },
-        });
+        // Track filter interaction for additions only
+        if (checked) {
+            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, {
+                action: 'ADD',
+                category: 'Report Job Status',
+                value: selectedStatus,
+            });
+        }
     };
 
     const onMyJobsFilterChange = (checked: boolean) => {
         setIsViewingOnlyMyJobs(String(checked));
         setPage(1);
 
-        // Track filter interaction with filter value
-        analyticsTrack({
-            event: VIEW_BASED_REPORT_FILTER_APPLIED,
-            properties: {
-                action: 'filter',
-                filterType: 'My Jobs',
-                filterValue: String(checked),
-            },
-        });
+        // Track filter interaction for enabling my jobs only
+        if (checked) {
+            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, {
+                action: 'ADD',
+                category: 'My Jobs',
+                value: 'true',
+            });
+        }
     };
 
     useInterval(refetch, 10000);

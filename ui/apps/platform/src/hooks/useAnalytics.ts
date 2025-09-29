@@ -286,11 +286,7 @@ export type AnalyticsEvent =
      */
     | {
           event: typeof VIEW_BASED_REPORT_FILTER_APPLIED;
-          properties: {
-              action: 'filter';
-              filterType: string;
-              filterValue: string[] | string;
-          };
+          properties: { category: string; filter: string } | { category: string };
       }
     /**
      * Tracks download attempts for view-based reports.
