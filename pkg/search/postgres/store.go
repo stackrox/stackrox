@@ -506,6 +506,10 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 	deletedCount := 0
 	numberToDelete := len(identifiers)
 
+	if initialBatchSize <= 0 {
+		return errors.New("batch size must be greater than 0")
+	}
+
 	for identifierBatch := range slices.Chunk(identifiers, initialBatchSize) {
 		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 

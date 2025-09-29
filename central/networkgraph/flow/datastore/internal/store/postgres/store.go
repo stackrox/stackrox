@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -23,7 +24,6 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
 )
@@ -731,34 +731,32 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 	// srcFlows contains flows where src is the deployment,
 	// so prune external flows based on the dst entity
 	if len(srcFlows) != 0 {
-		err := utils.BatchProcess(srcFlows, orphanedEntitiesPruningBatchSize, func(flows []*storage.NetworkFlow) error {
-			entities := make([]string, 0, len(flows))
-			for _, flow := range flows {
+		for flowBatch := range slices.Chunk(srcFlows, orphanedEntitiesPruningBatchSize) {
+			entities := make([]string, 0, len(flowBatch))
+			for _, flow := range flowBatch {
 				entities = append(entities, flow.GetProps().GetDstEntity().GetId())
 			}
 
 			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName, s.partitionName)
-			return s.pruneEntities(ctx, pruneStmt, entities)
-		})
-		if err != nil {
-			return err
+			if err := s.pruneEntities(ctx, pruneStmt, entities); err != nil {
+				return err
+			}
 		}
 	}
 
 	// dstFlows contains flows where dst is the deployment,
 	// so prune external flows based on the src entity
 	if len(dstFlows) != 0 {
-		err := utils.BatchProcess(dstFlows, orphanedEntitiesPruningBatchSize, func(flows []*storage.NetworkFlow) error {
-			entities := make([]string, 0, len(flows))
-			for _, flow := range flows {
+		for flowBatch := range slices.Chunk(dstFlows, orphanedEntitiesPruningBatchSize) {
+			entities := make([]string, 0, len(flowBatch))
+			for _, flow := range flowBatch {
 				entities = append(entities, flow.GetProps().GetSrcEntity().GetId())
 			}
 
 			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName, s.partitionName)
-			return s.pruneEntities(ctx, pruneStmt, entities)
-		})
-		if err != nil {
-			return err
+			if err := s.pruneEntities(ctx, pruneStmt, entities); err != nil {
+				return err
+			}
 		}
 	}
 
