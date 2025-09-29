@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,7 +16,7 @@ import (
 
 const (
 	defaultPageSize = 100
-	preAllocateCap  = 65535
+	preAllocateCap  = math.MaxUint16
 )
 
 type datastoreImpl struct {
