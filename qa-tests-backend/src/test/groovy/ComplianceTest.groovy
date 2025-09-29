@@ -1158,11 +1158,9 @@ class ComplianceTest extends BaseSpecification {
                     ComplianceService.getComplianceRunResult(NIST_800_190_ID, clusterId, complianceRun.id).results
             assert results != null
             Compliance.ComplianceRunMetadata metadata = results.runMetadata
-            verifyAll(metadata) {
-                clusterId == clusterId
-                runId == complianceRun.id
-                standardId == NIST_800_190_ID
-            }
+            assert metadata.clusterId == clusterId
+            assert metadata.runId == complianceRun.id
+            assert metadata.standardId == NIST_800_190_ID
 
             numErrors += errorsCount(results.clusterResults.controlResultsMap.values())
             for (def deploymentResults : results.deploymentResultsMap.values()) {
