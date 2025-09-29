@@ -61,6 +61,17 @@ spec:
   pipelineRef:
     name: basic-component-pipeline
 
+  taskRunSpecs:
+  - pipelineTaskName: build-source-image
+    stepSpecs:
+    # Set memory requests==limits for source image build because the one tends to get sometimes killed at 0.5/2 values.
+    - name: build
+      computeResources:
+        limits:
+          memory: 2Gi
+        requests:
+          memory: 2Gi
+
   taskRunTemplate:
     serviceAccountName: build-pipeline-scanner-v4-db
 
