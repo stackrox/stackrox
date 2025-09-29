@@ -674,8 +674,7 @@ describe('policies.utils', () => {
                         enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                         excludedImageNames: ['docker.io/library/archlinux:latest'],
                     },
-                    'DEPLOY',
-                    true
+                    ['BUILD', 'DEPLOY']
                 )
             ).toEqual({
                 lifecycleStages: ['BUILD', 'DEPLOY'],
@@ -694,8 +693,7 @@ describe('policies.utils', () => {
                         excludedImageNames: ['docker.io/library/archlinux:latest'],
                         enforcementActions: ['FAIL_BUILD_ENFORCEMENT', 'SCALE_TO_ZERO_ENFORCEMENT'],
                     },
-                    'BUILD',
-                    false
+                    ['DEPLOY']
                 )
             ).toEqual({
                 lifecycleStages: ['DEPLOY'],
@@ -714,37 +712,12 @@ describe('policies.utils', () => {
                         enforcementActions: ['FAIL_BUILD_ENFORCEMENT', 'SCALE_TO_ZERO_ENFORCEMENT'],
                         excludedImageNames: ['docker.io/library/archlinux:latest'],
                     },
-                    'DEPLOY',
-                    false
+                    ['BUILD']
                 )
             ).toEqual({
                 lifecycleStages: ['BUILD'],
                 eventSource: 'NOT_APPLICABLE',
                 enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
-                excludedImageNames: ['docker.io/library/archlinux:latest'],
-            });
-        });
-
-        // TODO This is an invalid case, but allowed by current code. It will be removed in the future.
-        it('should clear the event source when the runtime lifecycle is removed', () => {
-            expect(
-                getLifeCyclesUpdates(
-                    {
-                        lifecycleStages: ['BUILD', 'RUNTIME'],
-                        eventSource: 'DEPLOYMENT_EVENT',
-                        enforcementActions: [
-                            'KILL_POD_ENFORCEMENT',
-                            'FAIL_KUBE_REQUEST_ENFORCEMENT',
-                        ],
-                        excludedImageNames: ['docker.io/library/archlinux:latest'],
-                    },
-                    'RUNTIME',
-                    false
-                )
-            ).toEqual({
-                lifecycleStages: ['BUILD'],
-                eventSource: 'NOT_APPLICABLE',
-                enforcementActions: [],
                 excludedImageNames: ['docker.io/library/archlinux:latest'],
             });
         });
