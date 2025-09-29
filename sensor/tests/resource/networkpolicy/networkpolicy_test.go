@@ -65,12 +65,12 @@ func (s *NetworkPolicySuite) Test_NetworkPolicyViolations() {
 
 			deploymentID := string(k8sDeployment.GetUID())
 
-			tc.LastViolationStateByID(t, deploymentID, helper.AssertViolationsMatch(egressNetpolViolationName, ingressNetpolViolationName), "", true)
+			tc.LastViolationStateByID(t, deploymentID, helper.AssertViolationsMatch(egressNetpolViolationName, ingressNetpolViolationName), "", false)
 
 			_, err = tc.ApplyResourceAndWaitNoObject(ctx, t, helper.DefaultNamespace, EgressPolicyBlockAllEgress, nil)
 			require.NoError(t, err)
 
-			tc.LastViolationStateByID(t, deploymentID, helper.AssertViolationsMatch(ingressNetpolViolationName), "", true)
+			tc.LastViolationStateByID(t, deploymentID, helper.AssertViolationsMatch(ingressNetpolViolationName), "", false)
 
 			_, err = tc.ApplyResourceAndWaitNoObject(ctx, t, helper.DefaultNamespace, IngressPolicyAllow443, nil)
 			require.NoError(t, err)

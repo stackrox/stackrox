@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import useTimeout from './useTimeout';
 
 test('should call the passed callback after the specified delay', async () => {

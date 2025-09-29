@@ -392,7 +392,6 @@ module.exports = [
             'import/no-self-import': 'error',
             'import/no-useless-path-segments': ['error', { commonjs: true }],
             'import/no-webpack-loader-syntax': 'error',
-            'import/order': ['error', { groups: [['builtin', 'external', 'internal']] }],
             // 'import/prefer-default-export' is intentional omission
 
             // Turn on rules from airbnb style config that are not in ESLint recommended.
@@ -475,6 +474,12 @@ module.exports = [
             // 'no-shadow': 'error', // fix 15 errors
             'no-undef-init': 'error',
 
+            // Turn on rules not from (or with difference options than) airbnb config.
+            'import/no-empty-named-blocks': 'error',
+            'import/order': [
+                'error',
+                { groups: [['builtin', 'external', 'internal', 'parent', 'sibling']] },
+            ],
             'prettier/prettier': 'error',
         },
 
@@ -684,6 +689,7 @@ module.exports = [
         // Key of plugin is namespace of its rules.
         plugins: {
             '@typescript-eslint': pluginTypeScriptESLint,
+            import: pluginImport,
         },
         rules: {
             // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/eslint-recommended.ts
@@ -707,6 +713,8 @@ module.exports = [
 
             '@typescript-eslint/array-type': 'error',
             '@typescript-eslint/consistent-type-exports': 'error',
+
+            'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
         },
     },
     // Limited rules have ignores for specific files or folders.
@@ -727,17 +735,43 @@ module.exports = [
         },
     },
     {
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
+        ignores: [
+            'cypress/integration/**',
+            'src/Components/**',
+            'src/Containers/AccessControl/**',
+            'src/Containers/Clusters/**',
+            'src/Containers/Collections/**',
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ComplianceEnhanced/**',
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Dashboard/**',
+            'src/Containers/Integrations/**',
+            'src/Containers/MainPage/**',
+            'src/Containers/NetworkGraph/**',
+            'src/Containers/Policies/**',
+            'src/Containers/PolicyCategories/**',
+            'src/Containers/Risk/**',
+            'src/Containers/SystemConfig/**',
+            'src/Containers/SystemHealth/**',
+            'src/Containers/Violations/**',
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Vulnerabilities/**',
+        ],
+
+        // Separate from the following configuration to limit size of contributions.
+        rules: {
+            'sort-imports': ['error', { ignoreDeclarationSort: true }],
+        },
+    },
+    {
         files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: [
             'src/Components/**',
             'src/Containers/AccessControl/**',
             'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ComplianceEnhanced/**',
-            'src/Containers/Docs/**',
-            'src/Containers/Images/**',
             'src/Containers/Integrations/**',
-            'src/Containers/Login/**',
             'src/Containers/MainPage/**',
             'src/Containers/MitreAttackVectors/**',
             'src/Containers/NetworkGraph/**',
@@ -764,7 +798,6 @@ module.exports = [
         },
         rules: {
             '@typescript-eslint/consistent-type-imports': 'error',
-            'limited/no-inline-type-imports': 'error',
             'limited/no-qualified-name-react': 'error',
             'limited/no-relative-path-to-src-in-import': 'error',
         },

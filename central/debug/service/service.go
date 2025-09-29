@@ -51,6 +51,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
@@ -765,8 +766,11 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 	if s.telemetryGatherer != nil && opts.telemetryMode > noTelemetry {
 		diagBundleTasks.Go(func(ctx context.Context) error {
-			telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= telemetryCentralAndSensors,
-				opts.withCentral)
+			telemetryData := s.telemetryGatherer.Gather(
+				ctx,
+				opts.telemetryMode >= telemetryCentralAndSensors,
+				opts.withCentral,
+				set.NewStringSet(opts.clusters...))
 			return writeTelemetryData(zipWriter, telemetryData)
 		})
 	}

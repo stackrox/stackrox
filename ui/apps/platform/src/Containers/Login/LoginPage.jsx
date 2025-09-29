@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { ClipLoader } from 'react-spinners';
-import { formValueSelector, propTypes as reduxFormPropTypes, reduxForm } from 'redux-form';
+import { formValueSelector, reduxForm, propTypes as reduxFormPropTypes } from 'redux-form';
 import { Alert, Button, Title, TitleSizes } from '@patternfly/react-core';
 
 import { AUTH_STATUS } from 'reducers/auth';
@@ -18,12 +18,11 @@ import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import Labeled from 'Components/Labeled';
 import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
 import BrandLogo from 'Components/PatternFly/BrandLogo';
+import { loginWithBasicAuth } from 'services/AuthService';
+import { parseAndDecodeFragment } from 'utils/parseAndDecodeFragment';
 
 import ServerStatusBanner from '../MainPage/Banners/ServerStatusBanner';
 import LoginNotice from './LoginNotice';
-
-import { loginWithBasicAuth } from '../../services/AuthService';
-import { parseAndDecodeFragment } from '../../utils/parseAndDecodeFragment';
 
 const unknownErrorResponse = {
     error: 'Unknown error',

@@ -137,10 +137,11 @@ func insertIntoProcessIndicators(batch *pgx.Batch, obj *storage.ProcessIndicator
 		obj.GetSignal().GetUid(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
+		protocompat.NilOrTime(obj.GetContainerStartTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid, ClusterId, Namespace, ContainerStartTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -171,6 +172,7 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 		"signal_uid",
 		"clusterid",
 		"namespace",
+		"containerstarttime",
 		"serialized",
 	}
 
@@ -200,6 +202,7 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 				obj.GetSignal().GetUid(),
 				pgutils.NilOrUUID(obj.GetClusterId()),
 				obj.GetNamespace(),
+				protocompat.NilOrTime(obj.GetContainerStartTime()),
 				serialized,
 			})
 

@@ -1159,6 +1159,9 @@
         },
         "isDownloadAvailable": {
           "type": "boolean"
+        },
+        "areaOfConcern": {
+          "type": "string"
         }
       }
     },

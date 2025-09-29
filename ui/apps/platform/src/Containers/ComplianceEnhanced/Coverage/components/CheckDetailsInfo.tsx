@@ -11,7 +11,7 @@ import {
     Spinner,
 } from '@patternfly/react-core';
 
-import {
+import type {
     ComplianceCheckResult,
     ComplianceClusterCheckStatus,
 } from 'services/ComplianceResultsService';
