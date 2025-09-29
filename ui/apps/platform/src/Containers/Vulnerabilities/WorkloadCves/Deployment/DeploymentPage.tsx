@@ -78,7 +78,8 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = React.useState(false);
 
-    const onReportSelect = () => {
+    const onReportSelect = (value: string | number | undefined) => {
+        // For now, only handle CSV export. Add other report types here as needed.
         setIsCreateViewBasedReportModalOpen(true);
     };
 
@@ -169,11 +170,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                                     setSearchFilter={setSearchFilter}
                                     additionalToolbarItems={
                                         isViewBasedReportsEnabled ? (
-                                            <CreateReportDropdown
-                                                onSelect={onReportSelect}
-                                                buildQuery={buildDeploymentQuery}
-                                                areaOfConcern={viewContext}
-                                            />
+                                            <CreateReportDropdown onSelect={onReportSelect} />
                                         ) : undefined
                                     }
                                 />
