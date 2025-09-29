@@ -83,13 +83,17 @@ func IsStartupProcess(process *storage.ProcessIndicator) bool {
 	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
 }
 
-// IsStartupProcess determines if the process is a startup process
+// IsStartupProcessView determines if the process is a startup process
 // A process is considered a startup process if it happens within the first ContainerStartupDuration and was not scraped
 // but instead pulled from exec
 func IsStartupProcessView(process *views.ProcessIndicatorRiskView) bool {
 	if process.ContainerStartTime == nil {
 		return false
 	}
+	if process.SignalTime == nil {
+		return false
+	}
+	
 	durationBetweenProcessAndContainerStart := protoutils.Sub(protocompat.ConvertTimeToTimestampOrNil(process.SignalTime), protocompat.ConvertTimeToTimestampOrNil(process.ContainerStartTime))
 	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
 }
