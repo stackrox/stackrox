@@ -43,18 +43,18 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // CountVirtualMachines mocks base method.
-func (m *MockDataStore) CountVirtualMachines(ctx context.Context) (int, error) {
+func (m *MockDataStore) CountVirtualMachines(ctx context.Context, query *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountVirtualMachines", ctx)
+	ret := m.ctrl.Call(m, "CountVirtualMachines", ctx, query)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountVirtualMachines indicates an expected call of CountVirtualMachines.
-func (mr *MockDataStoreMockRecorder) CountVirtualMachines(ctx any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) CountVirtualMachines(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountVirtualMachines", reflect.TypeOf((*MockDataStore)(nil).CountVirtualMachines), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountVirtualMachines", reflect.TypeOf((*MockDataStore)(nil).CountVirtualMachines), ctx, query)
 }
 
 // DeleteVirtualMachines mocks base method.
