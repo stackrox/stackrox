@@ -9,22 +9,24 @@ import { Descriptor } from './policyCriteriaDescriptors';
 
 type CriteriaDomain =
     | 'Image criteria'
-    | 'Workload criteria'
-    | 'Deployment events'
-    | 'Audit log events';
+    | 'Workload configuration'
+    | 'Workload activity'
+    | 'Kubernetes resource operations';
 
 const criteriaDomains: Record<PolicyCriteriaCategoryKey, CriteriaDomain> = {
     [policyCriteriaCategories.IMAGE_REGISTRY]: 'Image criteria',
     [policyCriteriaCategories.IMAGE_CONTENTS]: 'Image criteria',
-    [policyCriteriaCategories.CONTAINER_CONFIGURATION]: 'Workload criteria',
-    [policyCriteriaCategories.DEPLOYMENT_METADATA]: 'Workload criteria',
-    [policyCriteriaCategories.STORAGE]: 'Workload criteria',
-    [policyCriteriaCategories.NETWORKING]: 'Workload criteria',
-    [policyCriteriaCategories.DEPLOYMENT_ACCESS_CONTROL]: 'Workload criteria',
-    [policyCriteriaCategories.PROCESS_ACTIVITY]: 'Deployment events',
-    [policyCriteriaCategories.BASELINE_DEVIATION]: 'Deployment events',
-    [policyCriteriaCategories.USER_ISSUED_CONTAINER_COMMANDS]: 'Deployment events',
-    [policyCriteriaCategories.AUDIT_LOG]: 'Audit log events',
+    [policyCriteriaCategories.IMAGE_SCANNING]: 'Image criteria',
+    [policyCriteriaCategories.CONTAINER_CONFIGURATION]: 'Workload configuration',
+    [policyCriteriaCategories.DEPLOYMENT_METADATA]: 'Workload configuration',
+    [policyCriteriaCategories.STORAGE]: 'Workload configuration',
+    [policyCriteriaCategories.NETWORKING]: 'Workload configuration',
+    [policyCriteriaCategories.ACCESS_CONTROL]: 'Workload configuration',
+    [policyCriteriaCategories.PROCESS_ACTIVITY]: 'Workload activity',
+    [policyCriteriaCategories.BASELINE_DEVIATION]: 'Workload activity',
+    [policyCriteriaCategories.USER_ISSUED_CONTAINER_COMMANDS]: 'Workload activity',
+    [policyCriteriaCategories.RESOURCE_OPERATION]: 'Kubernetes resource operations',
+    [policyCriteriaCategories.RESOURCE_ATTRIBUTES]: 'Kubernetes resource operations',
 } as const;
 
 function getCriteriaDomains(
@@ -57,8 +59,7 @@ function PolicyCriteriaKeys({ keys }: PolicyCriteriaKeysProps) {
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsXs' }}
                 >
-                    {/* If there is only one category, don't show an extra level domain */}
-                    {Object.keys(categories).length > 1 && <Text component="h3">{domain}</Text>}
+                    <Text component="h3">{domain}</Text>
                     <Flex
                         key={domain}
                         direction={{ default: 'column' }}

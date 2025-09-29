@@ -141,15 +141,17 @@ export const envVarSrcLabels = Object.freeze({
 export const policyCriteriaCategories = Object.freeze({
     IMAGE_REGISTRY: 'Image registry',
     IMAGE_CONTENTS: 'Image contents',
+    IMAGE_SCANNING: 'Image scanning',
     CONTAINER_CONFIGURATION: 'Container configuration',
     DEPLOYMENT_METADATA: 'Deployment metadata',
     STORAGE: 'Storage',
     NETWORKING: 'Networking',
     PROCESS_ACTIVITY: 'Process activity',
     BASELINE_DEVIATION: 'Baseline deviation',
-    DEPLOYMENT_ACCESS_CONTROL: 'Deployment access control',
+    ACCESS_CONTROL: 'Access control',
     USER_ISSUED_CONTAINER_COMMANDS: 'User issued container commands',
-    AUDIT_LOG: 'Audit log',
+    RESOURCE_OPERATION: 'Resource operation (Required)',
+    RESOURCE_ATTRIBUTES: 'Resource attributes',
 });
 
 export type PolicyCriteriaCategoryKey = ValueOf<typeof policyCriteriaCategories>;
