@@ -80,13 +80,13 @@ spec:
           cpu: 2
   - pipelineTaskName: build-source-image
     stepSpecs:
-    # Set memory requests==limits for source image build because the one tends to get sometimes killed at 0.5/2 values.
+    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
     - name: build
       computeResources:
         limits:
-          memory: 2Gi
+          memory: 3Gi
         requests:
-          memory: 2Gi
+          memory: 3Gi
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-operator
