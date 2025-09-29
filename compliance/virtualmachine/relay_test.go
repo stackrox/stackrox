@@ -47,7 +47,7 @@ func (s *relayTestSuite) TestVsockConnectionHandlerRejectsMalformedData() {
 	s.True(conn.closed, "connection should be closed after handling")
 }
 
-func (s *relayTestSuite) TestReadFromConn() {
+func (s *relayTestSuite) TestReadFromConnSizeLimit() {
 	data := []byte("Hello, world!")
 
 	cases := map[string]struct {
@@ -69,10 +69,11 @@ func (s *relayTestSuite) TestReadFromConn() {
 	}
 
 	conn := s.defaultVsockConn().withData(data)
+	connDeadlineSeconds := 10 // Not relevant in these tests
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			readData, err := readFromConn(conn, c.sizeLimit)
+			readData, err := readFromConn(conn, c.sizeLimit, connDeadlineSeconds)
 			if c.shouldError {
 				s.Error(err)
 			} else {

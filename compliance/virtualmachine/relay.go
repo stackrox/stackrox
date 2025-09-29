@@ -115,7 +115,8 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 	// with 500 packages would mean 200 KB). We set the limit to 4 MB or around 10000 packages, which should provide a
 	// big enough margin to account for installations with extreme amounts of packages.
 	maxSizeBytes := 4 * 1024 * 1024
-	data, err := readFromConn(conn, maxSizeBytes)
+	timeoutSeconds := 10
+	data, err := readFromConn(conn, maxSizeBytes, timeoutSeconds)
 	if err != nil {
 		return errors.Wrap(err, "reading from vsock connection")
 	}
@@ -145,7 +146,11 @@ func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 	return report, nil
 }
 
-func readFromConn(conn net.Conn, maxSize int) ([]byte, error) {
+func readFromConn(conn net.Conn, maxSize int, timeoutSeconds int) ([]byte, error) {
+	if err := conn.SetReadDeadline(time.Now().Add(time.Duration(timeoutSeconds) * time.Second)); err != nil {
+		return nil, errors.Wrap(err, "setting read deadline on connection")
+	}
+
 	// Add 1 to the limit so we can detect oversized data. If we used exactly maxSize, we couldn't tell the difference
 	// between a valid message of exactly maxSize bytes and an invalid message that's larger than maxSize (both would
 	// read maxSize bytes). With maxSize+1, reading more than maxSize bytes means the original data was too large.
