@@ -167,9 +167,10 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			scopeRules: nil,
 			expected: &vulnReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp"},
 				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -188,9 +189,10 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			scopeRules: nil,
 			expected: &vulnReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp"},
 				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
@@ -207,9 +209,10 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			scopeRules: nil,
 			expected: &vulnReportData{
 				deploymentNames: []string{"c1_ns1_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp"},
 				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 				},
 			},
@@ -225,10 +228,11 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			},
 			expected: &vulnReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames: []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp",
 					"w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -297,9 +301,10 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			},
 			expected: &vulnReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp"},
 				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -323,9 +328,10 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			},
 			expected: &vulnReportData{
 				deploymentNames: []string{"c1_ns1_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp"},
 				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 				},
 			},
