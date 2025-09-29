@@ -1,0 +1,50 @@
+name: Define CI Versions
+
+on:
+  workflow_call:
+    inputs:
+      commit:
+        description: 'Commit SHA to use'
+        required: false
+        type: string
+    outputs:
+      apollo-ci-test-image:
+        description: 'Apollo CI test image with version'
+        value: ${{ jobs.define-versions.outputs.apollo-ci-test-image }}
+      apollo-ci-ui-image:
+        description: 'Apollo CI UI test image with version'
+        value: ${{ jobs.define-versions.outputs.apollo-ci-ui-image }}
+      apollo-ci-build-image:
+        description: 'Apollo CI build image with version'
+        value: ${{ jobs.define-versions.outputs.apollo-ci-build-image }}
+      apollo-ci-scanner-test-image:
+        description: 'Apollo CI scanner test image with version'
+        value: ${{ jobs.define-versions.outputs.apollo-ci-scanner-test-image }}
+
+jobs:
+  define-versions:
+    outputs:
+      apollo-ci-test-image: ${{ steps.define-versions.outputs.apollo-ci-test-image }}
+      apollo-ci-ui-image: ${{ steps.define-versions.outputs.apollo-ci-ui-image }}
+      apollo-ci-build-image: ${{ steps.define-versions.outputs.apollo-ci-build-image }}
+      apollo-ci-scanner-test-image: ${{ steps.define-versions.outputs.apollo-ci-scanner-test-image }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CI_IMAGE_VERSION file only
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha || github.sha }}
+          sparse-checkout: |
+            CI_IMAGE_VERSION
+          sparse-checkout-cone-mode: false
+
+      - name: Define CI versions
+        id: define-versions
+        run: |
+          ci_version=$(tr -d '\n\r ' < CI_IMAGE_VERSION)
+          {
+            echo "apollo-ci-test-image=quay.io/stackrox-io/apollo-ci:stackrox-test-${ci_version}"
+            echo "apollo-ci-ui-image=quay.io/stackrox-io/apollo-ci:stackrox-ui-test-${ci_version}"
+            echo "apollo-ci-build-image=quay.io/stackrox-io/apollo-ci:stackrox-build-${ci_version}"
+            echo "apollo-ci-scanner-test-image=quay.io/stackrox-io/apollo-ci:scanner-test-${ci_version}"
+          } >> "$GITHUB_OUTPUT"
