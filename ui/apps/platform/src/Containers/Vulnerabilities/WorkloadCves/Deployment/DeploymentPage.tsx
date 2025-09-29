@@ -20,6 +20,7 @@ import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { VulnerabilityState } from 'types/cve.proto';
 
 import DeploymentPageHeader, {
@@ -28,14 +29,13 @@ import DeploymentPageHeader, {
 } from './DeploymentPageHeader';
 import { detailsTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
+import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
-import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../../utils/searchUtils';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const deploymentMetadataQuery = gql`
     ${deploymentMetadataFragment}
@@ -76,16 +76,17 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     // Report-specific functionality
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
-    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = React.useState(false);
+    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] =
+        React.useState(false);
 
-    const onReportSelect = (value: string | number | undefined) => {
-        // For now, only handle CSV export. Add other report types here as needed.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const onReportSelect = (_value: string | number | undefined) => {
         setIsCreateViewBasedReportModalOpen(true);
     };
 
     const buildDeploymentQuery = () => {
         // Create a scoped query that includes the deployment ID filter plus any applied search filters
-        const deploymentScopedFilter = { 'Deployment ID': deploymentId };
+        const deploymentScopedFilter = { 'Deployment ID': [deploymentId] };
         const combinedFilter = {
             ...baseSearchFilter,
             ...deploymentScopedFilter,
@@ -169,9 +170,9 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                                     searchFilter={searchFilter}
                                     setSearchFilter={setSearchFilter}
                                     additionalToolbarItems={
-                                        isViewBasedReportsEnabled ? (
+                                        isViewBasedReportsEnabled && (
                                             <CreateReportDropdown onSelect={onReportSelect} />
-                                        ) : undefined
+                                        )
                                     }
                                 />
                             </Tab>
