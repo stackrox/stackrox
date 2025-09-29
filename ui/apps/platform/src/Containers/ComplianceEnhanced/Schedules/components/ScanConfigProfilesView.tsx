@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 import { Badge, Flex, List, ListItem, Title } from '@patternfly/react-core';
 
 type ScanConfigProfilesViewProps = {
@@ -9,7 +10,7 @@ type ScanConfigProfilesViewProps = {
 function ScanConfigProfilesView({
     headingLevel,
     profiles,
-}: ScanConfigProfilesViewProps): React.ReactElement {
+}: ScanConfigProfilesViewProps): ReactElement {
     return (
         <Flex direction={{ default: 'column' }}>
             <Flex spaceItems={{ default: 'spaceItemsSm' }}>

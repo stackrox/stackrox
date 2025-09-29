@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -117,10 +118,10 @@ func insertIntoNodeComponents(batch *pgx.Batch, obj *storage.NodeComponent) erro
 }
 
 func copyFromNodeComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -138,48 +139,47 @@ func copyFromNodeComponents(ctx context.Context, s pgSearch.Deleter, tx *postgre
 		"serialized",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
+			serialized, marshalErr := obj.MarshalVT()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			inputRows = append(inputRows, []interface{}{
+				obj.GetId(),
+				obj.GetName(),
+				obj.GetVersion(),
+				obj.GetPriority(),
+				obj.GetRiskScore(),
+				obj.GetTopCvss(),
+				obj.GetOperatingSystem(),
+				serialized,
+			})
+
+			// Add the ID to be deleted.
+			deletes = append(deletes, obj.GetId())
 		}
 
-		inputRows = append(inputRows, []interface{}{
-			obj.GetId(),
-			obj.GetName(),
-			obj.GetVersion(),
-			obj.GetPriority(),
-			obj.GetRiskScore(),
-			obj.GetTopCvss(),
-			obj.GetOperatingSystem(),
-			serialized,
-		})
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
 
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = deletes[:0]
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"node_components"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
 		}
+		// clear the inserts and vals for the next batch
+		deletes = deletes[:0]
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"node_components"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	return nil

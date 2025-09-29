@@ -11,7 +11,7 @@ import {
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
-import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import {
     getBodyDefault,
     getSubjectDefault,

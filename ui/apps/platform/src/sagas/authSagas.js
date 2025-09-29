@@ -1,18 +1,18 @@
-import { all, take, call, fork, put, takeLatest, takeEvery, select } from 'redux-saga/effects';
+import { all, call, fork, put, select, take, takeEvery, takeLatest } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
 import queryString from 'qs';
 import Raven from 'raven-js';
 import { LOCATION_CHANGE, push } from 'connected-react-router';
 import { Base64 } from 'js-base64';
 
-import { loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
+import { authResponsePrefix, loginPath, testLoginResultsPath } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
 import { parseAndDecodeFragment } from 'utils/parseAndDecodeFragment';
 import {
     deleteAuthProvider as authServiceDeleteAuthProvider,
     exchangeAuthToken as authServiceExchangeAuthToken,
-    fetchAvailableProviderTypes as authServiceFetchAvailableProviderTypes,
     fetchAuthProviders as authServiceFetchAuthProviders,
+    fetchAvailableProviderTypes as authServiceFetchAvailableProviderTypes,
     fetchLoginAuthProviders as authServiceFetchLoginAuthProviders,
     getAccessToken as authServiceGetAccessToken,
     getAndClearRequestedLocation as authServiceGetAndClearRequestedLocation,
@@ -26,7 +26,7 @@ import {
 import fetchUsersAttributes from 'services/AttributesService';
 import { fetchUserRolePermissions } from 'services/RolesService';
 import { selectors } from 'reducers';
-import { actions, types, AUTH_STATUS } from 'reducers/auth';
+import { AUTH_STATUS, actions, types } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as rolesActions } from 'reducers/roles';

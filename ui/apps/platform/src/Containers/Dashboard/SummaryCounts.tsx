@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import Raven from 'raven-js';
 import { Alert, Skeleton, Split, SplitItem } from '@patternfly/react-core';

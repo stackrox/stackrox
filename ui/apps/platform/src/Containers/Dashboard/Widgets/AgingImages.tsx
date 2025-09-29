@@ -20,17 +20,12 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { vulnManagementImagesPath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
-import AgingImagesChart, {
-    TimeRangeCounts,
-    TimeRangeTupleIndex,
-    TimeRangeTuple,
-    timeRangeTupleIndices,
-    getTimeFilterOption,
-} from './AgingImagesChart';
+import AgingImagesChart, { timeRangeTupleIndices, getTimeFilterOption } from './AgingImagesChart';
+import type { TimeRangeCounts, TimeRangeTupleIndex, TimeRangeTuple } from './AgingImagesChart';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
 import WidgetOptionsMenu from './WidgetOptionsMenu';

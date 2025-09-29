@@ -1,9 +1,11 @@
 // eslint-disable @typescript-eslint/ban-ts-comment
 import React, { useState } from 'react';
+import type { KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import { Flex, FlexItem, Pagination, Title } from '@patternfly/react-core';
-import { Table, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import type { ThProps } from '@patternfly/react-table';
 
-import { ClusterScanStatus } from 'services/ComplianceScanConfigurationService';
+import type { ClusterScanStatus } from 'services/ComplianceScanConfigurationService';
 
 import ComplianceClusterStatus from './ComplianceClusterStatus';
 
@@ -19,15 +21,12 @@ function ScanConfigClustersTable({
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
 
-    const onSetPage = (
-        _event: React.MouseEvent | React.KeyboardEvent | MouseEvent,
-        newPage: number
-    ) => {
+    const onSetPage = (_event: ReactMouseEvent | KeyboardEvent | MouseEvent, newPage: number) => {
         setPage(newPage);
     };
 
     const onPerPageSelect = (
-        _event: React.MouseEvent | React.KeyboardEvent | MouseEvent,
+        _event: ReactMouseEvent | KeyboardEvent | MouseEvent,
         newPerPage: number
     ) => {
         setPerPage(newPerPage);

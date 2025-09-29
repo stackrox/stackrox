@@ -5,7 +5,8 @@ import { Table, Tbody, Tr, Td } from '@patternfly/react-table';
 
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import { policySeverityIconMap } from 'Components/PatternFly/SeverityIcons';
-import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import { isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import type { Alert } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { violationsBasePath } from 'routePaths';
 import NoDataEmptyState from './NoDataEmptyState';

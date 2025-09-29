@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/services"
 	"golang.org/x/sys/unix"
+	gogrpc "google.golang.org/grpc"
 )
 
 // Backends holds the backend engines the scanner may use depending on the
@@ -186,6 +187,7 @@ func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error)
 		IdentityExtractors: []authn.IdentityExtractor{identityExtractor},
 		GRPCMetrics:        grpcmetrics.NewGRPCMetrics(),
 		HTTPMetrics:        grpcmetrics.NewHTTPMetrics(),
+		UnaryInterceptors:  []gogrpc.UnaryServerInterceptor{version.UnaryServerInterceptor()},
 		Endpoints: []*grpc.EndpointConfig{
 			{
 				ListenEndpoint: cfg.GRPCListenAddr,

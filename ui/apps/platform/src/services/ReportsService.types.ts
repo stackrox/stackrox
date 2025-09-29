@@ -1,5 +1,5 @@
+import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { Snapshot } from 'types/reportJob';
-import type { VulnerabilitySeverity } from '../types/cve.proto';
 
 // Core report types
 
@@ -112,7 +112,6 @@ export type ReportHistoryResponse = {
 
 export type ViewBasedReportSnapshot = Snapshot & {
     viewBasedVulnReportFilters: ViewBasedVulnerabilityReportFilters;
-    requestName: string;
     areaOfConcern: string;
 };
 

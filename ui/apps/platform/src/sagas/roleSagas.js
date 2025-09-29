@@ -1,4 +1,4 @@
-import { all, call, fork, put, takeLatest, select } from 'redux-saga/effects';
+import { all, call, fork, put, select, takeLatest } from 'redux-saga/effects';
 import {
     createRole as serviceCreateRole,
     deleteRole as serviceDeleteRole,

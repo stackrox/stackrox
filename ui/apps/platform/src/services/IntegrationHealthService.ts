@@ -1,4 +1,4 @@
-import type { IntegrationHealth } from '../types/integrationHealth.proto';
+import type { IntegrationHealth } from 'types/integrationHealth.proto';
 
 import axios from './instance';
 

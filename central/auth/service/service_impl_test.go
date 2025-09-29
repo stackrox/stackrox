@@ -120,9 +120,7 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 
 	s.tokenExchangerSet = m2m.TokenExchangerSetForTesting(s.T(), s.roleDS, s.mockIssuerFactory,
 		s.mockExchangerFactory.factory())
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(gomock.NewController(s.T()))
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return("https://localhost", nil).AnyTimes()
-	authDataStore := datastore.New(store, nil, s.tokenExchangerSet, issuerFetcher)
+	authDataStore := datastore.New(store, nil, s.tokenExchangerSet)
 	s.svc = &serviceImpl{authDataStore: authDataStore}
 }
 

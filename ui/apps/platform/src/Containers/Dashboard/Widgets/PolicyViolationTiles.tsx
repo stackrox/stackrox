@@ -1,12 +1,14 @@
-import React, { CSSProperties } from 'react';
+import React from 'react';
+import type { CSSProperties } from 'react';
 import { Button, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
 
 import { violationsFullViewPath } from 'routePaths';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { severityLabels } from 'messages/common';
 import { policySeverityColorMap } from 'constants/severityColors';
-import { policySeverities, PolicySeverity } from 'types/policy.proto';
+import { policySeverities } from 'types/policy.proto';
+import type { PolicySeverity } from 'types/policy.proto';
 import LinkShim from 'Components/PatternFly/LinkShim';
 
 import './SeverityTile.css';

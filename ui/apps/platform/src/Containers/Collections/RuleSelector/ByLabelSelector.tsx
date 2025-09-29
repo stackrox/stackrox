@@ -12,11 +12,11 @@ import {
     ValidatedOptions,
 } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
-import { FormikErrors } from 'formik';
+import type { FormikErrors } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
 
 import useIndexKey from 'hooks/useIndexKey';
-import { ByLabelResourceSelector, ScopedResourceSelector, SelectorEntityType } from '../types';
+import type { ByLabelResourceSelector, ScopedResourceSelector, SelectorEntityType } from '../types';
 
 function parseInlineRuleError(
     errors: ByLabelSelectorProps['validationErrors'],

@@ -2,6 +2,7 @@ import React from 'react';
 import { Flex, Title, LabelGroup, Label } from '@patternfly/react-core';
 
 import { getDateTime } from 'utils/dateUtils';
+import DeveloperPreviewLabel from 'Components/PatternFly/DeveloperPreviewLabel';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 
@@ -53,7 +54,10 @@ function VirtualMachinePageHeader({ data }: VirtualMachinePageHeaderProps) {
 
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
-            <Title headingLevel="h1">{data.name}</Title>
+            <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                <Title headingLevel="h1">{data.name}</Title>
+                <DeveloperPreviewLabel />
+            </Flex>
             <LabelGroup numLabels={5}>
                 <Label>GuestOS: {data.guestOS}</Label>
                 <Label>In: {data.namespace}</Label>
