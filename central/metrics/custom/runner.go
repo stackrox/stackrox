@@ -13,10 +13,11 @@ import (
 	"github.com/stackrox/rox/central/metrics/custom/clusters"
 	"github.com/stackrox/rox/central/metrics/custom/expiry"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
+	"github.com/stackrox/rox/central/metrics/custom/node_vulnerabilities"
 	"github.com/stackrox/rox/central/metrics/custom/policies"
 	"github.com/stackrox/rox/central/metrics/custom/policy_violations"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
-	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
+	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	policyDS "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,7 +29,7 @@ import (
 )
 
 type trackerRunner []struct {
-	custom.Tracker
+	tracker.Tracker
 	// getGroupConfig returns the storage configuration associated to the
 	// tracker.
 	getGroupConfig func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group
@@ -38,11 +39,12 @@ type trackerRunner []struct {
 // Returned by ValidateConfiguration() and accepted by Reconfigure(). This split
 // allows the config service to dry-validate the configuration before applying
 // any changes.
-type RunnerConfiguration []*custom.Configuration
+type RunnerConfiguration []*tracker.Configuration
 
 type runnerDatastores struct {
 	deployments deploymentDS.DataStore
 	alerts      alertDS.DataStore
+	nodes       nodeDS.DataStore
 	clusters    clusterDS.DataStore
 	policies    policyDS.DataStore
 	expiry      expiryS.Service
@@ -72,6 +74,9 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 	}, {
 		policy_violations.New(ds.alerts),
 		(*storage.PrometheusMetrics).GetPolicyViolations,
+	}, {
+		node_vulnerabilities.New(ds.nodes),
+		(*storage.PrometheusMetrics).GetNodeVulnerabilities,
 	}, {
 		clusters.New(ds.clusters),
 		withHardcodedConfiguration(60, map[string][]string{
