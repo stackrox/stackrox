@@ -19,6 +19,7 @@ import NotFoundMessage from 'Components/NotFoundMessage';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
 import type { VulnerabilityState } from 'types/cve.proto';
 
 import DeploymentPageHeader, {
@@ -31,6 +32,10 @@ import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import CreateReportDropdown from '../components/CreateReportDropdown';
+import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
+import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../../utils/searchUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const deploymentMetadataQuery = gql`
     ${deploymentMetadataFragment}
@@ -47,12 +52,16 @@ export type DeploymentPageProps = {
 
 function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: DeploymentPageProps) {
     const { deploymentId } = useParams() as { deploymentId: string };
-    const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
+    const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
     const workloadCveOverviewDeploymentsPath = urlBuilder.workloadList('OBSERVED');
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+
+    // Search filter management
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     const metadataRequest = useQuery<{ deployment: DeploymentMetadata | null }, { id: string }>(
         deploymentMetadataQuery,
@@ -63,6 +72,26 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
 
     const deploymentName = metadataRequest.data?.deployment?.name;
     const deploymentNotFound = metadataRequest.data && !metadataRequest.data.deployment;
+
+    // Report-specific functionality
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
+    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = React.useState(false);
+
+    const onReportSelect = () => {
+        setIsCreateViewBasedReportModalOpen(true);
+    };
+
+    const buildDeploymentQuery = () => {
+        // Create a scoped query that includes the deployment ID filter plus any applied search filters
+        const deploymentScopedFilter = { 'Deployment ID': deploymentId };
+        const combinedFilter = {
+            ...baseSearchFilter,
+            ...deploymentScopedFilter,
+            ...querySearchFilter,
+        };
+        return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
+    };
 
     return (
         <>
@@ -136,6 +165,17 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                                     pagination={pagination}
                                     showVulnerabilityStateTabs={showVulnerabilityStateTabs}
                                     vulnerabilityState={vulnerabilityState}
+                                    searchFilter={searchFilter}
+                                    setSearchFilter={setSearchFilter}
+                                    additionalToolbarItems={
+                                        isViewBasedReportsEnabled ? (
+                                            <CreateReportDropdown
+                                                onSelect={onReportSelect}
+                                                buildQuery={buildDeploymentQuery}
+                                                areaOfConcern={viewContext}
+                                            />
+                                        ) : undefined
+                                    }
                                 />
                             </Tab>
                             <Tab
@@ -158,6 +198,14 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                         </Tabs>
                     </PageSection>
                 </>
+            )}
+            {isViewBasedReportsEnabled && (
+                <CreateViewBasedReportModal
+                    isOpen={isCreateViewBasedReportModalOpen}
+                    setIsOpen={setIsCreateViewBasedReportModalOpen}
+                    query={buildDeploymentQuery()}
+                    areaOfConcern={viewContext}
+                />
             )}
         </>
     );

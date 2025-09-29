@@ -12,8 +12,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
-
-import useURLSearch from 'hooks/useURLSearch';
+import { SearchFilter } from 'types/search';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
@@ -105,6 +104,9 @@ export type ImagePageVulnerabilitiesProps = {
     pagination: UseURLPaginationResult;
     vulnerabilityState: VulnerabilityState;
     showVulnerabilityStateTabs: boolean;
+    additionalToolbarItems?: React.ReactNode;
+    searchFilter: SearchFilter;
+    setSearchFilter: (filter: SearchFilter) => void;
 };
 
 function ImagePageVulnerabilities({
@@ -114,6 +116,9 @@ function ImagePageVulnerabilities({
     pagination,
     vulnerabilityState,
     showVulnerabilityStateTabs,
+    additionalToolbarItems,
+    searchFilter,
+    setSearchFilter,
 }: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -124,7 +129,6 @@ function ImagePageVulnerabilities({
 
     const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
 
-    const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -275,7 +279,9 @@ function ImagePageVulnerabilities({
                             'Image SHA': imageId,
                             ...baseSearchFilter,
                         }}
-                    />
+                    >
+                        {additionalToolbarItems}
+                    </AdvancedFiltersToolbar>
                 </div>
                 <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
                     <SummaryCardLayout error={error} isLoading={loading}>
