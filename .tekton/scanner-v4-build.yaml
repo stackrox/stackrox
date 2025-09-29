@@ -74,10 +74,8 @@ spec:
     stepSpecs:
     - name: build
       # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
+      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah-oci-ta/0.5/buildah-oci-ta.yaml#L921
       computeResources:
-        limits:
-          cpu: 2
         requests:
           cpu: 2
   - pipelineTaskName: build-source-image

@@ -83,16 +83,12 @@ spec:
     stepSpecs:
     - name: build
       # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
+      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah-oci-ta/0.5/buildah-oci-ta.yaml#L921
       #
       # Memory is increased for UI builds to succeed. Otherwise, there's an error like this in logs:
       # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
-      #
-      # Not using buildah-6gb/-8gb/... because these don't have memory requests equal to limits which still occasionally
-      # leads to failing builds.
       computeResources:
         limits:
-          cpu: 4
           memory: 7Gi
         requests:
           cpu: 4
