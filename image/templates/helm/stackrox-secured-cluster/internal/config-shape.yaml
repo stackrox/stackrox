@@ -141,7 +141,11 @@ collector:
   crio:
     enabled: null # bool
   runtimeConfig:
-    enabled: null # bool
+    enabled: null # string
+    networking:
+      externalIps:
+        enabled: null # string
+      maxConnectionsPerMinute: null # int
 auditLogs:
   disableCollection: null # bool
 customize:

@@ -111,8 +111,6 @@ collector:
     enabled: {{ eq ._rox.env.openshift 0 }}
   crio:
     enabled: {{ ne ._rox.env.openshift 0 }}
-  runtimeConfig:
-    enabled: true
   [<- end >]
 
 auditLogs:

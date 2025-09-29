@@ -1,0 +1,18 @@
+{{- include "srox.init" . -}}
+
+{{- $enabled := lower (default "disabled" ._rox.collector.runtimeConfig.enabled) }}
+{{- if or (eq $enabled "enabled") (eq $enabled "true") -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collector-config
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "collector-config") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "collector-config") | nindent 4 }}
+data:
+  runtime_config.yaml: |
+    {{- tpl (.Files.Get "config-templates/collector/config.yaml.tpl") . | nindent 4 }}
+{{- end }}

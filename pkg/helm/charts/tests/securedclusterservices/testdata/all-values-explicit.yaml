@@ -38,6 +38,12 @@ collector:
   serviceTLS:
     cert: "DUMMY COLLECTOR CERT"
     key: "DUMMY COLLECTOR KEY"
+  runtimeConfig:
+    enabled: "enabled"
+    networking:
+      externalIps:
+        enabled: "ENABLED"
+    maxConnectionsPerMinute: 1024
 
 admissionControl:
   serviceTLS:
