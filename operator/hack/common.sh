@@ -149,7 +149,7 @@ kind: ClusterServiceVersion
 metadata:
   name: rhacs-operator.${csv_version}
 status:
-  phase: Succeeded
+  phase: Succeededx
 END
 }
 
