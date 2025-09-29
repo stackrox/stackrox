@@ -128,14 +128,21 @@ function ImagePage({
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
-    const { hasReadWriteAccess } = usePermissions();
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
+    const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const [sbomTargetImage, setSbomTargetImage] = useState<string>();
 
     // Report-specific functionality
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
+    const isViewBasedReportsEnabled =
+        isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS') &&
+        hasWorkflowAdminAccess &&
+        (viewContext === 'User workloads' ||
+            viewContext === 'Platform' ||
+            viewContext === 'All vulnerable images' ||
+            viewContext === 'Inactive images');
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
