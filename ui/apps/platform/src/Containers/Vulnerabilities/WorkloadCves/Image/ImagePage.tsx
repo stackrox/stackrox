@@ -143,7 +143,7 @@ function ImagePage({
         setIsCreateViewBasedReportModalOpen(true);
     };
 
-    const buildImageQuery = () => {
+    const getImageQueryForReport = () => {
         // Create a scoped query that includes the image SHA filter plus any applied search filters
         const imageScopedFilter = { 'Image SHA': [imageId] };
         const combinedFilter = { ...baseSearchFilter, ...imageScopedFilter, ...querySearchFilter };
@@ -352,7 +352,7 @@ function ImagePage({
                 <CreateViewBasedReportModal
                     isOpen={isCreateViewBasedReportModalOpen}
                     setIsOpen={setIsCreateViewBasedReportModalOpen}
-                    query={buildImageQuery()}
+                    query={getImageQueryForReport()}
                     areaOfConcern={viewContext}
                 />
             )}

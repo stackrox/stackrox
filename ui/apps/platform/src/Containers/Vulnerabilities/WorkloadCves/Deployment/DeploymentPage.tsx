@@ -84,7 +84,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
         setIsCreateViewBasedReportModalOpen(true);
     };
 
-    const buildDeploymentQuery = () => {
+    const getDeploymentQueryForReport = () => {
         // Create a scoped query that includes the deployment ID filter plus any applied search filters
         const deploymentScopedFilter = { 'Deployment ID': [deploymentId] };
         const combinedFilter = {
@@ -201,7 +201,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                 <CreateViewBasedReportModal
                     isOpen={isCreateViewBasedReportModalOpen}
                     setIsOpen={setIsCreateViewBasedReportModalOpen}
-                    query={buildDeploymentQuery()}
+                    query={getDeploymentQueryForReport()}
                     areaOfConcern={viewContext}
                 />
             )}
