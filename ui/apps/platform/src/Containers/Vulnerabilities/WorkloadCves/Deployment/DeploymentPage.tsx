@@ -21,6 +21,7 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import usePermissions from 'hooks/usePermissions';
 import type { VulnerabilityState } from 'types/cve.proto';
 
 import DeploymentPageHeader, {
@@ -74,8 +75,16 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     const deploymentNotFound = metadataRequest.data && !metadataRequest.data.deployment;
 
     // Report-specific functionality
+    const { hasReadAccess } = usePermissions();
+    const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
+    const isViewBasedReportsEnabled =
+        isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS') &&
+        hasWorkflowAdminAccess &&
+        (viewContext === 'User workloads' ||
+            viewContext === 'Platform' ||
+            viewContext === 'All vulnerable images' ||
+            viewContext === 'Inactive images');
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] =
         React.useState(false);
 
@@ -138,7 +147,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                     >
                         <Tabs
                             activeKey={activeTabKey}
-                            onSelect={(e, key) => {
+                            onSelect={(_e, key) => {
                                 setActiveTabKey(key);
                                 pagination.setPage(1);
                             }}
