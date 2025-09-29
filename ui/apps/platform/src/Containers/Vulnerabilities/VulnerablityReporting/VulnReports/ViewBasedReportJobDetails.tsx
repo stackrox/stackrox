@@ -57,7 +57,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
         }
         if (typeof value === 'string') {
             return (
-                <ChipGroup categoryName={toTitleCase(key)}>
+                <ChipGroup key={key} categoryName={toTitleCase(key)}>
                     <Chip key={value} isReadOnly>
                         {value}
                     </Chip>
@@ -65,7 +65,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
             );
         }
         return (
-            <ChipGroup categoryName={toTitleCase(key)}>
+            <ChipGroup key={key} categoryName={toTitleCase(key)}>
                 {value.map((currentChip) => (
                     <Chip key={currentChip} isReadOnly>
                         {currentChip}
