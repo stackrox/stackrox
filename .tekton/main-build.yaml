@@ -94,7 +94,7 @@ spec:
           cpu: 4
           memory: 7Gi
     - name: sbom-syft-generate
-      computeResources:
+      computeResources: &sbom-syft-resources
         limits:
           memory: 3Gi
         requests:
@@ -102,27 +102,15 @@ spec:
   - pipelineTaskName: build-container-s390x
     stepSpecs:
     - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
+      computeResources: *sbom-syft-resources
   - pipelineTaskName: build-container-ppc64le
     stepSpecs:
     - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
+      computeResources: *sbom-syft-resources
   - pipelineTaskName: build-container-arm64
     stepSpecs:
     - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
+      computeResources: *sbom-syft-resources
   - pipelineTaskName: build-source-image
     stepSpecs:
     # Set memory requests==limits for source image build because the one tends to get sometimes killed at 0.5/2 values.
