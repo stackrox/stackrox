@@ -30,6 +30,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import type { VulnerabilityState } from 'types/cve.proto';
 
@@ -51,6 +52,10 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
+import CreateReportDropdown from '../components/CreateReportDropdown';
+import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
+import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../../utils/searchUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -94,7 +99,7 @@ function ImagePage({
     showVulnerabilityStateTabs,
     deploymentResourceColumnOverrides,
 }: ImagePageProps) {
-    const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
+    const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
     const { data, error } = useQuery<
         {
@@ -119,10 +124,30 @@ function ImagePage({
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
+    // Search filter management
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+
+    // Report-specific functionality
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
+    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
+
+    const onReportSelect = () => {
+        setIsCreateViewBasedReportModalOpen(true);
+    };
+
+    const buildImageQuery = () => {
+        // Create a scoped query that includes the image ID filter plus any applied search filters
+        const imageScopedFilter = { 'Image ID': imageId };
+        const combinedFilter = { ...baseSearchFilter, ...imageScopedFilter, ...querySearchFilter };
+        return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
+    };
 
     const imageData = data && data.image;
     const imageName = imageData?.name;
@@ -264,6 +289,17 @@ function ImagePage({
                                 pagination={pagination}
                                 vulnerabilityState={vulnerabilityState}
                                 showVulnerabilityStateTabs={showVulnerabilityStateTabs}
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                                additionalToolbarItems={
+                                    isViewBasedReportsEnabled ? (
+                                        <CreateReportDropdown
+                                            onSelect={onReportSelect}
+                                            buildQuery={buildImageQuery}
+                                            areaOfConcern={viewContext}
+                                        />
+                                    ) : undefined
+                                }
                             />
                         </Tab>
                         <Tab
@@ -315,6 +351,14 @@ function ImagePage({
             </PageSection>
             <Divider component="div" />
             {mainContent}
+            {isViewBasedReportsEnabled && (
+                <CreateViewBasedReportModal
+                    isOpen={isCreateViewBasedReportModalOpen}
+                    setIsOpen={setIsCreateViewBasedReportModalOpen}
+                    query={buildImageQuery()}
+                    areaOfConcern={viewContext}
+                />
+            )}
         </>
     );
 }

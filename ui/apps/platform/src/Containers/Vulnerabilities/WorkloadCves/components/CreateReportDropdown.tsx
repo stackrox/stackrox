@@ -8,10 +8,16 @@ import {
 } from '@patternfly/react-core';
 
 export type CreateReportDropdownProps = {
-    onSelect: (value: string | number | undefined) => void;
+    onSelect: (
+        value: string | number | undefined,
+        buildQuery?: () => string,
+        areaOfConcern?: string
+    ) => void;
+    buildQuery?: () => string;
+    areaOfConcern?: string;
 };
 
-function CreateReportDropdown({ onSelect }: CreateReportDropdownProps) {
+function CreateReportDropdown({ onSelect, buildQuery, areaOfConcern }: CreateReportDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const onToggleClick = () => {
@@ -22,7 +28,7 @@ function CreateReportDropdown({ onSelect }: CreateReportDropdownProps) {
         _event: React.MouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
-        onSelect(value);
+        onSelect(value, buildQuery, areaOfConcern);
         setIsOpen(false);
     };
 
