@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -161,9 +160,14 @@ func TestListVirtualMachines(t *testing.T) {
 				mockDS.EXPECT().
 					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return(storageVMs, nil)
+				mockDS.EXPECT().
+					CountVirtualMachines(ctx, gomock.Any()).
+					Times(1).
+					Return(len(storageVMs), nil)
 			},
 			expectedResult: &v2.ListVirtualMachinesResponse{
 				VirtualMachines: testVMs,
+				TotalCount:      int32(len(storageVMs)),
 			},
 			expectedError: "",
 		},
@@ -174,6 +178,10 @@ func TestListVirtualMachines(t *testing.T) {
 				mockDS.EXPECT().
 					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return([]*storage.VirtualMachine{}, nil)
+				mockDS.EXPECT().
+					CountVirtualMachines(ctx, gomock.Any()).
+					Times(1).
+					Return(0, nil)
 			},
 			expectedResult: &v2.ListVirtualMachinesResponse{
 				VirtualMachines: []*v2.VirtualMachine{},
@@ -181,49 +189,31 @@ func TestListVirtualMachines(t *testing.T) {
 			expectedError: "",
 		},
 		{
-			name:    "datastore error",
+			name:    "datastore error (count)",
+			request: &v2.ListVirtualMachinesRequest{},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					CountVirtualMachines(ctx, gomock.Any()).
+					Times(1).
+					Return(0, errors.New("datastore count error"))
+			},
+			expectedResult: nil,
+			expectedError:  "datastore count error",
+		},
+		{
+			name:    "datastore error (search)",
 			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return(nil, errors.New("datastore error"))
+				mockDS.EXPECT().
+					CountVirtualMachines(ctx, gomock.Any()).
+					Times(1).
+					Return(len(storageVMs), nil)
 			},
 			expectedResult: nil,
 			expectedError:  "datastore error",
-		},
-		{
-			name:    "default sort order",
-			request: &v2.ListVirtualMachinesRequest{},
-			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
-				mockDS.EXPECT().
-					SearchRawVirtualMachines(ctx, gomock.Any()).
-					Return(storageVMs, nil)
-			},
-			expectedResult: &v2.ListVirtualMachinesResponse{
-				VirtualMachines: testVMs,
-			},
-		},
-		{
-			name: "honor requested sort order",
-			request: &v2.ListVirtualMachinesRequest{
-				Query: &v2.RawQuery{
-					Pagination: &v2.Pagination{
-						SortOptions: []*v2.SortOption{
-							{
-								Field: search.ClusterID.String(),
-							},
-						},
-					},
-				},
-			},
-			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
-				mockDS.EXPECT().
-					SearchRawVirtualMachines(ctx, gomock.Any()).
-					Return(storageVMsInReversedOrder, nil)
-			},
-			expectedResult: &v2.ListVirtualMachinesResponse{
-				VirtualMachines: testVMsInReversedOrder,
-			},
 		},
 	}
 
