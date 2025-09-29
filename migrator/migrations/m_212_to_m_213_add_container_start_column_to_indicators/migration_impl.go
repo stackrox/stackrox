@@ -93,7 +93,11 @@ func migrateByCluster(cluster string, database *types.Databases) error {
 
 	var storeIndicators []*storage.ProcessIndicator
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster).ProtoQuery()
-	storeIndicators, err = store.GetByQuery(ctx, query)
+	// Using WalkByQuery as risk could potentially return a large amount of data
+	err = store.WalkByQuery(ctx, query, func(indicator *storage.ProcessIndicator) error {
+		storeIndicators = append(storeIndicators, indicator)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
