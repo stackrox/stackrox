@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestVMRelay(t *testing.T) {
@@ -93,7 +95,7 @@ func (s *relayTestSuite) TestSendReportToSensorRetries() {
 		shouldRetry bool
 	}{
 		"retryable error is retried": {
-			err:         errox.ResourceExhausted,
+			err:         status.Error(codes.ResourceExhausted, "retryable error"),
 			respSuccess: false,
 			shouldRetry: true,
 		},
