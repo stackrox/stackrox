@@ -1404,12 +1404,12 @@ OUTER:
 	return filtered
 }
 
-// vulnsEqual determines if the vulnerabilities are essentially equal.
+// vulnsEqual determines if the vulnerabilities are equivalent.
 // That is, this function does not check all fields of the vulnerability struct,
 // to prevent consumers from seeing two seemingly identical vulnerabilities
-// for the same package in the same image.
+// for the same package in the same image. It is assumed the two vulnerabilities are non-nil.
 //
-// For example: Claircore currently returns CVE-2019-12900 twice for the bzip2-libs package
+// For example: Claircore used to return CVE-2019-12900 twice for the bzip2-libs package
 // in one particular image. The two versions of the CVE are exactly the same
 // except for the repository name (cpe:/a:redhat:enterprise_linux:8::appstream vs cpe:/o:redhat:enterprise_linux:8::baseos).
 // The entry for this vulnerability as it matched this package in this image may be found in
@@ -1419,13 +1419,55 @@ OUTER:
 //
 // The goal of this function is to make it clear those two CVE-2019-12900 findings are exactly the same.
 func vulnsEqual(a, b *claircore.Vulnerability) bool {
-	return a.Name == b.Name &&
-		a.Description == b.Description &&
-		a.Issued == b.Issued &&
-		a.Links == b.Links &&
-		a.Severity == b.Severity &&
-		a.NormalizedSeverity == b.NormalizedSeverity &&
-		a.FixedInVersion == b.FixedInVersion
+	if a.Name != b.Name {
+		return false
+	}
+	if a.Description != b.Description {
+		return false
+	}
+	if a.Issued != b.Issued {
+		return false
+	}
+	if a.Links != b.Links {
+		return false
+	}
+	if a.Severity != b.Severity {
+		return false
+	}
+	if a.NormalizedSeverity != b.NormalizedSeverity {
+		return false
+	}
+	// At this point, if the FixedInVersion field matches,
+	// we are pretty confident the two vulnerabilities are equivalent.
+	if a.FixedInVersion == b.FixedInVersion {
+		return true
+	}
+
+	// The FixedInVersions do not match, so it is likely these vulnerabilities are not equivalent.
+	// However, we have seen a case such as https://osv.dev/vulnerability/GHSA-xggx-fx6w-v7ch
+	// where there are two equivalent vulnerabilities with mismatching FixedInVersions.
+	// In this example, we see one with introduced=2.0.0&fixed=2.1.8 and the other with
+	// introduced=2.1.0&fixed=2.1.8. These are essentially the same, especially for a
+	// package of version greater than or equal to 2.1.0 and less than 2.1.8.
+	// These vulnerabilities should be seen as equivalent if we get to this point.
+
+	// We only consider matching OSV updaters for the above comment.
+	if a.Updater != b.Updater || !strings.HasPrefix(a.Updater, osvUpdaterPrefix) {
+		return false
+	}
+	aFixedInVersion, err := url.ParseQuery(a.FixedInVersion)
+	if err != nil {
+		return false
+	}
+	bFixedInVersion, err := url.ParseQuery(b.FixedInVersion)
+	if err != nil {
+		return false
+	}
+	if aFixed, bFixed := aFixedInVersion.Get("fixed"), bFixedInVersion.Get("fixed"); aFixed != bFixed {
+		return false
+	}
+
+	return true
 }
 
 // dedupeAdvisories deduplicates repeat advisories out of vulnIDs and returns the result.
