@@ -36,9 +36,8 @@ export function saveFile({ method, url, data, name = '', timeout = 0 }) {
 
                 // Return file size for analytics tracking
                 return { fileSizeBytes };
-            } else {
-                throw new Error('Expected response to contain "data" property');
             }
+            return { fileSizeBytes: 0 };
         })
         .catch((err) => {
             // because the responseType of the request is `arraybuffer`,
