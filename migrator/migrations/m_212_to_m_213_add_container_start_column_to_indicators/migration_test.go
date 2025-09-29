@@ -36,7 +36,7 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.db = pghelper.ForT(s.T(), false)
 	// Use the below lines to use a large existing database for testing.
 	// This is beneficial to test large batches at once.
-	// s.db = pghelper.ForTExistingDB(s.T(), false, "indicators")
+	// s.db = pghelper.ForTExistingDB(s.T(), false, "7593dc135f89446b_oIIuR")
 	// s.existingDB = true
 }
 
@@ -48,7 +48,7 @@ func (s *migrationTestSuite) TestMigration() {
 	}
 
 	clusters := []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2, fixtureconsts.Cluster3}
-	numIndicators := 300
+	numIndicators := 3000
 	numNilContainerTime := 10
 
 	if !s.existingDB {

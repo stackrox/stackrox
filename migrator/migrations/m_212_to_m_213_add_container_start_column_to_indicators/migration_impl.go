@@ -10,6 +10,7 @@ import (
 	updatedStore "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/store"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -38,6 +39,9 @@ func migrate(database *types.Databases) error {
 	var wg sync.WaitGroup
 	sema := semaphore.NewWeighted(int64(semaphoreWeight))
 
+	// Channel to collect errors from goroutines
+	errorCh := make(chan error, len(clusters))
+
 	for _, cluster := range clusters {
 		if err := sema.Acquire(database.DBCtx, 1); err != nil {
 			log.Errorf("context cancelled via stop: %v", err)
@@ -46,22 +50,29 @@ func migrate(database *types.Databases) error {
 
 		log.Debugf("Migrate process indicators for cluster %q", cluster)
 		wg.Add(1)
-		var errorList []error
 
 		go func(c string) {
 			defer sema.Release(1)
 			defer wg.Done()
-			err := migrateByCluster(cluster, database)
+			err := migrateByCluster(c, database)
 			if err != nil {
-				errorList = append(errorList, err)
+				errorCh <- err
 			}
 		}(cluster)
-		if len(errorList) > 0 {
-			return errorList[0]
+	}
+
+	// Wait for all goroutines to complete
+	wg.Wait()
+	close(errorCh)
+
+	// Check for any errors
+	for err := range errorCh {
+		if err != nil {
+			return err
 		}
 	}
-	wg.Wait()
 
+	log.Info("Process Indicators migrated")
 	return nil
 }
 
@@ -69,11 +80,20 @@ func migrateByCluster(cluster string, database *types.Databases) error {
 	ctx, cancel := context.WithTimeout(database.DBCtx, types.DefaultMigrationTimeout)
 	defer cancel()
 
-	store := updatedStore.New(database.PostgresDB)
+	// Create a separate database connection pool for this goroutine to avoid pgx type map concurrency issues
+	// Each goroutine gets its own pgx connection pool with its own type map
+	config := database.PostgresDB.Config().Copy()
+	separateDB, err := postgres.New(ctx, config)
+	if err != nil {
+		return errors.Wrap(err, "failed to create separate database connection pool")
+	}
+	defer separateDB.Close()
+
+	store := updatedStore.New(separateDB)
 
 	var storeIndicators []*storage.ProcessIndicator
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster).ProtoQuery()
-	storeIndicators, err := store.GetByQuery(ctx, query)
+	storeIndicators, err = store.GetByQuery(ctx, query)
 	if err != nil {
 		return err
 	}
