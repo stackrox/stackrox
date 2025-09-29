@@ -45,15 +45,44 @@ const predefinedMetrics: Record<
 > = {
     imageVulnerabilities: {
         namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
-        deployment_severity: {
-            labels: ['Cluster', 'Namespace', 'Deployment', 'Severity'],
+        registry_severity: {
+            labels: ['Cluster', 'Namespace', 'ImageRegistry', 'Severity'],
         },
-        user_workload_severity: {
-            labels: ['Cluster', 'Namespace', 'Deployment', 'IsPlatformWorkload', 'Severity'],
+        deployment_severity: {
+            labels: [
+                'Cluster',
+                'Namespace',
+                'Deployment',
+                'IsPlatformWorkload',
+                'IsFixable',
+                'Severity',
+            ],
         },
     },
     policyViolations: {
         namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
+        action: {
+            labels: ['Cluster', 'Namespace', 'IsPlatformComponent', 'State', 'Severity', 'Action'],
+        },
+        stage_severity: {
+            labels: [
+                'Cluster',
+                'Namespace',
+                'IsPlatformComponent',
+                'Categories',
+                'Stage',
+                'State',
+                'Severity',
+            ],
+        },
+    },
+    nodeVulnerabilities: {
+        node_severity: {
+            labels: ['Cluster', 'Node', 'Severity'],
+        },
+        component_severity: {
+            labels: ['Cluster', 'Node', 'Component', 'IsFixable', 'IsSnoozed', 'Severity'],
+        },
     },
 };
 
