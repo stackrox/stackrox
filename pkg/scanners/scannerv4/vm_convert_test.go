@@ -6,10 +6,61 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	testCVE1CVSSV3 = &storage.CVSSV3{
+		Vector:              "CVSS:3.0/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+		Score:               3.1,
+		ExploitabilityScore: 1.6,
+		ImpactScore:         1.4,
+		AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+		AttackComplexity:    storage.CVSSV3_COMPLEXITY_HIGH,
+		PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+		UserInteraction:     storage.CVSSV3_UI_NONE,
+		Scope:               storage.CVSSV3_UNCHANGED,
+		Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+		Integrity:           storage.CVSSV3_IMPACT_NONE,
+		Availability:        storage.CVSSV3_IMPACT_NONE,
+		Severity:            storage.CVSSV3_LOW,
+	}
+
+	testCVE2CVSSV3 = &storage.CVSSV3{
+		Vector:              "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+		ExploitabilityScore: 2.8,
+		ImpactScore:         5.9,
+		AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+		AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+		PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+		UserInteraction:     storage.CVSSV3_UI_REQUIRED,
+		Scope:               storage.CVSSV3_UNCHANGED,
+		Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
+		Integrity:           storage.CVSSV3_IMPACT_HIGH,
+		Availability:        storage.CVSSV3_IMPACT_HIGH,
+		Score:               8.8,
+		Severity:            storage.CVSSV3_HIGH,
+	}
+
+	testCVE3CVSSV3 = &storage.CVSSV3{
+		Vector:              "CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+		ExploitabilityScore: 2.8,
+		ImpactScore:         5.9,
+		AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+		AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+		PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+		UserInteraction:     storage.CVSSV3_UI_NONE,
+		Scope:               storage.CVSSV3_UNCHANGED,
+		Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
+		Integrity:           storage.CVSSV3_IMPACT_HIGH,
+		Availability:        storage.CVSSV3_IMPACT_HIGH,
+		Score:               9.8,
+		Severity:            storage.CVSSV3_CRITICAL,
+	}
 )
 
 func TestNoVMConversionPanic(t *testing.T) {
@@ -286,6 +337,42 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 			expected:         []*storage.VirtualMachineVulnerability{},
 		},
 		{
+			name: "duplicate component vulnerability ID",
+			vulnerabilitiesByIDs: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"CVE-2025-8713-ID": {
+					Id:          "CVE-2025-8713-ID",
+					Name:        "CVE-2025-8713",
+					Description: "some vulnerability description",
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 3.1,
+								Vector:    "CVSS:3.0/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+							},
+						},
+					},
+				},
+			},
+			vulnerabilityIDs: []string{"CVE-2025-8713-ID", "CVE-2025-8713-ID"},
+			expected: []*storage.VirtualMachineVulnerability{
+				{
+					CveBaseInfo: &storage.VirtualMachineCVEInfo{
+						Cve:          "CVE-2025-8713",
+						Summary:      "some vulnerability description",
+						ScoreVersion: storage.VirtualMachineCVEInfo_V3,
+						CvssV3:       testCVE1CVSSV3,
+						CvssMetrics: []*storage.CVSSScore{
+							{
+								CvssScore: &storage.CVSSScore_Cvssv3{
+									Cvssv3: testCVE1CVSSV3,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "multiple mapping matches, some misses (silently skipped)",
 			vulnerabilitiesByIDs: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"CVE-2025-8715-ID": {
@@ -314,39 +401,11 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 						Cve:          "CVE-2025-8713",
 						Summary:      "some other vulnerability description",
 						ScoreVersion: storage.VirtualMachineCVEInfo_V3,
-						CvssV3: &storage.CVSSV3{
-							Vector:              "CVSS:3.0/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
-							Score:               3.1,
-							ExploitabilityScore: 1.6,
-							ImpactScore:         1.4,
-							AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-							AttackComplexity:    storage.CVSSV3_COMPLEXITY_HIGH,
-							PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
-							UserInteraction:     storage.CVSSV3_UI_NONE,
-							Scope:               storage.CVSSV3_UNCHANGED,
-							Confidentiality:     storage.CVSSV3_IMPACT_LOW,
-							Integrity:           storage.CVSSV3_IMPACT_NONE,
-							Availability:        storage.CVSSV3_IMPACT_NONE,
-							Severity:            storage.CVSSV3_LOW,
-						},
+						CvssV3:       testCVE1CVSSV3,
 						CvssMetrics: []*storage.CVSSScore{
 							{
 								CvssScore: &storage.CVSSScore_Cvssv3{
-									Cvssv3: &storage.CVSSV3{
-										Vector:              "CVSS:3.0/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
-										Score:               3.1,
-										ExploitabilityScore: 1.6,
-										ImpactScore:         1.4,
-										AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-										AttackComplexity:    storage.CVSSV3_COMPLEXITY_HIGH,
-										PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
-										UserInteraction:     storage.CVSSV3_UI_NONE,
-										Scope:               storage.CVSSV3_UNCHANGED,
-										Confidentiality:     storage.CVSSV3_IMPACT_LOW,
-										Integrity:           storage.CVSSV3_IMPACT_NONE,
-										Availability:        storage.CVSSV3_IMPACT_NONE,
-										Severity:            storage.CVSSV3_LOW,
-									},
+									Cvssv3: testCVE1CVSSV3,
 								},
 							},
 						},
@@ -366,6 +425,45 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 		t.Run(tc.name, func(it *testing.T) {
 			actual := toVirtualMachineScanComponentVulnerabilities(tc.vulnerabilitiesByIDs, tc.vulnerabilityIDs)
 			protoassert.SlicesEqual(it, tc.expected, actual)
+		})
+	}
+}
+
+func TestToVirtualMachineScanComponentVulnerabilitiesScoringError(t *testing.T) {
+	vulnerabilitiesByIDs := map[string]*v4.VulnerabilityReport_Vulnerability{
+		"CVE-2025-8713-ID": {
+			Id:          "CVE-2025-8713-ID",
+			Name:        "CVE-2025-8713",
+			Description: "some vulnerability description",
+			CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+						BaseScore: 3.1,
+						Vector:    "CVSS:3.0/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+					},
+				},
+			},
+		},
+	}
+	vulnerabilityIDs := []string{"CVE-2025-8713-ID"}
+
+	expected := []*storage.VirtualMachineVulnerability{
+		{
+			CveBaseInfo: &storage.VirtualMachineCVEInfo{
+				Cve:     "CVE-2025-8713",
+				Summary: "some vulnerability description",
+			},
+		},
+	}
+
+	if buildinfo.ReleaseBuild {
+		t.Log("Release")
+		actual := toVirtualMachineScanComponentVulnerabilities(vulnerabilitiesByIDs, vulnerabilityIDs)
+		protoassert.SlicesEqual(t, expected, actual)
+	} else {
+		t.Log("Debug")
+		assert.Panics(t, func() {
+			toVirtualMachineScanComponentVulnerabilities(vulnerabilitiesByIDs, vulnerabilityIDs)
 		})
 	}
 }
@@ -451,37 +549,9 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 		})
 	}
 
-	expectedCVSSV3 := &storage.CVSSV3{
-		Vector:              "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
-		ExploitabilityScore: 2.8,
-		ImpactScore:         5.9,
-		AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-		AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-		PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-		UserInteraction:     storage.CVSSV3_UI_REQUIRED,
-		Scope:               storage.CVSSV3_UNCHANGED,
-		Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
-		Integrity:           storage.CVSSV3_IMPACT_HIGH,
-		Availability:        storage.CVSSV3_IMPACT_HIGH,
-		Score:               8.8,
-		Severity:            storage.CVSSV3_HIGH,
-	}
+	expectedCVSSV3 := testCVE2CVSSV3
 
-	expectedFakeNVDCVSSV3 := &storage.CVSSV3{
-		Vector:              "CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-		ExploitabilityScore: 2.8,
-		ImpactScore:         5.9,
-		AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
-		AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-		PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-		UserInteraction:     storage.CVSSV3_UI_NONE,
-		Scope:               storage.CVSSV3_UNCHANGED,
-		Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
-		Integrity:           storage.CVSSV3_IMPACT_HIGH,
-		Availability:        storage.CVSSV3_IMPACT_HIGH,
-		Score:               9.8,
-		Severity:            storage.CVSSV3_CRITICAL,
-	}
+	expectedFakeNVDCVSSV3 := testCVE3CVSSV3
 
 	validInputTests := []struct {
 		name          string
@@ -693,6 +763,49 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 				require.Less(it, ix, len(input.GetCveBaseInfo().GetCvssMetrics()))
 				protoassert.Equal(it, expectedMetric, input.GetCveBaseInfo().GetCvssMetrics()[ix])
 			}
+		})
+	}
+}
+
+func TestSetVirtualMachineScoresAndScoreVersionsParseErrors(t *testing.T) {
+	tests := map[string]struct {
+		cvssMetrics      []*v4.VulnerabilityReport_Vulnerability_CVSS
+		expectedErrorMsg string
+	}{
+		"bad CVSSV2 vector": {
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+						BaseScore: 8.8,
+						Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+					},
+				},
+			},
+			expectedErrorMsg: "failed to get CVSS metrics error: parsing CVSS v2 vector: invalid CVSSv2 vector \"CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H\": undefined metric CVSS with value 3.0",
+		},
+		"bad CVSSV3 vector": {
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 8.8,
+						Vector:    "AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+					},
+				},
+			},
+			expectedErrorMsg: "failed to get CVSS metrics error: parsing CVSS v3 vector: invalid CVSSv3 vector \"AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H\": vector missing \"CVSS:\" prefix: \"AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H\"",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(it *testing.T) {
+			vuln := &storage.VirtualMachineVulnerability{
+				CveBaseInfo: &storage.VirtualMachineCVEInfo{
+					Cve: "some-CVE",
+				},
+			}
+			ioVuln := vuln.CloneVT()
+			err := setVirtualMachineScoresAndScoreVersions(ioVuln, tc.cvssMetrics)
+			assert.ErrorContains(it, err, tc.expectedErrorMsg)
 		})
 	}
 }
