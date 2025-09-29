@@ -158,7 +158,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     variant="info"
                     isExpandable
                     isInline
-                    title="Learn about how policies work in each lifecycle stage"
+                    title="How policies work in each lifecycle stage"
                     component="p"
                     className="pf-v5-u-mb-md"
                 >
