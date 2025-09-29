@@ -3,7 +3,6 @@ package util
 import (
 	"context"
 	"sync/atomic"
-	"unsafe"
 
 	"google.golang.org/grpc"
 )
@@ -25,7 +24,7 @@ func makeState(cc grpc.ClientConnInterface) *lazyConnState {
 // context-aware manner) until such a connection becomes available via a `Set` invocation with a non-nil argument
 // from a concurrent goroutine.
 type LazyClientConn struct {
-	state unsafe.Pointer
+	state atomic.Pointer[lazyConnState]
 }
 
 // NewLazyClientConn creates and returns a new LazyClientConn that does not have an underlying delegate client
@@ -33,18 +32,16 @@ type LazyClientConn struct {
 // Note: If you want a fail-fast behavior until a connection is available, you need to implement your own
 // client conn type that returns an error right away.
 func NewLazyClientConn() *LazyClientConn {
-	return &LazyClientConn{
-		//#nosec G103
-		state: unsafe.Pointer(makeState(nil)),
-	}
+	lcc := &LazyClientConn{}
+	lcc.state.Store(makeState(nil))
+	return lcc
 }
 
 // Set specifies the client connection to delegate to, or nil. All goroutines currently waiting for a connection to
 // become available will be woken up, although they might block again soon afterwards if nil was specified.
 func (c *LazyClientConn) Set(cc grpc.ClientConnInterface) {
 	newState := makeState(cc)
-	//#nosec G103
-	oldState := (*lazyConnState)(atomic.SwapPointer(&c.state, unsafe.Pointer(newState)))
+	oldState := c.state.Swap(newState)
 	if oldState.waitC != nil {
 		oldState.cc = cc
 		close(oldState.waitC)
@@ -53,7 +50,7 @@ func (c *LazyClientConn) Set(cc grpc.ClientConnInterface) {
 
 func (c *LazyClientConn) getClientConn(ctx context.Context) (grpc.ClientConnInterface, error) {
 	for {
-		st := (*lazyConnState)(atomic.LoadPointer(&c.state))
+		st := c.state.Load()
 		if st.waitC == nil {
 			return st.cc, nil
 		}
