@@ -47,6 +47,42 @@ func (s *relayTestSuite) TestVsockConnectionHandlerRejectsMalformedData() {
 	s.True(conn.closed, "connection should be closed after handling")
 }
 
+func (s *relayTestSuite) TestReadFromConn() {
+	data := []byte("Hello, world!")
+
+	cases := map[string]struct {
+		sizeLimit   int
+		shouldError bool
+	}{
+		"data smaller than limit succeeds": {
+			sizeLimit:   2 * len(data),
+			shouldError: false,
+		},
+		"data of equal size as limit succeeds": {
+			sizeLimit:   len(data),
+			shouldError: false,
+		},
+		"data larger than limit fails": {
+			sizeLimit:   len(data) - 1,
+			shouldError: true,
+		},
+	}
+
+	conn := s.defaultVsockConn().withData(data)
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			readData, err := readFromConn(conn, c.sizeLimit)
+			if c.shouldError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(data, readData)
+			}
+		})
+	}
+}
+
 func (s *relayTestSuite) TestSendReportToSensorRetries() {
 	conn := s.defaultVsockConn()
 
