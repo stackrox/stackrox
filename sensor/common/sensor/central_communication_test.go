@@ -39,7 +39,6 @@ type centralCommunicationSuite struct {
 	mockService        *MockSensorServiceClient
 	mockReconciliation *mocks.MockHashReconciler
 	comm               CentralCommunication
-	cancel             context.CancelFunc
 }
 
 var _ suite.SetupTestSuite = (*centralCommunicationSuite)(nil)
