@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync/atomic"
 	"time"
-	"unsafe"
 
 	pkgErr "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -89,7 +88,7 @@ type manager struct {
 
 	syncC chan *concurrency.Signal
 
-	statePtr unsafe.Pointer
+	state atomic.Pointer[state]
 
 	cacheVersion string
 
@@ -133,7 +132,7 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 }
 
 func (m *manager) currentState() *state {
-	return (*state)(atomic.LoadPointer(&m.statePtr))
+	return m.state.Load()
 }
 
 func (m *manager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings] {
@@ -230,7 +229,7 @@ func (m *manager) run() {
 func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSettings) {
 	if newSettings == nil {
 		log.Info("DISABLING admission control service (config map was deleted).")
-		atomic.StorePointer(&m.statePtr, nil)
+		m.state.Store(nil)
 		m.lastSettingsUpdate = nil
 		m.settingsStream.Push(newSettings) // typed nil ptr, not nil!
 		return
@@ -330,8 +329,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		m.cacheVersion = newSettings.GetCacheVersion()
 	}
 
-	//#nosec G103
-	atomic.StorePointer(&m.statePtr, unsafe.Pointer(newState))
+	m.state.Store(newState)
 	if m.lastSettingsUpdate == nil {
 		log.Info("RE-ENABLING admission control service")
 	}
