@@ -4,21 +4,20 @@ import (
 	"context"
 	"io"
 	"net"
-	"net/url"
 	"strconv"
 	"time"
 
-	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/mdlayher/vsock"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/virtualmachine/metrics"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -137,6 +136,22 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 	return nil
 }
 
+func isRetryableGRPCError(err error) bool {
+	grpcErr, ok := status.FromError(err)
+	if !ok {
+		return false
+	}
+	code := grpcErr.Code()
+	switch code {
+	case codes.DeadlineExceeded:
+		return !errors.Is(err, context.Canceled)
+	case codes.Unavailable, codes.ResourceExhausted, codes.Internal:
+		return true
+	default:
+		return false
+	}
+}
+
 func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 	report := &v1.IndexReport{}
 
@@ -189,17 +204,10 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 			}
 		}
 
-		var transportErr *transport.Error
-		var urlError *url.Error
-		if errors.As(err, &transportErr) && transportErr.Temporary() {
-			return retry.MakeRetryable(err)
+		if isRetryableGRPCError(err) {
+			err = retry.MakeRetryable(err)
 		}
-		if errors.As(err, &urlError) && urlError.Temporary() {
-			return retry.MakeRetryable(err)
-		}
-		if errors.Is(err, errox.ResourceExhausted) {
-			return retry.MakeRetryable(err)
-		}
+
 		return err
 	},
 		retry.WithContext(ctx),
