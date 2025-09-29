@@ -11,6 +11,7 @@ const PrivateConfigPrometheusMetricsDetails = ({
     privateConfig,
 }: PrivateConfigPrometheusMetricsDetailsProps): ReactElement[] => {
     const imageVulnerabilitiesCfg = privateConfig?.metrics?.imageVulnerabilities;
+    const nodeVulnerabilitiesCfg = privateConfig?.metrics?.nodeVulnerabilities;
     const policyViolationsCfg = privateConfig?.metrics?.policyViolations;
 
     return [
@@ -20,6 +21,13 @@ const PrivateConfigPrometheusMetricsDetails = ({
             period={imageVulnerabilitiesCfg?.gatheringPeriodMinutes || 0}
             descriptors={imageVulnerabilitiesCfg?.descriptors}
             title="Image vulnerabilities"
+        />,
+        <PrometheusMetricsCard
+            category="nodeVulnerabilities"
+            key="nodeVulnerabilities"
+            period={nodeVulnerabilitiesCfg?.gatheringPeriodMinutes || 0}
+            descriptors={nodeVulnerabilitiesCfg?.descriptors}
+            title="Node vulnerabilities"
         />,
         <PrometheusMetricsCard
             category="policyViolations"
