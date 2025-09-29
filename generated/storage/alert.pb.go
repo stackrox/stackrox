@@ -25,8 +25,17 @@ const (
 type ViolationState int32
 
 const (
-	ViolationState_ACTIVE    ViolationState = 0
-	ViolationState_RESOLVED  ViolationState = 2
+	// Alert is currently active and requires attention.
+	// This is the default state for new alerts.
+	// Active alerts can be resolved but cannot be deleted.
+	ViolationState_ACTIVE ViolationState = 0
+	// Alert has been resolved (manually or automatically).
+	// Resolved alerts can be deleted for maintenance purposes.
+	// Only RESOLVED alerts can be deleted via DeleteAlerts API.
+	ViolationState_RESOLVED ViolationState = 2
+	// Enforcement action was attempted but failed.
+	// These alerts can be resolved to acknowledge the failed enforcement.
+	// Common for alerts where enforcement actions are not fully configured.
 	ViolationState_ATTEMPTED ViolationState = 3
 )
 
@@ -75,9 +84,9 @@ type Alert_EntityType int32
 
 const (
 	Alert_UNSET           Alert_EntityType = 0
-	Alert_DEPLOYMENT      Alert_EntityType = 1
-	Alert_CONTAINER_IMAGE Alert_EntityType = 2
-	Alert_RESOURCE        Alert_EntityType = 3
+	Alert_DEPLOYMENT      Alert_EntityType = 1 // Alert on a deployment
+	Alert_CONTAINER_IMAGE Alert_EntityType = 2 // Alert on a container image
+	Alert_RESOURCE        Alert_EntityType = 3 // Alert on a Kubernetes resource
 )
 
 // Enum value maps for Alert_EntityType.
@@ -190,10 +199,10 @@ func (Alert_Resource_ResourceType) EnumDescriptor() ([]byte, []int) {
 type Alert_Violation_Type int32
 
 const (
-	Alert_Violation_GENERIC        Alert_Violation_Type = 0
-	Alert_Violation_K8S_EVENT      Alert_Violation_Type = 1
-	Alert_Violation_NETWORK_FLOW   Alert_Violation_Type = 2
-	Alert_Violation_NETWORK_POLICY Alert_Violation_Type = 3
+	Alert_Violation_GENERIC        Alert_Violation_Type = 0 // Generic policy violation
+	Alert_Violation_K8S_EVENT      Alert_Violation_Type = 1 // Kubernetes event violation
+	Alert_Violation_NETWORK_FLOW   Alert_Violation_Type = 2 // Network flow violation
+	Alert_Violation_NETWORK_POLICY Alert_Violation_Type = 3 // Network policy violation
 )
 
 // Enum value maps for Alert_Violation_Type.
@@ -307,14 +316,21 @@ func (ListAlert_ResourceType) EnumDescriptor() ([]byte, []int) {
 
 // Next available tag: 24
 type Alert struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"`                                                                            // @gotags: search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"
-	Policy         *Policy                `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty" sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"`                                                                    // @gotags: sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"
-	LifecycleStage LifecycleStage         `protobuf:"varint,3,opt,name=lifecycle_stage,json=lifecycleStage,proto3,enum=storage.LifecycleStage" json:"lifecycle_stage,omitempty" search:"Lifecycle Stage" sql:"index=btree"` // @gotags: search:"Lifecycle Stage" sql:"index=btree"
-	ClusterId      string                 `protobuf:"bytes,18,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store" sql:"type(uuid)"`                                            // @gotags: search:"Cluster ID,store" sql:"type(uuid)"
-	ClusterName    string                 `protobuf:"bytes,19,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"`                                      // @gotags: search:"Cluster,store"
-	Namespace      string                 `protobuf:"bytes,20,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                                                             // @gotags: search:"Namespace,store"
-	NamespaceId    string                 `protobuf:"bytes,21,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty" search:"Namespace ID" sql:"type(uuid)"`                                      // @gotags: search:"Namespace ID" sql:"type(uuid)"
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unique identifier for the alert.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"` // @gotags: search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"
+	// Policy that triggered this alert.
+	Policy *Policy `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty" sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"` // @gotags: sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"
+	// Lifecycle stage when the violation occurred.
+	LifecycleStage LifecycleStage `protobuf:"varint,3,opt,name=lifecycle_stage,json=lifecycleStage,proto3,enum=storage.LifecycleStage" json:"lifecycle_stage,omitempty" search:"Lifecycle Stage" sql:"index=btree"` // @gotags: search:"Lifecycle Stage" sql:"index=btree"
+	// Unique identifier for the cluster containing the alert.
+	ClusterId string `protobuf:"bytes,18,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,store" sql:"type(uuid)"
+	// Human-readable name of the cluster containing the alert.
+	ClusterName string `protobuf:"bytes,19,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"` // @gotags: search:"Cluster,store"
+	// Kubernetes namespace containing the alert.
+	Namespace string `protobuf:"bytes,20,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"` // @gotags: search:"Namespace,store"
+	// Unique identifier for the namespace containing the alert.
+	NamespaceId string `protobuf:"bytes,21,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty" search:"Namespace ID" sql:"type(uuid)"` // @gotags: search:"Namespace ID" sql:"type(uuid)"
 	// Types that are valid to be assigned to Entity:
 	//
 	//	*Alert_Deployment_
@@ -322,18 +338,26 @@ type Alert struct {
 	//	*Alert_Resource_
 	Entity isAlert_Entity `protobuf_oneof:"Entity"`
 	// For run-time phase alert, a maximum of 40 violations are retained.
-	Violations       []*Alert_Violation      `protobuf:"bytes,5,rep,name=violations,proto3" json:"violations,omitempty" search:"-"`                                      // @gotags: search:"-"
+	Violations []*Alert_Violation `protobuf:"bytes,5,rep,name=violations,proto3" json:"violations,omitempty" search:"-"` // @gotags: search:"-"
+	// Process violation details (if applicable).
 	ProcessViolation *Alert_ProcessViolation `protobuf:"bytes,13,opt,name=process_violation,json=processViolation,proto3" json:"process_violation,omitempty" search:"-"` // @gotags: search:"-"
-	Enforcement      *Alert_Enforcement      `protobuf:"bytes,6,opt,name=enforcement,proto3" json:"enforcement,omitempty"`
-	Time             *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty" sensorhash:"ignore" search:"Violation Time" sql:"index=btree"`                                         // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
-	FirstOccurred    *timestamppb.Timestamp  `protobuf:"bytes,10,opt,name=first_occurred,json=firstOccurred,proto3" json:"first_occurred,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
+	// Enforcement action taken or attempted.
+	Enforcement *Alert_Enforcement `protobuf:"bytes,6,opt,name=enforcement,proto3" json:"enforcement,omitempty"`
+	// Timestamp of the last occurrence of this alert.
+	// For alerts with multiple violations, this represents the most recent occurrence.
+	Time *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty" sensorhash:"ignore" search:"Violation Time" sql:"index=btree"` // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
+	// Timestamp of the first occurrence of this alert.
+	FirstOccurred *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=first_occurred,json=firstOccurred,proto3" json:"first_occurred,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
 	// The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
-	ResolvedAt        *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty" sensorhash:"ignore"`                                // @gotags: sensorhash:"ignore"
-	State             ViolationState         `protobuf:"varint,11,opt,name=state,proto3,enum=storage.ViolationState" json:"state,omitempty" search:"Violation State,store" sql:"index=btree"`                               // @gotags: search:"Violation State,store" sql:"index=btree"
-	PlatformComponent bool                   `protobuf:"varint,22,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`          // @gotags: search:"Platform Component"
-	EntityType        Alert_EntityType       `protobuf:"varint,23,opt,name=entity_type,json=entityType,proto3,enum=storage.Alert_EntityType" json:"entity_type,omitempty" search:"Entity Type"` // @gotags: search:"Entity Type"
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	ResolvedAt *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
+	// Current state of the alert.
+	State ViolationState `protobuf:"varint,11,opt,name=state,proto3,enum=storage.ViolationState" json:"state,omitempty" search:"Violation State,store" sql:"index=btree"` // @gotags: search:"Violation State,store" sql:"index=btree"
+	// Whether this alert is related to a platform component.
+	PlatformComponent bool `protobuf:"varint,22,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"` // @gotags: search:"Platform Component"
+	// Type of entity that triggered this alert.
+	EntityType    Alert_EntityType `protobuf:"varint,23,opt,name=entity_type,json=entityType,proto3,enum=storage.Alert_EntityType" json:"entity_type,omitempty" search:"Entity Type"` // @gotags: search:"Entity Type"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Alert) Reset() {
@@ -894,18 +918,30 @@ func (x *ListAlertDeployment) GetDeploymentType() string {
 }
 
 type Alert_Deployment struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	Id            string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,store,hidden" sql:"index=hash,type(uuid)"`     // @gotags: search:"Deployment ID,store,hidden" sql:"index=hash,type(uuid)"
-	Name          string                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment,store"` // @gotags: search:"Deployment,store"
-	Type          string                        `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	Namespace     string                        `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
-	NamespaceId   string                        `protobuf:"bytes,16,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`                                             // This field has to be duplicated in Alert for scope management and search.
-	Labels        map[string]string             `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
-	ClusterId     string                        `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`                                                    // This field has to be duplicated in Alert for scope management and search.
-	ClusterName   string                        `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`                                             // This field has to be duplicated in Alert for scope management and search.
-	Containers    []*Alert_Deployment_Container `protobuf:"bytes,11,rep,name=containers,proto3" json:"containers,omitempty"`
-	Annotations   map[string]string             `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
-	Inactive      bool                          `protobuf:"varint,15,opt,name=inactive,proto3" json:"inactive,omitempty" search:"Inactive Deployment"`                                                                                // @gotags: search:"Inactive Deployment"
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unique identifier for the deployment.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,store,hidden" sql:"index=hash,type(uuid)"` // @gotags: search:"Deployment ID,store,hidden" sql:"index=hash,type(uuid)"
+	// Human-readable name of the deployment.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment,store"` // @gotags: search:"Deployment,store"
+	// Type of deployment (e.g., "Deployment", "DaemonSet", "StatefulSet").
+	Type string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	// Kubernetes namespace containing the deployment.
+	// This field has to be duplicated in Alert for scope management and search.
+	Namespace string `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"` // This field has to be duplicated in Alert for scope management and search.
+	// Kubernetes labels applied to the deployment.
+	Labels map[string]string `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
+	// Unique identifier for the cluster containing the deployment.
+	// This field has to be duplicated in Alert for scope management and search.
+	ClusterId string `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // This field has to be duplicated in Alert for scope management and search.
+	// Human-readable name of the cluster containing the deployment.
+	// This field has to be duplicated in Alert for scope management and search.
+	ClusterName string `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"` // This field has to be duplicated in Alert for scope management and search.
+	// List of containers in the deployment.
+	Containers []*Alert_Deployment_Container `protobuf:"bytes,11,rep,name=containers,proto3" json:"containers,omitempty"`
+	// Kubernetes annotations applied to the deployment.
+	Annotations map[string]string `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
+	// Whether the deployment is currently inactive.
+	Inactive      bool `protobuf:"varint,15,opt,name=inactive,proto3" json:"inactive,omitempty" search:"Inactive Deployment"` // @gotags: search:"Inactive Deployment"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -968,13 +1004,6 @@ func (x *Alert_Deployment) GetNamespace() string {
 	return ""
 }
 
-func (x *Alert_Deployment) GetNamespaceId() string {
-	if x != nil {
-		return x.NamespaceId
-	}
-	return ""
-}
-
 func (x *Alert_Deployment) GetLabels() map[string]string {
 	if x != nil {
 		return x.Labels
@@ -1019,13 +1048,23 @@ func (x *Alert_Deployment) GetInactive() bool {
 
 // Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)
 type Alert_Resource struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	ResourceType  Alert_Resource_ResourceType `protobuf:"varint,1,opt,name=resource_type,json=resourceType,proto3,enum=storage.Alert_Resource_ResourceType" json:"resource_type,omitempty" search:"Resource Type,store"` // @gotags: search:"Resource Type,store"
-	Name          string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Resource"`                                                                               // @gotags: search:"Resource"
-	ClusterId     string                      `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`                                                    // This field has to be duplicated in Alert for scope management and search.
-	ClusterName   string                      `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`                                              // This field has to be duplicated in Alert for scope management and search.
-	Namespace     string                      `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
-	NamespaceId   string                      `protobuf:"bytes,6,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`                                              // This field has to be duplicated in Alert for scope management and search.
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type of Kubernetes resource that triggered the alert.
+	ResourceType Alert_Resource_ResourceType `protobuf:"varint,1,opt,name=resource_type,json=resourceType,proto3,enum=storage.Alert_Resource_ResourceType" json:"resource_type,omitempty" search:"Resource Type,store"` // @gotags: search:"Resource Type,store"
+	// Name of the resource that triggered the alert.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Resource"` // @gotags: search:"Resource"
+	// Unique identifier for the cluster containing the resource.
+	// This field has to be duplicated in Alert for scope management and search.
+	ClusterId string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // This field has to be duplicated in Alert for scope management and search.
+	// Human-readable name of the cluster containing the resource.
+	// This field has to be duplicated in Alert for scope management and search.
+	ClusterName string `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"` // This field has to be duplicated in Alert for scope management and search.
+	// Kubernetes namespace containing the resource.
+	// This field has to be duplicated in Alert for scope management and search.
+	Namespace string `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"` // This field has to be duplicated in Alert for scope management and search.
+	// Unique identifier for the namespace containing the resource.
+	// This field has to be duplicated in Alert for scope management and search.
+	NamespaceId   string `protobuf:"bytes,6,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"` // This field has to be duplicated in Alert for scope management and search.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1103,14 +1142,15 @@ func (x *Alert_Resource) GetNamespaceId() string {
 }
 
 type Alert_Violation struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	Message string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Human-readable message describing the violation.
+	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	// Types that are valid to be assigned to MessageAttributes:
 	//
 	//	*Alert_Violation_KeyValueAttrs_
 	//	*Alert_Violation_NetworkFlowInfo_
 	MessageAttributes isAlert_Violation_MessageAttributes `protobuf_oneof:"MessageAttributes"`
-	// 'type' is for internal use only.
+	// Type of violation (for internal use only).
 	Type Alert_Violation_Type `protobuf:"varint,5,opt,name=type,proto3,enum=storage.Alert_Violation_Type" json:"type,omitempty"`
 	// Indicates violation time. This field differs from top-level field 'time' which represents last time the alert
 	// occurred in case of multiple occurrences of the policy alert. As of 55.0, this field is set only for kubernetes
@@ -1201,10 +1241,12 @@ type isAlert_Violation_MessageAttributes interface {
 }
 
 type Alert_Violation_KeyValueAttrs_ struct {
+	// Key-value attributes for the violation.
 	KeyValueAttrs *Alert_Violation_KeyValueAttrs `protobuf:"bytes,4,opt,name=key_value_attrs,json=keyValueAttrs,proto3,oneof"`
 }
 
 type Alert_Violation_NetworkFlowInfo_ struct {
+	// Network flow information for network-related violations.
 	NetworkFlowInfo *Alert_Violation_NetworkFlowInfo `protobuf:"bytes,7,opt,name=network_flow_info,json=networkFlowInfo,proto3,oneof" search:"-" sql:"-"` // @gotags: search:"-" sql:"-"
 }
 
@@ -1213,9 +1255,12 @@ func (*Alert_Violation_KeyValueAttrs_) isAlert_Violation_MessageAttributes() {}
 func (*Alert_Violation_NetworkFlowInfo_) isAlert_Violation_MessageAttributes() {}
 
 type Alert_ProcessViolation struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	Processes     []*ProcessIndicator    `protobuf:"bytes,2,rep,name=processes,proto3" json:"processes,omitempty" sql:"ignore-fks"` // @gotags: sql:"ignore-fks"
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Human-readable message describing the process violation.
+	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	// List of processes that violated the policy.
+	// Limited to maximum 40 processes per runtime alert.
+	Processes     []*ProcessIndicator `protobuf:"bytes,2,rep,name=processes,proto3" json:"processes,omitempty" sql:"ignore-fks"` // @gotags: sql:"ignore-fks"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1265,9 +1310,11 @@ func (x *Alert_ProcessViolation) GetProcesses() []*ProcessIndicator {
 }
 
 type Alert_Enforcement struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Action        EnforcementAction      `protobuf:"varint,1,opt,name=action,proto3,enum=storage.EnforcementAction" json:"action,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Enforcement action taken or attempted.
+	Action EnforcementAction `protobuf:"varint,1,opt,name=action,proto3,enum=storage.EnforcementAction" json:"action,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
+	// Human-readable message describing the enforcement result.
+	Message       string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1317,9 +1364,11 @@ func (x *Alert_Enforcement) GetMessage() string {
 }
 
 type Alert_Deployment_Container struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Image         *ContainerImage        `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty" search:"-" sql:"ignore-fks,ignore-index"` // @gotags: search:"-" sql:"ignore-fks,ignore-index"
-	Name          string                 `protobuf:"bytes,10,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Container image information.
+	Image *ContainerImage `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty" search:"-" sql:"ignore-fks,ignore-index"` // @gotags: search:"-" sql:"ignore-fks,ignore-index"
+	// Name of the container within the deployment.
+	Name          string `protobuf:"bytes,10,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1769,7 +1818,7 @@ var File_storage_alert_proto protoreflect.FileDescriptor
 
 const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\xfd\x19\n" +
+	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\xda\x19\n" +
 	"\x05Alert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyR\x06policy\x12@\n" +
@@ -1797,14 +1846,13 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x05state\x18\v \x01(\x0e2\x17.storage.ViolationStateR\x05state\x12-\n" +
 	"\x12platform_component\x18\x16 \x01(\bR\x11platformComponent\x12:\n" +
 	"\ventity_type\x18\x17 \x01(\x0e2\x19.storage.Alert.EntityTypeR\n" +
-	"entityType\x1a\x80\x05\n" +
+	"entityType\x1a\xdd\x04\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12\x1c\n" +
-	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x12!\n" +
-	"\fnamespace_id\x18\x10 \x01(\tR\vnamespaceId\x12=\n" +
+	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x12=\n" +
 	"\x06labels\x18\a \x03(\v2%.storage.Alert.Deployment.LabelsEntryR\x06labels\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\t \x01(\tR\tclusterId\x12!\n" +
