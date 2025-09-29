@@ -543,6 +543,13 @@ const SystemConfigForm = ({
                         />
                         <PrometheusMetricsForm
                             pcfg={values?.privateConfig}
+                            category="nodeVulnerabilities"
+                            title="Node vulnerabilities"
+                            onChange={onChange}
+                            onCustomChange={onCustomChange}
+                        />
+                        <PrometheusMetricsForm
+                            pcfg={values?.privateConfig}
                             category="policyViolations"
                             title="Policy violations"
                             onChange={onChange}
