@@ -2,7 +2,8 @@ import React from 'react';
 import { groupBy } from 'lodash';
 import { Title, Divider, Flex, Text } from '@patternfly/react-core';
 
-import { policyCriteriaCategories, type PolicyCriteriaCategoryKey } from 'messages/common';
+import { policyCriteriaCategories } from 'messages/common';
+import type { PolicyCriteriaCategoryKey } from 'messages/common';
 
 import PolicyCriteriaCategory from './PolicyCriteriaCategory';
 import { Descriptor } from './policyCriteriaDescriptors';
