@@ -11,16 +11,7 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import {
-    Button,
-    Flex,
-    FlexItem,
-    Icon,
-    Text,
-    TextContent,
-    TextVariants,
-    Tooltip,
-} from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Icon, Text, TextContent, Tooltip } from '@patternfly/react-core';
 import {
     ExclamationCircleIcon,
     ExclamationTriangleIcon,
@@ -49,13 +40,6 @@ type FlowsTableProps = {
     onSelectFlow: (entityId: string) => void;
 };
 
-const columnNames = {
-    entity: 'Entity',
-    direction: 'Direction',
-    // @TODO: This would be a good point to update with i18n translation ability
-    portAndProtocol: 'Port / protocol',
-};
-
 function getFlowSubtext(flow: Flow): string {
     switch (flow.type) {
         case 'DEPLOYMENT':
@@ -82,39 +66,6 @@ function getBaselineSimulatedRowStyle(
         customStyle = {};
     }
     return customStyle;
-}
-
-function ExtraneousFlowsRow({
-    isEditable,
-    numExtraneousEgressFlows,
-    direction,
-}: {
-    isEditable: boolean;
-    numExtraneousEgressFlows: number;
-    direction: 'Ingress' | 'Egress';
-}) {
-    return (
-        <Tbody>
-            <Tr>
-                <Td />
-                {isEditable && <Td />}
-                <Td dataLabel={columnNames.entity}>
-                    <Flex direction={{ default: 'row' }}>
-                        <FlexItem>
-                            <div>+ {numExtraneousEgressFlows} allowed flows</div>
-                            <div>
-                                <TextContent>
-                                    <Text component={TextVariants.small}>Across this cluster</Text>
-                                </TextContent>
-                            </div>
-                        </FlexItem>
-                    </Flex>
-                </Td>
-                <Td dataLabel={columnNames.direction}>{direction}</Td>
-                <Td dataLabel={columnNames.portAndProtocol}>Any / Any</Td>
-            </Tr>
-        </Tbody>
-    );
 }
 
 function AnomalousIcon({ type }: { type: FlowEntityType }) {
@@ -197,9 +148,9 @@ function FlowsTable({
                         />
                     )}
                     {isBaselineSimulation && <Td />}
-                    <Th>{columnNames.entity}</Th>
-                    <Th modifier="nowrap">{columnNames.direction}</Th>
-                    <Th modifier="nowrap">{columnNames.portAndProtocol}</Th>
+                    <Th>Entity</Th>
+                    <Th modifier="nowrap">Direction</Th>
+                    <Th modifier="nowrap">Port / protocol</Th>
                     {isEditable && (
                         <Th>
                             <span className="pf-v5-screen-reader">Row actions</span>
@@ -268,7 +219,7 @@ function FlowsTable({
                                 />
                             )}
                             {isBaselineSimulation && (
-                                <Td dataLabel={columnNames.direction}>
+                                <Td dataLabel="TODO">
                                     {row.baselineSimulationDiffState === 'ADDED' && (
                                         <Tooltip content={<div>Baseline added</div>}>
                                             <Icon size="sm">
@@ -285,7 +236,7 @@ function FlowsTable({
                                     )}
                                 </Td>
                             )}
-                            <Td dataLabel={columnNames.entity}>
+                            <Td dataLabel="Entity">
                                 <Flex direction={{ default: 'row' }}>
                                     <FlexItem>
                                         <div>
@@ -299,9 +250,7 @@ function FlowsTable({
                                         </div>
                                         <div>
                                             <TextContent>
-                                                <Text component={TextVariants.small}>
-                                                    {getFlowSubtext(row)}
-                                                </Text>
+                                                <Text component="small">{getFlowSubtext(row)}</Text>
                                             </TextContent>
                                         </div>
                                     </FlexItem>
@@ -312,8 +261,8 @@ function FlowsTable({
                                     )}
                                 </Flex>
                             </Td>
-                            <Td dataLabel={columnNames.direction}>{row.direction}</Td>
-                            <Td dataLabel={columnNames.portAndProtocol}>
+                            <Td dataLabel="Direction">{row.direction}</Td>
+                            <Td dataLabel="Port / protocol">
                                 {row.port} / {protocolLabel[row.protocol]}
                             </Td>
                             {isEditable && (
@@ -358,7 +307,7 @@ function FlowsTable({
                                                 }}
                                             />
                                         )}
-                                        <Td>
+                                        <Td colSpan={1}>
                                             <ExpandableRowContent>
                                                 <Flex direction={{ default: 'row' }}>
                                                     <FlexItem>
@@ -378,12 +327,12 @@ function FlowsTable({
                                                 </Flex>
                                             </ExpandableRowContent>
                                         </Td>
-                                        <Td>
+                                        <Td colSpan={1}>
                                             <ExpandableRowContent>
                                                 {child.direction}
                                             </ExpandableRowContent>
                                         </Td>
-                                        <Td>
+                                        <Td colSpan={1}>
                                             <ExpandableRowContent>
                                                 {child.port} / {protocolLabel[child.protocol]}
                                             </ExpandableRowContent>
@@ -400,18 +349,48 @@ function FlowsTable({
                 );
             })}
             {numExtraneousEgressFlows > 0 && (
-                <ExtraneousFlowsRow
-                    isEditable
-                    numExtraneousEgressFlows={numExtraneousEgressFlows}
-                    direction="Egress"
-                />
+                <Tbody>
+                    <Tr>
+                        <Td />
+                        {isEditable && <Td />}
+                        <Td dataLabel="Entity">
+                            <Flex direction={{ default: 'row' }}>
+                                <FlexItem>
+                                    <div>+ {numExtraneousEgressFlows} allowed flows</div>
+                                    <div>
+                                        <TextContent>
+                                            <Text component="small">Across this cluster</Text>
+                                        </TextContent>
+                                    </div>
+                                </FlexItem>
+                            </Flex>
+                        </Td>
+                        <Td dataLabel="Direction">Egress</Td>
+                        <Td dataLabel="Port / protocol">Any / Any</Td>
+                    </Tr>
+                </Tbody>
             )}
             {numExtraneousIngressFlows > 0 && (
-                <ExtraneousFlowsRow
-                    isEditable
-                    numExtraneousEgressFlows={numExtraneousIngressFlows}
-                    direction="Ingress"
-                />
+                <Tbody>
+                    <Tr>
+                        <Td />
+                        {isEditable && <Td />}
+                        <Td dataLabel="Entity">
+                            <Flex direction={{ default: 'row' }}>
+                                <FlexItem>
+                                    <div>+ {numExtraneousIngressFlows} allowed flows</div>
+                                    <div>
+                                        <TextContent>
+                                            <Text component="small">Across this cluster</Text>
+                                        </TextContent>
+                                    </div>
+                                </FlexItem>
+                            </Flex>
+                        </Td>
+                        <Td dataLabel="Direction">Ingress</Td>
+                        <Td dataLabel="Port / protocol">Any / Any</Td>
+                    </Tr>
+                </Tbody>
             )}
         </Table>
     );
