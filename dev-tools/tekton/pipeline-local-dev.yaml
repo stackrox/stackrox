@@ -60,6 +60,8 @@ spec:
       value: source
     - name: builder-image
       value: $(params.builder-image)
+    - name: depth
+      value: 0
     workspaces:
     - name: output
       workspace: shared-data
@@ -83,7 +85,7 @@ spec:
         script: |
           #!/bin/bash
           set -e
-          git rev-parse --short HEAD | tee $(results.git-commit.path)
+          git rev-parse --short HEAD | tr -d '\n' | tee $(results.git-commit.path)
 
   # Build UI with NPM caching
   - name: build-ui
@@ -115,7 +117,7 @@ spec:
           name: cache-fetch
         params:
         - name: PATTERNS
-          value: "**/ui/apps/platform/package.json,**/ui/apps/platform/package-lock.json"
+          value: ["**/ui/apps/platform/package.json", "**/ui/apps/platform/package-lock.json"]
         - name: SOURCE
           value: "s3://$(params.cache-bucket)/npm-cache/{{hash}}"
         - name: CACHE_PATH
@@ -156,7 +158,7 @@ spec:
           name: cache-upload
         params:
         - name: PATTERNS
-          value: "**/ui/apps/platform/package.json,**/ui/apps/platform/package-lock.json"
+          value: ["**/ui/apps/platform/package.json", "**/ui/apps/platform/package-lock.json"]
         - name: TARGET
           value: "s3://$(params.cache-bucket)/npm-cache/{{hash}}"
         - name: CACHE_PATH
@@ -211,7 +213,7 @@ spec:
           name: cache-fetch
         params:
         - name: PATTERNS
-          value: "**/go.mod,!scannerv2**"
+          value: ["**/go.mod", "!scannerv2**"]
         - name: SOURCE
           value: "s3://$(params.cache-bucket)/gomod-cache/{{hash}}"
         - name: CACHE_PATH
@@ -233,7 +235,7 @@ spec:
           name: cache-fetch
         params:
         - name: PATTERNS
-          value: "**/go.mod,!scannerv2**"
+          value: ["**/go.mod", "!scannerv2**"]
         - name: SOURCE
           value: "s3://$(params.cache-bucket)/gobuild-cache/{{hash}}"
         - name: CACHE_PATH
@@ -343,7 +345,7 @@ spec:
           name: cache-upload
         params:
         - name: PATTERNS
-          value: "**/go.mod,!scannerv2**"
+          value: ["**/go.mod", "!scannerv2**"]
         - name: TARGET
           value: "s3://$(params.cache-bucket)/gomod-cache/{{hash}}"
         - name: CACHE_PATH
@@ -365,7 +367,7 @@ spec:
           name: cache-upload
         params:
         - name: PATTERNS
-          value: "**/go.mod,!scannerv2**"
+          value: ["**/go.mod", "!scannerv2**"]
         - name: TARGET
           value: "s3://$(params.cache-bucket)/gobuild-cache/{{hash}}"
         - name: CACHE_PATH
@@ -381,9 +383,148 @@ spec:
         - name: INSECURE
           value: "true"
 
+  # Generate documentation
+  - name: gendocs
+    runAfter: [setup-aws-credentials, fetch-source]
+    workspaces:
+    - name: shared-data
+      workspace: shared-data
+    params:
+    - name: builder-image
+      value: $(params.builder-image)
+    taskSpec:
+      workspaces:
+      - name: shared-data
+      params:
+      - name: builder-image
+        type: string
+      steps:
+      # Fetch Go module cache for docs
+      - name: fetch-gendocs-gomod-cache
+        ref:
+          name: cache-fetch
+        params:
+        - name: PATTERNS
+          value: ["**/go.mod", "!scannerv2**"]
+        - name: SOURCE
+          value: "s3://$(params.cache-bucket)/gendocs-mod-cache/{{hash}}"
+        - name: CACHE_PATH
+          value: "$(workspaces.shared-data.path)/gendocs-mod-cache"
+        - name: WORKING_DIR
+          value: "$(workspaces.shared-data.path)/source"
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: "$(workspaces.shared-data.path)/.aws/credentials"
+        - name: AWS_CONFIG_FILE
+          value: "$(workspaces.shared-data.path)/.aws/config"
+        - name: BLOB_QUERY_PARAMS
+          value: "?endpoint=http://$(params.minio-host)&disable_https=true&use_path_style=true"
+        - name: INSECURE
+          value: "true"
+
+      # Fetch Go build cache for docs
+      - name: fetch-gendocs-gobuild-cache
+        ref:
+          name: cache-fetch
+        params:
+        - name: PATTERNS
+          value: ["**/go.mod", "!scannerv2**"]
+        - name: SOURCE
+          value: "s3://$(params.cache-bucket)/gendocs-cache/{{hash}}"
+        - name: CACHE_PATH
+          value: "$(workspaces.shared-data.path)/gendocs-cache"
+        - name: WORKING_DIR
+          value: "$(workspaces.shared-data.path)/source"
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: "$(workspaces.shared-data.path)/.aws/credentials"
+        - name: AWS_CONFIG_FILE
+          value: "$(workspaces.shared-data.path)/.aws/config"
+        - name: BLOB_QUERY_PARAMS
+          value: "?endpoint=http://$(params.minio-host)&disable_https=true&use_path_style=true"
+        - name: INSECURE
+          value: "true"
+
+      - name: generate-docs
+        image: $(params.builder-image)
+        workingDir: $(workspaces.shared-data.path)/source
+        env:
+        - name: GOMODCACHE
+          value: "$(workspaces.shared-data.path)/gendocs-mod-cache"
+        - name: GOCACHE
+          value: "$(workspaces.shared-data.path)/gendocs-cache"
+        - name: GOARCH
+          value: "arm64"
+        script: |
+          #!/bin/bash
+          set -ex
+
+          echo "Generating API documentation..."
+
+          # Run go mod tidy first (required by protogen.mk)
+          go mod tidy
+
+          # Generate swagger documentation
+          make image/rhel/docs/api/v1/swagger.json image/rhel/docs/api/v2/swagger.json
+
+          # Generate third-party notices using ossls tool
+          echo "Generating third-party notices..."
+          make ossls-notice || {
+            echo "ossls-notice failed, creating empty directory for local dev"
+            mkdir -p image/rhel/THIRD_PARTY_NOTICES
+          }
+
+          echo "Documentation generation completed successfully"
+
+      # Upload Go module cache for docs
+      - name: upload-gendocs-gomod-cache
+        ref:
+          name: cache-upload
+        params:
+        - name: PATTERNS
+          value: ["**/go.mod", "!scannerv2**"]
+        - name: TARGET
+          value: "s3://$(params.cache-bucket)/gendocs-mod-cache/{{hash}}"
+        - name: CACHE_PATH
+          value: "$(workspaces.shared-data.path)/gendocs-mod-cache"
+        - name: WORKING_DIR
+          value: "$(workspaces.shared-data.path)/source"
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: "$(workspaces.shared-data.path)/.aws/credentials"
+        - name: AWS_CONFIG_FILE
+          value: "$(workspaces.shared-data.path)/.aws/config"
+        - name: BLOB_QUERY_PARAMS
+          value: "?endpoint=http://$(params.minio-host)&disable_https=true&use_path_style=true"
+        - name: INSECURE
+          value: "true"
+        - name: FETCHED
+          value: "$(steps.fetch-gendocs-gomod-cache.results.fetched)"
+
+      # Upload Go build cache for docs
+      - name: upload-gendocs-gobuild-cache
+        ref:
+          name: cache-upload
+        params:
+        - name: PATTERNS
+          value: ["**/go.mod", "!scannerv2**"]
+        - name: TARGET
+          value: "s3://$(params.cache-bucket)/gendocs-cache/{{hash}}"
+        - name: CACHE_PATH
+          value: "$(workspaces.shared-data.path)/gendocs-cache"
+        - name: WORKING_DIR
+          value: "$(workspaces.shared-data.path)/source"
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: "$(workspaces.shared-data.path)/.aws/credentials"
+        - name: AWS_CONFIG_FILE
+          value: "$(workspaces.shared-data.path)/.aws/config"
+        - name: BLOB_QUERY_PARAMS
+          value: "?endpoint=http://$(params.minio-host)&disable_https=true&use_path_style=true"
+        - name: INSECURE
+          value: "true"
+        - name: FETCHED
+          value: "$(steps.fetch-gendocs-gobuild-cache.results.fetched)"
+
   # Build container image
   - name: build-image
-    runAfter: [get-git-commit, build-go-binaries, build-ui]
+    runAfter: [get-git-commit, gendocs, build-go-binaries, build-ui]
     taskRef:
       name: buildah
     params:

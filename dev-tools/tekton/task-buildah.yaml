@@ -48,6 +48,12 @@ spec:
   workspaces:
   - name: source
     description: Workspace containing the source to build
+  - name: dockerconfig
+    description: >-
+      An optional workspace that allows providing a .docker/config.json file
+      for Buildah to access the container registry.
+      The file should be placed at the root of the Workspace with name config.json.
+    optional: true
 
   results:
   - name: IMAGE_DIGEST
@@ -70,13 +76,36 @@ spec:
       echo "TLS Verify: $(params.TLSVERIFY)"
 
       # Build the image
-      buildah --storage-driver=$(params.STORAGE_DRIVER) bud \
-        $(params.BUILD_EXTRA_ARGS) \
-        --format=$(params.FORMAT) \
-        --tls-verify=$(params.TLSVERIFY) \
-        -f $(params.DOCKERFILE) \
-        -t $(params.IMAGE) \
-        $(params.CONTEXT)
+      # Set variables to avoid parameter substitution issues
+      STORAGE_DRIVER="$(params.STORAGE_DRIVER)"
+      BUILD_EXTRA_ARGS="$(params.BUILD_EXTRA_ARGS)"
+      FORMAT="$(params.FORMAT)"
+      TLSVERIFY="$(params.TLSVERIFY)"
+      DOCKERFILE="$(params.DOCKERFILE)"
+      IMAGE="$(params.IMAGE)"
+      CONTEXT="$(params.CONTEXT)"
+
+      # Set up Docker config if workspace is bound
+      if [ "$(workspaces.dockerconfig.bound)" = "true" ]; then
+        export DOCKER_CONFIG="$(workspaces.dockerconfig.path)"
+        echo "Using Docker config from: $DOCKER_CONFIG"
+      else
+        # Create empty Docker config for local registry access
+        mkdir -p /tmp/.docker
+        echo '{}' > /tmp/.docker/config.json
+        export DOCKER_CONFIG="/tmp/.docker"
+        echo "Created empty Docker config at: $DOCKER_CONFIG"
+      fi
+
+      echo "Running buildah command with context: $CONTEXT"
+
+      buildah --storage-driver="$STORAGE_DRIVER" bud \
+        $BUILD_EXTRA_ARGS \
+        --format="$FORMAT" \
+        --tls-verify="$TLSVERIFY" \
+        -f "$DOCKERFILE" \
+        -t "$IMAGE" \
+        "$CONTEXT"
 
       # Push the image if not skipped
       if [ "$(params.SKIP_PUSH)" = "false" ]; then

@@ -1,165 +1,116 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: StepAction
 metadata:
   name: cache-upload
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.56.0"
+    tekton.dev/tags: "cache"
 spec:
-  description: Upload build cache to S3-compatible storage
   params:
-  - name: PATTERNS
-    description: Comma-delimited file patterns to generate cache key hash
-    type: string
-  - name: TARGET
-    description: Cache target URI with {{hash}} placeholder
-    type: string
-  - name: CACHE_PATH
-    description: Local path containing cache to upload
-    type: string
-  - name: WORKING_DIR
-    description: Working directory for pattern matching
-    type: string
-  - name: AWS_SHARED_CREDENTIALS_FILE
-    description: AWS credentials file path
-    type: string
-  - name: AWS_CONFIG_FILE
-    description: AWS config file path
-    type: string
-  - name: BLOB_QUERY_PARAMS
-    description: Additional query parameters for blob storage
-    type: string
-    default: ""
-  - name: INSECURE
-    description: Allow insecure connections
-    type: string
-    default: "false"
-  - name: FORCE_CACHE_UPLOAD
-    description: Force upload even if cache was fetched
-    type: string
-    default: "false"
-  - name: FETCHED
-    description: Whether cache was fetched previously (true/false)
-    type: string
-    default: "false"
-
-  results:
-  - name: uploaded
-    description: Whether cache was successfully uploaded (true/false)
-
-  image: quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9
+    - name: PATTERNS
+      description: |
+        Regular expression to select files to include to compute the hash.
+        For example, in the case of a Go project, you can use `go.mod` for this, so the value would be "**/go.sum" (to work with possible sub go modules as well).
+      type: array
+    - name: TARGET
+      description: |
+        The target from where the cache should be uploaded. It's a URI with the scheme defining the "provider". In addition, one can add a {{hash}} variable to use the computed hash in the reference (oci image tags, path in s3, …)
+        Currently supported:
+        - oci:// (e.g. oci://quay.io/vdemeester/go-cache:{{hash}}
+        - s3:// (e.g. s3://
+      type: string
+    - name: CACHE_PATH
+      description: |
+        Path where to extract the cache content.
+        It can refer any folder, backed by a workspace or a volume, or nothing.
+      type: string
+    - name: WORKING_DIR
+      description: |
+        The working dir from where the files patterns needs to be taken
+      type: string
+    - name: INSECURE
+      description: |
+        Whether to use insecure mode for fetching the cache
+      type: string
+      default: "false"
+    - name: FETCHED
+      description: |
+        Wether cache was fetched or not previously
+      type: string
+      default: "false"
+    - name: FORCE_CACHE_UPLOAD
+      description: |
+        Whether to force the cache upload even if it was fetched previously
+      type: string
+      default: "false"
+    - name: DOCKER_CONFIG
+      description: |
+        The path to find the docker config. If left empty, it is ignored.
+        If already using service account based docker secret, then this isn't required.
+      type: string
+      default: ""
+    - name: GOOGLE_APPLICATION_CREDENTIALS
+      description: |
+        The path where to find the google credentials. If left empty, it is ignored.
+      type: string
+      default: ""
+    - name: AWS_CONFIG_FILE
+      description: |
+        The path to the aws config file. If left empty, it is ignored.
+      type: string
+      default: ""
+    - name: AWS_SHARED_CREDENTIALS_FILE
+      description: |
+        The path to find the aws credentials file. If left empty, it is ignored.
+      type: string
+      default: ""
+    - name: BLOB_QUERY_PARAMS
+      description: |
+        Blob Query Params to support configure s3, gcs and azure. This is optional unless some additional features of storage providers are required like s3 acceleration, fips, pathstyle,etc
+      type: string
+      default: ""
   env:
-  - name: PARAM_WORKING_DIR
-    value: $(params.WORKING_DIR)
-  - name: PARAM_CACHE_PATH
-    value: $(params.CACHE_PATH)
-  - name: PARAM_TARGET
-    value: $(params.TARGET)
-  - name: PARAM_AWS_SHARED_CREDENTIALS_FILE
-    value: $(params.AWS_SHARED_CREDENTIALS_FILE)
-  - name: PARAM_AWS_CONFIG_FILE
-    value: $(params.AWS_CONFIG_FILE)
-  - name: PARAM_BLOB_QUERY_PARAMS
-    value: $(params.BLOB_QUERY_PARAMS)
-  - name: PARAM_INSECURE
-    value: $(params.INSECURE)
-  - name: PARAM_FORCE_CACHE_UPLOAD
-    value: $(params.FORCE_CACHE_UPLOAD)
-  - name: PARAM_FETCHED
-    value: $(params.FETCHED)
-  - name: PARAM_PATTERNS
-    value: $(params.PATTERNS)
+    - name: PARAM_TARGET
+      value: $(params.TARGET)
+    - name: PARAM_CACHE_PATH
+      value: $(params.CACHE_PATH)
+    - name: PARAM_WORKING_DIR
+      value: $(params.WORKING_DIR)
+    - name: PARAM_INSECURE
+      value: $(params.INSECURE)
+    - name: RESULT_CACHE_FETCHED
+      value: $(params.FETCHED)
+    - name: PARAM_FORCE_CACHE_UPLOAD
+      value: $(params.FORCE_CACHE_UPLOAD)
+    - name: DOCKER_CONFIG
+      value: $(params.DOCKER_CONFIG)
+    - name: GOOGLE_APPLICATION_CREDENTIALS
+      value: $(params.GOOGLE_APPLICATION_CREDENTIALS)
+    - name: AWS_CONFIG_FILE
+      value: $(params.AWS_CONFIG_FILE)
+    - name: AWS_SHARED_CREDENTIALS_FILE
+      value: $(params.AWS_SHARED_CREDENTIALS_FILE)
+    - name: BLOB_QUERY_PARAMS
+      value: $(params.BLOB_QUERY_PARAMS)
+  image: quay.io/openshift-pipeline/pipelines-cache-rhel9:next
+  args: ["$(params.PATTERNS[*])"]
   script: |
-    #!/bin/bash
-    set -e
+    #!/usr/bin/env sh
+    set -x
+    if [[ ${PARAM_FORCE_CACHE_UPLOAD} == "false" && ${RESULT_CACHE_FETCHED} == "true" ]]; then
+      echo "no need to upload cache"
+      exit 0
+    fi
 
-    echo "=== Cache Upload ==="
-    echo "Working directory: $PARAM_WORKING_DIR"
-    echo "Cache path: $PARAM_CACHE_PATH"
-    echo "Target: $PARAM_TARGET"
-    echo "Patterns: $PARAM_PATTERNS"
-
-    cd "$PARAM_WORKING_DIR"
-
-    # Generate hash from file patterns (same as fetch)
-    HASH=""
-    IFS=',' read -ra PATTERN_ARRAY <<< "$PARAM_PATTERNS"
-    for pattern in "${PATTERN_ARRAY[@]}"; do
-      # Remove leading/trailing whitespace
-      pattern=$(echo "$pattern" | xargs)
-      if [[ "$pattern" == !* ]]; then
-        # Skip exclusion patterns for now
-        continue
-      fi
-
-      # Find files matching pattern and add to hash
-      if find . -name "$pattern" -type f 2>/dev/null | head -1 | grep -q .; then
-        find . -name "$pattern" -type f -exec sha256sum {} \; | sort >> /tmp/hash_input
-      fi
+    PATTERN_FLAGS=""
+    echo "Patterns: $*"
+    for p in $*; do
+      PATTERN_FLAGS="${PATTERN_FLAGS} --pattern ${p}"
     done
 
-    if [ ! -f /tmp/hash_input ]; then
-      echo "No files found matching patterns, skipping cache upload"
-      echo "false" > "$(step.results.uploaded.path)"
-      exit 0
-    fi
-
-    HASH=$(sha256sum /tmp/hash_input | cut -d' ' -f1)
-    echo "Generated hash: $HASH"
-
-    # Replace {{hash}} in target URL
-    TARGET_URL=$(echo "$PARAM_TARGET" | sed "s/{{hash}}/$HASH/g")
-    echo "Cache destination URL: $TARGET_URL"
-
-    # Check if we should skip upload (cache was fetched and force is false)
-    if [ "$PARAM_FORCE_CACHE_UPLOAD" = "false" ] && [ "$PARAM_FETCHED" = "true" ]; then
-      echo "Cache was fetched and force upload is false, skipping upload"
-      echo "false" > "$(step.results.uploaded.path)"
-      exit 0
-    fi
-
-    # Check if cache directory exists and has content
-    if [ ! -d "$PARAM_CACHE_PATH" ] || [ -z "$(ls -A "$PARAM_CACHE_PATH" 2>/dev/null)" ]; then
-      echo "Cache directory is empty, nothing to upload"
-      echo "false" > "$(step.results.uploaded.path)"
-      exit 0
-    fi
-
-    # Set up AWS environment
-    export AWS_SHARED_CREDENTIALS_FILE="$PARAM_AWS_SHARED_CREDENTIALS_FILE"
-    export AWS_CONFIG_FILE="$PARAM_AWS_CONFIG_FILE"
-
-    # Create cache archive
-    echo "Creating cache archive..."
-    cd "$PARAM_CACHE_PATH"
-    tar -czf /tmp/cache.tar.gz .
-    cd -
-
-    # Upload cache
-    if [ "$PARAM_INSECURE" = "true" ]; then
-      AWS_ARGS="--no-verify-ssl"
-    else
-      AWS_ARGS=""
-    fi
-
-    # Parse S3 URL
-    if [[ "$TARGET_URL" =~ s3://([^/]+)/(.+) ]]; then
-      BUCKET="${BASH_REMATCH[1]}"
-      KEY="${BASH_REMATCH[2]}"
-
-      echo "Uploading cache to s3://$BUCKET/$KEY"
-
-      # Upload cache
-      if aws s3 cp "/tmp/cache.tar.gz" "s3://$BUCKET/$KEY" $AWS_ARGS $PARAM_BLOB_QUERY_PARAMS; then
-        echo "Cache successfully uploaded"
-        echo "true" > "$(step.results.uploaded.path)"
-      else
-        echo "Failed to upload cache"
-        echo "false" > "$(step.results.uploaded.path)"
-      fi
-
-      # Clean up
-      rm -f /tmp/cache.tar.gz
-    else
-      echo "Invalid S3 URL format: $TARGET_URL"
-      echo "false" > "$(step.results.uploaded.path)"
-    fi
-
-    echo "=== Cache Upload Complete ==="
+    set -ex
+    /ko-app/cache upload ${PATTERN_FLAGS} \
+                        --target ${PARAM_TARGET} \
+                        --folder ${PARAM_CACHE_PATH} \
+                        --insecure ${PARAM_INSECURE} \
+                        --workingdir ${PARAM_WORKING_DIR}
