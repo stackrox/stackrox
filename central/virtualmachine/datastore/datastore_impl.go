@@ -31,10 +31,13 @@ func newDatastoreImpl(store virtualMachineStore.VirtualMachineStore) DataStore {
 }
 
 // CountVirtualMachines delegates to the underlying store.
-func (ds *datastoreImpl) CountVirtualMachines(ctx context.Context) (int, error) {
+func (ds *datastoreImpl) CountVirtualMachines(ctx context.Context, query *v1.Query) (int, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "CountVirtualMachines")
+	if query == nil {
+		query = search.EmptyQuery()
+	}
 
-	return ds.store.Count(ctx, search.EmptyQuery())
+	return ds.store.Count(ctx, query)
 }
 
 // GetVirtualMachine delegates to the underlying store.

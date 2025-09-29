@@ -58,7 +58,7 @@ func (s *VirtualMachineDataStoreTestSuite) TearDownTest() {
 // Test CountVirtualMachines
 func (s *VirtualMachineDataStoreTestSuite) TestCountVirtualMachines() {
 	// Test with SAC allowed
-	count, err := s.datastore.CountVirtualMachines(s.sacCtx)
+	count, err := s.datastore.CountVirtualMachines(s.sacCtx, nil)
 	s.NoError(err)
 	s.Equal(0, count)
 
@@ -67,13 +67,17 @@ func (s *VirtualMachineDataStoreTestSuite) TestCountVirtualMachines() {
 	err = s.datastore.UpsertVirtualMachine(s.sacCtx, vm)
 	s.NoError(err)
 
-	count, err = s.datastore.CountVirtualMachines(s.sacCtx)
+	count, err = s.datastore.CountVirtualMachines(s.sacCtx, nil)
+	s.NoError(err)
+	s.Equal(1, count)
+
+	count, err = s.datastore.CountVirtualMachines(s.sacCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, count)
 
 	// Test with SAC denied
 	// Namespace-scoped resource silently returns 0 if access is denied
-	count, err = s.datastore.CountVirtualMachines(s.noSacCtx)
+	count, err = s.datastore.CountVirtualMachines(s.noSacCtx, nil)
 	s.NoError(err)
 	s.Equal(0, count)
 }
@@ -302,7 +306,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestConcurrentReads() {
 				}
 
 				// Test CountVirtualMachines
-				if _, err := s.datastore.CountVirtualMachines(s.sacCtx); err != nil {
+				if _, err := s.datastore.CountVirtualMachines(s.sacCtx, nil); err != nil {
 					errors <- err
 					continue
 				}

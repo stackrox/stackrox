@@ -76,6 +76,7 @@ func (m *ListVirtualMachinesResponse) CloneVT() *ListVirtualMachinesResponse {
 		return (*ListVirtualMachinesResponse)(nil)
 	}
 	r := new(ListVirtualMachinesResponse)
+	r.TotalCount = m.TotalCount
 	if rhs := m.VirtualMachines; rhs != nil {
 		tmpContainer := make([]*VirtualMachine, len(rhs))
 		for k, v := range rhs {
@@ -207,6 +208,9 @@ func (this *ListVirtualMachinesResponse) EqualVT(that *ListVirtualMachinesRespon
 				return false
 			}
 		}
+	}
+	if this.TotalCount != that.TotalCount {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -424,6 +428,11 @@ func (m *ListVirtualMachinesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.TotalCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.TotalCount))
+		i--
+		dAtA[i] = 0x10
+	}
 	if len(m.VirtualMachines) > 0 {
 		for iNdEx := len(m.VirtualMachines) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.VirtualMachines[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
@@ -558,6 +567,9 @@ func (m *ListVirtualMachinesResponse) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.TotalCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.TotalCount))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1155,6 +1167,25 @@ func (m *ListVirtualMachinesResponse) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalCount", wireType)
+			}
+			m.TotalCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TotalCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1874,6 +1905,25 @@ func (m *ListVirtualMachinesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalCount", wireType)
+			}
+			m.TotalCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TotalCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

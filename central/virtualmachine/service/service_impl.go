@@ -78,6 +78,14 @@ func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListV
 	}
 	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
 
+	queryWithoutPagination := searchQuery.CloneVT()
+	queryWithoutPagination.Pagination = nil
+	totalCount, err := s.datastore.CountVirtualMachines(ctx, queryWithoutPagination)
+	if err != nil {
+		// TODO: Handle specific error cases with proper error codes, e.g. duplicate ID
+		return nil, err
+	}
+
 	vms, err := s.datastore.SearchRawVirtualMachines(ctx, searchQuery)
 	if err != nil {
 		// TODO: Handle specific error cases with proper error codes, e.g. duplicate ID
@@ -91,5 +99,6 @@ func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListV
 
 	return &v2.ListVirtualMachinesResponse{
 		VirtualMachines: v2VMs,
+		TotalCount:      int32(totalCount),
 	}, nil
 }

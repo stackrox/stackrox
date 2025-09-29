@@ -35,6 +35,7 @@ message GetVirtualMachineRequest {
 
 message ListVirtualMachinesResponse {
   repeated VirtualMachine virtual_machines = 1;
+  int32 total_count = 2;
 }
 
 message ListVirtualMachinesRequest {

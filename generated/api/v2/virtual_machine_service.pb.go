@@ -235,6 +235,7 @@ func (x *GetVirtualMachineRequest) GetStripDescription() bool {
 type ListVirtualMachinesResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	VirtualMachines []*VirtualMachine      `protobuf:"bytes,1,rep,name=virtual_machines,json=virtualMachines,proto3" json:"virtual_machines,omitempty"`
+	TotalCount      int32                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -274,6 +275,13 @@ func (x *ListVirtualMachinesResponse) GetVirtualMachines() []*VirtualMachine {
 		return x.VirtualMachines
 	}
 	return nil
+}
+
+func (x *ListVirtualMachinesResponse) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
 }
 
 type ListVirtualMachinesRequest struct {
@@ -346,9 +354,11 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\aRUNNING\x10\x02\"W\n" +
 	"\x18GetVirtualMachineRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
-	"\x11strip_description\x18\x02 \x01(\bR\x10stripDescription\"\\\n" +
+	"\x11strip_description\x18\x02 \x01(\bR\x10stripDescription\"}\n" +
 	"\x1bListVirtualMachinesResponse\x12=\n" +
-	"\x10virtual_machines\x18\x01 \x03(\v2\x12.v2.VirtualMachineR\x0fvirtualMachines\"@\n" +
+	"\x10virtual_machines\x18\x01 \x03(\v2\x12.v2.VirtualMachineR\x0fvirtualMachines\x12\x1f\n" +
+	"\vtotal_count\x18\x02 \x01(\x05R\n" +
+	"totalCount\"@\n" +
 	"\x1aListVirtualMachinesRequest\x12\"\n" +
 	"\x05query\x18\x01 \x01(\v2\f.v2.RawQueryR\x05query2\xf5\x01\n" +
 	"\x15VirtualMachineService\x12g\n" +
