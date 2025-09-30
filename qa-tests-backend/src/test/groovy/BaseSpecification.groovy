@@ -448,12 +448,10 @@ class BaseSpecification extends Specification {
         return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOB_NAME == "race-condition-qa-e2e-tests"
     }
 
-    private Integer attemptCountClusterHealthy = 0
-
     @Retry(attempts = 90, delay = 1000)
     static void waitForClusterHealthy() {
         ClusterOuterClass.ClusterHealthStatus status = ClusterService.getCluster().healthStatus
-        LOG.info "waitForClusterHealthy{status:" + status.overallHealthStatus + ",attempt:" + this.attemptCountClusterHealthy + "}"
+        LOG.info "waitForClusterHealthy{status:" + status.overallHealthStatus + "}"
         this.attemptCountClusterHealthy += 1
         assert status.overallHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
     }
