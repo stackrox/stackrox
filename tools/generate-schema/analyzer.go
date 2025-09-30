@@ -92,56 +92,152 @@ func (ta *TypeAnalyzer) AnalyzeType(packagePath, typeName string) (*TypeInfo, er
 		return nil, fmt.Errorf("type %s is not a named type", typeName)
 	}
 
-	underlying, ok := named.Underlying().(*types.Struct)
+	_, ok = named.Underlying().(*types.Struct)
 	if !ok {
 		return nil, fmt.Errorf("type %s is not a struct", typeName)
-	}
-
-	// Find the AST node for this type to get struct tags
-	var astStruct *ast.StructType
-	for _, file := range pkg.Syntax {
-		ast.Inspect(file, func(n ast.Node) bool {
-			if ts, ok := n.(*ast.TypeSpec); ok && ts.Name.Name == typeName {
-				if structType, ok := ts.Type.(*ast.StructType); ok {
-					astStruct = structType
-					return false
-				}
-			}
-			return true
-		})
-		if astStruct != nil {
-			break
-		}
-	}
-
-	if astStruct == nil {
-		return nil, fmt.Errorf("could not find AST for struct %s", typeName)
 	}
 
 	typeInfo := &TypeInfo{
 		Name:        typeName,
 		PackagePath: packagePath,
-		Fields:      make([]FieldInfo, 0, underlying.NumFields()),
+		Fields:      make([]FieldInfo, 0),
 	}
 
-	// Analyze struct fields
-	for i := 0; i < underlying.NumFields(); i++ {
-		field := underlying.Field(i)
-		var tag string
+	// Recursively collect all search fields from the type and nested types
+	ta.collectSearchFieldsRecursive("", named, typeInfo)
 
-		// Get the tag from the AST
-		if i < len(astStruct.Fields.List) {
+	return typeInfo, nil
+}
+
+// collectSearchFieldsRecursive recursively collects all search fields from a type and its nested types
+func (ta *TypeAnalyzer) collectSearchFieldsRecursive(prefix string, t types.Type, typeInfo *TypeInfo) {
+	switch typ := t.(type) {
+	case *types.Pointer:
+		ta.collectSearchFieldsRecursive(prefix, typ.Elem(), typeInfo)
+	case *types.Slice:
+		ta.collectSearchFieldsRecursive(prefix, typ.Elem(), typeInfo)
+	case *types.Named:
+		if structType, ok := typ.Underlying().(*types.Struct); ok {
+			ta.collectStructFields(prefix, structType, typ, typeInfo)
+		}
+	case *types.Struct:
+		ta.collectStructFields(prefix, typ, nil, typeInfo)
+	}
+}
+
+// collectStructFields collects search fields from a struct type
+func (ta *TypeAnalyzer) collectStructFields(prefix string, structType *types.Struct, namedType *types.Named, typeInfo *TypeInfo) {
+	// Find the AST for this struct to get tags
+	var astStruct *ast.StructType
+	if namedType != nil {
+		typeName := namedType.Obj().Name()
+		for _, pkg := range ta.packages {
+			for _, file := range pkg.Syntax {
+				ast.Inspect(file, func(n ast.Node) bool {
+					if ts, ok := n.(*ast.TypeSpec); ok && ts.Name.Name == typeName {
+						if st, ok := ts.Type.(*ast.StructType); ok {
+							astStruct = st
+							return false
+						}
+					}
+					return true
+				})
+				if astStruct != nil {
+					break
+				}
+			}
+			if astStruct != nil {
+				break
+			}
+		}
+	}
+
+	for i := 0; i < structType.NumFields(); i++ {
+		field := structType.Field(i)
+
+		// Skip internal generator fields (like protobuf internals)
+		if strings.HasPrefix(field.Name(), "XXX_") ||
+		   strings.HasPrefix(field.Name(), "state") ||
+		   strings.HasPrefix(field.Name(), "sizeCache") ||
+		   strings.HasPrefix(field.Name(), "unknownFields") {
+			continue
+		}
+
+		var tag string
+		if astStruct != nil && i < len(astStruct.Fields.List) {
 			astField := astStruct.Fields.List[i]
 			if astField.Tag != nil {
 				tag = strings.Trim(astField.Tag.Value, "`")
 			}
 		}
 
-		fieldInfo := ta.analyzeField(field, tag)
-		typeInfo.Fields = append(typeInfo.Fields, fieldInfo)
+		// Parse JSON tag to get field name
+		jsonTag := ta.parseTag(tag, "json")
+		if jsonTag == "-" {
+			continue
+		}
+		if jsonTag == "" {
+			jsonTag = field.Name()
+		}
+		// Remove omitempty suffix
+		jsonTag = strings.TrimSuffix(jsonTag, ",omitempty")
+
+		fieldPath := jsonTag
+		if prefix != "" {
+			fieldPath = prefix + "." + jsonTag
+		}
+
+		// Check for protobuf oneof fields
+		protoTag := ta.parseTag(tag, "protobuf")
+		isOneof := strings.Contains(protoTag, "oneof")
+
+		// Check for search tag
+		searchTag := ta.parseTag(tag, "search")
+		if searchTag != "" && searchTag != "-" {
+			// Create a FieldInfo for this searchable field
+			fieldInfo := FieldInfo{
+				Name:      fieldPath,
+				SearchTag: searchTag,
+				JsonTag:   jsonTag,
+				SqlTag:    ta.parseTag(tag, "sql"),
+				ProtoTag:  protoTag,
+				Tag:       tag,
+			}
+
+			// Analyze the field type for schema generation
+			ta.analyzeFieldType(field.Type(), &fieldInfo)
+
+			// Special handling for protobuf timestamps
+			if ta.isTimestampType(field.Type()) {
+				// For timestamp fields, search.Walk appends .seconds
+				fieldInfo.Name = fieldPath + ".seconds"
+			}
+
+			typeInfo.Fields = append(typeInfo.Fields, fieldInfo)
+		}
+
+		// Recursively process nested structs (skip oneofs for now as we use precomputed fields)
+		if !isOneof {
+			ta.collectSearchFieldsRecursive(fieldPath, field.Type(), typeInfo)
+		}
+	}
+}
+
+// isTimestampType checks if a type is a protobuf timestamp
+func (ta *TypeAnalyzer) isTimestampType(t types.Type) bool {
+	// Handle pointer types
+	if ptr, ok := t.(*types.Pointer); ok {
+		t = ptr.Elem()
 	}
 
-	return typeInfo, nil
+	// Check if it's a named type containing "Timestamp"
+	if named, ok := t.(*types.Named); ok {
+		typeName := named.String()
+		return strings.Contains(typeName, "timestamppb.Timestamp") ||
+		       strings.Contains(typeName, "time.Time")
+	}
+
+	return false
 }
 
 // analyzeField analyzes a single struct field

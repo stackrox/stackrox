@@ -11,6 +11,12 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // SchemaGenerator generates PostgreSQL schema files
@@ -103,6 +109,40 @@ func (sg *SchemaGenerator) Generate() error {
 		}
 	}
 
+	// Generate missing core entities directly from storage types
+	missingEntities := []struct {
+		TypeName       string
+		TableName      string
+		SearchCategory string
+	}{
+		{"Alert", "alerts", "ALERTS"},
+		{"Policy", "policies", "POLICIES"},
+		{"Node", "nodes", "NODES"},
+	}
+
+	for _, entity := range missingEntities {
+		// Skip if entity filter is specified and doesn't match
+		if sg.EntityFilter != "" && sg.EntityFilter != entity.TypeName {
+			continue
+		}
+
+		// Check if internal file already exists
+		internalPath := filepath.Join(sg.OutputDir, "internal", entity.TableName+".go")
+		if _, err := os.Stat(internalPath); err == nil {
+			if sg.Verbose {
+				log.Printf("Skipping %s: internal file already exists", entity.TypeName)
+			}
+			continue
+		}
+
+		if err := sg.generateSchemaFromType(entity.TypeName, entity.TableName, entity.SearchCategory); err != nil {
+			return fmt.Errorf("generating schema for %s: %w", entity.TypeName, err)
+		}
+		if sg.Verbose {
+			log.Printf("Generated schema for %s", entity.TypeName)
+		}
+	}
+
 	return nil
 }
 
@@ -192,7 +232,7 @@ func (sg *SchemaGenerator) extractSchemaFromFile(filePath string) (*SchemaData, 
 	scopingResource := sg.extractScopingResource(contentStr, typeName)
 
 	return &SchemaData{
-		PackageName:     "schema",
+		PackageName:     "internal",
 		TableName:       tableName,
 		TypeName:        typeName,
 		StoragePackage:  "github.com/stackrox/rox/generated/storage",
@@ -381,13 +421,14 @@ func (sg *SchemaGenerator) generateSchema(config SchemaData) error {
 	}
 
 	// Ensure output directory exists
-	if err := os.MkdirAll(sg.OutputDir, 0755); err != nil {
-		return fmt.Errorf("creating output directory %s: %w", sg.OutputDir, err)
+	internalDir := filepath.Join(sg.OutputDir, "internal")
+	if err := os.MkdirAll(internalDir, 0755); err != nil {
+		return fmt.Errorf("creating output directory %s: %w", internalDir, err)
 	}
 
 	// Write to file
-	filename := fmt.Sprintf("generated_%s.go", config.TableName)
-	filepath := filepath.Join(sg.OutputDir, filename)
+	filename := fmt.Sprintf("%s.go", config.TableName)
+	filepath := filepath.Join(sg.OutputDir, "internal", filename)
 
 	if sg.Verbose {
 		log.Printf("Writing file: %s (size: %d bytes)", filepath, len(formattedCode))
@@ -429,28 +470,134 @@ func (sg *SchemaGenerator) convertFieldsToSchema(fields []FieldInfo) []SchemaFie
 	return schemaFields
 }
 
-// generateSearchFields generates search field data from analyzed fields
+// generateSearchFields generates search field data using search.Walk directly
 func (sg *SchemaGenerator) generateSearchFields(fields []FieldInfo, searchCategory string) []SearchFieldData {
+	return sg.generateSearchFieldsFromWalk(searchCategory)
+}
+
+// generateSearchFieldsFromWalk uses search.Walk to generate exact search fields
+func (sg *SchemaGenerator) generateSearchFieldsFromWalk(searchCategory string) []SearchFieldData {
+	// Map search category to storage type, v1.SearchCategory, and entity prefix
+	typeMap := map[string]struct {
+		storageType reflect.Type
+		category    v1.SearchCategory
+		prefix      string
+	}{
+		"ALERTS":      {reflect.TypeOf((*storage.Alert)(nil)), v1.SearchCategory_ALERTS, ""},
+		"POLICIES":    {reflect.TypeOf((*storage.Policy)(nil)), v1.SearchCategory_POLICIES, ""},
+		"DEPLOYMENTS": {reflect.TypeOf((*storage.Deployment)(nil)), v1.SearchCategory_DEPLOYMENTS, ""},
+		"NODES":       {reflect.TypeOf((*storage.Node)(nil)), v1.SearchCategory_NODES, ""},
+		"ROLEBINDINGS": {reflect.TypeOf((*storage.K8SRoleBinding)(nil)), v1.SearchCategory_ROLEBINDINGS, "k8srolebinding"},
+		"ROLES":       {reflect.TypeOf((*storage.Role)(nil)), v1.SearchCategory_ROLES, ""},
+	}
+
+	typeInfo, exists := typeMap[searchCategory]
+	if !exists {
+		if sg.Verbose {
+			log.Printf("No type mapping for search category: %s", searchCategory)
+		}
+		return []SearchFieldData{}
+	}
+
+	// Use search.Walk to get the exact search fields with the correct entity prefix
+	searchOptionsMap := search.Walk(typeInfo.category, typeInfo.prefix, reflect.Zero(typeInfo.storageType).Interface())
+	originalSearchFields := searchOptionsMap.Original()
+
 	var searchFields []SearchFieldData
-	seenFields := make(map[string]bool)
-
-	for _, field := range fields {
-		if field.SearchTag == "" {
-			continue
+	for fieldLabel, field := range originalSearchFields {
+		searchField := SearchFieldData{
+			FieldLabel: string(fieldLabel),
+			FieldPath:  field.FieldPath,
+			Store:      field.Store,
+			Hidden:     field.Hidden,
+			Analyzer:   field.Analyzer,
 		}
 
-		// Parse search tag
-		searchFieldData := sg.parseSearchTag(field.SearchTag, field.Name, searchCategory)
-		if searchFieldData != nil && !seenFields[searchFieldData.FieldLabel] {
-			searchFields = append(searchFields, *searchFieldData)
-			seenFields[searchFieldData.FieldLabel] = true
+		// Map v1.SearchDataType to string
+		switch field.Type {
+		case v1.SearchDataType_SEARCH_STRING:
+			searchField.DataType = "STRING"
+		case v1.SearchDataType_SEARCH_BOOL:
+			searchField.DataType = "BOOL"
+		case v1.SearchDataType_SEARCH_NUMERIC:
+			searchField.DataType = "NUMERIC"
+		case v1.SearchDataType_SEARCH_ENUM:
+			searchField.DataType = "ENUM"
+		case v1.SearchDataType_SEARCH_DATETIME:
+			searchField.DataType = "DATETIME"
+		case v1.SearchDataType_SEARCH_MAP:
+			searchField.DataType = "MAP"
+		default:
+			searchField.DataType = "STRING"
 		}
+
+		searchFields = append(searchFields, searchField)
 	}
 
 	return searchFields
 }
 
-// parseSearchTag parses a search struct tag and returns SearchFieldData
+
+// parseSearchTagWithField parses a search struct tag and returns SearchFieldData using FieldInfo
+func (sg *SchemaGenerator) parseSearchTagWithField(searchTag string, field FieldInfo, searchCategory string) *SearchFieldData {
+	if searchTag == "" || searchTag == "-" {
+		return nil
+	}
+
+	parts := strings.Split(searchTag, ",")
+	if len(parts) == 0 {
+		return nil
+	}
+
+	fieldLabel := parts[0]
+	if fieldLabel == "" {
+		return nil
+	}
+
+	// Convert field path to start with dot instead of entity name
+	fieldPath := field.Name
+	// If path contains entity prefix, remove it and add dot
+	if strings.Contains(fieldPath, ".") {
+		// Find first dot and convert to standard format
+		parts := strings.SplitN(fieldPath, ".", 2)
+		if len(parts) == 2 {
+			fieldPath = "." + parts[1]
+		}
+	} else {
+		// Simple field name, add dot prefix
+		fieldPath = "." + fieldPath
+	}
+
+	// Debug output
+	if sg.Verbose {
+		fmt.Printf("DEBUG: Converting fieldName '%s' to fieldPath '%s'\n", field.Name, fieldPath)
+	}
+
+	searchField := &SearchFieldData{
+		FieldLabel: fieldLabel,
+		FieldPath:  fieldPath,
+		DataType:   sg.getSearchDataType(field),
+	}
+
+	// Parse additional options
+	for i := 1; i < len(parts); i++ {
+		part := strings.TrimSpace(parts[i])
+		switch part {
+		case "hidden":
+			searchField.Hidden = true
+		case "store":
+			searchField.Store = true
+		default:
+			if strings.HasPrefix(part, "analyzer=") {
+				searchField.Analyzer = strings.TrimPrefix(part, "analyzer=")
+			}
+		}
+	}
+
+	return searchField
+}
+
+// parseSearchTag parses a search struct tag and returns SearchFieldData (legacy method)
 func (sg *SchemaGenerator) parseSearchTag(searchTag, fieldName, searchCategory string) *SearchFieldData {
 	if searchTag == "" || searchTag == "-" {
 		return nil
@@ -466,10 +613,29 @@ func (sg *SchemaGenerator) parseSearchTag(searchTag, fieldName, searchCategory s
 		return nil
 	}
 
+	// Convert field path to start with dot instead of entity name
+	fieldPath := fieldName
+	// If path contains entity prefix, remove it and add dot
+	if strings.Contains(fieldPath, ".") {
+		// Find first dot and convert to standard format
+		parts := strings.SplitN(fieldPath, ".", 2)
+		if len(parts) == 2 {
+			fieldPath = "." + parts[1]
+		}
+	} else {
+		// Simple field name, add dot prefix
+		fieldPath = "." + fieldPath
+	}
+
+	// Debug output
+	if sg.Verbose {
+		fmt.Printf("DEBUG: Converting fieldName '%s' to fieldPath '%s'\n", fieldName, fieldPath)
+	}
+
 	searchField := &SearchFieldData{
 		FieldLabel: fieldLabel,
-		FieldPath:  fieldName,
-		DataType:   sg.getSearchDataType(fieldName),
+		FieldPath:  fieldPath,
+		DataType:   sg.getSearchDataType(FieldInfo{Name: fieldName}),
 	}
 
 	// Parse additional options
@@ -491,20 +657,44 @@ func (sg *SchemaGenerator) parseSearchTag(searchTag, fieldName, searchCategory s
 }
 
 // getSearchDataType maps Go types to search data types
-func (sg *SchemaGenerator) getSearchDataType(fieldName string) string {
-	// This is a simplified mapping - in a real implementation we'd need
-	// to analyze the actual field type from the TypeInfo
-	switch {
-	case strings.Contains(strings.ToLower(fieldName), "time"):
+func (sg *SchemaGenerator) getSearchDataType(field FieldInfo) string {
+	// Handle time fields - look for .seconds suffix which search.Walk adds for timestamps
+	if strings.HasSuffix(field.Name, ".seconds") {
 		return "DATETIME"
-	case strings.Contains(strings.ToLower(fieldName), "id"):
+	}
+
+	// Map based on Go type
+	switch field.Kind {
+	case reflect.String:
 		return "STRING"
-	case strings.Contains(strings.ToLower(fieldName), "name"):
-		return "STRING"
-	case strings.Contains(strings.ToLower(fieldName), "count"):
+	case reflect.Bool:
+		return "BOOL"
+	case reflect.Int32:
+		if sg.isEnumType(field.Type) {
+			return "ENUM"
+		}
 		return "NUMERIC"
-	default:
+	case reflect.Int64, reflect.Uint64, reflect.Float32, reflect.Float64:
+		return "NUMERIC"
+	case reflect.Slice:
+		if field.ElementKind == reflect.String {
+			return "STRING"
+		}
 		return "STRING"
+	default:
+		// Fallback based on field name patterns
+		switch {
+		case strings.Contains(strings.ToLower(field.Name), "time"):
+			return "DATETIME"
+		case strings.Contains(strings.ToLower(field.Name), "id"):
+			return "STRING"
+		case strings.Contains(strings.ToLower(field.Name), "name"):
+			return "STRING"
+		case strings.Contains(strings.ToLower(field.Name), "count"):
+			return "NUMERIC"
+		default:
+			return "STRING"
+		}
 	}
 }
 
@@ -629,13 +819,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// generated{{.TypeName}}SearchFields contains pre-computed search fields for {{.TableName}}
-	generated{{.TypeName}}SearchFields = map[search.FieldLabel]*search.Field{
+	// {{.TypeName}}SearchFields contains pre-computed search fields for {{.TableName}}
+	{{.TypeName}}SearchFields = map[search.FieldLabel]*search.Field{
 		{{range .SearchFields}}
 		"{{.FieldLabel}}": {
 			FieldPath: "{{.FieldPath}}",
@@ -648,8 +837,8 @@ var (
 		{{end}}
 	}
 
-	// generated{{.TypeName}}Schema is the pre-computed schema for {{.TableName}} table
-	generated{{.TypeName}}Schema = &walker.Schema{
+	// {{.TypeName}}Schema is the pre-computed schema for {{.TableName}} table
+	{{.TypeName}}Schema = &walker.Schema{
 		Table:    "{{.TableName}}",
 		Type:     "*storage.{{.TypeName}}",
 		TypeName: "{{.TypeName}}",
@@ -681,19 +870,16 @@ var (
 			},
 			{{end}}{{end}}
 		},
-		{{if .ScopingResource}}
-		ScopingResource: resources.{{.ScopingResource}},
-		{{end}}
 	}
 )
 
 // Get{{.TypeName}}Schema returns the generated schema for {{.TableName}}
 func Get{{.TypeName}}Schema() *walker.Schema {
 	// Set up search options if not already done
-	if generated{{.TypeName}}Schema.OptionsMap == nil {
-		{{if .SearchCategory}}generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_{{.SearchCategory}}, generated{{.TypeName}}SearchFields)){{else}}generated{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, generated{{.TypeName}}SearchFields)){{end}}
+	if {{.TypeName}}Schema.OptionsMap == nil {
+		{{if .SearchCategory}}{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_{{.SearchCategory}}, {{.TypeName}}SearchFields)){{else}}{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, {{.TypeName}}SearchFields)){{end}}
 	}
-	return generated{{.TypeName}}Schema
+	return {{.TypeName}}Schema
 }
 `
 
@@ -708,4 +894,324 @@ func Get{{.TypeName}}Schema() *walker.Schema {
 	}
 
 	return buf.String(), nil
+}
+
+// generateSchemaFromType generates a schema directly from a storage type using walker.Walk
+func (sg *SchemaGenerator) generateSchemaFromType(typeName, tableName, searchCategory string) error {
+	// Map type name to reflection type
+	typeMap := map[string]reflect.Type{
+		"Alert":         reflect.TypeOf((*storage.Alert)(nil)),
+		"Policy":        reflect.TypeOf((*storage.Policy)(nil)),
+		"Deployment":    reflect.TypeOf((*storage.Deployment)(nil)),
+		"Node":          reflect.TypeOf((*storage.Node)(nil)),
+		"K8SRoleBinding": reflect.TypeOf((*storage.K8SRoleBinding)(nil)),
+		"Role":          reflect.TypeOf((*storage.Role)(nil)),
+	}
+
+	storageType, exists := typeMap[typeName]
+	if !exists {
+		return fmt.Errorf("no type mapping for %s", typeName)
+	}
+
+	// Use walker.Walk to get the schema structure
+	walkerSchema := walker.Walk(storageType, tableName)
+
+	// Use search.Walk to get search fields
+	searchFields := sg.generateSearchFieldsFromWalk(searchCategory)
+
+	// Generate code directly using the walker schema
+	return sg.generateSchemaFromWalkerSchema(typeName, walkerSchema, searchFields, searchCategory)
+}
+
+// generateSchemaFromWalkerSchema generates schema code directly from walker.Schema
+func (sg *SchemaGenerator) generateSchemaFromWalkerSchema(typeName string, walkerSchema *walker.Schema, searchFields []SearchFieldData, searchCategory string) error {
+	// Generate the Go code using the walker schema directly
+	code, err := sg.generateCodeFromWalkerSchema(typeName, walkerSchema, searchFields, searchCategory)
+	if err != nil {
+		return fmt.Errorf("generating code: %w", err)
+	}
+
+	// Format the code
+	formattedCode, err := format.Source([]byte(code))
+	if err != nil {
+		return fmt.Errorf("formatting code: %w", err)
+	}
+
+	// Ensure output directory exists
+	internalDir := filepath.Join(sg.OutputDir, "internal")
+	if err := os.MkdirAll(internalDir, 0755); err != nil {
+		return fmt.Errorf("creating output directory %s: %w", internalDir, err)
+	}
+
+	// Write to file
+	filename := fmt.Sprintf("%s.go", walkerSchema.Table)
+	filepath := filepath.Join(sg.OutputDir, "internal", filename)
+
+	if sg.Verbose {
+		log.Printf("Writing file: %s (size: %d bytes)", filepath, len(formattedCode))
+	}
+
+	if err := ioutil.WriteFile(filepath, formattedCode, 0644); err != nil {
+		return fmt.Errorf("writing file %s: %w", filepath, err)
+	}
+
+	return nil
+}
+
+// generateCodeFromWalkerSchema generates Go code that returns the walker schema directly
+func (sg *SchemaGenerator) generateCodeFromWalkerSchema(typeName string, walkerSchema *walker.Schema, searchFields []SearchFieldData, searchCategory string) (string, error) {
+	// Map type name to storage import path
+	typeMap := map[string]string{
+		"Alert":         "(*storage.Alert)(nil)",
+		"Policy":        "(*storage.Policy)(nil)",
+		"Deployment":    "(*storage.Deployment)(nil)",
+		"Node":          "(*storage.Node)(nil)",
+		"K8SRoleBinding": "(*storage.K8SRoleBinding)(nil)",
+		"Role":          "(*storage.Role)(nil)",
+	}
+
+	storageType, exists := typeMap[typeName]
+	if !exists {
+		return "", fmt.Errorf("no storage type mapping for %s", typeName)
+	}
+
+	tmpl := `// Code generated by generate-schema tool. DO NOT EDIT.
+
+package internal
+
+import (
+	"reflect"
+	"sync"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
+)
+
+var (
+	// {{.TypeName}}SearchFields contains pre-computed search fields for {{.TableName}}
+	{{.TypeName}}SearchFields = map[search.FieldLabel]*search.Field{
+		{{range .SearchFields}}
+		"{{.FieldLabel}}": {
+			FieldPath: "{{.FieldPath}}",
+			Type:      v1.SearchDataType_SEARCH_{{.DataType}},
+			Store:     {{.Store}},
+			Hidden:    {{.Hidden}},
+			{{if $.SearchCategory}}Category:  v1.SearchCategory_{{$.SearchCategory}},{{end}}
+			{{if .Analyzer}}Analyzer:  "{{.Analyzer}}",{{end}}
+		},
+		{{end}}
+	}
+
+	{{.TypeName}}SchemaOnce sync.Once
+	{{.TypeName}}Schema *walker.Schema
+)
+
+// Get{{.TypeName}}Schema returns the walker.Walk generated schema for {{.TableName}}
+func Get{{.TypeName}}Schema() *walker.Schema {
+	{{.TypeName}}SchemaOnce.Do(func() {
+		{{.TypeName}}Schema = walker.Walk(reflect.TypeOf({{.StorageType}}), "{{.TableName}}")
+		{{if .SearchCategory}}{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_{{.SearchCategory}}, {{.TypeName}}SearchFields)){{else}}{{.TypeName}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, {{.TypeName}}SearchFields)){{end}}
+	})
+	return {{.TypeName}}Schema
+}
+`
+
+	data := struct {
+		TypeName       string
+		TableName      string
+		StorageType    string
+		SearchFields   []SearchFieldData
+		SearchCategory string
+	}{
+		TypeName:       typeName,
+		TableName:      walkerSchema.Table,
+		StorageType:    storageType,
+		SearchFields:   searchFields,
+		SearchCategory: searchCategory,
+	}
+
+	t, err := template.New("schema").Parse(tmpl)
+	if err != nil {
+		return "", err
+	}
+
+	var buf strings.Builder
+	if err := t.Execute(&buf, data); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+// convertWalkerFieldsToSchema converts walker.Field slice to SchemaField slice
+func (sg *SchemaGenerator) convertWalkerFieldsToSchema(walkerFields []walker.Field) []SchemaField {
+	var schemaFields []SchemaField
+
+	for _, walkerField := range walkerFields {
+		schemaField := SchemaField{
+			Name:       walkerField.Name,
+			ColumnName: walkerField.ColumnName,
+			Type:       walkerField.Type,
+			SQLType:    walkerField.SQLType,
+			DataType:   sg.convertDataTypeToString(walkerField.DataType),
+			IsPointer:  false, // Not directly available from walker
+			IsSlice:    false, // Not directly available from walker
+		}
+
+		// Parse options if they exist
+		if walkerField.Options.PrimaryKey {
+			schemaField.IsPrimaryKey = true
+		}
+
+		if len(walkerField.Options.Index) > 0 {
+			schemaField.IsIndex = true
+			schemaField.IndexType = walkerField.Options.Index[0].IndexType
+		}
+
+		// Check if field is searchable
+		if walkerField.Search.Enabled {
+			schemaField.IsSearchable = true
+			schemaField.SearchField = walkerField.Search.FieldName
+		}
+
+		schemaFields = append(schemaFields, schemaField)
+	}
+
+	return schemaFields
+}
+
+// convertDataTypeToString converts postgres.DataType to string representation
+func (sg *SchemaGenerator) convertDataTypeToString(dataType postgres.DataType) string {
+	switch dataType {
+	case postgres.String:
+		return "postgres.String"
+	case postgres.Bool:
+		return "postgres.Bool"
+	case postgres.Integer:
+		return "postgres.Integer"
+	case postgres.BigInteger:
+		return "postgres.BigInteger"
+	case postgres.Numeric:
+		return "postgres.Numeric"
+	case postgres.DateTime:
+		return "postgres.DateTime"
+	case postgres.StringArray:
+		return "postgres.StringArray"
+	case postgres.EnumArray:
+		return "postgres.EnumArray"
+	case postgres.Enum:
+		return "postgres.Enum"
+	case postgres.Map:
+		return "postgres.Map"
+	case postgres.Bytes:
+		return "postgres.Bytes"
+	default:
+		return "postgres.String" // Default fallback
+	}
+}
+
+// convertToSchemaFields converts FieldInfo slice to SchemaField slice
+func (sg *SchemaGenerator) convertToSchemaFields(fields []FieldInfo) []SchemaField {
+	var schemaFields []SchemaField
+
+	for _, field := range fields {
+		schemaField := SchemaField{
+			Name:         field.Name,
+			ColumnName:   sg.toSnakeCase(field.Name),
+			Type:         field.Type,
+			SQLType:      sg.getSQLType(field.Kind, field.Type),
+			DataType:     sg.getDataType(field.Kind, field.Type),
+			IsPointer:    field.IsPointer,
+			IsSlice:      field.IsSlice,
+			IsSearchable: field.SearchTag != "",
+			SearchField:  field.SearchTag,
+		}
+
+		// Parse SQL tag for additional field options
+		sg.parseSqlTag(&schemaField, field.SqlTag)
+
+		schemaFields = append(schemaFields, schemaField)
+	}
+
+	return schemaFields
+}
+
+// toSnakeCase converts CamelCase to snake_case
+func (sg *SchemaGenerator) toSnakeCase(s string) string {
+	var result strings.Builder
+	for i, r := range s {
+		if i > 0 && (r >= 'A' && r <= 'Z') {
+			result.WriteByte('_')
+		}
+		result.WriteRune(r | 0x20) // to lowercase
+	}
+	return result.String()
+}
+
+// getSQLType returns the appropriate SQL type for a Go type
+func (sg *SchemaGenerator) getSQLType(kind reflect.Kind, typeName string) string {
+	if strings.HasPrefix(typeName, "[]") {
+		if strings.Contains(typeName, "string") {
+			return "text[]"
+		}
+		return "jsonb"
+	}
+	if strings.HasPrefix(typeName, "map[") {
+		return "jsonb"
+	}
+	if strings.Contains(typeName, ".") && !strings.Contains(typeName, "time.Time") {
+		return "jsonb" // Complex types as JSON
+	}
+
+	switch kind {
+	case reflect.String:
+		return "varchar"
+	case reflect.Int, reflect.Int32:
+		return "integer"
+	case reflect.Int64:
+		return "bigint"
+	case reflect.Uint64:
+		return "bigint"
+	case reflect.Float32, reflect.Float64:
+		return "numeric"
+	case reflect.Bool:
+		return "bool"
+	default:
+		return "jsonb"
+	}
+}
+
+// getDataType returns the appropriate postgres.DataType for a Go type
+func (sg *SchemaGenerator) getDataType(kind reflect.Kind, typeName string) string {
+	if strings.HasPrefix(typeName, "[]") {
+		if strings.Contains(typeName, "string") {
+			return "postgres.StringArray"
+		}
+		return "postgres.Map"
+	}
+	if strings.HasPrefix(typeName, "map[") {
+		return "postgres.Map"
+	}
+	if strings.Contains(typeName, ".") && !strings.Contains(typeName, "time.Time") {
+		return "postgres.Map" // Complex types as JSON
+	}
+
+	switch kind {
+	case reflect.String:
+		return "postgres.String"
+	case reflect.Int, reflect.Int32:
+		return "postgres.Integer"
+	case reflect.Int64:
+		return "postgres.BigInteger"
+	case reflect.Uint64:
+		return "postgres.BigInteger"
+	case reflect.Float32, reflect.Float64:
+		return "postgres.Numeric"
+	case reflect.Bool:
+		return "postgres.Bool"
+	default:
+		return "postgres.Map"
+	}
 }

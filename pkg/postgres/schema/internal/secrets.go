@@ -12,55 +12,55 @@ var (
 	// SecretSearchFields contains pre-computed search fields for secrets
 	SecretSearchFields = map[search.FieldLabel]*search.Field{
 		search.FieldLabel("Cert Expiration"): {
-			FieldPath: "secret.files.Metadata.Cert.end_date.seconds",
+			FieldPath: ".files.Metadata.Cert.end_date.seconds",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,
 		},
 		search.FieldLabel("Cluster"): {
-			FieldPath: "secret.cluster_name",
+			FieldPath: ".cluster_name",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,
 		},
 		search.FieldLabel("Cluster ID"): {
-			FieldPath: "secret.cluster_id",
+			FieldPath: ".cluster_id",
 			Store:     true,
 			Hidden:    true,
 			Category:  v1.SearchCategory_SECRETS,
 		},
 		search.FieldLabel("Created Time"): {
-			FieldPath: "secret.created_at.seconds",
+			FieldPath: ".created_at.seconds",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,
 		},
 		search.FieldLabel("Image Pull Secret Registry"): {
-			FieldPath: "secret.files.Metadata.ImagePullSecret.registries.name",
+			FieldPath: ".files.Metadata.ImagePullSecret.registries.name",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,
 		},
 		search.FieldLabel("Namespace"): {
-			FieldPath: "secret.namespace",
+			FieldPath: ".namespace",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,
 		},
 		search.FieldLabel("Secret"): {
-			FieldPath: "secret.name",
+			FieldPath: ".name",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,
 		},
 		search.FieldLabel("Secret ID"): {
-			FieldPath: "secret.id",
+			FieldPath: ".id",
 			Store:     true,
 			Hidden:    true,
 			Category:  v1.SearchCategory_SECRETS,
 		},
 		search.FieldLabel("Secret Type"): {
-			FieldPath: "secret.files.type",
+			FieldPath: ".files.type",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_SECRETS,
@@ -79,6 +79,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Secret ID",
+					Enabled:   true,
+				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -89,6 +93,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Secret",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterId",
@@ -96,6 +104,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterName",
@@ -103,6 +115,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Namespace",
@@ -110,6 +126,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "CreatedAt",

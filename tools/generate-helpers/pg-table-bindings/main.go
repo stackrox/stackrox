@@ -557,14 +557,18 @@ func generateSearchFields(protoType, trimmedType string) []OptimizedSearchField 
 	// Convert OptionsMap to our OptimizedSearchField format
 	var searchFields []OptimizedSearchField
 	for fieldLabel, field := range optionsMap.Original() {
-		// Convert field path to maintain backward compatibility with walker.Walk format
-		// Old format was: k8srolebinding.role_id, new format is: .role_id
-		// Need to convert .field_name to tablename.field_name for backward compatibility
+		// Handle field path prefixes based on entity type
+		// Most entities should use dot-prefixed paths (e.g., ".policy.name")
+		// Only specific entities like K8SRoleBinding should use entity prefixes (e.g., "k8srolebinding.role_id")
 		fieldPath := field.FieldPath
 		if strings.HasPrefix(fieldPath, ".") && len(fieldPath) > 1 {
-			// Remove the leading dot and prefix with table name
-			tableName := getTableNameFromType(trimmedType)
-			fieldPath = tableName + fieldPath
+			// Only add entity prefix for specific types that require it
+			if shouldUseEntityPrefix(trimmedType) {
+				// Remove the leading dot and prefix with table name
+				tableName := getTableNameFromType(trimmedType)
+				fieldPath = tableName + fieldPath
+			}
+			// For other types, keep the dot prefix as-is
 		}
 
 		searchField := OptimizedSearchField{
@@ -672,6 +676,18 @@ func getTableNameFromType(typeName string) string {
 	default:
 		// Fallback: convert to lowercase and snake_case
 		return pgutils.NamingStrategy.TableName(typeName)
+	}
+}
+
+func shouldUseEntityPrefix(typeName string) bool {
+	// Only specific types should use entity prefixes in their field paths
+	// Most types should keep dot-prefixed paths (e.g., ".policy.name")
+	switch typeName {
+	case "K8SRoleBinding", "K8sRoleBinding":
+		return true
+	// Add other types that need entity prefixes here if discovered
+	default:
+		return false
 	}
 }
 
