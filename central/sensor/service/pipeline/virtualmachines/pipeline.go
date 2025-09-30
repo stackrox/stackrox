@@ -3,7 +3,6 @@ package virtualmachines
 import (
 	"context"
 	"fmt"
-	"github.com/stackrox/rox/pkg/search"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -17,6 +16,7 @@ import (
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
