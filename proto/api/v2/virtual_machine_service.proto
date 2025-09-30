@@ -36,6 +36,8 @@ message VirtualMachineScan {
   string operating_system = 2;
   enum Note {
     UNSET = 0;
+    OS_UNKNOWN = 1;
+    OS_UNSUPPORTED = 2;
   }
   repeated Note notes = 3;
   repeated ScanComponent components = 4;
