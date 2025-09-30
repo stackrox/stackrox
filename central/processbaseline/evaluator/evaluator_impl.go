@@ -10,7 +10,6 @@ import (
 	indicatorsStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/views"
 	"github.com/stackrox/rox/generated/storage"
-	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -100,14 +99,14 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		if !exists {
 			continue
 		}
-		baselineItem := processBaselinePkg.BaselineItemFromProcessView(process)
+		baselineItem := processbaseline.BaselineItemFromProcessView(process)
 		if baselineItem == "" {
 			continue
 		}
 		if processbaseline.IsStartupProcessView(process) {
 			continue
 		}
-		if !processSet.Contains(processBaselinePkg.BaselineItemFromProcessView(process)) {
+		if !processSet.Contains(processbaseline.BaselineItemFromProcessView(process)) {
 			violatingProcesses = append(violatingProcesses, process)
 			containerNameToBaselineResults[process.ContainerName].AnomalousProcessesExecuted = true
 		}

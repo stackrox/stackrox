@@ -93,7 +93,12 @@ func IsStartupProcessView(process *views.ProcessIndicatorRiskView) bool {
 	if process.SignalTime == nil {
 		return false
 	}
-	
 	durationBetweenProcessAndContainerStart := protoutils.Sub(protocompat.ConvertTimeToTimestampOrNil(process.SignalTime), protocompat.ConvertTimeToTimestampOrNil(process.ContainerStartTime))
 	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
+}
+
+// BaselineItemFromProcessView returns what we baseline for a given process.
+// It exists to make sure that we're using the same thing in every place (name vs execfilepath).
+func BaselineItemFromProcessView(process *views.ProcessIndicatorRiskView) string {
+	return process.ExecFilePath
 }
