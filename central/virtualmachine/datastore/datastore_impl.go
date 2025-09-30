@@ -2,18 +2,21 @@ package datastore
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	virtualMachineStore "github.com/stackrox/rox/central/virtualmachine/datastore/internal/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 const (
-	defaultResultSize = 1000
+	defaultPageSize = 100
+	preAllocateCap  = math.MaxUint16
 )
 
 type datastoreImpl struct {
@@ -28,10 +31,13 @@ func newDatastoreImpl(store virtualMachineStore.VirtualMachineStore) DataStore {
 }
 
 // CountVirtualMachines delegates to the underlying store.
-func (ds *datastoreImpl) CountVirtualMachines(ctx context.Context) (int, error) {
+func (ds *datastoreImpl) CountVirtualMachines(ctx context.Context, query *v1.Query) (int, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "CountVirtualMachines")
+	if query == nil {
+		query = search.EmptyQuery()
+	}
 
-	return ds.store.Count(ctx, search.EmptyQuery())
+	return ds.store.Count(ctx, query)
 }
 
 // GetVirtualMachine delegates to the underlying store.
@@ -39,21 +45,6 @@ func (ds *datastoreImpl) GetVirtualMachine(ctx context.Context, id string) (*sto
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "GetVirtualMachine")
 
 	return ds.store.Get(ctx, id)
-}
-
-// GetAllVirtualMachines delegates to the underlying store.
-func (ds *datastoreImpl) GetAllVirtualMachines(ctx context.Context) ([]*storage.VirtualMachine, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "GetAllVirtualMachines")
-
-	ret := make([]*storage.VirtualMachine, 0, defaultResultSize)
-	err := ds.store.Walk(ctx, func(vm *storage.VirtualMachine) error {
-		ret = append(ret, vm)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
 }
 
 // UpsertVirtualMachine sets the virtualMachine in the underlying data structure.
@@ -79,4 +70,45 @@ func (ds *datastoreImpl) DeleteVirtualMachines(ctx context.Context, ids ...strin
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "Exists")
 	return ds.store.Exists(ctx, id)
+}
+
+func (ds *datastoreImpl) SearchRawVirtualMachines(
+	ctx context.Context,
+	query *v1.Query,
+) ([]*storage.VirtualMachine, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "SearchRawVirtualMachines")
+	// Sort by default by virtual machine name and namespace (does not apply if sort options are provided).
+	// TODO(ROX-31024): Move default sorting over multiple columns to store
+	searchQuery := query.CloneVT()
+	if len(searchQuery.GetPagination().GetSortOptions()) == 0 {
+		if searchQuery.GetPagination() == nil {
+			searchQuery.Pagination = &v1.QueryPagination{}
+		}
+		searchQuery.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.VirtualMachineName.String(),
+			},
+			{
+				Field: search.Namespace.String(),
+			},
+		}
+	}
+	pageSize := searchQuery.GetPagination().GetLimit()
+	if pageSize <= 0 {
+		pageSize = defaultPageSize
+	}
+	// Limit pre-allocation size (some code paths set the pagination limit to
+	// math.MaxInt32) and risk of OOMKills.
+	if pageSize > preAllocateCap {
+		pageSize = preAllocateCap
+	}
+	results := make([]*storage.VirtualMachine, 0, pageSize)
+	err := ds.store.WalkByQuery(ctx, searchQuery, func(vm *storage.VirtualMachine) error {
+		results = append(results, vm)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
