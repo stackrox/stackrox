@@ -15,5 +15,17 @@ message ScanComponent {
   float risk_score = 4;
   string architecture = 5;
   repeated EmbeddedVulnerability vulns = 6;
+  SourceType source = 7;
   // TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
+}
+
+enum SourceType {
+  OS = 0;
+  PYTHON = 1;
+  JAVA = 2;
+  RUBY = 3;
+  NODEJS = 4;
+  GO = 7;
+  DOTNETCORERUNTIME = 5;
+  INFRASTRUCTURE = 6;
 }

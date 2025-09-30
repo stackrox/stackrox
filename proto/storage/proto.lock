@@ -18528,6 +18528,11 @@
                 "name": "vulnerabilities",
                 "type": "VirtualMachineVulnerability",
                 "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "source",
+                "type": "SourceType"
               }
             ]
           },
@@ -18601,6 +18606,11 @@
                 "id": 9,
                 "name": "epss",
                 "type": "VirtualMachineEPSS"
+              },
+              {
+                "id": 10,
+                "name": "advisory",
+                "type": "VirtualMachineAdvisory"
               }
             ],
             "messages": [
@@ -18636,6 +18646,21 @@
                 "type": "float"
               }
             ]
+          },
+          {
+            "name": "VirtualMachineAdvisory",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "link",
+                "type": "string"
+              }
+            ]
           }
         ],
         "imports": [
@@ -18644,6 +18669,9 @@
           },
           {
             "path": "storage/cve.proto"
+          },
+          {
+            "path": "storage/image.proto"
           }
         ],
         "package": {
