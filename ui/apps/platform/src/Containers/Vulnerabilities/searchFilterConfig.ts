@@ -122,3 +122,13 @@ export const cveSnoozedDescriptor = {
     displayName: 'CVE snoozed',
     searchFilterName: 'CVE Snoozed',
 };
+
+export const platformComponentDescriptor = {
+    displayName: 'Platform component',
+    searchFilterName: 'Platform Component',
+};
+
+export const vulnerabilityStateDescriptor = {
+    displayName: 'Vulnerability state',
+    searchFilterName: 'Vulnerability State',
+};

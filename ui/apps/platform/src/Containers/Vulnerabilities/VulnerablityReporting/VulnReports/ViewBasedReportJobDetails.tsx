@@ -31,6 +31,8 @@ import {
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
+    platformComponentDescriptor,
+    vulnerabilityStateDescriptor,
 } from '../../searchFilterConfig';
 
 // Build combined config for all possible filters in view-based reports
@@ -49,6 +51,8 @@ const filterChipDescriptors = makeFilterChipDescriptors(viewBasedReportFilterCon
     cveSeverityFilterDescriptor,
     cveStatusFixableDescriptor,
     cveStatusClusterFixableDescriptor,
+    platformComponentDescriptor,
+    vulnerabilityStateDescriptor,
 ]);
 
 export type ViewBasedReportJobDetailsProps = {
