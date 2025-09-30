@@ -64,7 +64,11 @@ func (r *Relay) Run(ctx context.Context) error {
 	if err := r.vsockServer.Start(); err != nil {
 		return errors.Wrap(err, "starting vsock server")
 	}
-	defer r.vsockServer.Stop()
+
+	go func() {
+		<-ctx.Done()
+		r.vsockServer.Stop()
+	}()
 
 	for {
 		select {
