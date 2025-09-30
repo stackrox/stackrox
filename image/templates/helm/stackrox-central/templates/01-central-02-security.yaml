@@ -59,11 +59,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "srox.globalResourceName" (list . "central-token-reviews-binding") }}
+  name: {{ include "srox.globalResourceName" (list . "central-review-tokens-binding") }}
   labels:
-    {{- include "srox.labels" (list . "clusterrolebinding" "central-token-reviews-binding") | nindent 4 }}
+    {{- include "srox.labels" (list . "clusterrolebinding" "central-review-tokens-binding") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "clusterrolebinding" "central-token-reviews-binding") | nindent 4 }}
+    {{- include "srox.annotations" (list . "clusterrolebinding" "central-review-tokens-binding") | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
