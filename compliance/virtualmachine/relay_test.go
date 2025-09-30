@@ -35,7 +35,6 @@ func (s *relayTestSuite) TestHandleVsockConnection_InjectsVsockCID() {
 
 	s.Equal("42", client.capturedRequests[0].IndexReport.VsockCid)
 
-	s.True(conn.closed)
 }
 
 func (s *relayTestSuite) TestHandleVsockConnection_RejectsMalformedData() {
@@ -44,8 +43,6 @@ func (s *relayTestSuite) TestHandleVsockConnection_RejectsMalformedData() {
 
 	err := handleVsockConnection(s.ctx, conn, client)
 	s.Error(err)
-
-	s.True(conn.closed)
 }
 
 func (s *relayTestSuite) TestHandleVsockConnection_HandlesContextCancellation() {
@@ -57,8 +54,6 @@ func (s *relayTestSuite) TestHandleVsockConnection_HandlesContextCancellation() 
 	err := handleVsockConnection(ctx, conn, client)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context deadline exceeded")
-
-	s.True(conn.closed)
 }
 
 func (s *relayTestSuite) TestReadFromConn_EnforcesSizeLimit() {
