@@ -11,6 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// #nosec G101 -- This is a false positive.
+const kubernetesServiceAccountTokenIssuer = "kubernetes/serviceaccount"
+
 var (
 	once sync.Once
 
@@ -84,14 +87,45 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *st
 		return pkgErrors.Wrapf(err, "creating token exchanger for config %s", config.GetId())
 	}
 
-	t.tokenExchangers[config.GetIssuer()] = tokenExchanger
+	if config.GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
+		// Kubernetes token can be issued by 3 issuers. Let's add all of them.
+		t.tokenExchangers[KubernetesDefaultSvcTokenIssuer] = tokenExchanger
+		t.tokenExchangers[kubernetesServiceAccountTokenIssuer] = tokenExchanger
+		if config.GetIssuer() != KubernetesDefaultSvcTokenIssuer && config.GetIssuer() != kubernetesServiceAccountTokenIssuer {
+			t.tokenExchangers[config.GetIssuer()] = tokenExchanger
+			return nil
+		}
+		// If config.GetIssuer() is not the public issuer, let's discover it:
+		oidcIssuer, err := getKubernetesIssuer()
+		if err == nil {
+			t.tokenExchangers[oidcIssuer] = tokenExchanger
+		} else {
+			return err
+		}
+	} else {
+		t.tokenExchangers[config.GetIssuer()] = tokenExchanger
+	}
 	return nil
 }
 
 // GetTokenExchanger retrieves a TokenExchanger based on the issuer.
 func (t *tokenExchangerSet) GetTokenExchanger(issuer string) (TokenExchanger, bool) {
 	tokenExchanger, exists := t.tokenExchangers[issuer]
-	return tokenExchanger, exists
+	if exists {
+		return tokenExchanger, exists
+	}
+
+	// This is the issuer of the tokens, sometimes found in the secrets of type
+	// kubernetes.io/service-account-token
+	// We call TokenReview API to verify the token.
+	if issuer == kubernetesServiceAccountTokenIssuer {
+		for _, tokenExchanger := range t.tokenExchangers {
+			if tokenExchanger.Config().GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
+				return tokenExchanger, true
+			}
+		}
+	}
+	return nil, false
 }
 
 // RemoveTokenExchanger removes the token exchanger for the specific configuration ID.

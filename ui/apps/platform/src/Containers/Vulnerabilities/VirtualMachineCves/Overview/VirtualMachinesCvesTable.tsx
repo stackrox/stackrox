@@ -9,6 +9,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 
 import { getVirtualMachineSeveritiesCount } from '../aggregateUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
 
 function VirtualMachinesCvesTable() {
     const fetchVirtualMachines = useCallback(() => listVirtualMachines(), []);
@@ -56,16 +57,33 @@ function VirtualMachinesCvesTable() {
                                 getVirtualMachineSeveritiesCount(virtualMachine);
                             return (
                                 <Tr key={virtualMachine.id}>
-                                    <Td dataLabel="Virtual machine">
-                                        <Link to={''}>{virtualMachine.name}</Link>
+                                    <Td dataLabel="Virtual machine" modifier="nowrap">
+                                        <Link
+                                            to={getVirtualMachineEntityPagePath(
+                                                'VirtualMachine',
+                                                virtualMachine.id
+                                            )}
+                                        >
+                                            {virtualMachine.name}
+                                        </Link>
                                     </Td>
                                     <Td dataLabel="CVEs by severity">
                                         <SeverityCountLabels
-                                            criticalCount={virtualMachineSeverityCounts.CRITICAL}
-                                            importantCount={virtualMachineSeverityCounts.HIGH}
-                                            moderateCount={virtualMachineSeverityCounts.MEDIUM}
-                                            lowCount={virtualMachineSeverityCounts.LOW}
-                                            unknownCount={virtualMachineSeverityCounts.UNKNOWN}
+                                            criticalCount={
+                                                virtualMachineSeverityCounts.CRITICAL_VULNERABILITY_SEVERITY
+                                            }
+                                            importantCount={
+                                                virtualMachineSeverityCounts.IMPORTANT_VULNERABILITY_SEVERITY
+                                            }
+                                            moderateCount={
+                                                virtualMachineSeverityCounts.MODERATE_VULNERABILITY_SEVERITY
+                                            }
+                                            lowCount={
+                                                virtualMachineSeverityCounts.LOW_VULNERABILITY_SEVERITY
+                                            }
+                                            unknownCount={
+                                                virtualMachineSeverityCounts.UNKNOWN_VULNERABILITY_SEVERITY
+                                            }
                                         />
                                     </Td>
                                     <Td dataLabel="Guest OS">ROX-30535</Td>

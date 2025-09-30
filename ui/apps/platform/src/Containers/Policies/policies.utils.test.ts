@@ -1,5 +1,10 @@
 import { ClientPolicy, Policy } from 'types/policy.proto';
-import { getClientWizardPolicy, getPolicyOriginLabel, getServerPolicy } from './policies.utils';
+import {
+    getClientWizardPolicy,
+    getLifeCyclesUpdates,
+    getPolicyOriginLabel,
+    getServerPolicy,
+} from './policies.utils';
 
 describe('policies.utils', () => {
     describe('getClientWizardPolicy', () => {
@@ -69,7 +74,7 @@ describe('policies.utils', () => {
                                 fieldName: 'Dockerfile Line',
                                 booleanOperator: 'OR',
                                 negate: false,
-                                values: [{ value: 'ENV=ENV=myapp=test' }, { value: 'USER=root' }],
+                                values: [{ value: 'ENV=myapp=test' }, { value: 'USER=root' }],
                             },
                             {
                                 fieldName: 'Image Signature Verified By',
@@ -78,6 +83,19 @@ describe('policies.utils', () => {
                                 values: [
                                     {
                                         value: 'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        value: 'RAW=SOMEVAR=val_with=equals',
+                                    },
+                                    {
+                                        value: 'RAW=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
@@ -177,7 +195,7 @@ describe('policies.utils', () => {
                                 booleanOperator: 'OR',
                                 negate: false,
                                 values: [
-                                    { value: 'ENV=ENV=myapp=test' },
+                                    { key: 'ENV', value: 'myapp=test' },
                                     { key: 'USER', value: 'root' },
                                 ],
                             },
@@ -190,6 +208,23 @@ describe('policies.utils', () => {
                                         arrayValue: [
                                             'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
                                         ],
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        source: 'RAW',
+                                        key: 'SOMEVAR',
+                                        value: 'val_with=equals',
+                                    },
+                                    {
+                                        source: 'RAW',
+                                        key: 'OTHERVAR',
+                                        value: 'normal_value',
                                     },
                                 ],
                             },
@@ -242,7 +277,7 @@ describe('policies.utils', () => {
                                 fieldName: 'Dockerfile Line',
                                 booleanOperator: 'OR',
                                 negate: false,
-                                values: [{ value: 'ENV=ENV=myapp=test' }, { value: 'USER=root' }],
+                                values: [{ value: 'ENV=myapp=test' }, { value: 'USER=root' }],
                             },
                             {
                                 fieldName: 'Image Signature Verified By',
@@ -251,6 +286,19 @@ describe('policies.utils', () => {
                                 values: [
                                     {
                                         value: 'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        value: 'RAW=SOMEVAR=val_with=equals',
+                                    },
+                                    {
+                                        value: 'RAW=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
@@ -344,7 +392,7 @@ describe('policies.utils', () => {
                                 fieldName: 'Dockerfile Line',
                                 booleanOperator: 'OR',
                                 negate: false,
-                                values: [{ value: 'ENV=ENV=myapp=test' }, { value: 'USER=root' }],
+                                values: [{ value: 'ENV=myapp=test' }, { value: 'USER=root' }],
                             },
                             {
                                 fieldName: 'Image Signature Verified By',
@@ -353,6 +401,19 @@ describe('policies.utils', () => {
                                 values: [
                                     {
                                         value: 'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        value: 'RAW=SOMEVAR=val_with=equals',
+                                    },
+                                    {
+                                        value: 'RAW=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
@@ -452,7 +513,7 @@ describe('policies.utils', () => {
                                 booleanOperator: 'OR',
                                 negate: false,
                                 values: [
-                                    { value: 'ENV=ENV=myapp=test' },
+                                    { key: 'ENV', value: 'myapp=test' },
                                     { key: 'USER', value: 'root' },
                                 ],
                             },
@@ -465,6 +526,23 @@ describe('policies.utils', () => {
                                         arrayValue: [
                                             'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
                                         ],
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        source: 'RAW',
+                                        key: 'SOMEVAR',
+                                        value: 'val_with=equals',
+                                    },
+                                    {
+                                        source: 'RAW',
+                                        key: 'OTHERVAR',
+                                        value: 'normal_value',
                                     },
                                 ],
                             },
@@ -517,7 +595,7 @@ describe('policies.utils', () => {
                                 fieldName: 'Dockerfile Line',
                                 booleanOperator: 'OR',
                                 negate: false,
-                                values: [{ value: 'ENV=ENV=myapp=test' }, { value: 'USER=root' }],
+                                values: [{ value: 'ENV=myapp=test' }, { value: 'USER=root' }],
                             },
                             {
                                 fieldName: 'Image Signature Verified By',
@@ -526,6 +604,19 @@ describe('policies.utils', () => {
                                 values: [
                                     {
                                         value: 'io.stackrox.signatureintegration.bef8ab45-2f06-4937-9a97-5c8b5b049f54',
+                                    },
+                                ],
+                            },
+                            {
+                                fieldName: 'Environment Variable',
+                                booleanOperator: 'OR',
+                                negate: false,
+                                values: [
+                                    {
+                                        value: 'RAW=SOMEVAR=val_with=equals',
+                                    },
+                                    {
+                                        value: 'RAW=OTHERVAR=normal_value',
                                     },
                                 ],
                             },
@@ -570,6 +661,65 @@ describe('policies.utils', () => {
             expect(
                 getPolicyOriginLabel({ isDefault: false, source: 'DECLARATIVE' } as const)
             ).toEqual('Externally managed');
+        });
+    });
+
+    describe('getLifeCyclesUpdates', () => {
+        it('should add another lifecycle without modifying other values', () => {
+            expect(
+                getLifeCyclesUpdates(
+                    {
+                        lifecycleStages: ['BUILD'],
+                        eventSource: 'NOT_APPLICABLE',
+                        enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
+                        excludedImageNames: ['docker.io/library/archlinux:latest'],
+                    },
+                    ['BUILD', 'DEPLOY']
+                )
+            ).toEqual({
+                lifecycleStages: ['BUILD', 'DEPLOY'],
+                eventSource: 'NOT_APPLICABLE',
+                enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
+                excludedImageNames: ['docker.io/library/archlinux:latest'],
+            });
+        });
+
+        it('should clear the excluded image names and build enforcement action when the build lifecycle is removed', () => {
+            expect(
+                getLifeCyclesUpdates(
+                    {
+                        lifecycleStages: ['BUILD', 'DEPLOY'],
+                        eventSource: 'NOT_APPLICABLE',
+                        excludedImageNames: ['docker.io/library/archlinux:latest'],
+                        enforcementActions: ['FAIL_BUILD_ENFORCEMENT', 'SCALE_TO_ZERO_ENFORCEMENT'],
+                    },
+                    ['DEPLOY']
+                )
+            ).toEqual({
+                lifecycleStages: ['DEPLOY'],
+                eventSource: 'NOT_APPLICABLE',
+                enforcementActions: ['SCALE_TO_ZERO_ENFORCEMENT'],
+                excludedImageNames: [],
+            });
+        });
+
+        it('should clear the deployment enforcement actions when the deploy lifecycle is removed', () => {
+            expect(
+                getLifeCyclesUpdates(
+                    {
+                        lifecycleStages: ['BUILD', 'DEPLOY'],
+                        eventSource: 'NOT_APPLICABLE',
+                        enforcementActions: ['FAIL_BUILD_ENFORCEMENT', 'SCALE_TO_ZERO_ENFORCEMENT'],
+                        excludedImageNames: ['docker.io/library/archlinux:latest'],
+                    },
+                    ['BUILD']
+                )
+            ).toEqual({
+                lifecycleStages: ['BUILD'],
+                eventSource: 'NOT_APPLICABLE',
+                enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
+                excludedImageNames: ['docker.io/library/archlinux:latest'],
+            });
         });
     });
 });

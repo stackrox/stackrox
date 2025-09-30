@@ -32,7 +32,8 @@ var (
 // callOptions contains optional data and gRPC parameters for the underlying
 // Scanner calls.
 type callOptions struct {
-	version *scannerv4.Version
+	version                     *scannerv4.Version
+	includeExternalIndexReports bool
 }
 
 // CallOption configures call-specific options for scanner methods.
@@ -51,6 +52,15 @@ func makeCallOptions(callOpts ...CallOption) callOptions {
 func Version(v *scannerv4.Version) CallOption {
 	return func(o *callOptions) {
 		o.version = v
+	}
+}
+
+// IncludeExternalIndexReports returns a CallOption that will inform library
+// calls to include external index reports when retrieving index reports from
+// Scanner V4's Indexer.
+func IncludeExternalIndexReports() CallOption {
+	return func(o *callOptions) {
+		o.includeExternalIndexReports = true
 	}
 }
 
@@ -81,6 +91,12 @@ type Scanner interface {
 
 	// GetSBOM to get sbom for an image
 	GetSBOM(ctx context.Context, name string, ref name.Digest, uri string, callOpts ...CallOption) ([]byte, bool, error)
+
+	// StoreImageIndex stores the contents provided. Particularly useful for
+	// storing contents from delegated Scanners. indexerVersion is used to
+	// hint to the Scanner whether it should overwrite the contents of ref
+	// if ref already exists in its datastore.
+	StoreImageIndex(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -208,9 +224,11 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 
 // GetSBOM verifies that index report exists and calls matcher to return sbom for an image
 func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref name.Digest, uri string, callOpts ...CallOption) ([]byte, bool, error) {
+	options := makeCallOptions(callOpts...)
+
 	// verify index report exists for the image
-	hashId := getImageManifestID(ref)
-	ir, found, err := c.GetImageIndex(ctx, hashId, callOpts...)
+	hashID := getImageManifestID(ref)
+	ir, found, err := c.getImageIndex(ctx, hashID, options)
 	if err != nil {
 		return nil, false, err
 	}
@@ -241,27 +259,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts
 
 	options := makeCallOptions(callOpts...)
 
-	var ir *v4.IndexReport
-	var responseMetadata metadata.MD
-	// Get the IndexReport, if it exists.
-	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetIndexReport", func() (err error) {
-		ir, err = c.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID}, grpc.Header(&responseMetadata))
-		if e, ok := status.FromError(err); ok && e.Code() == codes.NotFound {
-			return nil
-		}
-		return err
-	})
-	if err != nil {
-		return nil, false, fmt.Errorf("get index: %w", err)
-	}
-	// Return not found if report doesn't exist or is unsuccessful.
-	if ir == nil || !ir.GetSuccess() {
-		return nil, false, nil
-	}
-
-	setIndexerVersion(options, responseMetadata)
-
-	return ir, true, nil
+	return c.getImageIndex(ctx, hashID, options)
 }
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint GetOrCreateIndexReport.
@@ -305,6 +303,31 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 	}
 
 	return c.getVulnerabilities(ctx, ir.GetHashId(), nil, options)
+}
+
+func (c *gRPCScanner) getImageIndex(ctx context.Context, hashID string, options callOptions) (*v4.IndexReport, bool, error) {
+	req := &v4.GetIndexReportRequest{HashId: hashID, IncludeExternal: options.includeExternalIndexReports}
+	var ir *v4.IndexReport
+	var responseMetadata metadata.MD
+	// Get the IndexReport, if it exists.
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetIndexReport", func() (err error) {
+		ir, err = c.indexer.GetIndexReport(ctx, req, grpc.Header(&responseMetadata))
+		if e, ok := status.FromError(err); ok && e.Code() == codes.NotFound {
+			return nil
+		}
+		return err
+	})
+	if err != nil {
+		return nil, false, fmt.Errorf("get index: %w", err)
+	}
+	// Return not found if report doesn't exist or is unsuccessful.
+	if !ir.GetSuccess() {
+		return nil, false, nil
+	}
+
+	setIndexerVersion(options, responseMetadata)
+
+	return ir, true, nil
 }
 
 func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, options callOptions) (*v4.IndexReport, error) {
@@ -400,6 +423,34 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 	setMatcherVersion(options, responseMetadata)
 
 	return m, nil
+}
+
+// StoreImageIndex calls the Indexer's gRPC endpoint StoreIndexReport.
+// The ...CallOption is included for consistency but isn't currently used.
+func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, _ ...CallOption) error {
+	if c.indexer == nil {
+		return errIndexerNotConfigured
+	}
+
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "StoreImageIndex")
+
+	req := &v4.StoreIndexReportRequest{
+		HashId:         getImageManifestID(ref),
+		IndexerVersion: indexerVersion,
+		Contents:       contents,
+	}
+	var r *v4.StoreIndexReportResponse
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.StoreImageIndex", func() error {
+		var err error
+		r, err = c.indexer.StoreIndexReport(ctx, req)
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("storing external index report: %w", err)
+	}
+	zlog.Debug(ctx).Err(err).Str("status", r.Status).Msg("received response from StoreIndexReport")
+
+	return nil
 }
 
 func getImageManifestID(ref name.Digest) string {

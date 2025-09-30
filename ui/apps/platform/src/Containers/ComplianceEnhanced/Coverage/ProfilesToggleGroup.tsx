@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Tab, Tabs, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
-import { ComplianceProfileSummary } from 'services/ComplianceCommon';
+import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
 const NON_STANDARD_TAB = 'Other';
 
