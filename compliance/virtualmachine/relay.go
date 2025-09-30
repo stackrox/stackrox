@@ -51,7 +51,7 @@ type Relay struct {
 }
 
 func NewRelay(conn grpc.ClientConnInterface) *Relay {
-	port := env.VirtualMachineVsockPort.IntegerSetting()
+	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	return &Relay{
 		sensorClient: sensor.NewVirtualMachineIndexReportServiceClient(conn),
 		vsockServer:  VsockServer{port: uint32(port)},
