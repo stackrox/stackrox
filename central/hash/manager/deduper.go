@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/pkg/sync"
@@ -41,7 +42,7 @@ var (
 )
 
 // NewDeduper creates a new deduper from the passed existing hashes
-func NewDeduper(existingHashes map[string]uint64) Deduper {
+func NewDeduper(existingHashes map[string]uint64, clusterID string) Deduper {
 	existingEntries := make(map[string]*entry)
 
 	if len(existingHashes) < maxHashes {
@@ -56,6 +57,7 @@ func NewDeduper(existingHashes map[string]uint64) Deduper {
 		received:              make(map[string]*entry),
 		successfullyProcessed: existingEntries,
 		hasher:                hash.NewHasher(),
+		clusterID:             clusterID,
 	}
 }
 
@@ -71,7 +73,8 @@ type deduperImpl struct {
 	// successfully processed map contains hashes of objects that have been successfully processed
 	successfullyProcessed map[string]*entry
 
-	hasher *hash.Hasher
+	hasher    *hash.Hasher
+	clusterID string
 }
 
 // skipDedupe signifies that a message from Sensor cannot be deduped and won't be stored
@@ -173,7 +176,7 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 	// evaluated as objects come into the queue and an object may have been successfully processed after
 	if msg.GetEvent().GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		delete(d.successfullyProcessed, key)
-		dedupingHashCounterVec.With(prometheus.Labels{"cluster": "find cluster", "ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())}).Add(-1)
+		dedupingHashCounterVec.With(prometheus.Labels{"cluster": d.clusterID, "ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()), "Operation": ops.Remove.String()}).Inc()
 		return
 	}
 
@@ -183,7 +186,7 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 		delete(d.received, key)
 	}
 	if !ok {
-		dedupingHashCounterVec.With(prometheus.Labels{"cluster": "find cluster", "ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())}).Inc()
+		dedupingHashCounterVec.With(prometheus.Labels{"cluster": d.clusterID, "ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()), "Operation": ops.Add.String()}).Inc()
 	}
 	d.successfullyProcessed[key] = &entry{
 		val:       msg.GetEvent().GetSensorHash(),

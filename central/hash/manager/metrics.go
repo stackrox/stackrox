@@ -22,6 +22,6 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "deduping_hash_count",
-		Help:      "Number of elements in removed from the the hash by resource",
-	}, []string{"cluster", "ResourceType"})
+		Help:      "Number of operations against the hashes by cluster, resource type and operation",
+	}, []string{"cluster", "ResourceType", "Operation"})
 )
