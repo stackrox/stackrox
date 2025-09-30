@@ -259,6 +259,17 @@ var (
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 
+	telemetryComplianceOperatorVersion = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace:   metrics.PrometheusNamespace,
+			Subsystem:   metrics.SensorSubsystem.String(),
+			Name:        "compliance_operator_version",
+			Help:        "Version of compliance operator",
+			ConstLabels: telemetryLabels,
+		},
+		[]string{"central_id", "hosting", "install_method", "sensor_id", "compliance_operator_version"},
+	)
+
 	// responsesChannelOperationCount a counter to track the operations in the responses channel
 	responsesChannelOperationCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -462,6 +473,9 @@ func SetTelemetryMetrics(clusterIDPeeker func() string, cm *central.ClusterMetri
 
 	telemetrySecuredVCPU.Reset()
 	telemetrySecuredVCPU.WithLabelValues(labels...).Set(float64(cm.GetCpuCapacity()))
+
+	telemetryComplianceOperatorVersion.Reset()
+	telemetryComplianceOperatorVersion.WithLabelValues(append(labels, cm.GetComplianceOperatorVersion())...).Set(1)
 }
 
 // ObserveCentralReceiverProcessMessageDuration records the duration of a ProcessMessage call
