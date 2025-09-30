@@ -345,9 +345,6 @@
         "link": {
           "type": "string"
         },
-        "cvssV3": {
-          "$ref": "#/definitions/v2CVSSV3"
-        },
         "publishedOn": {
           "type": "string",
           "format": "date-time"

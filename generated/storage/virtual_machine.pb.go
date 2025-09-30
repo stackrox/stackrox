@@ -126,16 +126,22 @@ func (VirtualMachine_State) EnumDescriptor() ([]byte, []int) {
 type VirtualMachineScan_Note int32
 
 const (
-	VirtualMachineScan_UNSET VirtualMachineScan_Note = 0
+	VirtualMachineScan_UNSET          VirtualMachineScan_Note = 0
+	VirtualMachineScan_OS_UNKNOWN     VirtualMachineScan_Note = 1
+	VirtualMachineScan_OS_UNSUPPORTED VirtualMachineScan_Note = 2
 )
 
 // Enum value maps for VirtualMachineScan_Note.
 var (
 	VirtualMachineScan_Note_name = map[int32]string{
 		0: "UNSET",
+		1: "OS_UNKNOWN",
+		2: "OS_UNSUPPORTED",
 	}
 	VirtualMachineScan_Note_value = map[string]int32{
-		"UNSET": 0,
+		"UNSET":          0,
+		"OS_UNKNOWN":     1,
+		"OS_UNSUPPORTED": 2,
 	}
 )
 
@@ -164,56 +170,6 @@ func (x VirtualMachineScan_Note) Number() protoreflect.EnumNumber {
 // Deprecated: Use VirtualMachineScan_Note.Descriptor instead.
 func (VirtualMachineScan_Note) EnumDescriptor() ([]byte, []int) {
 	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{1, 0}
-}
-
-// ScoreVersion can be deprecated ROX-26066
-type VirtualMachineCVEInfo_ScoreVersion int32
-
-const (
-	VirtualMachineCVEInfo_V2      VirtualMachineCVEInfo_ScoreVersion = 0 // No unset for automatic backwards compatibility
-	VirtualMachineCVEInfo_V3      VirtualMachineCVEInfo_ScoreVersion = 1
-	VirtualMachineCVEInfo_UNKNOWN VirtualMachineCVEInfo_ScoreVersion = 2
-)
-
-// Enum value maps for VirtualMachineCVEInfo_ScoreVersion.
-var (
-	VirtualMachineCVEInfo_ScoreVersion_name = map[int32]string{
-		0: "V2",
-		1: "V3",
-		2: "UNKNOWN",
-	}
-	VirtualMachineCVEInfo_ScoreVersion_value = map[string]int32{
-		"V2":      0,
-		"V3":      1,
-		"UNKNOWN": 2,
-	}
-)
-
-func (x VirtualMachineCVEInfo_ScoreVersion) Enum() *VirtualMachineCVEInfo_ScoreVersion {
-	p := new(VirtualMachineCVEInfo_ScoreVersion)
-	*p = x
-	return p
-}
-
-func (x VirtualMachineCVEInfo_ScoreVersion) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (VirtualMachineCVEInfo_ScoreVersion) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_virtual_machine_proto_enumTypes[3].Descriptor()
-}
-
-func (VirtualMachineCVEInfo_ScoreVersion) Type() protoreflect.EnumType {
-	return &file_storage_virtual_machine_proto_enumTypes[3]
-}
-
-func (x VirtualMachineCVEInfo_ScoreVersion) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use VirtualMachineCVEInfo_ScoreVersion.Descriptor instead.
-func (VirtualMachineCVEInfo_ScoreVersion) EnumDescriptor() ([]byte, []int) {
-	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{4, 0}
 }
 
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
@@ -509,8 +465,13 @@ func (*EmbeddedVirtualMachineScanComponent_TopCvss) isEmbeddedVirtualMachineScan
 }
 
 type VirtualMachineVulnerability struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CveBaseInfo   *VirtualMachineCVEInfo `protobuf:"bytes,1,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	CveBaseInfo *VirtualMachineCVEInfo `protobuf:"bytes,1,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
+	Severity    VulnerabilitySeverity  `protobuf:"varint,2,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty"`
+	// Types that are valid to be assigned to SetFixedBy:
+	//
+	//	*VirtualMachineVulnerability_FixedBy
+	SetFixedBy    isVirtualMachineVulnerability_SetFixedBy `protobuf_oneof:"set_fixed_by"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -552,6 +513,39 @@ func (x *VirtualMachineVulnerability) GetCveBaseInfo() *VirtualMachineCVEInfo {
 	return nil
 }
 
+func (x *VirtualMachineVulnerability) GetSeverity() VulnerabilitySeverity {
+	if x != nil {
+		return x.Severity
+	}
+	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+}
+
+func (x *VirtualMachineVulnerability) GetSetFixedBy() isVirtualMachineVulnerability_SetFixedBy {
+	if x != nil {
+		return x.SetFixedBy
+	}
+	return nil
+}
+
+func (x *VirtualMachineVulnerability) GetFixedBy() string {
+	if x != nil {
+		if x, ok := x.SetFixedBy.(*VirtualMachineVulnerability_FixedBy); ok {
+			return x.FixedBy
+		}
+	}
+	return ""
+}
+
+type isVirtualMachineVulnerability_SetFixedBy interface {
+	isVirtualMachineVulnerability_SetFixedBy()
+}
+
+type VirtualMachineVulnerability_FixedBy struct {
+	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,proto3,oneof"`
+}
+
+func (*VirtualMachineVulnerability_FixedBy) isVirtualMachineVulnerability_SetFixedBy() {}
+
 // VirtualMachineCVEInfo is a clone of the CVEInfo message from cve.proto, stripped from its search tags
 type VirtualMachineCVEInfo struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
@@ -563,14 +557,10 @@ type VirtualMachineCVEInfo struct {
 	// Time when the CVE was first seen in the system.
 	CreatedAt    *timestamppb.Timestamp             `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	LastModified *timestamppb.Timestamp             `protobuf:"bytes,6,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
-	ScoreVersion VirtualMachineCVEInfo_ScoreVersion `protobuf:"varint,7,opt,name=score_version,json=scoreVersion,proto3,enum=storage.VirtualMachineCVEInfo_ScoreVersion" json:"score_version,omitempty"`
-	// CVSSV2 CVSSV3 ScoreVersion can be deprecated ROX-26066
-	CvssV2     *CVSSV2                            `protobuf:"bytes,8,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty"`
-	CvssV3     *CVSSV3                            `protobuf:"bytes,9,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
-	References []*VirtualMachineCVEInfo_Reference `protobuf:"bytes,10,rep,name=references,proto3" json:"references,omitempty"`
+	References   []*VirtualMachineCVEInfo_Reference `protobuf:"bytes,7,rep,name=references,proto3" json:"references,omitempty"`
 	// cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
-	CvssMetrics   []*CVSSScore        `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics,proto3" json:"cvss_metrics,omitempty"`
-	Epss          *VirtualMachineEPSS `protobuf:"bytes,12,opt,name=epss,proto3" json:"epss,omitempty"`
+	CvssMetrics   []*CVSSScore        `protobuf:"bytes,8,rep,name=cvss_metrics,json=cvssMetrics,proto3" json:"cvss_metrics,omitempty"`
+	Epss          *VirtualMachineEPSS `protobuf:"bytes,9,opt,name=epss,proto3" json:"epss,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -643,27 +633,6 @@ func (x *VirtualMachineCVEInfo) GetCreatedAt() *timestamppb.Timestamp {
 func (x *VirtualMachineCVEInfo) GetLastModified() *timestamppb.Timestamp {
 	if x != nil {
 		return x.LastModified
-	}
-	return nil
-}
-
-func (x *VirtualMachineCVEInfo) GetScoreVersion() VirtualMachineCVEInfo_ScoreVersion {
-	if x != nil {
-		return x.ScoreVersion
-	}
-	return VirtualMachineCVEInfo_V2
-}
-
-func (x *VirtualMachineCVEInfo) GetCvssV2() *CVSSV2 {
-	if x != nil {
-		return x.CvssV2
-	}
-	return nil
-}
-
-func (x *VirtualMachineCVEInfo) GetCvssV3() *CVSSV3 {
-	if x != nil {
-		return x.CvssV3
 	}
 	return nil
 }
@@ -826,16 +795,19 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTOPPED\x10\x01\x12\v\n" +
-	"\aRUNNING\x10\x02\"\x91\x02\n" +
+	"\aRUNNING\x10\x02\"\xb5\x02\n" +
 	"\x12VirtualMachineScan\x127\n" +
 	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12)\n" +
 	"\x10operating_system\x18\x02 \x01(\tR\x0foperatingSystem\x126\n" +
 	"\x05notes\x18\x03 \x03(\x0e2 .storage.VirtualMachineScan.NoteR\x05notes\x12L\n" +
 	"\n" +
 	"components\x18\x04 \x03(\v2,.storage.EmbeddedVirtualMachineScanComponentR\n" +
-	"components\"\x11\n" +
+	"components\"5\n" +
 	"\x04Note\x12\t\n" +
-	"\x05UNSET\x10\x00\"\xef\x01\n" +
+	"\x05UNSET\x10\x00\x12\x0e\n" +
+	"\n" +
+	"OS_UNKNOWN\x10\x01\x12\x12\n" +
+	"\x0eOS_UNSUPPORTED\x10\x02\"\xef\x01\n" +
 	"#EmbeddedVirtualMachineScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1b\n" +
@@ -843,9 +815,12 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\n" +
 	"risk_score\x18\x04 \x01(\x02R\triskScore\x12N\n" +
 	"\x0fvulnerabilities\x18\x05 \x03(\v2$.storage.VirtualMachineVulnerabilityR\x0fvulnerabilitiesB\x0e\n" +
-	"\fset_top_cvss\"a\n" +
+	"\fset_top_cvss\"\xca\x01\n" +
 	"\x1bVirtualMachineVulnerability\x12B\n" +
-	"\rcve_base_info\x18\x01 \x01(\v2\x1e.storage.VirtualMachineCVEInfoR\vcveBaseInfo\"\xca\x05\n" +
+	"\rcve_base_info\x18\x01 \x01(\v2\x1e.storage.VirtualMachineCVEInfoR\vcveBaseInfo\x12:\n" +
+	"\bseverity\x18\x02 \x01(\x0e2\x1e.storage.VulnerabilitySeverityR\bseverity\x12\x1b\n" +
+	"\bfixed_by\x18\x03 \x01(\tH\x00R\afixedByB\x0e\n" +
+	"\fset_fixed_by\"\xf7\x03\n" +
 	"\x15VirtualMachineCVEInfo\x12\x10\n" +
 	"\x03cve\x18\x01 \x01(\tR\x03cve\x12\x18\n" +
 	"\asummary\x18\x02 \x01(\tR\asummary\x12\x12\n" +
@@ -853,23 +828,15 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\fpublished_on\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\vpublishedOn\x129\n" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12?\n" +
-	"\rlast_modified\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\flastModified\x12P\n" +
-	"\rscore_version\x18\a \x01(\x0e2+.storage.VirtualMachineCVEInfo.ScoreVersionR\fscoreVersion\x12(\n" +
-	"\acvss_v2\x18\b \x01(\v2\x0f.storage.CVSSV2R\x06cvssV2\x12(\n" +
-	"\acvss_v3\x18\t \x01(\v2\x0f.storage.CVSSV3R\x06cvssV3\x12H\n" +
+	"\rlast_modified\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\flastModified\x12H\n" +
 	"\n" +
-	"references\x18\n" +
-	" \x03(\v2(.storage.VirtualMachineCVEInfo.ReferenceR\n" +
+	"references\x18\a \x03(\v2(.storage.VirtualMachineCVEInfo.ReferenceR\n" +
 	"references\x125\n" +
-	"\fcvss_metrics\x18\v \x03(\v2\x12.storage.CVSSScoreR\vcvssMetrics\x12/\n" +
-	"\x04epss\x18\f \x01(\v2\x1b.storage.VirtualMachineEPSSR\x04epss\x1a1\n" +
+	"\fcvss_metrics\x18\b \x03(\v2\x12.storage.CVSSScoreR\vcvssMetrics\x12/\n" +
+	"\x04epss\x18\t \x01(\v2\x1b.storage.VirtualMachineEPSSR\x04epss\x1a1\n" +
 	"\tReference\x12\x10\n" +
 	"\x03URI\x18\x01 \x01(\tR\x03URI\x12\x12\n" +
-	"\x04tags\x18\x02 \x03(\tR\x04tags\"+\n" +
-	"\fScoreVersion\x12\x06\n" +
-	"\x02V2\x10\x00\x12\x06\n" +
-	"\x02V3\x10\x01\x12\v\n" +
-	"\aUNKNOWN\x10\x02\"h\n" +
+	"\x04tags\x18\x02 \x03(\tR\x04tags\"h\n" +
 	"\x12VirtualMachineEPSS\x12)\n" +
 	"\x10epss_probability\x18\x01 \x01(\x02R\x0fepssProbability\x12'\n" +
 	"\x0fepss_percentile\x18\x02 \x01(\x02R\x0eepssPercentileb\x06proto3"
@@ -886,51 +853,47 @@ func file_storage_virtual_machine_proto_rawDescGZIP() []byte {
 	return file_storage_virtual_machine_proto_rawDescData
 }
 
-var file_storage_virtual_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_storage_virtual_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_storage_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_storage_virtual_machine_proto_goTypes = []any{
 	(VirtualMachine_Note)(0),                    // 0: storage.VirtualMachine.Note
 	(VirtualMachine_State)(0),                   // 1: storage.VirtualMachine.State
 	(VirtualMachineScan_Note)(0),                // 2: storage.VirtualMachineScan.Note
-	(VirtualMachineCVEInfo_ScoreVersion)(0),     // 3: storage.VirtualMachineCVEInfo.ScoreVersion
-	(*VirtualMachine)(nil),                      // 4: storage.VirtualMachine
-	(*VirtualMachineScan)(nil),                  // 5: storage.VirtualMachineScan
-	(*EmbeddedVirtualMachineScanComponent)(nil), // 6: storage.EmbeddedVirtualMachineScanComponent
-	(*VirtualMachineVulnerability)(nil),         // 7: storage.VirtualMachineVulnerability
-	(*VirtualMachineCVEInfo)(nil),               // 8: storage.VirtualMachineCVEInfo
-	(*VirtualMachineEPSS)(nil),                  // 9: storage.VirtualMachineEPSS
-	nil,                                         // 10: storage.VirtualMachine.FactsEntry
-	(*VirtualMachineCVEInfo_Reference)(nil),     // 11: storage.VirtualMachineCVEInfo.Reference
-	(*timestamppb.Timestamp)(nil),               // 12: google.protobuf.Timestamp
-	(*CVSSV2)(nil),                              // 13: storage.CVSSV2
-	(*CVSSV3)(nil),                              // 14: storage.CVSSV3
-	(*CVSSScore)(nil),                           // 15: storage.CVSSScore
+	(*VirtualMachine)(nil),                      // 3: storage.VirtualMachine
+	(*VirtualMachineScan)(nil),                  // 4: storage.VirtualMachineScan
+	(*EmbeddedVirtualMachineScanComponent)(nil), // 5: storage.EmbeddedVirtualMachineScanComponent
+	(*VirtualMachineVulnerability)(nil),         // 6: storage.VirtualMachineVulnerability
+	(*VirtualMachineCVEInfo)(nil),               // 7: storage.VirtualMachineCVEInfo
+	(*VirtualMachineEPSS)(nil),                  // 8: storage.VirtualMachineEPSS
+	nil,                                         // 9: storage.VirtualMachine.FactsEntry
+	(*VirtualMachineCVEInfo_Reference)(nil),     // 10: storage.VirtualMachineCVEInfo.Reference
+	(*timestamppb.Timestamp)(nil),               // 11: google.protobuf.Timestamp
+	(VulnerabilitySeverity)(0),                  // 12: storage.VulnerabilitySeverity
+	(*CVSSScore)(nil),                           // 13: storage.CVSSScore
 }
 var file_storage_virtual_machine_proto_depIdxs = []int32{
-	10, // 0: storage.VirtualMachine.facts:type_name -> storage.VirtualMachine.FactsEntry
-	12, // 1: storage.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
+	9,  // 0: storage.VirtualMachine.facts:type_name -> storage.VirtualMachine.FactsEntry
+	11, // 1: storage.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
 	0,  // 2: storage.VirtualMachine.notes:type_name -> storage.VirtualMachine.Note
 	1,  // 3: storage.VirtualMachine.state:type_name -> storage.VirtualMachine.State
-	5,  // 4: storage.VirtualMachine.scan:type_name -> storage.VirtualMachineScan
-	12, // 5: storage.VirtualMachineScan.scan_time:type_name -> google.protobuf.Timestamp
+	4,  // 4: storage.VirtualMachine.scan:type_name -> storage.VirtualMachineScan
+	11, // 5: storage.VirtualMachineScan.scan_time:type_name -> google.protobuf.Timestamp
 	2,  // 6: storage.VirtualMachineScan.notes:type_name -> storage.VirtualMachineScan.Note
-	6,  // 7: storage.VirtualMachineScan.components:type_name -> storage.EmbeddedVirtualMachineScanComponent
-	7,  // 8: storage.EmbeddedVirtualMachineScanComponent.vulnerabilities:type_name -> storage.VirtualMachineVulnerability
-	8,  // 9: storage.VirtualMachineVulnerability.cve_base_info:type_name -> storage.VirtualMachineCVEInfo
-	12, // 10: storage.VirtualMachineCVEInfo.published_on:type_name -> google.protobuf.Timestamp
-	12, // 11: storage.VirtualMachineCVEInfo.created_at:type_name -> google.protobuf.Timestamp
-	12, // 12: storage.VirtualMachineCVEInfo.last_modified:type_name -> google.protobuf.Timestamp
-	3,  // 13: storage.VirtualMachineCVEInfo.score_version:type_name -> storage.VirtualMachineCVEInfo.ScoreVersion
-	13, // 14: storage.VirtualMachineCVEInfo.cvss_v2:type_name -> storage.CVSSV2
-	14, // 15: storage.VirtualMachineCVEInfo.cvss_v3:type_name -> storage.CVSSV3
-	11, // 16: storage.VirtualMachineCVEInfo.references:type_name -> storage.VirtualMachineCVEInfo.Reference
-	15, // 17: storage.VirtualMachineCVEInfo.cvss_metrics:type_name -> storage.CVSSScore
-	9,  // 18: storage.VirtualMachineCVEInfo.epss:type_name -> storage.VirtualMachineEPSS
-	19, // [19:19] is the sub-list for method output_type
-	19, // [19:19] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	5,  // 7: storage.VirtualMachineScan.components:type_name -> storage.EmbeddedVirtualMachineScanComponent
+	6,  // 8: storage.EmbeddedVirtualMachineScanComponent.vulnerabilities:type_name -> storage.VirtualMachineVulnerability
+	7,  // 9: storage.VirtualMachineVulnerability.cve_base_info:type_name -> storage.VirtualMachineCVEInfo
+	12, // 10: storage.VirtualMachineVulnerability.severity:type_name -> storage.VulnerabilitySeverity
+	11, // 11: storage.VirtualMachineCVEInfo.published_on:type_name -> google.protobuf.Timestamp
+	11, // 12: storage.VirtualMachineCVEInfo.created_at:type_name -> google.protobuf.Timestamp
+	11, // 13: storage.VirtualMachineCVEInfo.last_modified:type_name -> google.protobuf.Timestamp
+	10, // 14: storage.VirtualMachineCVEInfo.references:type_name -> storage.VirtualMachineCVEInfo.Reference
+	13, // 15: storage.VirtualMachineCVEInfo.cvss_metrics:type_name -> storage.CVSSScore
+	8,  // 16: storage.VirtualMachineCVEInfo.epss:type_name -> storage.VirtualMachineEPSS
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_storage_virtual_machine_proto_init() }
@@ -942,12 +905,15 @@ func file_storage_virtual_machine_proto_init() {
 	file_storage_virtual_machine_proto_msgTypes[2].OneofWrappers = []any{
 		(*EmbeddedVirtualMachineScanComponent_TopCvss)(nil),
 	}
+	file_storage_virtual_machine_proto_msgTypes[3].OneofWrappers = []any{
+		(*VirtualMachineVulnerability_FixedBy)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_virtual_machine_proto_rawDesc), len(file_storage_virtual_machine_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      3,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,

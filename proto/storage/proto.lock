@@ -18405,21 +18405,13 @@
             "enum_fields": [
               {
                 "name": "UNSET"
-              }
-            ]
-          },
-          {
-            "name": "VirtualMachineCVEInfo.ScoreVersion",
-            "enum_fields": [
-              {
-                "name": "V2"
               },
               {
-                "name": "V3",
+                "name": "OS_UNKNOWN",
                 "integer": 1
               },
               {
-                "name": "UNKNOWN",
+                "name": "OS_UNSUPPORTED",
                 "integer": 2
               }
             ]
@@ -18558,6 +18550,17 @@
                 "id": 1,
                 "name": "cve_base_info",
                 "type": "VirtualMachineCVEInfo"
+              },
+              {
+                "id": 2,
+                "name": "severity",
+                "type": "VulnerabilitySeverity"
+              },
+              {
+                "id": 3,
+                "name": "fixed_by",
+                "type": "string",
+                "oneof_parent": "set_fixed_by"
               }
             ]
           },
@@ -18596,33 +18599,18 @@
               },
               {
                 "id": 7,
-                "name": "score_version",
-                "type": "ScoreVersion"
-              },
-              {
-                "id": 8,
-                "name": "cvss_v2",
-                "type": "CVSSV2"
-              },
-              {
-                "id": 9,
-                "name": "cvss_v3",
-                "type": "CVSSV3"
-              },
-              {
-                "id": 10,
                 "name": "references",
                 "type": "Reference",
                 "is_repeated": true
               },
               {
-                "id": 11,
+                "id": 8,
                 "name": "cvss_metrics",
                 "type": "CVSSScore",
                 "is_repeated": true
               },
               {
-                "id": 12,
+                "id": 9,
                 "name": "epss",
                 "type": "VirtualMachineEPSS"
               }
@@ -18664,10 +18652,10 @@
         ],
         "imports": [
           {
-            "path": "storage/cve.proto"
+            "path": "google/protobuf/timestamp.proto"
           },
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "storage/cve.proto"
           }
         ],
         "package": {
