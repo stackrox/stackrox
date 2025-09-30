@@ -79,12 +79,14 @@ func newMockSensorClient() *mockSensorClient {
 	}
 }
 
-func (c *mockSensorClient) UpsertVirtualMachineIndexReport(_ context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
-	if c.delay > 0 {
-		time.Sleep(c.delay)
+func (c *mockSensorClient) UpsertVirtualMachineIndexReport(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
+	select {
+	case <-time.After(c.delay):
+		c.capturedRequests = append(c.capturedRequests, req)
+		return c.response, c.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
-	c.capturedRequests = append(c.capturedRequests, req)
-	return c.response, c.err
 }
 
 func (c *mockSensorClient) withDelay(delay time.Duration) *mockSensorClient {
