@@ -121,12 +121,12 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 	timeoutSeconds := 10
 	data, err := readFromConn(conn, maxSizeBytes, timeoutSeconds)
 	if err != nil {
-		return errors.Wrap(err, "reading from vsock connection")
+		return errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}
 
 	indexReport, err := parseIndexReport(data)
 	if err != nil {
-		return errors.Wrap(err, "parsing index report data")
+		return errors.Wrapf(err, "parsing index report data (vsock CID: %d)", vsockCID)
 	}
 	metrics.IndexReportsReceived.Inc()
 
@@ -135,8 +135,10 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 	indexReport.VsockCid = strconv.Itoa(int(vsockCID))
 
 	if err = sendReportToSensor(ctx, indexReport, sensorClient); err != nil {
-		return errors.Wrap(err, "sending report to sensor")
+		return errors.Wrapf(err, "sending report to sensor (vsock CID: %d)", vsockCID)
 	}
+
+	log.Debugf("Finished handling vsock connection from %s", conn.RemoteAddr())
 
 	return nil
 }
