@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react';
-import { FormikErrors, FormikTouched } from 'formik';
+import React from 'react';
+import type { ChangeEvent, FocusEvent, FormEvent, ReactElement } from 'react';
+import type { FormikErrors, FormikTouched } from 'formik';
 import {
     Alert,
     Checkbox,
@@ -15,16 +16,14 @@ import {
 } from '@patternfly/react-core';
 
 import { oidcCallbackModes } from 'constants/accessControl';
-import { AuthProviderConfig, AuthProviderType } from 'services/AuthService';
+import type { AuthProviderConfig, AuthProviderType } from 'services/AuthService';
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 
 export type ConfigurationFormFieldsProps = {
     config: AuthProviderConfig;
     isViewing: boolean;
-    onChange: (
-        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
-    ) => void;
-    onBlur: (event?: React.FocusEvent<HTMLTextAreaElement, Element>) => void;
+    onChange: (event: FormEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>) => void;
+    onBlur: (event?: FocusEvent<HTMLTextAreaElement, Element>) => void;
     setFieldValue: (name: string, value: string | boolean) => void;
     type: AuthProviderType;
     configErrors?: FormikErrors<Record<string, string>>;

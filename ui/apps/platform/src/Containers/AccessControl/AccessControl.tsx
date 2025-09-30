@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 
 import { entityPathSegment } from './accessControlPaths';
