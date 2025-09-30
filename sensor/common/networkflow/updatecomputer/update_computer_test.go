@@ -502,6 +502,40 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear (as closed).
 			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
 		},
+		"A replacement process is nil but the endpoint stays open": {
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: nil,
+					LastSeen:         open,
+				},
+			},
+			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0}, // ep1 remains open
+			// Legacy sends 1 update for p1 disappearing.
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+		},
+		"A replacement process is nil and the endpoint is closed": {
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: nil,
+					LastSeen:         closedNow,
+				},
+			},
+			expectNumUpdatesEp: map[string]int{implLegacy: 1, implTransitionBased: 1}, // for closing ep1
+			// Legacy sends 1 update for p1 disappearing.
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+		},
 	}
 
 	executeAssertions := func(t *testing.T, l UpdateComputer,
