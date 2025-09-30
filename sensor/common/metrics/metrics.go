@@ -263,8 +263,8 @@ var (
 		prometheus.GaugeOpts{
 			Namespace:   metrics.PrometheusNamespace,
 			Subsystem:   metrics.SensorSubsystem.String(),
-			Name:        "compliance_operator_version",
-			Help:        "Version of compliance operator",
+			Name:        "compliance_operator_version_info",
+			Help:        "Version of compliance operator reported in label with constant value of 1",
 			ConstLabels: telemetryLabels,
 		},
 		[]string{"central_id", "hosting", "install_method", "sensor_id", "compliance_operator_version"},
