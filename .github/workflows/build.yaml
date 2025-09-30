@@ -632,11 +632,11 @@ jobs:
       - name: Operator unit tests
         if: matrix.arch == 'amd64'
         run: |
-          GOOS=linux scripts/lib.sh retry 6 true make -C operator/ test
+          scripts/lib.sh retry 2 true make -C operator/ test
 
       - name: Build Operator image
         run: |
-          CGO_ENABLED=0 GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
