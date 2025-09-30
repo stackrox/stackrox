@@ -7,7 +7,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,16 +26,29 @@ func (s *relayTestSuite) SetupTest() {
 	s.ctx = context.Background()
 }
 
+func (s *relayTestSuite) TestCtxCancellationHandledDuringGRPC() {
+	conn := s.defaultVsockConn()
+	client := newMockSensorClient().withDelay(1 * time.Second)
+	ctx, cancel := context.WithTimeout(s.ctx, 100*time.Millisecond) // times out before sensor replies
+	defer cancel()
+
+	err := handleVsockConnection(ctx, conn, client)
+	s.Error(err)
+	s.Contains(err.Error(), "context deadline exceeded")
+
+	s.True(conn.closed)
+}
+
 func (s *relayTestSuite) TestVsockConnectionHandlerInjectsVsockCID() {
 	conn := s.defaultVsockConn().withVsockCID(42)
 	client := newMockSensorClient()
 
 	err := handleVsockConnection(s.ctx, conn, client)
-	require.NoError(s.T(), err)
-
-	s.True(conn.closed, "connection should be closed after handling")
+	s.Require().NoError(err)
 
 	s.Equal("42", client.capturedRequests[0].IndexReport.VsockCid)
+
+	s.True(conn.closed)
 }
 
 func (s *relayTestSuite) TestVsockConnectionHandlerRejectsMalformedData() {
@@ -44,9 +56,9 @@ func (s *relayTestSuite) TestVsockConnectionHandlerRejectsMalformedData() {
 	client := newMockSensorClient()
 
 	err := handleVsockConnection(s.ctx, conn, client)
-	require.Error(s.T(), err)
+	s.Error(err)
 
-	s.True(conn.closed, "connection should be closed after handling")
+	s.True(conn.closed)
 }
 
 func (s *relayTestSuite) TestReadFromConnSizeLimit() {
@@ -79,7 +91,7 @@ func (s *relayTestSuite) TestReadFromConnSizeLimit() {
 			if c.shouldError {
 				s.Error(err)
 			} else {
-				s.NoError(err)
+				s.Require().NoError(err)
 				s.Equal(data, readData)
 			}
 		})
@@ -99,7 +111,7 @@ func (s *relayTestSuite) TestSendReportToSensorRetries() {
 			respSuccess: false,
 			shouldRetry: true,
 		},
-		"nonretryable error is not retried": {
+		"non-retryable error is not retried": {
 			err:         errox.NotImplemented,
 			respSuccess: false,
 			shouldRetry: false,
@@ -123,13 +135,12 @@ func (s *relayTestSuite) TestSendReportToSensorRetries() {
 			defer cancel()
 
 			err := handleVsockConnection(ctx, conn, client)
-
-			s.Error(err)
-			s.True(conn.closed, "connection should be closed after handling")
+			s.Require().Error(err)
 
 			retried := len(client.capturedRequests) > 1
-
 			s.Equal(c.shouldRetry, retried)
+
+			s.True(conn.closed)
 		})
 	}
 }
@@ -137,6 +148,6 @@ func (s *relayTestSuite) TestSendReportToSensorRetries() {
 func (s *relayTestSuite) defaultVsockConn() *mockVsockConn {
 	c := newMockVsockConn().withVsockCID(1234)
 	c, err := c.withIndexReport(&v1.IndexReport{})
-	s.NoError(err)
+	s.Require().NoError(err)
 	return c
 }
