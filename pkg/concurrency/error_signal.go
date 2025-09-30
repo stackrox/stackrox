@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync/atomic"
 	"time"
+	"unsafe"
 
 	"github.com/pkg/errors"
 )
@@ -30,7 +31,7 @@ type ReadOnlyErrorSignal interface {
 }
 
 type errorSignalState struct {
-	err     atomic.Pointer[error]
+	errPtr  unsafe.Pointer
 	signalC chan struct{}
 }
 
@@ -109,11 +110,12 @@ func (s *errorSignalState) Snapshot() ReadOnlyErrorSignal {
 }
 
 func (s *errorSignalState) getErrPtr() *error {
-	return s.err.Load()
+	return (*error)(atomic.LoadPointer(&s.errPtr))
 }
 
 func (s *errorSignalState) trigger(err error) bool {
-	if !s.err.CompareAndSwap(nil, &err) {
+	//nolint:gosec // G103
+	if !atomic.CompareAndSwapPointer(&s.errPtr, nil, unsafe.Pointer(&err)) {
 		return false
 	}
 	close(s.signalC)
@@ -128,27 +130,25 @@ func newErrorSignalState() *errorSignalState {
 
 var (
 	defaultErrorSignalState = &errorSignalState{
+		//nolint:gosec // G103
+		errPtr:  unsafe.Pointer(&[]error{nil}[0]),
 		signalC: closedCh,
 	}
 )
-
-func init() {
-	nilErr := error(nil)
-	defaultErrorSignalState.err.Store(&nilErr)
-}
 
 // ErrorSignal is a signal that supports atomically storing an error whenever it is triggered. It is safe
 // to trigger the signal concurrently from different goroutines, but only the first successful call to
 // `SignalWithError` will result in the error being stored.
 type ErrorSignal struct {
-	state atomic.Pointer[errorSignalState]
+	statePtr unsafe.Pointer
 }
 
 // NewErrorSignal creates and returns a new error signal.
 func NewErrorSignal() ErrorSignal {
-	es := ErrorSignal{}
-	es.state.Store(newErrorSignalState())
-	return es
+	return ErrorSignal{
+		//nolint:gosec // G103
+		statePtr: unsafe.Pointer(newErrorSignalState()),
+	}
 }
 
 // WaitC returns a WaitableChan for this error signal.
@@ -190,7 +190,8 @@ func (s *ErrorSignal) ErrorAndReset() (Error, bool) {
 	// concurrent reset happened and succeeded, this Reset invocation will not. If the signal has been reset and
 	// triggered in the meantime, we fail, too, pretending this Reset invocation happened as the first action in a
 	// Reset - Trigger - Reset sequence.
-	if !s.state.CompareAndSwap(rawState, newErrorSignalState()) {
+	//nolint:gosec // G103
+	if !atomic.CompareAndSwapPointer(&s.statePtr, unsafe.Pointer(rawState), unsafe.Pointer(newErrorSignalState())) {
 		return nil, false
 	}
 	return state.Err(), true
@@ -223,7 +224,7 @@ func (s *ErrorSignal) SignalWithError(err error) bool {
 }
 
 func (s *ErrorSignal) getState() *errorSignalState {
-	return s.state.Load()
+	return (*errorSignalState)(atomic.LoadPointer(&s.statePtr))
 }
 
 func (s *ErrorSignal) getStateOrDefault() *errorSignalState {
