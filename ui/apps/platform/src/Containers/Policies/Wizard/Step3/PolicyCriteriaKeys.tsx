@@ -62,7 +62,6 @@ function PolicyCriteriaKeys({ keys }: PolicyCriteriaKeysProps) {
                 >
                     <Text component="h3">{domain}</Text>
                     <Flex
-                        key={domain}
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsNone' }}
                     >
