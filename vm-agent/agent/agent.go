@@ -17,19 +17,21 @@ import (
 type FakeAgent struct {
 	port         uint32
 	packageCount int
+	intervalMs   int
 }
 
 // NewFakeAgent creates a new fake agent
-func NewFakeAgent(port uint32, packageCount int) *FakeAgent {
+func NewFakeAgent(port uint32, packageCount int, intervalMs int) *FakeAgent {
 	return &FakeAgent{
 		port:         port,
 		packageCount: packageCount,
+		intervalMs:   intervalMs,
 	}
 }
 
 // Run starts the fake agent that generates and sends index reports
 func (a *FakeAgent) Run(ctx context.Context) error {
-	log.Printf("Fake agent starting - will send reports every 10 seconds on port %d", a.port)
+	log.Printf("Fake agent starting - will send reports every %d ms on port %d", a.intervalMs, a.port)
 
 	// Send first report immediately, then every 10 seconds
 	for {
@@ -53,12 +55,12 @@ func (a *FakeAgent) Run(ctx context.Context) error {
 			log.Printf("✅ Successfully sent index report with vsock_cid: %s, hash_id: %s", report.VsockCid, report.IndexV4.HashId)
 		}
 
-		// Wait 10 seconds before next report
+		// Wait before next report
 		select {
 		case <-ctx.Done():
 			log.Println("Fake agent stopping")
 			return nil
-		case <-time.After(10 * time.Second):
+		case <-time.After(time.Duration(a.intervalMs) * time.Millisecond):
 			// Continue to next iteration
 		}
 	}
@@ -165,28 +167,35 @@ func (a *FakeAgent) generatePackages() []*v4.Package {
 		{"fail2ban", "0.11.1-1", "binary", "amd64", "sqlite:usr/share/rpm"},
 	}
 
-	// Limit the number of packages based on the configured count
 	packageCount := a.packageCount
-	if packageCount > len(packageTemplates) {
-		packageCount = len(packageTemplates)
-	}
 	if packageCount < 1 {
 		packageCount = 1
 	}
 
 	var packages []*v4.Package
 	for i := 0; i < packageCount; i++ {
-		template := packageTemplates[i]
+		// Cycle through templates, reusing them with variations
+		templateIdx := i % len(packageTemplates)
+		template := packageTemplates[templateIdx]
 
-		// Add some variation to versions occasionally
+		// Add variations to make packages unique when reusing templates
+		cycle := i / len(packageTemplates)
 		version := template.version
-		if rand.Float32() < 0.1 { // 10% chance to vary version
+		name := template.name
+
+		if cycle > 0 {
+			// Add suffix to name for uniqueness
+			name = fmt.Sprintf("%s-%d", template.name, cycle)
+			// Vary the version
+			version = fmt.Sprintf("%s.%d", template.version, cycle)
+		} else if rand.Float32() < 0.1 {
+			// 10% chance to vary version for first cycle
 			version = fmt.Sprintf("%s-modified", template.version)
 		}
 
 		packages = append(packages, &v4.Package{
 			Id:        fmt.Sprintf("pkg-%d", i+1),
-			Name:      template.name,
+			Name:      name,
 			Version:   version,
 			Kind:      template.kind,
 			Arch:      template.arch,
