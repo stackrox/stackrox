@@ -30,6 +30,7 @@ func (m *VirtualMachine) CloneVT() *VirtualMachine {
 	r.Name = m.Name
 	r.ClusterId = m.ClusterId
 	r.VsockCid = m.VsockCid
+	r.VsockCidSet = m.VsockCidSet
 	r.State = m.State
 	if rhs := m.Facts; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
@@ -82,6 +83,9 @@ func (this *VirtualMachine) EqualVT(that *VirtualMachine) bool {
 	if this.VsockCid != that.VsockCid {
 		return false
 	}
+	if this.VsockCidSet != that.VsockCidSet {
+		return false
+	}
 	if this.State != that.State {
 		return false
 	}
@@ -127,6 +131,16 @@ func (m *VirtualMachine) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if m.State != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.State))
+		i--
+		dAtA[i] = 0x40
+	}
+	if m.VsockCidSet {
+		i--
+		if m.VsockCidSet {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
 		i--
 		dAtA[i] = 0x38
 	}
@@ -217,6 +231,9 @@ func (m *VirtualMachine) SizeVT() (n int) {
 	}
 	if m.VsockCid != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.VsockCid))
+	}
+	if m.VsockCidSet {
+		n += 2
 	}
 	if m.State != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.State))
@@ -529,6 +546,26 @@ func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VsockCidSet", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.VsockCidSet = bool(v != 0)
+		case 8:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
 			}
@@ -897,6 +934,26 @@ func (m *VirtualMachine) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VsockCidSet", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.VsockCidSet = bool(v != 0)
+		case 8:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
 			}
