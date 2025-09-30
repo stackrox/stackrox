@@ -52,5 +52,6 @@ func init() {
 		IndexReportsReceived,
 		IndexReportsNotRelayed,
 		IndexReportsRelayed,
+		VsockConnectionsAccepted,
 	)
 }
