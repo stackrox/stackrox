@@ -101,7 +101,7 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 		}
 	}()
 
-	metrics.IndexReportsReceived.Inc()
+	metrics.VsockConnectionsAccepted.Inc()
 
 	log.Debugf("Handling vsock connection from %s", conn.RemoteAddr())
 
@@ -124,6 +124,7 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 	if err != nil {
 		return errors.Wrap(err, "parsing index report data")
 	}
+	metrics.IndexReportsReceived.Inc()
 
 	// Fill the vsock context ID - at the moment the agent does not populate this field; if that changes, this can be
 	// replaced with a sanity check.

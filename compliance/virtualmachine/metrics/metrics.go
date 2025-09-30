@@ -36,6 +36,17 @@ var IndexReportsRelayed = prometheus.NewCounter(
 	},
 )
 
+// VsockConnectionsAccepted is a counter for the number of vsock connections accepted by this relay. A mismatch between
+// this and IndexReportsReceived indicates issues reading or parsing data
+var VsockConnectionsAccepted = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_vsock_connections_accepted_total",
+		Help:      "Total number of vsock connections accepted by this Relay",
+	},
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsReceived,
