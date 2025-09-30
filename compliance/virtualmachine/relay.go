@@ -81,10 +81,15 @@ func (r *Relay) Run(ctx context.Context) error {
 			time.Sleep(time.Second) // Prevent a tight loop
 			continue
 		}
+
 		go func() {
 			if err := handleVsockConnection(ctx, conn, r.sensorClient); err != nil {
 				log.Errorf("Error handling vsock connection: %v", err)
 			}
+			if err := conn.Close(); err != nil {
+				log.Errorf("Failed to close connection: %v", err)
+			}
+
 		}()
 	}
 }
@@ -99,12 +104,6 @@ func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 }
 
 func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
-	defer func() {
-		if err := conn.Close(); err != nil {
-			log.Errorf("Failed to close connection: %v", err)
-		}
-	}()
-
 	metrics.VsockConnectionsAccepted.Inc()
 
 	log.Debugf("Handling vsock connection from %s", conn.RemoteAddr())
