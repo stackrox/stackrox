@@ -1,10 +1,12 @@
 package manager
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
@@ -34,9 +36,10 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 	}
 
 	tt := map[string]struct {
-		events []event
+		events      []event
+		plopEnabled bool
 	}{
-		"open-e1p1 followed by close-e1p1 should yield empty deduper and mapping": {
+		"open-e1p1 followed by close-e1p1 should yield empty deduper": {
 			events: []event{
 				{
 					description:                 "Open endpoint e1 with new process p1",
@@ -59,6 +62,32 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedUpdatedProcesses:    &p1,
 				},
 			},
+			plopEnabled: true,
+		},
+		"open-e1p1 followed by close-e1p1 on disabled PLoP should yield no updates and empty deduper": {
+			events: []event{
+				{
+					description:                 "Open endpoint e1 with new process p1",
+					input:                       e1p1open,
+					expectedNumContainerLookups: 1,
+					expectedNumUpdatesEndpoint:  1,
+					expectedNumUpdatesProcess:   0,
+					expectedDeduperState: map[string]string{
+						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): "",
+					},
+					expectedUpdatedProcesses: nil,
+				},
+				{
+					description:                 "Closing endpoint e1 with new process p1",
+					input:                       e1p1closed,
+					expectedNumContainerLookups: 1,
+					expectedNumUpdatesEndpoint:  1,
+					expectedNumUpdatesProcess:   0,
+					expectedDeduperState:        map[string]string{},
+					expectedUpdatedProcesses:    nil,
+				},
+			},
+			plopEnabled: false,
 		},
 		"open-e1p1 followed by open-e1p2 should not keep p1 in deduper (replacing behavior)": {
 			events: []event{
@@ -85,6 +114,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedUpdatedProcesses: &p2,
 				},
 			},
+			plopEnabled: true,
 		},
 		"duplicated inputs should not yield duplicated updates": {
 			events: []event{
@@ -108,12 +138,15 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedUpdatedProcesses: nil,
 				},
 			},
+			plopEnabled: true,
 		},
 	}
 
 	for name, tc := range tt {
 		b.Run(name, func() {
 			b.uc.ResetState()
+			b.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), strconv.FormatBool(tc.plopEnabled))
+
 			for i, e := range tc.events {
 				b.T().Logf("event[%d]: %s", i, e.description)
 				b.expectContainerLookups(e.expectedNumContainerLookups)
@@ -138,6 +171,8 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					b.Equal(e.expectedUpdatedProcesses.ProcessName, updatesP[0].GetProcess().GetProcessName(), "Updated process name should match")
 					b.Equal(e.expectedUpdatedProcesses.ProcessArgs, updatesP[0].GetProcess().GetProcessArgs(), "Updated process args should match")
 					b.Equal(e.expectedUpdatedProcesses.ProcessExec, updatesP[0].GetProcess().GetProcessExecFilePath(), "Updated process exec should match")
+				} else {
+					b.Equal(0, len(updatesP), "Number of process updates should be 0 when 0 is expected")
 				}
 			}
 		})
