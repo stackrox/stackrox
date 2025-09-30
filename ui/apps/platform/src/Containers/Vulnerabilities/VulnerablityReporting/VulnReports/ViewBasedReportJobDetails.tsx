@@ -20,10 +20,28 @@ import {
 } from 'utils/searchUtils';
 import { isVulnerabilitySeverity } from 'types/cve.proto';
 import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
+import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
+import {
+    clusterSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageSearchFilterConfig,
+    namespaceSearchFilterConfig,
+} from '../../searchFilterConfig';
 
-const toTitleCase = (str: string) => {
-    return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
-};
+// Build combined config for all possible filters in view-based reports
+const viewBasedReportFilterConfig = [
+    imageCVESearchFilterConfig,
+    imageSearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
+];
+
+// Create filter chip descriptors with proper display names and rendering
+const filterChipDescriptors = makeFilterChipDescriptors(viewBasedReportFilterConfig);
 
 export type ViewBasedReportJobDetailsProps = {
     reportSnapshot: ViewBasedReportSnapshot;
@@ -55,20 +73,20 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
         if (!value) {
             return null;
         }
-        if (typeof value === 'string') {
-            return (
-                <ChipGroup key={key} categoryName={toTitleCase(key)}>
-                    <Chip key={value} isReadOnly>
-                        {value}
-                    </Chip>
-                </ChipGroup>
-            );
-        }
+
+        // Find the descriptor for this filter to get proper display name and rendering
+        const descriptor = filterChipDescriptors.find(
+            (desc) => desc.searchFilterName.toLowerCase() === key.toLowerCase()
+        );
+        const categoryName = descriptor?.displayName || key;
+
+        const values = typeof value === 'string' ? [value] : value;
+
         return (
-            <ChipGroup key={key} categoryName={toTitleCase(key)}>
-                {value.map((currentChip) => (
-                    <Chip key={currentChip} isReadOnly>
-                        {currentChip}
+            <ChipGroup key={key} categoryName={categoryName}>
+                {values.map((currentValue) => (
+                    <Chip key={currentValue} isReadOnly>
+                        {descriptor?.render ? descriptor.render(currentValue) : currentValue}
                     </Chip>
                 ))}
             </ChipGroup>
