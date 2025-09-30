@@ -601,13 +601,13 @@ class AdmissionControllerTest extends BaseSpecification {
         }
     }
 
-    @Retry(attempts = 30, delay = 3)
+    @Retry(attempts = 30, delay = 3 * 1000)
     static void waitForSensorHealthy() {
         ClusterOuterClass.ClusterHealthStatus status = ClusterService.getCluster().healthStatus
         assert status.sensorHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
     }
 
-    @Retry(attempts = 60, delay = 3)
+    @Retry(attempts = 60, delay = 3 * 1000)
     static void waitForSensorNotHealthy() {
         ClusterOuterClass.ClusterHealthStatus status = ClusterService.getCluster().healthStatus
         assert status.sensorHealthStatus != ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY

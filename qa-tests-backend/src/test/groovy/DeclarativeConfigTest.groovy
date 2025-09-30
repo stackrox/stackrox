@@ -779,7 +779,7 @@ splunk:
 
     // validateExpectedHealthStatus validates that specific resources have expected health status
     // This replaces brittle count-based assertions with semantic validation
-    @Retry(attempts = RETRIES, delay = PAUSE_SECS)
+    @Retry(attempts = RETRIES, delay = PAUSE_SECS * 1000)
     private static void validateExpectedHealthStatus(List<String> expectedHealthyResources,
                                                      List<String> expectedUnhealthyResources = []) {
         def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
@@ -822,7 +822,7 @@ splunk:
     }
 
     // validateCleanupState validates that only config maps remain after cleanup
-    @Retry(attempts = DELETION_RETRIES, delay = PAUSE_SECS)
+    @Retry(attempts = DELETION_RETRIES, delay = PAUSE_SECS * 1000)
     private static void validateCleanupState() {
         def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
         def actualHealths = response.getHealthsList()

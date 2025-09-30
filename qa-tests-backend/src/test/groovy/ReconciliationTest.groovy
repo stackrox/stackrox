@@ -95,7 +95,7 @@ class ReconciliationTest extends BaseSpecification {
         }
     }
 
-    @Retry(attempts = 30, delay = 5)
+    @Retry(attempts = 30, delay = 5 * 1000)
     private ReconciliationStatsForCluster waitForReconciliationWithDeletions() {
         BaseService.useBasicAuth()
         def clusterId = ClusterService.getClusterId()
