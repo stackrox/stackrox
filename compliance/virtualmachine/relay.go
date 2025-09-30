@@ -74,7 +74,9 @@ func (r *Relay) Run(ctx context.Context) error {
 		default:
 			conn, err := r.vsockServer.listener.Accept()
 			if err != nil {
-				return err
+				log.Errorf("Error accepting connection: %v", err)
+				time.Sleep(time.Second) // Prevent a tight loop
+				continue
 			}
 			go func() {
 				if err := handleVsockConnection(ctx, conn, r.sensorClient); err != nil {
