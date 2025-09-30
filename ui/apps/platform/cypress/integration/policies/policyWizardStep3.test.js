@@ -100,6 +100,7 @@ describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
         const GROUPS_AVAILABLE_FOR_DEPLOY_POLICY = [
             'Image registry',
             'Image contents',
+            'Image scanning',
             'Container configuration',
             'Deployment metadata',
             'Storage',
