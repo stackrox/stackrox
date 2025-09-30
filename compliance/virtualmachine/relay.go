@@ -223,9 +223,9 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 		retry.WithExponentialBackoff())
 
 	if err != nil {
-		metrics.IndexReportsNotRelayed.Inc()
+		metrics.IndexReportsSentToSensor.With(metrics.StatusFailLabels).Inc()
 	} else {
-		metrics.IndexReportsRelayed.Inc()
+		metrics.IndexReportsSentToSensor.With(metrics.StatusSuccessLabels).Inc()
 	}
 
 	return err
