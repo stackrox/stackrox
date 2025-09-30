@@ -4,6 +4,7 @@ package storage;
 
 import "google/protobuf/timestamp.proto";
 import "storage/cve.proto";
+import "storage/image.proto";
 
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 message VirtualMachine {
@@ -55,6 +56,7 @@ message EmbeddedVirtualMachineScanComponent {
   }
   float risk_score = 4;
   repeated VirtualMachineVulnerability vulnerabilities = 5;
+  SourceType source = 6;
 }
 
 message VirtualMachineVulnerability {
@@ -84,6 +86,7 @@ message VirtualMachineCVEInfo {
   // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
   repeated CVSSScore cvss_metrics = 8;
   VirtualMachineEPSS epss = 9;
+  VirtualMachineAdvisory advisory = 10;
 }
 
 // VirtualMachineEPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
@@ -91,4 +94,9 @@ message VirtualMachineCVEInfo {
 message VirtualMachineEPSS {
   float epss_probability = 1;
   float epss_percentile = 2;
+}
+
+message VirtualMachineAdvisory {
+  string name = 1;
+  string link = 2;
 }

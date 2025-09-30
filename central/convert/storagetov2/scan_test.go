@@ -6,6 +6,7 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -103,6 +104,7 @@ func TestEmbeddedVirtualMachineScanComponent(t *testing.T) {
 				Vulnerabilities: []*storage.VirtualMachineVulnerability{
 					storageVirtualMachineTestVuln,
 				},
+				Source: storage.SourceType_INFRASTRUCTURE,
 			},
 			expected: &v2.ScanComponent{
 				Name:      testComponentName,
@@ -111,6 +113,7 @@ func TestEmbeddedVirtualMachineScanComponent(t *testing.T) {
 				Vulns: []*v2.EmbeddedVulnerability{
 					v2VirtualMachineTestVuln,
 				},
+				Source: v2.SourceType_INFRASTRUCTURE,
 			},
 		},
 		{
@@ -144,6 +147,57 @@ func TestEmbeddedVirtualMachineScanComponent(t *testing.T) {
 		t.Run(tc.name, func(it *testing.T) {
 			result := EmbeddedVirtualMachineScanComponent(tc.input)
 			protoassert.Equal(it, tc.expected, result)
+		})
+	}
+}
+
+func TestConvertSourceType(t *testing.T) {
+	tests := map[string]struct {
+		input    storage.SourceType
+		expected v2.SourceType
+	}{
+		"OS": {
+			input:    storage.SourceType_OS,
+			expected: v2.SourceType_OS,
+		},
+		"PYTHON": {
+			input:    storage.SourceType_PYTHON,
+			expected: v2.SourceType_PYTHON,
+		},
+		"JAVA": {
+			input:    storage.SourceType_JAVA,
+			expected: v2.SourceType_JAVA,
+		},
+		"RUBY": {
+			input:    storage.SourceType_RUBY,
+			expected: v2.SourceType_RUBY,
+		},
+		"NODEJS": {
+			input:    storage.SourceType_NODEJS,
+			expected: v2.SourceType_NODEJS,
+		},
+		"GO": {
+			input:    storage.SourceType_GO,
+			expected: v2.SourceType_GO,
+		},
+		"DOTNETCORERUNTIME": {
+			input:    storage.SourceType_DOTNETCORERUNTIME,
+			expected: v2.SourceType_DOTNETCORERUNTIME,
+		},
+		"INFRASTRUCTURE": {
+			input:    storage.SourceType_INFRASTRUCTURE,
+			expected: v2.SourceType_INFRASTRUCTURE,
+		},
+		"Default": {
+			input:    storage.SourceType(-1),
+			expected: v2.SourceType_OS,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(it *testing.T) {
+			result := convertSourceType(tc.input)
+			assert.Equal(it, tc.expected, result)
 		})
 	}
 }
