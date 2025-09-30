@@ -114,8 +114,8 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 	}
 
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
-	timeoutSeconds := 10
-	data, err := readFromConn(conn, maxSizeBytes, timeoutSeconds)
+	timeout := 10 * time.Second
+	data, err := readFromConn(conn, maxSizeBytes, timeout)
 	if err != nil {
 		return errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}
@@ -164,8 +164,8 @@ func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 	return report, nil
 }
 
-func readFromConn(conn net.Conn, maxSize int, timeoutSeconds int) ([]byte, error) {
-	if err := conn.SetReadDeadline(time.Now().Add(time.Duration(timeoutSeconds) * time.Second)); err != nil {
+func readFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, error) {
+	if err := conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
 		return nil, errors.Wrap(err, "setting read deadline on connection")
 	}
 

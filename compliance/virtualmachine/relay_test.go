@@ -78,11 +78,11 @@ func (s *relayTestSuite) TestReadFromConn_EnforcesSizeLimit() {
 	}
 
 	conn := s.defaultVsockConn().withData(data)
-	connDeadlineSeconds := 10 // Not relevant in these tests
+	connTimeout := 10 * time.Second // Not relevant in these tests
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			readData, err := readFromConn(conn, c.sizeLimit, connDeadlineSeconds)
+			readData, err := readFromConn(conn, c.sizeLimit, connTimeout)
 			if c.shouldError {
 				s.Error(err)
 			} else {
