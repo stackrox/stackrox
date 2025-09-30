@@ -5,6 +5,7 @@ package evaluator
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -206,16 +208,48 @@ func BenchmarkEvaluateBaselinesAndPersistResult(b *testing.B) {
 			require.NoError(b, err)
 			require.NotNil(b, baseline)
 
+			var maxHeap uint64
+			var maxHeapObj uint64
+
+			runtime.GC()
 			b.ResetTimer()
 
-			// Run the benchmark
-			for i := 0; i < b.N; i++ {
-				violatingProcesses, err := evaluator.EvaluateBaselinesAndPersistResult(deployment)
-				require.NoError(b, err)
+			ticker := time.NewTicker(10 * time.Millisecond)
 
-				// Ensure we have realistic violation patterns
-				_ = violatingProcesses // Startup processes are filtered out by evaluator
+			go func() {
+				for range ticker.C {
+					var m runtime.MemStats
+					runtime.ReadMemStats(&m)
+					if m.Alloc > maxHeap {
+						maxHeap = m.Alloc
+					}
+					if m.HeapObjects > maxHeapObj {
+						maxHeapObj = m.HeapObjects
+					}
+				}
+			}()
+
+			// Run the benchmark
+			for b.Loop() {
+				runtime.GC()
+				wg := sync.WaitGroup{}
+				const parallelism = 10
+				wg.Add(parallelism)
+				for j := 0; j < parallelism; j++ {
+					go func() {
+						defer wg.Done()
+						violatingProcesses, err := evaluator.EvaluateBaselinesAndPersistResult(deployment)
+						require.NoError(b, err)
+						// Ensure we have realistic violation patterns
+						_ = violatingProcesses // Startup processes are filtered out by evaluator
+					}()
+				}
+				wg.Wait()
 			}
+			// Report custom metric
+			ticker.Stop()
+			b.ReportMetric(float64(maxHeap), "max_heap_bytes")
+			b.ReportMetric(float64(maxHeapObj), "max_heap_objects")
 		})
 	}
 }
