@@ -40,6 +40,8 @@ message VirtualMachineScan {
   string operating_system = 2;
   enum Note {
     UNSET = 0;
+    OS_UNKNOWN = 1;
+    OS_UNSUPPORTED = 2;
   }
   repeated Note notes = 3;
   repeated EmbeddedVirtualMachineScanComponent components = 4;
@@ -57,6 +59,10 @@ message EmbeddedVirtualMachineScanComponent {
 
 message VirtualMachineVulnerability {
   VirtualMachineCVEInfo cve_base_info = 1;
+  VulnerabilitySeverity severity = 2;
+  oneof set_fixed_by {
+    string fixed_by = 3;
+  }
 }
 
 // VirtualMachineCVEInfo is a clone of the CVEInfo message from cve.proto, stripped from its search tags
@@ -64,12 +70,6 @@ message VirtualMachineCVEInfo {
   message Reference {
     string URI = 1;
     repeated string tags = 2;
-  }
-  // ScoreVersion can be deprecated ROX-26066
-  enum ScoreVersion {
-    V2 = 0; // No unset for automatic backwards compatibility
-    V3 = 1;
-    UNKNOWN = 2;
   }
   string cve = 1;
   string summary = 2;
@@ -79,15 +79,11 @@ message VirtualMachineCVEInfo {
   // Time when the CVE was first seen in the system.
   google.protobuf.Timestamp created_at = 5;
   google.protobuf.Timestamp last_modified = 6;
-  ScoreVersion score_version = 7;
-  // CVSSV2 CVSSV3 ScoreVersion can be deprecated ROX-26066
-  CVSSV2 cvss_v2 = 8;
-  CVSSV3 cvss_v3 = 9;
-  repeated Reference references = 10;
+  repeated Reference references = 7;
 
   // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
-  repeated CVSSScore cvss_metrics = 11;
-  VirtualMachineEPSS epss = 12;
+  repeated CVSSScore cvss_metrics = 8;
+  VirtualMachineEPSS epss = 9;
 }
 
 // VirtualMachineEPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
