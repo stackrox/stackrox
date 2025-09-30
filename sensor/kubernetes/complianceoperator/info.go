@@ -23,7 +23,7 @@ func GetInstalledVersion(ctx context.Context, ns string, cli kubernetes.Interfac
 
 	foundInNamespace := complianceOperatorDeployment.GetNamespace()
 	version := extractVersionFromLabels(complianceOperatorDeployment.Labels)
-	log.Debugf("Found CO version %s in namespace %s", version, foundInNamespace)
+	log.Debugf("Found compliance-operator version %s in namespace %s", version, foundInNamespace)
 	if version == "" {
 		err = ErrUnableToExtractVersion
 	}
