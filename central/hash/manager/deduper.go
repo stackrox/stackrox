@@ -188,12 +188,11 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 	if ok && val.val == msg.GetEvent().GetSensorHash() {
 		delete(d.received, key)
 	}
-	if !ok {
-		dedupingHashCounterVec.With(prometheus.Labels{
-			"cluster":      d.clusterID,
-			"ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()),
-			"Operation":    ops.Add.String()}).Inc()
-	}
+
+	dedupingHashCounterVec.With(prometheus.Labels{
+		"cluster":      d.clusterID,
+		"ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()),
+		"Operation":    ops.Add.String()}).Inc()
 	d.successfullyProcessed[key] = &entry{
 		val:       msg.GetEvent().GetSensorHash(),
 		processed: true,
