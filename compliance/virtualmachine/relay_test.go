@@ -26,20 +26,7 @@ func (s *relayTestSuite) SetupTest() {
 	s.ctx = context.Background()
 }
 
-func (s *relayTestSuite) TestCtxCancellationHandledDuringGRPC() {
-	conn := s.defaultVsockConn()
-	client := newMockSensorClient().withDelay(1 * time.Second)
-	ctx, cancel := context.WithTimeout(s.ctx, 100*time.Millisecond) // times out before sensor replies
-	defer cancel()
-
-	err := handleVsockConnection(ctx, conn, client)
-	s.Error(err)
-	s.Contains(err.Error(), "context deadline exceeded")
-
-	s.True(conn.closed)
-}
-
-func (s *relayTestSuite) TestVsockConnectionHandlerInjectsVsockCID() {
+func (s *relayTestSuite) TestHandleVsockConnection_InjectsVsockCID() {
 	conn := s.defaultVsockConn().withVsockCID(42)
 	client := newMockSensorClient()
 
@@ -51,7 +38,7 @@ func (s *relayTestSuite) TestVsockConnectionHandlerInjectsVsockCID() {
 	s.True(conn.closed)
 }
 
-func (s *relayTestSuite) TestVsockConnectionHandlerRejectsMalformedData() {
+func (s *relayTestSuite) TestHandleVsockConnection_RejectsMalformedData() {
 	conn := s.defaultVsockConn().withData([]byte("malformed-data"))
 	client := newMockSensorClient()
 
@@ -61,7 +48,20 @@ func (s *relayTestSuite) TestVsockConnectionHandlerRejectsMalformedData() {
 	s.True(conn.closed)
 }
 
-func (s *relayTestSuite) TestReadFromConnSizeLimit() {
+func (s *relayTestSuite) TestHandleVsockConnection_HandlesContextCancellation() {
+	conn := s.defaultVsockConn()
+	client := newMockSensorClient().withDelay(1 * time.Second)
+	ctx, cancel := context.WithTimeout(s.ctx, 100*time.Millisecond) // times out before sensor replies
+	defer cancel()
+
+	err := handleVsockConnection(ctx, conn, client)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "context deadline exceeded")
+
+	s.True(conn.closed)
+}
+
+func (s *relayTestSuite) TestReadFromConn_EnforcesSizeLimit() {
 	data := []byte("Hello, world!")
 
 	cases := map[string]struct {
@@ -98,9 +98,7 @@ func (s *relayTestSuite) TestReadFromConnSizeLimit() {
 	}
 }
 
-func (s *relayTestSuite) TestSendReportToSensorRetries() {
-	conn := s.defaultVsockConn()
-
+func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 	cases := map[string]struct {
 		err         error
 		respSuccess bool
@@ -134,13 +132,11 @@ func (s *relayTestSuite) TestSendReportToSensorRetries() {
 			ctx, cancel := context.WithTimeout(s.ctx, 500*time.Millisecond)
 			defer cancel()
 
-			err := handleVsockConnection(ctx, conn, client)
+			err := sendReportToSensor(ctx, &v1.IndexReport{}, client)
 			s.Require().Error(err)
 
 			retried := len(client.capturedRequests) > 1
 			s.Equal(c.shouldRetry, retried)
-
-			s.True(conn.closed)
 		})
 	}
 }
