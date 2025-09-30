@@ -93,7 +93,7 @@ func IsStartupProcessView(process *views.ProcessIndicatorRiskView) bool {
 	if process.SignalTime == nil {
 		return false
 	}
-	durationBetweenProcessAndContainerStart := protoutils.Sub(protocompat.ConvertTimeToTimestampOrNil(process.SignalTime), protocompat.ConvertTimeToTimestampOrNil(process.ContainerStartTime))
+	durationBetweenProcessAndContainerStart := process.SignalTime.Sub(*process.ContainerStartTime)
 	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
 }
 
