@@ -194,7 +194,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             Kubernetes resource operations, depending on the event source selected.
                             When enforced, runtime policies that inspect workload activity terminate
                             the offending pod. Enforcement is not available for the policies
-                            inspecting sensitive operations via the Kubernetes Audit Log.
+                            inspecting sensitive operations via the Kubernetes audit log.
                         </p>
                         <div className="pf-v5-u-pt-md">
                             Learn more about policy{' '}
