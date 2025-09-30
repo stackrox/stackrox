@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 )
 
@@ -58,7 +59,7 @@ func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.Virtu
 		return errors.Wrap(err, "failed to get vulnerability report for VM")
 	}
 
-	vm.Scan = toVirtualMachineScan(vr)
+	vm.Scan = scannerv4.ToVirtualMachineScan(vr)
 	log.Debugf("Enriched VM %s with %d components", vm.GetName(), len(vm.GetScan().GetComponents()))
 	return nil
 }

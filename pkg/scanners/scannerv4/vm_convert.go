@@ -10,7 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func toVirtualMachineScan(r *v4.VulnerabilityReport) *storage.VirtualMachineScan {
+// ToVirtualMachineScan converts a scan report to the format needed to enrich a virtual machine with scan data.
+func ToVirtualMachineScan(r *v4.VulnerabilityReport) *storage.VirtualMachineScan {
 	return &storage.VirtualMachineScan{
 		ScanTime: protocompat.TimestampNow(),
 		// TODO: find an actual operating system source
@@ -74,16 +75,37 @@ func toVirtualMachineScanComponentVulnerabilities(
 				Summary:     reportVulnerability.GetDescription(),
 				Link:        link(reportVulnerability.GetLink()),
 				PublishedOn: reportVulnerability.GetIssued(),
+				Advisory:    toVirtualMachineAdvisory(reportVulnerability.GetAdvisory()),
 			},
+			Severity: normalizedSeverity(reportVulnerability.GetNormalizedSeverity()),
 		}
 		vulnerabilityMetrics := reportVulnerability.GetCvssMetrics()
 		if err := setVirtualMachineScoresAndScoreVersions(vulnerability, vulnerabilityMetrics); err != nil {
 			utils.Should(err)
 		}
 
+		if reportVulnerability.GetFixedInVersion() != "" {
+			vulnerability.SetFixedBy = &storage.VirtualMachineVulnerability_FixedBy{
+				FixedBy: reportVulnerability.GetFixedInVersion(),
+			}
+		}
+
 		result = append(result, vulnerability)
 	}
 	return result
+}
+
+func toVirtualMachineAdvisory(
+	advisory *v4.VulnerabilityReport_Advisory,
+) *storage.VirtualMachineAdvisory {
+	if advisory == nil {
+		return nil
+	}
+	return &storage.VirtualMachineAdvisory{
+		Name: advisory.GetName(),
+		Link: advisory.GetLink(),
+	}
+	return nil
 }
 
 func setVirtualMachineScoresAndScoreVersions(
@@ -113,15 +135,11 @@ func setVirtualMachineScoresAndScoreVersions(
 			}
 		}
 		if cvss.GetV3() != nil {
-			baseScore, cvssV3, v3Err := toCVSSV3Scores(cvss, cve)
+			_, cvssV3, v3Err := toCVSSV3Scores(cvss, cve)
 			if v3Err == nil && cvssV3 != nil {
 				score.CvssScore = &storage.CVSSScore_Cvssv3{Cvssv3: cvssV3}
 				// CVSS metrics has maximum two entries, one from NVD, one from Rox updater if available
 				if len(cvssMetrics) == 1 || (len(cvssMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
-					vulnerability.CveBaseInfo.CvssV3 = cvssV3.CloneVT()
-					vulnerability.CveBaseInfo.ScoreVersion = storage.VirtualMachineCVEInfo_V3
-					_ = baseScore
-					// vulnerability.CveBaseInfo.Cvss = baseScore
 					vulnerability.CveBaseInfo.Link = cvss.GetUrl()
 				}
 			} else {

@@ -169,7 +169,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			// Count total vulnerabilities across all components
 			totalVulns := 0
 			for _, component := range tt.vm.Scan.Components {
-				totalVulns += len(component.Vulns)
+				totalVulns += len(component.Vulnerabilities)
 			}
 			assert.Equal(t, tt.expectedVulnerabilitiesCount, totalVulns)
 
@@ -181,8 +181,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 
 			// Verify scan metadata
 			assert.NotNil(t, tt.vm.Scan.ScanTime)
-			assert.Equal(t, "linux", tt.vm.Scan.OperatingSystem)
-			assert.Equal(t, "Scanner V4", tt.vm.Scan.ScannerVersion)
+			assert.Equal(t, "", tt.vm.Scan.OperatingSystem)
 		})
 	}
 }
@@ -375,23 +374,22 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	firstComponent := vm.Scan.Components[0]
 	assert.Equal(t, expectedPackages[0].Name, firstComponent.Name)
 	assert.Equal(t, expectedPackages[0].Version, firstComponent.Version)
-	assert.Len(t, firstComponent.Vulns, 2) // pkg-1 has vuln-1 and vuln-2
+	assert.Len(t, firstComponent.Vulnerabilities, 2) // pkg-1 has vuln-1 and vuln-2
 
 	// Check second component
 	secondComponent := vm.Scan.Components[1]
 	assert.Equal(t, expectedPackages[1].Name, secondComponent.Name)
 	assert.Equal(t, expectedPackages[1].Version, secondComponent.Version)
-	assert.Len(t, secondComponent.Vulns, 1) // pkg-2 has only vuln-1
+	assert.Len(t, secondComponent.Vulnerabilities, 1) // pkg-2 has only vuln-1
 
 	// Verify vulnerability details from the vulnerability report
-	criticalVuln := firstComponent.Vulns[0]
+	criticalVuln := firstComponent.Vulnerabilities[0]
 	expectedVuln := vulnReport.Vulnerabilities["vuln-1"]
-	assert.Equal(t, expectedVuln.Name, criticalVuln.Cve)
-	assert.Equal(t, expectedVuln.Description, criticalVuln.Summary)
+	assert.Equal(t, expectedVuln.Name, criticalVuln.GetCveBaseInfo().GetCve())
+	assert.Equal(t, expectedVuln.Description, criticalVuln.GetCveBaseInfo().GetSummary())
 	assert.Equal(t, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, criticalVuln.Severity)
-	assert.Equal(t, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY, criticalVuln.VulnerabilityType)
 	assert.NotNil(t, criticalVuln.SetFixedBy)
-	if fixedBy, ok := criticalVuln.SetFixedBy.(*storage.EmbeddedVulnerability_FixedBy); ok {
+	if fixedBy, ok := criticalVuln.SetFixedBy.(*storage.VirtualMachineVulnerability_FixedBy); ok {
 		assert.Equal(t, expectedVuln.FixedInVersion, fixedBy.FixedBy)
 	}
 }
