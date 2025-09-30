@@ -2,6 +2,7 @@ package virtualmachine
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"strconv"
@@ -97,7 +98,8 @@ func (r *Relay) Run(ctx context.Context) error {
 func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
 	if !ok {
-		return 0, errors.New("Failed to extract remote address from vsock connection")
+		return 0, fmt.Errorf("failed to extract remote address from vsock connection: unexpected type %T, value: %v",
+			conn.RemoteAddr(), conn.RemoteAddr())
 	}
 
 	return remoteAddr.ContextID, nil
