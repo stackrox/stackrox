@@ -317,7 +317,7 @@ spec:
           echo "Copying binaries to image directory..."
           cp bin/central image/rhel/bin/central
           cp bin/config-controller image/rhel/bin/config-controller
-          cp bin/roxctl image/rhel/bin/roxctl
+          cp bin/roxctl image/rhel/bin/roxctl-linux-arm64
           cp bin/migrator image/rhel/bin/migrator
           cp bin/kubernetes-sensor        image/rhel/bin/kubernetes-sensor
           cp bin/init-tls-certs    image/rhel/bin/init-tls-certs
@@ -530,57 +530,33 @@ spec:
     params:
     - name: IMAGE
       value: $(params.registry)/stackrox/main:$(tasks.get-git-commit.results.git-commit)
+    - name: BUILD_EXTRA_ARGS
+      value: "--build-arg TARGET_ARCH=arm64"
     - name: PUSH_EXTRA_ARGS
       value: "--tls-verify=false"
     - name: CONTEXT
       value: ./source/image/rhel
     - name: DOCKERFILE
       value: ./source/image/rhel/Dockerfile
+    - name: ADDITIONAL_TAG
+      value: $(params.image-tag)
     workspaces:
     - name: source
       workspace: shared-data
 
-  # Also tag with custom tag for easy reference
-  - name: tag-image
+  # Deploy StackRox using the newly built image
+  - name: deploy-stackrox
     runAfter: [build-image]
-    workspaces:
-    - name: shared-data
-      workspace: shared-data
-    taskSpec:
-      workspaces:
-      - name: shared-data
-      params:
-      - name: registry
-      - name: image-tag
-      - name: git-commit
-      steps:
-      - name: tag-image
-        image: quay.io/buildah/stable
-        script: |
-          #!/bin/bash
-          set -ex
-
-          # Tag with custom tag
-          buildah tag $(params.registry)/stackrox/main:$(params.git-commit) $(params.registry)/stackrox/main:$(params.image-tag)
-
-          # Push custom tag
-          buildah push --tls-verify=false $(params.registry)/stackrox/main:$(params.image-tag)
-
-          echo "Successfully tagged and pushed:"
-          echo "  $(params.registry)/stackrox/main:$(params.git-commit)"
-          echo "  $(params.registry)/stackrox/main:$(params.image-tag)"
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - name: varlibcontainers
-          mountPath: /var/lib/containers
-      volumes:
-      - name: varlibcontainers
-        emptyDir: {}
+    taskRef:
+      name: deploy-stackrox
     params:
-    - name: registry
+    - name: IMAGE
+      value: $(params.registry)/stackrox/main:$(params.image-tag)
+    - name: REGISTRY
       value: $(params.registry)
-    - name: image-tag
-      value: $(params.image-tag)
-    - name: git-commit
-      value: $(tasks.get-git-commit.results.git-commit)
+    - name: NAMESPACE
+      value: stackrox
+    workspaces:
+    - name: source
+      workspace: shared-data
+

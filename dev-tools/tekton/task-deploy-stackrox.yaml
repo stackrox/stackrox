@@ -1,0 +1,116 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy-stackrox
+spec:
+  description: Deploy StackRox using roxctl helm output with newly built image
+  params:
+  - name: IMAGE
+    description: Reference of the newly built StackRox image
+    type: string
+  - name: REGISTRY
+    description: Container registry where the image was pushed
+    type: string
+    default: "kind-registry:5000"
+  - name: NAMESPACE
+    description: Namespace to deploy StackRox into
+    type: string
+    default: "stackrox"
+  - name: INSTALLER_IMAGE
+    description: Image to use for running the deployment
+    type: string
+    default: "quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9-9-ge7836f2caf-arm64"
+
+  workspaces:
+  - name: source
+    description: Workspace containing the StackRox source with roxctl
+
+  steps:
+  - name: deploy-stackrox
+    image: $(params.INSTALLER_IMAGE)
+    workingDir: $(workspaces.source.path)/source
+    script: |
+      #!/bin/bash
+      set -ex
+
+      echo "Deploying StackRox with image: $(params.IMAGE)"
+      echo "Registry: $(params.REGISTRY)"
+      echo "Namespace: $(params.NAMESPACE)"
+
+      # Use the roxctl binary from the image build
+      ROXCTL_PATH="./image/rhel/bin/roxctl"
+
+      if [ ! -f "$ROXCTL_PATH" ]; then
+        echo "roxctl not found at $ROXCTL_PATH, checking other locations..."
+        find . -name "roxctl" -type f 2>/dev/null || true
+        echo "Attempting to use roxctl from PATH..."
+        ROXCTL_PATH="roxctl"
+      fi
+
+      echo "Using roxctl at: $ROXCTL_PATH"
+
+      # Check if StackRox is already deployed
+      if kubectl get namespace $(params.NAMESPACE) 2>/dev/null; then
+        echo "StackRox namespace exists, cleaning up existing deployment..."
+        kubectl delete namespace $(params.NAMESPACE) --timeout=60s || true
+
+        # Wait for namespace to be fully deleted
+        echo "Waiting for namespace deletion..."
+        while kubectl get namespace $(params.NAMESPACE) 2>/dev/null; do
+          echo "Still waiting for namespace $(params.NAMESPACE) to be deleted..."
+          sleep 5
+        done
+      fi
+
+      echo "Generating Central YAML with custom image..."
+
+      # Generate Central manifests
+      $ROXCTL_PATH central generate k8s pvc \
+        --main-image="$(params.IMAGE)" \
+        --central-db-image="$(params.REGISTRY)/stackrox/central-db:latest" \
+        --scanner-image="$(params.IMAGE)" \
+        --scanner-v4-image="$(params.IMAGE)" \
+        --scanner-v4-db-image="$(params.REGISTRY)/stackrox/scanner-v4-db:latest" \
+        --output-dir /tmp/stackrox-central
+
+      echo "Generating Sensor YAML with custom image..."
+
+      # Generate Sensor manifests
+      $ROXCTL_PATH sensor generate k8s \
+        --main-image="$(params.IMAGE)" \
+        --collector-image="quay.io/stackrox-io/collector:3.22.0" \
+        --admission-control-image="$(params.IMAGE)" \
+        --create-admission-controller=true \
+        --output-dir /tmp/stackrox-sensor
+
+      echo "Generated YAML files:"
+      find /tmp/stackrox-central -name "*.yaml" | head -5
+      find /tmp/stackrox-sensor -name "*.yaml" | head -5
+
+      if [[ -z "$(kubectl get ns $(params.NAMESPACE) 2> /dev/null)" ]]; then
+        echo "Creating namespace $(params.NAMESPACE)..."
+        kubectl create namespace $(params.NAMESPACE)
+      fi
+
+      echo "Deploying Central..."
+      kubectl apply -f /tmp/stackrox-central/ -n $(params.NAMESPACE)
+
+      echo "Waiting for Central to be ready..."
+      kubectl -n $(params.NAMESPACE) wait --for=condition=Available deploy/central --timeout=300s
+
+      echo "Deploying Sensor..."
+      kubectl apply -f /tmp/stackrox-sensor/ -n $(params.NAMESPACE)
+
+      echo "Waiting for Sensor to be ready..."
+      kubectl -n $(params.NAMESPACE) wait --for=condition=Available deploy/sensor --timeout=300s
+
+      echo "StackRox deployment completed successfully!"
+      echo ""
+      echo "=== Deployment Status ==="
+      kubectl -n $(params.NAMESPACE) get pods
+      echo ""
+      echo "=== Services ==="
+      kubectl -n $(params.NAMESPACE) get svc
+      echo ""
+      echo "Central UI should be accessible at: https://central.$(params.NAMESPACE).svc:443"
+      echo "Default credentials: admin / $(cat /tmp/stackrox-central/password)"

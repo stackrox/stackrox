@@ -38,7 +38,7 @@ spec:
   - name: revision
     value: "fast-local-tekton-builds"
   - name: registry
-    value: "localhost:5000"
+    value: "kind-registry:5000"
   - name: image-tag
     value: "latest"
   - name: builder-image
@@ -52,10 +52,6 @@ spec:
   taskRunSpecs:
   # Build tasks need privileged access for buildah
   - pipelineTaskName: build-image
-    podTemplate:
-      securityContext:
-        runAsUser: 0
-  - pipelineTaskName: tag-image
     podTemplate:
       securityContext:
         runAsUser: 0

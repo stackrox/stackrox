@@ -44,6 +44,10 @@ spec:
     description: Skip pushing the built image
     type: string
     default: "false"
+  - name: ADDITIONAL_TAG
+    description: Additional tag to apply to the image (optional)
+    type: string
+    default: ""
 
   workspaces:
   - name: source
@@ -116,6 +120,22 @@ spec:
           $(params.PUSH_EXTRA_ARGS) \
           $(params.IMAGE) \
           docker://$(params.IMAGE)
+
+        # Tag with additional tag if provided
+        if [ -n "$(params.ADDITIONAL_TAG)" ]; then
+          ADDITIONAL_IMAGE="${IMAGE%:*}:$(params.ADDITIONAL_TAG)"
+          echo "Tagging image with additional tag: $ADDITIONAL_IMAGE"
+          buildah --storage-driver="$STORAGE_DRIVER" tag "$IMAGE" "$ADDITIONAL_IMAGE"
+
+          echo "Pushing additional tag: $ADDITIONAL_IMAGE"
+          buildah --storage-driver="$STORAGE_DRIVER" push \
+            --tls-verify="$(params.TLSVERIFY)" \
+            $(params.PUSH_EXTRA_ARGS) \
+            "$ADDITIONAL_IMAGE" \
+            "docker://$ADDITIONAL_IMAGE"
+
+          echo "Successfully pushed additional tag: $ADDITIONAL_IMAGE"
+        fi
 
         # Output results
         cat /tmp/image-digest | tee $(results.IMAGE_DIGEST.path)
