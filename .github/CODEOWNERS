@@ -39,6 +39,7 @@ roxctl/**/*                       @stackrox/sensor-ecosystem
 sensor/**/*                       @stackrox/sensor-ecosystem
 tests/performance/**/*            @stackrox/sensor-ecosystem
 tests/roxctl/**/*                 @stackrox/sensor-ecosystem
+virtualmachines/**/*              @stackrox/sensor-ecosystem
 
 # Listing all users as "Outside collaborators cannot be added to a team"
 bats-tests/local/roxctl-netpol-*               @zivnevo @adisos @shireenf-ibm
