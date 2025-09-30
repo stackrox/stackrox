@@ -135,15 +135,6 @@ func generateProcessIndicators(numProcesses int, deploymentID string, containers
 
 // BenchmarkEvaluateBaselinesAndPersistResult benchmarks the main evaluation function with real database
 func BenchmarkEvaluateBaselinesAndPersistResult(b *testing.B) {
-	testDB := pgtest.ForT(b)
-
-	// Set up datastores
-	processIndicatorDatastore := processIndicatorDS.GetTestPostgresDataStore(b, testDB.DB)
-	processBaselineDatastore := processBaselineDS.GetTestPostgresDataStore(b, testDB.DB)
-	processBaselineResultsDatastore := processBaselineResultsDS.GetTestPostgresDataStore(b, testDB.DB)
-
-	evaluator := New(processBaselineResultsDatastore, processBaselineDatastore, processIndicatorDatastore)
-
 	deployment := fixtures.GetDeployment()
 	deploymentID := uuid.NewV4().String()
 	deployment.Id = deploymentID
@@ -168,6 +159,9 @@ func BenchmarkEvaluateBaselinesAndPersistResult(b *testing.B) {
 
 	for _, scenario := range scenarios {
 		b.Run(scenario.name, func(b *testing.B) {
+			processIndicatorDatastore, processBaselineDatastore, processBaselineResultsDatastore := setupStores(b)
+			evaluator := New(processBaselineResultsDatastore, processBaselineDatastore, processIndicatorDatastore)
+
 			// Use actual container names from the deployment
 			containerNames := make([]string, 0, len(deployment.GetContainers()))
 			for _, container := range deployment.GetContainers() {
@@ -228,11 +222,7 @@ func BenchmarkEvaluateBaselinesAndPersistResult(b *testing.B) {
 
 // BenchmarkEvaluateBaselinesSmallScale benchmarks the evaluator with a smaller dataset
 func BenchmarkEvaluateBaselinesSmallScale(b *testing.B) {
-	testDB := pgtest.ForT(b)
-
-	processIndicatorDatastore := processIndicatorDS.GetTestPostgresDataStore(b, testDB.DB)
-	processBaselineDatastore := processBaselineDS.GetTestPostgresDataStore(b, testDB.DB)
-	processBaselineResultsDatastore := processBaselineResultsDS.GetTestPostgresDataStore(b, testDB.DB)
+	processIndicatorDatastore, processBaselineDatastore, processBaselineResultsDatastore := setupStores(b)
 
 	deployment := fixtures.GetDeployment()
 	deploymentID := uuid.NewV4().String()
@@ -288,4 +278,13 @@ func BenchmarkEvaluateBaselinesSmallScale(b *testing.B) {
 		}
 	})
 
+}
+
+func setupStores(b *testing.B) (processIndicatorDS.DataStore, processBaselineDS.DataStore, processBaselineResultsDS.DataStore) {
+	testDB := pgtest.ForT(b)
+
+	processIndicatorDatastore := processIndicatorDS.GetTestPostgresDataStore(b, testDB.DB)
+	processBaselineDatastore := processBaselineDS.GetTestPostgresDataStore(b, testDB.DB)
+	processBaselineResultsDatastore := processBaselineResultsDS.GetTestPostgresDataStore(b, testDB.DB)
+	return processIndicatorDatastore, processBaselineDatastore, processBaselineResultsDatastore
 }
