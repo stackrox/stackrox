@@ -113,10 +113,7 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 		return errors.Wrap(err, "extracting vsock CID")
 	}
 
-	// Index reports have around 2 KB of fixed overhead, growing at approx 40 KB / 100 packages (a typical installation
-	// with 500 packages would mean 200 KB). We set the limit to 4 MB or around 10000 packages, which should provide a
-	// big enough margin to account for installations with extreme amounts of packages.
-	maxSizeBytes := 4 * 1024 * 1024
+	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
 	timeoutSeconds := 10
 	data, err := readFromConn(conn, maxSizeBytes, timeoutSeconds)
 	if err != nil {
