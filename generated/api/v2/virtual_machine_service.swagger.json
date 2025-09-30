@@ -188,7 +188,9 @@
     "VirtualMachineScanNote": {
       "type": "string",
       "enum": [
-        "UNSET"
+        "UNSET",
+        "OS_UNKNOWN",
+        "OS_UNSUPPORTED"
       ],
       "default": "UNSET"
     },

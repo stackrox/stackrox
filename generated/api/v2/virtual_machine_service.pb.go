@@ -75,16 +75,22 @@ func (VirtualMachine_State) EnumDescriptor() ([]byte, []int) {
 type VirtualMachineScan_Note int32
 
 const (
-	VirtualMachineScan_UNSET VirtualMachineScan_Note = 0
+	VirtualMachineScan_UNSET          VirtualMachineScan_Note = 0
+	VirtualMachineScan_OS_UNKNOWN     VirtualMachineScan_Note = 1
+	VirtualMachineScan_OS_UNSUPPORTED VirtualMachineScan_Note = 2
 )
 
 // Enum value maps for VirtualMachineScan_Note.
 var (
 	VirtualMachineScan_Note_name = map[int32]string{
 		0: "UNSET",
+		1: "OS_UNKNOWN",
+		2: "OS_UNSUPPORTED",
 	}
 	VirtualMachineScan_Note_value = map[string]int32{
-		"UNSET": 0,
+		"UNSET":          0,
+		"OS_UNKNOWN":     1,
+		"OS_UNSUPPORTED": 2,
 	}
 )
 
@@ -472,16 +478,19 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTOPPED\x10\x01\x12\v\n" +
-	"\aRUNNING\x10\x02\"\xf1\x01\n" +
+	"\aRUNNING\x10\x02\"\x95\x02\n" +
 	"\x12VirtualMachineScan\x127\n" +
 	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12)\n" +
 	"\x10operating_system\x18\x02 \x01(\tR\x0foperatingSystem\x121\n" +
 	"\x05notes\x18\x03 \x03(\x0e2\x1b.v2.VirtualMachineScan.NoteR\x05notes\x121\n" +
 	"\n" +
 	"components\x18\x04 \x03(\v2\x11.v2.ScanComponentR\n" +
-	"components\"\x11\n" +
+	"components\"5\n" +
 	"\x04Note\x12\t\n" +
-	"\x05UNSET\x10\x00\"W\n" +
+	"\x05UNSET\x10\x00\x12\x0e\n" +
+	"\n" +
+	"OS_UNKNOWN\x10\x01\x12\x12\n" +
+	"\x0eOS_UNSUPPORTED\x10\x02\"W\n" +
 	"\x18GetVirtualMachineRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
 	"\x11strip_description\x18\x02 \x01(\bR\x10stripDescription\"}\n" +
