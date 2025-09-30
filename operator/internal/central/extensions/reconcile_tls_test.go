@@ -673,6 +673,23 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 			},
 		},
 		{
+			name:   "add secondary and promote to primary",
+			action: carotation.AddSecondaryAndPromote,
+			assert: func(t *testing.T, old, new types.SecretDataMap) {
+				require.Contains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be present")
+				require.Contains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be present")
+				require.NotEqual(t, old[mtls.CACertFileName], new[mtls.CACertFileName], "primary CA should have changed")
+				require.Equal(t, new[mtls.SecondaryCACertFileName], old[mtls.CACertFileName],
+					"secondary CA cert should be the old primary CA cert")
+				require.Equal(t, new[mtls.SecondaryCAKeyFileName], old[mtls.CAKeyFileName],
+					"secondary CA key should be the old primary CA key")
+				require.Contains(t, new, mtls.ServiceCertFileName, "central cert should be present")
+				require.Contains(t, new, mtls.ServiceKeyFileName, "central cert should be present")
+				require.NotEqual(t, old[mtls.ServiceCertFileName], new[mtls.ServiceCertFileName], "central cert should be reissued")
+				require.NotEqual(t, old[mtls.ServiceKeyFileName], new[mtls.ServiceKeyFileName], "central key should be reissued")
+			},
+		},
+		{
 			name:   "delete secondary CA",
 			action: carotation.DeleteSecondary,
 			additionalSetup: func(t *testing.T, old types.SecretDataMap) {

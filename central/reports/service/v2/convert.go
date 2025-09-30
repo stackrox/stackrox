@@ -405,6 +405,7 @@ func (s *serviceImpl) convertViewBasedProtoReportSnapshotstoV2(snapshots []*stor
 			ReportJobId:    snapshot.GetReportId(),
 			Name:           snapshot.GetName(),
 			Description:    snapshot.GetDescription(),
+			AreaOfConcern:  snapshot.GetAreaOfConcern(),
 			User: &apiV2.SlimUser{
 				Id:   snapshot.GetRequester().GetId(),
 				Name: snapshot.GetRequester().GetName(),

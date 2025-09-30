@@ -19,10 +19,10 @@ jobs:
     waitWhenFinished: true
     preLoadImages: true
     preLoadPeriod: 30s
-    churn: false
+    churn: true
     churnDuration: 1000h
-    churnDelay: 200h
-    churnPercent: 20
+    churnDelay: 10m
+    churnPercent: 80
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
       pod-security.kubernetes.io/enforce: privileged
@@ -30,23 +30,23 @@ jobs:
       pod-security.kubernetes.io/warn: privileged
     objects:
 
-      - objectTemplate: process-load-deployment.yml
-        replicas: 5
+      - objectTemplate: process-load-daemonset.yml
+        replicas: 6
         inputVars:
           podReplicas: 2
 
-      - objectTemplate: endpoint-load-deployment.yml
-        replicas: 5
+      - objectTemplate: endpoint-load-daemonset.yml
+        replicas: 6
         inputVars:
           podReplicas: 2
 
-      - objectTemplate: connection-load-deployment.yml
-        replicas: 5
+      - objectTemplate: connection-load-daemonset.yml
+        replicas: 6
         inputVars:
           podReplicas: 2
 
       - objectTemplate: service.yml
-        replicas: 5
+        replicas: 10
 
       - objectTemplate: secret.yml
         replicas: 10
@@ -55,4 +55,7 @@ jobs:
         replicas: 10
 
       - objectTemplate: berserker-configmap-connections.yml
+        replicas: 10
+
+      - objectTemplate: berserker-configmap-processes.yml
         replicas: 10

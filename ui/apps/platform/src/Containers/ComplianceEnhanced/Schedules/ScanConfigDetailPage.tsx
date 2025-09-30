@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useCallback } from 'react';
+import type { ReactElement } from 'react';
 import { generatePath, Link, useParams } from 'react-router-dom-v5-compat';
 
 import usePageAction from 'hooks/usePageAction';
@@ -7,7 +8,7 @@ import useRestQuery from 'hooks/useRestQuery';
 import { getComplianceScanConfiguration } from 'services/ComplianceScanConfigurationService';
 import EditScanConfigDetail from './EditScanConfigDetail';
 import ViewScanConfigDetail from './ViewScanConfigDetail';
-import { PageActions } from './compliance.scanConfigs.utils';
+import type { PageActions } from './compliance.scanConfigs.utils';
 
 type ScanConfigDetailPageProps = {
     hasWriteAccessForCompliance: boolean;
@@ -15,7 +16,7 @@ type ScanConfigDetailPageProps = {
 
 function ScanConfigDetailPage({
     hasWriteAccessForCompliance,
-}: ScanConfigDetailPageProps): React.ReactElement {
+}: ScanConfigDetailPageProps): ReactElement {
     const { scanConfigId } = useParams() as { scanConfigId: string };
     const { pageAction } = usePageAction<PageActions>();
 
