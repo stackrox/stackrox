@@ -20,9 +20,8 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 
 	props := make(map[string]any)
 	countByType := map[string]int{
-		storage.AuthMachineToMachineConfig_GITHUB_ACTIONS.String():       0,
-		storage.AuthMachineToMachineConfig_GENERIC.String():              0,
-		storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT.String(): 0,
+		storage.AuthMachineToMachineConfig_GITHUB_ACTIONS.String(): 0,
+		storage.AuthMachineToMachineConfig_GENERIC.String():        0,
 	}
 	count := 0
 	err := Singleton().ForEachAuthM2MConfig(ctx, func(config *storage.AuthMachineToMachineConfig) error {

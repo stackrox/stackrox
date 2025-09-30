@@ -26,8 +26,6 @@ func TestCreateRoxClaimsFromGenericClaims(t *testing.T) {
 					UserID:   "test-subject-email|test@something.com",
 					FullName: "test@something.com",
 					Attributes: map[string][]string{
-						"sub":       {"test-subject-email"},
-						"aud":       nil,
 						"email":     {"test@something.com"},
 						"something": {"else"},
 						"another":   {"value", "of", "things"},
@@ -48,8 +46,6 @@ func TestCreateRoxClaimsFromGenericClaims(t *testing.T) {
 					UserID:   "test-subject-preferred_username|test-user",
 					FullName: "test-user",
 					Attributes: map[string][]string{
-						"sub":                {"test-subject-preferred_username"},
-						"aud":                nil,
 						"preferred_username": {"test-user"},
 						"something":          {"else"},
 						"another":            {"value", "of", "things"},
@@ -70,8 +66,6 @@ func TestCreateRoxClaimsFromGenericClaims(t *testing.T) {
 					UserID:   "test-subject-full_name|i am the test user",
 					FullName: "i am the test user",
 					Attributes: map[string][]string{
-						"sub":       {"test-subject-full_name"},
-						"aud":       nil,
 						"full_name": {"i am the test user"},
 						"something": {"else"},
 						"another":   {"value", "of", "things"},
@@ -91,8 +85,6 @@ func TestCreateRoxClaimsFromGenericClaims(t *testing.T) {
 					UserID:   "test-subject-empty",
 					FullName: "test-subject-empty",
 					Attributes: map[string][]string{
-						"sub":       {"test-subject-empty"},
-						"aud":       nil,
 						"something": {"else"},
 						"another":   {"value", "of", "things"},
 					},
@@ -103,20 +95,61 @@ func TestCreateRoxClaimsFromGenericClaims(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		e := &genericClaimExtractor{}
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			token := &IDToken{
-				Subject: testCase.subject,
-				Claims: func(v any) error {
-					*v.(*map[string]any) = testCase.unstructured
-					return nil
-				},
-			}
-			claims, err := e.ExtractClaims(token)
-			assert.NoError(t, err)
-			roxClaims, err := e.ExtractRoxClaims(claims)
-			assert.NoError(t, err)
+			roxClaims := createRoxClaimsFromGenericClaims(testCase.subject, testCase.unstructured)
 			assert.Equal(t, testCase.roxClaims, roxClaims)
 		})
 	}
+}
+
+func TestCreateRoxClaimsFromGitHubClaims(t *testing.T) {
+	claims := githubActionClaims{
+		Actor:           "my-github-user",
+		ActorID:         "123456789",
+		Environment:     "production",
+		EventName:       "PullRequest",
+		GitRef:          "sha256824",
+		Repository:      "sample-repo",
+		RepositoryOwner: "sample-org",
+	}
+	subject := "test-subject"
+	audiences := []string{"repoA", "repoB"}
+	expectedRoxClaims := tokens.RoxClaims{
+		ExternalUser: &tokens.ExternalUserClaim{
+			UserID:   "123456789|my-github-user",
+			FullName: "my-github-user",
+			Email:    "",
+			Attributes: map[string][]string{
+				"actor":            {"my-github-user"},
+				"actor_id":         {"123456789"},
+				"repository":       {"sample-repo"},
+				"repository_owner": {"sample-org"},
+				"environment":      {"production"},
+				"event_name":       {"PullRequest"},
+				"ref":              {"sha256824"},
+				"sub":              {"test-subject"},
+				"aud":              {"repoA", "repoB"},
+
+				"base_ref":              {""},
+				"head_ref":              {""},
+				"job_workflow_ref":      {""},
+				"job_workflow_sha":      {""},
+				"ref_type":              {""},
+				"repository_id":         {""},
+				"repository_owner_id":   {""},
+				"repository_visibility": {""},
+				"run_id":                {""},
+				"run_number":            {""},
+				"run_attempt":           {""},
+				"runner_environment":    {""},
+				"workflow":              {""},
+				"workflow_ref":          {""},
+				"workflow_sha":          {""},
+			},
+		},
+		Name: "123456789|my-github-user",
+	}
+
+	roxClaims := createRoxClaimsFromGitHubClaims(subject, audiences, claims)
+	assert.Equal(t, expectedRoxClaims, roxClaims)
 }
