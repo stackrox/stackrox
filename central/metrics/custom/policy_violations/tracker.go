@@ -4,6 +4,7 @@ import (
 	"context"
 	"iter"
 
+	"github.com/pkg/errors"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,9 +23,9 @@ func New(ds alertDS.DataStore) *tracker.TrackerBase[*finding] {
 }
 
 func trackViolations(ctx context.Context, ds alertDS.DataStore) iter.Seq[*finding] {
-	f := finding{}
 	return func(yield func(*finding) bool) {
-		_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(a *storage.Alert) error {
+		var f finding
+		f.err = ds.WalkByQuery(ctx, search.EmptyQuery(), func(a *storage.Alert) error {
 			f.Alert = a
 			for _, v := range a.GetViolations() {
 				f.Alert_Violation = v
@@ -34,5 +35,9 @@ func trackViolations(ctx context.Context, ds alertDS.DataStore) iter.Seq[*findin
 			}
 			return nil
 		})
+		// Report walking error.
+		if f.err != nil && !errors.Is(f.err, tracker.ErrStopIterator) {
+			yield(&f)
+		}
 	}
 }

@@ -35,12 +35,15 @@ var lazyLabels = []tracker.LazyLabel[*finding]{
 // compute the values for the list of defined labels.
 type finding struct {
 	tracker.CommonFinding
+	err        error
 	deployment *storage.Deployment
 	image      *storage.Image
 	name       *storage.ImageName
 	component  *storage.EmbeddedImageScanComponent
 	vuln       *storage.EmbeddedVulnerability
 }
+
+func (f *finding) GetError() error { return f.err }
 
 func isPlatformWorkload(f *finding) string {
 	p, _ := matcher.Singleton().MatchDeployment(f.deployment)
