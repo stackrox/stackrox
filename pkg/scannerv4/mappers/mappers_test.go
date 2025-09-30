@@ -424,6 +424,15 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 							Cpe: emptyCPE,
 						},
 					},
+					EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb: "nodejs:/app/nodejs1",
+								},
+							},
+						},
+					},
 					Environments: map[string]*v4.Environment_List{
 						"1": {
 							Environments: []*v4.Environment{
@@ -516,22 +525,23 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 						Name: "Red Hat Container Catalog",
 						URI:  `https://catalog.redhat.com/software/containers/explore`,
 					},
-					"1": {
+					"something else": {
 						ID:   "1",
 						Name: "something else",
+						Key:  "rhel-cpe-repository",
 						URI:  "somethingelse.com",
 					},
 				},
 				Environments: map[string][]*claircore.Environment{
 					"0": {
 						{
-							RepositoryIDs: []string{"0", "1"},
+							RepositoryIDs: []string{"0", "something else"},
 							IntroducedIn:  layerA,
 						},
 					},
 					"1": {
 						{
-							RepositoryIDs: []string{"1"},
+							RepositoryIDs: []string{"something else"},
 							IntroducedIn:  layerB,
 						},
 					},
@@ -543,7 +553,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 					},
 					"3": {
 						{
-							RepositoryIDs: []string{"1"},
+							RepositoryIDs: []string{"something else"},
 							IntroducedIn:  layerB,
 						},
 					},
@@ -671,9 +681,10 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Uri:  `https://catalog.redhat.com/software/containers/explore`,
 							Cpe:  emptyCPE,
 						},
-						"1": {
+						"something else": {
 							Id:   "1",
 							Name: "something else",
+							Key:  "rhel-cpe-repository",
 							Uri:  "somethingelse.com",
 							Cpe:  emptyCPE,
 						},
@@ -688,11 +699,46 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 						{
 							Id:   "1",
 							Name: "something else",
+							Key:  "rhel-cpe-repository",
 							Uri:  "somethingelse.com",
 							Cpe:  emptyCPE,
 						},
 					},
 					Environments: map[string]*v4.Environment_List{
+						"0": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"0", "something else"},
+									IntroducedIn:  layerA.String(),
+								},
+							},
+						},
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"something else"},
+									IntroducedIn:  layerB.String(),
+								},
+							},
+						},
+						"2": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"0"},
+									IntroducedIn:  layerA.String(),
+								},
+							},
+						},
+						"3": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"something else"},
+									IntroducedIn:  layerB.String(),
+								},
+							},
+						},
+					},
+					EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
 						"0": {
 							Environments: []*v4.Environment{
 								{
@@ -1262,6 +1308,11 @@ func Test_toProtoV4Contents(t *testing.T) {
 					Cpe: emptyCPE,
 				}},
 				Environments: map[string]*v4.Environment_List{
+					"sample env": {
+						Environments: []*v4.Environment{{}},
+					},
+				},
+				EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
 					"sample env": {
 						Environments: []*v4.Environment{{}},
 					},
