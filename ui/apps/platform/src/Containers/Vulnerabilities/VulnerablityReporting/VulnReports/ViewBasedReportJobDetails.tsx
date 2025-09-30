@@ -23,6 +23,9 @@ import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     clusterSearchFilterConfig,
+    cveStatusClusterFixableDescriptor,
+    cveStatusFixableDescriptor,
+    cveSeverityFilterDescriptor,
     deploymentSearchFilterConfig,
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
@@ -41,7 +44,12 @@ const viewBasedReportFilterConfig = [
 ];
 
 // Create filter chip descriptors with proper display names and rendering
-const filterChipDescriptors = makeFilterChipDescriptors(viewBasedReportFilterConfig);
+const filterChipDescriptors = makeFilterChipDescriptors(viewBasedReportFilterConfig).concat([
+    // Add descriptors for special filters that aren't in CompoundSearchFilter config
+    cveSeverityFilterDescriptor,
+    cveStatusFixableDescriptor,
+    cveStatusClusterFixableDescriptor,
+]);
 
 export type ViewBasedReportJobDetailsProps = {
     reportSnapshot: ViewBasedReportSnapshot;

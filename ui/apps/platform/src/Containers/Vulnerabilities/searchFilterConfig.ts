@@ -98,3 +98,27 @@ export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEnti
     searchCategory: 'SEARCH_UNSET', // doesn't matter since we don't have autocomplete for virtual machines
     attributes: [VirtualMachineComponentName, VirtualMachineComponentVersion],
 };
+
+// Special filter descriptors for filters not in CompoundSearchFilter config
+// These are used for SEVERITY, FIXABLE, and other special filters that are handled
+// separately from the standard CompoundSearchFilter system
+
+export const cveSeverityFilterDescriptor = {
+    displayName: 'CVE severity',
+    searchFilterName: 'SEVERITY',
+};
+
+export const cveStatusFixableDescriptor = {
+    displayName: 'CVE status',
+    searchFilterName: 'FIXABLE',
+};
+
+export const cveStatusClusterFixableDescriptor = {
+    displayName: 'CVE status',
+    searchFilterName: 'CLUSTER CVE FIXABLE',
+};
+
+export const cveSnoozedDescriptor = {
+    displayName: 'CVE snoozed',
+    searchFilterName: 'CVE Snoozed',
+};
