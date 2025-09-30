@@ -118,8 +118,8 @@ func setVirtualMachineScoresAndScoreVersions(
 				score.CvssScore = &storage.CVSSScore_Cvssv3{Cvssv3: cvssV3}
 				// CVSS metrics has maximum two entries, one from NVD, one from Rox updater if available
 				if len(cvssMetrics) == 1 || (len(cvssMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
-					vulnerability.CveBaseInfo.CvssV3 = cvssV3.CloneVT()
-					vulnerability.CveBaseInfo.ScoreVersion = storage.VirtualMachineCVEInfo_V3
+					// vulnerability.CveBaseInfo.CvssV3 = cvssV3.CloneVT()
+					// vulnerability.CveBaseInfo.ScoreVersion = storage.VirtualMachineCVEInfo_V3
 					_ = baseScore
 					// vulnerability.CveBaseInfo.Cvss = baseScore
 					vulnerability.CveBaseInfo.Link = cvss.GetUrl()
