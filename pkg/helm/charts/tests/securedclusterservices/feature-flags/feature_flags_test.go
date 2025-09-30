@@ -33,6 +33,18 @@ func TestWithDifferentFeatureFlags(t *testing.T) {
 			},
 			flavor: defaults.RHACSReleaseImageFlavor(),
 		},
+		"auto-lock-process-baselines": {
+			featureFlags: map[string]bool{
+				"ROX_AUTO_LOCK_PROCESS_BASELINES": true,
+			},
+			flavor: defaults.RHACSReleaseImageFlavor(),
+		},
+		"auto-lock-process-baselines-disabled": {
+			featureFlags: map[string]bool{
+				"ROX_AUTO_LOCK_PROCESS_BASELINES": false,
+			},
+			flavor: defaults.RHACSReleaseImageFlavor(),
+		},
 	}
 
 	for testCaseName, testCaseSpec := range testCases {
