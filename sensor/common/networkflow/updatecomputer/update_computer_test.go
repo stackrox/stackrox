@@ -354,6 +354,11 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 		Protocol:      0,
 		Port:          0,
 	}
+	const (
+		ep1hash = "e2186fa0a852365c"
+		p1hash  = "b446b1d03441677f"
+		p2hash  = "8977439832a06657"
+	)
 
 	closedNow := timestamp.Now()
 	open := timestamp.InfiniteFuture
@@ -364,6 +369,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 		currentMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
 		expectNumUpdatesEp   map[string]int
 		expectNumUpdatesProc map[string]int
+		expectedDeduperState map[string]string // evaluated only for implTransitionBased!
 	}{
 		"Should send new closed endpoints": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
@@ -407,6 +413,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			},
 			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
 			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectedDeduperState: map[string]string{ep1hash: p1hash},
 		},
 		"Should not send update when closed TS is updated to a past value": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -460,6 +467,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
 			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 0},
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectedDeduperState: map[string]string{ep1hash: p1hash},
 		},
 		"handling nils": {
 			initialMapping:       nil,
@@ -484,6 +492,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0},
 			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear.
 			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
+			expectedDeduperState: map[string]string{ep1hash: p2hash},
 		},
 		"A replacement triggered with a close message should close the correct process": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -518,6 +527,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0}, // ep1 remains open
 			// Legacy sends 1 update for p1 disappearing.
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectedDeduperState: map[string]string{ep1hash: ""}, // Note that deduper gets updated with empty process
 		},
 		"A replacement process is nil and the endpoint is closed": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -535,6 +545,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesEp: map[string]int{implLegacy: 1, implTransitionBased: 1}, // for closing ep1
 			// Legacy sends 1 update for p1 disappearing.
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectedDeduperState: map[string]string{},
 		},
 	}
 
@@ -571,9 +582,17 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 					tc.initialMapping, tc.currentMapping)
 			})
 			t.Run(implTransitionBased, func(t *testing.T) {
-				executeAssertions(t, NewTransitionBased(),
+				uc := NewTransitionBased()
+				executeAssertions(t, uc,
 					tc.expectNumUpdatesEp[implTransitionBased], tc.expectNumUpdatesProc[implTransitionBased],
 					tc.initialMapping, tc.currentMapping)
+
+				assert.Len(t, uc.endpointsDeduper, len(tc.expectedDeduperState))
+				for k, v := range tc.expectedDeduperState {
+					got, found := uc.endpointsDeduper[k]
+					assert.Truef(t, found, "expected to find %s in deduper", k)
+					assert.Equal(t, v, got, "expected to find %s=%s in deduper, but found %s=%s", k, v, k, got)
+				}
 			})
 		})
 	}
