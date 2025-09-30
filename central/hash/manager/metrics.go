@@ -6,8 +6,7 @@ import (
 )
 
 func init() {
-	prometheus.MustRegister(dedupingHashSizeGauge)
-	prometheus.MustRegister(dedupingHashCounterVec)
+	prometheus.MustRegister(dedupingHashSizeGauge, dedupingHashCounterVec)
 }
 
 var (
