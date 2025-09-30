@@ -1,103 +1,176 @@
 import React, { useCallback } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
+import {
+    Flex,
+    Pagination,
+    pluralize,
+    Skeleton,
+    Split,
+    SplitItem,
+    Title,
+} from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import { DynamicTableLabel } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import {
+    clusterSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    virtualMachinesSearchFilterConfig,
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
 import { listVirtualMachines } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
+import { getHasSearchApplied } from 'utils/searchUtils';
 
 import { getVirtualMachineSeveritiesCount } from '../aggregateUtils';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
+
+const searchFilterConfig = [
+    virtualMachinesSearchFilterConfig,
+    clusterSearchFilterConfig,
+    namespaceSearchFilterConfig,
+];
 
 function VirtualMachinesCvesTable() {
     const fetchVirtualMachines = useCallback(() => listVirtualMachines(), []);
 
     const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const isFiltered = getHasSearchApplied(searchFilter);
 
     const tableState = getTableUIState({
         isLoading,
         data: data ?? [],
         error,
-        searchFilter: {},
+        searchFilter,
     });
 
     return (
-        <Table
-            borders={tableState.type === 'COMPLETE'}
-            variant="compact"
-            aria-live="polite"
-            aria-busy={false}
-        >
-            <Thead>
-                <Tr>
-                    <Th>Virtual machine</Th>
-                    <Th>CVEs by severity</Th>
-                    <Th>Guest OS</Th>
-                    <Th>Cluster</Th>
-                    <Th>Namespace</Th>
-                    <Th>Pod</Th>
-                    <Th>Created</Th>
-                </Tr>
-            </Thead>
-            <TbodyUnified
-                tableState={tableState}
-                colSpan={7}
-                errorProps={{
-                    title: 'There was an error loading results',
+        <>
+            <AdvancedFiltersToolbar
+                className="pf-v5-u-px-sm pf-v5-u-pb-0"
+                includeCveSeverityFilters={false}
+                includeCveStatusFilters={false}
+                searchFilter={searchFilter}
+                searchFilterConfig={searchFilterConfig}
+                onFilterChange={(newFilter) => {
+                    setSearchFilter(newFilter);
+                    setPage(1, 'replace');
                 }}
-                emptyProps={{
-                    message: 'No CVEs have been detected',
-                }}
-                renderer={({ data }) => (
-                    <Tbody>
-                        {data.map((virtualMachine) => {
-                            const virtualMachineSeverityCounts =
-                                getVirtualMachineSeveritiesCount(virtualMachine);
-                            return (
-                                <Tr key={virtualMachine.id}>
-                                    <Td dataLabel="Virtual machine" modifier="nowrap">
-                                        <Link
-                                            to={getVirtualMachineEntityPagePath(
-                                                'VirtualMachine',
-                                                virtualMachine.id
-                                            )}
-                                        >
-                                            {virtualMachine.name}
-                                        </Link>
-                                    </Td>
-                                    <Td dataLabel="CVEs by severity">
-                                        <SeverityCountLabels
-                                            criticalCount={
-                                                virtualMachineSeverityCounts.CRITICAL_VULNERABILITY_SEVERITY
-                                            }
-                                            importantCount={
-                                                virtualMachineSeverityCounts.IMPORTANT_VULNERABILITY_SEVERITY
-                                            }
-                                            moderateCount={
-                                                virtualMachineSeverityCounts.MODERATE_VULNERABILITY_SEVERITY
-                                            }
-                                            lowCount={
-                                                virtualMachineSeverityCounts.LOW_VULNERABILITY_SEVERITY
-                                            }
-                                            unknownCount={
-                                                virtualMachineSeverityCounts.UNKNOWN_VULNERABILITY_SEVERITY
-                                            }
-                                        />
-                                    </Td>
-                                    <Td dataLabel="Guest OS">ROX-30535</Td>
-                                    <Td dataLabel="Cluster">{virtualMachine.clusterName}</Td>
-                                    <Td dataLabel="Namespace">{virtualMachine.namespace}</Td>
-                                    <Td dataLabel="Pod">ROX-30535</Td>
-                                    <Td dataLabel="Created">ROX-30535</Td>
-                                </Tr>
-                            );
-                        })}
-                    </Tbody>
-                )}
             />
-        </Table>
+            <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
+                <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                    <SplitItem isFilled>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <Title headingLevel="h2">
+                                {!isLoading ? (
+                                    `${pluralize(0, 'result')} found - TODO: get count from api`
+                                ) : (
+                                    <Skeleton screenreaderText="Loading virtual machine count" />
+                                )}
+                            </Title>
+                            {isFiltered && <DynamicTableLabel />}
+                        </Flex>
+                    </SplitItem>
+                    <SplitItem>
+                        <Pagination
+                            itemCount={0} // TODO: get count from api
+                            perPage={perPage}
+                            page={page}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </SplitItem>
+                </Split>
+                <Table
+                    borders={tableState.type === 'COMPLETE'}
+                    variant="compact"
+                    aria-live="polite"
+                    aria-busy={false}
+                >
+                    <Thead>
+                        <Tr>
+                            <Th>Virtual machine</Th>
+                            <Th>CVEs by severity</Th>
+                            <Th>Guest OS</Th>
+                            <Th>Cluster</Th>
+                            <Th>Namespace</Th>
+                            <Th>Pod</Th>
+                            <Th>Created</Th>
+                        </Tr>
+                    </Thead>
+                    <TbodyUnified
+                        tableState={tableState}
+                        colSpan={7}
+                        errorProps={{
+                            title: 'There was an error loading results',
+                        }}
+                        emptyProps={{
+                            message: 'No CVEs have been detected',
+                        }}
+                        renderer={({ data }) => (
+                            <Tbody>
+                                {data.map((virtualMachine) => {
+                                    const virtualMachineSeverityCounts =
+                                        getVirtualMachineSeveritiesCount(virtualMachine);
+                                    return (
+                                        <Tr key={virtualMachine.id}>
+                                            <Td dataLabel="Virtual machine" modifier="nowrap">
+                                                <Link
+                                                    to={getVirtualMachineEntityPagePath(
+                                                        'VirtualMachine',
+                                                        virtualMachine.id
+                                                    )}
+                                                >
+                                                    {virtualMachine.name}
+                                                </Link>
+                                            </Td>
+                                            <Td dataLabel="CVEs by severity">
+                                                <SeverityCountLabels
+                                                    criticalCount={
+                                                        virtualMachineSeverityCounts.CRITICAL_VULNERABILITY_SEVERITY
+                                                    }
+                                                    importantCount={
+                                                        virtualMachineSeverityCounts.IMPORTANT_VULNERABILITY_SEVERITY
+                                                    }
+                                                    moderateCount={
+                                                        virtualMachineSeverityCounts.MODERATE_VULNERABILITY_SEVERITY
+                                                    }
+                                                    lowCount={
+                                                        virtualMachineSeverityCounts.LOW_VULNERABILITY_SEVERITY
+                                                    }
+                                                    unknownCount={
+                                                        virtualMachineSeverityCounts.UNKNOWN_VULNERABILITY_SEVERITY
+                                                    }
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Guest OS">ROX-30535</Td>
+                                            <Td dataLabel="Cluster">
+                                                {virtualMachine.clusterName}
+                                            </Td>
+                                            <Td dataLabel="Namespace">
+                                                {virtualMachine.namespace}
+                                            </Td>
+                                            <Td dataLabel="Pod">ROX-30535</Td>
+                                            <Td dataLabel="Created">ROX-30535</Td>
+                                        </Tr>
+                                    );
+                                })}
+                            </Tbody>
+                        )}
+                    />
+                </Table>
+            </div>
+        </>
     );
 }
 
