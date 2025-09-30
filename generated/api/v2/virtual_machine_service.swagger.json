@@ -229,6 +229,17 @@
         }
       }
     },
+    "v2Advisory": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
     "v2AggregateBy": {
       "type": "object",
       "properties": {
@@ -378,6 +389,9 @@
         },
         "severity": {
           "$ref": "#/definitions/v2VulnerabilitySeverity"
+        },
+        "advisory": {
+          "$ref": "#/definitions/v2Advisory"
         }
       }
     },
@@ -458,7 +472,10 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2EmbeddedVulnerability"
-          },
+          }
+        },
+        "source": {
+          "$ref": "#/definitions/v2SourceType",
           "title": "TODO (ROX-30352): Review the use of executable and if it applies to virtual machines"
         }
       }
@@ -487,6 +504,20 @@
         "SOURCE_NVD"
       ],
       "default": "SOURCE_UNKNOWN"
+    },
+    "v2SourceType": {
+      "type": "string",
+      "enum": [
+        "OS",
+        "PYTHON",
+        "JAVA",
+        "RUBY",
+        "NODEJS",
+        "GO",
+        "DOTNETCORERUNTIME",
+        "INFRASTRUCTURE"
+      ],
+      "default": "OS"
     },
     "v2VirtualMachine": {
       "type": "object",
