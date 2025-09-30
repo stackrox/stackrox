@@ -46,7 +46,7 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
             <Table aria-label="View-based reports table">
                 <Thead>
                     <Tr>
-                        <Th width={15}>Request name</Th>
+                        <Th width={20}>Request name</Th>
                         <Th>Requester</Th>
                         <Th>Job status</Th>
                         <Th sort={getSortParams('Report Completion Time')}>Completed</Th>
