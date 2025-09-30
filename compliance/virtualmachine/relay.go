@@ -71,23 +71,21 @@ func (r *Relay) Run(ctx context.Context) error {
 	}()
 
 	for {
-		select {
-		case <-ctx.Done():
-			log.Info("Shutting down virtual machine relay")
-			return ctx.Err()
-		default:
-			conn, err := r.vsockServer.listener.Accept()
-			if err != nil {
-				log.Errorf("Error accepting connection: %v", err)
-				time.Sleep(time.Second) // Prevent a tight loop
-				continue
+		conn, err := r.vsockServer.listener.Accept()
+		if err != nil {
+			if ctx.Err() != nil {
+				log.Info("Stopping virtual machine relay")
+				return ctx.Err()
 			}
-			go func() {
-				if err := handleVsockConnection(ctx, conn, r.sensorClient); err != nil {
-					log.Errorf("Error handling vsock connection: %v", err)
-				}
-			}()
+			log.Errorf("Error accepting connection: %v", err)
+			time.Sleep(time.Second) // Prevent a tight loop
+			continue
 		}
+		go func() {
+			if err := handleVsockConnection(ctx, conn, r.sensorClient); err != nil {
+				log.Errorf("Error handling vsock connection: %v", err)
+			}
+		}()
 	}
 }
 
