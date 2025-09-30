@@ -1,24 +1,16 @@
 package m2m
 
 import (
-	"strings"
-
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
-// IssuerFromRawIDToken retrieves the issuer from a raw ID token. If the token
-// is not a JWT, assume Kubernetes opaque token.
+// IssuerFromRawIDToken retrieves the issuer from a raw ID token.
 // In case the token is malformed (i.e. jwt.ErrTokenMalformed is met), it will return an error.
 // Other errors such as an expired token will be ignored.
 // Note: This does **not** verify the token's signature or any other claim value.
 func IssuerFromRawIDToken(rawIDToken string) (string, error) {
-	if strings.HasPrefix(rawIDToken, "sha256~") {
-		// Not a JWT. Assume Kubernetes opaque token.
-		return KubernetesDefaultSvcTokenIssuer, nil
-	}
-
 	standardClaims := &jwt.RegisteredClaims{}
 	// Explicitly ignore the signature of the ID token for now.
 	// This will be handled in a latter part, when the metadata from the provider will be used to verify the signature.

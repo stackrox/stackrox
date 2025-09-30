@@ -24,6 +24,7 @@ func Singleton() DataStore {
 			store.New(globaldb.GetPostgres()),
 			roleDataStore.Singleton(),
 			set,
+			m2m.NewServiceAccountIssuerFetcher(),
 		)
 
 		// On initialization of the store, list all existing configs and fill the set.
