@@ -32,6 +32,7 @@ import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 import { checkArrayContainsArray } from 'utils/arrayUtils';
 import { allEnabled } from 'utils/featureFlagUtils';
+import isEqual from 'lodash/isEqual';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
@@ -505,6 +506,7 @@ function trimPolicyScope(scope: PolicyScope) {
     if (typeof scope.namespace === 'string') {
         scope.namespace = scope.namespace.trim();
     }
+    /* eslint-enable no-param-reassign */
 
     // TODO label key and value: make sure about empty string versus undefined.
     /*
@@ -518,7 +520,6 @@ function trimPolicyScope(scope: PolicyScope) {
         }
     }
     */
-    /* eslint-enable no-param-reassign */
 
     return scope;
 }
@@ -633,34 +634,56 @@ export function getServerPolicy(policyUntrimmed: ClientPolicy): Policy {
     return serverPolicy;
 }
 
+export type ValidPolicyLifeCycle = ['BUILD'] | ['DEPLOY'] | ['BUILD', 'DEPLOY'] | ['RUNTIME'];
+
+export function isBuildPolicy(stages: LifecycleStage[]): stages is ['BUILD'] {
+    return isEqual(stages, ['BUILD']);
+}
+
+export function isDeployPolicy(lifecycleStages: LifecycleStage[]): lifecycleStages is ['DEPLOY'] {
+    return isEqual(lifecycleStages, ['DEPLOY']);
+}
+
+export function isBuildAndDeployPolicy(
+    lifecycleStages: LifecycleStage[]
+): lifecycleStages is ['BUILD', 'DEPLOY'] {
+    return isEqual(lifecycleStages, ['BUILD', 'DEPLOY']);
+}
+
+export function isRuntimePolicy(lifecycleStages: LifecycleStage[]): lifecycleStages is ['RUNTIME'] {
+    return isEqual(lifecycleStages, ['RUNTIME']);
+}
+
 export function getLifeCyclesUpdates<
     T extends Pick<
         ClientPolicy,
         'lifecycleStages' | 'eventSource' | 'excludedImageNames' | 'enforcementActions'
     >,
->(values: T, lifecycleStage: LifecycleStage, isChecked: boolean): T {
+>(values: T, selectedStages: ValidPolicyLifeCycle): T {
     /*
      * Set all changed values at once, because separate setFieldValue calls
      * for lifecycleStages and eventSource cause inconsistent incorrect validation.
      */
     const changedValues = cloneDeep(values);
-    if (isChecked) {
-        changedValues.lifecycleStages = [...values.lifecycleStages, lifecycleStage];
-    } else {
-        changedValues.lifecycleStages = values.lifecycleStages.filter(
-            (stage) => stage !== lifecycleStage
-        );
-        if (lifecycleStage === 'RUNTIME') {
-            changedValues.eventSource = 'NOT_APPLICABLE';
-        }
-        if (lifecycleStage === 'BUILD') {
-            changedValues.excludedImageNames = [];
-        }
-        changedValues.enforcementActions = filterEnforcementActionsForRemovedLifecycleStage(
-            lifecycleStage,
-            values.enforcementActions
-        );
+
+    if (!isRuntimePolicy(selectedStages)) {
+        changedValues.eventSource = 'NOT_APPLICABLE';
     }
+
+    if (!isBuildPolicy(selectedStages) && !isBuildAndDeployPolicy(selectedStages)) {
+        changedValues.excludedImageNames = [];
+    }
+
+    values.lifecycleStages.forEach((stage) => {
+        if (!selectedStages.some((validStage) => validStage === stage)) {
+            changedValues.enforcementActions = filterEnforcementActionsForRemovedLifecycleStage(
+                stage,
+                values.enforcementActions
+            );
+        }
+    });
+
+    changedValues.lifecycleStages = [...selectedStages];
     return changedValues;
 }
 
