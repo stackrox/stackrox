@@ -1,15 +1,14 @@
-import React, { ReactElement } from 'react';
-import { FormikContextType, useFormikContext } from 'formik';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { useFormikContext } from 'formik';
+import type { FormikContextType } from 'formik';
 import { Divider, Flex, FlexItem, Form, PageSection, Title } from '@patternfly/react-core';
 
 import NotifierConfigurationForm from 'Components/NotifierConfiguration/NotifierConfigurationForm';
 import usePermissions from 'hooks/usePermissions';
 
-import {
-    ScanConfigFormValues,
-    getBodyDefault,
-    getSubjectDefault,
-} from '../compliance.scanConfigs.utils';
+import { getBodyDefault, getSubjectDefault } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 function ReportConfiguration(): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();

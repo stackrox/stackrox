@@ -123,7 +123,7 @@ func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
-	sbom, found, err := s.scannerClient.GetSBOM(ctx, image.GetName().GetFullName(), digest, uri)
+	sbom, found, err := s.scannerClient.GetSBOM(ctx, image.GetName().GetFullName(), digest, uri, client.IncludeExternalIndexReports())
 	return sbom, found, err
 }
 

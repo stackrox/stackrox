@@ -89,10 +89,6 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
                     This file contains a detailed list of all components and dependencies included
                     in the image.
                 </Text>
-                <Text>
-                    (Generating SBOMs from scans delegated to secured clusters is currently not
-                    supported.)
-                </Text>
                 <DescriptionList isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>Selected image:</DescriptionListTerm>

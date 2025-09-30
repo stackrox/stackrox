@@ -1,21 +1,28 @@
 package tracker
 
 import (
+	"cmp"
 	"context"
 	"iter"
 	"maps"
 	"net/http"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
+
+const inactiveGathererTTL = 2 * 24 * time.Hour
 
 var (
 	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
@@ -101,9 +108,10 @@ type TrackerBase[F Finding] struct {
 	config           *Configuration
 	metricsConfigMux sync.RWMutex
 
-	gatherers sync.Map // map[user ID]*tokenGatherer
+	gatherers sync.Map       // map[user ID]*gatherer
+	cleanupWG sync.WaitGroup // for sync in testing.
 
-	registryFactory func(userID string) metrics.CustomRegistry // for mocking in tests.
+	registryFactory func(userID string) (metrics.CustomRegistry, error) // for mocking in tests.
 }
 
 // makeGettersMap transforms a list of label names with their getters to a map.
@@ -258,10 +266,10 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if cfg == nil {
 		return
 	}
+	// Pass the cfg so that the same configuration is used there and here.
 	gatherer := tracker.getGatherer(id.UID(), cfg)
-
-	// Return if is still running.
-	if !gatherer.running.CompareAndSwap(false, true) {
+	// getGatherer() returns nil if the gatherer is still running.
+	if gatherer == nil {
 		return
 	}
 	defer gatherer.running.Store(false)
@@ -269,28 +277,92 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
+	begin := time.Now()
 	if err := tracker.track(ctx, gatherer.registry, cfg.metrics); err != nil {
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
-	gatherer.lastGather = time.Now()
+	end := time.Now()
+	gatherer.lastGather = end
+
+	descriptionTitle := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
+	centralclient.Singleton().Telemeter().Track(
+		descriptionTitle+" metrics gathered", nil,
+		telemeter.WithTraits(tracker.makeProps(descriptionTitle, end.Sub(begin))),
+		telemeter.WithNoDuplicates(tracker.metricPrefix))
+}
+
+func (tracker *TrackerBase[Finding]) makeProps(descriptionTitle string, duration time.Duration) map[string]any {
+	props := make(map[string]any, 3)
+	props["Total "+descriptionTitle+" metrics"] = len(tracker.config.metrics)
+	props[descriptionTitle+" metrics labels"] = getLabels(tracker.config.metrics)
+	props[descriptionTitle+" gathering seconds"] = uint32(duration.Round(time.Second).Seconds())
+	return props
+}
+
+func getLabels(metrics MetricDescriptors) []Label {
+	labels := set.NewSet[Label]()
+	for _, metricLabels := range metrics {
+		labels.AddAll(metricLabels...)
+	}
+	return labels.AsSortedSlice(cmp.Less)
 }
 
 // getGatherer returns the existing or a new gatherer for the given userID.
-// When creating a new gatherer, it also registers all known metrics on the
-// gatherer registry.
+// The returned gatherer will be set to a running state for synchronization
+// purposes. When creating a new gatherer, it also registers all known metrics
+// on the gatherer registry.
+// Returns nil on error, or if the gatherer for this userID is still running.
 func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configuration) *gatherer {
-	// TODO(PR #16176): limit the number of different tokens accessing the metrics?
+	defer tracker.cleanupInactiveGatherers()
 	var gr *gatherer
 	if g, ok := tracker.gatherers.Load(userID); !ok {
-		gr = &gatherer{
-			registry: tracker.registryFactory(userID),
+		r, err := tracker.registryFactory(userID)
+		if err != nil {
+			log.Errorw("failed to create custom registry for user", userID, logging.Err(err))
+			return nil
 		}
+		gr = &gatherer{
+			registry: r,
+		}
+		gr.running.Store(true)
 		tracker.gatherers.Store(userID, gr)
 		for metricName := range cfg.metrics {
 			tracker.registerMetric(gr, cfg, metricName)
 		}
 	} else {
 		gr = g.(*gatherer)
+		// Return nil if this gatherer is still running.
+		// Otherwise mark it running.
+		if !gr.running.CompareAndSwap(false, true) {
+			return nil
+		}
 	}
 	return gr
+}
+
+// cleanupInactiveGatherers frees the registries for the userIDs, that haven't
+// shown up for inactiveGathererTTL.
+func (tracker *TrackerBase[Finding]) cleanupInactiveGatherers() {
+	tracker.cleanupWG.Add(1)
+	go func() {
+		defer tracker.cleanupWG.Done()
+		tracker.gatherers.Range(func(userID, gv any) bool {
+			g := gv.(*gatherer)
+			// Make it running to block normal gathering.
+			if !g.running.CompareAndSwap(false, true) {
+				return true
+			}
+			if time.Since(g.lastGather) >= inactiveGathererTTL &&
+				// Do not delete a just created gatherer in test.
+				// lastGather should never be zero for a non-running gatherer
+				// in production run.
+				!g.lastGather.IsZero() {
+				metrics.DeleteCustomRegistry(userID.(string))
+				tracker.gatherers.Delete(userID)
+			} else {
+				g.running.Store(false)
+			}
+			return true
+		})
+	}()
 }

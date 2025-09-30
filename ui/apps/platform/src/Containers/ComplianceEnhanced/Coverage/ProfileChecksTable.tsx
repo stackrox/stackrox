@@ -21,11 +21,11 @@ import {
 } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
-import { TableUIState } from 'utils/getTableUIState';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
+import type { TableUIState } from 'utils/getTableUIState';
 import { getPercentage } from 'utils/mathUtils';
 
 import { CHECK_NAME_QUERY, CHECK_STATUS_QUERY } from './compliance.coverage.constants';

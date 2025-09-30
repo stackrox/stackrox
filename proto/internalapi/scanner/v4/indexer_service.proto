@@ -28,6 +28,7 @@ message CreateIndexReportRequest {
 
 message GetIndexReportRequest {
   string hash_id = 1;
+  bool includeExternal = 2;
 }
 
 message HasIndexReportRequest {

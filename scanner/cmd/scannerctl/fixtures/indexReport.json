@@ -2,8 +2,8 @@
   "state": "IndexFinished",
   "success": true,
   "contents": {
-    "packages": {
-      "0": {
+    "packages": [
+      {
         "id": "0",
         "name": "vim-common",
         "version": "2:8.2.2637-22.el9_6",
@@ -19,21 +19,21 @@
         "arch": "x86_64",
         "cpe": "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
       }
-    },
-    "repositories": {
-      "0": {
+    ],
+    "repositories": [
+      {
         "id": "0",
         "name": "rhel-9-for-x86_64-appstream-rpms",
         "key": "rhel-cpe-repository",
         "cpe": "cpe:2.3:a:redhat:enterprise_linux:9:*:appstream:*:*:*:*:*"
       },
-      "1": {
+      {
         "id": "1",
         "name": "rhel-9-for-x86_64-baseos-rpms",
         "key": "rhel-cpe-repository",
         "cpe": "cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*"
       }
-    },
+    ],
     "environments": {
       "0": {
         "environments": [

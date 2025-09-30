@@ -76,7 +76,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 			return nil, errox.InvalidArgs.New("empty contents is disabled")
 		}
 		zlog.Debug(ctx).Msg("no contents, retrieving")
-		ir, err = getClairIndexReport(ctx, s.indexer, req.GetHashId())
+		ir, err = getClairIndexReport(ctx, s.indexer, req.GetHashId(), false)
 	} else {
 		zlog.Info(ctx).Msg("has contents, parsing")
 		ir, err = parseIndexReport(req.GetContents())
