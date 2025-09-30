@@ -20,6 +20,7 @@ import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { getSeveritySortOptions } from '../../utils/sortUtils';
 
 export const tableId = 'WorkloadCvesDeploymentOverviewTable';
 
@@ -135,6 +136,10 @@ function DeploymentOverviewTable({
                     <TooltipTh
                         className={getVisibilityClass('cvesBySeverity')}
                         tooltip="CVEs by severity across this deployment"
+                        sort={getSortParams(
+                            'CVEs By Severity',
+                            getSeveritySortOptions(filteredSeverities)
+                        )}
                     >
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
