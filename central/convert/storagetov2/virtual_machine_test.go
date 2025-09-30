@@ -234,6 +234,16 @@ func TestConvertVirtualMachineScanNote(t *testing.T) {
 			expected: v2.VirtualMachineScan_UNSET,
 		},
 		{
+			name:     "OS_UNKNOWN",
+			input:    storage.VirtualMachineScan_OS_UNKNOWN,
+			expected: v2.VirtualMachineScan_OS_UNKNOWN,
+		},
+		{
+			name:     "OS_UNSUPPORTED",
+			input:    storage.VirtualMachineScan_OS_UNSUPPORTED,
+			expected: v2.VirtualMachineScan_OS_UNSUPPORTED,
+		},
+		{
 			name:     "default",
 			input:    storage.VirtualMachineScan_Note(-1),
 			expected: v2.VirtualMachineScan_UNSET,
