@@ -137,6 +137,12 @@ func (m *VirtualMachineVulnerability) CloneVT() *VirtualMachineVulnerability {
 	}
 	r := new(VirtualMachineVulnerability)
 	r.CveBaseInfo = m.CveBaseInfo.CloneVT()
+	r.Severity = m.Severity
+	if m.SetFixedBy != nil {
+		r.SetFixedBy = m.SetFixedBy.(interface {
+			CloneVT() isVirtualMachineVulnerability_SetFixedBy
+		}).CloneVT()
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -146,6 +152,15 @@ func (m *VirtualMachineVulnerability) CloneVT() *VirtualMachineVulnerability {
 
 func (m *VirtualMachineVulnerability) CloneMessageVT() proto.Message {
 	return m.CloneVT()
+}
+
+func (m *VirtualMachineVulnerability_FixedBy) CloneVT() isVirtualMachineVulnerability_SetFixedBy {
+	if m == nil {
+		return (*VirtualMachineVulnerability_FixedBy)(nil)
+	}
+	r := new(VirtualMachineVulnerability_FixedBy)
+	r.FixedBy = m.FixedBy
+	return r
 }
 
 func (m *VirtualMachineCVEInfo_Reference) CloneVT() *VirtualMachineCVEInfo_Reference {
@@ -181,9 +196,6 @@ func (m *VirtualMachineCVEInfo) CloneVT() *VirtualMachineCVEInfo {
 	r.PublishedOn = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.PublishedOn).CloneVT())
 	r.CreatedAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.CreatedAt).CloneVT())
 	r.LastModified = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastModified).CloneVT())
-	r.ScoreVersion = m.ScoreVersion
-	r.CvssV2 = m.CvssV2.CloneVT()
-	r.CvssV3 = m.CvssV3.CloneVT()
 	r.Epss = m.Epss.CloneVT()
 	if rhs := m.References; rhs != nil {
 		tmpContainer := make([]*VirtualMachineCVEInfo_Reference, len(rhs))
@@ -417,7 +429,22 @@ func (this *VirtualMachineVulnerability) EqualVT(that *VirtualMachineVulnerabili
 	} else if this == nil || that == nil {
 		return false
 	}
+	if this.SetFixedBy == nil && that.SetFixedBy != nil {
+		return false
+	} else if this.SetFixedBy != nil {
+		if that.SetFixedBy == nil {
+			return false
+		}
+		if !this.SetFixedBy.(interface {
+			EqualVT(isVirtualMachineVulnerability_SetFixedBy) bool
+		}).EqualVT(that.SetFixedBy) {
+			return false
+		}
+	}
 	if !this.CveBaseInfo.EqualVT(that.CveBaseInfo) {
+		return false
+	}
+	if this.Severity != that.Severity {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -430,6 +457,23 @@ func (this *VirtualMachineVulnerability) EqualMessageVT(thatMsg proto.Message) b
 	}
 	return this.EqualVT(that)
 }
+func (this *VirtualMachineVulnerability_FixedBy) EqualVT(thatIface isVirtualMachineVulnerability_SetFixedBy) bool {
+	that, ok := thatIface.(*VirtualMachineVulnerability_FixedBy)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.FixedBy != that.FixedBy {
+		return false
+	}
+	return true
+}
+
 func (this *VirtualMachineCVEInfo_Reference) EqualVT(that *VirtualMachineCVEInfo_Reference) bool {
 	if this == that {
 		return true
@@ -480,15 +524,6 @@ func (this *VirtualMachineCVEInfo) EqualVT(that *VirtualMachineCVEInfo) bool {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.LastModified).EqualVT((*timestamppb1.Timestamp)(that.LastModified)) {
-		return false
-	}
-	if this.ScoreVersion != that.ScoreVersion {
-		return false
-	}
-	if !this.CvssV2.EqualVT(that.CvssV2) {
-		return false
-	}
-	if !this.CvssV3.EqualVT(that.CvssV3) {
 		return false
 	}
 	if len(this.References) != len(that.References) {
@@ -898,6 +933,20 @@ func (m *VirtualMachineVulnerability) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if vtmsg, ok := m.SetFixedBy.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+	}
+	if m.Severity != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Severity))
+		i--
+		dAtA[i] = 0x10
+	}
 	if m.CveBaseInfo != nil {
 		size, err := m.CveBaseInfo.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -911,6 +960,20 @@ func (m *VirtualMachineVulnerability) MarshalToSizedBufferVT(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
+func (m *VirtualMachineVulnerability_FixedBy) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *VirtualMachineVulnerability_FixedBy) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.FixedBy)
+	copy(dAtA[i:], m.FixedBy)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.FixedBy)))
+	i--
+	dAtA[i] = 0x1a
+	return len(dAtA) - i, nil
+}
 func (m *VirtualMachineCVEInfo_Reference) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -998,7 +1061,7 @@ func (m *VirtualMachineCVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x62
+		dAtA[i] = 0x4a
 	}
 	if len(m.CvssMetrics) > 0 {
 		for iNdEx := len(m.CvssMetrics) - 1; iNdEx >= 0; iNdEx-- {
@@ -1009,7 +1072,7 @@ func (m *VirtualMachineCVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x5a
+			dAtA[i] = 0x42
 		}
 	}
 	if len(m.References) > 0 {
@@ -1021,33 +1084,8 @@ func (m *VirtualMachineCVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x52
+			dAtA[i] = 0x3a
 		}
-	}
-	if m.CvssV3 != nil {
-		size, err := m.CvssV3.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if m.CvssV2 != nil {
-		size, err := m.CvssV2.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x42
-	}
-	if m.ScoreVersion != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ScoreVersion))
-		i--
-		dAtA[i] = 0x38
 	}
 	if m.LastModified != nil {
 		size, err := (*timestamppb1.Timestamp)(m.LastModified).MarshalToSizedBufferVT(dAtA[:i])
@@ -1287,10 +1325,26 @@ func (m *VirtualMachineVulnerability) SizeVT() (n int) {
 		l = m.CveBaseInfo.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.Severity != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Severity))
+	}
+	if vtmsg, ok := m.SetFixedBy.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
+	}
 	n += len(m.unknownFields)
 	return n
 }
 
+func (m *VirtualMachineVulnerability_FixedBy) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.FixedBy)
+	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	return n
+}
 func (m *VirtualMachineCVEInfo_Reference) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -1339,17 +1393,6 @@ func (m *VirtualMachineCVEInfo) SizeVT() (n int) {
 	}
 	if m.LastModified != nil {
 		l = (*timestamppb1.Timestamp)(m.LastModified).SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.ScoreVersion != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.ScoreVersion))
-	}
-	if m.CvssV2 != nil {
-		l = m.CvssV2.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.CvssV3 != nil {
-		l = m.CvssV3.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if len(m.References) > 0 {
@@ -2363,6 +2406,57 @@ func (m *VirtualMachineVulnerability) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Severity", wireType)
+			}
+			m.Severity = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Severity |= VulnerabilitySeverity(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SetFixedBy = &VirtualMachineVulnerability_FixedBy{FixedBy: string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2734,97 +2828,6 @@ func (m *VirtualMachineCVEInfo) UnmarshalVT(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 7:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScoreVersion", wireType)
-			}
-			m.ScoreVersion = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ScoreVersion |= VirtualMachineCVEInfo_ScoreVersion(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CvssV2", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.CvssV2 == nil {
-				m.CvssV2 = &CVSSV2{}
-			}
-			if err := m.CvssV2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CvssV3", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.CvssV3 == nil {
-				m.CvssV3 = &CVSSV3{}
-			}
-			if err := m.CvssV3.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field References", wireType)
 			}
@@ -2858,7 +2861,7 @@ func (m *VirtualMachineCVEInfo) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 11:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CvssMetrics", wireType)
 			}
@@ -2892,7 +2895,7 @@ func (m *VirtualMachineCVEInfo) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 12:
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Epss", wireType)
 			}
@@ -4038,6 +4041,61 @@ func (m *VirtualMachineVulnerability) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Severity", wireType)
+			}
+			m.Severity = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Severity |= VulnerabilitySeverity(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.SetFixedBy = &VirtualMachineVulnerability_FixedBy{FixedBy: stringValue}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4429,97 +4487,6 @@ func (m *VirtualMachineCVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 7:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScoreVersion", wireType)
-			}
-			m.ScoreVersion = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ScoreVersion |= VirtualMachineCVEInfo_ScoreVersion(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CvssV2", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.CvssV2 == nil {
-				m.CvssV2 = &CVSSV2{}
-			}
-			if err := m.CvssV2.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CvssV3", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.CvssV3 == nil {
-				m.CvssV3 = &CVSSV3{}
-			}
-			if err := m.CvssV3.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field References", wireType)
 			}
@@ -4553,7 +4520,7 @@ func (m *VirtualMachineCVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 11:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CvssMetrics", wireType)
 			}
@@ -4587,7 +4554,7 @@ func (m *VirtualMachineCVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 12:
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Epss", wireType)
 			}
