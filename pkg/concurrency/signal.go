@@ -2,6 +2,7 @@ package concurrency
 
 import (
 	"sync/atomic"
+	"unsafe"
 )
 
 // ReadOnlySignal provides an interface to inspect a Signal without modifying it.
@@ -20,7 +21,7 @@ type ReadOnlySignal interface {
 // which is not what you usually want. To reset it to the non-triggered state, call `Reset()`.
 // Similarly to `sync.(RW)Mutex` and `sync.Cond`, a signal should not be copied once used.
 type Signal struct {
-	ch atomic.Pointer[chan struct{}] // ch is a pointer to the signal channel, or `nil` if the signal is in the triggered state.
+	ch unsafe.Pointer // ch is a pointer to the signal channel, or `nil` if the signal is in the triggered state.
 }
 
 // NewSignal creates a new signal that is in the reset state.
@@ -32,11 +33,12 @@ func NewSignal() Signal {
 
 // WaitC returns a WaitableChan for this signal.
 func (s *Signal) WaitC() WaitableChan {
-	ch := s.ch.Load()
-	if ch == nil {
+	chPtr := atomic.LoadPointer(&s.ch)
+	if chPtr == nil {
 		return closedCh
 	}
 
+	ch := (*chan struct{})(chPtr)
 	return *ch
 }
 
@@ -47,20 +49,22 @@ func (s *Signal) Done() <-chan struct{} {
 
 // IsDone checks if the signal was triggered. It is a slightly more efficient alternative to calling `IsDone(s)`.
 func (s *Signal) IsDone() bool {
-	ch := s.ch.Load()
-	if ch == nil {
+	chPtr := atomic.LoadPointer(&s.ch)
+	if chPtr == nil {
 		return true
 	}
+	ch := (*chan struct{})(chPtr)
 	return IsDone(WaitableChan(*ch))
 }
 
 // Wait waits for the signal to be triggered. It is a slightly more efficient and convenient alternative to calling
 // `Wait(s)`.
 func (s *Signal) Wait() {
-	ch := s.ch.Load()
-	if ch == nil {
+	chPtr := atomic.LoadPointer(&s.ch)
+	if chPtr == nil {
 		return
 	}
+	ch := (*chan struct{})(chPtr)
 	Wait(WaitableChan(*ch))
 }
 
@@ -68,17 +72,19 @@ func (s *Signal) Wait() {
 // actually performed (i.e., the signal was triggered). It returns false if the signal was not in the triggered state.
 func (s *Signal) Reset() bool {
 	ch := make(chan struct{})
-	return s.ch.CompareAndSwap(nil, &ch)
+	//#nosec G103
+	return atomic.CompareAndSwapPointer(&s.ch, nil, unsafe.Pointer(&ch))
 }
 
 // Signal triggers the signal. The return value indicates whether the signal was actually triggered. It returns false
 // if the signal was already in the triggered state.
 func (s *Signal) Signal() bool {
-	ch := s.ch.Swap(nil)
-	if ch == nil {
+	chPtr := atomic.SwapPointer(&s.ch, nil)
+	if chPtr == nil {
 		return false
 	}
 
+	ch := (*chan struct{})(chPtr)
 	close(*ch)
 	return true
 }
