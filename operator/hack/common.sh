@@ -168,6 +168,13 @@ function gather_olm_resources() {
     log "Running oc adm must-gather..."
     local -r path="/tmp/k8s-service-logs/olm-must-gather"
     mkdir -p "${path}"
-    ( cd "${path}" && { oc adm must-gather || true; }; )
+    ( cd "${path}" && run_oc_adm_must_gather > "oc-adm-must-gather-output.txt"; )
+  fi
+}
+
+function run_oc_adm_must_gather() {
+  if ! oc adm must-gather 2>&1; then
+    log "Running oc adm must-gather failed, perhaps this is not an OpenShift cluster?"
+    log "The oc failure is never fatal. Look earlier in the log for the root cause of this failure of this run."
   fi
 }
