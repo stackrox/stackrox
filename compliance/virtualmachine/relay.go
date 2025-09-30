@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mdlayher/vsock"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/virtualmachine/metrics"
+	"github.com/stackrox/rox/compliance/virtualmachine/vsock"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/env"
@@ -24,13 +24,14 @@ import (
 var log = logging.LoggerForModule()
 
 type VsockServer struct {
-	listener *vsock.Listener
+	listener net.Listener
 	port     uint32
 }
 
 func (s *VsockServer) Start() error {
 	log.Debugf("Starting vsock server on port %d", s.port)
-	l, err := vsock.Listen(s.port, nil)
+
+	l, err := vsock.CreateVSockListener(s.port)
 	if err != nil {
 		return errors.Wrapf(err, "listening on port %d", s.port)
 	}
@@ -90,12 +91,12 @@ func (r *Relay) Run(ctx context.Context) error {
 }
 
 func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
-	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
+	vsockConn, ok := conn.(*vsock.VsockConn)
 	if !ok {
 		return 0, errors.New("Failed to extract remote address from vsock connection")
 	}
 
-	return remoteAddr.ContextID, nil
+	return vsockConn.GetPeerCID(), nil
 }
 
 func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
