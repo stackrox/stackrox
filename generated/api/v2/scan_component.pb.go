@@ -21,6 +21,70 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type SourceType int32
+
+const (
+	SourceType_OS                SourceType = 0
+	SourceType_PYTHON            SourceType = 1
+	SourceType_JAVA              SourceType = 2
+	SourceType_RUBY              SourceType = 3
+	SourceType_NODEJS            SourceType = 4
+	SourceType_GO                SourceType = 7
+	SourceType_DOTNETCORERUNTIME SourceType = 5
+	SourceType_INFRASTRUCTURE    SourceType = 6
+)
+
+// Enum value maps for SourceType.
+var (
+	SourceType_name = map[int32]string{
+		0: "OS",
+		1: "PYTHON",
+		2: "JAVA",
+		3: "RUBY",
+		4: "NODEJS",
+		7: "GO",
+		5: "DOTNETCORERUNTIME",
+		6: "INFRASTRUCTURE",
+	}
+	SourceType_value = map[string]int32{
+		"OS":                0,
+		"PYTHON":            1,
+		"JAVA":              2,
+		"RUBY":              3,
+		"NODEJS":            4,
+		"GO":                7,
+		"DOTNETCORERUNTIME": 5,
+		"INFRASTRUCTURE":    6,
+	}
+)
+
+func (x SourceType) Enum() *SourceType {
+	p := new(SourceType)
+	*p = x
+	return p
+}
+
+func (x SourceType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SourceType) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_v2_scan_component_proto_enumTypes[0].Descriptor()
+}
+
+func (SourceType) Type() protoreflect.EnumType {
+	return &file_api_v2_scan_component_proto_enumTypes[0]
+}
+
+func (x SourceType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SourceType.Descriptor instead.
+func (SourceType) EnumDescriptor() ([]byte, []int) {
+	return file_api_v2_scan_component_proto_rawDescGZIP(), []int{0}
+}
+
 type ScanComponent struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Name    string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -31,7 +95,8 @@ type ScanComponent struct {
 	SetTopCvss    isScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
 	RiskScore     float32                    `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
 	Architecture  string                     `protobuf:"bytes,5,opt,name=architecture,proto3" json:"architecture,omitempty"`
-	Vulns         []*EmbeddedVulnerability   `protobuf:"bytes,6,rep,name=vulns,proto3" json:"vulns,omitempty"` // TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
+	Vulns         []*EmbeddedVulnerability   `protobuf:"bytes,6,rep,name=vulns,proto3" json:"vulns,omitempty"`
+	Source        SourceType                 `protobuf:"varint,7,opt,name=source,proto3,enum=v2.SourceType" json:"source,omitempty"` // TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -117,6 +182,13 @@ func (x *ScanComponent) GetVulns() []*EmbeddedVulnerability {
 	return nil
 }
 
+func (x *ScanComponent) GetSource() SourceType {
+	if x != nil {
+		return x.Source
+	}
+	return SourceType_OS
+}
+
 type isScanComponent_SetTopCvss interface {
 	isScanComponent_SetTopCvss()
 }
@@ -131,7 +203,7 @@ var File_api_v2_scan_component_proto protoreflect.FileDescriptor
 
 const file_api_v2_scan_component_proto_rawDesc = "" +
 	"\n" +
-	"\x1bapi/v2/scan_component.proto\x12\x02v2\x1a\x1aapi/v2/vulnerability.proto\"\xde\x01\n" +
+	"\x1bapi/v2/scan_component.proto\x12\x02v2\x1a\x1aapi/v2/vulnerability.proto\"\x86\x02\n" +
 	"\rScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1b\n" +
@@ -139,8 +211,21 @@ const file_api_v2_scan_component_proto_rawDesc = "" +
 	"\n" +
 	"risk_score\x18\x04 \x01(\x02R\triskScore\x12\"\n" +
 	"\farchitecture\x18\x05 \x01(\tR\farchitecture\x12/\n" +
-	"\x05vulns\x18\x06 \x03(\v2\x19.v2.EmbeddedVulnerabilityR\x05vulnsB\x0e\n" +
-	"\fset_top_cvssB'\n" +
+	"\x05vulns\x18\x06 \x03(\v2\x19.v2.EmbeddedVulnerabilityR\x05vulns\x12&\n" +
+	"\x06source\x18\a \x01(\x0e2\x0e.v2.SourceTypeR\x06sourceB\x0e\n" +
+	"\fset_top_cvss*s\n" +
+	"\n" +
+	"SourceType\x12\x06\n" +
+	"\x02OS\x10\x00\x12\n" +
+	"\n" +
+	"\x06PYTHON\x10\x01\x12\b\n" +
+	"\x04JAVA\x10\x02\x12\b\n" +
+	"\x04RUBY\x10\x03\x12\n" +
+	"\n" +
+	"\x06NODEJS\x10\x04\x12\x06\n" +
+	"\x02GO\x10\a\x12\x15\n" +
+	"\x11DOTNETCORERUNTIME\x10\x05\x12\x12\n" +
+	"\x0eINFRASTRUCTURE\x10\x06B'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2b\x06proto3"
 
 var (
@@ -155,18 +240,21 @@ func file_api_v2_scan_component_proto_rawDescGZIP() []byte {
 	return file_api_v2_scan_component_proto_rawDescData
 }
 
+var file_api_v2_scan_component_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v2_scan_component_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v2_scan_component_proto_goTypes = []any{
-	(*ScanComponent)(nil),         // 0: v2.ScanComponent
-	(*EmbeddedVulnerability)(nil), // 1: v2.EmbeddedVulnerability
+	(SourceType)(0),               // 0: v2.SourceType
+	(*ScanComponent)(nil),         // 1: v2.ScanComponent
+	(*EmbeddedVulnerability)(nil), // 2: v2.EmbeddedVulnerability
 }
 var file_api_v2_scan_component_proto_depIdxs = []int32{
-	1, // 0: v2.ScanComponent.vulns:type_name -> v2.EmbeddedVulnerability
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 0: v2.ScanComponent.vulns:type_name -> v2.EmbeddedVulnerability
+	0, // 1: v2.ScanComponent.source:type_name -> v2.SourceType
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_scan_component_proto_init() }
@@ -183,13 +271,14 @@ func file_api_v2_scan_component_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_scan_component_proto_rawDesc), len(file_api_v2_scan_component_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_api_v2_scan_component_proto_goTypes,
 		DependencyIndexes: file_api_v2_scan_component_proto_depIdxs,
+		EnumInfos:         file_api_v2_scan_component_proto_enumTypes,
 		MessageInfos:      file_api_v2_scan_component_proto_msgTypes,
 	}.Build()
 	File_api_v2_scan_component_proto = out.File
