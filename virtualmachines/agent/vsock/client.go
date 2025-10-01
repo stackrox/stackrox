@@ -9,6 +9,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var log = logging.LoggerForModule()
@@ -44,6 +45,13 @@ func (c *Client) fixupIndexReport(report *v4.IndexReport) *v4.IndexReport {
 }
 
 func (c *Client) writeIndexReport(conn net.Conn, report *v4.IndexReport) error {
+	jsonBytes, err := protojson.Marshal(report)
+	if err != nil {
+		return err
+	}
+
+	log.Infof(string(jsonBytes))
+
 	reportBytes, err := protocompat.Marshal(report)
 	if err != nil {
 		return fmt.Errorf("marshalling index report: %w", err)
