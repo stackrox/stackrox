@@ -770,7 +770,6 @@ module.exports = [
             'src/Components/**',
             'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/Integrations/**',
             'src/Containers/MainPage/**',
             'src/Containers/MitreAttackVectors/**',
             'src/Containers/NetworkGraph/**',
