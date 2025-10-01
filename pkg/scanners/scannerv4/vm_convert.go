@@ -105,7 +105,6 @@ func toVirtualMachineAdvisory(
 		Name: advisory.GetName(),
 		Link: advisory.GetLink(),
 	}
-	return nil
 }
 
 func setVirtualMachineScoresAndScoreVersions(

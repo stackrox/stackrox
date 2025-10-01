@@ -94,7 +94,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	// Store enriched VM
-	if err := p.vmDatastore.UpsertVirtualMachine(ctx, vm); err != nil {
+	if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
 		return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
 	}
 
