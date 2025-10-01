@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils/external"
