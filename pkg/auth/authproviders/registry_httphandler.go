@@ -176,9 +176,6 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	}
 
 	ri := requestinfo.FromContext(req.Context())
-	if ri.Hostname == "" {
-		ri.Hostname = req.Host
-	}
 	loginURL, err := backend.LoginURL(clientState, &ri)
 	if err != nil {
 		log.Warnf("could not obtain the login URL for %s: %v", providerID, err)

@@ -237,9 +237,6 @@ func (c *openshiftConnector) HandleCallback(s Scopes, r *http.Request) (identity
 	}
 
 	ri := requestinfo.FromContext(ctx)
-	if ri.Hostname == "" {
-		ri.Hostname = r.Host
-	}
 	redirectURI := MakeRedirectURI(&ri, ri.HTTPRequest.URL.Path)
 
 	// Our service might be accessible via different routes and hence specify
