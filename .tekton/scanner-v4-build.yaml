@@ -61,6 +61,14 @@ spec:
     name: scanner-v4-pipeline
 
   taskRunSpecs:
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+    - name: prefetch-dependencies
+      computeResources:
+        limits:
+          cpu: 500m
+        requests:
+          cpu: 500m
   - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build

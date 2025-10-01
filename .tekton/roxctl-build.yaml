@@ -61,6 +61,14 @@ spec:
     name: basic-component-pipeline
 
   taskRunSpecs:
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+    - name: prefetch-dependencies
+      computeResources:
+        limits:
+          cpu: "2"
+        requests:
+          cpu: "1"
   - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build

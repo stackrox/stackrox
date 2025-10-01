@@ -66,6 +66,14 @@ spec:
     name: main-pipeline
 
   taskRunSpecs:
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+    - name: prefetch-dependencies
+      computeResources:
+        limits:
+          cpu: "1"
+        requests:
+          cpu: "1"
   # For all sbom-syft-generate steps:
   # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
   # exits with 137 (OOMKilled):
