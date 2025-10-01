@@ -67,10 +67,10 @@ func nodeNotes(report *v4.VulnerabilityReport, osImage string) []storage.NodeSca
 	return filterNodeNotes(notes.AsSlice(), osImage)
 }
 
-// TODO(ROX-26593): Instead of fixing notes here, add RHCOS DistributionScanner to Claircore
+// TODO(ROX-26593): Instead of fixing notes here, add RHCOS DistributionScanner to Claircore.
 // All nodes currently get the note UNSUPPORTED assigned to them because the IndexReport does not contain
 // Distribution information. To include it there, a specialized RHCOS DistributionScanner needs to be added
-// to ClairCore and then called in Compliances' IndexNode function where the IndexReport is created.
+// to Claircore and then called in Compliances' IndexNode function where the IndexReport is created.
 func filterNodeNotes(notes []storage.NodeScan_Note, osImage string) []storage.NodeScan_Note {
 	if !strings.HasPrefix(osImage, rhcosFullName) {
 		// Keep notes as they are for nodes other than RHCOS.
