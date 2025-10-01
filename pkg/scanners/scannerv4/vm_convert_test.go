@@ -66,33 +66,33 @@ var (
 func TestNoVMConversionPanic(t *testing.T) {
 	assert.NotPanics(t, func() {
 		var nilReport *v4.VulnerabilityReport
-		_ = toVirtualMachineScan(nilReport)
+		_ = ToVirtualMachineScan(nilReport)
 
 		report := &v4.VulnerabilityReport{}
-		_ = toVirtualMachineScan(report)
+		_ = ToVirtualMachineScan(report)
 
 		report.Contents = &v4.Contents{}
-		_ = toVirtualMachineScan(report)
+		_ = ToVirtualMachineScan(report)
 
 		report.Contents.Packages = []*v4.Package{}
-		_ = toVirtualMachineScan(report)
+		_ = ToVirtualMachineScan(report)
 
 		report.Contents.Packages = append(report.Contents.Packages, &v4.Package{
 			Id: "1",
 		})
-		_ = toVirtualMachineScan(report)
+		_ = ToVirtualMachineScan(report)
 
 		report.PackageVulnerabilities = map[string]*v4.StringList{}
-		_ = toVirtualMachineScan(report)
+		_ = ToVirtualMachineScan(report)
 
 		report.PackageVulnerabilities["1"] = &v4.StringList{}
-		_ = toVirtualMachineScan(report)
+		_ = ToVirtualMachineScan(report)
 
 		report.PackageVulnerabilities["1"].Values = []string{}
-		_ = toVirtualMachineScan(report)
+		_ = ToVirtualMachineScan(report)
 
 		report.PackageVulnerabilities["1"].Values = []string{"CVE1"}
-		_ = toVirtualMachineScan(report)
+		_ = ToVirtualMachineScan(report)
 	})
 }
 
@@ -138,13 +138,17 @@ func TestToVirtualMachineScan(t *testing.T) {
 						CveBaseInfo: &storage.VirtualMachineCVEInfo{
 							Cve: "CVE1-Name",
 						},
+						Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+						SetFixedBy: &storage.VirtualMachineVulnerability_FixedBy{
+							FixedBy: "v99",
+						},
 					},
 				},
 			},
 		},
 	}
 
-	actual := toVirtualMachineScan(input)
+	actual := ToVirtualMachineScan(input)
 	protoassert.SlicesEqual(t, expected.Components, actual.Components)
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
 	assert.Equal(t, expected.Notes, actual.Notes)
@@ -357,10 +361,8 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 			expected: []*storage.VirtualMachineVulnerability{
 				{
 					CveBaseInfo: &storage.VirtualMachineCVEInfo{
-						Cve:          "CVE-2025-8713",
-						Summary:      "some vulnerability description",
-						ScoreVersion: storage.VirtualMachineCVEInfo_V3,
-						CvssV3:       testCVE1CVSSV3,
+						Cve:     "CVE-2025-8713",
+						Summary: "some vulnerability description",
 						CvssMetrics: []*storage.CVSSScore{
 							{
 								CvssScore: &storage.CVSSScore_Cvssv3{
@@ -398,10 +400,8 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 			expected: []*storage.VirtualMachineVulnerability{
 				{
 					CveBaseInfo: &storage.VirtualMachineCVEInfo{
-						Cve:          "CVE-2025-8713",
-						Summary:      "some other vulnerability description",
-						ScoreVersion: storage.VirtualMachineCVEInfo_V3,
-						CvssV3:       testCVE1CVSSV3,
+						Cve:     "CVE-2025-8713",
+						Summary: "some other vulnerability description",
 						CvssMetrics: []*storage.CVSSScore{
 							{
 								CvssScore: &storage.CVSSScore_Cvssv3{
@@ -576,9 +576,7 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 			},
 			expected: &storage.VirtualMachineVulnerability{
 				CveBaseInfo: &storage.VirtualMachineCVEInfo{
-					Cve:          "CVE-2025-8715",
-					ScoreVersion: storage.VirtualMachineCVEInfo_V3,
-					CvssV3:       expectedCVSSV3,
+					Cve: "CVE-2025-8715",
 					CvssMetrics: []*storage.CVSSScore{
 						{
 							CvssScore: &storage.CVSSScore_Cvssv3{
@@ -647,9 +645,7 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 			},
 			expected: &storage.VirtualMachineVulnerability{
 				CveBaseInfo: &storage.VirtualMachineCVEInfo{
-					Cve:          "CVE-2025-8715",
-					ScoreVersion: storage.VirtualMachineCVEInfo_V3,
-					CvssV3:       expectedCVSSV3,
+					Cve: "CVE-2025-8715",
 					CvssMetrics: []*storage.CVSSScore{
 						{
 							Source: storage.Source_SOURCE_NVD,
@@ -686,9 +682,7 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 			},
 			expected: &storage.VirtualMachineVulnerability{
 				CveBaseInfo: &storage.VirtualMachineCVEInfo{
-					Cve:          "CVE-2025-8715",
-					ScoreVersion: storage.VirtualMachineCVEInfo_V3,
-					CvssV3:       expectedCVSSV3,
+					Cve: "CVE-2025-8715",
 					CvssMetrics: []*storage.CVSSScore{
 						{
 							Source: storage.Source_SOURCE_NVD,
@@ -731,9 +725,7 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 			},
 			expected: &storage.VirtualMachineVulnerability{
 				CveBaseInfo: &storage.VirtualMachineCVEInfo{
-					Cve:          "CVE-2025-8715",
-					ScoreVersion: storage.VirtualMachineCVEInfo_V3,
-					CvssV3:       expectedCVSSV3,
+					Cve: "CVE-2025-8715",
 					CvssMetrics: []*storage.CVSSScore{
 						{
 							Source: storage.Source_SOURCE_RED_HAT,
