@@ -60,10 +60,10 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, repor
 			r.GetDiscoveredAtImage(),
 			r.Link,
 		}
-		if reportSnapshot.GetVulnReportFilters() != nil {
-			addOptionalColumnstoRow(reportFilters, &row, csvWriter, r)
-		} else {
+		if reportSnapshot.GetViewBasedVulnReportFilters() != nil {
 			addOtherColumns(&row, csvWriter, r)
+		} else {
+			addOptionalColumnstoRow(reportFilters, &row, csvWriter, r)
 		}
 		csvWriter.AddValue(row)
 	}
