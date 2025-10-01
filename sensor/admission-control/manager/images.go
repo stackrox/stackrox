@@ -9,7 +9,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc/connectivity"
@@ -30,12 +32,20 @@ func (m *manager) getCachedImage(img *storage.ContainerImage) *storage.Image {
 		return nil
 	}
 
-	cachedImg, ok := m.imageCache.Get(img.GetId())
+	id := img.GetId()
+	if features.FlattenImageData.Enabled() {
+		if img.GetIdV2() == "" {
+			return nil
+		}
+		id = img.GetIdV2()
+	}
+
+	cachedImg, ok := m.imageCache.Get(id)
 	if !ok {
 		return nil
 	}
 	if time.Since(cachedImg.timestamp) > imageCacheTTL {
-		m.imageCache.RemoveIf(img.GetId(), func(entry imageCacheEntry) bool { return entry == cachedImg })
+		m.imageCache.RemoveIf(id, func(entry imageCacheEntry) bool { return entry == cachedImg })
 		return nil
 	}
 
@@ -47,12 +57,17 @@ func (m *manager) cacheImage(img *storage.Image) {
 		return
 	}
 
+	id := img.GetId()
+	if features.FlattenImageData.Enabled() {
+		id = utils.NewImageV2ID(img.GetName(), img.GetId())
+	}
+
 	cacheEntry := imageCacheEntry{
 		Image:     img,
 		timestamp: time.Now(),
 	}
 
-	m.imageCache.Add(img.GetId(), cacheEntry)
+	m.imageCache.Add(id, cacheEntry)
 }
 
 type fetchImageResult struct {
