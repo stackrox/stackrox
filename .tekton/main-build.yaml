@@ -89,6 +89,7 @@ spec:
       # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
       computeResources:
         limits:
+          cpu: 4
           memory: 7Gi
         requests:
           cpu: 4
