@@ -181,6 +181,9 @@ spec:
         securityContext:
           runAsUser: 0
           readOnlyRootFilesystem: true
+      [<- if .FeatureFlags.ROX_VIRTUAL_MACHINES >]
+          privileged: true
+      [<- end >]
           {{ if not ._rox.collector.disableSELinuxOptions }}
           seLinuxOptions:
             type: {{ ._rox.collector.seLinuxOptionsType | default "container_runtime_t" | quote }}
@@ -197,6 +200,10 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
+      [<- if .FeatureFlags.ROX_VIRTUAL_MACHINES >]
+        - mountPath: /dev/vsock
+          name: vsock
+      [<- end >]
       {{- if eq ._rox.env.openshift 4 }}
         - mountPath: /hostindex/usr/share
           name: usr-share-ro
@@ -257,6 +264,11 @@ spec:
       - hostPath:
           path: /dev
         name: dev-ro
+      [<- if .FeatureFlags.ROX_VIRTUAL_MACHINES >]
+      - hostPath:
+          path: /dev/vsock
+        name: vsock
+      [<- end >]
       {{- if ._rox._securedClusterCertRefresh }}
       {{- include "srox.tlsCertsInitContainerVolumes" (list "collector") | indent 6 }}
       {{- else }}
