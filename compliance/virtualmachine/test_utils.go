@@ -67,9 +67,10 @@ func (c *mockVsockConn) SetReadDeadline(time.Time) error  { return nil }
 func (c *mockVsockConn) SetWriteDeadline(time.Time) error { return nil }
 
 type mockSensorClient struct {
-	response         *sensor.UpsertVirtualMachineIndexReportResponse
-	err              error
 	capturedRequests []*sensor.UpsertVirtualMachineIndexReportRequest
+	delay            time.Duration
+	err              error
+	response         *sensor.UpsertVirtualMachineIndexReportResponse
 }
 
 func newMockSensorClient() *mockSensorClient {
@@ -78,17 +79,27 @@ func newMockSensorClient() *mockSensorClient {
 	}
 }
 
-func (c *mockSensorClient) UpsertVirtualMachineIndexReport(_ context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
-	c.capturedRequests = append(c.capturedRequests, req)
-	return c.response, c.err
+func (c *mockSensorClient) UpsertVirtualMachineIndexReport(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
+	select {
+	case <-time.After(c.delay):
+		c.capturedRequests = append(c.capturedRequests, req)
+		return c.response, c.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
 
-func (c *mockSensorClient) withUnsuccessfulResponse() *mockSensorClient {
-	c.response = &sensor.UpsertVirtualMachineIndexReportResponse{Success: false}
+func (c *mockSensorClient) withDelay(delay time.Duration) *mockSensorClient {
+	c.delay = delay
 	return c
 }
 
 func (c *mockSensorClient) withError(err error) *mockSensorClient {
 	c.err = err
+	return c
+}
+
+func (c *mockSensorClient) withUnsuccessfulResponse() *mockSensorClient {
+	c.response = &sensor.UpsertVirtualMachineIndexReportResponse{Success: false}
 	return c
 }

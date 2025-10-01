@@ -2,23 +2,23 @@ package virtualmachine
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
-	"net/url"
 	"strconv"
 	"time"
 
-	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/mdlayher/vsock"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/virtualmachine/metrics"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -52,7 +52,7 @@ type Relay struct {
 }
 
 func NewRelay(conn grpc.ClientConnInterface) *Relay {
-	port := env.VirtualMachineVsockPort.IntegerSetting()
+	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	return &Relay{
 		sensorClient: sensor.NewVirtualMachineIndexReportServiceClient(conn),
 		vsockServer:  VsockServer{port: uint32(port)},
@@ -65,44 +65,48 @@ func (r *Relay) Run(ctx context.Context) error {
 	if err := r.vsockServer.Start(); err != nil {
 		return errors.Wrap(err, "starting vsock server")
 	}
-	defer r.vsockServer.Stop()
+
+	go func() {
+		<-ctx.Done()
+		r.vsockServer.Stop()
+	}()
 
 	for {
-		select {
-		case <-ctx.Done():
-			log.Info("Shutting down virtual machine relay")
-			return ctx.Err()
-		default:
-			conn, err := r.vsockServer.listener.Accept()
-			if err != nil {
-				return err
+		conn, err := r.vsockServer.listener.Accept()
+		if err != nil {
+			if ctx.Err() != nil {
+				log.Info("Stopping virtual machine relay")
+				return ctx.Err()
 			}
-			go func() {
-				if err := handleVsockConnection(ctx, conn, r.sensorClient); err != nil {
-					log.Errorf("Error handling vsock connection: %v", err)
-				}
-			}()
+			log.Errorf("Error accepting connection: %v", err)
+			time.Sleep(time.Second) // Prevent a tight loop
+			continue
 		}
+
+		go func() {
+			if err := handleVsockConnection(ctx, conn, r.sensorClient); err != nil {
+				log.Errorf("Error handling vsock connection: %v", err)
+			}
+			if err := conn.Close(); err != nil {
+				log.Errorf("Failed to close connection: %v", err)
+			}
+
+		}()
 	}
 }
 
 func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
 	if !ok {
-		return 0, errors.New("Failed to extract remote address from vsock connection")
+		return 0, fmt.Errorf("failed to extract remote address from vsock connection: unexpected type %T, value: %v",
+			conn.RemoteAddr(), conn.RemoteAddr())
 	}
 
 	return remoteAddr.ContextID, nil
 }
 
 func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
-	defer func() {
-		if err := conn.Close(); err != nil {
-			log.Errorf("Failed to close connection: %v", err)
-		}
-	}()
-
-	metrics.IndexReportsReceived.Inc()
+	metrics.VsockConnectionsAccepted.Inc()
 
 	log.Debugf("Handling vsock connection from %s", conn.RemoteAddr())
 
@@ -111,26 +115,48 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 		return errors.Wrap(err, "extracting vsock CID")
 	}
 
-	maxSizeBytes := 10 * 1024 * 1024 // 10 MB
-	data, err := readFromConn(conn, maxSizeBytes)
+	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
+	timeout := 10 * time.Second
+	log.Debugf("Reading from connection (max bytes: %d, timeout: %s", maxSizeBytes, timeout)
+	data, err := readFromConn(conn, maxSizeBytes, timeout)
 	if err != nil {
-		return errors.Wrap(err, "reading from vsock connection")
+		return errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}
 
+	log.Debugf("Parsing index report (vsock CID: %d)", vsockCID)
 	indexReport, err := parseIndexReport(data)
 	if err != nil {
-		return errors.Wrap(err, "parsing index report data")
+		return errors.Wrapf(err, "parsing index report data (vsock CID: %d)", vsockCID)
 	}
+	metrics.IndexReportsReceived.Inc()
 
 	// Fill the vsock context ID - at the moment the agent does not populate this field; if that changes, this can be
 	// replaced with a sanity check.
 	indexReport.VsockCid = strconv.Itoa(int(vsockCID))
 
 	if err = sendReportToSensor(ctx, indexReport, sensorClient); err != nil {
-		return errors.Wrap(err, "sending report to sensor")
+		return errors.Wrapf(err, "sending report to sensor (vsock CID: %d)", vsockCID)
 	}
 
+	log.Debugf("Finished handling vsock connection from %s", conn.RemoteAddr())
+
 	return nil
+}
+
+func isRetryableGRPCError(err error) bool {
+	grpcErr, ok := status.FromError(err)
+	if !ok {
+		return false
+	}
+	code := grpcErr.Code()
+	switch code {
+	case codes.DeadlineExceeded:
+		return !errors.Is(err, context.Canceled)
+	case codes.Unavailable, codes.ResourceExhausted, codes.Internal:
+		return true
+	default:
+		return false
+	}
 }
 
 func parseIndexReport(data []byte) (*v1.IndexReport, error) {
@@ -142,7 +168,11 @@ func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 	return report, nil
 }
 
-func readFromConn(conn net.Conn, maxSize int) ([]byte, error) {
+func readFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, error) {
+	if err := conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
+		return nil, errors.Wrap(err, "setting read deadline on connection")
+	}
+
 	// Add 1 to the limit so we can detect oversized data. If we used exactly maxSize, we couldn't tell the difference
 	// between a valid message of exactly maxSize bytes and an invalid message that's larger than maxSize (both would
 	// read maxSize bytes). With maxSize+1, reading more than maxSize bytes means the original data was too large.
@@ -160,10 +190,11 @@ func readFromConn(conn net.Conn, maxSize int) ([]byte, error) {
 }
 
 func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
+	log.Debugf("Sending index report to sensor (vsockCID: %s)", report.VsockCid)
+
 	req := &sensor.UpsertVirtualMachineIndexReportRequest{
 		IndexReport: report,
 	}
-	log.Debugf("Sending index report to sensor: %v", req)
 
 	// Considering a timeout of 5 seconds and 10 tries with exponential backoff, the maximum time spent in this function
 	// is around 1 min 40 s. Given that each virtual machine sends an index report every 4 hours, these retries seem
@@ -181,17 +212,10 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 			}
 		}
 
-		var transportErr *transport.Error
-		var urlError *url.Error
-		if errors.As(err, &transportErr) && transportErr.Temporary() {
-			return retry.MakeRetryable(err)
+		if isRetryableGRPCError(err) {
+			err = retry.MakeRetryable(err)
 		}
-		if errors.As(err, &urlError) && urlError.Temporary() {
-			return retry.MakeRetryable(err)
-		}
-		if errors.Is(err, errox.ResourceExhausted) {
-			return retry.MakeRetryable(err)
-		}
+
 		return err
 	},
 		retry.WithContext(ctx),
@@ -203,9 +227,9 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 		retry.WithExponentialBackoff())
 
 	if err != nil {
-		metrics.IndexReportsNotRelayed.Inc()
+		metrics.IndexReportsSentToSensor.With(metrics.StatusFailLabels).Inc()
 	} else {
-		metrics.IndexReportsRelayed.Inc()
+		metrics.IndexReportsSentToSensor.With(metrics.StatusSuccessLabels).Inc()
 	}
 
 	return err
