@@ -57,8 +57,8 @@ func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanC
 	}
 	result := make([]*storage.EmbeddedNodeScanComponent, 0, len(packages))
 
-	for _, pkg := range packages {
-		vulns := getPackageVulns(pkg.GetId(), r)
+	for id, pkg := range packages {
+		vulns := getPackageVulns(id, r)
 		result = append(result, createEmbeddedComponent(pkg, vulns))
 	}
 	return result
