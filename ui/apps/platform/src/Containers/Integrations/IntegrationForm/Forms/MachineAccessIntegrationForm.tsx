@@ -32,10 +32,10 @@ import type { Role } from 'services/RolesService';
 import type { MachineConfigType } from 'services/MachineAccessService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import type { IntegrationFormProps } from 'Containers/Integrations/IntegrationForm/integrationFormTypes';
-import useIntegrationForm from 'Containers/Integrations/IntegrationForm/useIntegrationForm';
-import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
-import IntegrationFormActions from 'Containers/Integrations/IntegrationForm/IntegrationFormActions';
+import type { IntegrationFormProps } from '../integrationFormTypes';
+import useIntegrationForm from '../useIntegrationForm';
+import FormLabelGroup from '../FormLabelGroup';
+import IntegrationFormActions from '../IntegrationFormActions';
 
 export type MachineAccessConfig = {
     id: string;

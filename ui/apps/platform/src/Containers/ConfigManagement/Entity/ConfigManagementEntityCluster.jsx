@@ -11,14 +11,15 @@ import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
-import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import isGQLLoading from 'utils/gqlLoading';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import queryService from 'utils/queryService';
+
+import { getConfigMgmtCountQuery } from '../ConfigMgmt.utils';
+import EntityList from '../List/EntityList';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
-import EntityList from '../List/EntityList';
 
 const ConfigManagementEntityCluster = ({
     id,

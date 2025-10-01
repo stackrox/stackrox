@@ -18,12 +18,12 @@ import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useMetadata from 'hooks/useMetadata';
 import type { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 import { getVersionedDocs } from 'utils/versioning';
 
-import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
+import usePageState from '../../../hooks/usePageState';
+import { getGoogleCredentialsPlaceholder } from '../../../utils/integrationUtils';
 import useIntegrationForm from '../../useIntegrationForm';
 import type { IntegrationFormProps } from '../../integrationFormTypes';
 
@@ -33,7 +33,7 @@ import ScheduleIntervalOptions from '../../FormSchedule/ScheduleIntervalOptions'
 import ScheduleWeeklyOptions from '../../FormSchedule/ScheduleWeeklyOptions';
 import ScheduleDailyOptions from '../../FormSchedule/ScheduleDailyOptions';
 
-import { getGoogleCredentialsPlaceholder } from '../../../utils/integrationUtils';
+import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 
 export type GcsIntegration = {
     gcs: {
