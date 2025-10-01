@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -36,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -100,6 +102,8 @@ type serviceImpl struct {
 	policySet          detection.PolicySet
 	imageEnricher      enricher.ImageEnricher
 	imageDatastore     imageDatastore.DataStore
+	imageEnricherV2    enricher.ImageEnricherV2
+	imageV2Datastore   imageV2Datastore.DataStore
 	riskManager        manager.Manager
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
@@ -160,8 +164,6 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		name.FullName = types.Wrapper{GenericImage: image}.FullName()
 	}
 
-	img := types.ToImage(image)
-
 	fetchOpt, err := getFetchOptionFromRequest(req)
 	if err != nil {
 		return nil, err
@@ -182,26 +184,61 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		enrichmentContext.ClusterID = clusterID
 	}
 
-	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
-	if err != nil {
-		if env.AdministrationEventsAdHocScans.BooleanSetting() {
-			log.Errorw("Enriching image",
-				logging.ImageName(image.GetName().GetFullName()),
-				logging.Err(err),
-				logging.Bool("ad_hoc", true),
-			)
-		}
-		return nil, err
-	}
-	if enrichResult.ImageUpdated {
-		img.Id = utils.GetSHA(img)
-		if img.GetId() != "" {
-			if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+	var img *storage.Image
+	if features.FlattenImageData.Enabled() {
+		imgV2 := types.ToImageV2(image)
+		enrichResult, err := s.imageEnricherV2.EnrichImage(ctx, enrichmentContext, imgV2)
+		if err != nil {
+			if err != nil {
+				if env.AdministrationEventsAdHocScans.BooleanSetting() {
+					log.Errorw("Enriching image",
+						logging.ImageName(image.GetName().GetFullName()),
+						logging.Err(err),
+						logging.Bool("ad_hoc", true),
+					)
+				}
 				return nil, err
 			}
 		}
+		if enrichResult.ImageUpdated {
+			imgV2.Id, err = utils.GetImageV2ID(imgV2)
+			if err != nil {
+				return nil, err
+			}
+			if imgV2.GetId() != "" {
+				if err := s.imageV2Datastore.UpsertImage(ctx, imgV2); err != nil {
+					return nil, err
+				}
+			}
+		}
+		utils.FilterSuppressedCVEsNoCloneV2(imgV2)
+		img = utils.ConvertToV1(imgV2)
+	} else {
+		img = types.ToImage(image)
+		enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
+		if err != nil {
+			if err != nil {
+				if env.AdministrationEventsAdHocScans.BooleanSetting() {
+					log.Errorw("Enriching image",
+						logging.ImageName(image.GetName().GetFullName()),
+						logging.Err(err),
+						logging.Bool("ad_hoc", true),
+					)
+				}
+				return nil, err
+			}
+		}
+		if enrichResult.ImageUpdated {
+			img.Id = utils.GetSHA(img)
+			if img.GetId() != "" {
+				if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+					return nil, err
+				}
+			}
+		}
+		utils.FilterSuppressedCVEsNoClone(img)
 	}
-	utils.FilterSuppressedCVEsNoClone(img)
+
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(req.GetPolicyCategories())
 	alerts, err := s.buildTimeDetector.Detect(img, filter)
 	if err != nil {

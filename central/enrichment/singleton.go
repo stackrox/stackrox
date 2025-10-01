@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	imageIntegrationDS "github.com/stackrox/rox/central/imageintegration/datastore"
+	imageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -38,6 +39,7 @@ var (
 	once sync.Once
 
 	ie                    imageEnricher.ImageEnricher
+	ieV2                  imageEnricher.ImageEnricherV2
 	ne                    nodeEnricher.NodeEnricher
 	en                    Enricher
 	cf                    fetcher.OrchestratorIstioCVEManager
@@ -55,11 +57,18 @@ func initialize() {
 		sachelper.NewClusterNamespaceSacHelper(clusterDataStore.Singleton(), namespaceDataStore.Singleton()),
 	)
 
-	ie = imageEnricher.New(suppressor.Singleton(), imageintegration.Set(),
-		metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),
-		signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
+	if !features.FlattenImageData.Enabled() {
+		ie = imageEnricher.New(suppressor.Singleton(), imageintegration.Set(),
+			metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),
+			signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
+	} else {
+		ieV2 = imageEnricher.NewV2(suppressor.Singleton(), imageintegration.Set(),
+			metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), imageV2DataStore.Singleton().GetImage, reporter.Singleton(),
+			signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
+	}
+
 	ne = nodeEnricher.New(nodeCVEDataStore.Singleton(), metrics.CentralSubsystem)
-	en = New(datastore.Singleton(), ie)
+	en = New(datastore.Singleton(), ie, imageV2DataStore.Singleton(), ieV2)
 	cf = fetcher.SingletonManager()
 	initializeManager()
 }
@@ -124,6 +133,12 @@ func Singleton() Enricher {
 func ImageEnricherSingleton() imageEnricher.ImageEnricher {
 	once.Do(initialize)
 	return ie
+}
+
+// ImageEnricherV2Singleton provides the singleton ImageEnricherV2 to use.
+func ImageEnricherV2Singleton() imageEnricher.ImageEnricherV2 {
+	once.Do(initialize)
+	return ieV2
 }
 
 // NodeEnricherSingleton provides the singleton NodeEnricher to use.

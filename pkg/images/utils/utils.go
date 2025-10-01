@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -300,6 +301,7 @@ func StripCVEDescriptionsNoClone(img *storage.Image) {
 	}
 }
 
+// TODO(ROX-30117): Remove this function after ImageV2 model is fully rolled out
 // FilterSuppressedCVEsNoClone removes the vulns from the image that are currently suppressed
 func FilterSuppressedCVEsNoClone(img *storage.Image) {
 	cveSet := set.NewStringSet()
@@ -318,6 +320,22 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 			Cves: int32(len(cveSet)),
 		}
 	}
+}
+
+// FilterSuppressedCVEsNoCloneV2 removes the vulns from the image that are currently suppressed
+func FilterSuppressedCVEsNoCloneV2(img *storage.ImageV2) {
+	cveSet := set.NewStringSet()
+	for _, c := range img.GetScan().GetComponents() {
+		filteredVulns := make([]*storage.EmbeddedVulnerability, 0, len(c.GetVulns()))
+		for _, vuln := range c.GetVulns() {
+			if !cve.IsCVESnoozed(vuln) {
+				cveSet.Add(vuln.GetCve())
+				filteredVulns = append(filteredVulns, vuln)
+			}
+		}
+		c.Vulns = filteredVulns
+	}
+	enricher.FillScanStatsV2(img)
 }
 
 // IsRedHatImage takes in an image and returns whether it's a Red Hat image.
