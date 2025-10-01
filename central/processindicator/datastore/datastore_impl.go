@@ -8,15 +8,19 @@ import (
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/store"
+	"github.com/stackrox/rox/central/processindicator/views"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
@@ -30,6 +34,8 @@ var (
 )
 
 type datastoreImpl struct {
+	db postgres.DB
+
 	storage store.Store
 	// ProcessListeningOnPort storage is needed for correct pruning. It
 	// logically belongs to the datastore implementation of PLOP, but this way
@@ -217,6 +223,36 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
 	return ds.storage.DeleteByQuery(ctx, q)
+}
+
+// GetProcessIndicatorsRiskView retrieves minimal fields from process indicator for risk evaluation
+func (ds *datastoreImpl) GetProcessIndicatorsRiskView(ctx context.Context, q *v1.Query) ([]*views.ProcessIndicatorRiskView, error) {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
+	}
+
+	cloned := q.CloneVT()
+	// Add the select fields of the view to the query.
+	cloned.Selects = []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ContainerName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessExecPath).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessContainerStartTime).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessCreationTime).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessArguments).Proto(),
+	}
+
+	// We do not need the entire process indicator to process risk.  That object is large.  Use a view instead
+	var results []*views.ProcessIndicatorRiskView
+	results, err := pgSearch.RunSelectRequestForSchema[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned)
+	if err != nil {
+		log.Errorf("unable to retrieve indicators for risk processing: %v", err)
+	}
+
+	return results, err
 }
 
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {
