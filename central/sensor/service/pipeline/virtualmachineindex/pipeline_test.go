@@ -241,8 +241,8 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 
 				vmDatastore.EXPECT().
 					UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
-					Do(func(ctx context.Context, vmID string, vm *storage.VirtualMachine) {
-						assert.Equal(t, vmID, vm.GetId())
+					Do(func(ctx context.Context, virtualMachineID string, _ *storage.VirtualMachineScan) {
+						assert.Equal(t, vmID, virtualMachineID)
 					}).
 					Return(nil)
 			}

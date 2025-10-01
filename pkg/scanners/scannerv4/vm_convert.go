@@ -3,6 +3,7 @@ package scannerv4
 import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	pkgCVSS "github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -114,6 +115,8 @@ func setVirtualMachineScoresAndScoreVersions(
 	if vulnerability == nil || vulnerability.CveBaseInfo == nil {
 		return errox.InvalidArgs.CausedBy("Cannot enrich CVSS information on a nil vulnerability object")
 	}
+	severity := vulnerability.GetSeverity()
+	cvssV3Propagated := false
 	if len(cvssMetrics) == 0 {
 		return nil
 	}
@@ -129,6 +132,9 @@ func setVirtualMachineScoresAndScoreVersions(
 			_, cvssV2, v2Err := toCVSSV2Scores(cvss, cve)
 			if v2Err == nil && cvssV2 != nil {
 				score.CvssScore = &storage.CVSSScore_Cvssv2{Cvssv2: cvssV2}
+				if severity == storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY && !cvssV3Propagated {
+					vulnerability.Severity = pkgCVSS.ConvertCVSSV2SeverityToVulnerabilitySeverity(cvssV2.GetSeverity())
+				}
 			} else {
 				errList.AddError(v2Err)
 			}
@@ -140,6 +146,10 @@ func setVirtualMachineScoresAndScoreVersions(
 				// CVSS metrics has maximum two entries, one from NVD, one from Rox updater if available
 				if len(cvssMetrics) == 1 || (len(cvssMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
 					vulnerability.CveBaseInfo.Link = cvss.GetUrl()
+					if severity == storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY {
+						vulnerability.Severity = pkgCVSS.ConvertCVSSV3SeverityToVulnerabilitySeverity(cvssV3.GetSeverity())
+						cvssV3Propagated = true
+					}
 				}
 			} else {
 				errList.AddError(v3Err)
