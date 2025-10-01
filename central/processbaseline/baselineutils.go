@@ -79,6 +79,7 @@ func IsStartupProcess(process *storage.ProcessIndicator) bool {
 	if process.ContainerStartTime == nil {
 		return false
 	}
+	// TODO(ROX-31107): Determine if nil SignalTime should be considered startup task.  By this logic it is.
 	durationBetweenProcessAndContainerStart := protoutils.Sub(process.GetSignal().GetTime(), process.GetContainerStartTime())
 	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
 }
@@ -90,10 +91,9 @@ func IsStartupProcessView(process *views.ProcessIndicatorRiskView) bool {
 	if process.ContainerStartTime == nil {
 		return false
 	}
-	if process.SignalTime == nil {
-		return false
-	}
-	durationBetweenProcessAndContainerStart := process.SignalTime.Sub(*process.ContainerStartTime)
+	// TODO(ROX-31107): Determine if nil SignalTime should be considered startup task.  By this logic it is.
+	durationBetweenProcessAndContainerStart := protoutils.Sub(protocompat.ConvertTimeToTimestampOrNil(process.SignalTime),
+		protocompat.ConvertTimeToTimestampOrNil(process.ContainerStartTime))
 	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
 }
 
