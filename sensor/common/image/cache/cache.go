@@ -3,6 +3,8 @@ package cache
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/utils"
 )
 
 // Image is a cache for scanned images
@@ -29,6 +31,9 @@ type KeyProvider interface {
 // GetKey generates image cache key from a cache key provider.
 func GetKey(provider KeyProvider) Key {
 	if id := provider.GetId(); id != "" {
+		if features.FlattenImageData.Enabled() {
+			return Key(utils.NewImageV2ID(provider.GetName(), id))
+		}
 		return Key(id)
 	}
 	return Key(provider.GetName().GetFullName())
@@ -37,6 +42,9 @@ func GetKey(provider KeyProvider) Key {
 // CompareKeys given two KeyProvider, compares if they're equal
 func CompareKeys(a, b KeyProvider) bool {
 	if a.GetId() != "" && b.GetId() != "" {
+		if features.FlattenImageData.Enabled() {
+			return utils.NewImageV2ID(a.GetName(), a.GetId()) == utils.NewImageV2ID(b.GetName(), b.GetId())
+		}
 		return a.GetId() == b.GetId()
 	}
 	return a.GetName().GetFullName() == b.GetName().GetFullName()
