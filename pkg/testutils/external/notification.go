@@ -7,13 +7,6 @@ import (
 	testenv "github.com/stackrox/rox/pkg/testutils/env"
 )
 
-// NotificationClient interface for notification service operations
-type NotificationClient interface {
-	SendMessage(message *NotificationMessage) error
-	TestConnection() error
-	GetNotificationType() NotificationType
-}
-
 type NotificationType string
 
 const (

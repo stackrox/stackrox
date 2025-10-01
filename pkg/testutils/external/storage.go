@@ -9,16 +9,6 @@ import (
 	testenv "github.com/stackrox/rox/pkg/testutils/env"
 )
 
-// StorageClient interface for cloud storage operations
-type StorageClient interface {
-	UploadBackup(backupName string, data io.Reader) (*BackupUploadResult, error)
-	DownloadBackup(backupName string) (io.ReadCloser, error)
-	ListBackups() ([]BackupInfo, error)
-	DeleteBackup(backupName string) error
-	TestConnection() error
-	GetStorageType() StorageType
-}
-
 type StorageType string
 
 const (

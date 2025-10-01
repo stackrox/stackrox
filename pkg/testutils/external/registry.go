@@ -7,15 +7,6 @@ import (
 	testenv "github.com/stackrox/rox/pkg/testutils/env"
 )
 
-// RegistryClient interface for container registry operations
-type RegistryClient interface {
-	AuthenticateRegistry() error
-	ScanImage(image string) (*ScanResult, error)
-	ListRepositories() ([]string, error)
-	TestConnection() error
-	GetRegistryType() RegistryType
-}
-
 type RegistryType string
 
 const (
