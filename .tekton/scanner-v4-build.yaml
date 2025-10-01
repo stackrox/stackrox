@@ -63,13 +63,13 @@ spec:
   taskRunSpecs:
   - pipelineTaskName: prefetch-dependencies
     stepSpecs:
-    # Bump memory for Go dependencies prefetch which tends to be OOM-killed at the default setting of 3Gi.
+    # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
     - name: prefetch-dependencies
       computeResources:
         limits:
-          memory: 6Gi
+          cpu: 2
         requests:
-          memory: 6Gi
+          cpu: 2
   - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build
