@@ -27,19 +27,32 @@ import (
 
 var (
 	clusterAutolockEnabled = &storage.Cluster{
-		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
-		DynamicConfig: &storage.DynamicClusterConfig{
-			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
-				Enabled: true,
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
+					Enabled: true,
+				},
 			},
 		},
 	}
 
 	clusterAutolockDisabled = &storage.Cluster{
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
+					Enabled: false,
+				},
+			},
+		},
+	}
+
+	clusterAutolockManualEnabled = &storage.Cluster{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
-				Enabled: false,
+				Enabled: true,
 			},
 		},
 	}
@@ -267,6 +280,15 @@ func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesDisabled() {
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(clusterAutolockDisabled, true, nil)
 	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
 	suite.False(enabled)
+}
+
+func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesManual() {
+	clusterId := fixtureconsts.Cluster1
+
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(clusterAutolockManualEnabled, true, nil)
+	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
+	suite.True(enabled)
 }
 
 func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesNoCluster() {

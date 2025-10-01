@@ -1,0 +1,16 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+  - name: "Process baseline auto-locking should not exist since the feature flag is disabled even if it is enabled in the secured cluster"
+    values:
+      autoLockProcessBaselines:
+        enabled: true
+    expect: |
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.autoLockProcessBaselinesConfig.enabled | assertThat(. == null)
+  - name: "Process baseline auto-locking should not exist"
+    values:
+      autoLockProcessBaelines:
+        enabled: false
+    expect: |
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.autoLockProcessBaselinesConfig.enabled | assertThat(. == null)
