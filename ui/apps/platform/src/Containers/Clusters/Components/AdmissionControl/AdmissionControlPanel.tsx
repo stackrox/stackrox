@@ -9,10 +9,10 @@ import {
 } from '@patternfly/react-core';
 
 import type { ClusterHealthStatus } from 'types/cluster.proto';
-import { buildStatusMessage } from 'Containers/Clusters/cluster.helpers';
 
-import AdmissionControlStatus from './AdmissionControlStatus';
+import { buildStatusMessage } from '../../cluster.helpers';
 import ClusterHealthPanel from '../ClusterHealthPanel';
+import AdmissionControlStatus from './AdmissionControlStatus';
 
 export type AdmissionControlPanelProps = {
     healthStatus: ClusterHealthStatus;
