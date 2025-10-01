@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -17,6 +18,11 @@ import (
 	ginkgoHelper "github.com/stackrox/rox/pkg/testutils/ginkgo"
 	"google.golang.org/grpc"
 )
+
+func TestE2E(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "E2E Suite")
+}
 
 // Example test demonstrating the complete Ginkgo BDD framework
 var _ = Describe("Policy Field Validation Example", func() {
@@ -68,7 +74,7 @@ var _ = Describe("Policy Field Validation Example", func() {
 				By(fmt.Sprintf("Then should %s", expectedBehavior.Description))
 
 				if expectedBehavior.ShouldAlert {
-					Eventually(func() []*storage.Alert {
+					Eventually(func() []*storage.ListAlert {
 						resp, err := alertSvc.ListAlerts(ctx, &v1.ListAlertsRequest{
 							Query: fmt.Sprintf("Policy Id:%s", policy.GetId()),
 						})
@@ -169,7 +175,7 @@ var _ = Describe("Policy Field Validation Example", func() {
 				By(fmt.Sprintf("Then should %s", expectedBehavior.Description))
 
 				if expectedBehavior.ShouldAlert {
-					Eventually(func() []*storage.Alert {
+					Eventually(func() []*storage.ListAlert {
 						resp, err := alertSvc.ListAlerts(ctx, &v1.ListAlertsRequest{
 							Query: fmt.Sprintf("Image:%s", imageConfig.ImageName),
 						})

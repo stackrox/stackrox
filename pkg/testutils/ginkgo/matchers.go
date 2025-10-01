@@ -5,7 +5,6 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils/external"
 )
@@ -205,18 +204,18 @@ func (m *BeSuccessfulNotificationMatcher) NegatedFailureMessage(actual interface
 // Eventually helpers for common operations
 
 // EventuallyHaveAlert is a convenience function for Eventually with alert checking
-func EventuallyHaveAlert(alertFunc func() []*storage.Alert, count int, timeout time.Duration) types.AsyncAssertion {
-	return EventuallyWithOffset(1, alertFunc, timeout, 5*time.Second).Should(HaveAlerts(count))
+func EventuallyHaveAlert(alertFunc func() []*storage.Alert, count int, timeout time.Duration) {
+	EventuallyWithOffset(1, alertFunc, timeout, 5*time.Second).Should(HaveAlerts(count))
 }
 
 // EventuallyDeploymentBlocked is a convenience function for deployment blocking
-func EventuallyDeploymentBlocked(deploymentNameFunc func() string, timeout time.Duration) types.AsyncAssertion {
-	return EventuallyWithOffset(1, deploymentNameFunc, timeout, 10*time.Second).Should(BeDeploymentBlocked())
+func EventuallyDeploymentBlocked(deploymentNameFunc func() string, timeout time.Duration) {
+	EventuallyWithOffset(1, deploymentNameFunc, timeout, 10*time.Second).Should(BeDeploymentBlocked())
 }
 
 // ConsistentlyNoAlert ensures no alerts are generated over a period
-func ConsistentlyNoAlert(alertFunc func() []*storage.Alert, duration time.Duration) types.AsyncAssertion {
-	return ConsistentlyWithOffset(1, alertFunc, duration, 5*time.Second).Should(HaveAlerts(0))
+func ConsistentlyNoAlert(alertFunc func() []*storage.Alert, duration time.Duration) {
+	ConsistentlyWithOffset(1, alertFunc, duration, 5*time.Second).Should(HaveAlerts(0))
 }
 
 // Helper functions for BDD patterns
