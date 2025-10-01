@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
@@ -21,12 +22,12 @@ import {
 
 import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { defaultMinimalReadAccessResources } from 'constants/accessControl';
-import { PermissionSet } from 'services/RolesService';
+import usePermissions from 'hooks/usePermissions';
+import type { PermissionSet } from 'services/RolesService';
 
-import { AccessControlQueryAction } from '../accessControlPaths';
+import type { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
-import usePermissions from '../../../hooks/usePermissions';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;

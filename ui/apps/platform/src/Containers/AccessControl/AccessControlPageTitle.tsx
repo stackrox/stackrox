@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 
 import PageTitle from 'Components/PageTitle';
-import { AccessControlEntityType } from 'constants/entityTypes';
+import type { AccessControlEntityType } from 'constants/entityTypes';
 import useCaseTypes from 'constants/useCaseTypes';
 import { accessControlLabels } from 'messages/common';
 import useCaseLabels from 'messages/useCase';

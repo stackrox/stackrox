@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
@@ -13,9 +14,11 @@ import {
 } from '@patternfly/react-core';
 
 import TraitsOriginLabel from 'Components/TraitsOriginLabel';
-import { AccessScope, getIsUnrestrictedAccessScopeId } from 'services/AccessScopesService';
+import usePermissions from 'hooks/usePermissions';
+import { getIsUnrestrictedAccessScopeId } from 'services/AccessScopesService';
+import type { AccessScope } from 'services/AccessScopesService';
 
-import { AccessControlQueryAction } from '../accessControlPaths';
+import type { AccessControlQueryAction } from '../accessControlPaths';
 
 import {
     // LabelSelectorsEditingState,
@@ -23,7 +26,6 @@ import {
     getIsValidRules,
 } from './accessScopes.utils';
 import AccessScopeForm from './AccessScopeForm';
-import usePermissions from '../../../hooks/usePermissions';
 
 export type AccessScopeFormWrapperProps = {
     isActionable: boolean;
