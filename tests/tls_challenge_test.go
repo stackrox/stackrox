@@ -52,6 +52,12 @@ type TLSChallengeSuite struct {
 
 func (ts *TLSChallengeSuite) SetupSuite() {
 	ts.KubernetesSuite.SetupSuite()
+
+	// Set higher timeout for K8s client.
+	clientConfig := getConfig(ts.T())
+	clientConfig.Timeout = 30 * time.Second
+	ts.k8s = createK8sClientWithConfig(ts.T(), clientConfig)
+
 	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(ts.T(), "TestTLSChallenge", 15*time.Minute)
 
 	// Check sanity before test.
