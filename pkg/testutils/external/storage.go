@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/stackrox/rox/pkg/testutils/credentials"
+	testenv "github.com/stackrox/rox/pkg/testutils/env"
 )
 
 // StorageClient interface for cloud storage operations
@@ -22,19 +22,19 @@ type StorageClient interface {
 type StorageType string
 
 const (
-	S3Storage     StorageType = "s3"
-	GCSStorage    StorageType = "gcs"
-	AzureStorage  StorageType = "azure"
-	MockStorage   StorageType = "mock"
+	S3Storage    StorageType = "s3"
+	GCSStorage   StorageType = "gcs"
+	AzureStorage StorageType = "azure"
+	MockStorage  StorageType = "mock"
 )
 
 // BackupUploadResult represents the result of a backup upload operation
 type BackupUploadResult struct {
-	BackupName   string
-	Location     string
-	Size         int64
-	Checksum     string
-	UploadTime   time.Time
+	BackupName string
+	Location   string
+	Size       int64
+	Checksum   string
+	UploadTime time.Time
 }
 
 // BackupInfo represents information about a stored backup
@@ -46,100 +46,245 @@ type BackupInfo struct {
 	Checksum     string
 }
 
-// NewStorageClient creates a storage client based on available credentials
-func NewStorageClient(creds *credentials.Credentials, storageType StorageType) (StorageClient, error) {
-	// Check if we should use mocks
-	if creds.ShouldUseMockServices() {
-		return NewMockStorageClient(storageType), nil
-	}
-
-	// Create real client based on type and available credentials
-	switch storageType {
-	case S3Storage:
-		if !creds.HasAWSCredentials() {
-			if creds.IsDevelopmentMode() {
-				return NewMockStorageClient(S3Storage), nil
-			}
-			return nil, fmt.Errorf("AWS S3 credentials required")
-		}
-		return NewS3Client(creds.AWSAccessKeyID, creds.AWSSecretAccessKey, creds.AWSS3BucketName, creds.AWSS3BucketRegion)
-
-	case GCSStorage:
-		if !creds.HasGCSCredentials() {
-			if creds.IsDevelopmentMode() {
-				return NewMockStorageClient(GCSStorage), nil
-			}
-			return nil, fmt.Errorf("Google Cloud Storage credentials required")
-		}
-		return NewGCSClient(creds.GCPServiceAccount, creds.GCSBucketName)
-
-	case AzureStorage:
-		if !creds.HasAzureCredentials() {
-			if creds.IsDevelopmentMode() {
-				return NewMockStorageClient(AzureStorage), nil
-			}
-			return nil, fmt.Errorf("Azure Storage credentials required")
-		}
-		return NewAzureClient(creds.AzureClientID, creds.AzureClientSecret, creds.AzureTenantID)
-
-	default:
-		return nil, fmt.Errorf("unsupported storage type: %s", storageType)
-	}
+// S3 Client
+type S3Client struct {
+	accessKey  string
+	secretKey  string
+	bucket     string
+	region     string
+	mock       bool
+	mockClient *mockStorageClient
 }
 
-// GetAvailableStorageClients returns storage clients that can be created with current credentials
-func GetAvailableStorageClients(creds *credentials.Credentials) []StorageClient {
-	var clients []StorageClient
-
-	storageTypes := []StorageType{
-		S3Storage, GCSStorage, AzureStorage,
+func NewS3Client() (*S3Client, error) {
+	if !testenv.HasAWSCredentials() || testenv.ShouldUseMockServices() {
+		return &S3Client{
+			mock:       true,
+			mockClient: newMockStorageClient(S3Storage),
+		}, nil
 	}
 
-	for _, storageType := range storageTypes {
-		client, err := NewStorageClient(creds, storageType)
-		if err == nil {
-			clients = append(clients, client)
-		}
-	}
-
-	return clients
+	return &S3Client{
+		accessKey: testenv.AWSAccessKeyID.Setting(),
+		secretKey: testenv.AWSSecretAccessKey.Setting(),
+		bucket:    testenv.AWSS3BucketName.Setting(),
+		region:    testenv.AWSS3BucketRegion.Setting(),
+		mock:      false,
+	}, nil
 }
 
-// Mock Storage Client Implementation
-type MockStorageClient struct {
+func (s *S3Client) UploadBackup(backupName string, data io.Reader) (*BackupUploadResult, error) {
+	if s.mock {
+		return s.mockClient.UploadBackup(backupName, data)
+	}
+	// TODO: Implement real S3 upload using AWS SDK
+	return nil, fmt.Errorf("S3 upload not implemented")
+}
+
+func (s *S3Client) DownloadBackup(backupName string) (io.ReadCloser, error) {
+	if s.mock {
+		return s.mockClient.DownloadBackup(backupName)
+	}
+	// TODO: Implement real S3 download using AWS SDK
+	return nil, fmt.Errorf("S3 download not implemented")
+}
+
+func (s *S3Client) ListBackups() ([]BackupInfo, error) {
+	if s.mock {
+		return s.mockClient.ListBackups()
+	}
+	// TODO: Implement real S3 listing using AWS SDK
+	return nil, fmt.Errorf("S3 listing not implemented")
+}
+
+func (s *S3Client) DeleteBackup(backupName string) error {
+	if s.mock {
+		return s.mockClient.DeleteBackup(backupName)
+	}
+	// TODO: Implement real S3 deletion using AWS SDK
+	return fmt.Errorf("S3 deletion not implemented")
+}
+
+func (s *S3Client) TestConnection() error {
+	if s.mock {
+		return s.mockClient.TestConnection()
+	}
+	// TODO: Implement real S3 connection test
+	return fmt.Errorf("S3 connection test not implemented")
+}
+
+func (s *S3Client) GetStorageType() StorageType {
+	return S3Storage
+}
+
+// GCS Client
+type GCSClient struct {
+	serviceAccount string
+	bucket         string
+	mock           bool
+	mockClient     *mockStorageClient
+}
+
+func NewGCSClient() (*GCSClient, error) {
+	if !testenv.HasGCSCredentials() || testenv.ShouldUseMockServices() {
+		return &GCSClient{
+			mock:       true,
+			mockClient: newMockStorageClient(GCSStorage),
+		}, nil
+	}
+
+	return &GCSClient{
+		serviceAccount: testenv.GCPServiceAccount.Setting(),
+		bucket:         testenv.GCSBucketName.Setting(),
+		mock:           false,
+	}, nil
+}
+
+func (g *GCSClient) UploadBackup(backupName string, data io.Reader) (*BackupUploadResult, error) {
+	if g.mock {
+		return g.mockClient.UploadBackup(backupName, data)
+	}
+	// TODO: Implement real GCS upload using Google Cloud SDK
+	return nil, fmt.Errorf("GCS upload not implemented")
+}
+
+func (g *GCSClient) DownloadBackup(backupName string) (io.ReadCloser, error) {
+	if g.mock {
+		return g.mockClient.DownloadBackup(backupName)
+	}
+	// TODO: Implement real GCS download using Google Cloud SDK
+	return nil, fmt.Errorf("GCS download not implemented")
+}
+
+func (g *GCSClient) ListBackups() ([]BackupInfo, error) {
+	if g.mock {
+		return g.mockClient.ListBackups()
+	}
+	// TODO: Implement real GCS listing using Google Cloud SDK
+	return nil, fmt.Errorf("GCS listing not implemented")
+}
+
+func (g *GCSClient) DeleteBackup(backupName string) error {
+	if g.mock {
+		return g.mockClient.DeleteBackup(backupName)
+	}
+	// TODO: Implement real GCS deletion using Google Cloud SDK
+	return fmt.Errorf("GCS deletion not implemented")
+}
+
+func (g *GCSClient) TestConnection() error {
+	if g.mock {
+		return g.mockClient.TestConnection()
+	}
+	// TODO: Implement real GCS connection test
+	return fmt.Errorf("GCS connection test not implemented")
+}
+
+func (g *GCSClient) GetStorageType() StorageType {
+	return GCSStorage
+}
+
+// Azure Client
+type AzureClient struct {
+	clientID     string
+	clientSecret string
+	tenantID     string
+	mock         bool
+	mockClient   *mockStorageClient
+}
+
+func NewAzureClient() (*AzureClient, error) {
+	if !testenv.HasAzureCredentials() || testenv.ShouldUseMockServices() {
+		return &AzureClient{
+			mock:       true,
+			mockClient: newMockStorageClient(AzureStorage),
+		}, nil
+	}
+
+	return &AzureClient{
+		clientID:     testenv.AzureClientID.Setting(),
+		clientSecret: testenv.AzureClientSecret.Setting(),
+		tenantID:     testenv.AzureTenantID.Setting(),
+		mock:         false,
+	}, nil
+}
+
+func (a *AzureClient) UploadBackup(backupName string, data io.Reader) (*BackupUploadResult, error) {
+	if a.mock {
+		return a.mockClient.UploadBackup(backupName, data)
+	}
+	// TODO: Implement real Azure upload using Azure SDK
+	return nil, fmt.Errorf("Azure upload not implemented")
+}
+
+func (a *AzureClient) DownloadBackup(backupName string) (io.ReadCloser, error) {
+	if a.mock {
+		return a.mockClient.DownloadBackup(backupName)
+	}
+	// TODO: Implement real Azure download using Azure SDK
+	return nil, fmt.Errorf("Azure download not implemented")
+}
+
+func (a *AzureClient) ListBackups() ([]BackupInfo, error) {
+	if a.mock {
+		return a.mockClient.ListBackups()
+	}
+	// TODO: Implement real Azure listing using Azure SDK
+	return nil, fmt.Errorf("Azure listing not implemented")
+}
+
+func (a *AzureClient) DeleteBackup(backupName string) error {
+	if a.mock {
+		return a.mockClient.DeleteBackup(backupName)
+	}
+	// TODO: Implement real Azure deletion using Azure SDK
+	return fmt.Errorf("Azure deletion not implemented")
+}
+
+func (a *AzureClient) TestConnection() error {
+	if a.mock {
+		return a.mockClient.TestConnection()
+	}
+	// TODO: Implement real Azure connection test
+	return fmt.Errorf("Azure connection test not implemented")
+}
+
+func (a *AzureClient) GetStorageType() StorageType {
+	return AzureStorage
+}
+
+// Mock Storage Client Implementation (private)
+type mockStorageClient struct {
 	storageType StorageType
-	backups     map[string]*MockBackup
+	backups     map[string]*mockBackup
 }
 
-type MockBackup struct {
-	Name         string
-	Data         []byte
-	Size         int64
-	UploadTime   time.Time
-	Checksum     string
+type mockBackup struct {
+	Name       string
+	Data       []byte
+	Size       int64
+	UploadTime time.Time
+	Checksum   string
 }
 
-func NewMockStorageClient(storageType StorageType) *MockStorageClient {
-	return &MockStorageClient{
+func newMockStorageClient(storageType StorageType) *mockStorageClient {
+	return &mockStorageClient{
 		storageType: storageType,
-		backups:     make(map[string]*MockBackup),
+		backups:     make(map[string]*mockBackup),
 	}
 }
 
-func (m *MockStorageClient) UploadBackup(backupName string, data io.Reader) (*BackupUploadResult, error) {
-	// Read data into memory for mock storage
+func (m *mockStorageClient) UploadBackup(backupName string, data io.Reader) (*BackupUploadResult, error) {
 	backupData, err := io.ReadAll(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read backup data: %w", err)
 	}
 
-	// Simulate upload failure for certain backup names
 	if backupName == "fail-upload" {
 		return nil, fmt.Errorf("mock upload failure")
 	}
 
-	// Store backup
-	backup := &MockBackup{
+	backup := &mockBackup{
 		Name:       backupName,
 		Data:       backupData,
 		Size:       int64(len(backupData)),
@@ -158,13 +303,12 @@ func (m *MockStorageClient) UploadBackup(backupName string, data io.Reader) (*Ba
 	}, nil
 }
 
-func (m *MockStorageClient) DownloadBackup(backupName string) (io.ReadCloser, error) {
+func (m *mockStorageClient) DownloadBackup(backupName string) (io.ReadCloser, error) {
 	backup, exists := m.backups[backupName]
 	if !exists {
 		return nil, fmt.Errorf("backup %s not found", backupName)
 	}
 
-	// Simulate download failure
 	if backupName == "fail-download" {
 		return nil, fmt.Errorf("mock download failure")
 	}
@@ -172,7 +316,7 @@ func (m *MockStorageClient) DownloadBackup(backupName string) (io.ReadCloser, er
 	return io.NopCloser(bytes.NewReader(backup.Data)), nil
 }
 
-func (m *MockStorageClient) ListBackups() ([]BackupInfo, error) {
+func (m *mockStorageClient) ListBackups() ([]BackupInfo, error) {
 	var backups []BackupInfo
 
 	for _, backup := range m.backups {
@@ -188,12 +332,11 @@ func (m *MockStorageClient) ListBackups() ([]BackupInfo, error) {
 	return backups, nil
 }
 
-func (m *MockStorageClient) DeleteBackup(backupName string) error {
+func (m *mockStorageClient) DeleteBackup(backupName string) error {
 	if _, exists := m.backups[backupName]; !exists {
 		return fmt.Errorf("backup %s not found", backupName)
 	}
 
-	// Simulate deletion failure
 	if backupName == "fail-delete" {
 		return fmt.Errorf("mock deletion failure")
 	}
@@ -202,150 +345,10 @@ func (m *MockStorageClient) DeleteBackup(backupName string) error {
 	return nil
 }
 
-func (m *MockStorageClient) TestConnection() error {
-	// Mock connection test always succeeds
+func (m *mockStorageClient) TestConnection() error {
 	return nil
 }
 
-func (m *MockStorageClient) GetStorageType() StorageType {
+func (m *mockStorageClient) GetStorageType() StorageType {
 	return m.storageType
-}
-
-// GetMockBackups returns all stored backups (for test verification)
-func (m *MockStorageClient) GetMockBackups() map[string]*MockBackup {
-	return m.backups
-}
-
-// Real storage client implementations (stubs)
-
-// S3 Client
-type S3Client struct {
-	accessKey string
-	secretKey string
-	bucket    string
-	region    string
-}
-
-func NewS3Client(accessKey, secretKey, bucket, region string) (*S3Client, error) {
-	return &S3Client{
-		accessKey: accessKey,
-		secretKey: secretKey,
-		bucket:    bucket,
-		region:    region,
-	}, nil
-}
-
-func (s *S3Client) UploadBackup(backupName string, data io.Reader) (*BackupUploadResult, error) {
-	// TODO: Implement real S3 upload using AWS SDK
-	return nil, fmt.Errorf("S3 upload not implemented")
-}
-
-func (s *S3Client) DownloadBackup(backupName string) (io.ReadCloser, error) {
-	// TODO: Implement real S3 download using AWS SDK
-	return nil, fmt.Errorf("S3 download not implemented")
-}
-
-func (s *S3Client) ListBackups() ([]BackupInfo, error) {
-	// TODO: Implement real S3 listing using AWS SDK
-	return nil, fmt.Errorf("S3 listing not implemented")
-}
-
-func (s *S3Client) DeleteBackup(backupName string) error {
-	// TODO: Implement real S3 deletion using AWS SDK
-	return fmt.Errorf("S3 deletion not implemented")
-}
-
-func (s *S3Client) TestConnection() error {
-	// TODO: Implement real S3 connection test
-	return fmt.Errorf("S3 connection test not implemented")
-}
-
-func (s *S3Client) GetStorageType() StorageType {
-	return S3Storage
-}
-
-// GCS Client
-type GCSClient struct {
-	serviceAccount string
-	bucket         string
-}
-
-func NewGCSClient(serviceAccount, bucket string) (*GCSClient, error) {
-	return &GCSClient{
-		serviceAccount: serviceAccount,
-		bucket:         bucket,
-	}, nil
-}
-
-func (g *GCSClient) UploadBackup(backupName string, data io.Reader) (*BackupUploadResult, error) {
-	// TODO: Implement real GCS upload using Google Cloud SDK
-	return nil, fmt.Errorf("GCS upload not implemented")
-}
-
-func (g *GCSClient) DownloadBackup(backupName string) (io.ReadCloser, error) {
-	// TODO: Implement real GCS download using Google Cloud SDK
-	return nil, fmt.Errorf("GCS download not implemented")
-}
-
-func (g *GCSClient) ListBackups() ([]BackupInfo, error) {
-	// TODO: Implement real GCS listing using Google Cloud SDK
-	return nil, fmt.Errorf("GCS listing not implemented")
-}
-
-func (g *GCSClient) DeleteBackup(backupName string) error {
-	// TODO: Implement real GCS deletion using Google Cloud SDK
-	return fmt.Errorf("GCS deletion not implemented")
-}
-
-func (g *GCSClient) TestConnection() error {
-	// TODO: Implement real GCS connection test
-	return fmt.Errorf("GCS connection test not implemented")
-}
-
-func (g *GCSClient) GetStorageType() StorageType {
-	return GCSStorage
-}
-
-// Azure Client
-type AzureClient struct {
-	clientID     string
-	clientSecret string
-	tenantID     string
-}
-
-func NewAzureClient(clientID, clientSecret, tenantID string) (*AzureClient, error) {
-	return &AzureClient{
-		clientID:     clientID,
-		clientSecret: clientSecret,
-		tenantID:     tenantID,
-	}, nil
-}
-
-func (a *AzureClient) UploadBackup(backupName string, data io.Reader) (*BackupUploadResult, error) {
-	// TODO: Implement real Azure upload using Azure SDK
-	return nil, fmt.Errorf("Azure upload not implemented")
-}
-
-func (a *AzureClient) DownloadBackup(backupName string) (io.ReadCloser, error) {
-	// TODO: Implement real Azure download using Azure SDK
-	return nil, fmt.Errorf("Azure download not implemented")
-}
-
-func (a *AzureClient) ListBackups() ([]BackupInfo, error) {
-	// TODO: Implement real Azure listing using Azure SDK
-	return nil, fmt.Errorf("Azure listing not implemented")
-}
-
-func (a *AzureClient) DeleteBackup(backupName string) error {
-	// TODO: Implement real Azure deletion using Azure SDK
-	return fmt.Errorf("Azure deletion not implemented")
-}
-
-func (a *AzureClient) TestConnection() error {
-	// TODO: Implement real Azure connection test
-	return fmt.Errorf("Azure connection test not implemented")
-}
-
-func (a *AzureClient) GetStorageType() StorageType {
-	return AzureStorage
 }
