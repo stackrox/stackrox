@@ -452,7 +452,6 @@ class BaseSpecification extends Specification {
     static void waitForClusterHealthy() {
         ClusterOuterClass.ClusterHealthStatus status = ClusterService.getCluster().healthStatus
         LOG.info "waitForClusterHealthy{status:" + status.overallHealthStatus + "}"
-        this.attemptCountClusterHealthy += 1
         assert status.overallHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
     }
 }
