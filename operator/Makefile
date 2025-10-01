@@ -331,9 +331,10 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen test smuggled-status-sh ## Build docker image with the operator.
+docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		-t ${IMG} \
+		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
 		-f $< \
 		..
 
