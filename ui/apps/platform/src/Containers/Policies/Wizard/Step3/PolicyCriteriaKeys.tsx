@@ -1,6 +1,6 @@
 import React from 'react';
 import { groupBy } from 'lodash';
-import { Title, Divider, Flex, Text } from '@patternfly/react-core';
+import { Divider, Flex, Title } from '@patternfly/react-core';
 
 import { policyCriteriaCategories } from 'messages/common';
 import type { PolicyCriteriaCategoryKey } from 'messages/common';
@@ -60,7 +60,7 @@ function PolicyCriteriaKeys({ keys }: PolicyCriteriaKeysProps) {
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsXs' }}
                 >
-                    <Text component="h3">{domain}</Text>
+                    <Title headingLevel="h3">{domain}</Title>
                     <Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsNone' }}
