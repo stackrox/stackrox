@@ -2,9 +2,9 @@ package enricher
 
 import (
 	"context"
-	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/sync"
 )
