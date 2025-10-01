@@ -85,7 +85,7 @@ func (ds *datastoreImpl) UpdateVirtualMachineScan(
 
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
-	vmToUpdate, found, err := ds.GetVirtualMachine(ctx, virtualMachineID)
+	vmToUpdate, found, err := ds.store.Get(ctx, virtualMachineID)
 	if err != nil {
 		return errors.Wrap(err, "retrieving virtual machine for scan update")
 	}

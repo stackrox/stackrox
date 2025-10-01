@@ -140,7 +140,7 @@ func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
 
 	err := suite.pipeline.Run(ctx, testClusterID, msg, nil)
 	suite.Error(err)
-	suite.Contains(err.Error(), "failed to update VM with scan")
+	suite.Contains(err.Error(), "failed to upsert VM vm-1 to datastore: datastore error")
 	suite.Contains(err.Error(), "datastore error")
 }
 
@@ -241,7 +241,7 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 
 				vmDatastore.EXPECT().
 					UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
-					Do(func(ctx context.Context, vm *storage.VirtualMachine) {
+					Do(func(ctx context.Context, vmID string, vm *storage.VirtualMachine) {
 						assert.Equal(t, vmID, vm.GetId())
 					}).
 					Return(nil)
