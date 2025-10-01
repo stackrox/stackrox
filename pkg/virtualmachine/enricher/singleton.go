@@ -2,9 +2,8 @@ package enricher
 
 import (
 	"context"
-	"fmt"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/sync"
@@ -32,8 +31,8 @@ func Singleton() VirtualMachineEnricher {
 
 func createScannerV4Client() (client.Scanner, error) {
 	// Use same defaults as Scanner V4 node scanner but namespace-independent
-	indexerEndpoint := fmt.Sprintf("scanner-v4-indexer.%s.svc:8443", env.Namespace.Setting())
-	matcherEndpoint := fmt.Sprintf("scanner-v4-matcher.%s.svc:8443", env.Namespace.Setting())
+	indexerEndpoint := scannerv4.DefaultIndexerEndpoint
+	matcherEndpoint := scannerv4.DefaultMatcherEndpoint
 
 	ctx := context.Background()
 	return client.NewGRPCScanner(ctx,

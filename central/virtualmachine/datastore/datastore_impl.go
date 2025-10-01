@@ -2,16 +2,16 @@ package datastore
 
 import (
 	"context"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	virtualMachineStore "github.com/stackrox/rox/central/virtualmachine/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -94,7 +94,7 @@ func (ds *datastoreImpl) UpdateVirtualMachineScan(
 
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
-	vmToUpdate, found, err := ds.GetVirtualMachine(ctx, virtualMachineID)
+	vmToUpdate, found, err := ds.store.Get(ctx, virtualMachineID)
 	if err != nil {
 		return errors.Wrap(err, "retrieving virtual machine for scan update")
 	}
