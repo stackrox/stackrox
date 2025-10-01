@@ -181,7 +181,7 @@ func makeRequestInfo(req *http.Request) *RequestInfo {
 	if fwdHost := req.Header.Get(forwardedHost); fwdHost != "" {
 		ri.Hostname = fwdHost
 		log.Infof("lvm --> make request info fwd host: %s", ri.Hostname)
-	} else if tlsState != nil {
+	} else if tlsState != nil && tlsState.ServerName != "" {
 		ri.Hostname = tlsState.ServerName
 		log.Infof("lvm --> make request info tls server name: %s", ri.Hostname)
 		log.Infof("lvm --> tls state: %+v", tlsState)
