@@ -124,7 +124,7 @@ func (suite *PipelineTestSuite) TestRun_NilVirtualMachine() {
 	suite.Contains(err.Error(), "unexpected resource type")
 }
 
-func (suite *PipelineTestSuite) TestRun_UpsertError() {
+func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
 	vmID := "vm-1"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
@@ -135,12 +135,12 @@ func (suite *PipelineTestSuite) TestRun_UpsertError() {
 
 	expectedError := errors.New("datastore error")
 	suite.vmDatastore.EXPECT().
-		UpsertVirtualMachine(ctx, gomock.Any()).
+		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(expectedError)
 
 	err := suite.pipeline.Run(ctx, testClusterID, msg, nil)
 	suite.Error(err)
-	suite.Contains(err.Error(), "failed to upsert VM")
+	suite.Contains(err.Error(), "failed to update VM with scan")
 	suite.Contains(err.Error(), "datastore error")
 }
 
@@ -187,34 +187,34 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 	tests := []struct {
 		name          string
 		action        central.ResourceAction
-		expectUpsert  bool
+		expectUpdate  bool
 		expectError   bool
 		errorContains string
 	}{
 		{
 			name:         "CREATE_RESOURCE",
 			action:       central.ResourceAction_CREATE_RESOURCE,
-			expectUpsert: false,
+			expectUpdate: false,
 		},
 		{
 			name:         "UPDATE_RESOURCE",
 			action:       central.ResourceAction_UPDATE_RESOURCE,
-			expectUpsert: false,
+			expectUpdate: false,
 		},
 		{
 			name:         "UNSET_ACTION_RESOURCE",
 			action:       central.ResourceAction_UNSET_ACTION_RESOURCE,
-			expectUpsert: false,
+			expectUpdate: false,
 		},
 		{
 			name:         "REMOVE_RESOURCE",
 			action:       central.ResourceAction_REMOVE_RESOURCE,
-			expectUpsert: false,
+			expectUpdate: false,
 		},
 		{
 			name:         "SYNC_RESOURCE",
 			action:       central.ResourceAction_SYNC_RESOURCE,
-			expectUpsert: true,
+			expectUpdate: true,
 		},
 	}
 
@@ -233,14 +233,14 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 			vmID := "vm-1"
 			msg := createVMIndexMessage(vmID, tt.action)
 
-			if tt.expectUpsert {
-				// Expect enricher to be called for SYNC_RESOURCE
+			if tt.expectUpdate {
+				// Expect enricher to be called for action
 				enricher.EXPECT().
 					EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 					Return(nil)
 
 				vmDatastore.EXPECT().
-					UpsertVirtualMachine(ctx, gomock.Any()).
+					UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 					Do(func(ctx context.Context, vm *storage.VirtualMachine) {
 						assert.Equal(t, vmID, vm.GetId())
 					}).
