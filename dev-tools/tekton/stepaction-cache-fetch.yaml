@@ -82,6 +82,10 @@ spec:
       value: $(params.AWS_SHARED_CREDENTIALS_FILE)
     - name: BLOB_QUERY_PARAMS
       value: $(params.BLOB_QUERY_PARAMS)
+    - name: AWS_ENDPOINT_URL_S3
+      value: "http://minio.default.svc:9000"
+    - name: AWS_S3_USE_PATH_STYLE
+      value: "true"
   image: quay.io/openshift-pipeline/pipelines-cache-rhel9:next
   args: ["$(params.PATTERNS[*])"]
   script: |

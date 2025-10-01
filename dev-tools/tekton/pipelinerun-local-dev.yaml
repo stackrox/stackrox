@@ -42,7 +42,7 @@ spec:
   - name: image-tag
     value: "latest"
   - name: builder-image
-    value: "quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9-9-ge7836f2caf-arm64"
+    value: "quay.io/stackrox-io/apollo-ci:stackrox-build-0.4.9-9-ge7836f2caf"
   - name: cache-bucket
     value: "local-dev-cache"
   - name: minio-host
