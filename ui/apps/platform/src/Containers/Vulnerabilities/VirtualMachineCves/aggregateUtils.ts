@@ -15,7 +15,6 @@ import {
     CVE_EPSS_PROBABILITY_SORT_FIELD,
     CVE_SEVERITY_SORT_FIELD,
     CVE_SORT_FIELD,
-    CVE_STATUS_SORT_FIELD,
     CVSS_SORT_FIELD,
 } from '../utils/sortFields';
 
@@ -221,9 +220,6 @@ export function applyVirtualMachineCveTableSort(
             case CVE_EPSS_PROBABILITY_SORT_FIELD:
                 compareResult = a.epssProbability - b.epssProbability;
                 break;
-            case CVE_STATUS_SORT_FIELD:
-                compareResult = Number(a.isFixable) - Number(b.isFixable);
-                break;
             case CVE_SEVERITY_SORT_FIELD:
                 compareResult = severityRankings[a.severity] - severityRankings[b.severity];
                 break;
@@ -236,7 +232,7 @@ export function applyVirtualMachineCveTableSort(
 
         // backup compare when rows are equal
         // doesn't appear to be a consistent behavior in the backend between vulnerability pages
-        // however secondary sort of cve name seems to mimic node cve page behavior
+        // however secondary sort of cve name (ignoring direction) seems to mimic node cve page behavior
         return a.cve.localeCompare(b.cve);
     };
 

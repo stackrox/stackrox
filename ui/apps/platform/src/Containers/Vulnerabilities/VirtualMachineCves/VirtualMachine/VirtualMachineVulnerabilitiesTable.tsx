@@ -15,7 +15,6 @@ import {
     CVE_EPSS_PROBABILITY_SORT_FIELD,
     CVE_SEVERITY_SORT_FIELD,
     CVE_SORT_FIELD,
-    CVE_STATUS_SORT_FIELD,
     CVSS_SORT_FIELD,
 } from '../../utils/sortFields';
 import { formatEpssProbabilityAsPercent } from '../../WorkloadCves/Tables/table.utils';
@@ -47,7 +46,7 @@ function VirtualMachineVulnerabilitiesTable({
                     <ExpandRowTh />
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Severity</Th>
-                    <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>
+                    <Th>CVE status</Th>
                     <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
                     <Th sort={getSortParams(CVE_EPSS_PROBABILITY_SORT_FIELD)}>EPSS probability</Th>
                     <Th>Affected components</Th>

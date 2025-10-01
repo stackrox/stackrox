@@ -43,7 +43,6 @@ import {
     CVE_EPSS_PROBABILITY_SORT_FIELD,
     CVE_SEVERITY_SORT_FIELD,
     CVE_SORT_FIELD,
-    CVE_STATUS_SORT_FIELD,
     CVSS_SORT_FIELD,
 } from '../../utils/sortFields';
 import VirtualMachineVulnerabilitiesTable from './VirtualMachineVulnerabilitiesTable';
@@ -61,7 +60,6 @@ const sortFields = [
     CVE_EPSS_PROBABILITY_SORT_FIELD,
     CVE_SORT_FIELD,
     CVE_SEVERITY_SORT_FIELD,
-    CVE_STATUS_SORT_FIELD,
     CVSS_SORT_FIELD,
 ];
 
