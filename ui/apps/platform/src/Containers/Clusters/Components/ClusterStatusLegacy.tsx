@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Button, Popover, PopoverPosition } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons/dist/esm/icons';
 
@@ -11,7 +12,7 @@ import { healthStatusLabels } from '../cluster.constants';
 import HealthStatus from './HealthStatus';
 import ClusterStatusPill from './ClusterStatusPill';
 import { healthStatusStylesLegacy } from '../cluster.helpers';
-import { ClusterHealthStatus } from '../clusterTypes';
+import type { ClusterHealthStatus } from '../clusterTypes';
 
 /*
  * Cluster Status in Clusters list or Cluster side panel

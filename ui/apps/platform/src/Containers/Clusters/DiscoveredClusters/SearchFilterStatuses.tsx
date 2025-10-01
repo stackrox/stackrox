@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Divider } from '@patternfly/react-core';
 import { SelectOption, Select } from '@patternfly/react-core/deprecated';
 
-import { DiscoveredClusterStatus, isStatus, statuses } from 'services/DiscoveredClusterService';
+import { isStatus, statuses } from 'services/DiscoveredClusterService';
+import type { DiscoveredClusterStatus } from 'services/DiscoveredClusterService';
 
 import { getStatusText } from './DiscoveredCluster';
 

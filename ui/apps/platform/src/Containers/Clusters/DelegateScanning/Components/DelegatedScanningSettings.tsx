@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { ReactElement, Ref } from 'react';
 import {
     Flex,
     FlexItem,
@@ -6,13 +7,13 @@ import {
     FormHelperText,
     HelperText,
     HelperTextItem,
-    MenuToggleElement,
     MenuToggle,
     Select,
     SelectOption,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
-import { DelegatedRegistryCluster } from 'services/DelegatedRegistryConfigService';
+import type { DelegatedRegistryCluster } from 'services/DelegatedRegistryConfigService';
 
 import { getClusterName } from '../cluster';
 
@@ -28,7 +29,7 @@ function DelegatedScanningSettings({
     defaultClusterId,
     isEditing,
     setDefaultClusterId,
-}: DelegatedScanningSettingsProps) {
+}: DelegatedScanningSettingsProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
     // Options consist of valid clusters, plus default cluster (in unlikely case that it is not valid).
@@ -58,7 +59,7 @@ function DelegatedScanningSettings({
                         isOpen={isOpen}
                         selected={defaultClusterId}
                         shouldFocusToggleOnSelect
-                        toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                        toggle={(toggleRef: Ref<MenuToggleElement>) => (
                             <MenuToggle
                                 aria-label="Select default cluster"
                                 ref={toggleRef}

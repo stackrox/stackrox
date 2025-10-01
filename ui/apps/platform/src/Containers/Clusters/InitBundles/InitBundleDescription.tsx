@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     DescriptionList,
     DescriptionListDescription,
@@ -6,7 +7,7 @@ import {
     DescriptionListTerm,
 } from '@patternfly/react-core';
 
-import { ClusterInitBundle } from 'services/ClustersService';
+import type { ClusterInitBundle } from 'services/ClustersService';
 
 export type InitBundleDescriptionProps = {
     initBundle: ClusterInitBundle;

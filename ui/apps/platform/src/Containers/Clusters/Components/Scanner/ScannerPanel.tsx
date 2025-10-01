@@ -9,7 +9,7 @@ import {
 } from '@patternfly/react-core';
 
 import { buildStatusMessage } from 'Containers/Clusters/cluster.helpers';
-import { ClusterHealthStatus } from 'types/cluster.proto';
+import type { ClusterHealthStatus } from 'types/cluster.proto';
 
 import { healthStatusLabels } from '../../cluster.constants';
 import ClusterHealthPanel from '../ClusterHealthPanel';

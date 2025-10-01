@@ -1,10 +1,11 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Tooltip } from '@patternfly/react-core';
 
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { findUpgradeState, formatSensorVersion, sensorUpgradeStyles } from '../cluster.helpers';
-import { SensorUpgradeStatus } from '../clusterTypes';
+import type { SensorUpgradeStatus } from '../clusterTypes';
 
 const trClassName = 'align-top leading-normal';
 const thClassName = 'font-700 pl-0 pr-1 py-0 text-left';

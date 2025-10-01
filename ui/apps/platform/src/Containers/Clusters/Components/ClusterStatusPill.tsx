@@ -1,9 +1,10 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
 import CollectorStatusLegacy from './Collector/CollectorStatusLegacy';
 import AdmissionControlStatusLegacy from './AdmissionControl/AdmissionControlStatusLegacy';
 import SensorStatusLegacy from './SensorStatusLegacy';
-import { ClusterHealthStatus } from '../clusterTypes';
+import type { ClusterHealthStatus } from '../clusterTypes';
 import ScannerStatusLegacy from './Scanner/ScannerStatusLegacy';
 
 type ClusterStatusPillProps = {
