@@ -117,11 +117,13 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
 	timeout := 10 * time.Second
+	log.Debugf("Reading from connection (max bytes: %d, timeout: %s", maxSizeBytes, timeout)
 	data, err := readFromConn(conn, maxSizeBytes, timeout)
 	if err != nil {
 		return errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}
 
+	log.Debugf("Parsing index report (vsock CID: %d)", vsockCID)
 	indexReport, err := parseIndexReport(data)
 	if err != nil {
 		return errors.Wrapf(err, "parsing index report data (vsock CID: %d)", vsockCID)
