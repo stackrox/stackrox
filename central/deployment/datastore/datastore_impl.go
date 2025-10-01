@@ -344,9 +344,6 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 
 	if features.FlattenImageData.Enabled() {
 		for _, container := range deployment.GetContainers() {
-			if container.Image.GetId() == "" {
-				continue
-			}
 			if container.Image.GetIdV2() == "" {
 				// IDV2 may not be set if the sensor is running an older version
 				container.Image.IdV2 = utils.NewImageV2ID(container.Image.GetName(), container.Image.GetId())
