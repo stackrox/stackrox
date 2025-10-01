@@ -111,9 +111,10 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 		return errors.Wrap(err, "extracting vsock CID")
 	}
 
-	data, err := io.ReadAll(conn)
+	maxSizeBytes := 10 * 1024 * 1024 // 10 MB
+	data, err := readFromConn(conn, maxSizeBytes)
 	if err != nil {
-		return errors.Wrapf(err, "reading data from vsock connection (CID: %d)", vsockCID)
+		return errors.Wrap(err, "reading from vsock connection")
 	}
 
 	indexReport, err := parseIndexReport(data)
@@ -139,6 +140,23 @@ func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 		return nil, errors.Wrap(err, "unmarshalling data")
 	}
 	return report, nil
+}
+
+func readFromConn(conn net.Conn, maxSize int) ([]byte, error) {
+	// Add 1 to the limit so we can detect oversized data. If we used exactly maxSize, we couldn't tell the difference
+	// between a valid message of exactly maxSize bytes and an invalid message that's larger than maxSize (both would
+	// read maxSize bytes). With maxSize+1, reading more than maxSize bytes means the original data was too large.
+	limitedReader := io.LimitReader(conn, int64(maxSize+1))
+	data, err := io.ReadAll(limitedReader)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading data from vsock connection")
+	}
+
+	if len(data) > maxSize {
+		return nil, errors.Errorf("data size exceeds the limit (%d bytes)", maxSize)
+	}
+
+	return data, nil
 }
 
 func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
