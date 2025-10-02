@@ -31,7 +31,7 @@ type VsockServer struct {
 
 func (s *VsockServer) Start() error {
 	log.Debugf("Starting vsock server on port %d", s.port)
-	l, err := vsock.Listen(s.port, nil)
+	l, err := vsock.ListenContextID(vsock.Host, s.port, nil)
 	if err != nil {
 		return errors.Wrapf(err, "listening on port %d", s.port)
 	}
