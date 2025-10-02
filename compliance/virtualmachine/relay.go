@@ -88,13 +88,15 @@ func (r *Relay) Run(ctx context.Context) error {
 		}
 
 		go func() {
+			defer func() {
+				if err := conn.Close(); err != nil {
+					log.Errorf("Failed to close connection: %v", err)
+				}
+			}()
+
 			if err := handleVsockConnection(ctx, conn, r.sensorClient); err != nil {
 				log.Errorf("Error handling vsock connection: %v", err)
 			}
-			if err := conn.Close(); err != nil {
-				log.Errorf("Failed to close connection: %v", err)
-			}
-
 		}()
 	}
 }
@@ -104,6 +106,10 @@ func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	if !ok {
 		return 0, fmt.Errorf("failed to extract remote address from vsock connection: unexpected type %T, value: %v",
 			conn.RemoteAddr(), conn.RemoteAddr())
+	}
+
+	if remoteAddr.ContextID <= 2 {
+		return 0, fmt.Errorf("received an invalid vsock context ID: %d (values <=2 are reserved)", remoteAddr.ContextID)
 	}
 
 	return remoteAddr.ContextID, nil

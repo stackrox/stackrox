@@ -17,7 +17,7 @@ type mockVsockConn struct {
 	closed     bool
 	data       []byte
 	readErr    error
-	remoteAddr *vsock.Addr
+	remoteAddr net.Addr
 }
 
 func newMockVsockConn() *mockVsockConn {

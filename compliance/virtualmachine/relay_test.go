@@ -2,6 +2,7 @@ package virtualmachine
 
 import (
 	"context"
+	"net"
 	"testing"
 	"time"
 
@@ -24,6 +25,46 @@ type relayTestSuite struct {
 
 func (s *relayTestSuite) SetupTest() {
 	s.ctx = context.Background()
+}
+
+func (s *relayTestSuite) TestExtractVsockCIDFromConnection() {
+
+	connWrongAddrType := s.defaultVsockConn()
+	connWrongAddrType.remoteAddr = &net.TCPAddr{}
+
+	cases := map[string]struct {
+		conn             net.Conn
+		shouldError      bool
+		expectedVsockCID uint32
+	}{
+		"wrong type fails": {
+			conn:             connWrongAddrType,
+			shouldError:      true,
+			expectedVsockCID: 0,
+		},
+		"reserved vsock CID fails": {
+			conn:             s.defaultVsockConn().withVsockCID(2),
+			shouldError:      true,
+			expectedVsockCID: 0,
+		},
+		"valid vsock CID succeeds": {
+			conn:             s.defaultVsockConn().withVsockCID(42),
+			shouldError:      false,
+			expectedVsockCID: 42,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			vsockCID, err := extractVsockCIDFromConnection(c.conn)
+			if c.shouldError {
+				s.Require().Error(err)
+			} else {
+				s.Require().NoError(err)
+				s.Equal(c.expectedVsockCID, vsockCID)
+			}
+		})
+	}
 }
 
 func (s *relayTestSuite) TestHandleVsockConnection_InjectsVsockCID() {
