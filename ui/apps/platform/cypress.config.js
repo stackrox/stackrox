@@ -1,6 +1,11 @@
 const path = require('path');
-// eslint-disable-next-line import/no-extraneous-dependencies
+
 const cypressVite = require('cypress-vite');
+
+// This is needed because cypress-axe will attempt to resolve the axe.min.js file internally using CommonJS require,
+// which is not supported in Vite. Instead, we resolve the path to the file using CommonJS require in the cypress config
+// and make the path available at test runtime when injecting the axe core.
+const axeCorePath = require.resolve('axe-core/axe.min.js');
 
 /*
  * The helper function intended to provide automatic code completion for configuration in many popular code editors
@@ -30,7 +35,9 @@ module.exports = {
         baseUrl: 'https://localhost:3000',
         viewportHeight: 850, // Viewport options
         viewportWidth: 1440, // Viewport options
-        setupNodeEvents: (on) => {
+        setupNodeEvents: (on, config) => {
+            // eslint-disable-next-line no-param-reassign
+            config.env.AXE_CORE_PATH = axeCorePath;
             on('task', {
                 beforeSuite(spec) {
                     // eslint-disable-next-line no-console
@@ -42,6 +49,7 @@ module.exports = {
                 },
             });
             on('file:preprocessor', cypressVite.vitePreprocessor());
+            return config;
         },
     },
 
