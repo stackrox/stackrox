@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -15,7 +16,7 @@ import { integrationsPath } from 'routePaths';
 import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { Traits } from 'types/traits.proto';
+import type { Traits } from 'types/traits.proto';
 import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { isUserResource } from 'utils/traits.utils';
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';

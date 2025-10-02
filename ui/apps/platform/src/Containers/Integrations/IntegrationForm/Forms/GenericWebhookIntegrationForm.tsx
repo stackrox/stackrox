@@ -1,5 +1,6 @@
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Button,
     Checkbox,
@@ -21,9 +22,9 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
-import { GenericNotifierIntegration as GenericWebhookIntegration } from 'types/notifier.proto';
+import type { GenericNotifierIntegration as GenericWebhookIntegration } from 'types/notifier.proto';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';

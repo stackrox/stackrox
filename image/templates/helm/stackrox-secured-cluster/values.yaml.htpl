@@ -38,6 +38,9 @@ config:
   offlineMode: [< default false .OfflineMode >]
   slimCollector: false
 
+autoLockProcessBaselies:
+  enabled: [<default false .AutoLockProcessBaselines >]
+
 envVars: [< if empty .EnvVars >] []
   [< else >]
   [< range $key, $value := .EnvVars >]

@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { selectors } from 'reducers';
 import { useSelector } from 'react-redux';
 import IntegrationTile from './IntegrationTile';
