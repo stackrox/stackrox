@@ -29,7 +29,7 @@ message ComplianceStandardMetadata {
   }
 
   string id = 1; // @gotags: search:"Standard ID,hidden"
-  string name = 2; // @gotags: search:"Standard,store,hidden"
+  string name = 2; // @gotags: search:"Standard,hidden"
   string description = 3;
   int32 num_implemented_checks = 4;
   repeated Scope scopes = 5;
@@ -39,8 +39,8 @@ message ComplianceStandardMetadata {
 
 message ComplianceControlGroup {
   string id = 1; // @gotags: search:"Control Group ID"
-  string standard_id = 2; // @gotags: search:"Standard ID,store"
-  string name = 3; // @gotags: search:"Control Group,store"
+  string standard_id = 2; // @gotags: search:"Standard ID"
+  string name = 3; // @gotags: search:"Control Group"
   string description = 4;
   int32 num_implemented_checks = 5;
 }
@@ -49,7 +49,7 @@ message ComplianceControl {
   string id = 1; // @gotags: search:"Control ID,hidden"
   string standard_id = 2; // @gotags: search:"Standard ID,hidden"
   string group_id = 3; // @gotags: search:"Control Group ID,hidden"
-  string name = 4; // @gotags: search:"Control,store"
+  string name = 4; // @gotags: search:"Control"
   string description = 5;
 
   bool implemented = 6;

@@ -15,9 +15,9 @@ option java_package = "io.stackrox.proto.storage";
 
 //Next tag: 28
 message Policy {
-  string id = 1; // @gotags: search:"Policy ID,store,hidden" sql:"pk,index=btree" crYaml:"-"
+  string id = 1; // @gotags: search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"
   // Name of the policy.  Must be unique.
-  string name = 2; // @gotags: search:"Policy,store" sql:"unique" crYaml:"policyName"
+  string name = 2; // @gotags: search:"Policy" sql:"unique" crYaml:"policyName"
   // Free-form text description of this policy.
   string description = 3; // @gotags: search:"Description" crYaml:",omitempty"
   string rationale = 4; // @gotags: crYaml:",omitempty"
@@ -26,11 +26,11 @@ message Policy {
   // Toggles whether or not this policy will be executing and actively firing alerts.
   bool disabled = 6; // @gotags: search:"Disabled" crYaml:",omitempty"
   // List of categories that this policy falls under.  Category names must already exist in Central.
-  repeated string categories = 7; // @gotags: search:"Category,store" crYaml:",omitempty"
+  repeated string categories = 7; // @gotags: search:"Category" crYaml:",omitempty"
   reserved 8; // was PolicyFields fields
 
   // Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
-  repeated LifecycleStage lifecycle_stages = 9; // @gotags: search:"Lifecycle Stage,store" crYaml:"lifecycleStages,stringer"
+  repeated LifecycleStage lifecycle_stages = 9; // @gotags: search:"Lifecycle Stage" crYaml:"lifecycleStages,stringer"
   // Describes which events should trigger execution of this policy
   EventSource event_source = 22; // @gotags: crYaml:"eventSource,stringer"
 
@@ -41,7 +41,7 @@ message Policy {
   repeated Scope scope = 11; // @gotags: crYaml:",omitempty"
 
   // Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY.
-  Severity severity = 12; // @gotags: search:"Severity,store" crYaml:",stringer"
+  Severity severity = 12; // @gotags: search:"Severity" crYaml:",stringer"
   // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
   // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
   // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.

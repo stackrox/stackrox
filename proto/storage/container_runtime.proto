@@ -13,5 +13,5 @@ enum ContainerRuntime {
 
 message ContainerRuntimeInfo {
   ContainerRuntime type = 1;
-  string version = 2; // @gotags: search:"Container Runtime,store"
+  string version = 2; // @gotags: search:"Container Runtime"
 }
