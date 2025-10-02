@@ -38,6 +38,7 @@ const (
 
 var (
 	workflowSAC = sac.ForResource(resources.WorkflowAdministration)
+	imageSAC    = sac.ForResource(resources.Image)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		// V2 API authorization
@@ -592,4 +593,15 @@ func verifyNoUserSearchLabels(q *v1.Query) error {
 		}
 	})
 	return err
+}
+
+func verifyReportSAC(ctx context.Context) error {
+	// Authorisation: must have write access on workflow administration and read access for Image.
+	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+	if err := sac.VerifyAuthzOK(imageSAC.ReadAllowed(ctx)); err != nil {
+		return err
+	}
+	return nil
 }
