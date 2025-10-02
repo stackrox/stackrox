@@ -353,6 +353,7 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 	// Generate the optimized schema file in the same directory
 
 	// Generate search fields using reflection on the protobuf type first
+	// Only include fields that actually exist in this type (walker.Walk parity)
 	searchFields := generateSearchFields(props.Type, trimmedType)
 
 	// Create a map from field path to search field name for lookup
@@ -364,12 +365,16 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 	// Extract fields from walker schema
 	var fields []OptimizedSchemaField
 	for _, field := range schema.Fields {
-		// Find the search field name for this field by matching the column name
+		// Find the search field name for this field by matching the field path
 		searchFieldName := ""
 		// Try multiple variations of the field path to match
 		possiblePaths := []string{
-			"." + strings.ToLower(field.ColumnName),
+			// Direct field name matching for root level fields
+			"." + strings.ToLower(field.Name),
 			"." + pgutils.NamingStrategy.ColumnName("", field.ColumnName),
+			// Entity-prefixed paths for root level fields
+			trimmedType + "." + strings.ToLower(field.Name),
+			trimmedType + "." + strings.ToLower(field.ColumnName),
 		}
 		for _, path := range possiblePaths {
 			if fieldName, exists := fieldPathToSearchName[path]; exists {
@@ -396,7 +401,7 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 	// Extract child schemas recursively
 	var childSchemas []OptimizedSchemaData
 	for _, childSchema := range schema.Children {
-		childData := extractSchemaDataRecursively(childSchema, cleanSearchCategory)
+		childData := extractSchemaDataRecursively(childSchema, cleanSearchCategory, fieldPathToSearchName, strings.ToLower(trimmedType))
 		childSchemas = append(childSchemas, childData)
 	}
 
@@ -428,9 +433,227 @@ func generateOptimizedSchema(schema *walker.Schema, props properties, trimmedTyp
 	return common.RenderFile(templateMap, optimizedSchemaTemplate, fileName)
 }
 
-func extractFieldsFromSchema(schema *walker.Schema) []OptimizedSchemaField {
+func extractFieldsFromSchema(schema *walker.Schema, fieldPathToSearchName map[string]string, entityPrefix string) []OptimizedSchemaField {
 	var fields []OptimizedSchemaField
 	for _, field := range schema.Fields {
+		// Find the search field name for this field by matching possible paths
+		searchFieldName := ""
+
+		// For child schema fields, we need to construct the full path
+		// For example: deployment.containers.image.name.full_name should map to FullName field
+		possiblePaths := []string{
+			// Direct field name matching
+			"." + strings.ToLower(field.Name),
+			"." + strings.ToLower(field.ColumnName),
+			// Entity-prefixed paths
+			entityPrefix + "." + strings.ToLower(field.Name),
+			entityPrefix + "." + strings.ToLower(field.ColumnName),
+		}
+
+		// For child schemas, also try to match by constructing the full hierarchical path
+		if strings.Contains(schema.Table, "_") {
+			// This is a child table, try to construct full path
+			// For deployments_containers, we want paths like deployment.containers.xxx
+			tableParts := strings.Split(schema.Table, "_")
+			if len(tableParts) >= 2 {
+				// Build hierarchical path: deployment.containers.field_name
+				hierarchicalPath := entityPrefix
+				for i := 1; i < len(tableParts); i++ {
+					hierarchicalPath += "." + tableParts[i]
+				}
+
+				// Add variations with field names
+				possiblePaths = append(possiblePaths,
+					hierarchicalPath + "." + strings.ToLower(field.Name),
+					hierarchicalPath + "." + strings.ToLower(field.ColumnName),
+				)
+
+				// Special handling for common field patterns
+				if field.Name == "FullName" && strings.Contains(field.ColumnName, "Image_Name_FullName") {
+					possiblePaths = append(possiblePaths,
+						".containers.image.name.full_name",
+					)
+				}
+				if field.Name == "Registry" && strings.Contains(field.ColumnName, "Image_Name_Registry") {
+					possiblePaths = append(possiblePaths,
+						".containers.image.name.registry",
+					)
+				}
+				if field.Name == "Remote" && strings.Contains(field.ColumnName, "Image_Name_Remote") {
+					possiblePaths = append(possiblePaths,
+						".containers.image.name.remote",
+					)
+				}
+				if field.Name == "Tag" && strings.Contains(field.ColumnName, "Image_Name_Tag") {
+					possiblePaths = append(possiblePaths,
+						".containers.image.name.tag",
+					)
+				}
+				if field.Name == "Id" && strings.Contains(field.ColumnName, "Image_Id") {
+					possiblePaths = append(possiblePaths,
+						".containers.image.id",
+					)
+				}
+				if field.Name == "IdV2" && strings.Contains(field.ColumnName, "Image_IdV2") {
+					possiblePaths = append(possiblePaths,
+						".containers.image.id_v2",
+					)
+				}
+				if field.Name == "Privileged" && strings.Contains(field.ColumnName, "SecurityContext_Privileged") {
+					possiblePaths = append(possiblePaths,
+						".containers.security_context.privileged",
+					)
+				}
+				if field.Name == "DropCapabilities" && strings.Contains(field.ColumnName, "SecurityContext_DropCapabilities") {
+					possiblePaths = append(possiblePaths,
+						".containers.security_context.drop_capabilities",
+					)
+				}
+				if field.Name == "AddCapabilities" && strings.Contains(field.ColumnName, "SecurityContext_AddCapabilities") {
+					possiblePaths = append(possiblePaths,
+						".containers.security_context.add_capabilities",
+					)
+				}
+				if field.Name == "ReadOnlyRootFilesystem" && strings.Contains(field.ColumnName, "SecurityContext_ReadOnlyRootFilesystem") {
+					possiblePaths = append(possiblePaths,
+						".containers.security_context.read_only_root_filesystem",
+					)
+				}
+				if field.Name == "CpuCoresRequest" && strings.Contains(field.ColumnName, "Resources_CpuCoresRequest") {
+					possiblePaths = append(possiblePaths,
+						".containers.resources.cpu_cores_request",
+					)
+				}
+				if field.Name == "CpuCoresLimit" && strings.Contains(field.ColumnName, "Resources_CpuCoresLimit") {
+					possiblePaths = append(possiblePaths,
+						".containers.resources.cpu_cores_limit",
+					)
+				}
+				if field.Name == "MemoryMbRequest" && strings.Contains(field.ColumnName, "Resources_MemoryMbRequest") {
+					possiblePaths = append(possiblePaths,
+						".containers.resources.memory_mb_request",
+					)
+				}
+				if field.Name == "MemoryMbLimit" && strings.Contains(field.ColumnName, "Resources_MemoryMbLimit") {
+					possiblePaths = append(possiblePaths,
+						".containers.resources.memory_mb_limit",
+					)
+				}
+
+				// Environment variable patterns
+				if field.Name == "Key" && strings.Contains(schema.Table, "envs") {
+					possiblePaths = append(possiblePaths,
+						".containers.config.env.key",
+					)
+				}
+				if field.Name == "Value" && strings.Contains(schema.Table, "envs") {
+					possiblePaths = append(possiblePaths,
+						".containers.config.env.value",
+					)
+				}
+				if field.Name == "EnvVarSource" && strings.Contains(schema.Table, "envs") {
+					possiblePaths = append(possiblePaths,
+						".containers.config.env.env_var_source",
+					)
+				}
+
+				// Volume patterns
+				if field.Name == "Name" && strings.Contains(schema.Table, "volumes") {
+					possiblePaths = append(possiblePaths,
+						".containers.volumes.name",
+					)
+				}
+				if field.Name == "Source" && strings.Contains(schema.Table, "volumes") {
+					possiblePaths = append(possiblePaths,
+						".containers.volumes.source",
+					)
+				}
+				if field.Name == "Destination" && strings.Contains(schema.Table, "volumes") {
+					possiblePaths = append(possiblePaths,
+						".containers.volumes.destination",
+					)
+				}
+				if field.Name == "ReadOnly" && strings.Contains(schema.Table, "volumes") {
+					possiblePaths = append(possiblePaths,
+						".containers.volumes.read_only",
+					)
+				}
+				if field.Name == "Type" && strings.Contains(schema.Table, "volumes") {
+					possiblePaths = append(possiblePaths,
+						".containers.volumes.type",
+					)
+				}
+
+				// Secret patterns
+				if field.Name == "Name" && strings.Contains(schema.Table, "secrets") {
+					possiblePaths = append(possiblePaths,
+						".containers.secrets.name",
+					)
+				}
+				if field.Name == "Path" && strings.Contains(schema.Table, "secrets") {
+					possiblePaths = append(possiblePaths,
+						".containers.secrets.path",
+					)
+				}
+
+				// Port patterns
+				if field.Name == "ContainerPort" && strings.Contains(schema.Table, "ports") {
+					possiblePaths = append(possiblePaths,
+						".ports.container_port",
+					)
+				}
+				if field.Name == "Protocol" && strings.Contains(schema.Table, "ports") && !strings.Contains(schema.Table, "exposure") {
+					possiblePaths = append(possiblePaths,
+						".ports.protocol",
+					)
+				}
+				if field.Name == "Exposure" && strings.Contains(schema.Table, "ports") {
+					possiblePaths = append(possiblePaths,
+						".ports.exposure",
+					)
+				}
+
+				// Port exposure info patterns
+				if field.Name == "Level" && strings.Contains(schema.Table, "exposure_infos") {
+					possiblePaths = append(possiblePaths,
+						".ports.exposure_infos.level",
+					)
+				}
+				if field.Name == "ServiceName" && strings.Contains(schema.Table, "exposure_infos") {
+					possiblePaths = append(possiblePaths,
+						".ports.exposure_infos.service_name",
+					)
+				}
+				if field.Name == "ServicePort" && strings.Contains(schema.Table, "exposure_infos") {
+					possiblePaths = append(possiblePaths,
+						".ports.exposure_infos.service_port",
+					)
+				}
+				if field.Name == "NodePort" && strings.Contains(schema.Table, "exposure_infos") {
+					possiblePaths = append(possiblePaths,
+						".ports.exposure_infos.node_port",
+					)
+				}
+				if field.Name == "ExternalIps" && strings.Contains(schema.Table, "exposure_infos") {
+					possiblePaths = append(possiblePaths,
+						".ports.exposure_infos.external_ips",
+					)
+				}
+				if field.Name == "ExternalHostnames" && strings.Contains(schema.Table, "exposure_infos") {
+					possiblePaths = append(possiblePaths,
+						".ports.exposure_infos.external_hostnames",
+					)
+				}
+			}
+		}
+
+		for _, path := range possiblePaths {
+			if fieldName, exists := fieldPathToSearchName[path]; exists {
+				searchFieldName = fieldName
+				break
+			}
+		}
+
 		optimizedField := OptimizedSchemaField{
 			Name:            field.Name,
 			ColumnName:      field.ColumnName,
@@ -438,20 +661,20 @@ func extractFieldsFromSchema(schema *walker.Schema) []OptimizedSchemaField {
 			SQLType:         field.SQLType,
 			DataType:        getDataTypeName(field.DataType),
 			IsPrimaryKey:    field.Options.PrimaryKey,
-			SearchFieldName: "", // Child schema fields don't have search names
+			SearchFieldName: searchFieldName,
 		}
 		fields = append(fields, optimizedField)
 	}
 	return fields
 }
 
-func extractSchemaDataRecursively(schema *walker.Schema, searchCategory string) OptimizedSchemaData {
-	fields := extractFieldsFromSchema(schema)
+func extractSchemaDataRecursively(schema *walker.Schema, searchCategory string, fieldPathToSearchName map[string]string, entityPrefix string) OptimizedSchemaData {
+	fields := extractFieldsFromSchema(schema, fieldPathToSearchName, entityPrefix)
 
 	// Extract child schemas recursively
 	var childSchemas []OptimizedSchemaData
 	for _, childSchema := range schema.Children {
-		childData := extractSchemaDataRecursively(childSchema, searchCategory)
+		childData := extractSchemaDataRecursively(childSchema, searchCategory, fieldPathToSearchName, entityPrefix)
 		childSchemas = append(childSchemas, childData)
 	}
 
@@ -509,8 +732,44 @@ func getDataTypeName(dataType interface{}) string {
 	}
 }
 
+func generateSearchFieldsWithScope(protoType, trimmedType string, searchScope []string) []OptimizedSearchField {
+	// Generate fields for the primary type
+	searchFields := generateSearchFields(protoType, trimmedType)
+
+	// Create a map to track field labels and avoid duplicates
+	fieldLabelMap := make(map[string]bool)
+	for _, field := range searchFields {
+		fieldLabelMap[field.FieldLabel] = true
+	}
+
+	// Add fields from other types in the search scope
+	for _, scopeCategory := range searchScope {
+		// Skip the primary category to avoid duplicates
+		primaryCategory := getSearchCategoryName(getSearchCategoryForType(trimmedType))
+		if scopeCategory == primaryCategory {
+			continue
+		}
+
+		// Get the type name for this search category
+		scopeTypeName := getTypeNameForSearchCategory(scopeCategory)
+		if scopeTypeName != "" && scopeTypeName != trimmedType {
+			// Generate search fields for this scope type
+			scopeFields := generateSearchFields("", scopeTypeName)
+			// Add only unique fields to our list
+			for _, field := range scopeFields {
+				if !fieldLabelMap[field.FieldLabel] {
+					searchFields = append(searchFields, field)
+					fieldLabelMap[field.FieldLabel] = true
+				}
+			}
+		}
+	}
+
+	return searchFields
+}
+
 func generateSearchFields(protoType, trimmedType string) []OptimizedSearchField {
-	if protoType == "" {
+	if protoType == "" && trimmedType == "" {
 		return []OptimizedSearchField{}
 	}
 
@@ -679,13 +938,38 @@ func getTableNameFromType(typeName string) string {
 	}
 }
 
+func getTypeNameForSearchCategory(searchCategory string) string {
+	// Map search categories back to type names
+	switch searchCategory {
+	case "SearchCategory_ALERTS", "ALERTS":
+		return "Alert"
+	case "SearchCategory_CLUSTERS", "CLUSTERS":
+		return "Cluster"
+	case "SearchCategory_DEPLOYMENTS", "DEPLOYMENTS":
+		return "Deployment"
+	case "SearchCategory_IMAGES", "IMAGES":
+		return "Image"
+	case "SearchCategory_POLICIES", "POLICIES":
+		return "Policy"
+	case "SearchCategory_NODES", "NODES":
+		return "Node"
+	case "SearchCategory_SECRETS", "SECRETS":
+		return "Secret"
+	case "SearchCategory_ROLES", "ROLES":
+		return "Role"
+	case "SearchCategory_ROLEBINDINGS", "ROLEBINDINGS":
+		return "K8SRoleBinding"
+	default:
+		return ""
+	}
+}
+
 func shouldUseEntityPrefix(typeName string) bool {
-	// Only specific types should use entity prefixes in their field paths
-	// Most types should keep dot-prefixed paths (e.g., ".policy.name")
+	// Only role bindings need entity prefixes for backward compatibility
+	// All other types should use dot prefixes to match search.Walk behavior
 	switch typeName {
 	case "K8SRoleBinding", "K8sRoleBinding":
 		return true
-	// Add other types that need entity prefixes here if discovered
 	default:
 		return false
 	}

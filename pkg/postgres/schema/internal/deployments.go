@@ -562,6 +562,10 @@ var (
 						Type:       "string",
 						SQLType:    "varchar",
 						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Deployment ID",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "Registry",
@@ -569,6 +573,10 @@ var (
 						Type:       "string",
 						SQLType:    "varchar",
 						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image Registry",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "Remote",
@@ -576,6 +584,10 @@ var (
 						Type:       "string",
 						SQLType:    "varchar",
 						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image Remote",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "Tag",
@@ -583,6 +595,10 @@ var (
 						Type:       "string",
 						SQLType:    "varchar",
 						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image Tag",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "FullName",
@@ -590,6 +606,10 @@ var (
 						Type:       "string",
 						SQLType:    "varchar",
 						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "IdV2",
@@ -597,6 +617,10 @@ var (
 						Type:       "string",
 						SQLType:    "varchar",
 						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image ID",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "Privileged",
@@ -604,6 +628,10 @@ var (
 						Type:       "bool",
 						SQLType:    "bool",
 						DataType:   postgres.Bool,
+						Search: walker.SearchField{
+							FieldName: "Privileged",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "DropCapabilities",
@@ -611,6 +639,10 @@ var (
 						Type:       "[]string",
 						SQLType:    "text[]",
 						DataType:   postgres.StringArray,
+						Search: walker.SearchField{
+							FieldName: "Drop Capabilities",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "AddCapabilities",
@@ -618,6 +650,10 @@ var (
 						Type:       "[]string",
 						SQLType:    "text[]",
 						DataType:   postgres.StringArray,
+						Search: walker.SearchField{
+							FieldName: "Add Capabilities",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "ReadOnlyRootFilesystem",
@@ -625,6 +661,10 @@ var (
 						Type:       "bool",
 						SQLType:    "bool",
 						DataType:   postgres.Bool,
+						Search: walker.SearchField{
+							FieldName: "Read Only Root Filesystem",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "CpuCoresRequest",
@@ -632,6 +672,10 @@ var (
 						Type:       "float32",
 						SQLType:    "numeric",
 						DataType:   postgres.Numeric,
+						Search: walker.SearchField{
+							FieldName: "CPU Cores Request",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "CpuCoresLimit",
@@ -639,6 +683,10 @@ var (
 						Type:       "float32",
 						SQLType:    "numeric",
 						DataType:   postgres.Numeric,
+						Search: walker.SearchField{
+							FieldName: "CPU Cores Limit",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "MemoryMbRequest",
@@ -646,6 +694,10 @@ var (
 						Type:       "float32",
 						SQLType:    "numeric",
 						DataType:   postgres.Numeric,
+						Search: walker.SearchField{
+							FieldName: "Memory Request (MB)",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "MemoryMbLimit",
@@ -653,6 +705,10 @@ var (
 						Type:       "float32",
 						SQLType:    "numeric",
 						DataType:   postgres.Numeric,
+						Search: walker.SearchField{
+							FieldName: "Memory Limit (MB)",
+							Enabled:   true,
+						},
 					},
 				},
 				Children: []*walker.Schema{
@@ -697,6 +753,10 @@ var (
 								Type:       "string",
 								SQLType:    "varchar",
 								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Environment Key",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "Value",
@@ -704,6 +764,10 @@ var (
 								Type:       "string",
 								SQLType:    "varchar",
 								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Environment Value",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "EnvVarSource",
@@ -711,6 +775,10 @@ var (
 								Type:       "storage.ContainerConfig_EnvironmentConfig_EnvVarSource",
 								SQLType:    "integer",
 								DataType:   postgres.Enum,
+								Search: walker.SearchField{
+									FieldName: "Environment Variable Source",
+									Enabled:   true,
+								},
 							},
 						},
 					},
@@ -755,6 +823,10 @@ var (
 								Type:       "string",
 								SQLType:    "varchar",
 								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Deployment",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "Source",
@@ -762,6 +834,10 @@ var (
 								Type:       "string",
 								SQLType:    "varchar",
 								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Volume Source",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "Destination",
@@ -769,6 +845,10 @@ var (
 								Type:       "string",
 								SQLType:    "varchar",
 								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Volume Destination",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "ReadOnly",
@@ -776,6 +856,10 @@ var (
 								Type:       "bool",
 								SQLType:    "bool",
 								DataType:   postgres.Bool,
+								Search: walker.SearchField{
+									FieldName: "Volume ReadOnly",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "Type",
@@ -783,6 +867,10 @@ var (
 								Type:       "string",
 								SQLType:    "varchar",
 								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Deployment Type",
+									Enabled:   true,
+								},
 							},
 						},
 					},
@@ -827,6 +915,10 @@ var (
 								Type:       "string",
 								SQLType:    "varchar",
 								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Deployment",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "Path",
@@ -834,6 +926,10 @@ var (
 								Type:       "string",
 								SQLType:    "varchar",
 								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Secret Path",
+									Enabled:   true,
+								},
 							},
 						},
 					},
@@ -870,6 +966,10 @@ var (
 						Type:       "int32",
 						SQLType:    "integer",
 						DataType:   postgres.Integer,
+						Search: walker.SearchField{
+							FieldName: "Port",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "Protocol",
@@ -877,6 +977,10 @@ var (
 						Type:       "string",
 						SQLType:    "varchar",
 						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Port Protocol",
+							Enabled:   true,
+						},
 					},
 					{
 						Name:       "Exposure",
@@ -884,6 +988,10 @@ var (
 						Type:       "storage.PortConfig_ExposureLevel",
 						SQLType:    "integer",
 						DataType:   postgres.Enum,
+						Search: walker.SearchField{
+							FieldName: "Max Exposure Level",
+							Enabled:   true,
+						},
 					},
 				},
 				Children: []*walker.Schema{
@@ -928,6 +1036,10 @@ var (
 								Type:       "storage.PortConfig_ExposureLevel",
 								SQLType:    "integer",
 								DataType:   postgres.Enum,
+								Search: walker.SearchField{
+									FieldName: "Exposure Level",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "ServiceName",
@@ -935,6 +1047,10 @@ var (
 								Type:       "string",
 								SQLType:    "varchar",
 								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Exposing Service",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "ServicePort",
@@ -942,6 +1058,10 @@ var (
 								Type:       "int32",
 								SQLType:    "integer",
 								DataType:   postgres.Integer,
+								Search: walker.SearchField{
+									FieldName: "Exposing Service Port",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "NodePort",
@@ -949,6 +1069,10 @@ var (
 								Type:       "int32",
 								SQLType:    "integer",
 								DataType:   postgres.Integer,
+								Search: walker.SearchField{
+									FieldName: "Exposed Node Port",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "ExternalIps",
@@ -956,6 +1080,10 @@ var (
 								Type:       "[]string",
 								SQLType:    "text[]",
 								DataType:   postgres.StringArray,
+								Search: walker.SearchField{
+									FieldName: "External IP",
+									Enabled:   true,
+								},
 							},
 							{
 								Name:       "ExternalHostnames",
@@ -963,6 +1091,10 @@ var (
 								Type:       "[]string",
 								SQLType:    "text[]",
 								DataType:   postgres.StringArray,
+								Search: walker.SearchField{
+									FieldName: "External Hostname",
+									Enabled:   true,
+								},
 							},
 						},
 					},

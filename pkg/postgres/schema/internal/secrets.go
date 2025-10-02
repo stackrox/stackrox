@@ -228,6 +228,10 @@ var (
 								Type:       "string",
 								SQLType:    "varchar",
 								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Secret",
+									Enabled:   true,
+								},
 							},
 						},
 					},

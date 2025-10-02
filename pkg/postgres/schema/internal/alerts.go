@@ -233,6 +233,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Alert ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Name",
@@ -365,6 +369,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Alert ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Name",
@@ -386,6 +394,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Alert ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Registry",

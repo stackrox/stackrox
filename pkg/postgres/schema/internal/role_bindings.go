@@ -197,6 +197,10 @@ var (
 						Type:       "string",
 						SQLType:    "varchar",
 						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Role Binding",
+							Enabled:   true,
+						},
 					},
 				},
 			},

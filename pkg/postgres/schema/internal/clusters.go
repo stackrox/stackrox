@@ -144,6 +144,10 @@ var (
 				Type:       "storage.ClusterMetadata_Type",
 				SQLType:    "integer",
 				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Cluster Platform Type",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Version",
