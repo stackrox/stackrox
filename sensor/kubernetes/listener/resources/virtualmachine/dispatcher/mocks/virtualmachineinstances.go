@@ -41,9 +41,11 @@ func (m *MockvirtualMachineStore) EXPECT() *MockvirtualMachineStoreMockRecorder 
 }
 
 // AddOrUpdate mocks base method.
-func (m *MockvirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) {
+func (m *MockvirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddOrUpdate", vm)
+	ret := m.ctrl.Call(m, "AddOrUpdate", vm)
+	ret0, _ := ret[0].(*virtualmachine.Info)
+	return ret0
 }
 
 // AddOrUpdate indicates an expected call of AddOrUpdate.

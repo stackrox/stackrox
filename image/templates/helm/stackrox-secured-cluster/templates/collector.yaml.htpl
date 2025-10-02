@@ -179,6 +179,7 @@ spec:
         resources:
           {{- ._rox.collector._complianceResources | nindent 10 }}
         securityContext:
+          privileged: true
           runAsUser: 0
           readOnlyRootFilesystem: true
           {{ if not ._rox.collector.disableSELinuxOptions }}
