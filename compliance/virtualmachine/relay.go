@@ -49,25 +49,21 @@ func (s *VsockServer) Stop() {
 }
 
 type Relay struct {
-	connectionReadTimeout time.Duration
-	ctx                   context.Context
-	sensorClient          sensor.VirtualMachineIndexReportServiceClient
 	vsockServer           VsockServer
+	sensorClient          sensor.VirtualMachineIndexReportServiceClient
 	waitAfterFailedAccept time.Duration
 }
 
-func NewRelay(ctx context.Context, conn grpc.ClientConnInterface) *Relay {
+func NewRelay(conn grpc.ClientConnInterface) *Relay {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	return &Relay{
-		connectionReadTimeout: 10 * time.Second,
-		ctx:                   ctx,
 		sensorClient:          sensor.NewVirtualMachineIndexReportServiceClient(conn),
 		vsockServer:           VsockServer{port: uint32(port)},
 		waitAfterFailedAccept: time.Second,
 	}
 }
 
-func (r *Relay) Run() error {
+func (r *Relay) Run(ctx context.Context) error {
 	log.Info("Starting virtual machine relay")
 
 	if err := r.vsockServer.Start(); err != nil {
@@ -75,16 +71,16 @@ func (r *Relay) Run() error {
 	}
 
 	go func() {
-		<-r.ctx.Done()
+		<-ctx.Done()
 		r.vsockServer.Stop()
 	}()
 
 	for {
 		conn, err := r.vsockServer.listener.Accept()
 		if err != nil {
-			if r.ctx.Err() != nil {
+			if ctx.Err() != nil {
 				log.Info("Stopping virtual machine relay")
-				return r.ctx.Err()
+				return ctx.Err()
 			}
 			log.Errorf("Error accepting connection: %v", err)
 			time.Sleep(r.waitAfterFailedAccept) // Prevent a tight loop
@@ -98,14 +94,28 @@ func (r *Relay) Run() error {
 				}
 			}()
 
-			if err := r.handleVsockConnection(conn); err != nil {
+			if err := handleVsockConnection(ctx, conn, r.sensorClient); err != nil {
 				log.Errorf("Error handling vsock connection: %v", err)
 			}
 		}()
 	}
 }
 
-func (r *Relay) handleVsockConnection(conn net.Conn) error {
+func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
+	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
+	if !ok {
+		return 0, fmt.Errorf("failed to extract remote address from vsock connection: unexpected type %T, value: %v",
+			conn.RemoteAddr(), conn.RemoteAddr())
+	}
+
+	if remoteAddr.ContextID <= 2 {
+		return 0, fmt.Errorf("received an invalid vsock context ID: %d (values <=2 are reserved)", remoteAddr.ContextID)
+	}
+
+	return remoteAddr.ContextID, nil
+}
+
+func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
 	metrics.VsockConnectionsAccepted.Inc()
 
 	log.Infof("Handling vsock connection from %s", conn.RemoteAddr())
@@ -116,8 +126,9 @@ func (r *Relay) handleVsockConnection(conn net.Conn) error {
 	}
 
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
-	log.Debugf("Reading from connection (max bytes: %d, timeout: %s", maxSizeBytes, r.connectionReadTimeout)
-	data, err := readFromConn(conn, maxSizeBytes, r.connectionReadTimeout)
+	timeout := 10 * time.Second
+	log.Debugf("Reading from connection (max bytes: %d, timeout: %s", maxSizeBytes, timeout)
+	data, err := readFromConn(conn, maxSizeBytes, timeout)
 	if err != nil {
 		return errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}
@@ -133,27 +144,13 @@ func (r *Relay) handleVsockConnection(conn net.Conn) error {
 	// replaced with a sanity check.
 	indexReport.VsockCid = strconv.Itoa(int(vsockCID))
 
-	if err = sendReportToSensor(r.ctx, indexReport, r.sensorClient); err != nil {
+	if err = sendReportToSensor(ctx, indexReport, sensorClient); err != nil {
 		return errors.Wrapf(err, "sending report to sensor (vsock CID: %d)", vsockCID)
 	}
 
 	log.Debugf("Finished handling vsock connection from %s", conn.RemoteAddr())
 
 	return nil
-}
-
-func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
-	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
-	if !ok {
-		return 0, fmt.Errorf("failed to extract remote address from vsock connection: unexpected type %T, value: %v",
-			conn.RemoteAddr(), conn.RemoteAddr())
-	}
-
-	if remoteAddr.ContextID <= 2 {
-		return 0, fmt.Errorf("received an invalid vsock context ID: %d (values <=2 are reserved)", remoteAddr.ContextID)
-	}
-
-	return remoteAddr.ContextID, nil
 }
 
 func isRetryableGRPCError(err error) bool {
