@@ -118,7 +118,7 @@ func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
 	metrics.VsockConnectionsAccepted.Inc()
 
-	log.Debugf("Handling vsock connection from %s", conn.RemoteAddr())
+	log.Infof("Handling vsock connection from %s", conn.RemoteAddr())
 
 	vsockCID, err := extractVsockCIDFromConnection(conn)
 	if err != nil {
