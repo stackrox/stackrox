@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -344,7 +343,7 @@ func FilterSuppressedCVEsNoCloneV2(img *storage.ImageV2) {
 		}
 		c.Vulns = filteredVulns
 	}
-	enricher.FillScanStatsV2(img)
+	FillScanStatsV2(img)
 }
 
 // IsRedHatImage takes in an image and returns whether it's a Red Hat image.
