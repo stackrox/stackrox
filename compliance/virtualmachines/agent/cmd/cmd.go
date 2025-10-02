@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/compliance/virtualmachines/agent/config"
 	"github.com/stackrox/rox/compliance/virtualmachines/agent/index"
 	"github.com/stackrox/rox/compliance/virtualmachines/agent/vsock"
+	"github.com/stackrox/rox/pkg/logging"
 )
+
+const repoToCPEMappingURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
 
 var log = logging.LoggerForModule()
 
@@ -29,6 +31,9 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	)
 	cmd.Flags().StringVar(&cfg.IndexHostPath, "host-path", "/",
 		"Path where the indexer starts searching for the RPM and DNF databases.",
+	)
+	cmd.Flags().StringVar(&cfg.RepoToCPEMappingURL, "repo-cpe-url", repoToCPEMappingURL,
+		"URL for the repository to CPE mapping.",
 	)
 	cmd.Flags().DurationVar(&cfg.Timeout, "timeout", 30*time.Second,
 		"VSock client timeout when sending index reports.",
