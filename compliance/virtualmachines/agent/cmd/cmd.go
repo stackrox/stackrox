@@ -41,7 +41,7 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().BoolVar(&cfg.Verbose, "verbose", false,
 		"Prints the index reports to stdout.",
 	)
-	cmd.Flags().Uint32Var(&cfg.VsockPort, "port", 1024,
+	cmd.Flags().Uint32Var(&cfg.VsockPort, "port", 818,
 		"VSock port to connect with the virtual machine host.",
 	)
 	cmd.Run = func(cmd *cobra.Command, _ []string) {
