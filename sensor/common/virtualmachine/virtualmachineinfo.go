@@ -9,6 +9,7 @@ type Info struct {
 	Namespace string
 	VSOCKCID  *uint32
 	Running   bool
+	GuestOS   string
 }
 
 // Copy returns a copy of the VirtualMachineInfo

@@ -66,6 +66,7 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		Namespace: namespace,
 		Running:   virtualMachineInstance.Status.Phase == kubeVirtV1.Running,
 		VSOCKCID:  virtualMachineInstance.Status.VSOCKCID,
+		GuestOS:   virtualMachineInstance.Status.GuestOSInfo.Name,
 	}
 	// If the instance is NOT handled by a VirtualMachine
 	// Process the instance as a VirtualMachine
@@ -107,6 +108,9 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 				Name:      vm.Name,
 				Namespace: vm.Namespace,
 				ClusterId: d.clusterID,
+				Facts: map[string]string{
+					GuestOSKey: vm.GuestOS,
+				},
 			},
 		},
 	})

@@ -74,6 +74,9 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
@@ -99,6 +102,9 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
@@ -124,6 +130,9 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
@@ -143,6 +152,9 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),

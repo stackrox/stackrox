@@ -143,6 +143,7 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	// Update new VSOCK maps
 	prev.VSOCKCID = s.addOrUpdateVSOCKInfoNoLock(updateInfo.ID, updateInfo.VSOCKCID)
 	prev.Running = updateInfo.Running
+	prev.GuestOS = updateInfo.GuestOS
 }
 
 func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(id virtualmachine.VMID, vsockCID *uint32) *uint32 {

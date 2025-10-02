@@ -9,6 +9,10 @@ import (
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
 
+const (
+	GuestOSKey = "GuestOS"
+)
+
 type VirtualMachineDispatcher struct {
 	clusterID string
 	store     virtualMachineStore
@@ -60,6 +64,9 @@ func processVirtualMachine(vm *virtualmachine.Info, action central.ResourceActio
 				Namespace: vm.Namespace,
 				Name:      vm.Name,
 				ClusterId: clusterID,
+				Facts: map[string]string{
+					GuestOSKey: vm.GuestOS,
+				},
 			},
 		},
 	})
