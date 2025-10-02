@@ -160,9 +160,10 @@ func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgre
 	}
 	defer rows.Close()
 
+	scanner := scanAPI.NewRowScanner(rows)
 	for rows.Next() {
 		var row T
-		if err := pgxscan.ScanRow(&row, rows); err != nil {
+		if err := scanner.Scan(&row); err != nil {
 			return err
 		}
 		if err := fn(&row); err != nil {
