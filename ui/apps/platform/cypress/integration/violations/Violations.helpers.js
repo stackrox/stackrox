@@ -1,6 +1,7 @@
 import { visitFromLeftNav, visitFromHorizontalNav } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
+import { readFileFromDownloads } from '../../helpers/file';
 
 // Source of truth for keys in routeMatcherMap and staticResponseMap objects.
 export const alertsAlias = 'alerts';
@@ -199,9 +200,7 @@ export function exportAndWaitForNetworkPolicyYaml(fileName, onDownload) {
         `[role="dialog"]:contains("Network policy details") button:contains('Export YAML')`
     ).click();
 
-    cy.task('joinPaths', [Cypress.config('downloadsFolder'), fileName]).then((path) => {
-        cy.readFile(path).then(onDownload);
-    });
+    readFileFromDownloads(fileName).then(onDownload);
 }
 
 /**
