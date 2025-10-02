@@ -10,8 +10,6 @@ source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
-REGION="${REGION:-us-west4}"
-
 provision_gke_cluster() {
     info "Provisioning a GKE cluster"
 
@@ -46,9 +44,6 @@ assign_env_variables() {
     cluster_name="${cluster_name:0:40}" # (for GKE name limit)
     ci_export CLUSTER_NAME "$cluster_name"
     echo "Assigned cluster name is $cluster_name"
-
-    ci_export REGION "${REGION}"
-    echo "Selected region is $REGION"
 
     choose_release_channel
     choose_cluster_version
@@ -93,7 +88,6 @@ create_cluster() {
     ensure_CI
 
     require_environment "CLUSTER_NAME"
-    require_environment "REGION"
 
     local tags="stackrox-ci"
     local labels="stackrox-ci=true"
@@ -138,9 +132,9 @@ create_cluster() {
     # The overall subnetwork ("--create-subnetwork") is used for nodes.
     # The "cluster" secondary range is for pods ("--cluster-ipv4-cidr").
     # The "services" secondary range is for ClusterIP services ("--services-ipv4-cidr").
-    # Regional clusters need more node IPs than zonal clusters due to multi-zone distribution.
     # See https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips#cluster_sizing.
 
+    REGION=us-east4
     NUM_NODES="${NUM_NODES:-3}"
     GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU_CONTAINERD}"
     POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
@@ -163,67 +157,68 @@ create_cluster() {
     if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
         PSP_ARG="--enable-pod-security-policy"
     fi
-
-    echo "Creating regional cluster in region $REGION"
-    gcloud config set compute/region "${REGION}"
-    status=0
-    # shellcheck disable=SC2153
-    timeout 830 gcloud beta container clusters create \
-        --region "${REGION}" \
-        --machine-type "${MACHINE_TYPE}" \
-        --num-nodes "${NUM_NODES}" \
-        --disk-type=pd-ssd \
-        --disk-size="${DISK_SIZE_GB}GB" \
-        --create-subnetwork range=/24 \
-        --cluster-ipv4-cidr=/20 \
-        --services-ipv4-cidr=/24 \
-        --enable-ip-alias \
-        --enable-network-policy \
-        --no-enable-autorepair \
-        "${VERSION_ARGS[@]}" \
-        --image-type "${GCP_IMAGE_TYPE}" \
-        --tags="${tags}" \
-        --labels="${labels}" \
-        ${PSP_ARG} \
-        "${CLUSTER_NAME}" || status="$?"
-
-    if [[ "${status}" == 0 ]]; then
-        info "Successfully created regional cluster ${CLUSTER_NAME}"
-        local kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
-        ls -l "${kubeconfig}" || true
-        gcloud container clusters get-credentials --region "${REGION}" "$CLUSTER_NAME"
-        ls -l "${kubeconfig}" || true
-    elif [[ "${status}" == 124 ]]; then
-        info "gcloud command timed out. Checking to see if cluster is still creating"
-        if ! gcloud container clusters describe --region "${REGION}" "${CLUSTER_NAME}" >/dev/null; then
-            info "Create cluster did not create the cluster in Google."
-            return 1
-        else
-            for i in {1..60}; do
-                if [[ "$(gcloud container clusters describe --region "${REGION}" "${CLUSTER_NAME}" --format json | jq -r .status)" == "RUNNING" ]]; then
-                    info "Successfully launched cluster ${CLUSTER_NAME}"
-                    local kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
-                    ls -l "${kubeconfig}" || true
-                    gcloud container clusters get-credentials --region "${REGION}" "$CLUSTER_NAME"
-                    ls -l "${kubeconfig}" || true
-                    break
-                fi
-                sleep 20
-                info "Waiting for cluster ${CLUSTER_NAME} in ${REGION} to move to running state (wait $i of 60)"
-            done
-
-            if [[ "$(gcloud container clusters describe --region "${REGION}" "${CLUSTER_NAME}" --format json | jq -r .status)" != "RUNNING" ]]; then
-                info "Timed out waiting for cluster to become ready"
-                info "Attempting to delete the cluster"
-                gcloud container clusters delete --region "${REGION}" "${CLUSTER_NAME}" || {
-                    info "An error occurred deleting the cluster: $?"
-                    true
-                }
-                return 1
+    zones=$(gcloud compute zones list --format="value(name,region.basename(),status)" | awk "/${REGION}\tUP\$/{print \$1}" | shuf)
+    success=0
+    for zone in $zones; do
+        echo "Trying zone $zone"
+        ci_export ZONE "$zone"
+        gcloud config set compute/zone "${zone}"
+        status=0
+        # shellcheck disable=SC2153
+        timeout 830 gcloud beta container clusters create \
+            --machine-type "${MACHINE_TYPE}" \
+            --num-nodes "${NUM_NODES}" \
+            --disk-type=pd-ssd \
+            --disk-size="${DISK_SIZE_GB}GB" \
+            --create-subnetwork range=/28 \
+            --cluster-ipv4-cidr=/20 \
+            --services-ipv4-cidr=/24 \
+            --enable-ip-alias \
+            --enable-network-policy \
+            --no-enable-autorepair \
+            "${VERSION_ARGS[@]}" \
+            --image-type "${GCP_IMAGE_TYPE}" \
+            --tags="${tags}" \
+            --labels="${labels}" \
+            ${PSP_ARG} \
+            "${CLUSTER_NAME}" || status="$?"
+        if [[ "${status}" == 0 ]]; then
+            success=1
+            break
+        elif [[ "${status}" == 124 ]]; then
+            info "gcloud command timed out. Checking to see if cluster is still creating"
+            if ! gcloud container clusters describe "${CLUSTER_NAME}" >/dev/null; then
+                info "Create cluster did not create the cluster in Google. Trying a different zone..."
+            else
+                for i in {1..60}; do
+                    if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format json | jq -r .status)" == "RUNNING" ]]; then
+                        success=1
+                        break
+                    fi
+                    sleep 20
+                    info "Waiting for cluster ${CLUSTER_NAME} in ${zone} to move to running state (wait $i of 60)"
+                done
             fi
+
+            if [[ "${success}" == 1 ]]; then
+                info "Successfully launched cluster ${CLUSTER_NAME}"
+                local kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
+                ls -l "${kubeconfig}" || true
+                gcloud container clusters get-credentials "$CLUSTER_NAME"
+                ls -l "${kubeconfig}" || true
+                break
+            fi
+            info "Timed out"
+            info "Attempting to delete the cluster before trying another zone"
+            gcloud container clusters delete "${CLUSTER_NAME}" || {
+                info "An error occurred deleting the cluster: $?"
+                true
+            }
         fi
-    else
-        info "Cluster creation failed with status ${status}"
+    done
+
+    if [[ "${success}" == "0" ]]; then
+        info "Cluster creation failed"
         return 1
     fi
 
@@ -231,17 +226,11 @@ create_cluster() {
 }
 
 add_a_maintenance_exclusion() {
-    info "Adding a maintenance exclusion for the cluster"
-
-    require_environment "REGION"
-    require_environment "CLUSTER_NAME"
-
     from_now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     plus_five_epoch=$(($(date -u '+%s') + 5*3600))
     plus_five="$(date -u --date=@${plus_five_epoch} +"%Y-%m-%dT%H:%M:%SZ")"
 
     gcloud container clusters update "${CLUSTER_NAME}" \
-        --region "${REGION}" \
         --add-maintenance-exclusion-name leave-these-clusters-alone \
         --add-maintenance-exclusion-start "${from_now}" \
         --add-maintenance-exclusion-end "${plus_five}" \
@@ -295,8 +284,8 @@ ensure_supported_cluster_version() {
 refresh_gke_token() {
     info "Starting a GKE token refresh loop"
 
+    require_environment "ZONE"
     require_environment "CLUSTER_NAME"
-    require_environment "REGION"
 
     local real_kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
 
@@ -319,7 +308,7 @@ refresh_gke_token() {
         echo >/tmp/kubeconfig-new
         chmod 0600 /tmp/kubeconfig-new
         # shellcheck disable=SC2153
-        KUBECONFIG=/tmp/kubeconfig-new gcloud container clusters get-credentials --project acs-san-stackroxci --region "$REGION" "$CLUSTER_NAME"
+        KUBECONFIG=/tmp/kubeconfig-new gcloud container clusters get-credentials --project acs-san-stackroxci --zone "$ZONE" "$CLUSTER_NAME"
         KUBECONFIG=/tmp/kubeconfig-new kubectl get ns >/dev/null
         mv /tmp/kubeconfig-new "$real_kubeconfig"
     done
@@ -332,7 +321,6 @@ teardown_gke_cluster() {
     info "Tearing down the GKE cluster: ${CLUSTER_NAME:-}, canceled: ${canceled}"
 
     require_environment "CLUSTER_NAME"
-    require_environment "REGION"
     require_executable "gcloud"
 
     if [[ "${canceled}" == "false" ]] &&
@@ -343,15 +331,15 @@ teardown_gke_cluster() {
     fi
 
     for i in {1..10}; do
-        gcloud container clusters describe --region "${REGION}" "${CLUSTER_NAME}" --format "flattened(status)"
-        if [[ ! "$(gcloud container clusters describe --region "${REGION}" "${CLUSTER_NAME}" --format 'get(status)')" =~ PROVISIONING|RECONCILING ]]; then
+        gcloud container clusters describe "${CLUSTER_NAME}" --format "flattened(status)"
+        if [[ ! "$(gcloud container clusters describe "${CLUSTER_NAME}" --format 'get(status)')" =~ PROVISIONING|RECONCILING ]]; then
             break
         fi
         info "Before deleting, waiting for cluster ${CLUSTER_NAME} to leave provisioning state (wait $i of 10)"
         sleep 60
     done
 
-    gcloud container clusters delete --region "${REGION}" "$CLUSTER_NAME" --async
+    gcloud container clusters delete "$CLUSTER_NAME" --async
 
     info "Cluster deleting asynchronously"
 
