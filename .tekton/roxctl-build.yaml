@@ -58,16 +58,34 @@ spec:
     name: basic-component-pipeline
 
   taskRunSpecs:
-  - pipelineTaskName: build-container-amd64
+  - pipelineTaskName: prefetch-dependencies
     stepSpecs:
-    - name: build
-      # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
+    # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
+    - name: prefetch-dependencies
       computeResources:
         limits:
           cpu: 2
         requests:
           cpu: 2
+  - pipelineTaskName: build-container-amd64
+    stepSpecs:
+    - name: build
+      # CPU requests are increased to speed up builds compared to the defaults.
+      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah-oci-ta/0.5/buildah-oci-ta.yaml#L921
+      computeResources:
+        limits:
+          cpu: 2
+        requests:
+          cpu: 2
+  - pipelineTaskName: build-source-image
+    stepSpecs:
+    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
+    - name: build
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-roxctl-4-7
