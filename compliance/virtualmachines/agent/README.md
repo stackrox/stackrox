@@ -27,6 +27,9 @@ Scans the VM for installed packages (RPM/DNF databases), creates vulnerability r
 - `--index-interval` - Time between scans in daemon mode (default: 5m).
 - `--host-path` - Where to look for package databases (default: /).
 - `--port` - VSock port (default: 1024).
+- `--repo-cpe-url` - URL for the repository to CPE mapping.
+- `--timeout` - VSock client timeout when sending index reports.
+- `--verbose` - Prints the index reports to stdout.
 
 ## How it works
 

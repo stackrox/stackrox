@@ -156,7 +156,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 	// claircore no longer returns an error if the host path does not exist.
 	_, err := os.Stat(l.cfg.HostPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "host path does not exist")
+		return nil, errors.Wrapf(err, "host path %q does not exist", l.cfg.HostPath)
 	}
 
 	layer, err := layer(ctx, layerDigest, l.cfg.HostPath)
