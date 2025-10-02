@@ -567,7 +567,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 			imageDS.EXPECT().GetImage(gomock.Any(), img.Id).AnyTimes().Return(img, true, nil)
 		}
 
-		riskManager.EXPECT().CalculateRiskAndUpsertImage(gomock.Any()).AnyTimes().Return(nil)
+		riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).AnyTimes().Return(nil)
 
 		testLoop := &loopImpl{
 			imagesV2:    imageDS,
