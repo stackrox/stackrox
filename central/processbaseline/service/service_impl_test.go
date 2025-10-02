@@ -388,6 +388,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 		locked         bool
 		baselines      []*storage.ProcessBaseline
 		expectedLocked []*storage.ProcessBaselineKey
+		expectError    bool
 	}{
 		{
 			name:           "Lock multiple process baselines",
@@ -396,6 +397,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			locked:         true,
 			baselines:      allBaselines[0:4],
 			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey()},
+			expectError:    false,
 		},
 		{
 			name:           "Lock process baselines in other cluster",
@@ -404,6 +406,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			locked:         true,
 			baselines:      allBaselines[0:4],
 			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[3].GetKey()},
+			expectError:    false,
 		},
 		{
 			name:           "Lock multiple namespaces",
@@ -412,6 +415,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			locked:         true,
 			baselines:      allBaselines[0:4],
 			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
+			expectError:    false,
 		},
 		{
 			name:           "Lock non existant namespace",
@@ -420,6 +424,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			locked:         true,
 			baselines:      allBaselines[0:4],
 			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    false,
 		},
 		{
 			name:           "Unlock already unlocked baselines",
@@ -428,6 +433,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			locked:         false,
 			baselines:      allBaselines[0:4],
 			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    false,
 		},
 		{
 			name:           "Unlock a locked baseline",
@@ -436,6 +442,25 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			locked:         false,
 			baselines:      allBaselines[1:5],
 			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    false,
+		},
+		{
+			name:           "Lock all baselines in cluster 1",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
+			expectError:    false,
+		},
+		{
+			name:           "Not specifying a cluster results in an error",
+			clusterId:      "",
+			namespaces:     []string{"namespace"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    true,
 		},
 	}
 
@@ -459,7 +484,12 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			} else {
 				response, err = suite.service.BulkUnlockProcessBaselines(hasWriteCtx, request)
 			}
-			suite.NoError(err)
+
+			if !c.expectError {
+				suite.NoError(err)
+			} else {
+				suite.Error(err)
+			}
 
 			locked := make([]*storage.ProcessBaselineKey, 0)
 			for _, baseline := range response.GetBaselines() {
