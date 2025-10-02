@@ -27,7 +27,7 @@ class LocalQaPropsTest extends Specification {
         def canonicalJson = JsonOutput.toJson(rawData)
         def canonicalJsonSha256 = DigestUtils.sha256Hex(canonicalJson)
         then:
-        canonicalJsonSha256 == 'f75d8cf9ea0c7886293f689478daafe75126c719313b4366c02bd41d69bb05e5'
+        canonicalJsonSha256 == '86fc788697b3f201422cda5ee1e7a98882f8929c02e668599c6c190d080230c2'
     }
 
     def "CheckPropertyFileInputValue > GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2"() {
