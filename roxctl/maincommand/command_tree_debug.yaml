@@ -1744,8 +1744,10 @@ image:
       - use-current-k8s-context
   sbom:
     LOCAL_FLAGS:
+      - cluster
       - force
       - image
+      - namespace
       - retries
       - retry-delay
     INHERITED_FLAGS:
@@ -2030,6 +2032,7 @@ sensor:
       - admission-controller-listen-on-updates
       - admission-controller-scan-inline
       - admission-controller-timeout
+      - auto-lock-process-baselines
       - central
       - collection-method
       - collector-image-repository
@@ -2070,6 +2073,7 @@ sensor:
         - admission-controller-listen-on-updates
         - admission-controller-scan-inline
         - admission-controller-timeout
+        - auto-lock-process-baselines
         - ca
         - central
         - collection-method
@@ -2111,6 +2115,7 @@ sensor:
         - admission-controller-listen-on-updates
         - admission-controller-scan-inline
         - admission-controller-timeout
+        - auto-lock-process-baselines
         - ca
         - central
         - collection-method

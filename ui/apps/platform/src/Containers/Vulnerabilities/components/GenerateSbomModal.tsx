@@ -13,7 +13,6 @@ import {
 } from '@patternfly/react-core';
 import Raven from 'raven-js';
 
-import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { IMAGE_SBOM_GENERATED } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
@@ -66,7 +65,6 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
                     alignItems={{ default: 'alignItemsCenter' }}
                 >
                     <Title headingLevel="h1">Generate Software Bill of Materials (SBOM)</Title>
-                    <TechPreviewLabel />
                 </Flex>
             }
             actions={[
@@ -88,10 +86,6 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
                     Generate and download the Software Bill of Materials (SBOM) in SPDX 2.3 format.
                     This file contains a detailed list of all components and dependencies included
                     in the image.
-                </Text>
-                <Text>
-                    (Generating SBOMs from scans delegated to secured clusters is currently not
-                    supported.)
                 </Text>
                 <DescriptionList isHorizontal>
                     <DescriptionListGroup>

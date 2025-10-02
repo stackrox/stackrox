@@ -18,7 +18,7 @@ function VirtualMachineCvesPage() {
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 <Route index element={<VirtualMachineCvesOverviewPage />} />
-                <Route path=":virtualMachineId" element={<VirtualMachinePage />} />
+                <Route path="virtualmachines/:virtualMachineId" element={<VirtualMachinePage />} />
                 <Route
                     path="*"
                     element={

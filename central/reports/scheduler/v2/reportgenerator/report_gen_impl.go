@@ -155,7 +155,11 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
 	case storage.ReportStatus_DOWNLOAD:
-		if err = rg.saveReportData(req.ReportSnapshot.GetReportConfigurationId(),
+		parentDir := req.ReportSnapshot.GetReportConfigurationId()
+		if req.ReportSnapshot.GetVulnReportFilters() == nil {
+			parentDir = "view-based-report"
+		}
+		if err = rg.saveReportData(parentDir,
 			req.ReportSnapshot.GetReportId(), zippedCSVData); err != nil {
 			return errors.Wrap(err, "error persisting blob")
 		}

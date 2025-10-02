@@ -405,6 +405,7 @@ func (s *serviceImpl) convertViewBasedProtoReportSnapshotstoV2(snapshots []*stor
 			ReportJobId:    snapshot.GetReportId(),
 			Name:           snapshot.GetName(),
 			Description:    snapshot.GetDescription(),
+			AreaOfConcern:  snapshot.GetAreaOfConcern(),
 			User: &apiV2.SlimUser{
 				Id:   snapshot.GetRequester().GetId(),
 				Name: snapshot.GetRequester().GetName(),
@@ -412,7 +413,7 @@ func (s *serviceImpl) convertViewBasedProtoReportSnapshotstoV2(snapshots []*stor
 			Filter: &apiV2.ReportSnapshot_ViewBasedVulnReportFilters{
 				ViewBasedVulnReportFilters: viewBasedFilters,
 			},
-			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
+			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath("view-based", snapshot.GetReportId())),
 		}
 		v2snaps = append(v2snaps, snapshotv2)
 	}

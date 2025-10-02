@@ -50,13 +50,16 @@ function PolicyEnforcementForm() {
         );
     }
 
-    const responseMethodHelperText = showEnforcement
-        ? 'Inform and enforce will execute enforcement behavior at the stages you select.'
-        : 'Inform will always include violations for this policy in the violations list.';
-
     const hasBuild = values.lifecycleStages.includes('BUILD');
     const hasDeploy = values.lifecycleStages.includes('DEPLOY');
     const hasRuntime = values.lifecycleStages.includes('RUNTIME');
+    const hasAuditLog = values.eventSource === 'AUDIT_LOG_EVENT';
+
+    const responseMethodHelperText = showEnforcement
+        ? 'Inform and enforce will execute enforcement behavior at the stages you select.'
+        : hasRuntime && hasAuditLog
+          ? 'Inform will always include violations for this policy in the violations list. Enforcement is not available for audit log event sources.'
+          : 'Inform will always include violations for this policy in the violations list.';
 
     return (
         <Form>
@@ -67,6 +70,7 @@ function PolicyEnforcementForm() {
                         isChecked={!showEnforcement}
                         id="policy-response-inform"
                         name="inform"
+                        isDisabled={hasRuntime && hasAuditLog}
                         onChange={() => {
                             setShowEnforcement(false);
                             setFieldValue('enforcementActions', [], false); // do not validate, because code changes the value
@@ -77,6 +81,7 @@ function PolicyEnforcementForm() {
                         isChecked={showEnforcement}
                         id="policy-response-inform-enforce"
                         name="enforce"
+                        isDisabled={hasRuntime && hasAuditLog}
                         onChange={() => setShowEnforcement(true)}
                     />
                 </Flex>
@@ -159,7 +164,7 @@ function PolicyEnforcementForm() {
                                             'RUNTIME',
                                             values.enforcementActions
                                         )}
-                                        isDisabled={!hasRuntime}
+                                        isDisabled={!hasRuntime || hasAuditLog}
                                         onChange={(_event, isChecked) => {
                                             onChangeEnforcementActions('RUNTIME', isChecked);
                                         }}

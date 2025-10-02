@@ -25,8 +25,12 @@ var lazyLabels = []tracker.LazyLabel[*finding]{
 	{Label: "CVE", Getter: func(f *finding) string { return f.vuln.GetCve() }},
 	{Label: "CVSS", Getter: func(f *finding) string { return strconv.FormatFloat(float64(f.vuln.GetCvss()), 'f', 1, 32) }},
 	{Label: "Severity", Getter: func(f *finding) string { return f.vuln.GetSeverity().String() }},
-	{Label: "SeverityV2", Getter: func(f *finding) string { return f.vuln.GetCvssV2().GetSeverity().String() }},
-	{Label: "SeverityV3", Getter: func(f *finding) string { return f.vuln.GetCvssV3().GetSeverity().String() }},
+	{Label: "EPSSProbability", Getter: func(f *finding) string {
+		return strconv.FormatFloat(float64(f.vuln.GetEpss().GetEpssProbability()), 'f', 1, 32)
+	}},
+	{Label: "EPSSPercentile", Getter: func(f *finding) string {
+		return strconv.FormatFloat(float64(f.vuln.GetEpss().GetEpssPercentile()), 'f', 1, 32)
+	}},
 	{Label: "IsFixable", Getter: func(f *finding) string { return strconv.FormatBool(f.vuln.GetFixedBy() != "") }},
 }
 
@@ -34,6 +38,7 @@ var lazyLabels = []tracker.LazyLabel[*finding]{
 // The aggregator calls the lazy label's Getter function with every finding to
 // compute the values for the list of defined labels.
 type finding struct {
+	tracker.CommonFinding
 	err        error
 	deployment *storage.Deployment
 	image      *storage.Image

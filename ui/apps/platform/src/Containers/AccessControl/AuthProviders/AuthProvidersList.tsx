@@ -1,4 +1,5 @@
-import React, { useState, ReactElement } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
@@ -7,12 +8,8 @@ import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/reac
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import {
-    AuthProvider,
-    AuthProviderInfo,
-    AuthStatus,
-    getIsAuthProviderImmutable,
-} from 'services/AuthService';
+import { getIsAuthProviderImmutable } from 'services/AuthService';
+import type { AuthProvider, AuthProviderInfo, AuthStatus } from 'services/AuthService';
 import { getOriginLabel } from 'utils/traits.utils';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';

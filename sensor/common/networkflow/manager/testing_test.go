@@ -200,6 +200,24 @@ func (ep *endpointPair) containerID(id string) *endpointPair {
 	return ep
 }
 
+func (ep *endpointPair) processListeningIndicator() *indicator.ProcessListening {
+	// Assumption: The container/deployment IDs are empty in the test
+	return &indicator.ProcessListening{
+		Process:  ep.endpoint.processKey,
+		Port:     ep.endpoint.endpoint.IPAndPort.Port,
+		Protocol: ep.endpoint.endpoint.L4Proto.ToProtobuf(),
+	}
+}
+
+func (ep *endpointPair) endpointIndicator(deplID string) *indicator.ContainerEndpoint {
+	// Assumption: The container/deployment IDs are empty in the test
+	return &indicator.ContainerEndpoint{
+		Entity:   networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: deplID},
+		Port:     ep.endpoint.endpoint.IPAndPort.Port,
+		Protocol: ep.endpoint.endpoint.L4Proto.ToProtobuf(),
+	}
+}
+
 func (ep *endpointPair) lastSeen(lastSeen timestamp.MicroTS) *endpointPair {
 	ep.status.lastSeen = lastSeen
 	return ep
@@ -210,6 +228,14 @@ func defaultProcessKey() indicator.ProcessInfo {
 		ProcessName: "process-name",
 		ProcessArgs: "process-args",
 		ProcessExec: "process-exec",
+	}
+}
+
+func anotherProcessKey() indicator.ProcessInfo {
+	return indicator.ProcessInfo{
+		ProcessName: "another-process-name",
+		ProcessArgs: "another-process-args",
+		ProcessExec: "another-process-exec",
 	}
 }
 
@@ -448,7 +474,7 @@ func (ea *enrichmentAssertion) assertEndpointEnrichment(
 	actualResultNG, actualResultPLOP EnrichmentResult,
 	actualReasonNG, actualReasonPLOP EnrichmentReasonEp,
 	actualAction PostEnrichmentAction,
-	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	expected struct {
 		resultNG   EnrichmentResult
 		resultPLOP EnrichmentResult
@@ -466,7 +492,7 @@ func (ea *enrichmentAssertion) assertEndpointEnrichment(
 	assert.Equal(ea.t, expected.action, actualAction, "Action mismatch")
 
 	if expected.endpoint != nil {
-		_, found := enrichedEndpoints[*expected.endpoint]
+		_, found := enrichedEndpointsProcesses[*expected.endpoint]
 		assert.True(ea.t, found, "Expected endpoint not found in enriched endpoints")
 	}
 }

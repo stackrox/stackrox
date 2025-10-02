@@ -1,5 +1,7 @@
-import React, { ReactElement, RefObject, useCallback } from 'react';
-import { FormikContextType, useFormikContext } from 'formik';
+import React, { useCallback } from 'react';
+import type { FormEvent, ReactElement, RefObject } from 'react';
+import { useFormikContext } from 'formik';
+import type { FormikContextType } from 'formik';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Alert,
@@ -20,9 +22,9 @@ import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import useTableSelection from 'hooks/useTableSelection';
 import { clustersBasePath } from 'routePaths';
-import { ComplianceIntegration } from 'services/ComplianceIntegrationService';
+import type { ComplianceIntegration } from 'services/ComplianceIntegrationService';
 
-import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 import ComplianceClusterStatus from '../components/ComplianceClusterStatus';
 
 export type ClusterSelectionProps = {
@@ -64,7 +66,7 @@ function ClusterSelection({
     );
 
     const handleSelect = (
-        event: React.FormEvent<HTMLInputElement>,
+        event: FormEvent<HTMLInputElement>,
         isSelected: boolean,
         rowId: number
     ) => {
@@ -80,7 +82,7 @@ function ClusterSelection({
         setFieldValue('clusters', newSelectedIds);
     };
 
-    const handleSelectAll = (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => {
+    const handleSelectAll = (event: FormEvent<HTMLInputElement>, isSelected: boolean) => {
         onSelectAll(event, isSelected);
 
         const newSelectedIds = isSelected ? clusters.map((cluster) => cluster.clusterId) : [];

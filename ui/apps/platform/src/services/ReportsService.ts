@@ -5,16 +5,16 @@ import {
     isViewBasedReportSnapshot,
 } from 'services/ReportsService.types';
 import type {
+    ConfiguredReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
-    ViewBasedReportSnapshot,
     ReportRequestViewBased,
     RunReportResponse,
     RunReportResponseViewBased,
-    ConfiguredReportSnapshot,
+    ViewBasedReportSnapshot,
 } from 'services/ReportsService.types';
 import type { ApiSortOption, SearchFilter } from 'types/search';
-import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import type { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
 import { sanitizeFilename } from 'utils/fileUtils';
 
@@ -144,7 +144,15 @@ export function fetchViewBasedReportHistory({
     sortOption,
     showMyHistory,
 }: FetchViewBasedReportHistoryServiceParams): Promise<ViewBasedReportSnapshot[]> {
-    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+    const params = queryString.stringify(
+        {
+            reportParamQuery: {
+                query: getRequestQueryStringForSearchFilter(searchFilter),
+                pagination: getPaginationParams({ page, perPage, sortOption }),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
 
     const endpoint = showMyHistory
         ? '/v2/reports/view-based/my-history'
@@ -232,6 +240,7 @@ export function runViewBasedReport({
 
 /**
  * Downloads a report file by job ID and saves it to the user's device with a sanitized filename
+ * Returns file size in bytes for analytics tracking
  */
 export function downloadReportByJobId({
     reportJobId,
@@ -241,7 +250,7 @@ export function downloadReportByJobId({
     reportJobId: string;
     filename: string;
     fileExtension: string;
-}): Promise<void> {
+}): Promise<{ fileSizeBytes?: number }> {
     const sanitizedFilename = sanitizeFilename(filename);
 
     return saveFile({

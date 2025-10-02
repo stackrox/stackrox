@@ -1,5 +1,6 @@
 /* eslint-disable no-void */
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Checkbox,
     Form,
@@ -19,12 +20,12 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useMetadata from 'hooks/useMetadata';
-import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
+import type { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 import { getVersionedDocs } from 'utils/versioning';
 
 import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 import useIntegrationForm from '../../useIntegrationForm';
-import { IntegrationFormProps } from '../../integrationFormTypes';
+import type { IntegrationFormProps } from '../../integrationFormTypes';
 
 import IntegrationFormActions from '../../IntegrationFormActions';
 import FormLabelGroup from '../../FormLabelGroup';

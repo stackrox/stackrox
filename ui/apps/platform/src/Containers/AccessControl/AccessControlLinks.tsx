@@ -1,9 +1,10 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
-import { AccessControlEntityType } from 'constants/entityTypes';
-import { Role } from 'services/RolesService';
+import type { AccessControlEntityType } from 'constants/entityTypes';
+import type { Role } from 'services/RolesService';
 
 import { getEntityPath } from './accessControlPaths';
 

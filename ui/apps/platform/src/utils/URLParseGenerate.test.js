@@ -2,7 +2,7 @@ import qs from 'qs';
 
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
-import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
+import { pagingParams, searchParams, sortParams } from 'constants/searchParams';
 import { urlEntityListTypes, urlEntityTypes } from '../routePaths';
 import parseURL from './URLParser';
 import generateURL from './URLGenerator';

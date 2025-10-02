@@ -13,23 +13,51 @@ import {
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import { getSearchFilterFromSearchString } from 'utils/searchUtils';
+import {
+    getSearchFilterFromSearchString,
+    getValueByCaseInsensitiveKey,
+    searchValueAsArray,
+} from 'utils/searchUtils';
+import { isVulnerabilitySeverity } from 'types/cve.proto';
+import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
+
+const toTitleCase = (str: string) => {
+    return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+};
 
 export type ViewBasedReportJobDetailsProps = {
     reportSnapshot: ViewBasedReportSnapshot;
 };
 
 function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetailsProps) {
-    // @TODO: We need to separate the "CVE Severity" and "CVEs discovered since" filters from the rest of the filters.
-    // The relevant search terms are called "Severity" and "CVE Discovered Time".
     const query = getSearchFilterFromSearchString(reportSnapshot.viewBasedVulnReportFilters.query);
-    const scopeFilterChips = Object.entries(query).map(([key, value]) => {
+
+    // Extract vulnerability-specific filters
+    const severityValues = getValueByCaseInsensitiveKey(query, 'Severity');
+    const cveDiscoveredTimeValues = getValueByCaseInsensitiveKey(query, 'CVE Created Time');
+
+    const validSeverities = severityValues
+        ? searchValueAsArray(severityValues).filter((severity) => isVulnerabilitySeverity(severity))
+        : [];
+
+    const validCveDiscoveredTimes = cveDiscoveredTimeValues
+        ? searchValueAsArray(cveDiscoveredTimeValues)
+        : [];
+
+    // Create scope filters excluding vulnerability-specific ones
+    const scopeFilters = Object.fromEntries(
+        Object.entries(query).filter(
+            ([key]) => key.toLowerCase() !== 'severity' && key.toLowerCase() !== 'cve created time'
+        )
+    );
+
+    const scopeFilterChips = Object.entries(scopeFilters).map(([key, value]) => {
         if (!value) {
             return null;
         }
         if (typeof value === 'string') {
             return (
-                <ChipGroup categoryName={key}>
+                <ChipGroup categoryName={toTitleCase(key)}>
                     <Chip key={value} isReadOnly>
                         {value}
                     </Chip>
@@ -37,7 +65,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
             );
         }
         return (
-            <ChipGroup categoryName={key}>
+            <ChipGroup categoryName={toTitleCase(key)}>
                 {value.map((currentChip) => (
                     <Chip key={currentChip} isReadOnly>
                         {currentChip}
@@ -57,9 +85,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
             >
                 <DescriptionListGroup>
                     <DescriptionListTerm>Name</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        {reportSnapshot.requestName}
-                    </DescriptionListDescription>
+                    <DescriptionListDescription>{reportSnapshot.name}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
                     <DescriptionListTerm>Results type</DescriptionListTerm>
@@ -98,15 +124,33 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                 <DescriptionListGroup>
                     <DescriptionListTerm>CVE severity</DescriptionListTerm>
                     <DescriptionListDescription>
-                        <Stack>
-                            <VulnerabilitySeverityIconText severity="CRITICAL_VULNERABILITY_SEVERITY" />
-                            <VulnerabilitySeverityIconText severity="IMPORTANT_VULNERABILITY_SEVERITY" />
-                        </Stack>
+                        {validSeverities.length > 0 ? (
+                            <Stack>
+                                {validSeverities.map((severity) => (
+                                    <VulnerabilitySeverityIconText
+                                        key={severity}
+                                        severity={severity}
+                                    />
+                                ))}
+                            </Stack>
+                        ) : (
+                            'All severities'
+                        )}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>CVEs discovered since</DescriptionListTerm>
-                    <DescriptionListDescription>All time</DescriptionListDescription>
+                    <DescriptionListTerm>CVEs discovered time</DescriptionListTerm>
+                    <DescriptionListDescription>
+                        {validCveDiscoveredTimes.length > 0 ? (
+                            <Stack>
+                                {validCveDiscoveredTimes.map((timeValue) => (
+                                    <div key={timeValue}>{formatCveDiscoveredTime(timeValue)}</div>
+                                ))}
+                            </Stack>
+                        ) : (
+                            'All time'
+                        )}
+                    </DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
         </Flex>

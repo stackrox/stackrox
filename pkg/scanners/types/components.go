@@ -10,7 +10,7 @@ import (
 type ScanComponents struct {
 	v1comps        *v1.Components
 	v4comps        *v4.Contents
-	indexerVersion string
+	IndexerVersion string
 }
 
 // NewScanComponents creates a new ScanComponents.
@@ -18,7 +18,7 @@ func NewScanComponents(indexerVersion string, v1comps *v1.Components, v4comps *v
 	return &ScanComponents{
 		v1comps:        v1comps,
 		v4comps:        v4comps,
-		indexerVersion: indexerVersion,
+		IndexerVersion: indexerVersion,
 	}
 }
 
@@ -35,7 +35,7 @@ func (s *ScanComponents) ScannerV4() *v4.Contents {
 // ScannerType returns the scanner type for which components
 // have been populated for.
 func (s *ScanComponents) ScannerType() string {
-	if ScannerV4IndexerVersion(s.indexerVersion) {
+	if ScannerV4IndexerVersion(s.IndexerVersion) {
 		return ScannerV4
 	}
 

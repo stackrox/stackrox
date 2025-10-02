@@ -4,8 +4,12 @@ import (
 	"net/http"
 
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
+	expiryS "github.com/stackrox/rox/central/credentialexpiry/service"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	nodeDS "github.com/stackrox/rox/central/node/datastore"
+	policyDS "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -31,6 +35,10 @@ func Singleton() Runner {
 		runner = makeRunner(&runnerDatastores{
 			deploymentDS.Singleton(),
 			alertDS.Singleton(),
+			nodeDS.Singleton(),
+			clusterDS.Singleton(),
+			policyDS.Singleton(),
+			expiryS.Singleton(),
 		})
 		go runner.initialize(configDS.Singleton())
 	})

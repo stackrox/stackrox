@@ -13,10 +13,10 @@ import {
 } from '@patternfly/react-core';
 
 import {
-    ComplianceReportSnapshot,
     deleteDownloadableComplianceReport,
     fetchComplianceReportHistory,
 } from 'services/ComplianceScanConfigurationService';
+import type { ComplianceReportSnapshot } from 'services/ComplianceScanConfigurationService';
 import JobDetails from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/JobDetails';
 import ReportJobsTable from 'Components/ReportJob/ReportJobsTable';
 import useURLPagination from 'hooks/useURLPagination';
@@ -34,7 +34,7 @@ import ReportJobStatusFilter, {
     ensureReportJobStatuses,
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
-import { ReportJobStatus } from 'Components/ReportJob/types';
+import type { ReportJobStatus } from 'Components/ReportJob/types';
 import ConfigDetails from './ConfigDetails';
 
 function getJobId(snapshot: ComplianceReportSnapshot) {

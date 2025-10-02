@@ -788,6 +788,18 @@ spec:
                     - AvoidTaints
                     type: string
                 type: object
+              processBaselines:
+                description: Settings relating to process baselines.
+                properties:
+                  autoLock:
+                    description: |-
+                      Should process baselines be automatically locked when the observation period (1 hour by default) ends.
+                      The default is: Disabled.
+                    enum:
+                    - Enabled
+                    - Disabled
+                    type: string
+                type: object
               registryOverride:
                 description: Set this parameter to override the default registry in
                   images. For example, nginx:latest -> <registry override>/library/nginx:latest
