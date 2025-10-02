@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -191,6 +192,8 @@ func (s *serviceImpl) getKeys(ctx context.Context, clusterId string, namespaces 
 func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest, lock bool) (*v1.UpdateProcessBaselinesResponse, error) {
 	var resp *v1.UpdateProcessBaselinesResponse
 	defer s.reprocessUpdatedBaselines(&resp)
+
+	metrics.IncrementBulkProcessBaselineCallCounter(lock)
 
 	clusterId := request.GetClusterId()
 
