@@ -79,8 +79,7 @@ func TestImagesWithSignaturesQueryV2(t *testing.T) {
 	pool := testingDB.DB
 	defer pool.Close()
 
-	var imageDS imageV2Datastore.DataStore
-	imageDS = imageV2Datastore.NewWithPostgres(imageV2PG.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+	imageDS := imageV2Datastore.NewWithPostgres(imageV2PG.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
 
 	imgWithSignature := fixtures.GetImageV2()
 	imgWithoutSignature := fixtures.GetImageV2WithUniqueComponents(10)
