@@ -18,7 +18,7 @@ var (
 	scanTimeout = env.ScanTimeout.DurationSetting()
 )
 
-const vmMockDigest = "vm-registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
+const vmMockDigest = "vm-registry/repository@sha256:900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900d"
 
 type enricherImpl struct {
 	scannerClient client.Scanner
