@@ -321,45 +321,6 @@ push_main_image_set() {
     fi
 }
 
-push_operator_image() {
-    info "Pushing stackrox-operator image"
-
-    if [[ "$#" -ne 3 ]]; then
-        die "Missing parameter. Usage: push_operator_image <push_context> <brand> <arch>"
-    fi
-
-    local push_context="$1" # Allowed to be empty.
-    local brand="$2"
-    local arch="$3"
-
-    if [[ "$brand" == "" ]]; then
-        die "Brand must be non-empty"
-    fi
-    if [[ "$arch" == "" ]]; then
-        die "Arch must be non-empty"
-    fi
-
-    _push_operator_image() {
-        local registry="$1"
-        local tag="$2"
-        local arch="$3"
-
-        docker tag "${registry}/stackrox-operator:${tag}" "${registry}/stackrox-operator:${tag}-${arch}"
-        retry 5 true \
-            docker push "${registry}/stackrox-operator:${tag}-${arch}" | cat
-    }
-
-    local registry
-    registry="$(registry_from_branding "$brand")"
-
-    local tag
-    tag="$(make -C operator/ --quiet --no-print-directory tag)"
-
-    registry_rw_login "$registry"
-
-    _push_operator_image "$registry" "$tag" "$arch"
-}
-
 push_scanner_image_manifest_lists() {
     info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
 
@@ -419,32 +380,6 @@ push_scanner_image_set() {
 
     _tag_scanner_image_set "$tag" "$registry" "$tag-$arch"
     _push_scanner_image_set "$registry" "$tag-$arch"
-}
-
-push_operator_manifest_lists() {
-    info "Pushing stackrox-operator images as manifest lists"
-
-    if [[ "$#" -ne 3 ]]; then
-        die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <architectures (CSV)>"
-    fi
-
-    local push_context="$1"
-    local brand="$2"
-    local architectures="$3"
-
-    local registry
-    registry="$(registry_from_branding "$brand")"
-
-    local tag
-    tag="$(make -C operator --quiet --no-print-directory tag)"
-
-    registry_rw_login "$registry"
-    retry 5 true \
-        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:${tag}" "$architectures" | cat
-    if [[ "$push_context" == "merge-to-master" ]]; then
-        retry 5 true \
-            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:latest" "$architectures" | cat
-    fi
 }
 
 registry_rw_login() {
