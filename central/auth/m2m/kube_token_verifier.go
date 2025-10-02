@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	v1 "k8s.io/api/authentication/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,8 +19,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// #nosec G101 -- This is a false positive.
-const KubernetesDefaultSvcTokenIssuer = "https://kubernetes.default.svc"
+var (
+	serviceAccountIssuer string
+	getIssuerOnce        sync.Once
+)
 
 // kubeTokenVerifier verifies tokens using the Kubernetes TokenReview API.
 type kubeTokenVerifier struct {
@@ -36,6 +39,20 @@ func newKubeTokenVerifier() (*kubeTokenVerifier, error) {
 		return nil, err
 	}
 	return &kubeTokenVerifier{c}, nil
+}
+
+// GetKubernetesIssuerOrEmpty returns the kubernetes token issuer or an empty
+// string if the issuer could not be identified.
+func GetKubernetesIssuerOrEmpty() string {
+	getIssuerOnce.Do(func() {
+		issuer, err := getKubernetesIssuer()
+		if err != nil {
+			log.Errorf("could not read service account issuer: %v", err)
+			return
+		}
+		serviceAccountIssuer = issuer
+	})
+	return serviceAccountIssuer
 }
 
 // getKubernetesIssuer discovers the kubernetes token issuer.

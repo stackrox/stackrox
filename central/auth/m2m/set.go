@@ -12,7 +12,7 @@ import (
 )
 
 // #nosec G101 -- This is a false positive.
-const kubernetesServiceAccountTokenIssuer = "kubernetes/serviceaccount"
+const LegacyServiceAccountIssuer = "kubernetes/serviceaccount"
 
 var (
 	once sync.Once
@@ -88,23 +88,14 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *st
 	}
 
 	if config.GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
-		// Kubernetes token can be issued by 3 issuers. Let's add all of them.
-		t.tokenExchangers[KubernetesDefaultSvcTokenIssuer] = tokenExchanger
-		t.tokenExchangers[kubernetesServiceAccountTokenIssuer] = tokenExchanger
-		if config.GetIssuer() != KubernetesDefaultSvcTokenIssuer && config.GetIssuer() != kubernetesServiceAccountTokenIssuer {
-			t.tokenExchangers[config.GetIssuer()] = tokenExchanger
-			return nil
+		// Kubernetes tokens can be issued by 2 different issuers.
+		// Let's add both of them.
+		t.tokenExchangers[LegacyServiceAccountIssuer] = tokenExchanger
+		if serviceAccountIssuer := GetKubernetesIssuerOrEmpty(); serviceAccountIssuer != "" {
+			t.tokenExchangers[serviceAccountIssuer] = tokenExchanger
 		}
-		// If config.GetIssuer() is not the public issuer, let's discover it:
-		oidcIssuer, err := getKubernetesIssuer()
-		if err == nil {
-			t.tokenExchangers[oidcIssuer] = tokenExchanger
-		} else {
-			return err
-		}
-	} else {
-		t.tokenExchangers[config.GetIssuer()] = tokenExchanger
 	}
+	t.tokenExchangers[config.GetIssuer()] = tokenExchanger
 	return nil
 }
 
@@ -118,7 +109,7 @@ func (t *tokenExchangerSet) GetTokenExchanger(issuer string) (TokenExchanger, bo
 	// This is the issuer of the tokens, sometimes found in the secrets of type
 	// kubernetes.io/service-account-token
 	// We call TokenReview API to verify the token.
-	if issuer == kubernetesServiceAccountTokenIssuer {
+	if issuer == LegacyServiceAccountIssuer {
 		for _, tokenExchanger := range t.tokenExchangers {
 			if tokenExchanger.Config().GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
 				return tokenExchanger, true
