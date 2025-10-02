@@ -375,21 +375,51 @@ jobs:
       with:
         fetch-depth: 0
 
-    - uses: ./.github/actions/download-artifact-with-retry
+    - uses: actions/download-artifact@v5
       with:
         # Vulnerability bundles are named `artifact_${{ env.SCANNER_BUNDLE_VERSION }}`.
         pattern: "artifact_*"
-        path: downloaded_artifacts
+        path: definitions_files
+        # Merge all artifacts (`<version>/<files>`) into the directory.
+        merge-multiple: true
 
-    - name: Check and move files artifacts
+    - name: Check vulnerability bundles
+      working-directory: ./definitions_files
       run: |
-        ls -lR downloaded_artifacts
-        if rmdir downloaded_artifacts 2>/dev/null; then
-            echo "error: no definition files were created, abort..."
+        set -eu
+
+        empty() {
+            find "${1:-.}" -maxdepth 0 -type d -empty | grep -q .
+        }
+
+        error() {
+            echo >&2 "error: $*"
             exit 1
-        fi
-        rsync -av downloaded_artifacts/*/ definitions_files/
-        ls -lR definitions_files
+        }
+
+        echo "Listing definitions files:"
+        pwd
+        ls -l
+        empty && error "definitions directory (current directory) is empty"
+
+        # Look for version dirs (use globbing, dot files included).
+        shopt -s dotglob
+        for d in *; do
+            echo "Listing bundle version directory '$d':"
+            ls -l "$d"
+            [ -d "$d" ] || error "found a non-directory in definitions_files/: $d"
+            [[ "$d" = .* ]] && error "version directory name not allowed (starts with dot): $d"
+            empty "$d" && error "bundle version directory is empty"
+            for f in "$d"/*; do
+                case "$f" in
+                    */vulnerabilities.zip) ;;
+                    */vulns.json.zst) ;;
+                    *) error "found unexpected file name in bundle version '$d/': $f" ;;
+                esac
+                [ -f "$f" ] || error "non-regular file in bundle version '$d/': $f"
+                [ -s "$f" ] || error "empty file in bundle version '$d/': $f"
+            done
+        done
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v3
@@ -399,14 +429,13 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v3
 
-    - name: Upload to GCS
+    - name: Upload vulnerability bundles to GCS
+      working-directory: ./definitions_files
       run: |
-        for dir in definitions_files/*; do
-          if [ -d "$dir" ]; then
-            echo "Copy $dir"
-            gsutil -m cp -r "$dir" gs://definitions.stackrox.io/v4/vulnerability-bundles/
-          fi
-        done
+        # Upload all bundle directories (preserving the `<verions>/<file>` structure).
+        bucket="gs://definitions.stackrox.io/v4/vulnerability-bundles"
+        echo "Uploading all dir(s) to $bucket/"
+        gsutil -m cp -r . "$bucket/"
 
     - name: Update downstream dev
       # Run on schedule or when dispatched to build "dev" (only possible if RC was not requested).
