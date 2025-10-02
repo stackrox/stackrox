@@ -9724,7 +9724,7 @@
               },
               {
                 "id": 2,
-                "name": "sha",
+                "name": "digest",
                 "type": "string"
               },
               {
@@ -9754,104 +9754,116 @@
               },
               {
                 "id": 8,
-                "name": "component_count",
-                "type": "int32"
+                "name": "scan_stats",
+                "type": "ScanStats"
               },
               {
                 "id": 9,
-                "name": "cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 10,
-                "name": "fixable_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 11,
-                "name": "unknown_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 12,
-                "name": "fixable_unknown_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 13,
-                "name": "critical_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 14,
-                "name": "fixable_critical_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 15,
-                "name": "important_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 16,
-                "name": "fixable_important_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 17,
-                "name": "moderate_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 18,
-                "name": "fixable_moderate_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 19,
-                "name": "low_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 20,
-                "name": "fixable_low_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 21,
                 "name": "last_updated",
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 22,
+                "id": 10,
                 "name": "not_pullable",
                 "type": "bool"
               },
               {
-                "id": 23,
+                "id": 11,
                 "name": "is_cluster_local",
                 "type": "bool"
               },
               {
-                "id": 24,
+                "id": 12,
                 "name": "priority",
                 "type": "int64"
               },
               {
-                "id": 25,
+                "id": 13,
                 "name": "risk_score",
                 "type": "float"
               },
               {
-                "id": 26,
+                "id": 14,
                 "name": "top_cvss",
                 "type": "float"
               },
               {
-                "id": 27,
+                "id": 15,
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "ScanStats",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "component_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 2,
+                    "name": "cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 3,
+                    "name": "fixable_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 4,
+                    "name": "unknown_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 5,
+                    "name": "fixable_unknown_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 6,
+                    "name": "critical_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 7,
+                    "name": "fixable_critical_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 8,
+                    "name": "important_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 9,
+                    "name": "fixable_important_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 10,
+                    "name": "moderate_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 11,
+                    "name": "fixable_moderate_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 12,
+                    "name": "low_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 13,
+                    "name": "fixable_low_cve_count",
+                    "type": "int32"
+                  }
+                ]
               }
             ]
           },
