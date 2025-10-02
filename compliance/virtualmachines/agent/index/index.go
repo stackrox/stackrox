@@ -7,19 +7,18 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/compliance/node/index"
+	"github.com/stackrox/rox/compliance/virtualmachines/agent/config"
+	"github.com/stackrox/rox/compliance/virtualmachines/agent/vsock"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/compliance/virtualmachines/agent/config"
-	"github.com/stackrox/rox/compliance/virtualmachines/agent/vsock"
 )
 
 var log = logging.LoggerForModule()
 
 const (
 	mappingClientTimeout = 30 * time.Second
-	repo2CPEMappingURL   = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
 )
 
 func RunDaemon(ctx context.Context, cfg *config.AgentConfig, client *vsock.Client) error {
@@ -73,7 +72,7 @@ func runIndexer(ctx context.Context, cfg *config.AgentConfig) (*v4.IndexReport, 
 		// URL where to get the repo to cpe mapping json from.
 		// In ACS, we fetch it internally from the cluster (to prevent Collector from accessing the Internet):
 		// "https://sensor.stackrox.svc:443/scanner/definitions?file=repo2cpe"
-		Repo2CPEMappingURL: repo2CPEMappingURL,
+		Repo2CPEMappingURL: cfg.RepoToCPEMappingURL,
 		Timeout:            mappingClientTimeout,
 		// Disable package filtering.
 		PackageDBFilter: "",
