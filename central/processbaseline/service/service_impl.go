@@ -164,28 +164,14 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 	return resp, nil
 }
 
-func (s *serviceImpl) getKeysForNamespaces(ctx context.Context, clusterId string, namespaces []string) ([]*storage.ProcessBaselineKey, error) {
-	query := search.NewQueryBuilder().
-		AddExactMatches(search.Namespace, namespaces...).
-		AddExactMatches(search.ClusterID, clusterId).ProtoQuery()
+func (s *serviceImpl) getKeys(ctx context.Context, clusterId string, namespaces []string) ([]*storage.ProcessBaselineKey, error) {
+	queryBuilder := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterId)
 
-	baselines, err := s.dataStore.SearchRawProcessBaselines(ctx, query)
-
-	if err != nil {
-		return nil, err
+	if len(namespaces) > 0 {
+		queryBuilder = queryBuilder.AddExactMatches(search.Namespace, namespaces...)
 	}
 
-	keys := make([]*storage.ProcessBaselineKey, len(baselines))
-
-	for i := range baselines {
-		keys[i] = baselines[i].GetKey()
-	}
-
-	return keys, nil
-}
-
-func (s *serviceImpl) getKeysForCluster(ctx context.Context, clusterId string) ([]*storage.ProcessBaselineKey, error) {
-	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterId).ProtoQuery()
+	query := queryBuilder.ProtoQuery()
 
 	baselines, err := s.dataStore.SearchRawProcessBaselines(ctx, query)
 
@@ -213,27 +199,17 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 		return nil, err
 	}
 
-	namespaces := request.GetNamespaces()
-	var keys []*storage.ProcessBaselineKey
-	var err error
-
-	if len(namespaces) == 0 {
-		keys, err = s.getKeysForCluster(ctx, clusterId)
-		if err != nil {
-			return nil, err
-		}
-
-	} else {
-		keys, err = s.getKeysForNamespaces(ctx, clusterId, namespaces)
-		if err != nil {
-			return nil, err
-		}
+	keys, err := s.getKeys(ctx, clusterId, request.GetNamespaces())
+	if err != nil {
+		return nil, err
 	}
 
 	updateFunc := func(key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
 		return s.dataStore.UserLockProcessBaseline(ctx, key, lock)
 	}
+
 	resp = bulkUpdate(keys, updateFunc)
+
 	for _, w := range resp.GetBaselines() {
 		err := s.lifecycleManager.SendBaselineToSensor(w)
 		if err != nil {
