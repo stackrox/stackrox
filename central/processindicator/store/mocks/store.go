@@ -162,6 +162,20 @@ func (mr *MockStoreMockRecorder) UpsertMany(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), arg0, arg1)
 }
 
+// Walk mocks base method.
+func (m *MockStore) Walk(arg0 context.Context, arg1 func(*storage.ProcessIndicator) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Walk", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Walk indicates an expected call of Walk.
+func (mr *MockStoreMockRecorder) Walk(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), arg0, arg1)
+}
+
 // WalkByQuery mocks base method.
 func (m *MockStore) WalkByQuery(arg0 context.Context, arg1 *v1.Query, arg2 func(*storage.ProcessIndicator) error) error {
 	m.ctrl.T.Helper()
