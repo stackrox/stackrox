@@ -218,11 +218,11 @@ func (m *LockProcessBaselinesRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *BulkLockOrUnlockProcessBaselinesRequest) CloneVT() *BulkLockOrUnlockProcessBaselinesRequest {
+func (m *BulkProcessBaselinesRequest) CloneVT() *BulkProcessBaselinesRequest {
 	if m == nil {
-		return (*BulkLockOrUnlockProcessBaselinesRequest)(nil)
+		return (*BulkProcessBaselinesRequest)(nil)
 	}
-	r := new(BulkLockOrUnlockProcessBaselinesRequest)
+	r := new(BulkProcessBaselinesRequest)
 	r.ClusterId = m.ClusterId
 	if rhs := m.Namespaces; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
@@ -236,7 +236,7 @@ func (m *BulkLockOrUnlockProcessBaselinesRequest) CloneVT() *BulkLockOrUnlockPro
 	return r
 }
 
-func (m *BulkLockOrUnlockProcessBaselinesRequest) CloneMessageVT() proto.Message {
+func (m *BulkProcessBaselinesRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -551,7 +551,7 @@ func (this *LockProcessBaselinesRequest) EqualMessageVT(thatMsg proto.Message) b
 	}
 	return this.EqualVT(that)
 }
-func (this *BulkLockOrUnlockProcessBaselinesRequest) EqualVT(that *BulkLockOrUnlockProcessBaselinesRequest) bool {
+func (this *BulkProcessBaselinesRequest) EqualVT(that *BulkProcessBaselinesRequest) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -572,8 +572,8 @@ func (this *BulkLockOrUnlockProcessBaselinesRequest) EqualVT(that *BulkLockOrUnl
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *BulkLockOrUnlockProcessBaselinesRequest) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*BulkLockOrUnlockProcessBaselinesRequest)
+func (this *BulkProcessBaselinesRequest) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*BulkProcessBaselinesRequest)
 	if !ok {
 		return false
 	}
@@ -1038,7 +1038,7 @@ func (m *LockProcessBaselinesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *BulkLockOrUnlockProcessBaselinesRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *BulkProcessBaselinesRequest) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1051,12 +1051,12 @@ func (m *BulkLockOrUnlockProcessBaselinesRequest) MarshalVT() (dAtA []byte, err 
 	return dAtA[:n], nil
 }
 
-func (m *BulkLockOrUnlockProcessBaselinesRequest) MarshalToVT(dAtA []byte) (int, error) {
+func (m *BulkProcessBaselinesRequest) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *BulkLockOrUnlockProcessBaselinesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *BulkProcessBaselinesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1350,7 +1350,7 @@ func (m *LockProcessBaselinesRequest) SizeVT() (n int) {
 	return n
 }
 
-func (m *BulkLockOrUnlockProcessBaselinesRequest) SizeVT() (n int) {
+func (m *BulkProcessBaselinesRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2135,7 +2135,7 @@ func (m *LockProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BulkLockOrUnlockProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
+func (m *BulkProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2158,10 +2158,10 @@ func (m *BulkLockOrUnlockProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: BulkLockOrUnlockProcessBaselinesRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: BulkProcessBaselinesRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BulkLockOrUnlockProcessBaselinesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: BulkProcessBaselinesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -3179,7 +3179,7 @@ func (m *LockProcessBaselinesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BulkLockOrUnlockProcessBaselinesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *BulkProcessBaselinesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3202,10 +3202,10 @@ func (m *BulkLockOrUnlockProcessBaselinesRequest) UnmarshalVTUnsafe(dAtA []byte)
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: BulkLockOrUnlockProcessBaselinesRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: BulkProcessBaselinesRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BulkLockOrUnlockProcessBaselinesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: BulkProcessBaselinesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

@@ -472,7 +472,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
 			suite.lifecycleManager.EXPECT().SendBaselineToSensor(gomock.Any()).AnyTimes()
 
-			request := &v1.BulkLockOrUnlockProcessBaselinesRequest{
+			request := &v1.BulkProcessBaselinesRequest{
 				ClusterId:  c.clusterId,
 				Namespaces: c.namespaces,
 			}

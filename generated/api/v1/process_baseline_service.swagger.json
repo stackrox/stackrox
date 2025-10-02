@@ -108,7 +108,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1BulkLockOrUnlockProcessBaselinesRequest"
+              "$ref": "#/definitions/v1BulkProcessBaselinesRequest"
             }
           }
         ],
@@ -141,7 +141,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1BulkLockOrUnlockProcessBaselinesRequest"
+              "$ref": "#/definitions/v1BulkProcessBaselinesRequest"
             }
           }
         ],
@@ -343,7 +343,7 @@
         }
       }
     },
-    "v1BulkLockOrUnlockProcessBaselinesRequest": {
+    "v1BulkProcessBaselinesRequest": {
       "type": "object",
       "properties": {
         "clusterId": {

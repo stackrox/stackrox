@@ -126,7 +126,7 @@ func local_request_ProcessBaselineService_LockProcessBaselines_0(ctx context.Con
 
 func request_ProcessBaselineService_BulkLockProcessBaselines_0(ctx context.Context, marshaler runtime.Marshaler, client ProcessBaselineServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq BulkLockOrUnlockProcessBaselinesRequest
+		protoReq BulkProcessBaselinesRequest
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
@@ -141,7 +141,7 @@ func request_ProcessBaselineService_BulkLockProcessBaselines_0(ctx context.Conte
 
 func local_request_ProcessBaselineService_BulkLockProcessBaselines_0(ctx context.Context, marshaler runtime.Marshaler, server ProcessBaselineServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq BulkLockOrUnlockProcessBaselinesRequest
+		protoReq BulkProcessBaselinesRequest
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
@@ -153,7 +153,7 @@ func local_request_ProcessBaselineService_BulkLockProcessBaselines_0(ctx context
 
 func request_ProcessBaselineService_BulkUnlockProcessBaselines_0(ctx context.Context, marshaler runtime.Marshaler, client ProcessBaselineServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq BulkLockOrUnlockProcessBaselinesRequest
+		protoReq BulkProcessBaselinesRequest
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
@@ -168,7 +168,7 @@ func request_ProcessBaselineService_BulkUnlockProcessBaselines_0(ctx context.Con
 
 func local_request_ProcessBaselineService_BulkUnlockProcessBaselines_0(ctx context.Context, marshaler runtime.Marshaler, server ProcessBaselineServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq BulkLockOrUnlockProcessBaselinesRequest
+		protoReq BulkProcessBaselinesRequest
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
