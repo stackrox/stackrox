@@ -145,6 +145,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    0,
 						VsockCidSet: false,
 						State:       virtualMachineV1.VirtualMachine_STOPPED,
+						Facts:       nil,
 					},
 				},
 			},
@@ -159,6 +160,7 @@ func TestCreateEvent(t *testing.T) {
 				Namespace: ns1,
 				VSOCKCID:  &vm2VSockCID,
 				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
 			},
 			expected: &central.SensorEvent{
 				Id:     vm2ID,
@@ -172,6 +174,9 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    wireVM2VSockCID,
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
+						Facts: map[string]string{
+							GuestOSKey: "Red Hat Enterprise Linux",
+						},
 					},
 				},
 			},
@@ -199,6 +204,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    0,
 						VsockCidSet: false,
 						State:       virtualMachineV1.VirtualMachine_STOPPED,
+						Facts:       nil,
 					},
 				},
 			},
@@ -213,6 +219,7 @@ func TestCreateEvent(t *testing.T) {
 				Namespace: ns1,
 				VSOCKCID:  &vm2VSockCID,
 				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
 			},
 			expected: &central.SensorEvent{
 				Id:     vm2ID,
@@ -226,6 +233,9 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    wireVM2VSockCID,
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
+						Facts: map[string]string{
+							GuestOSKey: "Red Hat Enterprise Linux",
+						},
 					},
 				},
 			},
@@ -240,6 +250,7 @@ func TestCreateEvent(t *testing.T) {
 				Namespace: ns1,
 				VSOCKCID:  &vm2VSockCID,
 				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
 			},
 			expected: &central.SensorEvent{
 				Id:     vm2ID,
@@ -253,6 +264,9 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    wireVM2VSockCID,
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
+						Facts: map[string]string{
+							GuestOSKey: "Red Hat Enterprise Linux",
+						},
 					},
 				},
 			},
@@ -280,6 +294,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    0,
 						VsockCidSet: false,
 						State:       virtualMachineV1.VirtualMachine_STOPPED,
+						Facts:       nil,
 					},
 				},
 			},
@@ -294,6 +309,7 @@ func TestCreateEvent(t *testing.T) {
 				Namespace: ns1,
 				VSOCKCID:  &vm2VSockCID,
 				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
 			},
 			expected: &central.SensorEvent{
 				Id:     vm2ID,
@@ -307,6 +323,9 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    wireVM2VSockCID,
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
+						Facts: map[string]string{
+							GuestOSKey: "Red Hat Enterprise Linux",
+						},
 					},
 				},
 			},

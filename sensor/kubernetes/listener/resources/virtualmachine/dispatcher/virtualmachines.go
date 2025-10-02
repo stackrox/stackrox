@@ -8,6 +8,10 @@ import (
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
 
+const (
+	GuestOSKey = "Guest OS"
+)
+
 type VirtualMachineDispatcher struct {
 	clusterID string
 	store     virtualMachineStore
