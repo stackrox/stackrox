@@ -1,5 +1,3 @@
-import path from 'path';
-
 import { visitFromLeftNav, visitFromHorizontalNav } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
@@ -201,7 +199,9 @@ export function exportAndWaitForNetworkPolicyYaml(fileName, onDownload) {
         `[role="dialog"]:contains("Network policy details") button:contains('Export YAML')`
     ).click();
 
-    cy.readFile(path.join(Cypress.config('downloadsFolder'), fileName)).then(onDownload);
+    cy.task('joinPaths', [Cypress.config('downloadsFolder'), fileName]).then((path) => {
+        cy.readFile(path).then(onDownload);
+    });
 }
 
 /**

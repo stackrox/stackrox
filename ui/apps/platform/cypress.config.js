@@ -1,4 +1,6 @@
-const vitePreprocessor = require('cypress-vite');
+const path = require('path');
+// eslint-disable-next-line import/no-extraneous-dependencies
+const cypressVite = require('cypress-vite');
 
 /*
  * The helper function intended to provide automatic code completion for configuration in many popular code editors
@@ -35,9 +37,11 @@ module.exports = {
                     console.log(`${new Date().toISOString()} running test suite: ${spec.name}\n`);
                     return null;
                 },
+                joinPaths(paths) {
+                    return path.join(...paths);
+                },
             });
-            // @ts-expect-error cypress-vite is not typed correctly, the preprocessor function is actually the default export
-            on('file:preprocessor', vitePreprocessor());
+            on('file:preprocessor', cypressVite.vitePreprocessor());
         },
     },
 
