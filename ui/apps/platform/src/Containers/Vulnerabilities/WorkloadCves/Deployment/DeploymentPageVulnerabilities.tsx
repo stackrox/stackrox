@@ -99,8 +99,8 @@ export type DeploymentPageVulnerabilitiesProps = {
     vulnerabilityState: VulnerabilityState;
     showVulnerabilityStateTabs: boolean;
     additionalToolbarItems?: React.ReactNode;
-    searchFilter: SearchFilter;
-    setSearchFilter: (filter: SearchFilter) => void;
+    searchFilter?: SearchFilter;
+    setSearchFilter?: (filter: SearchFilter) => void;
 };
 
 function DeploymentPageVulnerabilities({
@@ -109,8 +109,8 @@ function DeploymentPageVulnerabilities({
     vulnerabilityState,
     showVulnerabilityStateTabs,
     additionalToolbarItems,
-    searchFilter,
-    setSearchFilter,
+    searchFilter = {},
+    setSearchFilter = () => {},
 }: DeploymentPageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
