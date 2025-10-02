@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     PageSection,
     Breadcrumb,
@@ -85,15 +85,14 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
             viewContext === 'Platform' ||
             viewContext === 'All vulnerable images' ||
             viewContext === 'Inactive images');
-    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] =
-        React.useState(false);
+    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const onReportSelect = (_value: string | number | undefined) => {
         setIsCreateViewBasedReportModalOpen(true);
     };
 
-    const getDeploymentQueryForReport = () => {
+    const getDeploymentQueryForReport = useCallback(() => {
         // Create a scoped query that includes the deployment ID filter plus any applied search filters
         const deploymentScopedFilter = { 'Deployment ID': [deploymentId] };
         const combinedFilter = {
@@ -102,7 +101,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
             ...querySearchFilter,
         };
         return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
-    };
+    }, [deploymentId, baseSearchFilter, querySearchFilter, vulnerabilityState]);
 
     return (
         <>
@@ -206,7 +205,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                     </PageSection>
                 </>
             )}
-            {isViewBasedReportsEnabled && (
+            {isViewBasedReportsEnabled && isCreateViewBasedReportModalOpen && (
                 <CreateViewBasedReportModal
                     isOpen={isCreateViewBasedReportModalOpen}
                     setIsOpen={setIsCreateViewBasedReportModalOpen}

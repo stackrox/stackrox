@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode, useState } from 'react';
+import React, { ReactElement, ReactNode, useCallback, useState } from 'react';
 import {
     Alert,
     Breadcrumb,
@@ -150,12 +150,12 @@ function ImagePage({
         setIsCreateViewBasedReportModalOpen(true);
     };
 
-    const getImageQueryForReport = () => {
+    const getImageQueryForReport = useCallback(() => {
         // Create a scoped query that includes the image SHA filter plus any applied search filters
         const imageScopedFilter = { 'Image SHA': [imageId] };
         const combinedFilter = { ...baseSearchFilter, ...imageScopedFilter, ...querySearchFilter };
         return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
-    };
+    }, [imageId, baseSearchFilter, querySearchFilter, vulnerabilityState]);
 
     const imageData = data && data.image;
     const imageName = imageData?.name;
@@ -355,7 +355,7 @@ function ImagePage({
             </PageSection>
             <Divider component="div" />
             {mainContent}
-            {isViewBasedReportsEnabled && (
+            {isViewBasedReportsEnabled && isCreateViewBasedReportModalOpen && (
                 <CreateViewBasedReportModal
                     isOpen={isCreateViewBasedReportModalOpen}
                     setIsOpen={setIsCreateViewBasedReportModalOpen}
