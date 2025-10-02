@@ -17,7 +17,11 @@ import omit from 'lodash/omit';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useMetadata from 'hooks/useMetadata';
 import { ClientPolicy } from 'types/policy.proto';
+import type { PolicyEventSource } from 'types/policy.proto';
+import { getVersionedDocs } from 'utils/versioning';
 
 import {
     getLifeCyclesUpdates,
@@ -33,7 +37,7 @@ type PolicyBehaviorFormProps = {
     hasActiveViolations: boolean;
 };
 
-function getEventSourceHelperText(eventSource) {
+function getEventSourceHelperText(eventSource: PolicyEventSource) {
     if (eventSource === 'DEPLOYMENT_EVENT') {
         return 'Monitor deployments for process activity, baseline deviation, and user issued container commands.';
     }
@@ -49,6 +53,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const { errors, setFieldTouched, setFieldValue, setValues, touched, values } =
         useFormikContext<ClientPolicy>();
     const [lifeCycleChanges, setLifeCycleChanges] = useState<ValidPolicyLifeCycle | null>(null);
+    const { version } = useMetadata();
 
     function onChangeLifecycleStages(lifecycleStages: ValidPolicyLifeCycle) {
         const hasNonEmptyPolicyGroup = values.policySections.some(
@@ -166,25 +171,47 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         className="pf-v5-u-pt-sm"
                     >
                         <p>
-                            <strong>Build stage</strong> policies can only inspect images. They are
-                            evaluated in the build pipeline.
+                            <strong>Build stage</strong> policies can inspect only images built in
+                            the build pipeline, using criteria related to the image registry,
+                            content, vulnerability data and scanning process. When enforced, policy
+                            violations may be used to fail the build.
                         </p>
                         <p>
-                            <strong>Deploy stage</strong> policies can inspect workloads and/or
-                            their images. They are evaluated while creating or updating a workload
-                            resource, and re-evaluated periodically or on demand.
+                            <strong>Deploy stage</strong> policies can inspect workload
+                            configurations and/or their images. They are evaluated while creating or
+                            updating a workload resource and re-evaluated periodically or on demand.
+                            When enforced, policy violations result in rejection of workload
+                            admission or update, or if admitted, workload replicas being scaled down
+                            to zero.
                         </p>
                         <p>
-                            <strong>Build and Deploy stage</strong> policies are a convenient option
-                            to inspect images in both the build pipeline and during workload
-                            admission, and apply enforcement to either or both stages (in a single
-                            policy).
+                            <strong>Build+Deploy stage</strong> policies are a convenient option to
+                            inspect images in both the build pipeline and during workload admission
+                            and apply enforcement to either or both stages in a single policy.
                         </p>
                         <p>
-                            <strong>Runtime</strong> policies operate on one of two domains:
-                            Workload Activity or Kubernetes Resource Operations. The two domains are
-                            associated with different “Event Sources”.
+                            <strong>Runtime</strong> policies inspect either workload activity or
+                            Kubernetes resource operations, depending on the event source selected.
+                            When enforced, runtime policies that inspect workload activity terminate
+                            the offending pod. Enforcement is not available for the policies
+                            inspecting sensitive operations via the Kubernetes audit log.
                         </p>
+                        <div className="pf-v5-u-pt-md">
+                            Learn more about policy{' '}
+                            <ExternalLink>
+                                <a
+                                    href={getVersionedDocs(
+                                        version,
+                                        'operating/managing-security-policies#con-policy-lifecycle_about-security-policies'
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    lifecycle stages
+                                </a>
+                            </ExternalLink>
+                            .
+                        </div>
                     </Flex>
                 </Alert>
             </Flex>
