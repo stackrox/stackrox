@@ -45,6 +45,17 @@ func ConvertNotesToV1(notes []storage.ImageV2_Note) []storage.Image_Note {
 	return res
 }
 
+func ConvertToV1List(imagesV2 []*storage.ImageV2) []*storage.Image {
+	res := make([]*storage.Image, 0, len(imagesV2))
+	for _, imageV2 := range imagesV2 {
+		if imageV2 == nil {
+			continue
+		}
+		res = append(res, ConvertToV1(imageV2))
+	}
+	return res
+}
+
 func ConvertToV2(image *storage.Image) *storage.ImageV2 {
 	if image == nil {
 		return nil

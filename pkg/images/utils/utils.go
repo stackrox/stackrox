@@ -301,6 +301,15 @@ func StripCVEDescriptionsNoClone(img *storage.Image) {
 	}
 }
 
+// StripCVEDescriptionsNoCloneV2 takes in an image object and modifies it to remove the vulnerability summaries
+func StripCVEDescriptionsNoCloneV2(img *storage.ImageV2) {
+	for _, component := range img.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			vuln.Summary = ""
+		}
+	}
+}
+
 // TODO(ROX-30117): Remove this function after ImageV2 model is fully rolled out
 // FilterSuppressedCVEsNoClone removes the vulns from the image that are currently suppressed
 func FilterSuppressedCVEsNoClone(img *storage.Image) {

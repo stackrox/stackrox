@@ -28,6 +28,7 @@ func initialize() {
 		clusterDS,
 		enrichment.ImageEnricherSingleton(),
 		imageDatastore.Singleton(),
+		enrichment.ImageEnricherV2Singleton(),
 		manager.Singleton(),
 		enrichment.Singleton(),
 		buildTimeDetection.SingletonDetector(),
