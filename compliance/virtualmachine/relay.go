@@ -41,8 +41,10 @@ func (s *VsockServer) Start() error {
 
 func (s *VsockServer) Stop() {
 	log.Infof("Stopping vsock server on port %d", s.port)
-	if err := s.listener.Close(); err != nil {
-		log.Errorf("Error closing vsock listener: %v", err)
+	if s.listener != nil {
+		if err := s.listener.Close(); err != nil {
+			log.Errorf("Error closing vsock listener: %v", err)
+		}
 	}
 }
 
