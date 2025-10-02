@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net"
+	"os"
 	"time"
 
 	"github.com/mdlayher/vsock"
@@ -14,10 +15,12 @@ import (
 )
 
 type mockVsockConn struct {
-	closed     bool
-	data       []byte
-	readErr    error
-	remoteAddr net.Addr
+	closed       bool
+	data         []byte
+	delay        time.Duration
+	readErr      error
+	remoteAddr   net.Addr
+	readDeadline time.Time
 }
 
 func newMockVsockConn() *mockVsockConn {
@@ -40,7 +43,16 @@ func (c *mockVsockConn) withData(data []byte) *mockVsockConn {
 	return c
 }
 
+func (c *mockVsockConn) withDelay(delay time.Duration) *mockVsockConn {
+	c.delay = delay
+	return c
+}
+
 func (c *mockVsockConn) Read(b []byte) (n int, err error) {
+	time.Sleep(c.delay)
+	if !c.readDeadline.IsZero() && time.Now().After(c.readDeadline) {
+		return 0, os.ErrDeadlineExceeded
+	}
 	if c.readErr != nil {
 		return 0, c.readErr
 	}
@@ -60,10 +72,13 @@ func (c *mockVsockConn) Close() error {
 	return nil
 }
 
-func (c *mockVsockConn) Write([]byte) (int, error)        { return 0, nil }
-func (c *mockVsockConn) LocalAddr() net.Addr              { return nil }
-func (c *mockVsockConn) SetDeadline(time.Time) error      { return nil }
-func (c *mockVsockConn) SetReadDeadline(time.Time) error  { return nil }
+func (c *mockVsockConn) Write([]byte) (int, error)   { return 0, nil }
+func (c *mockVsockConn) LocalAddr() net.Addr         { return nil }
+func (c *mockVsockConn) SetDeadline(time.Time) error { return nil }
+func (c *mockVsockConn) SetReadDeadline(t time.Time) error {
+	c.readDeadline = t
+	return nil
+}
 func (c *mockVsockConn) SetWriteDeadline(time.Time) error { return nil }
 
 type mockSensorClient struct {
