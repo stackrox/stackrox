@@ -84,6 +84,72 @@
         ]
       }
     },
+    "/v1/processbaselines/bulk/lock": {
+      "put": {
+        "summary": "`BulkLockProcessBaselines` locks process baselines given a cluster and\nan optional set of namespaces. It returns the updated baseline objects.",
+        "operationId": "ProcessBaselineService_BulkLockProcessBaselines",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateProcessBaselinesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1BulkLockOrUnlockProcessBaselinesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProcessBaselineService"
+        ]
+      }
+    },
+    "/v1/processbaselines/bulk/unlock": {
+      "put": {
+        "summary": "`BulkUnockProcessBaselines` unlocks process baselines given a cluster and\nan optional set of namespaces. It returns the updated baseline objects.",
+        "operationId": "ProcessBaselineService_BulkUnlockProcessBaselines",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateProcessBaselinesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1BulkLockOrUnlockProcessBaselinesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProcessBaselineService"
+        ]
+      }
+    },
     "/v1/processbaselines/key": {
       "get": {
         "summary": "`GetProcessBaselineById` returns the single\nprocess baseline referenced by the given ID.",
@@ -159,39 +225,6 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/v1LockProcessBaselinesRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ProcessBaselineService"
-        ]
-      }
-    },
-    "/v1/processbaselines/lock/namespace": {
-      "put": {
-        "summary": "`LockProcessBaselinesByNamespace` locks process baselines by namespace,\nand returns the updated baseline objects.",
-        "operationId": "ProcessBaselineService_LockProcessBaselinesByNamespace",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1UpdateProcessBaselinesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1LockProcessBaselinesByNamespaceRequest"
             }
           }
         ],
@@ -310,19 +343,7 @@
         }
       }
     },
-    "v1DeleteProcessBaselinesResponse": {
-      "type": "object",
-      "properties": {
-        "numDeleted": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "dryRun": {
-          "type": "boolean"
-        }
-      }
-    },
-    "v1LockProcessBaselinesByNamespaceRequest": {
+    "v1BulkLockOrUnlockProcessBaselinesRequest": {
       "type": "object",
       "properties": {
         "clusterId": {
@@ -333,8 +354,17 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "v1DeleteProcessBaselinesResponse": {
+      "type": "object",
+      "properties": {
+        "numDeleted": {
+          "type": "integer",
+          "format": "int32"
         },
-        "locked": {
+        "dryRun": {
           "type": "boolean"
         }
       }

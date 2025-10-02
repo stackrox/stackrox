@@ -445,15 +445,20 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			defer emptyDB(t, suite.datastore, c.baselines)
 
 			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
-			suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).AnyTimes()
+			suite.lifecycleManager.EXPECT().SendBaselineToSensor(gomock.Any()).AnyTimes()
 
-			request := &v1.LockProcessBaselinesByNamespaceRequest{
+			request := &v1.BulkLockOrUnlockProcessBaselinesRequest{
 				ClusterId:  c.clusterId,
 				Namespaces: c.namespaces,
-				Locked:     c.locked,
 			}
 
-			response, err := suite.service.LockProcessBaselinesByNamespace(hasWriteCtx, request)
+			var response *v1.UpdateProcessBaselinesResponse
+			var err error
+			if c.locked {
+				response, err = suite.service.BulkLockProcessBaselines(hasWriteCtx, request)
+			} else {
+				response, err = suite.service.BulkUnlockProcessBaselines(hasWriteCtx, request)
+			}
 			suite.NoError(err)
 
 			locked := make([]*storage.ProcessBaselineKey, 0)

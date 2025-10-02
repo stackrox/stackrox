@@ -218,13 +218,12 @@ func (m *LockProcessBaselinesRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *LockProcessBaselinesByNamespaceRequest) CloneVT() *LockProcessBaselinesByNamespaceRequest {
+func (m *BulkLockOrUnlockProcessBaselinesRequest) CloneVT() *BulkLockOrUnlockProcessBaselinesRequest {
 	if m == nil {
-		return (*LockProcessBaselinesByNamespaceRequest)(nil)
+		return (*BulkLockOrUnlockProcessBaselinesRequest)(nil)
 	}
-	r := new(LockProcessBaselinesByNamespaceRequest)
+	r := new(BulkLockOrUnlockProcessBaselinesRequest)
 	r.ClusterId = m.ClusterId
-	r.Locked = m.Locked
 	if rhs := m.Namespaces; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
@@ -237,7 +236,7 @@ func (m *LockProcessBaselinesByNamespaceRequest) CloneVT() *LockProcessBaselines
 	return r
 }
 
-func (m *LockProcessBaselinesByNamespaceRequest) CloneMessageVT() proto.Message {
+func (m *BulkLockOrUnlockProcessBaselinesRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -552,7 +551,7 @@ func (this *LockProcessBaselinesRequest) EqualMessageVT(thatMsg proto.Message) b
 	}
 	return this.EqualVT(that)
 }
-func (this *LockProcessBaselinesByNamespaceRequest) EqualVT(that *LockProcessBaselinesByNamespaceRequest) bool {
+func (this *BulkLockOrUnlockProcessBaselinesRequest) EqualVT(that *BulkLockOrUnlockProcessBaselinesRequest) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -570,14 +569,11 @@ func (this *LockProcessBaselinesByNamespaceRequest) EqualVT(that *LockProcessBas
 			return false
 		}
 	}
-	if this.Locked != that.Locked {
-		return false
-	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *LockProcessBaselinesByNamespaceRequest) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*LockProcessBaselinesByNamespaceRequest)
+func (this *BulkLockOrUnlockProcessBaselinesRequest) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*BulkLockOrUnlockProcessBaselinesRequest)
 	if !ok {
 		return false
 	}
@@ -1042,7 +1038,7 @@ func (m *LockProcessBaselinesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *LockProcessBaselinesByNamespaceRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *BulkLockOrUnlockProcessBaselinesRequest) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1055,12 +1051,12 @@ func (m *LockProcessBaselinesByNamespaceRequest) MarshalVT() (dAtA []byte, err e
 	return dAtA[:n], nil
 }
 
-func (m *LockProcessBaselinesByNamespaceRequest) MarshalToVT(dAtA []byte) (int, error) {
+func (m *BulkLockOrUnlockProcessBaselinesRequest) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *LockProcessBaselinesByNamespaceRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *BulkLockOrUnlockProcessBaselinesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1071,16 +1067,6 @@ func (m *LockProcessBaselinesByNamespaceRequest) MarshalToSizedBufferVT(dAtA []b
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.Locked {
-		i--
-		if m.Locked {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
 	}
 	if len(m.Namespaces) > 0 {
 		for iNdEx := len(m.Namespaces) - 1; iNdEx >= 0; iNdEx-- {
@@ -1364,7 +1350,7 @@ func (m *LockProcessBaselinesRequest) SizeVT() (n int) {
 	return n
 }
 
-func (m *LockProcessBaselinesByNamespaceRequest) SizeVT() (n int) {
+func (m *BulkLockOrUnlockProcessBaselinesRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1379,9 +1365,6 @@ func (m *LockProcessBaselinesByNamespaceRequest) SizeVT() (n int) {
 			l = len(s)
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
-	}
-	if m.Locked {
-		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2152,7 +2135,7 @@ func (m *LockProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *LockProcessBaselinesByNamespaceRequest) UnmarshalVT(dAtA []byte) error {
+func (m *BulkLockOrUnlockProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2175,10 +2158,10 @@ func (m *LockProcessBaselinesByNamespaceRequest) UnmarshalVT(dAtA []byte) error 
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: LockProcessBaselinesByNamespaceRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: BulkLockOrUnlockProcessBaselinesRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: LockProcessBaselinesByNamespaceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: BulkLockOrUnlockProcessBaselinesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2245,26 +2228,6 @@ func (m *LockProcessBaselinesByNamespaceRequest) UnmarshalVT(dAtA []byte) error 
 			}
 			m.Namespaces = append(m.Namespaces, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Locked", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Locked = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3216,7 +3179,7 @@ func (m *LockProcessBaselinesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *LockProcessBaselinesByNamespaceRequest) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *BulkLockOrUnlockProcessBaselinesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3239,10 +3202,10 @@ func (m *LockProcessBaselinesByNamespaceRequest) UnmarshalVTUnsafe(dAtA []byte) 
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: LockProcessBaselinesByNamespaceRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: BulkLockOrUnlockProcessBaselinesRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: LockProcessBaselinesByNamespaceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: BulkLockOrUnlockProcessBaselinesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -3317,26 +3280,6 @@ func (m *LockProcessBaselinesByNamespaceRequest) UnmarshalVTUnsafe(dAtA []byte) 
 			}
 			m.Namespaces = append(m.Namespaces, stringValue)
 			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Locked", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Locked = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

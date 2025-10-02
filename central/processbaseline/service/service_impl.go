@@ -31,7 +31,8 @@ var (
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			v1.ProcessBaselineService_UpdateProcessBaselines_FullMethodName,
 			v1.ProcessBaselineService_LockProcessBaselines_FullMethodName,
-			v1.ProcessBaselineService_LockProcessBaselinesByNamespace_FullMethodName,
+			v1.ProcessBaselineService_BulkLockProcessBaselines_FullMethodName,
+			v1.ProcessBaselineService_BulkUnlockProcessBaselines_FullMethodName,
 			v1.ProcessBaselineService_DeleteProcessBaselines_FullMethodName,
 		},
 	})
@@ -183,23 +184,72 @@ func (s *serviceImpl) getKeysForNamespaces(ctx context.Context, clusterId string
 	return keys, nil
 }
 
-func (s *serviceImpl) LockProcessBaselinesByNamespace(ctx context.Context, request *v1.LockProcessBaselinesByNamespaceRequest) (*v1.UpdateProcessBaselinesResponse, error) {
-	var resp *v1.UpdateProcessBaselinesResponse
-	defer s.reprocessUpdatedBaselines(&resp)
+func (s *serviceImpl) getKeysForCluster(ctx context.Context, clusterId string) ([]*storage.ProcessBaselineKey, error) {
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterId).ProtoQuery()
 
-	keys, err := s.getKeysForNamespaces(ctx, request.GetClusterId(), request.GetNamespaces())
+	baselines, err := s.dataStore.SearchRawProcessBaselines(ctx, query)
+
 	if err != nil {
 		return nil, err
 	}
 
+	keys := make([]*storage.ProcessBaselineKey, len(baselines))
+
+	for i := range baselines {
+		keys[i] = baselines[i].GetKey()
+	}
+
+	return keys, nil
+}
+
+func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, request *v1.BulkLockOrUnlockProcessBaselinesRequest, lock bool) (*v1.UpdateProcessBaselinesResponse, error) {
+	var resp *v1.UpdateProcessBaselinesResponse
+	defer s.reprocessUpdatedBaselines(&resp)
+
+	clusterId := request.GetClusterId()
+
+	if clusterId == "" {
+		err := errors.New("Cluster ID must be specified")
+		return nil, err
+	}
+
+	namespaces := request.GetNamespaces()
+	var keys []*storage.ProcessBaselineKey
+	var err error
+
+	if len(namespaces) == 0 {
+		keys, err = s.getKeysForCluster(ctx, clusterId)
+		if err != nil {
+			return nil, err
+		}
+
+	} else {
+		keys, err = s.getKeysForNamespaces(ctx, clusterId, namespaces)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	updateFunc := func(key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
-		return s.dataStore.UserLockProcessBaseline(ctx, key, request.GetLocked())
+		return s.dataStore.UserLockProcessBaseline(ctx, key, lock)
 	}
 	resp = bulkUpdate(keys, updateFunc)
 	for _, w := range resp.GetBaselines() {
-		s.sendBaselineToSensor(w)
+		err := s.lifecycleManager.SendBaselineToSensor(w)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return resp, nil
+}
+
+func (s *serviceImpl) BulkLockProcessBaselines(ctx context.Context, request *v1.BulkLockOrUnlockProcessBaselinesRequest) (*v1.UpdateProcessBaselinesResponse, error) {
+	return s.bulkLockOrUnlockProcessBaselines(ctx, request, true)
+}
+
+func (s *serviceImpl) BulkUnlockProcessBaselines(ctx context.Context, request *v1.BulkLockOrUnlockProcessBaselinesRequest) (*v1.UpdateProcessBaselinesResponse, error) {
+	return s.bulkLockOrUnlockProcessBaselines(ctx, request, false)
 }
 
 func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.DeleteProcessBaselinesRequest) (*v1.DeleteProcessBaselinesResponse, error) {

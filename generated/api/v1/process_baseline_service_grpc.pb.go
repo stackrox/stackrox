@@ -20,11 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ProcessBaselineService_GetProcessBaseline_FullMethodName              = "/v1.ProcessBaselineService/GetProcessBaseline"
-	ProcessBaselineService_UpdateProcessBaselines_FullMethodName          = "/v1.ProcessBaselineService/UpdateProcessBaselines"
-	ProcessBaselineService_LockProcessBaselines_FullMethodName            = "/v1.ProcessBaselineService/LockProcessBaselines"
-	ProcessBaselineService_LockProcessBaselinesByNamespace_FullMethodName = "/v1.ProcessBaselineService/LockProcessBaselinesByNamespace"
-	ProcessBaselineService_DeleteProcessBaselines_FullMethodName          = "/v1.ProcessBaselineService/DeleteProcessBaselines"
+	ProcessBaselineService_GetProcessBaseline_FullMethodName         = "/v1.ProcessBaselineService/GetProcessBaseline"
+	ProcessBaselineService_UpdateProcessBaselines_FullMethodName     = "/v1.ProcessBaselineService/UpdateProcessBaselines"
+	ProcessBaselineService_LockProcessBaselines_FullMethodName       = "/v1.ProcessBaselineService/LockProcessBaselines"
+	ProcessBaselineService_BulkLockProcessBaselines_FullMethodName   = "/v1.ProcessBaselineService/BulkLockProcessBaselines"
+	ProcessBaselineService_BulkUnlockProcessBaselines_FullMethodName = "/v1.ProcessBaselineService/BulkUnlockProcessBaselines"
+	ProcessBaselineService_DeleteProcessBaselines_FullMethodName     = "/v1.ProcessBaselineService/DeleteProcessBaselines"
 )
 
 // ProcessBaselineServiceClient is the client API for ProcessBaselineService service.
@@ -42,9 +43,12 @@ type ProcessBaselineServiceClient interface {
 	// `LockProcessBaselines` accepts a list of baseline IDs, locks
 	// those baselines, and returns the updated baseline objects.
 	LockProcessBaselines(ctx context.Context, in *LockProcessBaselinesRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error)
-	// `LockProcessBaselinesByNamespace` locks process baselines by namespace,
-	// and returns the updated baseline objects.
-	LockProcessBaselinesByNamespace(ctx context.Context, in *LockProcessBaselinesByNamespaceRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error)
+	// `BulkLockProcessBaselines` locks process baselines given a cluster and
+	// an optional set of namespaces. It returns the updated baseline objects.
+	BulkLockProcessBaselines(ctx context.Context, in *BulkLockOrUnlockProcessBaselinesRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error)
+	// `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
+	// an optional set of namespaces. It returns the updated baseline objects.
+	BulkUnlockProcessBaselines(ctx context.Context, in *BulkLockOrUnlockProcessBaselinesRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error)
 	// `DeleteProcessBaselines` deletes baselines.
 	DeleteProcessBaselines(ctx context.Context, in *DeleteProcessBaselinesRequest, opts ...grpc.CallOption) (*DeleteProcessBaselinesResponse, error)
 }
@@ -87,10 +91,20 @@ func (c *processBaselineServiceClient) LockProcessBaselines(ctx context.Context,
 	return out, nil
 }
 
-func (c *processBaselineServiceClient) LockProcessBaselinesByNamespace(ctx context.Context, in *LockProcessBaselinesByNamespaceRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error) {
+func (c *processBaselineServiceClient) BulkLockProcessBaselines(ctx context.Context, in *BulkLockOrUnlockProcessBaselinesRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateProcessBaselinesResponse)
-	err := c.cc.Invoke(ctx, ProcessBaselineService_LockProcessBaselinesByNamespace_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, ProcessBaselineService_BulkLockProcessBaselines_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *processBaselineServiceClient) BulkUnlockProcessBaselines(ctx context.Context, in *BulkLockOrUnlockProcessBaselinesRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateProcessBaselinesResponse)
+	err := c.cc.Invoke(ctx, ProcessBaselineService_BulkUnlockProcessBaselines_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,9 +136,12 @@ type ProcessBaselineServiceServer interface {
 	// `LockProcessBaselines` accepts a list of baseline IDs, locks
 	// those baselines, and returns the updated baseline objects.
 	LockProcessBaselines(context.Context, *LockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error)
-	// `LockProcessBaselinesByNamespace` locks process baselines by namespace,
-	// and returns the updated baseline objects.
-	LockProcessBaselinesByNamespace(context.Context, *LockProcessBaselinesByNamespaceRequest) (*UpdateProcessBaselinesResponse, error)
+	// `BulkLockProcessBaselines` locks process baselines given a cluster and
+	// an optional set of namespaces. It returns the updated baseline objects.
+	BulkLockProcessBaselines(context.Context, *BulkLockOrUnlockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error)
+	// `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
+	// an optional set of namespaces. It returns the updated baseline objects.
+	BulkUnlockProcessBaselines(context.Context, *BulkLockOrUnlockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error)
 	// `DeleteProcessBaselines` deletes baselines.
 	DeleteProcessBaselines(context.Context, *DeleteProcessBaselinesRequest) (*DeleteProcessBaselinesResponse, error)
 }
@@ -145,8 +162,11 @@ func (UnimplementedProcessBaselineServiceServer) UpdateProcessBaselines(context.
 func (UnimplementedProcessBaselineServiceServer) LockProcessBaselines(context.Context, *LockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LockProcessBaselines not implemented")
 }
-func (UnimplementedProcessBaselineServiceServer) LockProcessBaselinesByNamespace(context.Context, *LockProcessBaselinesByNamespaceRequest) (*UpdateProcessBaselinesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LockProcessBaselinesByNamespace not implemented")
+func (UnimplementedProcessBaselineServiceServer) BulkLockProcessBaselines(context.Context, *BulkLockOrUnlockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BulkLockProcessBaselines not implemented")
+}
+func (UnimplementedProcessBaselineServiceServer) BulkUnlockProcessBaselines(context.Context, *BulkLockOrUnlockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BulkUnlockProcessBaselines not implemented")
 }
 func (UnimplementedProcessBaselineServiceServer) DeleteProcessBaselines(context.Context, *DeleteProcessBaselinesRequest) (*DeleteProcessBaselinesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProcessBaselines not implemented")
@@ -225,20 +245,38 @@ func _ProcessBaselineService_LockProcessBaselines_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProcessBaselineService_LockProcessBaselinesByNamespace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LockProcessBaselinesByNamespaceRequest)
+func _ProcessBaselineService_BulkLockProcessBaselines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BulkLockOrUnlockProcessBaselinesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProcessBaselineServiceServer).LockProcessBaselinesByNamespace(ctx, in)
+		return srv.(ProcessBaselineServiceServer).BulkLockProcessBaselines(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ProcessBaselineService_LockProcessBaselinesByNamespace_FullMethodName,
+		FullMethod: ProcessBaselineService_BulkLockProcessBaselines_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProcessBaselineServiceServer).LockProcessBaselinesByNamespace(ctx, req.(*LockProcessBaselinesByNamespaceRequest))
+		return srv.(ProcessBaselineServiceServer).BulkLockProcessBaselines(ctx, req.(*BulkLockOrUnlockProcessBaselinesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProcessBaselineService_BulkUnlockProcessBaselines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BulkLockOrUnlockProcessBaselinesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProcessBaselineServiceServer).BulkUnlockProcessBaselines(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProcessBaselineService_BulkUnlockProcessBaselines_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProcessBaselineServiceServer).BulkUnlockProcessBaselines(ctx, req.(*BulkLockOrUnlockProcessBaselinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -281,8 +319,12 @@ var ProcessBaselineService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProcessBaselineService_LockProcessBaselines_Handler,
 		},
 		{
-			MethodName: "LockProcessBaselinesByNamespace",
-			Handler:    _ProcessBaselineService_LockProcessBaselinesByNamespace_Handler,
+			MethodName: "BulkLockProcessBaselines",
+			Handler:    _ProcessBaselineService_BulkLockProcessBaselines_Handler,
+		},
+		{
+			MethodName: "BulkUnlockProcessBaselines",
+			Handler:    _ProcessBaselineService_BulkUnlockProcessBaselines_Handler,
 		},
 		{
 			MethodName: "DeleteProcessBaselines",

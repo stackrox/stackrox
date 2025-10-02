@@ -40,10 +40,9 @@ message LockProcessBaselinesRequest {
   bool locked = 2;
 }
 
-message LockProcessBaselinesByNamespaceRequest {
+message BulkLockOrUnlockProcessBaselinesRequest {
   string cluster_id = 1;
   repeated string namespaces = 2;
-  bool locked = 3;
 }
 
 message DeleteProcessBaselinesRequest {
@@ -82,11 +81,20 @@ service ProcessBaselineService {
     };
   }
 
-  // `LockProcessBaselinesByNamespace` locks process baselines by namespace,
-  // and returns the updated baseline objects.
-  rpc LockProcessBaselinesByNamespace(LockProcessBaselinesByNamespaceRequest) returns (UpdateProcessBaselinesResponse) {
+  // `BulkLockProcessBaselines` locks process baselines given a cluster and
+  // an optional set of namespaces. It returns the updated baseline objects.
+  rpc BulkLockProcessBaselines(BulkLockOrUnlockProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
     option (google.api.http) = {
-      put: "/v1/processbaselines/lock/namespace"
+      put: "/v1/processbaselines/bulk/lock"
+      body: "*"
+    };
+  }
+
+  // `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
+  // an optional set of namespaces. It returns the updated baseline objects.
+  rpc BulkUnlockProcessBaselines(BulkLockOrUnlockProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
+    option (google.api.http) = {
+      put: "/v1/processbaselines/bulk/unlock"
       body: "*"
     };
   }
