@@ -1,8 +1,8 @@
 package metrics
 
 import (
-	"time"
 	"strconv"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
