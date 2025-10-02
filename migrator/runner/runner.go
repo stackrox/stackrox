@@ -83,12 +83,6 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 		// Add an outer transaction so migrations can be wrapped in a transaction.
 		ctx := sac.WithAllAccess(context.Background())
 
-		tx, err := databases.PostgresDB.Begin(ctx)
-		if err != nil {
-			return err
-		}
-		ctx = pgPkg.ContextWithTx(ctx, tx)
-
 		// Set the context with the databases so the wrapped transaction can be used
 		databases.DBCtx = ctx
 
@@ -102,9 +96,15 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 		} else {
 			err := migration.Run(databases)
 			if err != nil {
-				return wrapRollback(ctx, tx, errors.Wrapf(err, "error running migration starting at %d", seqNum))
+				return errors.Wrapf(err, "error running migration starting at %d", seqNum)
 			}
 		}
+
+		tx, err := databases.PostgresDB.Begin(ctx)
+		if err != nil {
+			return err
+		}
+		ctx = pgPkg.ContextWithTx(ctx, tx)
 
 		err = updateVersion(ctx, databases, migration.VersionAfter)
 		if err != nil {

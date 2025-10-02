@@ -51,7 +51,7 @@ func migrateByCluster(cluster string, database *types.Databases) error {
 	store := updatedStore.New(database.PostgresDB)
 
 	var storeIndicators []*storage.ProcessIndicator
-	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster).AddNullField(search.ProcessContainerStartTime).ProtoQuery()
 	storeIndicators, err := store.GetByQuery(ctx, query)
 	if err != nil {
 		return err
