@@ -58,6 +58,17 @@ spec:
   pipelineRef:
     name: basic-component-pipeline
 
+  taskRunSpecs:
+  - pipelineTaskName: build-source-image
+    stepSpecs:
+    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
+    - name: build
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+
   taskRunTemplate:
     serviceAccountName: build-pipeline-scanner-v4-db-4-6
 
