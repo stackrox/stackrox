@@ -78,7 +78,7 @@ since 4.7 and prior.
   - `--admission-controller-listen-on-events`
   - `--admission-controller-timeout`
   Using them has no effect.
-
+- The current hierarchical implementation for defining Collections is deprecated and will be replaced by a more comprehensive search-based definition in the future.
 
 ### Technical Changes
 - ROX-31088: If Compliance Operator is installed, its version is now correctly reported through telemetry.
