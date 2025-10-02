@@ -371,6 +371,7 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 							},
 						},
 					},
+					Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 				},
 			},
 		},
@@ -410,6 +411,7 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 							},
 						},
 					},
+					Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 				},
 				{
 					CveBaseInfo: &storage.VirtualMachineCVEInfo{
@@ -585,6 +587,7 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 						},
 					},
 				},
+				Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 			},
 		},
 		{
@@ -625,6 +628,7 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 						},
 					},
 				},
+				Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 			},
 		},
 		{
@@ -655,6 +659,7 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 						},
 					},
 				},
+				Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 			},
 		},
 		{
@@ -698,6 +703,7 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 						},
 					},
 				},
+				Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 			},
 		},
 		{
@@ -741,6 +747,7 @@ func TestSetVirtualMachineScoresAndScoreVersions(t *testing.T) {
 						},
 					},
 				},
+				Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 			},
 		},
 	}
