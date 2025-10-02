@@ -1037,7 +1037,8 @@ class PolicyFieldsTest extends BaseSpecification {
         "Image Tag"                       | NO_IMAGE_TAG                          | WITH_IMAGE_TAG_TO_NOT_MATCH            | "no match"
         "Image Scan Age"                  | NO_OLD_IMAGE_SCANS                    | WITH_RECENT_SCAN_AGE                   | "no match"
         "Liveness Probe Defined"          | NO_LIVENESS_PROBE_DEFINED             | WITH_LIVENESS_PROBE                    | "no match"
-        "Minimum RBAC Permissions"        | MINIMUM_RBAC_CLUSTER_WIDE             | CENTRAL                                | "match"
+        // ROX-31124: A ClusterRole has been bound to central to allow access to TokenReview API.
+        // "Minimum RBAC Permissions"        | MINIMUM_RBAC_CLUSTER_WIDE             | CENTRAL                                | "no match"
         "Namespace"                       | IS_NAMESPACE_OF_DEPLOYMENT_D          | WITH_NAMESPACE_POLICYFIELDTEST_C       | "no match"
         "Service Account"                 | DEFAULT_SERVICE_ACCOUNT_NAME          | CENTRAL                                | "no match"
         "Exposed Port"                    | HAS_PORT_25_EXPOSED                   | WITHOUT_PORTS_EXPOSED                  | "no match"
