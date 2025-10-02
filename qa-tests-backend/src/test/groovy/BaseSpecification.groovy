@@ -451,7 +451,6 @@ class BaseSpecification extends Specification {
     @Retry(attempts = 90, delay = 1000)
     static void waitForClusterHealthy() {
         ClusterOuterClass.ClusterHealthStatus status = ClusterService.getCluster().healthStatus
-        LOG.info "waitForClusterHealthy{status:" + status.overallHealthStatus + "}"
         assert status.overallHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
     }
 }
