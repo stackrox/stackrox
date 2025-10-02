@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -103,7 +102,6 @@ type serviceImpl struct {
 	imageEnricher      enricher.ImageEnricher
 	imageDatastore     imageDatastore.DataStore
 	imageEnricherV2    enricher.ImageEnricherV2
-	imageV2Datastore   imageV2Datastore.DataStore
 	riskManager        manager.Manager
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
@@ -206,7 +204,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 				return nil, err
 			}
 			if imgV2.GetId() != "" {
-				if err := s.imageV2Datastore.UpsertImage(ctx, imgV2); err != nil {
+				if err := s.riskManager.CalculateRiskAndUpsertImageV2(imgV2); err != nil {
 					return nil, err
 				}
 			}
@@ -257,19 +255,41 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 }
 
 func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories ...string) (*apiV1.DeployDetectionResponse_Run, error) {
-	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(ctx, enrichmentContext, deployment)
-	if err != nil {
-		return nil, err
-	}
-	for _, idx := range updatedIndices {
-		img := images[idx]
-		img.Id = utils.GetSHA(img)
-		if err := s.riskManager.CalculateRiskAndUpsertImage(images[idx]); err != nil {
+	var images []*storage.Image
+	if features.FlattenImageData.Enabled() {
+		imagesV2, updatedIndices, _, err := s.deploymentEnricher.EnrichDeploymentV2(ctx, enrichmentContext, deployment)
+		if err != nil {
 			return nil, err
 		}
-	}
-	for _, img := range images {
-		utils.FilterSuppressedCVEsNoClone(img)
+		for _, idx := range updatedIndices {
+			img := imagesV2[idx]
+			img.Id, err = utils.GetImageV2ID(img)
+			if err != nil {
+				return nil, err
+			}
+			if err := s.riskManager.CalculateRiskAndUpsertImageV2(img); err != nil {
+				return nil, err
+			}
+		}
+		for _, img := range imagesV2 {
+			utils.FilterSuppressedCVEsNoCloneV2(img)
+		}
+		images = utils.ConvertToV1List(imagesV2)
+	} else {
+		images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(ctx, enrichmentContext, deployment)
+		if err != nil {
+			return nil, err
+		}
+		for _, idx := range updatedIndices {
+			img := images[idx]
+			img.Id = utils.GetSHA(img)
+			if err := s.riskManager.CalculateRiskAndUpsertImage(images[idx]); err != nil {
+				return nil, err
+			}
+		}
+		for _, img := range images {
+			utils.FilterSuppressedCVEsNoClone(img)
+		}
 	}
 
 	detectionCtx := deploytimePkg.DetectionContext{
@@ -278,7 +298,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 
 	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
 	if enrichmentContext.ClusterID != "" {
-		appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
+		appliedNetpols, err := s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
 		if err != nil {
 			log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment. Error: %s", deployment.GetName(), err)
 		} else {
