@@ -165,9 +165,6 @@ func slimHTTPRequest(req *http.Request) *HTTPRequest {
 
 func makeRequestInfo(req *http.Request) *RequestInfo {
 	tlsState := req.TLS
-	log.Infof("lvm --> make request info req host: %s", req.Host)
-	log.Infof("lvm --> make request info req URL: %s", req.URL)
-	log.Infof("lvm --> make request info req URI: %s", req.RequestURI)
 
 	ri := &RequestInfo{
 		Hostname:    req.Host,
@@ -180,13 +177,9 @@ func makeRequestInfo(req *http.Request) *RequestInfo {
 	// `Hostname` should match what the client sees.
 	if fwdHost := req.Header.Get(forwardedHost); fwdHost != "" {
 		ri.Hostname = fwdHost
-		log.Infof("lvm --> make request info fwd host: %s", ri.Hostname)
 	} else if tlsState != nil && tlsState.ServerName != "" {
 		ri.Hostname = tlsState.ServerName
-		log.Infof("lvm --> make request info tls server name: %s", ri.Hostname)
-		log.Infof("lvm --> tls state: %+v", tlsState)
 	}
-	log.Infof("lvm --> make request info ri hostname: %s", ri.Hostname)
 
 	if fwdProto := req.Header.Get(forwardedProto); fwdProto != "" {
 		ri.ClientUsedTLS = fwdProto != "http"

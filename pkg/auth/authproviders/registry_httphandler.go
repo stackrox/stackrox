@@ -141,10 +141,6 @@ func (r *registryImpl) initHTTPMux() {
 }
 
 func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request) {
-	log.Infof("lvm --> http request URL: %v", req.URL)
-	log.Infof("lvm --> http request Context: %+v", req.Context())
-	log.Infof("lvm --> http request Host: %v", req.Host)
-	log.Infof("lvm --> http request URI: %+v", req.RequestURI)
 	prefix := r.loginURLPrefix()
 	if !strings.HasPrefix(req.URL.Path, prefix) {
 		log.Errorf("UNEXPECTED: received HTTP request for invalid URL %v", req.URL)
@@ -292,10 +288,6 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	authResp, err := backend.ProcessHTTPRequest(w, req)
-	log.Infof("lvm --> http request URL: %v", req.URL)
-	log.Infof("lvm --> http request Context: %+v", req.Context())
-	log.Infof("lvm --> http request Host: %v", req.Host)
-	log.Infof("lvm --> http request URI: %+v", req.RequestURI)
 	if err != nil {
 		log.Errorf("error processing HTTP request for provider %s of type %s: %v",
 			provider.Name(), provider.Type(), err)
