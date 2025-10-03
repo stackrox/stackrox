@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"testing"
 
+	"maps"
+
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/compress"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/suite"
-	"golang.org/x/exp/maps"
 )
 
 func TestRepositorySuite(t *testing.T) {
@@ -84,7 +85,7 @@ func (s *RepositoryTestSuite) TestGetNodeResults() {
 
 	nodeResults := getNodeResults(testScrapeResults)
 
-	s.Equal(maps.Keys(nodeResults), []string{testNodeName})
+	s.Equal(slices.Collect(maps.Keys(nodeResults), []string{testNodeName}))
 	actual := nodeResults[testNodeName]
 	protoassert.MapEqual(s.T(), testEvidence, actual)
 }

@@ -5,6 +5,8 @@ import (
 	"slices"
 	"strings"
 
+	"maps"
+
 	"github.com/owenrumney/go-sarif/v2/sarif"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
-	"golang.org/x/exp/maps"
 )
 
 // Required JSON path expressions for the sarif printer.
@@ -182,7 +183,7 @@ func (s *SarifPrinter) addEntry(run *sarif.Run, entry sarifEntry) {
 }
 
 func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[string]string) ([]sarifEntry, error) {
-	pathExpr := set.NewStringSet(maps.Keys(pathExpressions)...)
+	pathExpr := set.NewStringSet(slices.Collect(maps.Keys(pathExpressions))...)
 	for _, requiredKey := range requiredKeys {
 		if !pathExpr.Contains(requiredKey) {
 			return nil, errox.InvalidArgs.Newf("not all required JSON path expressions given, ensure JSON "+

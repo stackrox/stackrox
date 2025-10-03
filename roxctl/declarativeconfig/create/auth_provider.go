@@ -7,6 +7,8 @@ import (
 	"os"
 	"slices"
 
+	"maps"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
@@ -17,7 +19,6 @@ import (
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"go.yaml.in/yaml/v3"
-	"golang.org/x/exp/maps"
 )
 
 var (
@@ -254,8 +255,7 @@ func (a *authProviderCmd) Construct(cmd *cobra.Command) error {
 func (a *authProviderCmd) Validate(providerType string) error {
 	requiredAttributes := make([]declarativeconfig.RequiredAttribute, 0, len(a.requiredAttributes))
 	keys := maps.Keys(a.requiredAttributes)
-	slices.Sort(keys)
-	for _, key := range keys {
+	for _, key := range slices.Sorted(keys) {
 		requiredAttributes = append(requiredAttributes, declarativeconfig.RequiredAttribute{
 			AttributeKey:   key,
 			AttributeValue: a.requiredAttributes[key],
@@ -291,8 +291,7 @@ func (a *authProviderCmd) Validate(providerType string) error {
 	case "oidc":
 		claimMappings := make([]declarativeconfig.ClaimMapping, 0, len(a.claimMapping))
 		paths := maps.Keys(a.claimMapping)
-		slices.Sort(paths)
-		for _, path := range paths {
+		for _, path := range slices.Sorted(paths) {
 			claimMappings = append(claimMappings, declarativeconfig.ClaimMapping{
 				Path: path,
 				Name: a.claimMapping[path],

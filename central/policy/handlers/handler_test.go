@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 
+	"maps"
+
 	notifierStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/customresource"
 	policyStoreMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
@@ -24,7 +26,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/tidwall/gjson"
 	gomock "go.uber.org/mock/gomock"
-	"golang.org/x/exp/maps"
 )
 
 var (

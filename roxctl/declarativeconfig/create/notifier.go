@@ -9,6 +9,8 @@ import (
 	"os"
 	"slices"
 
+	"maps"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -19,7 +21,6 @@ import (
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"go.yaml.in/yaml/v3"
-	"golang.org/x/exp/maps"
 )
 
 func notifierCommand(cliEnvironment environment.Environment) *cobra.Command {
@@ -180,13 +181,11 @@ func (n *notifierCmd) construct(cmd *cobra.Command) error {
 
 	if anyFlagChanged(n.genericFlagSet) {
 		keys := maps.Keys(n.gcHeaders)
-		slices.Sort(keys)
-		for _, k := range keys {
+		for _, k := range slices.Sorted(keys) {
 			n.gc.Headers = append(n.gc.Headers, declarativeconfig.KeyValuePair{Key: k, Value: n.gcHeaders[k]})
 		}
 		keys = maps.Keys(n.gcExtraFields)
-		slices.Sort(keys)
-		for _, k := range keys {
+		for _, k := range slices.Sorted(keys) {
 			n.gc.ExtraFields = append(n.gc.ExtraFields, declarativeconfig.KeyValuePair{Key: k, Value: n.gcExtraFields[k]})
 		}
 
@@ -200,8 +199,7 @@ func (n *notifierCmd) construct(cmd *cobra.Command) error {
 
 	if anyFlagChanged(n.splunkFlagSet) {
 		keys := maps.Keys(n.scSourceTypes)
-		slices.Sort(keys)
-		for _, k := range keys {
+		for _, k := range slices.Sorted(keys) {
 			n.sc.SourceTypes = append(n.sc.SourceTypes, declarativeconfig.SourceTypePair{Key: k, Value: n.scSourceTypes[k]})
 		}
 		n.notifier.SplunkConfig = n.sc
