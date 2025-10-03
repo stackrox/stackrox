@@ -199,6 +199,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 			}
 		}
 		if enrichResult.ImageUpdated {
+			imgV2.Digest = utils.GetSHAV2(imgV2)
 			imgV2.Id, err = utils.GetImageV2ID(imgV2)
 			if err != nil {
 				return nil, err
@@ -263,6 +264,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		}
 		for _, idx := range updatedIndices {
 			img := imagesV2[idx]
+			img.Digest = utils.GetSHAV2(img)
 			img.Id, err = utils.GetImageV2ID(img)
 			if err != nil {
 				return nil, err
