@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { updateCollection, createCollection } from 'services/CollectionsService';
+import { createCollection, updateCollection } from 'services/CollectionsService';
 import type { Collection } from 'services/CollectionsService';
 import type { CollectionPageAction } from '../collections.utils';
 import { generateRequest } from '../converter';
