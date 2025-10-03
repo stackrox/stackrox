@@ -47,6 +47,7 @@ func (s *virtualMachineSuite) TearDownSubTest() {
 }
 
 func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
+	runningVSockCID := uint32(0xca7d09)
 	cases := map[string]struct {
 		action      central.ResourceAction
 		obj         any
@@ -63,7 +64,13 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						Running:   false,
-					})).Times(1)
+					})).Times(1).Return(
+					&virtualmachine.Info{
+						ID:        vmUID,
+						Name:      vmName,
+						Namespace: vmNamespace,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmUID,
@@ -74,6 +81,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -88,7 +96,13 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						Running:   false,
-					})).Times(1)
+					})).Times(1).Return(
+					&virtualmachine.Info{
+						ID:        vmUID,
+						Name:      vmName,
+						Namespace: vmNamespace,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmUID,
@@ -99,6 +113,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -113,7 +128,13 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						Running:   false,
-					})).Times(1)
+					})).Times(1).Return(
+					&virtualmachine.Info{
+						ID:        vmUID,
+						Name:      vmName,
+						Namespace: vmNamespace,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmUID,
@@ -124,6 +145,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -143,6 +165,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Name:      vmName,
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -158,6 +181,76 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			obj:         toUnstructured(&v1.VirtualMachineInstance{}),
 			expectFn:    func() {},
 			expectedMsg: nil,
+		},
+		"create already running event": {
+			action: central.ResourceAction_CREATE_RESOURCE,
+			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
+			expectFn: func() {
+				s.store.EXPECT().AddOrUpdate(
+					gomock.Eq(&virtualmachine.Info{
+						ID:        vmUID,
+						Name:      vmName,
+						Namespace: vmNamespace,
+						Running:   false,
+					})).Times(1).Return(
+					&virtualmachine.Info{
+						ID:        vmUID,
+						Name:      vmName,
+						Namespace: vmNamespace,
+						Running:   true,
+						VSOCKCID:  &runningVSockCID,
+					})
+			},
+			expectedMsg: component.NewEvent(&central.SensorEvent{
+				Id:     vmUID,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachine{
+					VirtualMachine: &virtualMachineV1.VirtualMachine{
+						Id:          vmUID,
+						Name:        vmName,
+						Namespace:   vmNamespace,
+						ClusterId:   clusterID,
+						State:       virtualMachineV1.VirtualMachine_RUNNING,
+						VsockCid:    int32(runningVSockCID),
+						VsockCidSet: true,
+					},
+				},
+			}),
+		},
+		"update already running event": {
+			action: central.ResourceAction_UPDATE_RESOURCE,
+			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
+			expectFn: func() {
+				s.store.EXPECT().AddOrUpdate(
+					gomock.Eq(&virtualmachine.Info{
+						ID:        vmUID,
+						Name:      vmName,
+						Namespace: vmNamespace,
+						Running:   false,
+					})).Times(1).Return(
+					&virtualmachine.Info{
+						ID:        vmUID,
+						Name:      vmName,
+						Namespace: vmNamespace,
+						Running:   true,
+						VSOCKCID:  &runningVSockCID,
+					})
+			},
+			expectedMsg: component.NewEvent(&central.SensorEvent{
+				Id:     vmUID,
+				Action: central.ResourceAction_UPDATE_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachine{
+					VirtualMachine: &virtualMachineV1.VirtualMachine{
+						Id:          vmUID,
+						Name:        vmName,
+						Namespace:   vmNamespace,
+						ClusterId:   clusterID,
+						State:       virtualMachineV1.VirtualMachine_RUNNING,
+						VsockCid:    int32(runningVSockCID),
+						VsockCidSet: true,
+					},
+				},
+			}),
 		},
 	}
 	for tName, tCase := range cases {

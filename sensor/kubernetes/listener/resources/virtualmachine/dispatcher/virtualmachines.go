@@ -2,7 +2,6 @@ package dispatcher
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
-	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/utils"
@@ -49,18 +48,7 @@ func processVirtualMachine(vm *virtualmachine.Info, action central.ResourceActio
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		store.Remove(vm.ID)
 	} else {
-		store.AddOrUpdate(vm)
+		vm = store.AddOrUpdate(vm)
 	}
-	return component.NewEvent(&central.SensorEvent{
-		Id:     string(vm.ID),
-		Action: action,
-		Resource: &central.SensorEvent_VirtualMachine{
-			VirtualMachine: &virtualMachineV1.VirtualMachine{
-				Id:        string(vm.ID),
-				Namespace: vm.Namespace,
-				Name:      vm.Name,
-				ClusterId: clusterID,
-			},
-		},
-	})
+	return component.NewEvent(createEvent(action, clusterID, vm))
 }

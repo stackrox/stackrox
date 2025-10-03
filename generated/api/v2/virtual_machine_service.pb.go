@@ -235,6 +235,7 @@ func (x *GetVirtualMachineRequest) GetStripDescription() bool {
 type ListVirtualMachinesResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	VirtualMachines []*VirtualMachine      `protobuf:"bytes,1,rep,name=virtual_machines,json=virtualMachines,proto3" json:"virtual_machines,omitempty"`
+	TotalCount      int32                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -276,9 +277,16 @@ func (x *ListVirtualMachinesResponse) GetVirtualMachines() []*VirtualMachine {
 	return nil
 }
 
-// TODO: Add filters/search capabilities to list endpoint
+func (x *ListVirtualMachinesResponse) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
+}
+
 type ListVirtualMachinesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -313,11 +321,18 @@ func (*ListVirtualMachinesRequest) Descriptor() ([]byte, []int) {
 	return file_api_v2_virtual_machine_service_proto_rawDescGZIP(), []int{3}
 }
 
+func (x *ListVirtualMachinesRequest) GetQuery() *RawQuery {
+	if x != nil {
+		return x.Query
+	}
+	return nil
+}
+
 var File_api_v2_virtual_machine_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\n" +
-	"$api/v2/virtual_machine_service.proto\x12\x02v2\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbf\x03\n" +
+	"$api/v2/virtual_machine_service.proto\x12\x02v2\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbf\x03\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
@@ -339,14 +354,17 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\aRUNNING\x10\x02\"W\n" +
 	"\x18GetVirtualMachineRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
-	"\x11strip_description\x18\x02 \x01(\bR\x10stripDescription\"\\\n" +
+	"\x11strip_description\x18\x02 \x01(\bR\x10stripDescription\"}\n" +
 	"\x1bListVirtualMachinesResponse\x12=\n" +
-	"\x10virtual_machines\x18\x01 \x03(\v2\x12.v2.VirtualMachineR\x0fvirtualMachines\"\x1c\n" +
-	"\x1aListVirtualMachinesRequest2\xf5\x01\n" +
+	"\x10virtual_machines\x18\x01 \x03(\v2\x12.v2.VirtualMachineR\x0fvirtualMachines\x12\x1f\n" +
+	"\vtotal_count\x18\x02 \x01(\x05R\n" +
+	"totalCount\"@\n" +
+	"\x1aListVirtualMachinesRequest\x12\"\n" +
+	"\x05query\x18\x01 \x01(\v2\f.v2.RawQueryR\x05query2\xf5\x01\n" +
 	"\x15VirtualMachineService\x12g\n" +
 	"\x11GetVirtualMachine\x12\x1c.v2.GetVirtualMachineRequest\x1a\x12.v2.VirtualMachine\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v2/virtualmachines/{id}\x12s\n" +
 	"\x13ListVirtualMachines\x12\x1e.v2.ListVirtualMachinesRequest\x1a\x1f.v2.ListVirtualMachinesResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v2/virtualmachinesB'\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x00b\x06proto3"
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x01b\x06proto3"
 
 var (
 	file_api_v2_virtual_machine_service_proto_rawDescOnce sync.Once
@@ -370,21 +388,23 @@ var file_api_v2_virtual_machine_service_proto_goTypes = []any{
 	(*ListVirtualMachinesRequest)(nil),  // 4: v2.ListVirtualMachinesRequest
 	nil,                                 // 5: v2.VirtualMachine.FactsEntry
 	(*timestamppb.Timestamp)(nil),       // 6: google.protobuf.Timestamp
+	(*RawQuery)(nil),                    // 7: v2.RawQuery
 }
 var file_api_v2_virtual_machine_service_proto_depIdxs = []int32{
 	5, // 0: v2.VirtualMachine.facts:type_name -> v2.VirtualMachine.FactsEntry
 	6, // 1: v2.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
 	0, // 2: v2.VirtualMachine.state:type_name -> v2.VirtualMachine.State
 	1, // 3: v2.ListVirtualMachinesResponse.virtual_machines:type_name -> v2.VirtualMachine
-	2, // 4: v2.VirtualMachineService.GetVirtualMachine:input_type -> v2.GetVirtualMachineRequest
-	4, // 5: v2.VirtualMachineService.ListVirtualMachines:input_type -> v2.ListVirtualMachinesRequest
-	1, // 6: v2.VirtualMachineService.GetVirtualMachine:output_type -> v2.VirtualMachine
-	3, // 7: v2.VirtualMachineService.ListVirtualMachines:output_type -> v2.ListVirtualMachinesResponse
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	7, // 4: v2.ListVirtualMachinesRequest.query:type_name -> v2.RawQuery
+	2, // 5: v2.VirtualMachineService.GetVirtualMachine:input_type -> v2.GetVirtualMachineRequest
+	4, // 6: v2.VirtualMachineService.ListVirtualMachines:input_type -> v2.ListVirtualMachinesRequest
+	1, // 7: v2.VirtualMachineService.GetVirtualMachine:output_type -> v2.VirtualMachine
+	3, // 8: v2.VirtualMachineService.ListVirtualMachines:output_type -> v2.ListVirtualMachinesResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_virtual_machine_service_proto_init() }
@@ -392,6 +412,7 @@ func file_api_v2_virtual_machine_service_proto_init() {
 	if File_api_v2_virtual_machine_service_proto != nil {
 		return
 	}
+	file_api_v2_search_query_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
