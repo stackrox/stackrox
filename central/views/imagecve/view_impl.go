@@ -4,7 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -17,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -67,35 +65,29 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*common.ResourceCountByImageCVESeverity
-	results, err = pgSearch.RunSelectRequestForSchema[common.ResourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
+	result, err := pgSearch.RunSelectOneForSchema[common.ResourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return &common.ResourceCountByImageCVESeverity{}, nil
-	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
-		return &common.ResourceCountByImageCVESeverity{}, err
 	}
 
 	return &common.ResourceCountByImageCVESeverity{
-		CriticalSeverityCount:        results[0].CriticalSeverityCount,
-		FixableCriticalSeverityCount: results[0].FixableCriticalSeverityCount,
+		CriticalSeverityCount:        result.CriticalSeverityCount,
+		FixableCriticalSeverityCount: result.FixableCriticalSeverityCount,
 
-		ImportantSeverityCount:        results[0].ImportantSeverityCount,
-		FixableImportantSeverityCount: results[0].FixableImportantSeverityCount,
+		ImportantSeverityCount:        result.ImportantSeverityCount,
+		FixableImportantSeverityCount: result.FixableImportantSeverityCount,
 
-		ModerateSeverityCount:        results[0].ModerateSeverityCount,
-		FixableModerateSeverityCount: results[0].FixableModerateSeverityCount,
+		ModerateSeverityCount:        result.ModerateSeverityCount,
+		FixableModerateSeverityCount: result.FixableModerateSeverityCount,
 
-		LowSeverityCount:        results[0].LowSeverityCount,
-		FixableLowSeverityCount: results[0].FixableLowSeverityCount,
+		LowSeverityCount:        result.LowSeverityCount,
+		FixableLowSeverityCount: result.FixableLowSeverityCount,
 
-		UnknownSeverityCount:        results[0].UnknownSeverityCount,
-		FixableUnknownSeverityCount: results[0].FixableUnknownSeverityCount,
+		UnknownSeverityCount:        result.UnknownSeverityCount,
+		FixableUnknownSeverityCount: result.FixableUnknownSeverityCount,
 	}, nil
 }
 
@@ -130,19 +122,17 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*imageCVECoreResponse
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, cveIDsToFilter, options))
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]CveCore, 0, len(results))
-	for _, r := range results {
+	ret := make([]CveCore, 0)
+	err = pgSearch.RunSelectRequestForSchemaFn[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, cveIDsToFilter, options), func(r *imageCVECoreResponse) error {
 		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
 			return r.CVEIDs[i] < r.CVEIDs[j]
 		})
 		ret = append(ret, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return ret, nil
 }

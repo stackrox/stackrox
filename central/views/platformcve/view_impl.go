@@ -51,15 +51,13 @@ func (v *platformCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCo
 		return nil, err
 	}
 
-	var results []*platformCVECoreResponse
-	results, err = pgSearch.RunSelectRequestForSchema[platformCVECoreResponse](ctx, v.db, v.schema, withSelectQuery(q))
+	ret := make([]CveCore, 0)
+	err = pgSearch.RunSelectRequestForSchemaFn[platformCVECoreResponse](ctx, v.db, v.schema, withSelectQuery(q), func(r *platformCVECoreResponse) error {
+		ret = append(ret, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	ret := make([]CveCore, 0, len(results))
-	for _, r := range results {
-		ret = append(ret, r)
 	}
 	return ret, nil
 }
@@ -75,15 +73,13 @@ func (v *platformCVECoreViewImpl) GetClusterIDs(ctx context.Context, q *v1.Query
 		search.NewQuerySelect(search.ClusterID).Distinct().Proto(),
 	}
 
-	var results []*clusterResponse
-	results, err = pgSearch.RunSelectRequestForSchema[clusterResponse](ctx, v.db, v.schema, q)
-	if err != nil || len(results) == 0 {
-		return nil, err
-	}
-
-	ret := make([]string, 0, len(results))
-	for _, r := range results {
+	ret := make([]string, 0)
+	err = pgSearch.RunSelectRequestForSchemaFn[clusterResponse](ctx, v.db, v.schema, q, func(r *clusterResponse) error {
 		ret = append(ret, r.ClusterID)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return ret, nil
 }

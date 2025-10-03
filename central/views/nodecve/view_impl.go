@@ -52,14 +52,8 @@ func (n *nodeCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, 
 		return nil, err
 	}
 
-	var results []*nodeCVECoreResponse
-	results, err = pgSearch.RunSelectRequestForSchema[nodeCVECoreResponse](ctx, n.db, n.schema, withSelectQuery(q))
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]CveCore, 0, len(results))
-	for _, r := range results {
+	ret := make([]CveCore, 0)
+	err = pgSearch.RunSelectRequestForSchemaFn[nodeCVECoreResponse](ctx, n.db, n.schema, withSelectQuery(q), func(r *nodeCVECoreResponse) error {
 		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
 			return r.CVEIDs[i] < r.CVEIDs[j]
@@ -68,6 +62,10 @@ func (n *nodeCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, 
 			return r.NodeIDs[i] < r.NodeIDs[j]
 		})
 		ret = append(ret, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return ret, nil
 }
@@ -111,15 +109,13 @@ func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]st
 		search.NewQuerySelect(search.NodeID).Distinct().Proto(),
 	}
 
-	var results []*nodeResponse
-	results, err = pgSearch.RunSelectRequestForSchema[nodeResponse](ctx, n.db, n.schema, q)
-	if err != nil || len(results) == 0 {
-		return nil, err
-	}
-
-	ret := make([]string, 0, len(results))
-	for _, r := range results {
+	ret := make([]string, 0)
+	err = pgSearch.RunSelectRequestForSchemaFn[nodeResponse](ctx, n.db, n.schema, q, func(r *nodeResponse) error {
 		ret = append(ret, r.GetNodeID())
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return ret, nil
 }
