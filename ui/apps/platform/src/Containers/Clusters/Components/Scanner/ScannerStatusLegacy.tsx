@@ -3,7 +3,7 @@ import { Tooltip } from '@patternfly/react-core';
 
 import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
-import { ClusterHealthStatus } from '../../clusterTypes';
+import type { ClusterHealthStatus } from '../../clusterTypes';
 import {
     delayedScannerStatusStyle,
     healthStatusStylesLegacy,

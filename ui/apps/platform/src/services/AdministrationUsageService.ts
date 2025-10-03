@@ -33,7 +33,10 @@ export function fetchMaxCurrentUsage({ from, to }: TimeRange) {
         });
 }
 
-export function downloadAdministrationUsageCsv({ from, to }: TimeRange): Promise<void> {
+export function downloadAdministrationUsageCsv({
+    from,
+    to,
+}: TimeRange): Promise<{ fileSizeBytes: number }> {
     const queryString = qs.stringify(
         {
             from,

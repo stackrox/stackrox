@@ -1,13 +1,12 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Bullseye, Button, Divider, PageSection, Spinner } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useAnalytics, { CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED } from 'hooks/useAnalytics';
 import useRestQuery from 'hooks/useRestQuery';
-import {
-    ClusterRegistrationSecret,
-    fetchClusterRegistrationSecrets,
-} from 'services/ClustersService';
+import { fetchClusterRegistrationSecrets } from 'services/ClustersService';
+import type { ClusterRegistrationSecret } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersClusterRegistrationSecretsPath } from 'routePaths';
 

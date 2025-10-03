@@ -5,9 +5,9 @@ import PageNotFound from 'Components/PageNotFound';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import configMgmtPaginationContext from 'Containers/configMgmtPaginationContext';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { getConfigMgmtDefaultSort } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import queryService from 'utils/queryService';
 
+import { getConfigMgmtDefaultSort } from './ConfigMgmt.utils';
 import ConfigManagementEntityCluster from './Entity/ConfigManagementEntityCluster';
 import ConfigManagementEntityControl from './Entity/ConfigManagementEntityControl';
 import ConfigManagementEntityDeployment from './Entity/Deployment/ConfigManagementEntityDeployment';

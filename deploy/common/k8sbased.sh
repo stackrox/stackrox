@@ -651,6 +651,11 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
+    if [[ "${SECURED_CLUSTER_AUTO_LOCK_PROCESS_BASELINES:-}" == "true" ]]; then
+        extra_config+=("--auto-lock-process-baselines=true")
+        extra_helm_config+=(--set "autoLockProcessBaselines.enabled=true")
+    fi
+
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")

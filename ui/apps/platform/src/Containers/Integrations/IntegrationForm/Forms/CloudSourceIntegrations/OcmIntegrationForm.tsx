@@ -1,19 +1,21 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import * as yup from 'yup';
 import { Checkbox, Flex, FlexItem, Form, PageSection, TextInput } from '@patternfly/react-core';
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import FormMessage from 'Components/PatternFly/FormMessage';
-import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
-import { CloudSourceIntegration } from 'services/CloudSourceService';
+import type { CloudSourceIntegration } from 'services/CloudSourceService';
 import merge from 'lodash/merge';
+
+import usePageState from '../../../hooks/usePageState';
 import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
+import FormLabelGroup from '../../FormLabelGroup';
 import IntegrationFormActions from '../../IntegrationFormActions';
 import useIntegrationForm from '../../useIntegrationForm';
-import { IntegrationFormProps } from '../../integrationFormTypes';
+import type { IntegrationFormProps } from '../../integrationFormTypes';
 
 function testTokenValue(value: string | undefined, context: yup.TestContext): boolean {
     const requireSecretField = !!context?.from?.[2]?.value?.updateCredentials;

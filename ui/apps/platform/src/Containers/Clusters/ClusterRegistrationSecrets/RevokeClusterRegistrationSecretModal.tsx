@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Button,
@@ -12,10 +13,8 @@ import {
 
 import useAnalytics, { REVOKE_CLUSTER_REGISTRATION_SECRET } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
-import {
-    ClusterRegistrationSecret,
-    revokeClusterRegistrationSecrets,
-} from 'services/ClustersService';
+import { revokeClusterRegistrationSecrets } from 'services/ClustersService';
+import type { ClusterRegistrationSecret } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type RevokeClusterRegistrationSecretModalProps = {

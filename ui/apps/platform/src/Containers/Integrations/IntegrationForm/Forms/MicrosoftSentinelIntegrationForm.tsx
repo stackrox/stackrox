@@ -1,4 +1,5 @@
-import React, { useState, ReactElement } from 'react';
+import React, { useState } from 'react';
+import type { ChangeEvent, FormEvent, ReactElement } from 'react';
 import {
     Card,
     CardBody,
@@ -15,9 +16,8 @@ import {
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useMetadata from 'hooks/useMetadata';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import FormMessage from 'Components/PatternFly/FormMessage';
@@ -25,12 +25,15 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import { getVersionedDocs } from 'utils/versioning';
-import IntegrationHelpIcon from './Components/IntegrationHelpIcon';
+
+import usePageState from '../../hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
+
+import IntegrationHelpIcon from './Components/IntegrationHelpIcon';
 
 export type MicrosoftSentinel = {
     microsoftSentinel: {
@@ -163,7 +166,7 @@ function MicrosoftSentinelIntegrationForm({
 
     function onChange(
         value: string | boolean,
-        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
+        event: FormEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>
     ) {
         return setFieldValue(event.currentTarget.id, value);
     }
@@ -176,7 +179,7 @@ function MicrosoftSentinelIntegrationForm({
 
     function onUpdateCredentialsChange(
         value: string | boolean,
-        event: React.FormEvent<HTMLInputElement>
+        event: FormEvent<HTMLInputElement>
     ) {
         setFieldValue('notifier.microsoftSentinel.secret', '');
         setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.privateKey', '');

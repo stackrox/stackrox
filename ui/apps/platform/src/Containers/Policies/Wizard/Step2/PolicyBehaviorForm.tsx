@@ -17,7 +17,11 @@ import omit from 'lodash/omit';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useMetadata from 'hooks/useMetadata';
 import { ClientPolicy } from 'types/policy.proto';
+import type { PolicyEventSource } from 'types/policy.proto';
+import { getVersionedDocs } from 'utils/versioning';
 
 import {
     getLifeCyclesUpdates,
@@ -33,13 +37,13 @@ type PolicyBehaviorFormProps = {
     hasActiveViolations: boolean;
 };
 
-function getEventSourceHelperText(eventSource) {
+function getEventSourceHelperText(eventSource: PolicyEventSource) {
     if (eventSource === 'DEPLOYMENT_EVENT') {
-        return 'Event sources that include process and network activity, pod exec and pod port forwarding.';
+        return 'Monitor deployments for process activity, baseline deviation, and user issued container commands.';
     }
 
     if (eventSource === 'AUDIT_LOG_EVENT') {
-        return 'Event sources that match Kubernetes audit log records.';
+        return 'Inspect the Kubernetes audit log for access to sensitive Kubernetes resources.';
     }
 
     return '';
@@ -49,6 +53,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const { errors, setFieldTouched, setFieldValue, setValues, touched, values } =
         useFormikContext<ClientPolicy>();
     const [lifeCycleChanges, setLifeCycleChanges] = useState<ValidPolicyLifeCycle | null>(null);
+    const { version } = useMetadata();
 
     function onChangeLifecycleStages(lifecycleStages: ValidPolicyLifeCycle) {
         const hasNonEmptyPolicyGroup = values.policySections.some(
@@ -154,30 +159,59 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             >
                 <Alert
                     variant="info"
+                    isExpandable
                     isInline
-                    title="Lifecycle stages"
+                    title="How policies work in each lifecycle stage"
                     component="p"
                     className="pf-v5-u-mb-md"
                 >
                     <Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsSm' }}
+                        className="pf-v5-u-pt-sm"
                     >
                         <p>
-                            Build-time policies apply to image fields such as CVEs and Dockerfile
-                            instructions.
+                            <strong>Build stage</strong> policies can inspect only images built in
+                            the build pipeline, using criteria related to the image registry,
+                            content, vulnerability data and scanning process. When enforced, policy
+                            violations may be used to fail the build.
                         </p>
                         <p>
-                            Deploy-time policies can include all build-time policy criteria but they
-                            can also include data from your cluster configurations, such as running
-                            in privileged mode or mounting the Docker socket.
+                            <strong>Deploy stage</strong> policies can inspect workload
+                            configurations and/or their images. They are evaluated while creating or
+                            updating a workload resource and re-evaluated periodically or on demand.
+                            When enforced, policy violations result in rejection of workload
+                            admission or update, or if admitted, workload replicas being scaled down
+                            to zero.
                         </p>
                         <p>
-                            Runtime policies can include all build-time and deploy-time policy
-                            criteria but they <strong>must</strong> include at least one policy
-                            criterion from process, network flow, audit log events, or Kubernetes
-                            events criteria categories.
+                            <strong>Build+Deploy stage</strong> policies are a convenient option to
+                            inspect images in both the build pipeline and during workload admission
+                            and apply enforcement to either or both stages in a single policy.
                         </p>
+                        <p>
+                            <strong>Runtime</strong> policies inspect either workload activity or
+                            Kubernetes resource operations, depending on the event source selected.
+                            When enforced, runtime policies that inspect workload activity terminate
+                            the offending pod. Enforcement is not available for the policies
+                            inspecting sensitive operations via the Kubernetes audit log.
+                        </p>
+                        <div className="pf-v5-u-pt-md">
+                            Learn more about policy{' '}
+                            <ExternalLink>
+                                <a
+                                    href={getVersionedDocs(
+                                        version,
+                                        'operating/managing-security-policies#con-policy-lifecycle_about-security-policies'
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    lifecycle stages
+                                </a>
+                            </ExternalLink>
+                            .
+                        </div>
                     </Flex>
                 </Alert>
             </Flex>
@@ -190,7 +224,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         isRequired
                         touched={touched}
                         helperText={
-                            'Choose lifecycle stage to which your policy is applicable. You can select more than one stage.'
+                            'Choose the lifecycle stage to which your policy is applicable.'
                         }
                     >
                         <Flex direction={{ default: 'row' }} className="pf-v5-u-pb-sm">

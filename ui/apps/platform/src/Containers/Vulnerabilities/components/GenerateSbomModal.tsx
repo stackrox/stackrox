@@ -13,7 +13,6 @@ import {
 } from '@patternfly/react-core';
 import Raven from 'raven-js';
 
-import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { IMAGE_SBOM_GENERATED } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
@@ -66,7 +65,6 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
                     alignItems={{ default: 'alignItemsCenter' }}
                 >
                     <Title headingLevel="h1">Generate Software Bill of Materials (SBOM)</Title>
-                    <TechPreviewLabel />
                 </Flex>
             }
             actions={[

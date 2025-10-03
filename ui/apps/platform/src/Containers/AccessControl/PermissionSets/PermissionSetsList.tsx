@@ -1,12 +1,13 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Button, Modal, PageSection, pluralize, Title } from '@patternfly/react-core';
 import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { PermissionSet, Role } from 'services/RolesService';
+import usePermissions from 'hooks/usePermissions';
+import type { PermissionSet, Role } from 'services/RolesService';
 import { getOriginLabel, isUserResource } from 'utils/traits.utils';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
-import usePermissions from '../../../hooks/usePermissions';
 
 const entityType = 'PERMISSION_SET';
 

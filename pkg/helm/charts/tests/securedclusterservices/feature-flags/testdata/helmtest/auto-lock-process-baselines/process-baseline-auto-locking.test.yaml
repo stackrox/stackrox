@@ -1,0 +1,16 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+  - name: "Process baseline auto-locking should be enabled"
+    values:
+      autoLockProcessBaselines:
+        enabled: true
+    expect: |
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.autoLockProcessBaselinesConfig.enabled | assertThat(. == true)
+  - name: "Process baseline auto-locking should be disabled"
+    values:
+      autoLockProcessBaelines:
+        enabled: false
+    expect: |
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.autoLockProcessBaselinesConfig.enabled | assertThat(. == false)

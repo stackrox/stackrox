@@ -1,4 +1,5 @@
-import React, { useState, ReactElement } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { Button, Flex, FlexItem, Text, Title } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';

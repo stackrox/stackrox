@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     PageSection,
     PageSectionVariants,
@@ -30,9 +31,8 @@ import {
     getIsMachineAccessConfig,
     getIsSignatureIntegration,
     getIsScannerV4,
-    IntegrationSource,
-    IntegrationType,
 } from '../utils/integrationUtils';
+import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 import {
     DeleteAPITokensConfirmationText,
