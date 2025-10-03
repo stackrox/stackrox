@@ -405,7 +405,13 @@ func (f *fakeClusterIDPeekSetter) GetNoWait() string {
 func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
 	// Create a CentralCommunication with a fake SensorComponent
 	ret := make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(&fakeClusterIDPeekSetter{}, false, clientReconcile, NewFakeSensorComponent(ret))
+	component := NewFakeSensorComponent(ret)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	c.T().Cleanup(cancel)
+
+	processor := NewComponentProcessor(ctx, []common.SensorComponent{component})
+	c.comm = NewCentralCommunication(&fakeClusterIDPeekSetter{}, false, clientReconcile, processor, component)
 	// Initialize the gRPC mocked service
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),

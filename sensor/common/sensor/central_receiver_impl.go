@@ -7,11 +7,10 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common"
 )
 
 type centralReceiverImpl struct {
-	receivers []common.SensorComponent
+	processor *ComponentProcessor
 	stopper   concurrency.Stopper
 	finished  *sync.WaitGroup
 }
@@ -32,13 +31,6 @@ func (s *centralReceiverImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 // Take in data processed by central, run post-processing, then send it to the output channel.
 func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateClient, onStops ...func()) {
 	ctx, cancel := context.WithCancel(stream.Context())
-
-	componentsQueues := make([]*ComponentQueue, 0, len(s.receivers))
-	for _, c := range s.receivers {
-		componentQueue := NewComponentQueue(c)
-		componentQueue.Start(ctx)
-		componentsQueues = append(componentsQueues, componentQueue)
-	}
 
 	defer func() {
 		cancel()
@@ -70,9 +62,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 				s.stopper.Flow().StopWithError(err)
 				return
 			}
-			for _, q := range componentsQueues {
-				q.Push(msg)
-			}
+			s.processor.ProcessMessage(msg)
 		}
 	}
 }
