@@ -128,7 +128,7 @@ dependencies {
 // Apply some base attributes to all the test tasks.
 tasks.withType(Test) {
     testLogging {
-        showStandardStreams true
+        showStandardStreams false
         exceptionFormat "full"
         events "passed", "skipped", "failed"
     }
