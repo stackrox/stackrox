@@ -370,3 +370,4 @@ func (ta *TypeAnalyzer) parseTag(tag, key string) string {
 	}
 	return ""
 }
+

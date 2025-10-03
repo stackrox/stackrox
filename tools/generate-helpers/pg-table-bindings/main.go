@@ -336,12 +336,12 @@ type OptimizedSchemaData struct {
 }
 
 type OptimizedSchemaField struct {
-	Name         string
-	ColumnName   string
-	Type         string
-	SQLType      string
-	DataType     string
-	IsPrimaryKey bool
+	Name            string
+	ColumnName      string
+	Type            string
+	SQLType         string
+	DataType        string
+	IsPrimaryKey    bool
 	SearchFieldName string // The field name for search if this field is searchable
 }
 
@@ -469,8 +469,8 @@ func extractFieldsFromSchema(schema *walker.Schema, fieldPathToSearchName map[st
 
 				// Add variations with field names
 				possiblePaths = append(possiblePaths,
-					hierarchicalPath + "." + strings.ToLower(field.Name),
-					hierarchicalPath + "." + strings.ToLower(field.ColumnName),
+					hierarchicalPath+"."+strings.ToLower(field.Name),
+					hierarchicalPath+"."+strings.ToLower(field.ColumnName),
 				)
 
 				// Special handling for common field patterns
@@ -1020,4 +1020,3 @@ func extractSchemaFieldsFromWalker(schema *walker.Schema, searchFields []Optimiz
 	}
 	return fields
 }
-

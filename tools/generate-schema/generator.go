@@ -1215,3 +1215,4 @@ func (sg *SchemaGenerator) getDataType(kind reflect.Kind, typeName string) strin
 		return "postgres.Map"
 	}
 }
+
