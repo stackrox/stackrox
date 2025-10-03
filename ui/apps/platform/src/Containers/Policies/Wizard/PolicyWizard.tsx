@@ -66,7 +66,14 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                 pageAction === 'edit' ? savePolicy(serverPolicy) : createPolicy(serverPolicy);
             request
                 .then(() => {
-                    navigate(-1);
+                    if (pageAction === 'edit') {
+                        // Either navigate back to the policies list or the policy detail page
+                        navigate(-1);
+                    } else {
+                        // Unconditionally navigate to the policies list, note that for "clone" it would
+                        // be more consistent to navigate to the policy detail page for the new policy
+                        navigate(policiesBasePath);
+                    }
                 })
                 .catch((error) => {
                     setPolicyErrorMessage(getAxiosErrorMessage(error));
