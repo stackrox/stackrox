@@ -42,6 +42,6 @@ func init() {
 		storeCacheOperationHistogramVec,
 		msgToSensorNotSentCounter,
 		bulkProcessBaselineCallCounter,
-		bulkProcessBaselineCounter,
+		elementsImpactedCounter,
 	)
 }
