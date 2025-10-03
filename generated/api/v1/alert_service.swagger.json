@@ -752,6 +752,19 @@
         }
       }
     },
+    "FileActivityOperation": {
+      "type": "string",
+      "enum": [
+        "CREAT",
+        "UNLINK",
+        "RENAME",
+        "PERMISSION_CHANGE",
+        "OWNERSHIP_CHANGE",
+        "WRITE",
+        "OPEN"
+      ],
+      "default": "CREAT"
+    },
     "GetAlertTimeseriesResponseClusterAlerts": {
       "type": "object",
       "properties": {
@@ -1213,8 +1226,8 @@
         "process": {
           "$ref": "#/definitions/storageProcessIndicator"
         },
-        "type": {
-          "$ref": "#/definitions/storageFileActivityType"
+        "operation": {
+          "$ref": "#/definitions/FileActivityOperation"
         },
         "file": {
           "$ref": "#/definitions/storageFileActivityFile"
@@ -1255,19 +1268,6 @@
           "type": "string"
         }
       }
-    },
-    "storageFileActivityType": {
-      "type": "string",
-      "enum": [
-        "CREATION",
-        "UNLINK",
-        "RENAME",
-        "PERMISSION_CHANGE",
-        "OWNERSHIP_CHANGE",
-        "WRITE",
-        "OPEN"
-      ],
-      "default": "CREATION"
     },
     "storageImageName": {
       "type": "object",

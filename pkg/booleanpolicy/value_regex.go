@@ -36,6 +36,8 @@ var (
 	kubernetesNameRegex                      = createRegex(`(?i:[a-z0-9])(?i:[-:a-z0-9]*[a-z0-9])?`)
 	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
 	signatureIntegrationIDValueRegex         = createRegex(regexp.QuoteMeta(signatures.SignatureIntegrationIDPrefix) + "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+	fileOperationValueRegex                  = createRegex(`(?i:(OPEN|CREATE|DELETE|RENAME|WRITE|PERMISSION_CHANGE|OWNERSHIP_CHANGE)`)
+	filePathValueRegex                       = createRegex(`^\/(?:[a-zA-Z0-9._-]+\/)*[a-zA-Z0-9._-]*$`)
 )
 
 func createRegex(s string) *regexp.Regexp {

@@ -22,22 +22,22 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type FileActivity_Type int32
+type FileActivity_Operation int32
 
 const (
-	FileActivity_CREATION          FileActivity_Type = 0
-	FileActivity_UNLINK            FileActivity_Type = 1
-	FileActivity_RENAME            FileActivity_Type = 2
-	FileActivity_PERMISSION_CHANGE FileActivity_Type = 3
-	FileActivity_OWNERSHIP_CHANGE  FileActivity_Type = 4
-	FileActivity_WRITE             FileActivity_Type = 5
-	FileActivity_OPEN              FileActivity_Type = 6
+	FileActivity_CREAT             FileActivity_Operation = 0
+	FileActivity_UNLINK            FileActivity_Operation = 1
+	FileActivity_RENAME            FileActivity_Operation = 2
+	FileActivity_PERMISSION_CHANGE FileActivity_Operation = 3
+	FileActivity_OWNERSHIP_CHANGE  FileActivity_Operation = 4
+	FileActivity_WRITE             FileActivity_Operation = 5
+	FileActivity_OPEN              FileActivity_Operation = 6
 )
 
-// Enum value maps for FileActivity_Type.
+// Enum value maps for FileActivity_Operation.
 var (
-	FileActivity_Type_name = map[int32]string{
-		0: "CREATION",
+	FileActivity_Operation_name = map[int32]string{
+		0: "CREAT",
 		1: "UNLINK",
 		2: "RENAME",
 		3: "PERMISSION_CHANGE",
@@ -45,8 +45,8 @@ var (
 		5: "WRITE",
 		6: "OPEN",
 	}
-	FileActivity_Type_value = map[string]int32{
-		"CREATION":          0,
+	FileActivity_Operation_value = map[string]int32{
+		"CREAT":             0,
 		"UNLINK":            1,
 		"RENAME":            2,
 		"PERMISSION_CHANGE": 3,
@@ -56,30 +56,30 @@ var (
 	}
 )
 
-func (x FileActivity_Type) Enum() *FileActivity_Type {
-	p := new(FileActivity_Type)
+func (x FileActivity_Operation) Enum() *FileActivity_Operation {
+	p := new(FileActivity_Operation)
 	*p = x
 	return p
 }
 
-func (x FileActivity_Type) String() string {
+func (x FileActivity_Operation) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (FileActivity_Type) Descriptor() protoreflect.EnumDescriptor {
+func (FileActivity_Operation) Descriptor() protoreflect.EnumDescriptor {
 	return file_storage_file_system_proto_enumTypes[0].Descriptor()
 }
 
-func (FileActivity_Type) Type() protoreflect.EnumType {
+func (FileActivity_Operation) Type() protoreflect.EnumType {
 	return &file_storage_file_system_proto_enumTypes[0]
 }
 
-func (x FileActivity_Type) Number() protoreflect.EnumNumber {
+func (x FileActivity_Operation) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use FileActivity_Type.Descriptor instead.
-func (FileActivity_Type) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use FileActivity_Operation.Descriptor instead.
+func (FileActivity_Operation) EnumDescriptor() ([]byte, []int) {
 	return file_storage_file_system_proto_rawDescGZIP(), []int{0, 0}
 }
 
@@ -87,7 +87,7 @@ type FileActivity struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	Process            *ProcessIndicator      `protobuf:"bytes,2,opt,name=process,proto3" json:"process,omitempty"`
-	Type               FileActivity_Type      `protobuf:"varint,3,opt,name=type,proto3,enum=storage.FileActivity_Type" json:"type,omitempty"`
+	Operation          FileActivity_Operation `protobuf:"varint,3,opt,name=operation,proto3,enum=storage.FileActivity_Operation" json:"operation,omitempty" search:"File Operation"` // @gotags: search:"File Operation"
 	File               *FileActivity_File     `protobuf:"bytes,4,opt,name=file,proto3" json:"file,omitempty"`
 	Moved              *FileActivity_File     `protobuf:"bytes,5,opt,name=moved,proto3" json:"moved,omitempty"`
 	Uid                uint32                 `protobuf:"varint,6,opt,name=uid,proto3" json:"uid,omitempty"`
@@ -144,11 +144,11 @@ func (x *FileActivity) GetProcess() *ProcessIndicator {
 	return nil
 }
 
-func (x *FileActivity) GetType() FileActivity_Type {
+func (x *FileActivity) GetOperation() FileActivity_Operation {
 	if x != nil {
-		return x.Type
+		return x.Operation
 	}
-	return FileActivity_CREATION
+	return FileActivity_CREAT
 }
 
 func (x *FileActivity) GetFile() *FileActivity_File {
@@ -263,11 +263,11 @@ var File_storage_file_system_proto protoreflect.FileDescriptor
 
 const file_storage_file_system_proto_rawDesc = "" +
 	"\n" +
-	"\x19storage/file_system.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xd3\x04\n" +
+	"\x19storage/file_system.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xe4\x04\n" +
 	"\fFileActivity\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
-	"\aprocess\x18\x02 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12.\n" +
-	"\x04type\x18\x03 \x01(\x0e2\x1a.storage.FileActivity.TypeR\x04type\x12.\n" +
+	"\aprocess\x18\x02 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12=\n" +
+	"\toperation\x18\x03 \x01(\x0e2\x1f.storage.FileActivity.OperationR\toperation\x12.\n" +
 	"\x04file\x18\x04 \x01(\v2\x1a.storage.FileActivity.FileR\x04file\x120\n" +
 	"\x05moved\x18\x05 \x01(\v2\x1a.storage.FileActivity.FileR\x05moved\x12\x10\n" +
 	"\x03uid\x18\x06 \x01(\rR\x03uid\x12\x10\n" +
@@ -279,9 +279,9 @@ const file_storage_file_system_proto_rawDesc = "" +
 	"\x13unexpected_activity\x18\v \x01(\tR\x12unexpectedActivity\x1a7\n" +
 	"\x04File\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
-	"\thost_path\x18\x02 \x01(\tR\bhostPath\"n\n" +
-	"\x04Type\x12\f\n" +
-	"\bCREATION\x10\x00\x12\n" +
+	"\thost_path\x18\x02 \x01(\tR\bhostPath\"p\n" +
+	"\tOperation\x12\t\n" +
+	"\x05CREAT\x10\x00\x12\n" +
 	"\n" +
 	"\x06UNLINK\x10\x01\x12\n" +
 	"\n" +
@@ -307,7 +307,7 @@ func file_storage_file_system_proto_rawDescGZIP() []byte {
 var file_storage_file_system_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_file_system_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_file_system_proto_goTypes = []any{
-	(FileActivity_Type)(0),        // 0: storage.FileActivity.Type
+	(FileActivity_Operation)(0),   // 0: storage.FileActivity.Operation
 	(*FileActivity)(nil),          // 1: storage.FileActivity
 	(*FileActivity_File)(nil),     // 2: storage.FileActivity.File
 	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
@@ -316,7 +316,7 @@ var file_storage_file_system_proto_goTypes = []any{
 var file_storage_file_system_proto_depIdxs = []int32{
 	3, // 0: storage.FileActivity.timestamp:type_name -> google.protobuf.Timestamp
 	4, // 1: storage.FileActivity.process:type_name -> storage.ProcessIndicator
-	0, // 2: storage.FileActivity.type:type_name -> storage.FileActivity.Type
+	0, // 2: storage.FileActivity.operation:type_name -> storage.FileActivity.Operation
 	2, // 3: storage.FileActivity.file:type_name -> storage.FileActivity.File
 	2, // 4: storage.FileActivity.moved:type_name -> storage.FileActivity.File
 	5, // [5:5] is the sub-list for method output_type

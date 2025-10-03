@@ -669,9 +669,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"group: String!",
 		"mode: Int!",
 		"moved: FileActivity_File",
+		"operation: FileActivity_Operation!",
 		"process: ProcessIndicator",
 		"timestamp: Time",
-		"type: FileActivity_Type!",
 		"uid: Int!",
 		"unexpectedActivity: String!",
 		"username: String!",
@@ -680,7 +680,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"hostPath: String!",
 		"path: String!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.FileActivity_Type(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.FileActivity_Operation(0)))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
 		"token: String!",
@@ -8061,6 +8061,11 @@ func (resolver *fileActivityResolver) Moved(ctx context.Context) (*fileActivity_
 	return resolver.root.wrapFileActivity_File(value, true, nil)
 }
 
+func (resolver *fileActivityResolver) Operation(ctx context.Context) string {
+	value := resolver.data.GetOperation()
+	return value.String()
+}
+
 func (resolver *fileActivityResolver) Process(ctx context.Context) (*processIndicatorResolver, error) {
 	value := resolver.data.GetProcess()
 	return resolver.root.wrapProcessIndicator(value, true, nil)
@@ -8069,11 +8074,6 @@ func (resolver *fileActivityResolver) Process(ctx context.Context) (*processIndi
 func (resolver *fileActivityResolver) Timestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetTimestamp()
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
-}
-
-func (resolver *fileActivityResolver) Type(ctx context.Context) string {
-	value := resolver.data.GetType()
-	return value.String()
 }
 
 func (resolver *fileActivityResolver) Uid(ctx context.Context) int32 {
@@ -8143,20 +8143,20 @@ func (resolver *fileActivity_FileResolver) Path(ctx context.Context) string {
 	return value
 }
 
-func toFileActivity_Type(value *string) storage.FileActivity_Type {
+func toFileActivity_Operation(value *string) storage.FileActivity_Operation {
 	if value != nil {
-		return storage.FileActivity_Type(storage.FileActivity_Type_value[*value])
+		return storage.FileActivity_Operation(storage.FileActivity_Operation_value[*value])
 	}
-	return storage.FileActivity_Type(0)
+	return storage.FileActivity_Operation(0)
 }
 
-func toFileActivity_Types(values *[]string) []storage.FileActivity_Type {
+func toFileActivity_Operations(values *[]string) []storage.FileActivity_Operation {
 	if values == nil {
 		return nil
 	}
-	output := make([]storage.FileActivity_Type, len(*values))
+	output := make([]storage.FileActivity_Operation, len(*values))
 	for i, v := range *values {
-		output[i] = toFileActivity_Type(&v)
+		output[i] = toFileActivity_Operation(&v)
 	}
 	return output
 }

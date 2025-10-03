@@ -104,7 +104,7 @@ func (d *detectorImpl) detectForFileActivity(enhancedDeployment *booleanpolicy.E
 			violation, err := compiled.MatchAgainstFileActivityAndDeployment(&cacheReceptable, *enhancedDeployment, activity)
 			if err != nil {
 				return errors.Wrapf(err, "evaluating violations for policy %q; file activity %s/%s",
-					compiled.Policy().GetName(), activity.GetType(), activity.GetFile().GetPath())
+					compiled.Policy().GetName(), activity.GetOperation(), activity.GetFile().GetPath())
 			}
 
 			if alert := constructFileAlert(compiled.Policy(), activity, enhancedDeployment.Deployment, violation); alert != nil {
@@ -115,7 +115,7 @@ func (d *detectorImpl) detectForFileActivity(enhancedDeployment *booleanpolicy.E
 			violation, err := compiled.MatchAgainstFileActivity(&cacheReceptable, activity)
 			if err != nil {
 				return errors.Wrapf(err, "evaluating violations for policy %q; file activity %s/%s",
-					compiled.Policy().GetName(), activity.GetType(), activity.GetFile().GetPath())
+					compiled.Policy().GetName(), activity.GetOperation(), activity.GetFile().GetPath())
 			}
 
 			if alert := constructFileAlert(compiled.Policy(), activity, nil, violation); alert != nil {

@@ -211,7 +211,8 @@ var (
 	ProcessCreationTime       = newFieldLabel("Process Creation Time")
 	ProcessContainerStartTime = newFieldLabel("Process Container Start Time")
 
-	UnexpectedFilesystemAccess = newFieldLabel("Unexpected Filesystem Access")
+	FilePath      = newFieldLabel("File Path")
+	FileOperation = newFieldLabel("File Operation")
 
 	// ProcessListeningOnPort Search fields
 	Closed     = newFieldLabel("Closed")

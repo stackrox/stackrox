@@ -85,13 +85,13 @@ func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 			Path:     fs.GetOpen().GetActivity().GetPath(),
 			HostPath: fs.GetOpen().GetActivity().GetHostPath(),
 		}
-		activity.Type = storage.FileActivity_OPEN
+		activity.Operation = storage.FileActivity_OPEN
 	} else if fs.GetWrite() != nil {
 		activity.File = &storage.FileActivity_File{
 			Path:     fs.GetWrite().GetActivity().GetPath(),
 			HostPath: fs.GetWrite().GetActivity().GetHostPath(),
 		}
-		activity.Type = storage.FileActivity_WRITE
+		activity.Operation = storage.FileActivity_WRITE
 	} else {
 		log.Warn("Not implemented file activity type")
 		return

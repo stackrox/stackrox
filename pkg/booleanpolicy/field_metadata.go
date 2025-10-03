@@ -877,13 +877,23 @@ func initializeFieldMetadata() FieldMetadata {
 	)
 
 	f.registerFieldMetadata(fieldnames.UnexpectedFilesystemAccess,
-		querybuilders.ForFieldLabel(augmentedobjs.UnexpectedFilesystemAccessCustomTag),
+		querybuilders.ForFieldLabel(search.FilePath),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return filePathValueRegex
 		},
-		[]storage.EventSource{storage.EventSource_HOST_EVENT},
+		[]storage.EventSource{storage.EventSource_HOST_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
 		[]RuntimeFieldType{FileActivity}, negationForbidden,
+	)
+
+	f.registerFieldMetadata(fieldnames.FileOperation,
+		querybuilders.ForFieldLabel(search.FileOperation),
+		nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return fileOperationValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_HOST_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
+		[]RuntimeFieldType{FileActivity},
 	)
 
 	return f

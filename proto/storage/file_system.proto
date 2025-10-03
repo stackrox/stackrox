@@ -14,8 +14,8 @@ message FileActivity {
     string host_path = 2;
   }
 
-  enum Type {
-    CREATION = 0;
+  enum Operation {
+    CREAT = 0;
     UNLINK = 1;
     RENAME = 2;
     PERMISSION_CHANGE = 3;
@@ -27,7 +27,7 @@ message FileActivity {
 
   google.protobuf.Timestamp timestamp = 1;
   ProcessIndicator process = 2;
-  Type type = 3;
+  Operation operation = 3; // @gotags: search:"File Operation"
   File file = 4;
   File moved = 5;
   uint32 uid = 6;
