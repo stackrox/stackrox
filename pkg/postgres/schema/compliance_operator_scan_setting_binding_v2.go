@@ -8,9 +8,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -27,7 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetComplianceOperatorScanSettingBindingV2Schema()
+		schema = getComplianceOperatorScanSettingBindingV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -54,4 +54,77 @@ type ComplianceOperatorScanSettingBindingV2 struct {
 	ClusterID       string `gorm:"column:clusterid;type:uuid;index:complianceoperatorscansettingbindingv2_sac_filter,type:hash"`
 	ScanSettingName string `gorm:"column:scansettingname;type:varchar"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	complianceOperatorScanSettingBindingV2SearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceOperatorScanSettingBindingV2Schema = &walker.Schema{
+		Table:    "compliance_operator_scan_setting_binding_v2",
+		Type:     "*storage.ComplianceOperatorScanSettingBindingV2",
+		TypeName: "ComplianceOperatorScanSettingBindingV2",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ScanSettingName",
+				ColumnName: "ScanSettingName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getComplianceOperatorScanSettingBindingV2Schema() *walker.Schema {
+	// Set up search options if not already done
+	if complianceOperatorScanSettingBindingV2Schema.OptionsMap == nil {
+		complianceOperatorScanSettingBindingV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS, complianceOperatorScanSettingBindingV2SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceOperatorScanSettingBindingV2Schema.Fields {
+		complianceOperatorScanSettingBindingV2Schema.Fields[i].Schema = complianceOperatorScanSettingBindingV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceOperatorScanSettingBindingV2Schema)
+	return complianceOperatorScanSettingBindingV2Schema
 }

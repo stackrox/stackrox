@@ -9,9 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -28,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetImageComponentV2Schema()
+		schema = getImageComponentV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":   ImagesSchema,
 			"storage.ImageV2": ImagesV2Schema,
@@ -74,4 +74,126 @@ type ImageComponentV2 struct {
 	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
 	ImagesRef       Images             `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImagesV2Ref     ImagesV2           `gorm:"foreignKey:imageidv2;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	imageComponentV2SearchFields = map[search.FieldLabel]*search.Field{}
+
+	imageComponentV2Schema = &walker.Schema{
+		Table:    "image_component_v2",
+		Type:     "*storage.ImageComponentV2",
+		TypeName: "ImageComponentV2",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Version",
+				ColumnName: "Version",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Priority",
+				ColumnName: "Priority",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "Source",
+				ColumnName: "Source",
+				Type:       "storage.SourceType",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "RiskScore",
+				ColumnName: "RiskScore",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "TopCvss",
+				ColumnName: "TopCvss",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "OperatingSystem",
+				ColumnName: "OperatingSystem",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ImageId",
+				ColumnName: "ImageId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Location",
+				ColumnName: "Location",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ImageIdV2",
+				ColumnName: "ImageIdV2",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getImageComponentV2Schema() *walker.Schema {
+	// Set up search options if not already done
+	if imageComponentV2Schema.OptionsMap == nil {
+		imageComponentV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_COMPONENTS_V2, imageComponentV2SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range imageComponentV2Schema.Fields {
+		imageComponentV2Schema.Fields[i].Schema = imageComponentV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(imageComponentV2Schema)
+	return imageComponentV2Schema
 }

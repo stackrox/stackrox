@@ -5,9 +5,9 @@ package schema
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -24,7 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetK8SRoleSchema()
+		schema = getK8SRoleSchema()
 		schema.ScopingResource = resources.K8sRole
 		RegisterTable(schema, CreateTableK8sRolesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLES, schema)
@@ -48,4 +48,105 @@ type K8sRoles struct {
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	k8SRoleSearchFields = map[search.FieldLabel]*search.Field{}
+
+	k8SRoleSchema = &walker.Schema{
+		Table:    "k8s_roles",
+		Type:     "*storage.K8SRole",
+		TypeName: "K8SRole",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterName",
+				ColumnName: "ClusterName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterRole",
+				ColumnName: "ClusterRole",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+			},
+			{
+				Name:       "Annotations",
+				ColumnName: "Annotations",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getK8SRoleSchema() *walker.Schema {
+	// Set up search options if not already done
+	if k8SRoleSchema.OptionsMap == nil {
+		k8SRoleSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ROLES, k8SRoleSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range k8SRoleSchema.Fields {
+		k8SRoleSchema.Fields[i].Schema = k8SRoleSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(k8SRoleSchema)
+	return k8SRoleSchema
 }

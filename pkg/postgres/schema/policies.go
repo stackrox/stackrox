@@ -9,9 +9,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -28,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetPolicySchema()
+		schema = getPolicySchema()
 		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTablePoliciesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICIES, schema)
@@ -56,4 +56,239 @@ type Policies struct {
 	SORTLifecycleStage string           `gorm:"column:sortlifecyclestage;type:varchar"`
 	SORTEnforcement    bool             `gorm:"column:sortenforcement;type:bool"`
 	Serialized         []byte           `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	policySearchFields = map[search.FieldLabel]*search.Field{
+		search.FieldLabel("Category"): {
+			FieldPath: ".categories",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("Description"): {
+			FieldPath: ".description",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("Disabled"): {
+			FieldPath: ".disabled",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("Enforcement"): {
+			FieldPath: ".enforcement_actions",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("Lifecycle Stage"): {
+			FieldPath: ".lifecycle_stages",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("Policy"): {
+			FieldPath: ".name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("Policy ID"): {
+			FieldPath: ".id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("Policy Last Updated"): {
+			FieldPath: ".last_updated.seconds",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("SORT_Enforcement"): {
+			FieldPath: ".SORT_enforcement",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("SORT_Lifecycle Stage"): {
+			FieldPath: ".SORT_lifecycleStage",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+		search.FieldLabel("SORT_Policy"): {
+			FieldPath: ".SORT_name",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_POLICIES,
+			Analyzer:  "keyword",
+		},
+		search.FieldLabel("Severity"): {
+			FieldPath: ".severity",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_POLICIES,
+		},
+	}
+
+	policySchema = &walker.Schema{
+		Table:    "policies",
+		Type:     "*storage.Policy",
+		TypeName: "Policy",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Policy ID",
+					Enabled:   true,
+				},
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Policy",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Description",
+				ColumnName: "Description",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Description",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Disabled",
+				ColumnName: "Disabled",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Disabled",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Categories",
+				ColumnName: "Categories",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+				Search: walker.SearchField{
+					FieldName: "Category",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "LifecycleStages",
+				ColumnName: "LifecycleStages",
+				Type:       "[]storage.LifecycleStage",
+				SQLType:    "int[]",
+				DataType:   postgres.EnumArray,
+				Search: walker.SearchField{
+					FieldName: "Lifecycle Stage",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Severity",
+				ColumnName: "Severity",
+				Type:       "storage.Severity",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Severity",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "EnforcementActions",
+				ColumnName: "EnforcementActions",
+				Type:       "[]storage.EnforcementAction",
+				SQLType:    "int[]",
+				DataType:   postgres.EnumArray,
+				Search: walker.SearchField{
+					FieldName: "Enforcement",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "LastUpdated",
+				ColumnName: "LastUpdated",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "SORTName",
+				ColumnName: "SORTName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "SORTLifecycleStage",
+				ColumnName: "SORTLifecycleStage",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "SORTEnforcement",
+				ColumnName: "SORTEnforcement",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getPolicySchema() *walker.Schema {
+	// Set up search options if not already done
+	if policySchema.OptionsMap == nil {
+		policySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICIES, policySearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range policySchema.Fields {
+		policySchema.Fields[i].Schema = policySchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(policySchema)
+	return policySchema
 }

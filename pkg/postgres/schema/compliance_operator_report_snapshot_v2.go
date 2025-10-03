@@ -10,9 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -34,7 +34,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetComplianceOperatorReportSnapshotV2Schema()
+		schema = getComplianceOperatorReportSnapshotV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
 			"storage.ComplianceOperatorScanV2":              ComplianceOperatorScanV2Schema,
@@ -80,4 +80,171 @@ type ComplianceOperatorReportSnapshotV2Scans struct {
 	ScanRefID                                  string                             `gorm:"column:scanrefid;type:varchar"`
 	LastStartedTime                            *time.Time                         `gorm:"column:laststartedtime;type:timestamp"`
 	ComplianceOperatorReportSnapshotV2Ref      ComplianceOperatorReportSnapshotV2 `gorm:"foreignKey:compliance_operator_report_snapshot_v2_reportid;references:reportid;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	complianceOperatorReportSnapshotV2SearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceOperatorReportSnapshotV2Schema = &walker.Schema{
+		Table:    "compliance_operator_report_snapshot_v2",
+		Type:     "*storage.ComplianceOperatorReportSnapshotV2",
+		TypeName: "ComplianceOperatorReportSnapshotV2",
+		Fields: []walker.Field{
+			{
+				Name:       "ReportId",
+				ColumnName: "ReportId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ScanConfigurationId",
+				ColumnName: "ScanConfigurationId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "RunState",
+				ColumnName: "ReportStatus_RunState",
+				Type:       "storage.ComplianceOperatorReportStatus_RunState",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "StartedAt",
+				ColumnName: "ReportStatus_StartedAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "CompletedAt",
+				ColumnName: "ReportStatus_CompletedAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "ReportRequestType",
+				ColumnName: "ReportStatus_ReportRequestType",
+				Type:       "storage.ComplianceOperatorReportStatus_RunMethod",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "ReportNotificationMethod",
+				ColumnName: "ReportStatus_ReportNotificationMethod",
+				Type:       "storage.ComplianceOperatorReportStatus_NotificationMethod",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "Id",
+				ColumnName: "User_Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Name",
+				ColumnName: "User_Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "compliance_operator_report_snapshot_v2_scans",
+				Type:     "*storage.ComplianceOperatorReportSnapshotV2_Scan",
+				TypeName: "ComplianceOperatorReportSnapshotV2_Scan",
+				Fields: []walker.Field{
+					{
+						Name:       "complianceOperatorReportSnapshotV2ReportId",
+						ColumnName: "compliance_operator_report_snapshot_v2_ReportId",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ScanRefId",
+						ColumnName: "ScanRefId",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Scan Ref ID",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "LastStartedTime",
+						ColumnName: "LastStartedTime",
+						Type:       "*timestamppb.Timestamp",
+						SQLType:    "timestamp",
+						DataType:   postgres.DateTime,
+						Search: walker.SearchField{
+							FieldName: "Compliance Scan Last Started Time",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getComplianceOperatorReportSnapshotV2Schema() *walker.Schema {
+	// Set up search options if not already done
+	if complianceOperatorReportSnapshotV2Schema.OptionsMap == nil {
+		complianceOperatorReportSnapshotV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT, complianceOperatorReportSnapshotV2SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceOperatorReportSnapshotV2Schema.Fields {
+		complianceOperatorReportSnapshotV2Schema.Fields[i].Schema = complianceOperatorReportSnapshotV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceOperatorReportSnapshotV2Schema)
+	return complianceOperatorReportSnapshotV2Schema
 }

@@ -3,10 +3,11 @@
 package schema
 
 import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -25,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetSensorUpgradeConfigSchema()
+		schema = getSensorUpgradeConfigSchema()
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableSensorUpgradeConfigsStmt)
 		return schema
@@ -40,4 +41,46 @@ const (
 // SensorUpgradeConfigs holds the Gorm model for Postgres table `sensor_upgrade_configs`.
 type SensorUpgradeConfigs struct {
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	sensorUpgradeConfigSearchFields = map[search.FieldLabel]*search.Field{}
+
+	sensorUpgradeConfigSchema = &walker.Schema{
+		Table:    "sensor_upgrade_configs",
+		Type:     "*storage.SensorUpgradeConfig",
+		TypeName: "SensorUpgradeConfig",
+		Fields: []walker.Field{
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getSensorUpgradeConfigSchema() *walker.Schema {
+	// Set up search options if not already done
+	if sensorUpgradeConfigSchema.OptionsMap == nil {
+		sensorUpgradeConfigSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, sensorUpgradeConfigSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range sensorUpgradeConfigSchema.Fields {
+		sensorUpgradeConfigSchema.Fields[i].Schema = sensorUpgradeConfigSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(sensorUpgradeConfigSchema)
+	return sensorUpgradeConfigSchema
 }

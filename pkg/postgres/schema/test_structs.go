@@ -9,9 +9,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -33,7 +33,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetTestStructSchema()
+		schema = getTestStructSchema()
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestStructsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(101), schema)
@@ -78,4 +78,243 @@ type TestStructsNesteds struct {
 	Nested2IsNested bool        `gorm:"column:nested2_isnested;type:bool"`
 	Nested2Int64    int64       `gorm:"column:nested2_int64;type:bigint"`
 	TestStructsRef  TestStructs `gorm:"foreignKey:test_structs_key1;references:key1;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	testStructSearchFields = map[search.FieldLabel]*search.Field{}
+
+	testStructSchema = &walker.Schema{
+		Table:    "test_structs",
+		Type:     "*storage.TestStruct",
+		TypeName: "TestStruct",
+		Fields: []walker.Field{
+			{
+				Name:       "Key1",
+				ColumnName: "Key1",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Key2",
+				ColumnName: "Key2",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "StringSlice",
+				ColumnName: "StringSlice",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+			},
+			{
+				Name:       "Bool",
+				ColumnName: "Bool",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "Uint64",
+				ColumnName: "Uint64",
+				Type:       "uint64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "Int64",
+				ColumnName: "Int64",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "Float",
+				ColumnName: "Float",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+			},
+			{
+				Name:       "Timestamp",
+				ColumnName: "Timestamp",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Enum",
+				ColumnName: "Enum",
+				Type:       "storage.TestStruct_Enum",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "Enums",
+				ColumnName: "Enums",
+				Type:       "[]storage.TestStruct_Enum",
+				SQLType:    "int[]",
+				DataType:   postgres.EnumArray,
+			},
+			{
+				Name:       "String_",
+				ColumnName: "String_",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Int32Slice",
+				ColumnName: "Int32Slice",
+				Type:       "[]int32",
+				SQLType:    "int[]",
+				DataType:   postgres.IntArray,
+			},
+			{
+				Name:       "Nested",
+				ColumnName: "Oneofnested_Nested",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "test_structs_nesteds",
+				Type:     "*storage.TestStruct_Nested",
+				TypeName: "TestStruct_Nested",
+				Fields: []walker.Field{
+					{
+						Name:       "testStructKey1",
+						ColumnName: "test_structs_Key1",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Nested",
+						ColumnName: "Nested",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Test Nested String",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "IsNested",
+						ColumnName: "IsNested",
+						Type:       "bool",
+						SQLType:    "bool",
+						DataType:   postgres.Bool,
+						Search: walker.SearchField{
+							FieldName: "Test Nested Bool",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Int64",
+						ColumnName: "Int64",
+						Type:       "int64",
+						SQLType:    "bigint",
+						DataType:   postgres.BigInteger,
+						Search: walker.SearchField{
+							FieldName: "Test Nested Int64",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Nested2",
+						ColumnName: "Nested2_Nested2",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Test Nested String 2",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "IsNested",
+						ColumnName: "Nested2_IsNested",
+						Type:       "bool",
+						SQLType:    "bool",
+						DataType:   postgres.Bool,
+						Search: walker.SearchField{
+							FieldName: "Test Nested Bool 2",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Int64",
+						ColumnName: "Nested2_Int64",
+						Type:       "int64",
+						SQLType:    "bigint",
+						DataType:   postgres.BigInteger,
+						Search: walker.SearchField{
+							FieldName: "Test Nested Int64 2",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getTestStructSchema() *walker.Schema {
+	// Set up search options if not already done
+	if testStructSchema.OptionsMap == nil {
+		testStructSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(101), testStructSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range testStructSchema.Fields {
+		testStructSchema.Fields[i].Schema = testStructSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(testStructSchema)
+	return testStructSchema
 }

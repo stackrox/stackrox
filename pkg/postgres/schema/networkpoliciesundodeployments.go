@@ -3,10 +3,11 @@
 package schema
 
 import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -22,7 +23,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetNetworkPolicyApplicationUndoDeploymentRecordSchema()
+		schema = getNetworkPolicyApplicationUndoDeploymentRecordSchema()
 		schema.ScopingResource = resources.NetworkPolicy
 		RegisterTable(schema, CreateTableNetworkpoliciesundodeploymentsStmt)
 		return schema
@@ -38,4 +39,56 @@ const (
 type Networkpoliciesundodeployments struct {
 	DeploymentID string `gorm:"column:deploymentid;type:uuid;primaryKey"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	networkPolicyApplicationUndoDeploymentRecordSearchFields = map[search.FieldLabel]*search.Field{}
+
+	networkPolicyApplicationUndoDeploymentRecordSchema = &walker.Schema{
+		Table:    "networkpoliciesundodeployments",
+		Type:     "*storage.NetworkPolicyApplicationUndoDeploymentRecord",
+		TypeName: "NetworkPolicyApplicationUndoDeploymentRecord",
+		Fields: []walker.Field{
+			{
+				Name:       "DeploymentId",
+				ColumnName: "DeploymentId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getNetworkPolicyApplicationUndoDeploymentRecordSchema() *walker.Schema {
+	// Set up search options if not already done
+	if networkPolicyApplicationUndoDeploymentRecordSchema.OptionsMap == nil {
+		networkPolicyApplicationUndoDeploymentRecordSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, networkPolicyApplicationUndoDeploymentRecordSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range networkPolicyApplicationUndoDeploymentRecordSchema.Fields {
+		networkPolicyApplicationUndoDeploymentRecordSchema.Fields[i].Schema = networkPolicyApplicationUndoDeploymentRecordSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(networkPolicyApplicationUndoDeploymentRecordSchema)
+	return networkPolicyApplicationUndoDeploymentRecordSchema
 }

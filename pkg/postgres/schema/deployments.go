@@ -10,9 +10,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -56,7 +56,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetDeploymentSchema()
+		schema = getDeploymentSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":             ImagesSchema,
 			"storage.NamespaceMetadata": NamespacesSchema,
@@ -206,4 +206,1131 @@ type DeploymentsPortsExposureInfos struct {
 	ExternalIps         *pq.StringArray                  `gorm:"column:externalips;type:text[]"`
 	ExternalHostnames   *pq.StringArray                  `gorm:"column:externalhostnames;type:text[]"`
 	DeploymentsPortsRef DeploymentsPorts                 `gorm:"foreignKey:deployments_id,deployments_ports_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	deploymentSearchFields = map[search.FieldLabel]*search.Field{
+		search.FieldLabel("Add Capabilities"): {
+			FieldPath: ".containers.security_context.add_capabilities",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("CPU Cores Limit"): {
+			FieldPath: ".containers.resources.cpu_cores_limit",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("CPU Cores Request"): {
+			FieldPath: ".containers.resources.cpu_cores_request",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Cluster"): {
+			FieldPath: ".cluster_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".cluster_id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Created"): {
+			FieldPath: ".created.seconds",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment"): {
+			FieldPath: ".name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment Annotation"): {
+			FieldPath: ".annotations",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment ID"): {
+			FieldPath: ".id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment Label"): {
+			FieldPath: ".labels",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment Risk Priority"): {
+			FieldPath: ".priority",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment Risk Score"): {
+			FieldPath: ".risk_score",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Deployment Type"): {
+			FieldPath: ".type",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Drop Capabilities"): {
+			FieldPath: ".containers.security_context.drop_capabilities",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Environment Key"): {
+			FieldPath: ".containers.config.env.key",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Environment Value"): {
+			FieldPath: ".containers.config.env.value",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Environment Variable Source"): {
+			FieldPath: ".containers.config.env.env_var_source",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Exposed Node Port"): {
+			FieldPath: ".ports.exposure_infos.node_port",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Exposing Service"): {
+			FieldPath: ".ports.exposure_infos.service_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Exposing Service Port"): {
+			FieldPath: ".ports.exposure_infos.service_port",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Exposure Level"): {
+			FieldPath: ".ports.exposure_infos.level",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("External Hostname"): {
+			FieldPath: ".ports.exposure_infos.external_hostnames",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("External IP"): {
+			FieldPath: ".ports.exposure_infos.external_ips",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Image"): {
+			FieldPath: ".containers.image.name.full_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+			Analyzer:  "standard",
+		},
+		search.FieldLabel("Image ID"): {
+			FieldPath: ".containers.image.id_v2",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Image Pull Secret"): {
+			FieldPath: ".image_pull_secrets",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Image Registry"): {
+			FieldPath: ".containers.image.name.registry",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Image Remote"): {
+			FieldPath: ".containers.image.name.remote",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Image Sha"): {
+			FieldPath: ".containers.image.id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Image Tag"): {
+			FieldPath: ".containers.image.name.tag",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Max Exposure Level"): {
+			FieldPath: ".ports.exposure",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Memory Limit (MB)"): {
+			FieldPath: ".containers.resources.memory_mb_limit",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Memory Request (MB)"): {
+			FieldPath: ".containers.resources.memory_mb_request",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Namespace"): {
+			FieldPath: ".namespace",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Namespace ID"): {
+			FieldPath: ".namespace_id",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Orchestrator Component"): {
+			FieldPath: ".orchestrator_component",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Platform Component"): {
+			FieldPath: ".platform_component",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Pod Label"): {
+			FieldPath: ".pod_labels",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Port"): {
+			FieldPath: ".ports.container_port",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Port Protocol"): {
+			FieldPath: ".ports.protocol",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Privileged"): {
+			FieldPath: ".containers.security_context.privileged",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Read Only Root Filesystem"): {
+			FieldPath: ".containers.security_context.read_only_root_filesystem",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Secret"): {
+			FieldPath: ".containers.secrets.name",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Secret Path"): {
+			FieldPath: ".containers.secrets.path",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Service Account"): {
+			FieldPath: ".service_account",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Service Account Permission Level"): {
+			FieldPath: ".service_account_permission_level",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Volume Destination"): {
+			FieldPath: ".containers.volumes.destination",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Volume Name"): {
+			FieldPath: ".containers.volumes.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Volume ReadOnly"): {
+			FieldPath: ".containers.volumes.read_only",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Volume Source"): {
+			FieldPath: ".containers.volumes.source",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+		search.FieldLabel("Volume Type"): {
+			FieldPath: ".containers.volumes.type",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
+		},
+	}
+
+	deploymentSchema = &walker.Schema{
+		Table:    "deployments",
+		Type:     "*storage.Deployment",
+		TypeName: "Deployment",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Deployment ID",
+					Enabled:   true,
+				},
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Deployment",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Type",
+				ColumnName: "Type",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Deployment Type",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "NamespaceId",
+				ColumnName: "NamespaceId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "OrchestratorComponent",
+				ColumnName: "OrchestratorComponent",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Orchestrator Component",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Deployment Label",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "PodLabels",
+				ColumnName: "PodLabels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Pod Label",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Created",
+				ColumnName: "Created",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ClusterName",
+				ColumnName: "ClusterName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Annotations",
+				ColumnName: "Annotations",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Deployment Annotation",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Priority",
+				ColumnName: "Priority",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+				Search: walker.SearchField{
+					FieldName: "Deployment Risk Priority",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ImagePullSecrets",
+				ColumnName: "ImagePullSecrets",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+				Search: walker.SearchField{
+					FieldName: "Image Pull Secret",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ServiceAccount",
+				ColumnName: "ServiceAccount",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Service Account",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ServiceAccountPermissionLevel",
+				ColumnName: "ServiceAccountPermissionLevel",
+				Type:       "storage.PermissionLevel",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Service Account Permission Level",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "RiskScore",
+				ColumnName: "RiskScore",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+				Search: walker.SearchField{
+					FieldName: "Deployment Risk Score",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "PlatformComponent",
+				ColumnName: "PlatformComponent",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Platform Component",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "deployments_containers",
+				Type:     "*storage.Container",
+				TypeName: "Container",
+				Fields: []walker.Field{
+					{
+						Name:       "deploymentID",
+						ColumnName: "deployments_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Id",
+						ColumnName: "Image_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image Sha",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Registry",
+						ColumnName: "Image_Name_Registry",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image Registry",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Remote",
+						ColumnName: "Image_Name_Remote",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image Remote",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Tag",
+						ColumnName: "Image_Name_Tag",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image Tag",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "FullName",
+						ColumnName: "Image_Name_FullName",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "IdV2",
+						ColumnName: "Image_IdV2",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image ID",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Privileged",
+						ColumnName: "SecurityContext_Privileged",
+						Type:       "bool",
+						SQLType:    "bool",
+						DataType:   postgres.Bool,
+						Search: walker.SearchField{
+							FieldName: "Privileged",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "DropCapabilities",
+						ColumnName: "SecurityContext_DropCapabilities",
+						Type:       "[]string",
+						SQLType:    "text[]",
+						DataType:   postgres.StringArray,
+						Search: walker.SearchField{
+							FieldName: "Drop Capabilities",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "AddCapabilities",
+						ColumnName: "SecurityContext_AddCapabilities",
+						Type:       "[]string",
+						SQLType:    "text[]",
+						DataType:   postgres.StringArray,
+						Search: walker.SearchField{
+							FieldName: "Add Capabilities",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "ReadOnlyRootFilesystem",
+						ColumnName: "SecurityContext_ReadOnlyRootFilesystem",
+						Type:       "bool",
+						SQLType:    "bool",
+						DataType:   postgres.Bool,
+						Search: walker.SearchField{
+							FieldName: "Read Only Root Filesystem",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "CpuCoresRequest",
+						ColumnName: "Resources_CpuCoresRequest",
+						Type:       "float32",
+						SQLType:    "numeric",
+						DataType:   postgres.Numeric,
+						Search: walker.SearchField{
+							FieldName: "CPU Cores Request",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "CpuCoresLimit",
+						ColumnName: "Resources_CpuCoresLimit",
+						Type:       "float32",
+						SQLType:    "numeric",
+						DataType:   postgres.Numeric,
+						Search: walker.SearchField{
+							FieldName: "CPU Cores Limit",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "MemoryMbRequest",
+						ColumnName: "Resources_MemoryMbRequest",
+						Type:       "float32",
+						SQLType:    "numeric",
+						DataType:   postgres.Numeric,
+						Search: walker.SearchField{
+							FieldName: "Memory Request (MB)",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "MemoryMbLimit",
+						ColumnName: "Resources_MemoryMbLimit",
+						Type:       "float32",
+						SQLType:    "numeric",
+						DataType:   postgres.Numeric,
+						Search: walker.SearchField{
+							FieldName: "Memory Limit (MB)",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{
+
+					&walker.Schema{
+						Table:    "deployments_containers_envs",
+						Type:     "*storage.ContainerConfig_EnvironmentConfig",
+						TypeName: "ContainerConfig_EnvironmentConfig",
+						Fields: []walker.Field{
+							{
+								Name:       "deploymentID",
+								ColumnName: "deployments_Id",
+								Type:       "string",
+								SQLType:    "uuid",
+								DataType:   postgres.String,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "deploymentContainerIdx",
+								ColumnName: "deployments_containers_idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "idx",
+								ColumnName: "idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "Key",
+								ColumnName: "Key",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Environment Key",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "Value",
+								ColumnName: "Value",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Environment Value",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "EnvVarSource",
+								ColumnName: "EnvVarSource",
+								Type:       "storage.ContainerConfig_EnvironmentConfig_EnvVarSource",
+								SQLType:    "integer",
+								DataType:   postgres.Enum,
+								Search: walker.SearchField{
+									FieldName: "Environment Variable Source",
+									Enabled:   true,
+								},
+							},
+						},
+						Children: []*walker.Schema{},
+					},
+
+					&walker.Schema{
+						Table:    "deployments_containers_volumes",
+						Type:     "*storage.Volume",
+						TypeName: "Volume",
+						Fields: []walker.Field{
+							{
+								Name:       "deploymentID",
+								ColumnName: "deployments_Id",
+								Type:       "string",
+								SQLType:    "uuid",
+								DataType:   postgres.String,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "deploymentContainerIdx",
+								ColumnName: "deployments_containers_idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "idx",
+								ColumnName: "idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "Name",
+								ColumnName: "Name",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Volume Name",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "Source",
+								ColumnName: "Source",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Volume Source",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "Destination",
+								ColumnName: "Destination",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Volume Destination",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "ReadOnly",
+								ColumnName: "ReadOnly",
+								Type:       "bool",
+								SQLType:    "bool",
+								DataType:   postgres.Bool,
+								Search: walker.SearchField{
+									FieldName: "Volume ReadOnly",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "Type",
+								ColumnName: "Type",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Volume Type",
+									Enabled:   true,
+								},
+							},
+						},
+						Children: []*walker.Schema{},
+					},
+
+					&walker.Schema{
+						Table:    "deployments_containers_secrets",
+						Type:     "*storage.EmbeddedSecret",
+						TypeName: "EmbeddedSecret",
+						Fields: []walker.Field{
+							{
+								Name:       "deploymentID",
+								ColumnName: "deployments_Id",
+								Type:       "string",
+								SQLType:    "uuid",
+								DataType:   postgres.String,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "deploymentContainerIdx",
+								ColumnName: "deployments_containers_idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "idx",
+								ColumnName: "idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "Name",
+								ColumnName: "Name",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Secret",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "Path",
+								ColumnName: "Path",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Secret Path",
+									Enabled:   true,
+								},
+							},
+						},
+						Children: []*walker.Schema{},
+					},
+				},
+			},
+
+			&walker.Schema{
+				Table:    "deployments_ports",
+				Type:     "*storage.PortConfig",
+				TypeName: "PortConfig",
+				Fields: []walker.Field{
+					{
+						Name:       "deploymentID",
+						ColumnName: "deployments_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ContainerPort",
+						ColumnName: "ContainerPort",
+						Type:       "int32",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Search: walker.SearchField{
+							FieldName: "Port",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Protocol",
+						ColumnName: "Protocol",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Port Protocol",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Exposure",
+						ColumnName: "Exposure",
+						Type:       "storage.PortConfig_ExposureLevel",
+						SQLType:    "integer",
+						DataType:   postgres.Enum,
+						Search: walker.SearchField{
+							FieldName: "Max Exposure Level",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{
+
+					&walker.Schema{
+						Table:    "deployments_ports_exposure_infos",
+						Type:     "*storage.PortConfig_ExposureInfo",
+						TypeName: "PortConfig_ExposureInfo",
+						Fields: []walker.Field{
+							{
+								Name:       "deploymentID",
+								ColumnName: "deployments_Id",
+								Type:       "string",
+								SQLType:    "uuid",
+								DataType:   postgres.String,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "deploymentPortIdx",
+								ColumnName: "deployments_ports_idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "idx",
+								ColumnName: "idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "Level",
+								ColumnName: "Level",
+								Type:       "storage.PortConfig_ExposureLevel",
+								SQLType:    "integer",
+								DataType:   postgres.Enum,
+								Search: walker.SearchField{
+									FieldName: "Exposure Level",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "ServiceName",
+								ColumnName: "ServiceName",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Exposing Service",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "ServicePort",
+								ColumnName: "ServicePort",
+								Type:       "int32",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Search: walker.SearchField{
+									FieldName: "Exposing Service Port",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "NodePort",
+								ColumnName: "NodePort",
+								Type:       "int32",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Search: walker.SearchField{
+									FieldName: "Exposed Node Port",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "ExternalIps",
+								ColumnName: "ExternalIps",
+								Type:       "[]string",
+								SQLType:    "text[]",
+								DataType:   postgres.StringArray,
+								Search: walker.SearchField{
+									FieldName: "External IP",
+									Enabled:   true,
+								},
+							},
+							{
+								Name:       "ExternalHostnames",
+								ColumnName: "ExternalHostnames",
+								Type:       "[]string",
+								SQLType:    "text[]",
+								DataType:   postgres.StringArray,
+								Search: walker.SearchField{
+									FieldName: "External Hostname",
+									Enabled:   true,
+								},
+							},
+						},
+						Children: []*walker.Schema{},
+					},
+				},
+			},
+		},
+	}
+)
+
+func getDeploymentSchema() *walker.Schema {
+	// Set up search options if not already done
+	if deploymentSchema.OptionsMap == nil {
+		deploymentSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, deploymentSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range deploymentSchema.Fields {
+		deploymentSchema.Fields[i].Schema = deploymentSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(deploymentSchema)
+	return deploymentSchema
 }

@@ -7,9 +7,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetComplianceRunResultsSchema()
+		schema = getComplianceRunResultsSchema()
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceRunResultsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_RESULTS, schema)
@@ -46,4 +46,77 @@ type ComplianceRunResults struct {
 	RunMetadataClusterID       string     `gorm:"column:runmetadata_clusterid;type:uuid;index:compliancerunresults_sac_filter,type:hash"`
 	RunMetadataFinishTimestamp *time.Time `gorm:"column:runmetadata_finishtimestamp;type:timestamp"`
 	Serialized                 []byte     `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	complianceRunResultsSearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceRunResultsSchema = &walker.Schema{
+		Table:    "compliance_run_results",
+		Type:     "*storage.ComplianceRunResults",
+		TypeName: "ComplianceRunResults",
+		Fields: []walker.Field{
+			{
+				Name:       "RunId",
+				ColumnName: "RunMetadata_RunId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "StandardId",
+				ColumnName: "RunMetadata_StandardId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "RunMetadata_ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "FinishTimestamp",
+				ColumnName: "RunMetadata_FinishTimestamp",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getComplianceRunResultsSchema() *walker.Schema {
+	// Set up search options if not already done
+	if complianceRunResultsSchema.OptionsMap == nil {
+		complianceRunResultsSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_RESULTS, complianceRunResultsSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceRunResultsSchema.Fields {
+		complianceRunResultsSchema.Fields[i].Schema = complianceRunResultsSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceRunResultsSchema)
+	return complianceRunResultsSchema
 }

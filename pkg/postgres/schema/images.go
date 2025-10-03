@@ -8,9 +8,9 @@ import (
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -32,7 +32,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetImageSchema()
+		schema = getImageSchema()
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES,
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
@@ -93,4 +93,478 @@ type ImagesLayers struct {
 	Instruction string `gorm:"column:instruction;type:varchar"`
 	Value       string `gorm:"column:value;type:varchar"`
 	ImagesRef   Images `gorm:"foreignKey:images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	imageSearchFields = map[search.FieldLabel]*search.Field{
+		search.FieldLabel("Advisory Link"): {
+			FieldPath: ".scan.components.vulns.advisory.link",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Advisory Name"): {
+			FieldPath: ".scan.components.vulns.advisory.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("CVE"): {
+			FieldPath: ".scan.components.vulns.cve",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("CVE Published On"): {
+			FieldPath: ".scan.components.vulns.published_on.seconds",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("CVE Snoozed"): {
+			FieldPath: ".scan.components.vulns.suppressed",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("CVSS"): {
+			FieldPath: ".scan.components.vulns.cvss",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Component"): {
+			FieldPath: ".scan.components.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Component Count"): {
+			FieldPath: ".SetComponents.Components",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Component Risk Score"): {
+			FieldPath: ".scan.components.risk_score",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Component Version"): {
+			FieldPath: ".scan.components.version",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Dockerfile Instruction Keyword"): {
+			FieldPath: ".metadata.v1.layers.instruction",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Dockerfile Instruction Value"): {
+			FieldPath: ".metadata.v1.layers.value",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("EPSS Probability"): {
+			FieldPath: ".scan.components.vulns.epss.epss_probability",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Fixable CVE Count"): {
+			FieldPath: ".SetFixable.FixableCves",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Fixed By"): {
+			FieldPath: ".scan.components.vulns.SetFixedBy.FixedBy",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image"): {
+			FieldPath: ".name.full_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+			Analyzer:  "standard",
+		},
+		search.FieldLabel("Image CVE Count"): {
+			FieldPath: ".SetCves.Cves",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Command"): {
+			FieldPath: ".metadata.v1.command",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Created Time"): {
+			FieldPath: ".metadata.v1.created.seconds",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Entrypoint"): {
+			FieldPath: ".metadata.v1.entrypoint",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Label"): {
+			FieldPath: ".metadata.v1.labels",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image OS"): {
+			FieldPath: ".scan.operating_system",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Registry"): {
+			FieldPath: ".name.registry",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Remote"): {
+			FieldPath: ".name.remote",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Risk Priority"): {
+			FieldPath: ".priority",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Risk Score"): {
+			FieldPath: ".risk_score",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Scan Time"): {
+			FieldPath: ".scan.scan_time.seconds",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Sha"): {
+			FieldPath: ".id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Signature Fetched Time"): {
+			FieldPath: ".signature.fetched.seconds",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Tag"): {
+			FieldPath: ".name.tag",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Top CVSS"): {
+			FieldPath: ".SetTopCvss.TopCvss",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image User"): {
+			FieldPath: ".metadata.v1.user",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Image Volumes"): {
+			FieldPath: ".metadata.v1.volumes",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Last Updated"): {
+			FieldPath: ".last_updated.seconds",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("NVD CVSS"): {
+			FieldPath: ".scan.components.vulns.nvd_cvss",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+		search.FieldLabel("Vulnerability State"): {
+			FieldPath: ".scan.components.vulns.state",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_IMAGES,
+		},
+	}
+
+	imageSchema = &walker.Schema{
+		Table:    "images",
+		Type:     "*storage.Image",
+		TypeName: "Image",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Image Sha",
+					Enabled:   true,
+				},
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Registry",
+				ColumnName: "Name_Registry",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Remote",
+				ColumnName: "Name_Remote",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Tag",
+				ColumnName: "Name_Tag",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "FullName",
+				ColumnName: "Name_FullName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Created",
+				ColumnName: "Metadata_V1_Created",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "User",
+				ColumnName: "Metadata_V1_User",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Command",
+				ColumnName: "Metadata_V1_Command",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+			},
+			{
+				Name:       "Entrypoint",
+				ColumnName: "Metadata_V1_Entrypoint",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+			},
+			{
+				Name:       "Volumes",
+				ColumnName: "Metadata_V1_Volumes",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Metadata_V1_Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+			},
+			{
+				Name:       "ScanTime",
+				ColumnName: "Scan_ScanTime",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "OperatingSystem",
+				ColumnName: "Scan_OperatingSystem",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Fetched",
+				ColumnName: "Signature_Fetched",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Components",
+				ColumnName: "Components",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "Cves",
+				ColumnName: "Cves",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "FixableCves",
+				ColumnName: "FixableCves",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "LastUpdated",
+				ColumnName: "LastUpdated",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Priority",
+				ColumnName: "Priority",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+				Search: walker.SearchField{
+					FieldName: "Image Risk Priority",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "RiskScore",
+				ColumnName: "RiskScore",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+				Search: walker.SearchField{
+					FieldName: "Image Risk Score",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "TopCvss",
+				ColumnName: "TopCvss",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "images_layers",
+				Type:     "*storage.ImageLayer",
+				TypeName: "ImageLayer",
+				Fields: []walker.Field{
+					{
+						Name:       "imageID",
+						ColumnName: "images_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Instruction",
+						ColumnName: "Instruction",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Dockerfile Instruction Keyword",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Value",
+						ColumnName: "Value",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Dockerfile Instruction Value",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getImageSchema() *walker.Schema {
+	// Set up search options if not already done
+	if imageSchema.OptionsMap == nil {
+		imageSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGES, imageSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range imageSchema.Fields {
+		imageSchema.Fields[i].Schema = imageSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(imageSchema)
+	return imageSchema
 }

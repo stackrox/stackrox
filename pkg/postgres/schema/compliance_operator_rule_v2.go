@@ -9,9 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -33,7 +33,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetComplianceOperatorRuleV2Schema()
+		schema = getComplianceOperatorRuleV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -73,4 +73,143 @@ type ComplianceOperatorRuleV2Controls struct {
 	Standard                    string                   `gorm:"column:standard;type:varchar"`
 	Control                     string                   `gorm:"column:control;type:varchar"`
 	ComplianceOperatorRuleV2Ref ComplianceOperatorRuleV2 `gorm:"foreignKey:compliance_operator_rule_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	complianceOperatorRuleV2SearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceOperatorRuleV2Schema = &walker.Schema{
+		Table:    "compliance_operator_rule_v2",
+		Type:     "*storage.ComplianceOperatorRuleV2",
+		TypeName: "ComplianceOperatorRuleV2",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "RuleType",
+				ColumnName: "RuleType",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Severity",
+				ColumnName: "Severity",
+				Type:       "storage.RuleSeverity",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "RuleRefId",
+				ColumnName: "RuleRefId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "compliance_operator_rule_v2_controls",
+				Type:     "*storage.RuleControls",
+				TypeName: "RuleControls",
+				Fields: []walker.Field{
+					{
+						Name:       "complianceOperatorRuleV2ID",
+						ColumnName: "compliance_operator_rule_v2_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Standard",
+						ColumnName: "Standard",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Compliance Standard",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Control",
+						ColumnName: "Control",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Compliance Control",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getComplianceOperatorRuleV2Schema() *walker.Schema {
+	// Set up search options if not already done
+	if complianceOperatorRuleV2Schema.OptionsMap == nil {
+		complianceOperatorRuleV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_RULES, complianceOperatorRuleV2SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceOperatorRuleV2Schema.Fields {
+		complianceOperatorRuleV2Schema.Fields[i].Schema = complianceOperatorRuleV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceOperatorRuleV2Schema)
+	return complianceOperatorRuleV2Schema
 }

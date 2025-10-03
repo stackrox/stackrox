@@ -7,9 +7,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -31,7 +31,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetActiveComponentSchema()
+		schema = getActiveComponentSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Deployment":     DeploymentsSchema,
 			"storage.ImageComponent": ImageComponentsSchema,
@@ -69,4 +69,122 @@ type ActiveComponentsActiveContextsSlices struct {
 	ContainerName       string           `gorm:"column:containername;type:varchar"`
 	ImageID             string           `gorm:"column:imageid;type:varchar"`
 	ActiveComponentsRef ActiveComponents `gorm:"foreignKey:active_components_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	activeComponentSearchFields = map[search.FieldLabel]*search.Field{}
+
+	activeComponentSchema = &walker.Schema{
+		Table:    "active_components",
+		Type:     "*storage.ActiveComponent",
+		TypeName: "ActiveComponent",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "DeploymentId",
+				ColumnName: "DeploymentId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ComponentId",
+				ColumnName: "ComponentId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "active_components_active_contexts_slices",
+				Type:     "*storage.ActiveComponent_ActiveContext",
+				TypeName: "ActiveComponent_ActiveContext",
+				Fields: []walker.Field{
+					{
+						Name:       "activeComponentID",
+						ColumnName: "active_components_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ContainerName",
+						ColumnName: "ContainerName",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Container Name",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "ImageId",
+						ColumnName: "ImageId",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Image Sha",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getActiveComponentSchema() *walker.Schema {
+	// Set up search options if not already done
+	if activeComponentSchema.OptionsMap == nil {
+		activeComponentSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ACTIVE_COMPONENT, activeComponentSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range activeComponentSchema.Fields {
+		activeComponentSchema.Fields[i].Schema = activeComponentSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(activeComponentSchema)
+	return activeComponentSchema
 }

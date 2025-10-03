@@ -8,9 +8,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -37,7 +37,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetSecretSchema()
+		schema = getSecretSchema()
 		schema.ScopingResource = resources.Secret
 		RegisterTable(schema, CreateTableSecretsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_SECRETS, schema)
@@ -81,4 +81,269 @@ type SecretsFilesRegistries struct {
 	Idx             int          `gorm:"column:idx;type:integer;primaryKey;index:secretsfilesregistries_idx,type:btree"`
 	Name            string       `gorm:"column:name;type:varchar"`
 	SecretsFilesRef SecretsFiles `gorm:"foreignKey:secrets_id,secrets_files_idx;references:secrets_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	secretSearchFields = map[search.FieldLabel]*search.Field{
+		search.FieldLabel("Cert Expiration"): {
+			FieldPath: ".files.Metadata.Cert.end_date.seconds",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Cluster"): {
+			FieldPath: ".cluster_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".cluster_id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Created Time"): {
+			FieldPath: ".created_at.seconds",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Image Pull Secret Registry"): {
+			FieldPath: ".files.Metadata.ImagePullSecret.registries.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Namespace"): {
+			FieldPath: ".namespace",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Secret"): {
+			FieldPath: ".name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Secret ID"): {
+			FieldPath: ".id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+		search.FieldLabel("Secret Type"): {
+			FieldPath: ".files.type",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_SECRETS,
+		},
+	}
+
+	secretSchema = &walker.Schema{
+		Table:    "secrets",
+		Type:     "*storage.Secret",
+		TypeName: "Secret",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Secret ID",
+					Enabled:   true,
+				},
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Secret",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ClusterName",
+				ColumnName: "ClusterName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "CreatedAt",
+				ColumnName: "CreatedAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "secrets_files",
+				Type:     "*storage.SecretDataFile",
+				TypeName: "SecretDataFile",
+				Fields: []walker.Field{
+					{
+						Name:       "secretID",
+						ColumnName: "secrets_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Type",
+						ColumnName: "Type",
+						Type:       "storage.SecretType",
+						SQLType:    "integer",
+						DataType:   postgres.Enum,
+						Search: walker.SearchField{
+							FieldName: "Secret Type",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "EndDate",
+						ColumnName: "Cert_EndDate",
+						Type:       "*timestamppb.Timestamp",
+						SQLType:    "timestamp",
+						DataType:   postgres.DateTime,
+						Search: walker.SearchField{
+							FieldName: "Cert Expiration",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{
+
+					&walker.Schema{
+						Table:    "secrets_files_registries",
+						Type:     "*storage.ImagePullSecret_Registry",
+						TypeName: "ImagePullSecret_Registry",
+						Fields: []walker.Field{
+							{
+								Name:       "secretID",
+								ColumnName: "secrets_Id",
+								Type:       "string",
+								SQLType:    "uuid",
+								DataType:   postgres.String,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "secretFileIdx",
+								ColumnName: "secrets_files_idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "idx",
+								ColumnName: "idx",
+								Type:       "int",
+								SQLType:    "integer",
+								DataType:   postgres.Integer,
+								Options: walker.PostgresOptions{
+									PrimaryKey: true,
+								},
+							},
+							{
+								Name:       "Name",
+								ColumnName: "Name",
+								Type:       "string",
+								SQLType:    "varchar",
+								DataType:   postgres.String,
+								Search: walker.SearchField{
+									FieldName: "Image Pull Secret Registry",
+									Enabled:   true,
+								},
+							},
+						},
+						Children: []*walker.Schema{},
+					},
+				},
+			},
+		},
+	}
+)
+
+func getSecretSchema() *walker.Schema {
+	// Set up search options if not already done
+	if secretSchema.OptionsMap == nil {
+		secretSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SECRETS, secretSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range secretSchema.Fields {
+		secretSchema.Fields[i].Schema = secretSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(secretSchema)
+	return secretSchema
 }

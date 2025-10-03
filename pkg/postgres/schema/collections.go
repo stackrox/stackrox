@@ -5,9 +5,9 @@ package schema
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -29,7 +29,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetResourceCollectionSchema()
+		schema = getResourceCollectionSchema()
 		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTableCollectionsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COLLECTIONS, schema)
@@ -60,4 +60,118 @@ type CollectionsEmbeddedCollections struct {
 	ID                  string      `gorm:"column:id;type:varchar"`
 	CollectionsRef      Collections `gorm:"foreignKey:collections_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	CollectionsCycleRef Collections `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
+}
+
+var (
+	resourceCollectionSearchFields = map[search.FieldLabel]*search.Field{}
+
+	resourceCollectionSchema = &walker.Schema{
+		Table:    "collections",
+		Type:     "*storage.ResourceCollection",
+		TypeName: "ResourceCollection",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Name",
+				ColumnName: "CreatedBy_Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Name",
+				ColumnName: "UpdatedBy_Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "collections_embedded_collections",
+				Type:     "*storage.ResourceCollection_EmbeddedResourceCollection",
+				TypeName: "ResourceCollection_EmbeddedResourceCollection",
+				Fields: []walker.Field{
+					{
+						Name:       "collectionID",
+						ColumnName: "collections_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Id",
+						ColumnName: "Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Embedded Collection ID",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getResourceCollectionSchema() *walker.Schema {
+	// Set up search options if not already done
+	if resourceCollectionSchema.OptionsMap == nil {
+		resourceCollectionSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COLLECTIONS, resourceCollectionSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range resourceCollectionSchema.Fields {
+		resourceCollectionSchema.Fields[i].Schema = resourceCollectionSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(resourceCollectionSchema)
+	return resourceCollectionSchema
 }

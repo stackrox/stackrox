@@ -9,9 +9,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -33,7 +33,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetNodeSchema()
+		schema = getNodeSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -93,4 +93,466 @@ type NodesTaints struct {
 	Value       string              `gorm:"column:value;type:varchar"`
 	TaintEffect storage.TaintEffect `gorm:"column:tainteffect;type:integer"`
 	NodesRef    Nodes               `gorm:"foreignKey:nodes_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	nodeSearchFields = map[search.FieldLabel]*search.Field{
+		search.FieldLabel("Advisory Link"): {
+			FieldPath: ".scan.components.vulns.advisory.link",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Advisory Name"): {
+			FieldPath: ".scan.components.vulns.advisory.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("CVE"): {
+			FieldPath: ".scan.components.vulnerabilities.cve_base_info.cve",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("CVE Count"): {
+			FieldPath: ".SetCves.Cves",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("CVE Created Time"): {
+			FieldPath: ".scan.components.vulnerabilities.cve_base_info.created_at.seconds",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("CVE Published On"): {
+			FieldPath: ".scan.components.vulnerabilities.cve_base_info.published_on.seconds",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("CVE Snoozed"): {
+			FieldPath: ".scan.components.vulns.suppressed",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("CVSS"): {
+			FieldPath: ".scan.components.vulns.cvss",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Cluster"): {
+			FieldPath: ".cluster_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".cluster_id",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Component"): {
+			FieldPath: ".scan.components.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Component Count"): {
+			FieldPath: ".SetComponents.Components",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Component Version"): {
+			FieldPath: ".scan.components.version",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Container Runtime"): {
+			FieldPath: ".container_runtime.version",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("EPSS Probability"): {
+			FieldPath: ".scan.components.vulnerabilities.cve_base_info.epss.epss_probability",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Fixable CVE Count"): {
+			FieldPath: ".SetFixable.FixableCves",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Fixed By"): {
+			FieldPath: ".scan.components.vulns.SetFixedBy.FixedBy",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Last Updated"): {
+			FieldPath: ".last_updated.seconds",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("NVD CVSS"): {
+			FieldPath: ".scan.components.vulns.nvd_cvss",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node"): {
+			FieldPath: ".name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Annotation"): {
+			FieldPath: ".annotations",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node ID"): {
+			FieldPath: ".id",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Join Time"): {
+			FieldPath: ".joined_at.seconds",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Label"): {
+			FieldPath: ".labels",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Risk Priority"): {
+			FieldPath: ".priority",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Risk Score"): {
+			FieldPath: ".risk_score",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Scan Time"): {
+			FieldPath: ".scan.scan_time.seconds",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Node Top CVSS"): {
+			FieldPath: ".SetTopCvss.TopCvss",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Operating System"): {
+			FieldPath: ".os_image",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Taint Effect"): {
+			FieldPath: ".taints.taint_effect",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Taint Key"): {
+			FieldPath: ".taints.key",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Taint Value"): {
+			FieldPath: ".taints.value",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+		search.FieldLabel("Vulnerability State"): {
+			FieldPath: ".scan.components.vulns.state",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_NODES,
+		},
+	}
+
+	nodeSchema = &walker.Schema{
+		Table:    "nodes",
+		Type:     "*storage.Node",
+		TypeName: "Node",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Node ID",
+					Enabled:   true,
+				},
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Node",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ClusterName",
+				ColumnName: "ClusterName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Node Label",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Annotations",
+				ColumnName: "Annotations",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Node Annotation",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "JoinedAt",
+				ColumnName: "JoinedAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Version",
+				ColumnName: "ContainerRuntime_Version",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "OsImage",
+				ColumnName: "OsImage",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Operating System",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "LastUpdated",
+				ColumnName: "LastUpdated",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "ScanTime",
+				ColumnName: "Scan_ScanTime",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Components",
+				ColumnName: "Components",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "Cves",
+				ColumnName: "Cves",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "FixableCves",
+				ColumnName: "FixableCves",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "Priority",
+				ColumnName: "Priority",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+				Search: walker.SearchField{
+					FieldName: "Node Risk Priority",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "RiskScore",
+				ColumnName: "RiskScore",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+				Search: walker.SearchField{
+					FieldName: "Node Risk Score",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "TopCvss",
+				ColumnName: "TopCvss",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "nodes_taints",
+				Type:     "*storage.Taint",
+				TypeName: "Taint",
+				Fields: []walker.Field{
+					{
+						Name:       "nodeID",
+						ColumnName: "nodes_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Key",
+						ColumnName: "Key",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Taint Key",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Value",
+						ColumnName: "Value",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Taint Value",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "TaintEffect",
+						ColumnName: "TaintEffect",
+						Type:       "storage.TaintEffect",
+						SQLType:    "integer",
+						DataType:   postgres.Enum,
+						Search: walker.SearchField{
+							FieldName: "Taint Effect",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getNodeSchema() *walker.Schema {
+	// Set up search options if not already done
+	if nodeSchema.OptionsMap == nil {
+		nodeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NODES, nodeSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range nodeSchema.Fields {
+		nodeSchema.Fields[i].Schema = nodeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(nodeSchema)
+	return nodeSchema
 }

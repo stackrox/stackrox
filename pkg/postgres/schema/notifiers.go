@@ -3,10 +3,11 @@
 package schema
 
 import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -22,7 +23,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetNotifierSchema()
+		schema = getNotifierSchema()
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableNotifiersStmt)
 		return schema
@@ -39,4 +40,63 @@ type Notifiers struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	notifierSearchFields = map[search.FieldLabel]*search.Field{}
+
+	notifierSchema = &walker.Schema{
+		Table:    "notifiers",
+		Type:     "*storage.Notifier",
+		TypeName: "Notifier",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getNotifierSchema() *walker.Schema {
+	// Set up search options if not already done
+	if notifierSchema.OptionsMap == nil {
+		notifierSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, notifierSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range notifierSchema.Fields {
+		notifierSchema.Fields[i].Schema = notifierSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(notifierSchema)
+	return notifierSchema
 }

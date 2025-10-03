@@ -7,9 +7,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetPolicyCategoryEdgeSchema()
+		schema = getPolicyCategoryEdgeSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Policy":         PoliciesSchema,
 			"storage.PolicyCategory": PolicyCategoriesSchema,
@@ -59,4 +59,70 @@ type PolicyCategoryEdges struct {
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	PoliciesRef         Policies         `gorm:"foreignKey:policyid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	PolicyCategoriesRef PolicyCategories `gorm:"foreignKey:categoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	policyCategoryEdgeSearchFields = map[search.FieldLabel]*search.Field{}
+
+	policyCategoryEdgeSchema = &walker.Schema{
+		Table:    "policy_category_edges",
+		Type:     "*storage.PolicyCategoryEdge",
+		TypeName: "PolicyCategoryEdge",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "PolicyId",
+				ColumnName: "PolicyId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "CategoryId",
+				ColumnName: "CategoryId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getPolicyCategoryEdgeSchema() *walker.Schema {
+	// Set up search options if not already done
+	if policyCategoryEdgeSchema.OptionsMap == nil {
+		policyCategoryEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICY_CATEGORY_EDGE, policyCategoryEdgeSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range policyCategoryEdgeSchema.Fields {
+		policyCategoryEdgeSchema.Fields[i].Schema = policyCategoryEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(policyCategoryEdgeSchema)
+	return policyCategoryEdgeSchema
 }

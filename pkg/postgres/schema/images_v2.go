@@ -9,9 +9,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -33,7 +33,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetImageV2Schema()
+		schema = getImageV2Schema()
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
@@ -100,4 +100,325 @@ type ImagesV2Layers struct {
 	Instruction string   `gorm:"column:instruction;type:varchar"`
 	Value       string   `gorm:"column:value;type:varchar"`
 	ImagesV2Ref ImagesV2 `gorm:"foreignKey:images_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	imageV2SearchFields = map[search.FieldLabel]*search.Field{}
+
+	imageV2Schema = &walker.Schema{
+		Table:    "images_v2",
+		Type:     "*storage.ImageV2",
+		TypeName: "ImageV2",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Sha",
+				ColumnName: "Sha",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Registry",
+				ColumnName: "Name_Registry",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Remote",
+				ColumnName: "Name_Remote",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Tag",
+				ColumnName: "Name_Tag",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "FullName",
+				ColumnName: "Name_FullName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Created",
+				ColumnName: "Metadata_V1_Created",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "User",
+				ColumnName: "Metadata_V1_User",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Command",
+				ColumnName: "Metadata_V1_Command",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+			},
+			{
+				Name:       "Entrypoint",
+				ColumnName: "Metadata_V1_Entrypoint",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+			},
+			{
+				Name:       "Volumes",
+				ColumnName: "Metadata_V1_Volumes",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Metadata_V1_Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+			},
+			{
+				Name:       "ScanTime",
+				ColumnName: "Scan_ScanTime",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "OperatingSystem",
+				ColumnName: "Scan_OperatingSystem",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Fetched",
+				ColumnName: "Signature_Fetched",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "ComponentCount",
+				ColumnName: "ComponentCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "CveCount",
+				ColumnName: "CveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "FixableCveCount",
+				ColumnName: "FixableCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "UnknownCveCount",
+				ColumnName: "UnknownCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "FixableUnknownCveCount",
+				ColumnName: "FixableUnknownCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "CriticalCveCount",
+				ColumnName: "CriticalCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "FixableCriticalCveCount",
+				ColumnName: "FixableCriticalCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "ImportantCveCount",
+				ColumnName: "ImportantCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "FixableImportantCveCount",
+				ColumnName: "FixableImportantCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "ModerateCveCount",
+				ColumnName: "ModerateCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "FixableModerateCveCount",
+				ColumnName: "FixableModerateCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "LowCveCount",
+				ColumnName: "LowCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "FixableLowCveCount",
+				ColumnName: "FixableLowCveCount",
+				Type:       "int32",
+				SQLType:    "integer",
+				DataType:   postgres.Integer,
+			},
+			{
+				Name:       "LastUpdated",
+				ColumnName: "LastUpdated",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Priority",
+				ColumnName: "Priority",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "RiskScore",
+				ColumnName: "RiskScore",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "TopCvss",
+				ColumnName: "TopCvss",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "images_v2_layers",
+				Type:     "*storage.ImageLayer",
+				TypeName: "ImageLayer",
+				Fields: []walker.Field{
+					{
+						Name:       "imageV2ID",
+						ColumnName: "images_v2_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Instruction",
+						ColumnName: "Instruction",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Dockerfile Instruction Keyword",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Value",
+						ColumnName: "Value",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Dockerfile Instruction Value",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getImageV2Schema() *walker.Schema {
+	// Set up search options if not already done
+	if imageV2Schema.OptionsMap == nil {
+		imageV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGES_V2, imageV2SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range imageV2Schema.Fields {
+		imageV2Schema.Fields[i].Schema = imageV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(imageV2Schema)
+	return imageV2Schema
 }

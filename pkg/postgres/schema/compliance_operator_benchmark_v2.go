@@ -8,9 +8,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -32,7 +32,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetComplianceOperatorBenchmarkV2Schema()
+		schema = getComplianceOperatorBenchmarkV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ComplianceOperatorProfileV2": ComplianceOperatorProfileV2Schema,
 		}
@@ -70,4 +70,129 @@ type ComplianceOperatorBenchmarkV2Profiles struct {
 	ProfileName                      string                        `gorm:"column:profilename;type:varchar"`
 	ProfileVersion                   string                        `gorm:"column:profileversion;type:varchar"`
 	ComplianceOperatorBenchmarkV2Ref ComplianceOperatorBenchmarkV2 `gorm:"foreignKey:compliance_operator_benchmark_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	complianceOperatorBenchmarkV2SearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceOperatorBenchmarkV2Schema = &walker.Schema{
+		Table:    "compliance_operator_benchmark_v2",
+		Type:     "*storage.ComplianceOperatorBenchmarkV2",
+		TypeName: "ComplianceOperatorBenchmarkV2",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Version",
+				ColumnName: "Version",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ShortName",
+				ColumnName: "ShortName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "compliance_operator_benchmark_v2_profiles",
+				Type:     "*storage.ComplianceOperatorBenchmarkV2_Profile",
+				TypeName: "ComplianceOperatorBenchmarkV2_Profile",
+				Fields: []walker.Field{
+					{
+						Name:       "complianceOperatorBenchmarkV2ID",
+						ColumnName: "compliance_operator_benchmark_v2_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ProfileName",
+						ColumnName: "ProfileName",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Compliance Profile Name",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "ProfileVersion",
+						ColumnName: "ProfileVersion",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Compliance Profile Version",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getComplianceOperatorBenchmarkV2Schema() *walker.Schema {
+	// Set up search options if not already done
+	if complianceOperatorBenchmarkV2Schema.OptionsMap == nil {
+		complianceOperatorBenchmarkV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_BENCHMARKS, complianceOperatorBenchmarkV2SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceOperatorBenchmarkV2Schema.Fields {
+		complianceOperatorBenchmarkV2Schema.Fields[i].Schema = complianceOperatorBenchmarkV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceOperatorBenchmarkV2Schema)
+	return complianceOperatorBenchmarkV2Schema
 }

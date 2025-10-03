@@ -7,9 +7,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetComponentCVEEdgeSchema()
+		schema = getComponentCVEEdgeSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ImageComponent": ImageComponentsSchema,
 			"storage.ImageCVE":       ImageCvesSchema,
@@ -67,4 +67,84 @@ type ImageComponentCveEdges struct {
 	ImageCveID         string          `gorm:"column:imagecveid;type:varchar;index:imagecomponentcveedges_imagecveid,type:hash"`
 	Serialized         []byte          `gorm:"column:serialized;type:bytea"`
 	ImageComponentsRef ImageComponents `gorm:"foreignKey:imagecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	componentCVEEdgeSearchFields = map[search.FieldLabel]*search.Field{}
+
+	componentCVEEdgeSchema = &walker.Schema{
+		Table:    "image_component_cve_edges",
+		Type:     "*storage.ComponentCVEEdge",
+		TypeName: "ComponentCVEEdge",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "IsFixable",
+				ColumnName: "IsFixable",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "FixedBy",
+				ColumnName: "FixedBy",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ImageComponentId",
+				ColumnName: "ImageComponentId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ImageCveId",
+				ColumnName: "ImageCveId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getComponentCVEEdgeSchema() *walker.Schema {
+	// Set up search options if not already done
+	if componentCVEEdgeSchema.OptionsMap == nil {
+		componentCVEEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPONENT_VULN_EDGE, componentCVEEdgeSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range componentCVEEdgeSchema.Fields {
+		componentCVEEdgeSchema.Fields[i].Schema = componentCVEEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(componentCVEEdgeSchema)
+	return componentCVEEdgeSchema
 }

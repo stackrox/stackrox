@@ -9,9 +9,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -28,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetClusterHealthStatusSchema()
+		schema = getClusterHealthStatusSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -58,4 +58,98 @@ type ClusterHealthStatuses struct {
 	ScannerHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:scannerhealthstatus;type:integer"`
 	LastContact                  *time.Time                                    `gorm:"column:lastcontact;type:timestamp"`
 	Serialized                   []byte                                        `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	clusterHealthStatusSearchFields = map[search.FieldLabel]*search.Field{}
+
+	clusterHealthStatusSchema = &walker.Schema{
+		Table:    "cluster_health_statuses",
+		Type:     "*storage.ClusterHealthStatus",
+		TypeName: "ClusterHealthStatus",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "SensorHealthStatus",
+				ColumnName: "SensorHealthStatus",
+				Type:       "storage.ClusterHealthStatus_HealthStatusLabel",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "CollectorHealthStatus",
+				ColumnName: "CollectorHealthStatus",
+				Type:       "storage.ClusterHealthStatus_HealthStatusLabel",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "OverallHealthStatus",
+				ColumnName: "OverallHealthStatus",
+				Type:       "storage.ClusterHealthStatus_HealthStatusLabel",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "AdmissionControlHealthStatus",
+				ColumnName: "AdmissionControlHealthStatus",
+				Type:       "storage.ClusterHealthStatus_HealthStatusLabel",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "ScannerHealthStatus",
+				ColumnName: "ScannerHealthStatus",
+				Type:       "storage.ClusterHealthStatus_HealthStatusLabel",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "LastContact",
+				ColumnName: "LastContact",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getClusterHealthStatusSchema() *walker.Schema {
+	// Set up search options if not already done
+	if clusterHealthStatusSchema.OptionsMap == nil {
+		clusterHealthStatusSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTER_HEALTH, clusterHealthStatusSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range clusterHealthStatusSchema.Fields {
+		clusterHealthStatusSchema.Fields[i].Schema = clusterHealthStatusSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(clusterHealthStatusSchema)
+	return clusterHealthStatusSchema
 }

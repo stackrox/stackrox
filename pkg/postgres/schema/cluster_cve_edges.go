@@ -7,9 +7,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetClusterCVEEdgeSchema()
+		schema = getClusterCVEEdgeSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster":    ClustersSchema,
 			"storage.ClusterCVE": ClusterCvesSchema,
@@ -61,4 +61,84 @@ type ClusterCveEdges struct {
 	CveID       string   `gorm:"column:cveid;type:varchar;index:clustercveedges_cveid,type:hash"`
 	Serialized  []byte   `gorm:"column:serialized;type:bytea"`
 	ClustersRef Clusters `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	clusterCVEEdgeSearchFields = map[search.FieldLabel]*search.Field{}
+
+	clusterCVEEdgeSchema = &walker.Schema{
+		Table:    "cluster_cve_edges",
+		Type:     "*storage.ClusterCVEEdge",
+		TypeName: "ClusterCVEEdge",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "IsFixable",
+				ColumnName: "IsFixable",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "FixedBy",
+				ColumnName: "FixedBy",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "CveId",
+				ColumnName: "CveId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getClusterCVEEdgeSchema() *walker.Schema {
+	// Set up search options if not already done
+	if clusterCVEEdgeSchema.OptionsMap == nil {
+		clusterCVEEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTER_VULN_EDGE, clusterCVEEdgeSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range clusterCVEEdgeSchema.Fields {
+		clusterCVEEdgeSchema.Fields[i].Schema = clusterCVEEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(clusterCVEEdgeSchema)
+	return clusterCVEEdgeSchema
 }

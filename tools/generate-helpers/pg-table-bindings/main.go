@@ -212,6 +212,15 @@ func main() {
 			}
 		}
 
+		// Generate inline search fields and schema data for the main template
+		var searchFields []OptimizedSearchField
+		var schemaFields []OptimizedSchemaField
+		if props.GenerateOptimizedSchema {
+			// Generate search fields data for inline inclusion
+			searchFields = generateSearchFields(props.Type, trimmedType)
+			schemaFields = extractSchemaFieldsFromWalker(schema, searchFields, trimmedType)
+		}
+
 		templateMap := map[string]interface{}{
 			"Type":           props.Type,
 			"TrimmedType":    trimmedType,
@@ -237,16 +246,12 @@ func main() {
 			"TransformSortOptions": props.TransformSortOptions,
 			"DefaultTransform":     props.TransformSortOptions != "",
 			"Singleton":            props.SingletonStore,
+			"SearchFields":         searchFields,
+			"SchemaFields":         schemaFields,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
 			return err
-		}
-
-		if props.GenerateOptimizedSchema {
-			if err := generateOptimizedSchema(schema, props, trimmedType, searchCategory); err != nil {
-				return err
-			}
 		}
 
 		if props.ConversionFuncs {
@@ -973,5 +978,46 @@ func shouldUseEntityPrefix(typeName string) bool {
 	default:
 		return false
 	}
+}
+
+func extractSchemaFieldsFromWalker(schema *walker.Schema, searchFields []OptimizedSearchField, trimmedType string) []OptimizedSchemaField {
+	// Create a map from field path to search field name for lookup
+	fieldPathToSearchName := make(map[string]string)
+	for _, searchField := range searchFields {
+		fieldPathToSearchName[searchField.FieldPath] = searchField.FieldLabel
+	}
+
+	var fields []OptimizedSchemaField
+	for _, field := range schema.Fields {
+		// Find the search field name for this field by matching the field path
+		searchFieldName := ""
+		// Try multiple variations of the field path to match
+		possiblePaths := []string{
+			// Direct field name matching for root level fields
+			"." + strings.ToLower(field.Name),
+			"." + pgutils.NamingStrategy.ColumnName("", field.ColumnName),
+			// Entity-prefixed paths for root level fields
+			trimmedType + "." + strings.ToLower(field.Name),
+			trimmedType + "." + strings.ToLower(field.ColumnName),
+		}
+		for _, path := range possiblePaths {
+			if fieldName, exists := fieldPathToSearchName[path]; exists {
+				searchFieldName = fieldName
+				break
+			}
+		}
+
+		optimizedField := OptimizedSchemaField{
+			Name:            field.Name,
+			ColumnName:      field.ColumnName,
+			Type:            field.Type,
+			SQLType:         field.SQLType,
+			DataType:        getDataTypeName(field.DataType),
+			IsPrimaryKey:    field.Options.PrimaryKey,
+			SearchFieldName: searchFieldName,
+		}
+		fields = append(fields, optimizedField)
+	}
+	return fields
 }
 

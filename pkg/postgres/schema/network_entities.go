@@ -5,9 +5,9 @@ package schema
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -24,7 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetNetworkEntitySchema()
+		schema = getNetworkEntitySchema()
 		schema.ScopingResource = resources.NetworkEntity
 		RegisterTable(schema, CreateTableNetworkEntitiesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_ENTITY, schema)
@@ -44,4 +44,77 @@ type NetworkEntities struct {
 	InfoExternalSourceDefault    bool   `gorm:"column:info_externalsource_default;type:bool"`
 	InfoExternalSourceDiscovered bool   `gorm:"column:info_externalsource_discovered;type:bool"`
 	Serialized                   []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	networkEntitySearchFields = map[search.FieldLabel]*search.Field{}
+
+	networkEntitySchema = &walker.Schema{
+		Table:    "network_entities",
+		Type:     "*storage.NetworkEntity",
+		TypeName: "NetworkEntity",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Info_Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Cidr",
+				ColumnName: "Info_ExternalSource_Cidr",
+				Type:       "string",
+				SQLType:    "cidr",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Default",
+				ColumnName: "Info_ExternalSource_Default",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "Discovered",
+				ColumnName: "Info_ExternalSource_Discovered",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getNetworkEntitySchema() *walker.Schema {
+	// Set up search options if not already done
+	if networkEntitySchema.OptionsMap == nil {
+		networkEntitySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_ENTITY, networkEntitySearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range networkEntitySchema.Fields {
+		networkEntitySchema.Fields[i].Schema = networkEntitySchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(networkEntitySchema)
+	return networkEntitySchema
 }

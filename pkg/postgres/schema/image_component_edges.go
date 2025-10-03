@@ -7,9 +7,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetImageComponentEdgeSchema()
+		schema = getImageComponentEdgeSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":          ImagesSchema,
 			"storage.ImageComponent": ImageComponentsSchema,
@@ -66,4 +66,77 @@ type ImageComponentEdges struct {
 	ImageComponentID string `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentedges_imagecomponentid,type:hash"`
 	Serialized       []byte `gorm:"column:serialized;type:bytea"`
 	ImagesRef        Images `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	imageComponentEdgeSearchFields = map[search.FieldLabel]*search.Field{}
+
+	imageComponentEdgeSchema = &walker.Schema{
+		Table:    "image_component_edges",
+		Type:     "*storage.ImageComponentEdge",
+		TypeName: "ImageComponentEdge",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Location",
+				ColumnName: "Location",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ImageId",
+				ColumnName: "ImageId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ImageComponentId",
+				ColumnName: "ImageComponentId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getImageComponentEdgeSchema() *walker.Schema {
+	// Set up search options if not already done
+	if imageComponentEdgeSchema.OptionsMap == nil {
+		imageComponentEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_COMPONENT_EDGE, imageComponentEdgeSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range imageComponentEdgeSchema.Fields {
+		imageComponentEdgeSchema.Fields[i].Schema = imageComponentEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(imageComponentEdgeSchema)
+	return imageComponentEdgeSchema
 }

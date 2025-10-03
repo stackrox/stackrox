@@ -5,9 +5,9 @@ package schema
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -24,7 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetProcessBaselineSchema()
+		schema = getProcessBaselineSchema()
 		schema.ScopingResource = resources.DeploymentExtension
 		RegisterTable(schema, CreateTableProcessBaselinesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_BASELINES, schema)
@@ -44,4 +44,77 @@ type ProcessBaselines struct {
 	KeyClusterID    string `gorm:"column:key_clusterid;type:uuid;index:processbaselines_sac_filter,type:btree"`
 	KeyNamespace    string `gorm:"column:key_namespace;type:varchar;index:processbaselines_sac_filter,type:btree"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	processBaselineSearchFields = map[search.FieldLabel]*search.Field{}
+
+	processBaselineSchema = &walker.Schema{
+		Table:    "process_baselines",
+		Type:     "*storage.ProcessBaseline",
+		TypeName: "ProcessBaseline",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "DeploymentId",
+				ColumnName: "Key_DeploymentId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "Key_ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Key_Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getProcessBaselineSchema() *walker.Schema {
+	// Set up search options if not already done
+	if processBaselineSchema.OptionsMap == nil {
+		processBaselineSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PROCESS_BASELINES, processBaselineSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range processBaselineSchema.Fields {
+		processBaselineSchema.Fields[i].Schema = processBaselineSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(processBaselineSchema)
+	return processBaselineSchema
 }

@@ -3,11 +3,12 @@
 package schema
 
 import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -23,7 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetHashSchema()
+		schema = getHashSchema()
 		schema.ScopingResource = resources.Hash
 		RegisterTable(schema, CreateTableHashesStmt, features.StoreEventHashes.Enabled)
 		return schema
@@ -39,4 +40,56 @@ const (
 type Hashes struct {
 	ClusterID  string `gorm:"column:clusterid;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	hashSearchFields = map[search.FieldLabel]*search.Field{}
+
+	hashSchema = &walker.Schema{
+		Table:    "hashes",
+		Type:     "*storage.Hash",
+		TypeName: "Hash",
+		Fields: []walker.Field{
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getHashSchema() *walker.Schema {
+	// Set up search options if not already done
+	if hashSchema.OptionsMap == nil {
+		hashSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, hashSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range hashSchema.Fields {
+		hashSchema.Fields[i].Schema = hashSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(hashSchema)
+	return hashSchema
 }

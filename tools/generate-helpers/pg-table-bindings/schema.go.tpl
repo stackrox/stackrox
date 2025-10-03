@@ -1,6 +1,41 @@
 {{define "schemaVar"}}{{.|upperCamelCase}}Schema{{end}}
 {{define "createTableStmtVar"}}CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 
+{{define "generateChildSchema"}}
+&walker.Schema{
+	Table:    "{{.Table}}",
+	Type:     "{{.Type}}",
+	TypeName: "{{.TypeName}}",
+	Fields: []walker.Field{
+		{{- range .Fields }}
+		{
+			Name:       "{{.Name}}",
+			ColumnName: "{{.ColumnName}}",
+			Type:       "{{.Type}}",
+			SQLType:    "{{.SQLType}}",
+			{{- if .DataType }}
+			DataType:   postgres.{{getDataTypeName .DataType}},
+			{{- end }}
+			{{- if .Search.Enabled }}
+			Search: walker.SearchField{
+				FieldName: "{{.Search.FieldName}}",
+				Enabled:   true,
+			},
+			{{- end }}
+			{{- if .Options.PrimaryKey }}
+			Options: walker.PostgresOptions{
+				PrimaryKey: true,
+			},
+			{{- end }}
+		},
+		{{- end }}
+	},
+	Children: []*walker.Schema{
+		{{range .Children}}{{template "generateChildSchema" .}},
+		{{end}}
+	},
+}{{end}}
+
 package schema
 
 import (
@@ -15,7 +50,6 @@ import (
     {{- if .FeatureFlag }}
     "github.com/stackrox/rox/pkg/features"{{- end }}
     "github.com/stackrox/rox/pkg/postgres"
-    "github.com/stackrox/rox/pkg/postgres/schema/internal"
     "github.com/stackrox/rox/pkg/postgres/walker"
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/sac/resources"
@@ -53,9 +87,9 @@ var (
         if schema != nil {
             return schema
         }
-        schema = internal.Get{{.TrimmedType}}Schema()
+        schema = get{{.TrimmedType}}Schema()
         {{- else}}
-        schema = internal.Get{{.TrimmedType}}Schema()
+        schema = get{{.TrimmedType}}Schema()
         {{- end}}
 
         {{- if gt (len .References) 0 }}
@@ -137,3 +171,82 @@ const (
 )
 
 {{- template "createGormModel" dict "Schema" .Schema "Obj" .Obj }}
+
+var (
+	{{.TrimmedType|lowerCamelCase}}SearchFields = map[search.FieldLabel]*search.Field{
+		{{- range .SearchFields }}
+		search.FieldLabel("{{.FieldLabel}}"): {
+			FieldPath: "{{.FieldPath}}",
+			Store:     {{.Store}},
+			Hidden:    {{.Hidden}},
+			{{- if .SearchCategory }}
+			Category:  v1.{{.SearchCategory}},
+			{{- end }}
+			{{- if .Analyzer }}
+			Analyzer:  "{{.Analyzer}}",
+			{{- end }}
+		},
+		{{- end }}
+	}
+
+	{{.TrimmedType|lowerCamelCase}}Schema = &walker.Schema{
+		Table:    "{{.Schema.Table}}",
+		Type:     "{{.Schema.Type}}",
+		TypeName: "{{.TrimmedType}}",
+		Fields: []walker.Field{
+			{{- range .SchemaFields }}
+			{
+				Name:       "{{.Name}}",
+				ColumnName: "{{.ColumnName}}",
+				Type:       "{{.Type}}",
+				SQLType:    "{{.SQLType}}",
+				{{- if .DataType }}
+				DataType:   postgres.{{.DataType}},
+				{{- end }}
+				{{- if .SearchFieldName }}
+				Search: walker.SearchField{
+					FieldName: "{{.SearchFieldName}}",
+					Enabled:   true,
+				},
+				{{- end }}
+				{{- if .IsPrimaryKey }}
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+				{{- end }}
+			},
+			{{- end }}
+		},
+		Children: []*walker.Schema{
+			{{range .Schema.Children}}{{template "generateChildSchema" .}},
+			{{end}}
+		},
+	}
+)
+
+func get{{.TrimmedType}}Schema() *walker.Schema {
+	// Set up search options if not already done
+	if {{.TrimmedType|lowerCamelCase}}Schema.OptionsMap == nil {
+		{{- if .SearchCategory }}
+		{{.TrimmedType|lowerCamelCase}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.{{.SearchCategory}}, {{.TrimmedType|lowerCamelCase}}SearchFields))
+		{{- else }}
+		{{.TrimmedType|lowerCamelCase}}Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, {{.TrimmedType|lowerCamelCase}}SearchFields))
+		{{- end }}
+	}
+	// Set Schema back-reference on all fields
+	for i := range {{.TrimmedType|lowerCamelCase}}Schema.Fields {
+		{{.TrimmedType|lowerCamelCase}}Schema.Fields[i].Schema = {{.TrimmedType|lowerCamelCase}}Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences({{.TrimmedType|lowerCamelCase}}Schema)
+	return {{.TrimmedType|lowerCamelCase}}Schema
+}

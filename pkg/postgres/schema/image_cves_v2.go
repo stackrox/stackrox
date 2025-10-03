@@ -10,9 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -29,7 +29,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetImageCVEV2Schema()
+		schema = getImageCVEV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":            ImagesSchema,
 			"storage.ImageComponentV2": ImageComponentV2Schema,
@@ -84,4 +84,175 @@ type ImageCvesV2 struct {
 	ImagesRef                      Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImageComponentV2Ref            ImageComponentV2              `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImagesV2Ref                    ImagesV2                      `gorm:"foreignKey:imageidv2;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	imageCVEV2SearchFields = map[search.FieldLabel]*search.Field{}
+
+	imageCVEV2Schema = &walker.Schema{
+		Table:    "image_cves_v2",
+		Type:     "*storage.ImageCVEV2",
+		TypeName: "ImageCVEV2",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ImageId",
+				ColumnName: "ImageId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Cve",
+				ColumnName: "CveBaseInfo_Cve",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "PublishedOn",
+				ColumnName: "CveBaseInfo_PublishedOn",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "CreatedAt",
+				ColumnName: "CveBaseInfo_CreatedAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "EpssProbability",
+				ColumnName: "CveBaseInfo_Epss_EpssProbability",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "Cvss",
+				ColumnName: "Cvss",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "Severity",
+				ColumnName: "Severity",
+				Type:       "storage.VulnerabilitySeverity",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "ImpactScore",
+				ColumnName: "ImpactScore",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "Nvdcvss",
+				ColumnName: "Nvdcvss",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "FirstImageOccurrence",
+				ColumnName: "FirstImageOccurrence",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "State",
+				ColumnName: "State",
+				Type:       "storage.VulnerabilityState",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "IsFixable",
+				ColumnName: "IsFixable",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "FixedBy",
+				ColumnName: "FixedBy",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ComponentId",
+				ColumnName: "ComponentId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Advisory_Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Link",
+				ColumnName: "Advisory_Link",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ImageIdV2",
+				ColumnName: "ImageIdV2",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getImageCVEV2Schema() *walker.Schema {
+	// Set up search options if not already done
+	if imageCVEV2Schema.OptionsMap == nil {
+		imageCVEV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_VULNERABILITIES_V2, imageCVEV2SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range imageCVEV2Schema.Fields {
+		imageCVEV2Schema.Fields[i].Schema = imageCVEV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(imageCVEV2Schema)
+	return imageCVEV2Schema
 }

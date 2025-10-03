@@ -5,10 +5,11 @@ package schema
 import (
 	"fmt"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -29,7 +30,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetAuthMachineToMachineConfigSchema()
+		schema = getAuthMachineToMachineConfigSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Role": RolesSchema,
 		}
@@ -64,4 +65,100 @@ type AuthMachineToMachineConfigsMappings struct {
 	Role                           string                      `gorm:"column:role;type:varchar"`
 	AuthMachineToMachineConfigsRef AuthMachineToMachineConfigs `gorm:"foreignKey:auth_machine_to_machine_configs_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	RolesRef                       Roles                       `gorm:"foreignKey:role;references:name;belongsTo;constraint:OnDelete:RESTRICT"`
+}
+
+var (
+	authMachineToMachineConfigSearchFields = map[search.FieldLabel]*search.Field{}
+
+	authMachineToMachineConfigSchema = &walker.Schema{
+		Table:    "auth_machine_to_machine_configs",
+		Type:     "*storage.AuthMachineToMachineConfig",
+		TypeName: "AuthMachineToMachineConfig",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Issuer",
+				ColumnName: "Issuer",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "auth_machine_to_machine_configs_mappings",
+				Type:     "*storage.AuthMachineToMachineConfig_Mapping",
+				TypeName: "AuthMachineToMachineConfig_Mapping",
+				Fields: []walker.Field{
+					{
+						Name:       "authMachineToMachineConfigID",
+						ColumnName: "auth_machine_to_machine_configs_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Role",
+						ColumnName: "Role",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getAuthMachineToMachineConfigSchema() *walker.Schema {
+	// Set up search options if not already done
+	if authMachineToMachineConfigSchema.OptionsMap == nil {
+		authMachineToMachineConfigSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, authMachineToMachineConfigSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range authMachineToMachineConfigSchema.Fields {
+		authMachineToMachineConfigSchema.Fields[i].Schema = authMachineToMachineConfigSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(authMachineToMachineConfigSchema)
+	return authMachineToMachineConfigSchema
 }

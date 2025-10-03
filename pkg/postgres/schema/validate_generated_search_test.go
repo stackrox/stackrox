@@ -6,7 +6,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -28,32 +27,32 @@ func TestValidateGeneratedSearchFields(t *testing.T) {
 			name:             "alerts",
 			storageType:      reflect.TypeOf((*storage.Alert)(nil)),
 			tableName:        "alerts",
-			generatedFields:  internal.AlertSearchFields,
-			generatedSchema:  internal.AlertSchema,
+			generatedFields:  alertSearchFields,
+			generatedSchema:  alertSchema,
 			searchCategory:   v1.SearchCategory_ALERTS,
 		},
 		{
 			name:             "policies",
 			storageType:      reflect.TypeOf((*storage.Policy)(nil)),
 			tableName:        "policies",
-			generatedFields:  internal.PolicySearchFields,
-			generatedSchema:  internal.PolicySchema,
+			generatedFields:  policySearchFields,
+			generatedSchema:  policySchema,
 			searchCategory:   v1.SearchCategory_POLICIES,
 		},
 		{
 			name:             "deployments",
 			storageType:      reflect.TypeOf((*storage.Deployment)(nil)),
 			tableName:        "deployments",
-			generatedFields:  internal.DeploymentSearchFields,
-			generatedSchema:  internal.DeploymentSchema,
+			generatedFields:  deploymentSearchFields,
+			generatedSchema:  deploymentSchema,
 			searchCategory:   v1.SearchCategory_DEPLOYMENTS,
 		},
 		{
 			name:             "nodes",
 			storageType:      reflect.TypeOf((*storage.Node)(nil)),
 			tableName:        "nodes",
-			generatedFields:  internal.NodeSearchFields,
-			generatedSchema:  internal.NodeSchema,
+			generatedFields:  nodeSearchFields,
+			generatedSchema:  nodeSchema,
 			searchCategory:   v1.SearchCategory_NODES,
 		},
 	}
@@ -193,14 +192,14 @@ func TestSearchFieldGeneration(t *testing.T) {
 	}{
 		{
 			name:           "alerts",
-			getSchemaFunc:  internal.GetAlertSchema,
-			expectedFields: internal.AlertSearchFields,
+			getSchemaFunc:  getAlertSchema,
+			expectedFields: alertSearchFields,
 			searchCategory: v1.SearchCategory_ALERTS,
 		},
 		{
 			name:           "policies",
-			getSchemaFunc:  internal.GetPolicySchema,
-			expectedFields: internal.PolicySearchFields,
+			getSchemaFunc:  getPolicySchema,
+			expectedFields: policySearchFields,
 			searchCategory: v1.SearchCategory_POLICIES,
 		},
 	}
@@ -236,7 +235,7 @@ func TestDeploymentChildSchemas(t *testing.T) {
 	originalSchema := walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 
 	// Get our generated deployment schema
-	generatedSchema := internal.GetDeploymentSchema()
+	generatedSchema := getDeploymentSchema()
 
 	// The generated schema should have the same child schemas as the original
 	require.Equal(t, len(originalSchema.Children), len(generatedSchema.Children),
@@ -292,6 +291,6 @@ func BenchmarkOriginalWalkerWalk(b *testing.B) {
 func BenchmarkGeneratedSchema(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = internal.GetAlertSchema()
+		_ = getAlertSchema()
 	}
 }

@@ -9,9 +9,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -28,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetAlertSchema()
+		schema = getAlertSchema()
 		schema.ScopingResource = resources.Alert
 		RegisterTable(schema, CreateTableAlertsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ALERTS, schema)
@@ -77,4 +77,523 @@ type Alerts struct {
 	PlatformComponent        bool                                `gorm:"column:platformcomponent;type:bool"`
 	EntityType               storage.Alert_EntityType            `gorm:"column:entitytype;type:integer"`
 	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	alertSearchFields = map[search.FieldLabel]*search.Field{
+		search.FieldLabel("Alert ID"): {
+			FieldPath: ".id",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Category"): {
+			FieldPath: ".policy.categories",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Cluster"): {
+			FieldPath: ".cluster_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".cluster_id",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Deployment"): {
+			FieldPath: ".Entity.Deployment.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Deployment ID"): {
+			FieldPath: ".Entity.Deployment.id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Description"): {
+			FieldPath: ".policy.description",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Disabled"): {
+			FieldPath: ".policy.disabled",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Enforcement"): {
+			FieldPath: ".enforcement.action",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Entity Type"): {
+			FieldPath: ".entity_type",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Image"): {
+			FieldPath: ".Entity.Image.name.full_name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+			Analyzer:  "standard",
+		},
+		search.FieldLabel("Image ID"): {
+			FieldPath: ".Entity.Image.id_v2",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Image Registry"): {
+			FieldPath: ".Entity.Image.name.registry",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Image Remote"): {
+			FieldPath: ".Entity.Image.name.remote",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Image Sha"): {
+			FieldPath: ".Entity.Image.id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Image Tag"): {
+			FieldPath: ".Entity.Image.name.tag",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Inactive Deployment"): {
+			FieldPath: ".Entity.Deployment.inactive",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Lifecycle Stage"): {
+			FieldPath: ".lifecycle_stage",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Namespace"): {
+			FieldPath: ".namespace",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Namespace ID"): {
+			FieldPath: ".namespace_id",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Platform Component"): {
+			FieldPath: ".platform_component",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Policy"): {
+			FieldPath: ".policy.name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Policy ID"): {
+			FieldPath: ".policy.id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Policy Last Updated"): {
+			FieldPath: ".policy.last_updated.seconds",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Resource"): {
+			FieldPath: ".Entity.Resource.name",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Resource Type"): {
+			FieldPath: ".Entity.Resource.resource_type",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("SORT_Enforcement"): {
+			FieldPath: ".policy.SORT_enforcement",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("SORT_Lifecycle Stage"): {
+			FieldPath: ".policy.SORT_lifecycleStage",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("SORT_Policy"): {
+			FieldPath: ".policy.SORT_name",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ALERTS,
+			Analyzer:  "keyword",
+		},
+		search.FieldLabel("Severity"): {
+			FieldPath: ".policy.severity",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Violation State"): {
+			FieldPath: ".state",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+		search.FieldLabel("Violation Time"): {
+			FieldPath: ".time.seconds",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ALERTS,
+		},
+	}
+
+	alertSchema = &walker.Schema{
+		Table:    "alerts",
+		Type:     "*storage.Alert",
+		TypeName: "Alert",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Alert ID",
+					Enabled:   true,
+				},
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Id",
+				ColumnName: "Policy_Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Alert ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Policy_Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Description",
+				ColumnName: "Policy_Description",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Disabled",
+				ColumnName: "Policy_Disabled",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "Categories",
+				ColumnName: "Policy_Categories",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+			},
+			{
+				Name:       "Severity",
+				ColumnName: "Policy_Severity",
+				Type:       "storage.Severity",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "EnforcementActions",
+				ColumnName: "Policy_EnforcementActions",
+				Type:       "[]storage.EnforcementAction",
+				SQLType:    "int[]",
+				DataType:   postgres.EnumArray,
+			},
+			{
+				Name:       "LastUpdated",
+				ColumnName: "Policy_LastUpdated",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "SORTName",
+				ColumnName: "Policy_SORTName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "SORTLifecycleStage",
+				ColumnName: "Policy_SORTLifecycleStage",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "SORTEnforcement",
+				ColumnName: "Policy_SORTEnforcement",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "LifecycleStage",
+				ColumnName: "LifecycleStage",
+				Type:       "storage.LifecycleStage",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Lifecycle Stage",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ClusterName",
+				ColumnName: "ClusterName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "NamespaceId",
+				ColumnName: "NamespaceId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Id",
+				ColumnName: "Deployment_Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Alert ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Deployment_Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Inactive",
+				ColumnName: "Deployment_Inactive",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "Id",
+				ColumnName: "Image_Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Alert ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Registry",
+				ColumnName: "Image_Name_Registry",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Remote",
+				ColumnName: "Image_Name_Remote",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Tag",
+				ColumnName: "Image_Name_Tag",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "FullName",
+				ColumnName: "Image_Name_FullName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "IdV2",
+				ColumnName: "Image_IdV2",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ResourceType",
+				ColumnName: "Resource_ResourceType",
+				Type:       "storage.Alert_Resource_ResourceType",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Resource_Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Action",
+				ColumnName: "Enforcement_Action",
+				Type:       "storage.EnforcementAction",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "Time",
+				ColumnName: "Time",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "State",
+				ColumnName: "State",
+				Type:       "storage.ViolationState",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Violation State",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "PlatformComponent",
+				ColumnName: "PlatformComponent",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Platform Component",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "EntityType",
+				ColumnName: "EntityType",
+				Type:       "storage.Alert_EntityType",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Entity Type",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getAlertSchema() *walker.Schema {
+	// Set up search options if not already done
+	if alertSchema.OptionsMap == nil {
+		alertSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ALERTS, alertSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range alertSchema.Fields {
+		alertSchema.Fields[i].Schema = alertSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(alertSchema)
+	return alertSchema
 }

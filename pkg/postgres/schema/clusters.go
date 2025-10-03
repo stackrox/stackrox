@@ -6,9 +6,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -25,7 +25,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetClusterSchema()
+		schema = getClusterSchema()
 		schema.ScopingResource = resources.Cluster
 		RegisterTable(schema, CreateTableClustersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema)
@@ -47,4 +47,184 @@ type Clusters struct {
 	StatusProviderMetadataClusterType storage.ClusterMetadata_Type `gorm:"column:status_providermetadata_cluster_type;type:integer"`
 	StatusOrchestratorMetadataVersion string                       `gorm:"column:status_orchestratormetadata_version;type:varchar"`
 	Serialized                        []byte                       `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	clusterSearchFields = map[search.FieldLabel]*search.Field{
+		search.FieldLabel("Admission Control Status"): {
+			FieldPath: ".health_status.admission_control_health_status",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Cluster"): {
+			FieldPath: ".name",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Cluster Kubernetes Version"): {
+			FieldPath: ".status.orchestrator_metadata.version",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Cluster Label"): {
+			FieldPath: ".labels",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Cluster Platform Type"): {
+			FieldPath: ".type",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Cluster Status"): {
+			FieldPath: ".health_status.overall_health_status",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Cluster Type"): {
+			FieldPath: ".status.provider_metadata.cluster.type",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Collector Status"): {
+			FieldPath: ".health_status.collector_health_status",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Last Contact"): {
+			FieldPath: ".health_status.last_contact.seconds",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Scanner Status"): {
+			FieldPath: ".health_status.scanner_health_status",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+		search.FieldLabel("Sensor Status"): {
+			FieldPath: ".health_status.sensor_health_status",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_CLUSTERS,
+		},
+	}
+
+	clusterSchema = &walker.Schema{
+		Table:    "clusters",
+		Type:     "*storage.Cluster",
+		TypeName: "Cluster",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Type",
+				ColumnName: "Type",
+				Type:       "storage.ClusterType",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Cluster Platform Type",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Cluster Label",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Type",
+				ColumnName: "Status_ProviderMetadata_Cluster_Type",
+				Type:       "storage.ClusterMetadata_Type",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+				Search: walker.SearchField{
+					FieldName: "Cluster Platform Type",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Version",
+				ColumnName: "Status_OrchestratorMetadata_Version",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getClusterSchema() *walker.Schema {
+	// Set up search options if not already done
+	if clusterSchema.OptionsMap == nil {
+		clusterSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTERS, clusterSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range clusterSchema.Fields {
+		clusterSchema.Fields[i].Schema = clusterSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(clusterSchema)
+	return clusterSchema
 }

@@ -7,9 +7,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetBlobSchema()
+		schema = getBlobSchema()
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableBlobsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BLOB, schema)
@@ -45,4 +45,70 @@ type Blobs struct {
 	Length       int64      `gorm:"column:length;type:bigint"`
 	ModifiedTime *time.Time `gorm:"column:modifiedtime;type:timestamp"`
 	Serialized   []byte     `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	blobSearchFields = map[search.FieldLabel]*search.Field{}
+
+	blobSchema = &walker.Schema{
+		Table:    "blobs",
+		Type:     "*storage.Blob",
+		TypeName: "Blob",
+		Fields: []walker.Field{
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Length",
+				ColumnName: "Length",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "ModifiedTime",
+				ColumnName: "ModifiedTime",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getBlobSchema() *walker.Schema {
+	// Set up search options if not already done
+	if blobSchema.OptionsMap == nil {
+		blobSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_BLOB, blobSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range blobSchema.Fields {
+		blobSchema.Fields[i].Schema = blobSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(blobSchema)
+	return blobSchema
 }

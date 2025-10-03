@@ -6,9 +6,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -25,7 +25,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetRiskSchema()
+		schema = getRiskSchema()
 		schema.ScopingResource = resources.DeploymentExtension
 		RegisterTable(schema, CreateTableRisksStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_RISKS, schema)
@@ -46,4 +46,84 @@ type Risks struct {
 	SubjectType      storage.RiskSubjectType `gorm:"column:subject_type;type:integer"`
 	Score            float32                 `gorm:"column:score;type:numeric"`
 	Serialized       []byte                  `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	riskSearchFields = map[search.FieldLabel]*search.Field{}
+
+	riskSchema = &walker.Schema{
+		Table:    "risks",
+		Type:     "*storage.Risk",
+		TypeName: "Risk",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Subject_Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "Subject_ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Type",
+				ColumnName: "Subject_Type",
+				Type:       "storage.RiskSubjectType",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "Score",
+				ColumnName: "Score",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getRiskSchema() *walker.Schema {
+	// Set up search options if not already done
+	if riskSchema.OptionsMap == nil {
+		riskSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_RISKS, riskSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range riskSchema.Fields {
+		riskSchema.Fields[i].Schema = riskSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(riskSchema)
+	return riskSchema
 }

@@ -3,10 +3,11 @@
 package schema
 
 import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -25,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetNotificationScheduleSchema()
+		schema = getNotificationScheduleSchema()
 		schema.ScopingResource = resources.Notifications
 		RegisterTable(schema, CreateTableNotificationSchedulesStmt)
 		return schema
@@ -40,4 +41,46 @@ const (
 // NotificationSchedules holds the Gorm model for Postgres table `notification_schedules`.
 type NotificationSchedules struct {
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	notificationScheduleSearchFields = map[search.FieldLabel]*search.Field{}
+
+	notificationScheduleSchema = &walker.Schema{
+		Table:    "notification_schedules",
+		Type:     "*storage.NotificationSchedule",
+		TypeName: "NotificationSchedule",
+		Fields: []walker.Field{
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getNotificationScheduleSchema() *walker.Schema {
+	// Set up search options if not already done
+	if notificationScheduleSchema.OptionsMap == nil {
+		notificationScheduleSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, notificationScheduleSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range notificationScheduleSchema.Fields {
+		notificationScheduleSchema.Fields[i].Schema = notificationScheduleSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(notificationScheduleSchema)
+	return notificationScheduleSchema
 }

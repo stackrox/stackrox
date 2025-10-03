@@ -7,9 +7,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetTestG2GrandChild1Schema()
+		schema = getTestG2GrandChild1Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.TestGGrandChild1":  TestGGrandChild1Schema,
 			"storage.TestG3GrandChild1": TestG3GrandChild1Schema,
@@ -55,4 +55,77 @@ type TestG2GrandChild1 struct {
 	Val                 string           `gorm:"column:val;type:varchar"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	TestGGrandChild1Ref TestGGrandChild1 `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	testG2GrandChild1SearchFields = map[search.FieldLabel]*search.Field{}
+
+	testG2GrandChild1Schema = &walker.Schema{
+		Table:    "test_g2_grand_child1",
+		Type:     "*storage.TestG2GrandChild1",
+		TypeName: "TestG2GrandChild1",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ParentId",
+				ColumnName: "ParentId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ChildId",
+				ColumnName: "ChildId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Val",
+				ColumnName: "Val",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getTestG2GrandChild1Schema() *walker.Schema {
+	// Set up search options if not already done
+	if testG2GrandChild1Schema.OptionsMap == nil {
+		testG2GrandChild1Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(105), testG2GrandChild1SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range testG2GrandChild1Schema.Fields {
+		testG2GrandChild1Schema.Fields[i].Schema = testG2GrandChild1Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(testG2GrandChild1Schema)
+	return testG2GrandChild1Schema
 }

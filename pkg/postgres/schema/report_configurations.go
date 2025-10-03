@@ -8,9 +8,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -32,7 +32,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetReportConfigurationSchema()
+		schema = getReportConfigurationSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Notifier": NotifiersSchema,
 		}
@@ -75,4 +75,128 @@ type ReportConfigurationsNotifiers struct {
 	ID                      string               `gorm:"column:id;type:varchar"`
 	ReportConfigurationsRef ReportConfigurations `gorm:"foreignKey:report_configurations_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	NotifiersRef            Notifiers            `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
+}
+
+var (
+	reportConfigurationSearchFields = map[search.FieldLabel]*search.Field{}
+
+	reportConfigurationSchema = &walker.Schema{
+		Table:    "report_configurations",
+		Type:     "*storage.ReportConfiguration",
+		TypeName: "ReportConfiguration",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Type",
+				ColumnName: "Type",
+				Type:       "storage.ReportConfiguration_ReportType",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "ScopeId",
+				ColumnName: "ScopeId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "CollectionId",
+				ColumnName: "ResourceScope_CollectionId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Creator_Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "report_configurations_notifiers",
+				Type:     "*storage.NotifierConfiguration",
+				TypeName: "NotifierConfiguration",
+				Fields: []walker.Field{
+					{
+						Name:       "reportConfigurationID",
+						ColumnName: "report_configurations_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Id",
+						ColumnName: "Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getReportConfigurationSchema() *walker.Schema {
+	// Set up search options if not already done
+	if reportConfigurationSchema.OptionsMap == nil {
+		reportConfigurationSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_REPORT_CONFIGURATIONS, reportConfigurationSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range reportConfigurationSchema.Fields {
+		reportConfigurationSchema.Fields[i].Schema = reportConfigurationSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(reportConfigurationSchema)
+	return reportConfigurationSchema
 }

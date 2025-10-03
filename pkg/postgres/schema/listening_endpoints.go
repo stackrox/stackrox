@@ -9,9 +9,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -28,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetProcessListeningOnPortStorageSchema()
+		schema = getProcessListeningOnPortStorageSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ProcessIndicator": ProcessIndicatorsSchema,
 			"storage.Deployment":       DeploymentsSchema,
@@ -63,4 +63,119 @@ type ListeningEndpoints struct {
 	ClusterID          string             `gorm:"column:clusterid;type:uuid;index:listeningendpoints_sac_filter,type:btree"`
 	Namespace          string             `gorm:"column:namespace;type:varchar;index:listeningendpoints_sac_filter,type:btree"`
 	Serialized         []byte             `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	processListeningOnPortStorageSearchFields = map[search.FieldLabel]*search.Field{}
+
+	processListeningOnPortStorageSchema = &walker.Schema{
+		Table:    "listening_endpoints",
+		Type:     "*storage.ProcessListeningOnPortStorage",
+		TypeName: "ProcessListeningOnPortStorage",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Port",
+				ColumnName: "Port",
+				Type:       "uint32",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "Protocol",
+				ColumnName: "Protocol",
+				Type:       "storage.L4Protocol",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "CloseTimestamp",
+				ColumnName: "CloseTimestamp",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "ProcessIndicatorId",
+				ColumnName: "ProcessIndicatorId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Closed",
+				ColumnName: "Closed",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "DeploymentId",
+				ColumnName: "DeploymentId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "PodUid",
+				ColumnName: "PodUid",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getProcessListeningOnPortStorageSchema() *walker.Schema {
+	// Set up search options if not already done
+	if processListeningOnPortStorageSchema.OptionsMap == nil {
+		processListeningOnPortStorageSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, processListeningOnPortStorageSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range processListeningOnPortStorageSchema.Fields {
+		processListeningOnPortStorageSchema.Fields[i].Schema = processListeningOnPortStorageSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(processListeningOnPortStorageSchema)
+	return processListeningOnPortStorageSchema
 }

@@ -5,9 +5,9 @@ package schema
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -24,7 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetAuthProviderSchema()
+		schema = getAuthProviderSchema()
 		schema.ScopingResource = resources.Access
 		RegisterTable(schema, CreateTableAuthProvidersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_AUTH_PROVIDERS, schema)
@@ -42,4 +42,63 @@ type AuthProviders struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	authProviderSearchFields = map[search.FieldLabel]*search.Field{}
+
+	authProviderSchema = &walker.Schema{
+		Table:    "auth_providers",
+		Type:     "*storage.AuthProvider",
+		TypeName: "AuthProvider",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getAuthProviderSchema() *walker.Schema {
+	// Set up search options if not already done
+	if authProviderSchema.OptionsMap == nil {
+		authProviderSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_AUTH_PROVIDERS, authProviderSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range authProviderSchema.Fields {
+		authProviderSchema.Fields[i].Schema = authProviderSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(authProviderSchema)
+	return authProviderSchema
 }

@@ -7,9 +7,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetTestGrandChild1Schema()
+		schema = getTestGrandChild1Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.TestChild1":       TestChild1Schema,
 			"storage.TestGGrandChild1": TestGGrandChild1Schema,
@@ -55,4 +55,77 @@ type TestGrandChild1 struct {
 	Val           string     `gorm:"column:val;type:varchar"`
 	Serialized    []byte     `gorm:"column:serialized;type:bytea"`
 	TestChild1Ref TestChild1 `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	testGrandChild1SearchFields = map[search.FieldLabel]*search.Field{}
+
+	testGrandChild1Schema = &walker.Schema{
+		Table:    "test_grand_child1",
+		Type:     "*storage.TestGrandChild1",
+		TypeName: "TestGrandChild1",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ParentId",
+				ColumnName: "ParentId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ChildId",
+				ColumnName: "ChildId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Val",
+				ColumnName: "Val",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getTestGrandChild1Schema() *walker.Schema {
+	// Set up search options if not already done
+	if testGrandChild1Schema.OptionsMap == nil {
+		testGrandChild1Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(108), testGrandChild1SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range testGrandChild1Schema.Fields {
+		testGrandChild1Schema.Fields[i].Schema = testGrandChild1Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(testGrandChild1Schema)
+	return testGrandChild1Schema
 }

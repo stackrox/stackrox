@@ -8,9 +8,9 @@ import (
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema/internal"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -32,7 +32,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = internal.GetTestParent1Schema()
+		schema = getTestParent1Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.TestGrandparent": TestGrandparentsSchema,
 			"storage.TestChild1":      TestChild1Schema,
@@ -71,4 +71,114 @@ type TestParent1Childrens struct {
 	Idx            int         `gorm:"column:idx;type:integer;primaryKey;index:testparent1childrens_idx,type:btree"`
 	ChildID        string      `gorm:"column:childid;type:varchar"`
 	TestParent1Ref TestParent1 `gorm:"foreignKey:test_parent1_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	testParent1SearchFields = map[search.FieldLabel]*search.Field{}
+
+	testParent1Schema = &walker.Schema{
+		Table:    "test_parent1",
+		Type:     "*storage.TestParent1",
+		TypeName: "TestParent1",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ParentId",
+				ColumnName: "ParentId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Val",
+				ColumnName: "Val",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "StringSlice",
+				ColumnName: "StringSlice",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "test_parent1_childrens",
+				Type:     "*storage.TestParent1_Child1Ref",
+				TypeName: "TestParent1_Child1Ref",
+				Fields: []walker.Field{
+					{
+						Name:       "testParent1ID",
+						ColumnName: "test_parent1_Id",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "ChildId",
+						ColumnName: "ChildId",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getTestParent1Schema() *walker.Schema {
+	// Set up search options if not already done
+	if testParent1Schema.OptionsMap == nil {
+		testParent1Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(110), testParent1SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range testParent1Schema.Fields {
+		testParent1Schema.Fields[i].Schema = testParent1Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(testParent1Schema)
+	return testParent1Schema
 }
