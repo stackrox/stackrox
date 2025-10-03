@@ -92,7 +92,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1UpdateProcessBaselinesResponse"
+              "$ref": "#/definitions/v1BulkUpdateProcessBaselinesResponse"
             }
           },
           "default": {
@@ -125,7 +125,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1UpdateProcessBaselinesResponse"
+              "$ref": "#/definitions/v1BulkUpdateProcessBaselinesResponse"
             }
           },
           "default": {
@@ -354,6 +354,14 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "v1BulkUpdateProcessBaselinesResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
         }
       }
     },

@@ -477,7 +477,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 				Namespaces: c.namespaces,
 			}
 
-			var response *v1.UpdateProcessBaselinesResponse
+			var response *v1.BulkUpdateProcessBaselinesResponse
 			var err error
 			if c.locked {
 				response, err = suite.service.BulkLockProcessBaselines(hasWriteCtx, request)
@@ -487,18 +487,11 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 
 			if !c.expectError {
 				suite.NoError(err)
+				suite.True(response.GetSuccess())
 			} else {
 				suite.Error(err)
+				suite.False(response.GetSuccess())
 			}
-
-			locked := make([]*storage.ProcessBaselineKey, 0)
-			for _, baseline := range response.GetBaselines() {
-				if baseline.GetUserLockedTimestamp() != nil {
-					locked = append(locked, baseline.GetKey())
-				}
-			}
-
-			protoassert.ElementsMatch(suite.T(), c.expectedLocked, locked)
 		})
 	}
 }
