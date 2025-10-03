@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 // import { createMemoryHistory } from 'history';
-import { Route, MemoryRouter as Router } from 'react-router-dom';
+import { MemoryRouter as Router, Route } from 'react-router-dom';
 import type { RouteComponentProps } from 'react-router-dom';
 // import { HistoryRouter as Router } from 'redux-first-history/rr6';
 import { CompatRouter } from 'react-router-dom-v5-compat';

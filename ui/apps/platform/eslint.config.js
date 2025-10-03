@@ -756,9 +756,16 @@ module.exports = [
             'src/Containers/Vulnerabilities/**',
         ],
 
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+
         // Separate from the following configuration to limit size of contributions.
         rules: {
-            'sort-imports': ['error', { ignoreDeclarationSort: true }],
+            'limited/sort-named-imports': 'error',
         },
     },
     {
