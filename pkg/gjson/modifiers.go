@@ -148,10 +148,9 @@ func TextModifier() CustomModifier {
 			return true
 		})
 		// Ensure we keep the same order for the texts we generated.
-		keys := slices.Collect(maps.Keys(texts))
-		slices.Sort(keys)
+		keys := slices.Sorted(maps.Keys(texts))
 		var result []string
-		for key := range keys {
+		for _, key := range keys {
 			result = append(result, modifier.trimSeparator(texts[key]))
 		}
 		bytes, _ := json.Marshal(result)
