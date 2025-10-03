@@ -37,6 +37,7 @@ linters:
   # - unconvert TODO: add in follow-up
   # - unparam TODO: add in follow-up
   # - unused // enabled in Makefile as it fails with release tag
+    - usestdlibvars
   settings:
     errcheck:
       disable-default-exclusions: false

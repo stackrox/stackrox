@@ -471,7 +471,7 @@ func createClient(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 	log.Debugf("Making request to Jira at %s", urlPath)
 	if resp, err = client.Do(req, nil); err != nil {
 		// If the underlying http.Client.Do() returns an error, the Jira response will be nil.
-		if resp == nil || (resp.StatusCode != 401 && resp.StatusCode != 403) {
+		if resp == nil || (resp.StatusCode != http.StatusUnauthorized && resp.StatusCode != http.StatusForbidden) {
 			return nil, errors.Wrap(err, "Could not make request to Jira")
 		}
 		log.Debug("Retrying request to Jira using Bearer auth")
@@ -509,7 +509,7 @@ func canCreateIssuesInProject(client *jiraLib.Client, project string) (bool, err
 	resp, err := client.Do(req, nil)
 	if err != nil {
 		log.Debugf("Raw error message from jira lib: %s", err.Error())
-		if resp != nil && resp.StatusCode == 404 {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
 			return false, fmt.Errorf("Project %s not found", project)
 		}
 		return false, err
