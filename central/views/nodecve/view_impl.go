@@ -32,20 +32,14 @@ func (n *nodeCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, erro
 		return 0, err
 	}
 
-	var results []*nodeCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[nodeCVECoreCount](ctx, n.db, n.schema, common.WithCountQuery(q, search.CVE))
+	result, err := pgSearch.RunSelectOneForSchema[nodeCVECoreCount](ctx, n.db, n.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return 0, nil
 	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].CVECount, nil
+	return result.CVECount, nil
 }
 func (n *nodeCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, error) {
 	if err := common.ValidateQuery(q); err != nil {

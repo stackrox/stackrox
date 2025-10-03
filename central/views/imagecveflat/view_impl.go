@@ -4,7 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -45,20 +43,14 @@ func (v *imageCVEFlatViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*imageCVEFlatCount
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVEFlatCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
+	result, err := pgSearch.RunSelectOneForSchema[imageCVEFlatCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return 0, nil
 	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].CVECount, nil
+	return result.CVECount, nil
 }
 
 func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveFlat, error) {

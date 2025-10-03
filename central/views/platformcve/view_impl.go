@@ -3,7 +3,6 @@ package platformcve
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 type platformCVECoreViewImpl struct {
@@ -32,20 +30,14 @@ func (v *platformCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, 
 		return 0, err
 	}
 
-	var results []*platformCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[platformCVECoreCount](ctx, v.db, v.schema, common.WithCountQuery(q, search.CVEID))
+	result, err := pgSearch.RunSelectOneForSchema[platformCVECoreCount](ctx, v.db, v.schema, common.WithCountQuery(q, search.CVEID))
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return 0, nil
 	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].CVECount, nil
+	return result.CVECount, nil
 }
 
 func (v *platformCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, error) {
@@ -107,21 +99,15 @@ func (v *platformCVECoreViewImpl) CVECountByType(ctx context.Context, q *v1.Quer
 		return nil, err
 	}
 
-	var results []*cveCountByTypeResponse
-	results, err = pgSearch.RunSelectRequestForSchema[cveCountByTypeResponse](ctx, v.db, v.schema, withCVECountByTypeQuery(q))
+	result, err := pgSearch.RunSelectOneForSchema[cveCountByTypeResponse](ctx, v.db, v.schema, withCVECountByTypeQuery(q))
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 0 {
-		return NewEmptyCVECountByType(), nil
-	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
+	if result == nil {
 		return NewEmptyCVECountByType(), nil
 	}
 
-	return results[0], nil
+	return result, nil
 }
 
 func (v *platformCVECoreViewImpl) CVECountByFixability(ctx context.Context, q *v1.Query) (common.ResourceCountByFixability, error) {
@@ -135,21 +121,15 @@ func (v *platformCVECoreViewImpl) CVECountByFixability(ctx context.Context, q *v
 		return nil, err
 	}
 
-	var results []*cveCountByFixabilityResponse
-	results, err = pgSearch.RunSelectRequestForSchema[cveCountByFixabilityResponse](ctx, v.db, v.schema, withCVECountByFixabilityQuery(q))
+	result, err := pgSearch.RunSelectOneForSchema[cveCountByFixabilityResponse](ctx, v.db, v.schema, withCVECountByFixabilityQuery(q))
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 0 {
-		return NewEmptyCVECountByFixability(), nil
-	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
+	if result == nil {
 		return NewEmptyCVECountByFixability(), nil
 	}
 
-	return results[0], nil
+	return result, nil
 }
 
 func withSelectQuery(q *v1.Query) *v1.Query {

@@ -43,20 +43,14 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*imageCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
+	result, err := pgSearch.RunSelectOneForSchema[imageCVECoreCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return 0, nil
 	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].CVECount, nil
+	return result.CVECount, nil
 }
 
 func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
