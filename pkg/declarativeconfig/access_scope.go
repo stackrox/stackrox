@@ -2,7 +2,7 @@ package declarativeconfig
 
 import (
 	"maps"
-	slices "slices"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"

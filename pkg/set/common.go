@@ -1,10 +1,5 @@
 package set
 
-import (
-	"iter"
-	"slices"
-)
-
 // TODO: remove these shortcuts to commonly used types, made to avoid huge diff.
 
 // StringSet is a set of strings.
@@ -13,11 +8,6 @@ type StringSet = Set[string]
 // NewStringSet creates an initialized set of strings.
 func NewStringSet(initial ...string) Set[string] {
 	return NewSet(initial...)
-}
-
-// NewStringSetFromSeq creates a string set from iterator
-func NewStringSetFromSeq(initial iter.Seq[string]) Set[string] {
-	return NewSet(slices.Collect(initial)...)
 }
 
 // FrozenStringSet is a frozen set of strings.
