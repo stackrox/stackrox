@@ -729,8 +729,8 @@ func GetImageV2SherlockHolmes1() *storage.ImageV2 {
 	imageName := "baker.st/sherlock/holmes:v1"
 	imageSha := "sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7"
 	return &storage.ImageV2{
-		Id:  uuid.NewV5FromNonUUIDs(imageName, imageSha).String(),
-		Sha: imageSha,
+		Id:     uuid.NewV5FromNonUUIDs(imageName, imageSha).String(),
+		Digest: imageSha,
 		Name: &storage.ImageName{
 			Registry: "baker.st",
 			Remote:   "sherlock/holmes",
@@ -794,15 +794,17 @@ func GetImageV2SherlockHolmes1() *storage.ImageV2 {
 		},
 		SignatureVerificationData: nil,
 		Signature:                 nil,
-		ComponentCount:            3,
-		CveCount:                  5,
-		FixableCveCount:           1,
-		LastUpdated:               protocompat.GetProtoTimestampFromSecondsAndNanos(1654154313, 67882700),
-		NotPullable:               false,
-		IsClusterLocal:            false,
-		Priority:                  0,
-		RiskScore:                 1.5,
-		TopCvss:                   7.5,
+		ScanStats: &storage.ImageV2_ScanStats{
+			ComponentCount:  3,
+			CveCount:        5,
+			FixableCveCount: 1,
+		},
+		LastUpdated:    protocompat.GetProtoTimestampFromSecondsAndNanos(1654154313, 67882700),
+		NotPullable:    false,
+		IsClusterLocal: false,
+		Priority:       0,
+		RiskScore:      1.5,
+		TopCvss:        7.5,
 		Notes: []storage.ImageV2_Note{
 			storage.ImageV2_MISSING_SIGNATURE_VERIFICATION_DATA,
 			storage.ImageV2_MISSING_SIGNATURE,
@@ -822,7 +824,7 @@ func GetImageV2DoctorJekyll2() *storage.ImageV2 {
 			Tag:      "v2",
 			FullName: imageName,
 		},
-		Sha: imageSha,
+		Digest: imageSha,
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
 				Digest:  "sha256:9fe0366ee2eead5a66948f853ebedae5464361b5ffb166980db355d294a971ff",
@@ -880,15 +882,17 @@ func GetImageV2DoctorJekyll2() *storage.ImageV2 {
 		},
 		SignatureVerificationData: nil,
 		Signature:                 nil,
-		ComponentCount:            3,
-		CveCount:                  5,
-		FixableCveCount:           2,
-		LastUpdated:               protocompat.GetProtoTimestampFromSecondsAndNanos(1654154413, 970783800),
-		NotPullable:               false,
-		IsClusterLocal:            false,
-		Priority:                  0,
-		RiskScore:                 2.375,
-		TopCvss:                   7.8,
+		ScanStats: &storage.ImageV2_ScanStats{
+			ComponentCount:  3,
+			CveCount:        5,
+			FixableCveCount: 2,
+		},
+		LastUpdated:    protocompat.GetProtoTimestampFromSecondsAndNanos(1654154413, 970783800),
+		NotPullable:    false,
+		IsClusterLocal: false,
+		Priority:       0,
+		RiskScore:      2.375,
+		TopCvss:        7.8,
 		Notes: []storage.ImageV2_Note{
 			storage.ImageV2_MISSING_SIGNATURE_VERIFICATION_DATA,
 			storage.ImageV2_MISSING_SIGNATURE,

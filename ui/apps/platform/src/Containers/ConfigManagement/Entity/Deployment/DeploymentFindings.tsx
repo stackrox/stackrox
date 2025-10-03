@@ -1,7 +1,8 @@
 import React from 'react';
-import FailedPoliciesAcrossDeployment from 'Containers/ConfigManagement/Entity/widgets/FailedPoliciesAcrossDeployment';
 import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
 import entityTypes from 'constants/entityTypes';
+
+import FailedPoliciesAcrossDeployment from '../widgets/FailedPoliciesAcrossDeployment';
 
 export type DeploymentFindingsProps = {
     deploymentID: string;

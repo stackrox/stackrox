@@ -9,15 +9,13 @@ import {
     testIntegrationV2,
 } from 'services/IntegrationsService';
 import type { IntegrationOptions } from 'services/IntegrationsService';
-import type {
-    IntegrationSource,
-    IntegrationType,
-} from 'Containers/Integrations/utils/integrationUtils';
 import { generateAPIToken } from 'services/APITokensService';
 import { getAxiosErrorMessage, isTimeoutError } from 'utils/responseErrorUtils';
 
 import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { createMachineAccessConfig } from 'services/MachineAccessService';
+
+import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
 

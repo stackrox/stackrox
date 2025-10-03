@@ -16,14 +16,14 @@ import merge from 'lodash/merge';
 
 import type { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import SelectSingle from 'Components/SelectSingle';
-import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
+
+import usePageState from '../../../hooks/usePageState';
 import useIntegrationForm from '../../useIntegrationForm';
 import type { IntegrationFormProps } from '../../integrationFormTypes';
 
@@ -32,6 +32,8 @@ import FormLabelGroup from '../../FormLabelGroup';
 import ScheduleIntervalOptions from '../../FormSchedule/ScheduleIntervalOptions';
 import ScheduleWeeklyOptions from '../../FormSchedule/ScheduleWeeklyOptions';
 import ScheduleDailyOptions from '../../FormSchedule/ScheduleDailyOptions';
+
+import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 
 const urlStyles = [
     {

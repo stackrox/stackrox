@@ -1,6 +1,7 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
-import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
+import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 

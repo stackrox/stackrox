@@ -14,11 +14,15 @@ import {
     UnknownIcon,
 } from '@patternfly/react-icons';
 
-import { Cluster, ClusterHealthStatusLabel, ClusterProviderMetadata } from 'types/cluster.proto';
+import type {
+    Cluster,
+    ClusterHealthStatusLabel,
+    ClusterProviderMetadata,
+} from 'types/cluster.proto';
 import { getDate, getDistanceStrict } from 'utils/dateUtils';
 
 import { healthStatusLabels } from './cluster.constants';
-import { CertExpiryStatus } from './clusterTypes';
+import type { CertExpiryStatus } from './clusterTypes';
 
 export const runtimeOptions = [
     {

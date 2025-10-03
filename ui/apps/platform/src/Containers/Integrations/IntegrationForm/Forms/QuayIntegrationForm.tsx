@@ -18,12 +18,12 @@ import * as yup from 'yup';
 
 import type { QuayImageIntegration } from 'types/imageIntegration.proto';
 
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 
+import usePageState from '../../hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import type { IntegrationFormProps } from '../integrationFormTypes';
 

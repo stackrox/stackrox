@@ -751,6 +751,22 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageSignatureVerificationResult_Status(0)))
 	utils.Must(builder.AddType("ImageV2", []string{
+		"digest: String!",
+		"id: ID!",
+		"isClusterLocal: Boolean!",
+		"lastUpdated: Time",
+		"metadata: ImageMetadata",
+		"name: ImageName",
+		"notPullable: Boolean!",
+		"notes: [ImageV2_Note!]!",
+		"priority: Int!",
+		"riskScore: Float!",
+		"signature: ImageSignature",
+		"signatureVerificationData: ImageSignatureVerificationData",
+		"topCvss: Float!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageV2_Note(0)))
+	utils.Must(builder.AddType("ImageV2_ScanStats", []string{
 		"componentCount: Int!",
 		"criticalCveCount: Int!",
 		"cveCount: Int!",
@@ -760,25 +776,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"fixableLowCveCount: Int!",
 		"fixableModerateCveCount: Int!",
 		"fixableUnknownCveCount: Int!",
-		"id: ID!",
 		"importantCveCount: Int!",
-		"isClusterLocal: Boolean!",
-		"lastUpdated: Time",
 		"lowCveCount: Int!",
-		"metadata: ImageMetadata",
 		"moderateCveCount: Int!",
-		"name: ImageName",
-		"notPullable: Boolean!",
-		"notes: [ImageV2_Note!]!",
-		"priority: Int!",
-		"riskScore: Float!",
-		"sha: String!",
-		"signature: ImageSignature",
-		"signatureVerificationData: ImageSignatureVerificationData",
-		"topCvss: Float!",
 		"unknownCveCount: Int!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageV2_Note(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Image_Note(0)))
 	utils.Must(builder.AddType("Jira", []string{
 		"defaultFieldsJson: String!",
@@ -8992,63 +8994,9 @@ func (resolver *imageV2Resolver) ensureData(ctx context.Context) {
 	}
 }
 
-func (resolver *imageV2Resolver) ComponentCount(ctx context.Context) int32 {
-	value := resolver.data.GetComponentCount()
-	if resolver.data == nil {
-		value = resolver.list.GetComponentCount()
-	}
-	return value
-}
-
-func (resolver *imageV2Resolver) CriticalCveCount(ctx context.Context) int32 {
+func (resolver *imageV2Resolver) Digest(ctx context.Context) string {
 	resolver.ensureData(ctx)
-	value := resolver.data.GetCriticalCveCount()
-	return value
-}
-
-func (resolver *imageV2Resolver) CveCount(ctx context.Context) int32 {
-	value := resolver.data.GetCveCount()
-	if resolver.data == nil {
-		value = resolver.list.GetCveCount()
-	}
-	return value
-}
-
-func (resolver *imageV2Resolver) FixableCriticalCveCount(ctx context.Context) int32 {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetFixableCriticalCveCount()
-	return value
-}
-
-func (resolver *imageV2Resolver) FixableCveCount(ctx context.Context) int32 {
-	value := resolver.data.GetFixableCveCount()
-	if resolver.data == nil {
-		value = resolver.list.GetFixableCveCount()
-	}
-	return value
-}
-
-func (resolver *imageV2Resolver) FixableImportantCveCount(ctx context.Context) int32 {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetFixableImportantCveCount()
-	return value
-}
-
-func (resolver *imageV2Resolver) FixableLowCveCount(ctx context.Context) int32 {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetFixableLowCveCount()
-	return value
-}
-
-func (resolver *imageV2Resolver) FixableModerateCveCount(ctx context.Context) int32 {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetFixableModerateCveCount()
-	return value
-}
-
-func (resolver *imageV2Resolver) FixableUnknownCveCount(ctx context.Context) int32 {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetFixableUnknownCveCount()
+	value := resolver.data.GetDigest()
 	return value
 }
 
@@ -9058,12 +9006,6 @@ func (resolver *imageV2Resolver) Id(ctx context.Context) graphql.ID {
 		value = resolver.list.GetId()
 	}
 	return graphql.ID(value)
-}
-
-func (resolver *imageV2Resolver) ImportantCveCount(ctx context.Context) int32 {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetImportantCveCount()
-	return value
 }
 
 func (resolver *imageV2Resolver) IsClusterLocal(ctx context.Context) bool {
@@ -9080,22 +9022,10 @@ func (resolver *imageV2Resolver) LastUpdated(ctx context.Context) (*graphql.Time
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
-func (resolver *imageV2Resolver) LowCveCount(ctx context.Context) int32 {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetLowCveCount()
-	return value
-}
-
 func (resolver *imageV2Resolver) Metadata(ctx context.Context) (*imageMetadataResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetMetadata()
 	return resolver.root.wrapImageMetadata(value, true, nil)
-}
-
-func (resolver *imageV2Resolver) ModerateCveCount(ctx context.Context) int32 {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetModerateCveCount()
-	return value
 }
 
 func (resolver *imageV2Resolver) Name(ctx context.Context) (*imageNameResolver, error) {
@@ -9130,12 +9060,6 @@ func (resolver *imageV2Resolver) RiskScore(ctx context.Context) float64 {
 	return float64(value)
 }
 
-func (resolver *imageV2Resolver) Sha(ctx context.Context) string {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetSha()
-	return value
-}
-
 func (resolver *imageV2Resolver) Signature(ctx context.Context) (*imageSignatureResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetSignature()
@@ -9154,12 +9078,6 @@ func (resolver *imageV2Resolver) TopCvss(ctx context.Context) float64 {
 	return float64(value)
 }
 
-func (resolver *imageV2Resolver) UnknownCveCount(ctx context.Context) int32 {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetUnknownCveCount()
-	return value
-}
-
 func toImageV2_Note(value *string) storage.ImageV2_Note {
 	if value != nil {
 		return storage.ImageV2_Note(storage.ImageV2_Note_value[*value])
@@ -9176,6 +9094,113 @@ func toImageV2_Notes(values *[]string) []storage.ImageV2_Note {
 		output[i] = toImageV2_Note(&v)
 	}
 	return output
+}
+
+type imageV2_ScanStatsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageV2_ScanStats
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStats(value *storage.ImageV2_ScanStats, ok bool, err error) (*imageV2_ScanStatsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageV2_ScanStatsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStatses(values []*storage.ImageV2_ScanStats, err error) ([]*imageV2_ScanStatsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageV2_ScanStatsResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2_ScanStatsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStatsWithContext(ctx context.Context, value *storage.ImageV2_ScanStats, ok bool, err error) (*imageV2_ScanStatsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageV2_ScanStatsResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStatsesWithContext(ctx context.Context, values []*storage.ImageV2_ScanStats, err error) ([]*imageV2_ScanStatsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageV2_ScanStatsResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2_ScanStatsResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageV2_ScanStatsResolver) ComponentCount(ctx context.Context) int32 {
+	value := resolver.data.GetComponentCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) CriticalCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetCriticalCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) CveCount(ctx context.Context) int32 {
+	value := resolver.data.GetCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableCriticalCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableCriticalCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableImportantCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableImportantCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableLowCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableLowCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableModerateCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableModerateCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableUnknownCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableUnknownCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) ImportantCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetImportantCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) LowCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetLowCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) ModerateCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetModerateCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) UnknownCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetUnknownCveCount()
+	return value
 }
 
 func toImage_Note(value *string) storage.Image_Note {

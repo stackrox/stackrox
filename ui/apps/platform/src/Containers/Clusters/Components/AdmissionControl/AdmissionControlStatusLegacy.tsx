@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Tooltip } from '@patternfly/react-core';
 
 import DetailedTooltipContent from 'Components/DetailedTooltipContent';
@@ -11,7 +12,7 @@ import {
 } from '../../cluster.helpers';
 import AdmissionControlStatusTotals from './AdmissionControlStatusTotals';
 import AdmissionControlUnavailableStatus from './AdmissionControlUnavailableStatus';
-import { ClusterHealthStatus } from '../../clusterTypes';
+import type { ClusterHealthStatus } from '../../clusterTypes';
 import HealthLabelWithDelayed from '../HealthLabelWithDelayed';
 import HealthStatusNotApplicable from '../HealthStatusNotApplicable';
 

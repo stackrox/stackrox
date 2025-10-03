@@ -1,10 +1,11 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Button, Flex, FlexItem, Switch, Text, Title } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 import { CheckCircle } from 'react-feather';
 import { ClipLoader } from 'react-spinners';
 
-import { ClusterManagerType } from 'types/cluster.proto';
+import type { ClusterManagerType } from 'types/cluster.proto';
 import useAnalytics, { LEGACY_CLUSTER_DOWNLOAD_YAML } from 'hooks/useAnalytics';
 
 export type ClusterDeploymentProps = {

@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Breadcrumb,
@@ -19,13 +20,13 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { fetchCloudSources } from 'services/CloudSourceService';
 import {
-    DiscoveredCluster,
     countDiscoveredClusters,
     defaultSortOption,
     getListDiscoveredClustersArg,
     listDiscoveredClusters,
     sortFields,
 } from 'services/DiscoveredClusterService';
+import type { DiscoveredCluster } from 'services/DiscoveredClusterService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersBasePath } from 'routePaths';
 
