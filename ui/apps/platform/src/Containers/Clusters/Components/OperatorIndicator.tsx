@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Tooltip } from '@patternfly/react-core';
 
 import operatorLogo from 'images/operator-logo.png';

@@ -768,7 +768,6 @@ module.exports = [
         files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: [
             'src/Components/**',
-            'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/MainPage/**',
             'src/Containers/MitreAttackVectors/**',
@@ -797,6 +796,7 @@ module.exports = [
         rules: {
             '@typescript-eslint/consistent-type-imports': 'error',
             'limited/no-qualified-name-react': 'error',
+            'limited/no-absolute-path-within-container-in-import': 'error',
             'limited/no-relative-path-to-src-in-import': 'error',
         },
     },

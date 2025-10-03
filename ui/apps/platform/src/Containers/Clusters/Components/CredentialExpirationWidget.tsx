@@ -5,7 +5,7 @@ import { Flex, FlexItem } from '@patternfly/react-core';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { clustersInitBundlesPath } from 'routePaths';
 
-import { ClusterStatus } from '../clusterTypes';
+import type { ClusterStatus } from '../clusterTypes';
 import CredentialExpiration from './CredentialExpiration';
 import CredentialInteraction from './CredentialInteraction';
 

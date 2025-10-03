@@ -8,7 +8,7 @@ import {
     ListItem,
 } from '@patternfly/react-core';
 
-import { ClusterHealthStatus } from 'types/cluster.proto';
+import type { ClusterHealthStatus } from 'types/cluster.proto';
 import { buildStatusMessage } from '../../cluster.helpers';
 
 import ClusterHealthPanel from '../ClusterHealthPanel';
