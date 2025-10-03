@@ -12,8 +12,8 @@ import {
     sortParamValues,
 } from 'test-utils/workflowUtils';
 import {
-    getVulnerabilityManagementEntityTypesByRelationship as getEntityTypesByRelationship,
     getVulnerabilityManagementEntityTypes,
+    getVulnerabilityManagementEntityTypesByRelationship as getEntityTypesByRelationship,
 } from './entityRelationships';
 import WorkflowEntity from './WorkflowEntity';
 import { WorkflowState } from './WorkflowState';
