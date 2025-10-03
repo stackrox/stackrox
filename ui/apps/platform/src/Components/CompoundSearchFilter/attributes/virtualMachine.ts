@@ -23,14 +23,14 @@ export const VirtualMachineComponentVersion: CompoundSearchFilterAttribute = {
 
 export const VirtualMachineID: CompoundSearchFilterAttribute = {
     displayName: 'ID',
-    filterChipLabel: 'Virtual Machine ID',
+    filterChipLabel: 'Virtual machine ID',
     searchTerm: 'Virtual Machine ID',
-    inputType: 'text',
+    inputType: 'autocomplete',
 };
 
 export const VirtualMachineName: CompoundSearchFilterAttribute = {
     displayName: 'Name',
-    filterChipLabel: 'Virtual Machine Name',
+    filterChipLabel: 'Virtual machine name',
     searchTerm: 'Virtual Machine Name',
-    inputType: 'text',
+    inputType: 'autocomplete',
 };

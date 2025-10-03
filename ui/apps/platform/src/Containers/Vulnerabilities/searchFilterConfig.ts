@@ -90,8 +90,8 @@ export const platformCVESearchFilterConfig: CompoundSearchFilterEntity = {
 };
 
 export const virtualMachinesSearchFilterConfig: CompoundSearchFilterEntity = {
-    displayName: 'Virtual Machine',
-    searchCategory: 'SEARCH_UNSET', // TODO: will be updated with ROX-30825, dependent on PR#16758
+    displayName: 'Virtual machine',
+    searchCategory: 'VIRTUAL_MACHINES',
     attributes: [VirtualMachineName, VirtualMachineID],
 };
 

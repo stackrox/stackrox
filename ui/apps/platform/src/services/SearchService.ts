@@ -55,6 +55,7 @@ export type SearchCategory =
     | 'SECRETS'
     | 'SERVICE_ACCOUNTS'
     | 'SUBJECTS'
+    | 'VIRTUAL_MACHINES'
     | 'VULN_REQUEST'
     | 'VULNERABILITIES'
     ;
