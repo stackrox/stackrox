@@ -193,7 +193,7 @@ func TestPipelineReconcile(t *testing.T) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
 			setupMock: func(m *virtualMachineDSMocks.MockDataStore) {
-				m.EXPECT().GetAllVirtualMachines(gomock.Any()).
+				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachine{
 						{
 							Id:        "existing-vm",
@@ -208,7 +208,7 @@ func TestPipelineReconcile(t *testing.T) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
 			setupMock: func(m *virtualMachineDSMocks.MockDataStore) {
-				m.EXPECT().GetAllVirtualMachines(gomock.Any()).
+				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachine{
 						{
 							Id:        "existing-vm",
@@ -228,7 +228,7 @@ func TestPipelineReconcile(t *testing.T) {
 			},
 			setupMock: func(m *virtualMachineDSMocks.MockDataStore) {
 				m.EXPECT().
-					GetAllVirtualMachines(gomock.Any()).
+					SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachine{
 						{
 							Id:        "existing-vm",
@@ -251,7 +251,7 @@ func TestPipelineReconcile(t *testing.T) {
 			},
 			setupMock: func(m *virtualMachineDSMocks.MockDataStore) {
 				m.EXPECT().
-					GetAllVirtualMachines(gomock.Any()).
+					SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return(nil, errox.InvalidArgs)
 			},
 			expectsError: true,

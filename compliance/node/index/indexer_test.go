@@ -136,16 +136,26 @@ func (s *nodeIndexerSuite) TestRunRepositoryScannerAnyPath() {
 func (s *nodeIndexerSuite) TestRunPackageScanner() {
 	layer := s.mustCreateLayer("testdata")
 
-	packages, err := runPackageScanner(context.Background(), layer)
+	packages, err := runPackageScanner(context.Background(), rhcosPackageDB, layer)
 	s.NoError(err)
 
 	s.Len(packages, 106)
 }
 
+func (s *nodeIndexerSuite) TestRunPackageScannerWithUnmatchedFilter() {
+	layer := s.mustCreateLayer("testdata")
+
+	packages, err := runPackageScanner(context.Background(), "invalidPackageDB", layer)
+	s.NoError(err)
+
+	// All packages are filtered out.
+	s.Len(packages, 0)
+}
+
 func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 	layer := s.mustCreateLayer(s.T().TempDir())
 
-	packages, err := runPackageScanner(context.Background(), layer)
+	packages, err := runPackageScanner(context.Background(), rhcosPackageDB, layer)
 	s.NoError(err)
 
 	// The scanner must not error out, but produce 0 results

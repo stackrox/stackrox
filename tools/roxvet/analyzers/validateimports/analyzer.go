@@ -46,6 +46,7 @@ var (
 		"tools",
 		"webhookserver",
 		"qa-tests-backend/test-images/syslog",
+		"virtualmachines/agent",
 	)
 
 	ignoredRoots = []string{

@@ -17,7 +17,6 @@ import (
 	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/rhel"
-	"github.com/quay/claircore/rpm"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/compliance/node"
@@ -37,7 +36,7 @@ import (
 const (
 	layerMediaType = "application/vnd.claircore.filesystem"
 
-	rhcosPackageDB = "sqlite:usr/share/rpm"
+	rhcosPackageDB = "usr/share/rpm"
 
 	// scannerDefinitionsRouteInSensor should be in sync with `scannerDefinitionsRoute` in sensor/sensor.go
 	// Direct import is prohibited by import rules
@@ -112,6 +111,9 @@ type NodeIndexerConfig struct {
 	Repo2CPEMappingURL string
 	// Timeout controls the timeout for any remote API calls.
 	Timeout time.Duration
+	// PackageDBFilter removes irrelevant packages. For node scanning, we are
+	// currently only interested in the RHCOS RPM database.
+	PackageDBFilter string
 }
 
 // DefaultNodeIndexerConfig provides the default configuration for a node indexer.
@@ -122,6 +124,7 @@ func DefaultNodeIndexerConfig() NodeIndexerConfig {
 		Client:             nil,
 		Repo2CPEMappingURL: buildMappingURL(),
 		Timeout:            10 * time.Second,
+		PackageDBFilter:    rhcosPackageDB,
 	}
 }
 
@@ -161,7 +164,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 		return nil, errors.Wrap(err, "failed to run repository scanner")
 	}
 
-	pkgs, err := runPackageScanner(ctx, layer)
+	pkgs, err := runPackageScanner(ctx, l.cfg.PackageDBFilter, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run package scanner")
 	}
@@ -233,19 +236,21 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 	return repos, nil
 }
 
-func runPackageScanner(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
-	scanner := rpm.Scanner{}
+func runPackageScanner(ctx context.Context, packageDBFilter string, layer *claircore.Layer) ([]*claircore.Package, error) {
+	scanner := rhel.PackageScanner{}
 	pkgs, err := scanner.Scan(ctx, layer)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to invoke RPM scanner")
+		return nil, errors.Wrap(err, "failed to invoke RHEL scanner")
 	}
 
 	// Filter out packages in which we are not interested.
-	// At this time, we are only interested in the RHCOS RPM database.
-	filtered := pkgs[:0]
-	for _, pkg := range pkgs {
-		if pkg.PackageDB == rhcosPackageDB {
-			filtered = append(filtered, pkg)
+	filtered := pkgs
+	if packageDBFilter != "" {
+		filtered = pkgs[:0]
+		for _, pkg := range pkgs {
+			if pkg.PackageDB == packageDBFilter {
+				filtered = append(filtered, pkg)
+			}
 		}
 	}
 	for i, p := range filtered {

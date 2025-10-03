@@ -20,3 +20,17 @@ export const VirtualMachineComponentVersion: CompoundSearchFilterAttribute = {
     searchTerm: 'Component Version',
     inputType: 'text',
 };
+
+export const VirtualMachineID: CompoundSearchFilterAttribute = {
+    displayName: 'ID',
+    filterChipLabel: 'Virtual Machine ID',
+    searchTerm: 'Virtual Machine ID',
+    inputType: 'text',
+};
+
+export const VirtualMachineName: CompoundSearchFilterAttribute = {
+    displayName: 'Name',
+    filterChipLabel: 'Virtual Machine Name',
+    searchTerm: 'Virtual Machine Name',
+    inputType: 'text',
+};

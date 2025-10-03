@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	"github.com/stackrox/rox/central/virtualmachine/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -12,9 +13,15 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	defaultPageSize = 100
 )
 
 var (
@@ -65,8 +72,21 @@ func (s *serviceImpl) GetVirtualMachine(ctx context.Context, request *v2.GetVirt
 }
 
 func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListVirtualMachinesRequest) (*v2.ListVirtualMachinesResponse, error) {
-	// TODO: Filtering/search capabilities
-	vms, err := s.datastore.GetAllVirtualMachines(ctx)
+	searchQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing input query")
+	}
+	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
+
+	queryWithoutPagination := searchQuery.CloneVT()
+	queryWithoutPagination.Pagination = nil
+	totalCount, err := s.datastore.CountVirtualMachines(ctx, queryWithoutPagination)
+	if err != nil {
+		// TODO: Handle specific error cases with proper error codes, e.g. duplicate ID
+		return nil, err
+	}
+
+	vms, err := s.datastore.SearchRawVirtualMachines(ctx, searchQuery)
 	if err != nil {
 		// TODO: Handle specific error cases with proper error codes, e.g. duplicate ID
 		return nil, err
@@ -79,5 +99,6 @@ func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListV
 
 	return &v2.ListVirtualMachinesResponse{
 		VirtualMachines: v2VMs,
+		TotalCount:      int32(totalCount),
 	}, nil
 }

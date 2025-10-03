@@ -105,6 +105,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -135,6 +136,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -157,6 +159,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -185,7 +188,14 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1)
+				).Times(1).Return(
+					&vmInfo.Info{
+						ID:        vmiUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						VSOCKCID:  nil,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -196,6 +206,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -212,7 +223,14 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1)
+				).Times(1).Return(
+					&vmInfo.Info{
+						ID:        vmiUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						VSOCKCID:  nil,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -223,6 +241,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -242,6 +261,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -258,7 +278,14 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1)
+				).Times(1).Return(
+					&vmInfo.Info{
+						ID:        vmiUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						VSOCKCID:  nil,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -269,6 +296,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
 					},
 				},
 			}),
@@ -314,10 +342,13 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 				Action: central.ResourceAction_UPDATE_RESOURCE,
 				Resource: &central.SensorEvent_VirtualMachine{
 					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        ownerUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						ClusterId: clusterID,
+						Id:          ownerUID,
+						Name:        vmiName,
+						Namespace:   vmiNamespace,
+						ClusterId:   clusterID,
+						VsockCid:    int32(vsockVal),
+						VsockCidSet: true,
+						State:       virtualMachineV1.VirtualMachine_RUNNING,
 					},
 				},
 			}),

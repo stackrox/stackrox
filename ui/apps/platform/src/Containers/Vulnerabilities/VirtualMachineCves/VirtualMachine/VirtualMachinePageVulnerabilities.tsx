@@ -19,12 +19,14 @@ import {
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 import { getVirtualMachine } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { getHasSearchApplied } from 'utils/searchUtils';
 import {
     applyVirtualMachineCveTableFilters,
+    applyVirtualMachineCveTableSort,
     getVirtualMachineCveTableData,
     getVirtualMachineCveSeverityStatusCounts,
 } from '../aggregateUtils';
@@ -37,6 +39,13 @@ import {
     getHiddenStatuses,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
+import {
+    CVE_EPSS_PROBABILITY_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVE_STATUS_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../../utils/sortFields';
 import VirtualMachineVulnerabilitiesTable from './VirtualMachineVulnerabilitiesTable';
 
 export type VirtualMachinePageVulnerabilitiesProps = {
@@ -48,6 +57,16 @@ const searchFilterConfig = [
     virtualMachineComponentSearchFilterConfig,
 ];
 
+const sortFields = [
+    CVE_EPSS_PROBABILITY_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_STATUS_SORT_FIELD,
+    CVSS_SORT_FIELD,
+];
+
+const defaultSortOption = { field: CVE_SEVERITY_SORT_FIELD, direction: 'desc' } as const;
+
 function VirtualMachinePageVulnerabilities({
     virtualMachineId,
 }: VirtualMachinePageVulnerabilitiesProps) {
@@ -58,6 +77,11 @@ function VirtualMachinePageVulnerabilities({
 
     const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => setPage(1, 'replace'),
+    });
     const { page, perPage, setPage, setPerPage } = pagination;
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -72,15 +96,25 @@ function VirtualMachinePageVulnerabilities({
         [virtualMachineTableData, searchFilter]
     );
 
+    const sortedVirtualMachineTableData = useMemo(
+        () =>
+            applyVirtualMachineCveTableSort(
+                filteredVirtualMachineTableData,
+                Array.isArray(sortOption) ? sortOption[0].field : sortOption.field,
+                Array.isArray(sortOption) ? sortOption[0].reversed : sortOption.reversed
+            ),
+        [filteredVirtualMachineTableData, sortOption]
+    );
+
     const paginatedVirtualMachineTableData = useMemo(() => {
-        const totalRows = filteredVirtualMachineTableData.length;
+        const totalRows = sortedVirtualMachineTableData.length;
         const maxPage = Math.max(1, Math.ceil(totalRows / perPage) || 1);
         const safePage = Math.min(page, maxPage);
 
         const start = (safePage - 1) * perPage;
         const end = start + perPage;
-        return filteredVirtualMachineTableData.slice(start, end);
-    }, [filteredVirtualMachineTableData, page, perPage]);
+        return sortedVirtualMachineTableData.slice(start, end);
+    }, [sortedVirtualMachineTableData, page, perPage]);
 
     const tableState = getTableUIState({
         isLoading,
@@ -155,8 +189,9 @@ function VirtualMachinePageVulnerabilities({
                     </SplitItem>
                 </Split>
                 <VirtualMachineVulnerabilitiesTable
-                    tableState={tableState}
                     onClearFilters={onClearFilters}
+                    getSortParams={getSortParams}
+                    tableState={tableState}
                 />
             </div>
         </PageSection>

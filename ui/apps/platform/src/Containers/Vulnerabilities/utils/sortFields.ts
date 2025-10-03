@@ -1,4 +1,5 @@
 // General CVE sort fields
+export const CVE_EPSS_PROBABILITY_SORT_FIELD = 'EPSS Probability';
 export const CVE_SORT_FIELD = 'CVE';
 export const CVSS_SORT_FIELD = 'CVSS';
 export const CVE_SEVERITY_SORT_FIELD = 'Severity';
