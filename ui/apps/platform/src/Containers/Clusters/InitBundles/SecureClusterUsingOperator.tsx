@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { ClipboardCopy, Flex, List, ListItem, Title } from '@patternfly/react-core';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';

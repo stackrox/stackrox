@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     ActionGroup,
@@ -27,13 +28,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import InitBundlesHeader from './InitBundlesHeader';
 
-import {
-    InstallationKey,
-    PlatformKey,
-    downloadBundle,
-    installationOptions,
-    platformOptions,
-} from './InitBundleForm.utils';
+import { downloadBundle, installationOptions, platformOptions } from './InitBundleForm.utils';
+import type { InstallationKey, PlatformKey } from './InitBundleForm.utils';
 
 export type InitBundleFormValues = {
     installation: InstallationKey;

@@ -1,6 +1,6 @@
 import FileSaver from 'file-saver';
 
-import { GenerateClusterInitBundleResponse } from 'services/ClustersService';
+import type { GenerateClusterInitBundleResponse } from 'services/ClustersService';
 
 export const installationOptions: Record<string, string> = {
     Operator: 'Operator (recommended)',

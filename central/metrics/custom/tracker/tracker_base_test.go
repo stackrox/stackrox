@@ -154,8 +154,13 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 
 		{ // Reset lastGather
 			identity, _ := authn.IdentityFromContext(ctx)
-			g, _ := tracker.gatherers.Load(identity.UID())
-			g.(*gatherer).lastGather = time.Time{}
+			gRaw, ok := tracker.gatherers.Load(identity.UID())
+			require.True(t, ok)
+			g := gRaw.(*gatherer)
+			// Make it temporarily running to avoid data race on lastGather.
+			require.Eventually(t, g.trySetRunning, 5*time.Second, 10*time.Millisecond)
+			g.lastGather = time.Time{}
+			g.running.Store(false)
 		}
 		tracker.Gather(ctx)
 

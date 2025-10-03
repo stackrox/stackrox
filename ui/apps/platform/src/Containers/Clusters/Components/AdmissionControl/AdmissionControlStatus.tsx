@@ -1,6 +1,7 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
-import { ClusterHealthStatus } from 'types/cluster.proto';
+import type { ClusterHealthStatus } from 'types/cluster.proto';
 
 import {
     delayedAdmissionControlStatusStyle,

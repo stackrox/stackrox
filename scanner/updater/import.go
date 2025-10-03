@@ -37,7 +37,7 @@ func Load(ctx context.Context, connString, vulnsURL string) error {
 		Store:         store,
 		Locker:        locker,
 		MetadataStore: metadataStore,
-		URL:           vulnsURL,
+		URLs:          []string{vulnsURL},
 		SkipGC:        true,
 	})
 	if err != nil {

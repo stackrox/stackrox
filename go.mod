@@ -29,7 +29,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.31.12
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.16
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.9
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.19.10
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.19.11
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.50.5
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.3
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.64.4
@@ -89,7 +89,7 @@ require (
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v1.1.0
-	github.com/onsi/ginkgo/v2 v2.25.3
+	github.com/onsi/ginkgo/v2 v2.26.0
 	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
@@ -149,12 +149,12 @@ require (
 	golang.org/x/time v0.13.0
 	golang.org/x/tools v0.37.0
 	golang.stackrox.io/grpc-http1 v0.4.0
-	google.golang.org/api v0.250.0
+	google.golang.org/api v0.251.0
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c
 	google.golang.org/grpc v1.75.1
 	google.golang.org/grpc/examples v0.0.0-20230224211313-3775f633ce20
-	google.golang.org/protobuf v1.36.9
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -170,7 +170,7 @@ require (
 	k8s.io/kubectl v0.33.5
 	k8s.io/kubelet v0.32.9
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	kubevirt.io/api v1.6.1
+	kubevirt.io/api v1.6.2
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/controller-tools v0.18.0
 	sigs.k8s.io/e2e-framework v0.6.0
@@ -500,7 +500,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250929231259-57b25ae835d4 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

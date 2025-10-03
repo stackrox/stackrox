@@ -333,11 +333,15 @@ func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configurati
 		gr = g.(*gatherer)
 		// Return nil if this gatherer is still running.
 		// Otherwise mark it running.
-		if !gr.running.CompareAndSwap(false, true) {
+		if !gr.trySetRunning() {
 			return nil
 		}
 	}
 	return gr
+}
+
+func (g *gatherer) trySetRunning() bool {
+	return g.running.CompareAndSwap(false, true)
 }
 
 // cleanupInactiveGatherers frees the registries for the userIDs, that haven't
@@ -348,8 +352,9 @@ func (tracker *TrackerBase[Finding]) cleanupInactiveGatherers() {
 		defer tracker.cleanupWG.Done()
 		tracker.gatherers.Range(func(userID, gv any) bool {
 			g := gv.(*gatherer)
-			// Make it running to block normal gathering.
-			if !g.running.CompareAndSwap(false, true) {
+			// Try to make it running to not interfere with the normal gathering
+			// or otherwise do nothing.
+			if !g.trySetRunning() {
 				return true
 			}
 			if time.Since(g.lastGather) >= inactiveGathererTTL &&

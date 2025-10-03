@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { MouseEvent, ReactElement } from 'react';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -32,7 +33,7 @@ export type ClustersTableProps = {
     tableState: TableUIState<Cluster>;
     selectedClusterIds: string[];
     onClearFilters: () => void;
-    onDeleteCluster: (cluster: Cluster) => (event: React.MouseEvent) => void;
+    onDeleteCluster: (cluster: Cluster) => (event: MouseEvent) => void;
     toggleAllClusters: () => void;
     toggleCluster: (clusterId) => void;
     upgradeSingleCluster: (clusterId: string) => void;
@@ -56,7 +57,7 @@ function ClustersTable({
     toggleAllClusters,
     toggleCluster,
     upgradeSingleCluster,
-}: ClustersTableProps) {
+}: ClustersTableProps): ReactElement {
     const [expanded, setExpanded] = useState<ExpansionMap>({});
 
     function toggle(clusterId: string, col: ExpandableColumnId) {

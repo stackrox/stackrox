@@ -179,8 +179,12 @@ type MatcherConfig struct {
 	IndexerAddr string `mapstructure:"indexer_addr"`
 	// VulnerabilitiesURL specifies the URL to query for vulnerabilities.
 	VulnerabilitiesURL string `mapstructure:"vulnerabilities_url"`
+	// EnableRCVulnBundle, when true, attempts to use an RC vulnerability bundle before falling back to the GA bundle.
+	EnableRCVulnBundle bool `mapstructure:"enable_rc_vuln_bundle"`
+	// VulnerabilitiesURLs internal list of candidate URLs for vulnerability bundles, ordered by preference.
+	VulnerabilitiesURLs []string `mapstructure:"-"`
 	// RemoteIndexerEnabled internal and generated flag, true when the remote indexer is enabled.
-	RemoteIndexerEnabled bool
+	RemoteIndexerEnabled bool `mapstructure:"-"`
 	// VulnerabilityVersion allows overwriting the default version.Version and
 	// version.VulnerabilityVersion (normally defined by the go build command).
 	VulnerabilityVersion string `mapstructure:"vulnerability_version"`
@@ -236,9 +240,15 @@ func (c *MatcherConfig) validate() error {
 		return fmt.Errorf("vulnerabilities_url: invalid URL: %w", err)
 	}
 
+	// Replace version placeholders.
 	roxVer, vulnVer := c.resolveVersions()
-	c.VulnerabilitiesURL = strings.ReplaceAll(c.VulnerabilitiesURL, "ROX_VERSION", roxVer)
-	c.VulnerabilitiesURL = strings.ReplaceAll(c.VulnerabilitiesURL, "ROX_VULNERABILITY_VERSION", vulnVer)
+	u := strings.ReplaceAll(c.VulnerabilitiesURL, "ROX_VERSION", roxVer)
+	c.VulnerabilitiesURLs = make([]string, 0, 2)
+	if c.EnableRCVulnBundle {
+		// Prioritize RC-based vulnerability URL.
+		c.VulnerabilitiesURLs = append(c.VulnerabilitiesURLs, strings.ReplaceAll(u, "ROX_VULNERABILITY_VERSION", vulnVer+"-rc"))
+	}
+	c.VulnerabilitiesURLs = append(c.VulnerabilitiesURLs, strings.ReplaceAll(u, "ROX_VULNERABILITY_VERSION", vulnVer))
 
 	if c.Readiness == "" {
 		return errors.New("readiness: cannot be empty")

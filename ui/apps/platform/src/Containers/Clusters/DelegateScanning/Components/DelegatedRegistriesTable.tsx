@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
+import type { ReactElement, Ref } from 'react';
 import {
     Button,
     FormHelperText,
     HelperText,
     HelperTextItem,
-    MenuToggleElement,
     MenuToggle,
     Select,
     SelectOption,
     TextInput,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { MinusCircleIcon } from '@patternfly/react-icons';
-import { FormikContextType } from 'formik';
+import type { FormikContextType } from 'formik';
 import get from 'lodash/get';
 import * as yup from 'yup';
 
-import {
+import type {
     DelegatedRegistry,
     DelegatedRegistryCluster,
     DelegatedRegistryConfig,
@@ -53,7 +54,7 @@ function DelegatedRegistriesTable({
     registries,
     setRegistryClusterId,
     setRegistryPath,
-}: DelegatedRegistriesTableProps) {
+}: DelegatedRegistriesTableProps): ReactElement {
     const [openRow, setRowOpen] = useState<number>(-1);
     function toggleSelect(rowToToggle: number) {
         setRowOpen((prev) => (rowToToggle === prev ? -1 : rowToToggle));
@@ -145,7 +146,7 @@ function DelegatedRegistriesTable({
                                     onSelect={(_, value) => onSelect(rowIndex, value)}
                                     isOpen={openRow === rowIndex}
                                     selected={registry.clusterId}
-                                    toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                                    toggle={(toggleRef: Ref<MenuToggleElement>) => (
                                         <MenuToggle
                                             aria-label="Select destination cluster"
                                             ref={toggleRef}
