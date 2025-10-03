@@ -302,16 +302,19 @@ type fileMatcherImpl struct {
 }
 
 func (m *fileMatcherImpl) MatchHostFileActivity(cache *CacheReceptacle, activity *storage.FileActivity) (Violations, error) {
-	violation := &storage.Alert_Violation{
-		Message: fmt.Sprintf("Unexpected file system activity: %s", activity.GetFile().GetPath()),
-	}
 	return Violations{
-		AlertViolations: []*storage.Alert_Violation{
-			violation,
+		FileViolation: &storage.Alert_FileSystemViolation{
+			Message:      fmt.Sprintf("Unexpected file system activity %s on Node", activity.GetFile().GetPath()),
+			FileActivity: []*storage.FileActivity{activity},
 		},
 	}, nil
 }
 
 func (m *fileMatcherImpl) MatchDeploymentWithFileActivity(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, activity *storage.FileActivity) (Violations, error) {
-	return Violations{}, nil
+	return Violations{
+		FileViolation: &storage.Alert_FileSystemViolation{
+			Message:      fmt.Sprintf("Unexpected file system activity in Deployment %s", enhancedDeployment.Deployment.GetName()),
+			FileActivity: []*storage.FileActivity{activity},
+		},
+	}, nil
 }

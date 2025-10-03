@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/scopecomp"
@@ -493,9 +494,24 @@ func (fp *filePredicate) AppliesTo(input interface{}) bool {
 		return false
 	}
 
+	if !policyHasFileActivity(fp.policy) {
+		return false
+	}
+
 	if fa.GetProcess().GetDeploymentId() != "" {
 		return fp.policy.GetEventSource() == storage.EventSource_DEPLOYMENT_EVENT
 	}
 
 	return fp.policy.GetEventSource() == storage.EventSource_HOST_EVENT
+}
+
+func policyHasFileActivity(policy *storage.Policy) bool {
+	for _, section := range policy.GetPolicySections() {
+		for _, group := range section.GetPolicyGroups() {
+			if group.GetFieldName() == fieldnames.UnexpectedFilesystemAccess {
+				return true
+			}
+		}
+	}
+	return false
 }

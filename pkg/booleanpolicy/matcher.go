@@ -47,6 +47,7 @@ type EnhancedDeployment struct {
 // Violations represents a list of violation sub-objects.
 type Violations struct {
 	ProcessViolation *storage.Alert_ProcessViolation
+	FileViolation    *storage.Alert_FileSystemViolation
 	AlertViolations  []*storage.Alert_Violation
 }
 

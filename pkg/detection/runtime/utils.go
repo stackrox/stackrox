@@ -70,17 +70,33 @@ func constructNetworkFlowAlert(
 func constructFileAlert(
 	policy *storage.Policy,
 	activity *storage.FileActivity,
+	deployment *storage.Deployment,
 	violations booleanpolicy.Violations,
 ) *storage.Alert {
-	if len(violations.AlertViolations) == 0 {
+	if violations.FileViolation == nil {
+		log.Info("No file violations")
 		return nil
 	}
+
+	if deployment != nil {
+		return &storage.Alert{
+			Id:             uuid.NewV4().String(),
+			Policy:         policy.CloneVT(),
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Entity:         convert.ToAlertDeployment(deployment),
+			FileViolation:  violations.FileViolation,
+			Time:           protocompat.TimestampNow(),
+			EntityType:     storage.Alert_DEPLOYMENT,
+		}
+
+	}
+
 	return &storage.Alert{
 		Id:             uuid.NewV4().String(),
 		Policy:         policy.CloneVT(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity:         convert.ToAlertHost(activity),
-		Violations:     violations.AlertViolations,
+		FileViolation:  violations.FileViolation,
 		Time:           protocompat.TimestampNow(),
 		EntityType:     storage.Alert_HOST,
 	}

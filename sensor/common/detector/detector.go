@@ -588,7 +588,10 @@ func (d *detectorImpl) pushFileActivity(ctx context.Context, fs *storage.FileAct
 		Activity: fs,
 	}
 
-	log.Info("Pushing...")
+	if fs.GetProcess().GetDeploymentId() != "" {
+		item.Deployment = d.deploymentStore.GetSnapshot(fs.GetProcess().GetDeploymentId())
+	}
+
 	d.filesystemQueue.Push(item)
 }
 
@@ -690,11 +693,15 @@ func (d *detectorImpl) processFileActivity() {
 			// // the context will not be canceled with sensor disconnects
 			// images := d.enricher.getImages(item.Ctx, item.Deployment)
 
-			log.Info("Detecting ", item.Activity)
+			log.Info("Detecting ", item)
+			images := d.enricher.getImages(item.Ctx, item.Deployment)
 
 			var alerts []*storage.Alert
-			if item.Activity.GetProcess().GetDeploymentId() != "" {
-				alerts = d.unifiedDetector.DetectFileActivityForDeployment(booleanpolicy.EnhancedDeployment{}, item.Activity)
+			if item.Deployment != nil {
+				alerts = d.unifiedDetector.DetectFileActivityForDeployment(booleanpolicy.EnhancedDeployment{
+					Deployment: item.Deployment,
+					Images:     images,
+				}, item.Activity)
 			} else {
 				alerts = d.unifiedDetector.DetectFileActivityForHost(item.Activity)
 			}

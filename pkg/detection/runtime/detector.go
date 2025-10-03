@@ -89,34 +89,36 @@ func (d *detectorImpl) detectForFileActivity(enhancedDeployment *booleanpolicy.E
 	var cacheReceptable booleanpolicy.CacheReceptacle
 
 	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
-		log.Info("Checking ", compiled.Policy().GetName())
 		if compiled.Policy().GetDisabled() {
 			return nil
 		}
 
 		if !compiled.AppliesTo(activity) {
-			log.Info("Policy:", compiled.Policy().GetName(), " does not apply to FS activity")
 			return nil
 		}
 
+		log.Info("Detecting for policy", compiled.Policy().GetName())
+
 		if enhancedDeployment != nil {
+			log.Info("Deployment detection")
 			violation, err := compiled.MatchAgainstFileActivityAndDeployment(&cacheReceptable, *enhancedDeployment, activity)
 			if err != nil {
 				return errors.Wrapf(err, "evaluating violations for policy %q; file activity %s/%s",
 					compiled.Policy().GetName(), activity.GetType(), activity.GetFile().GetPath())
 			}
 
-			if alert := constructFileAlert(compiled.Policy(), activity, violation); alert != nil {
+			if alert := constructFileAlert(compiled.Policy(), activity, enhancedDeployment.Deployment, violation); alert != nil {
 				alerts = append(alerts, alert)
 			}
 		} else {
+			log.Info("Host detection")
 			violation, err := compiled.MatchAgainstFileActivity(&cacheReceptable, activity)
 			if err != nil {
 				return errors.Wrapf(err, "evaluating violations for policy %q; file activity %s/%s",
 					compiled.Policy().GetName(), activity.GetType(), activity.GetFile().GetPath())
 			}
 
-			if alert := constructFileAlert(compiled.Policy(), activity, violation); alert != nil {
+			if alert := constructFileAlert(compiled.Policy(), activity, nil, violation); alert != nil {
 				alerts = append(alerts, alert)
 			}
 		}

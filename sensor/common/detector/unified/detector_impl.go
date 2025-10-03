@@ -50,7 +50,6 @@ func (d *detectorImpl) DetectFileActivityForHost(activity *storage.FileActivity)
 }
 
 func (d *detectorImpl) DetectFileActivityForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, activity *storage.FileActivity) []*storage.Alert {
-	log.Info("Detecting file activity: ", activity)
 	alerts, err := d.runtimeDetector.DetectForDeploymentFileActivity(enhancedDeployment, activity)
 	if err != nil {
 		log.Errorf("Error running runtime policies for file activity %s: %v", activity.GetFile().GetPath(), err)
