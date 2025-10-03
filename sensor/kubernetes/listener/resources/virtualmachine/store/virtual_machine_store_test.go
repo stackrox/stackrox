@@ -58,6 +58,15 @@ func (s *storeSuite) Test_AddVirtualMachine() {
 				VSOCKCID:  newVSOCKCID(1),
 			},
 		},
+		"with GuestOS": {
+			vm: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+		},
 		"nil": {
 			vm: nil,
 		},
@@ -179,6 +188,40 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Namespace: vmNamespace,
 				Running:   true,
 				VSOCKCID:  nil,
+			},
+			new: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   false,
+				VSOCKCID:  nil,
+			},
+		},
+		"original without GuestOS - update with GuestOS": {
+			original: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				VSOCKCID:  nil,
+			},
+			new: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   false,
+				VSOCKCID:  nil,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+		},
+		"original with GuestOS - update without GuestOS": {
+			original: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				VSOCKCID:  nil,
+				GuestOS:   "Red Hat Enterprise Linux",
 			},
 			new: &virtualmachine.Info{
 				ID:        vmID,
@@ -372,6 +415,28 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				Running:   true,
 			},
 		},
+		"original running without GuestOS - instance running with GuestOS": {
+			original: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+			},
+			new: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+			expected: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+		},
 		"no virtual machine info - instance running with vsock": {
 			original: nil,
 			new: &virtualmachine.Info{
@@ -418,6 +483,23 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
+			},
+		},
+		"no virtual machine info - instance running with GuestOS": {
+			original: nil,
+			new: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+			expected: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
 			},
 		},
 	}
@@ -868,6 +950,7 @@ func (s *storeSuite) assertVM(expected *virtualmachine.Info) {
 	s.Assert().Equal(expected.Namespace, actual.Namespace)
 	s.Assert().Equal(expected.VSOCKCID, actual.VSOCKCID)
 	s.Assert().Equal(expected.Running, actual.Running)
+	s.Assert().Equal(expected.GuestOS, actual.GuestOS)
 	nsIDs, ok := s.store.namespaceToID[expected.Namespace]
 	s.Assert().True(ok)
 	s.Assert().Contains(nsIDs, expected.ID)

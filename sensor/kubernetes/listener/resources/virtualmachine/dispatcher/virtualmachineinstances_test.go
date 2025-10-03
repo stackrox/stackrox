@@ -105,6 +105,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
@@ -135,6 +138,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
@@ -157,6 +163,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
@@ -196,6 +205,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
@@ -223,6 +235,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
@@ -242,6 +257,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
@@ -269,6 +287,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
@@ -318,6 +339,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						Facts: map[string]string{
+							GuestOSKey: "",
+						},
 					},
 				},
 			}),
