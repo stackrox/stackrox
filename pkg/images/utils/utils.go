@@ -300,6 +300,16 @@ func StripCVEDescriptionsNoClone(img *storage.Image) {
 	}
 }
 
+// StripCVEDescriptionsNoCloneV2 takes in an image object and modifies it to remove the vulnerability summaries
+func StripCVEDescriptionsNoCloneV2(img *storage.ImageV2) {
+	for _, component := range img.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			vuln.Summary = ""
+		}
+	}
+}
+
+// TODO(ROX-30117): Remove this function after ImageV2 model is fully rolled out
 // FilterSuppressedCVEsNoClone removes the vulns from the image that are currently suppressed
 func FilterSuppressedCVEsNoClone(img *storage.Image) {
 	cveSet := set.NewStringSet()
@@ -318,6 +328,22 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 			Cves: int32(len(cveSet)),
 		}
 	}
+}
+
+// FilterSuppressedCVEsNoCloneV2 removes the vulns from the image that are currently suppressed
+func FilterSuppressedCVEsNoCloneV2(img *storage.ImageV2) {
+	cveSet := set.NewStringSet()
+	for _, c := range img.GetScan().GetComponents() {
+		filteredVulns := make([]*storage.EmbeddedVulnerability, 0, len(c.GetVulns()))
+		for _, vuln := range c.GetVulns() {
+			if !cve.IsCVESnoozed(vuln) {
+				cveSet.Add(vuln.GetCve())
+				filteredVulns = append(filteredVulns, vuln)
+			}
+		}
+		c.Vulns = filteredVulns
+	}
+	FillScanStatsV2(img)
 }
 
 // IsRedHatImage takes in an image and returns whether it's a Red Hat image.
