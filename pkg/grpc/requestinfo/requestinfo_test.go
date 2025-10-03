@@ -29,7 +29,7 @@ var insecureSkipVerify = credentials.NewTLS(insecureTLSConfig)
 const userAgentKey = "User-Agent"
 
 func makeTestRequest(url string) *http.Request {
-	req, _ := http.NewRequest("GET", url, nil)
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Add("test-key", "test value")
 	req.Header.Add(userAgentKey, "test agent")
 	return req

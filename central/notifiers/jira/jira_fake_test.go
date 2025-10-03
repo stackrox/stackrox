@@ -61,7 +61,7 @@ func (j *fakeJira) Handler() http.Handler {
 }
 
 func (j *fakeJira) handleConfiguration(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (j *fakeJira) handleIssueTypeFields(w http.ResponseWriter, _ *http.Request) {
@@ -86,7 +86,7 @@ func (j *fakeJira) handleIssueTypeFields(w http.ResponseWriter, _ *http.Request)
 
 func (j *fakeJira) handleMyPermissions(w http.ResponseWriter, r *http.Request) {
 	if projectKey := r.URL.Query().Get("projectKey"); projectKey == "" {
-		w.WriteHeader(404)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
