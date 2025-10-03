@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package v2;
 
-import "api/v2/search_query.proto";
 import "api/v2/scan_component.proto";
+import "api/v2/search_query.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
