@@ -223,8 +223,8 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 	metrics.IncrementElementsImpactedCounter(methodName, len(resp.GetBaselines()))
 
 	success := &v1.BulkUpdateProcessBaselinesResponse{
-			Success: true,
-		}
+		Success: true,
+	}
 
 	return success, nil
 }
