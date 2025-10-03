@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"slices"
 	"testing"
 
 	"maps"
@@ -85,7 +86,7 @@ func (s *RepositoryTestSuite) TestGetNodeResults() {
 
 	nodeResults := getNodeResults(testScrapeResults)
 
-	s.Equal(slices.Collect(maps.Keys(nodeResults), []string{testNodeName}))
+	s.Equal(slices.Collect(maps.Keys(nodeResults)), []string{testNodeName})
 	actual := nodeResults[testNodeName]
 	protoassert.MapEqual(s.T(), testEvidence, actual)
 }

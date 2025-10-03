@@ -151,8 +151,7 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMultipleValidIDSucceeds() {
 	}
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"id1", "id2"}}
 
-	policies := maps.Values(expectedNameToPolicies)
-	slices.SortFunc(policies, func(a, b *storage.Policy) int { return strings.Compare(a.GetId(), b.GetId()) })
+	policies := slices.SortedFunc(maps.Values(expectedNameToPolicies), func(a, b *storage.Policy) int { return strings.Compare(a.GetId(), b.GetId()) })
 	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(policies, nil, nil)
 	s.notifierStore.EXPECT().ForEachNotifier(s.ctx, gomock.Any()).DoAndReturn(
 		func(_ context.Context, fn func(obj *storage.Notifier) error) error {

@@ -264,7 +264,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 				}
 			}()
 
-			for tickNo := 0; tickNo < slices.Max(maps.Keys(tCase.lookupResultsAfterTick))+1; tickNo++ {
+			for tickNo := 0; tickNo < slices.Max(slices.Collect(maps.Keys(tCase.lookupResultsAfterTick)))+1; tickNo++ {
 				expectations := tCase.lookupResultsAfterTick[tickNo]
 				// Add entities to the store (mimic data arriving from the K8s informers)
 				if updatesForTick, ok := tCase.entityUpdates[tickNo]; ok {

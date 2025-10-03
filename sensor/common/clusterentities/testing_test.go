@@ -2,6 +2,7 @@ package clusterentities
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"maps"
@@ -71,7 +72,7 @@ func newTestPublicIPsListener(t *testing.T) *testPublicIPsListener {
 }
 
 func (p *testPublicIPsListener) String() string {
-	return fmt.Sprintf("%s", maps.Keys(p.data))
+	return fmt.Sprintf("%s", slices.Collect(maps.Keys(p.data)))
 }
 
 func (p *testPublicIPsListener) OnUpdate(ips set.Set[net.IPAddress]) {

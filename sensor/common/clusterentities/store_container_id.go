@@ -2,6 +2,7 @@ package clusterentities
 
 import (
 	"fmt"
+	"slices"
 
 	"maps"
 
@@ -175,6 +176,6 @@ func (e *containerIDsStore) String() string {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
 	return fmt.Sprintf("Current: %s\n Historical: %s",
-		maps.Keys(e.containerIDMap),
+		slices.Collect(maps.Keys(e.containerIDMap)),
 		prettyPrintHistoricalData(e.historicalContainerIDs))
 }

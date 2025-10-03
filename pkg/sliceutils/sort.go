@@ -4,10 +4,10 @@ import (
 	"slices"
 	"sort"
 
-	"golang.org/x/exp/constraints"
+	"cmp"
 )
 
-type naturallySortableSlice[T constraints.Ordered] []T
+type naturallySortableSlice[T cmp.Ordered] []T
 
 func (s naturallySortableSlice[T]) Len() int {
 	return len(s)
@@ -22,12 +22,12 @@ func (s naturallySortableSlice[T]) Swap(i, j int) {
 }
 
 // NaturalSort sorts the given slice according to the natural ording of elements.
-func NaturalSort[T constraints.Ordered](slice []T) {
+func NaturalSort[T cmp.Ordered](slice []T) {
 	sort.Sort(naturallySortableSlice[T](slice))
 }
 
 // CopySliceSorted creates a sorted copy of the input slice
-func CopySliceSorted[T constraints.Ordered](slice []T) []T {
+func CopySliceSorted[T cmp.Ordered](slice []T) []T {
 	sorted := make([]T, len(slice))
 	copy(sorted, slice)
 	slices.Sort(sorted)
