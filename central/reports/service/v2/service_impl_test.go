@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -1342,6 +1343,9 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 }
 
 func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
+	// Enable the view-based reports feature flag for this test
+	s.T().Setenv(features.VulnerabilityViewBasedReports.EnvVar(), "true")
+
 	user := &storage.SlimUser{
 		Id:   "test-user-id",
 		Name: "test-user-name",
@@ -1465,6 +1469,9 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 }
 
 func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
+	// Enable the view-based reports feature flag for this test
+	s.T().Setenv(features.VulnerabilityViewBasedReports.EnvVar(), "true")
+
 	testCases := []struct {
 		desc    string
 		req     *apiV2.GetViewBasedReportHistoryRequest
@@ -1567,6 +1574,9 @@ func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
 }
 
 func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
+	// Enable the view-based reports feature flag for this test
+	s.T().Setenv(features.VulnerabilityViewBasedReports.EnvVar(), "true")
+
 	userA := &storage.SlimUser{
 		Id:   "user-a",
 		Name: "user-a",
