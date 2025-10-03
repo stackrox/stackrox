@@ -741,6 +741,7 @@ func (l *loopImpl) reprocessWatchedImageV2(name string) bool {
 		return false
 	}
 	// Save the image
+	img.Digest = utils.GetSHAV2(img)
 	img.Id, err = utils.GetImageV2ID(img)
 	if err != nil {
 		log.Errorw("Error getting enriched image ID", logging.ImageName(name), logging.Err(err))
