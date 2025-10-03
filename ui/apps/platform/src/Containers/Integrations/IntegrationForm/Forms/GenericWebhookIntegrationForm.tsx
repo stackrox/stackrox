@@ -17,12 +17,13 @@ import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
 import merge from 'lodash/merge';
 
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import type { GenericNotifierIntegration as GenericWebhookIntegration } from 'types/notifier.proto';
+
+import usePageState from '../../hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import type { IntegrationFormProps } from '../integrationFormTypes';
 

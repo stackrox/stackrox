@@ -89,6 +89,53 @@ const rules = {
             };
         },
     },
+    'no-absolute-path-within-container-in-import': {
+        // Prerequisite so import statements within same Containers subfolder can have consistent order.
+        // By the way, absence of src in path is magic in project configuration.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Replace absolute path to same Containers subfolder with relative path',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                Literal(node) {
+                    if (typeof node.value === 'string' && !node.value.startsWith('.')) {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].type === 'ImportDeclaration'
+                        ) {
+                            // Calculate slashes in filename after base to prevent false positive
+                            // for relative path to subfolder like Containers or hooks within a container folder.
+                            const baseSuffix = 'ui/apps/platform/src/Containers/';
+                            const indexAtStartOfSuffix = context.filename.indexOf(baseSuffix);
+                            if (indexAtStartOfSuffix >= 0) {
+                                const indexAfterBase = indexAtStartOfSuffix + baseSuffix.length;
+                                const filenameAfterBase = context.filename.slice(indexAfterBase);
+                                const indexOfSlash = filenameAfterBase.indexOf('/');
+                                if (
+                                    indexOfSlash >= 0 &&
+                                    node.value.startsWith(
+                                        `Containers/${filenameAfterBase.slice(0, indexOfSlash)}/`
+                                    )
+                                ) {
+                                    context.report({
+                                        node,
+                                        message:
+                                            'Replace absolute path to same Containers subfolder with relative path',
+                                    });
+                                }
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-relative-path-to-src-in-import': {
         // Prerequisite so import statements from other containers can have consistent order.
         // By the way, absence of src in path is magic in project configuration.

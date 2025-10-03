@@ -9,15 +9,16 @@ import RelatedEntity from 'Components/RelatedEntity';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
-import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
 import searchContext from 'Containers/searchContext';
-import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import { getDateTime } from 'utils/dateUtils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
+
+import { getConfigMgmtCountQuery } from '../ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
+import ClusterScopedPermissions from './widgets/ClusterScopedPermissions';
+import NamespaceScopedPermissions from './widgets/NamespaceScopedPermissions';
 
 const ConfigManagementEntityServiceAccount = ({
     id,

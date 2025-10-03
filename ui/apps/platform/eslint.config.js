@@ -796,6 +796,7 @@ module.exports = [
         rules: {
             '@typescript-eslint/consistent-type-imports': 'error',
             'limited/no-qualified-name-react': 'error',
+            'limited/no-absolute-path-within-container-in-import': 'error',
             'limited/no-relative-path-to-src-in-import': 'error',
         },
     },
