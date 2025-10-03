@@ -458,6 +458,7 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		grpc.ChainStreamInterceptor(a.streamInterceptors()...),
 		grpc.ChainUnaryInterceptor(a.unaryInterceptors()...),
 		grpc.MaxRecvMsgSize(env.MaxMsgSizeSetting.IntegerSetting()),
+		grpc.MaxHeaderListSize(64*1024), // 64KB header size limit (default is 10KB)
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time:             40 * time.Second,
 			MaxConnectionAge: a.config.MaxConnectionAge,
