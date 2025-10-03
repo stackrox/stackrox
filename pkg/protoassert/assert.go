@@ -7,10 +7,9 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"maps"
 	"slices"
 	"testing"
-
-	"maps"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/pmezard/go-difflib/difflib"

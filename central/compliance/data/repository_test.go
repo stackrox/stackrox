@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"maps"
 	"slices"
 	"testing"
-
-	"maps"
 
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"

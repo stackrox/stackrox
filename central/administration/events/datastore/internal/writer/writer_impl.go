@@ -2,9 +2,8 @@ package writer
 
 import (
 	"context"
-	"slices"
-
 	"maps"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"

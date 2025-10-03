@@ -2,11 +2,10 @@ package gjson
 
 import (
 	"encoding/json"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
-
-	"maps"
 
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/tidwall/gjson"

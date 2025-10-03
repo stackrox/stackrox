@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
-
-	"maps"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"

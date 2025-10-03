@@ -1,10 +1,9 @@
 package sliceutils
 
 import (
+	"cmp"
 	"slices"
 	"sort"
-
-	"cmp"
 )
 
 type naturallySortableSlice[T cmp.Ordered] []T

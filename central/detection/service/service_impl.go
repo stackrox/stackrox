@@ -6,10 +6,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"slices"
 	"time"
-
-	"maps"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"

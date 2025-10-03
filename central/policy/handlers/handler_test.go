@@ -5,14 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"slices"
 	"strings"
 	"testing"
-
-	"maps"
 
 	notifierStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/customresource"

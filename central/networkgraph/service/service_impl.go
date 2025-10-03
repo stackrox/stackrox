@@ -2,11 +2,10 @@ package service
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"sort"
 	"time"
-
-	"maps"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"

@@ -2,9 +2,8 @@ package clusterentities
 
 import (
 	"fmt"
-	"slices"
-
 	"maps"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"

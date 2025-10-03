@@ -2,12 +2,11 @@ package registrymirror
 
 import (
 	"bytes"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
 	"time"
-
-	"maps"
 
 	"github.com/BurntSushi/toml"
 	"github.com/containers/image/v5/pkg/sysregistriesv2"

@@ -2,10 +2,9 @@ package preflight
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
-
-	"maps"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/pods"

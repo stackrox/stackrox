@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"os"
 	"slices"
-
-	"maps"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

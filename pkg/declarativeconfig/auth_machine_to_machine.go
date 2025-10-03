@@ -1,10 +1,9 @@
 package declarativeconfig
 
 import (
+	"maps"
 	"slices"
 	"strings"
-
-	"maps"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"

@@ -2,6 +2,7 @@ package declarativeconfig
 
 import (
 	"context"
+	"maps"
 	"os"
 	"path"
 	"reflect"
@@ -9,8 +10,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
-
-	"maps"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/mitchellh/hashstructure/v2"

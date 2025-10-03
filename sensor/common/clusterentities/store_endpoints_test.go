@@ -1,9 +1,8 @@
 package clusterentities
 
 import (
-	"slices"
-
 	"maps"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"

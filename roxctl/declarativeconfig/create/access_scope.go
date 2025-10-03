@@ -5,11 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"reflect"
 	"slices"
 	"strings"
-
-	"maps"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

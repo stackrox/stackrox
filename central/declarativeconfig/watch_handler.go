@@ -5,12 +5,11 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path"
 	"slices"
 	"strings"
-
-	"maps"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"

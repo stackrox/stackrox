@@ -2,10 +2,9 @@ package printers
 
 import (
 	"io"
+	"maps"
 	"slices"
 	"strings"
-
-	"maps"
 
 	"github.com/owenrumney/go-sarif/v2/sarif"
 	"github.com/pkg/errors"
