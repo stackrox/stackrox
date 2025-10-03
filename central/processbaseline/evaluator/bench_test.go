@@ -210,28 +210,20 @@ func BenchmarkEvaluateBaselinesAndPersistResult(b *testing.B) {
 
 			var maxHeap uint64
 			var maxHeapObj uint64
-
-			runtime.GC()
-			b.ResetTimer()
-
 			ticker := time.NewTicker(10 * time.Millisecond)
-
 			go func() {
+				var m runtime.MemStats
 				for range ticker.C {
-					var m runtime.MemStats
+					runtime.GC()
 					runtime.ReadMemStats(&m)
-					if m.Alloc > maxHeap {
-						maxHeap = m.Alloc
-					}
-					if m.HeapObjects > maxHeapObj {
-						maxHeapObj = m.HeapObjects
-					}
+					maxHeap = max(maxHeap, m.HeapAlloc)
+					maxHeapObj = max(maxHeap, m.HeapObjects)
 				}
 			}()
 
 			// Run the benchmark
+			b.ResetTimer()
 			for b.Loop() {
-				runtime.GC()
 				wg := sync.WaitGroup{}
 				const parallelism = 10
 				wg.Add(parallelism)
