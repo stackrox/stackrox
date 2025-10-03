@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
@@ -220,7 +221,16 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 		}
 	}
 
-	return resp, nil
+	metrics.IncrementBulkProcessBaselineCounter(lock, len(resp.GetBaselines()))
+
+	responseSizeLimit := 1000
+
+	limitedResponse := &v1.UpdateProcessBaselinesResponse{
+		Baselines: paginated.PaginateSlice(0, responseSizeLimit, resp.GetBaselines()),
+		Errors:    paginated.PaginateSlice(0, responseSizeLimit, resp.GetErrors()),
+	}
+
+	return limitedResponse, nil
 }
 
 func (s *serviceImpl) BulkLockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest) (*v1.UpdateProcessBaselinesResponse, error) {

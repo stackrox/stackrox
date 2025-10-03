@@ -285,6 +285,13 @@ var (
 		Name:      "bulk_process_baseline_call_count",
 		Help:      "The total number of times that the service to lock or unlock process baselines in bulk has been called",
 	}, []string{"lock"})
+
+	bulkProcessBaselineCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "bulk_process_baseline_count",
+		Help:      "The total number of process baselines that have been locked and unlocked in bulk actions",
+	}, []string{"lock"})
 )
 
 // Reasons for a message not being sent.
@@ -508,6 +515,10 @@ func IncrementMsgToSensorNotSentCounter(clusterID string, msg *central.MsgToSens
 
 func IncrementBulkProcessBaselineCallCounter(lock bool) {
 	bulkProcessBaselineCallCounter.With(prometheus.Labels{"lock": strconv.FormatBool(lock)}).Inc()
+}
+
+func IncrementBulkProcessBaselineCounter(lock bool, nProcessBaselines int) {
+	bulkProcessBaselineCounter.With(prometheus.Labels{"lock": strconv.FormatBool(lock)}).Add(float64(nProcessBaselines))
 }
 
 // SetSignatureVerificationReprocessorDuration registers how long a signature verification reprocessing step took.
