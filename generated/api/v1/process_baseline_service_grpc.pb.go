@@ -44,10 +44,10 @@ type ProcessBaselineServiceClient interface {
 	// those baselines, and returns the updated baseline objects.
 	LockProcessBaselines(ctx context.Context, in *LockProcessBaselinesRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error)
 	// `BulkLockProcessBaselines` locks process baselines given a cluster and
-	// an optional set of namespaces. It returns the updated baseline objects.
+	// an optional set of namespaces. It returns success or an error.
 	BulkLockProcessBaselines(ctx context.Context, in *BulkProcessBaselinesRequest, opts ...grpc.CallOption) (*BulkUpdateProcessBaselinesResponse, error)
 	// `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
-	// an optional set of namespaces. It returns the updated baseline objects.
+	// an optional set of namespaces. It returns success or an error.
 	BulkUnlockProcessBaselines(ctx context.Context, in *BulkProcessBaselinesRequest, opts ...grpc.CallOption) (*BulkUpdateProcessBaselinesResponse, error)
 	// `DeleteProcessBaselines` deletes baselines.
 	DeleteProcessBaselines(ctx context.Context, in *DeleteProcessBaselinesRequest, opts ...grpc.CallOption) (*DeleteProcessBaselinesResponse, error)
@@ -137,10 +137,10 @@ type ProcessBaselineServiceServer interface {
 	// those baselines, and returns the updated baseline objects.
 	LockProcessBaselines(context.Context, *LockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error)
 	// `BulkLockProcessBaselines` locks process baselines given a cluster and
-	// an optional set of namespaces. It returns the updated baseline objects.
+	// an optional set of namespaces. It returns success or an error.
 	BulkLockProcessBaselines(context.Context, *BulkProcessBaselinesRequest) (*BulkUpdateProcessBaselinesResponse, error)
 	// `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
-	// an optional set of namespaces. It returns the updated baseline objects.
+	// an optional set of namespaces. It returns success or an error.
 	BulkUnlockProcessBaselines(context.Context, *BulkProcessBaselinesRequest) (*BulkUpdateProcessBaselinesResponse, error)
 	// `DeleteProcessBaselines` deletes baselines.
 	DeleteProcessBaselines(context.Context, *DeleteProcessBaselinesRequest) (*DeleteProcessBaselinesResponse, error)

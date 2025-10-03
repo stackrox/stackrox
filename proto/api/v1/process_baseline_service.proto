@@ -86,7 +86,7 @@ service ProcessBaselineService {
   }
 
   // `BulkLockProcessBaselines` locks process baselines given a cluster and
-  // an optional set of namespaces. It returns the updated baseline objects.
+  // an optional set of namespaces. It returns success or an error.
   rpc BulkLockProcessBaselines(BulkProcessBaselinesRequest) returns (BulkUpdateProcessBaselinesResponse) {
     option (google.api.http) = {
       put: "/v1/processbaselines/bulk/lock"
@@ -95,7 +95,7 @@ service ProcessBaselineService {
   }
 
   // `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
-  // an optional set of namespaces. It returns the updated baseline objects.
+  // an optional set of namespaces. It returns success or an error.
   rpc BulkUnlockProcessBaselines(BulkProcessBaselinesRequest) returns (BulkUpdateProcessBaselinesResponse) {
     option (google.api.http) = {
       put: "/v1/processbaselines/bulk/unlock"
