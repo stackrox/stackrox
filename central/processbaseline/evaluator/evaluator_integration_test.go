@@ -10,6 +10,7 @@ import (
 	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	resultDatastore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	indicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/central/processindicator/views"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
@@ -825,7 +826,11 @@ func (suite *ProcessBaselineEvaluatorIntegrationTestSuite) TestQueryProcessIndic
 
 	// Query for indicators by deployment ID
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery()
-	riskViews, err := suite.indicatorsDatastore.GetProcessIndicatorsRiskView(suite.ctx, query)
+	riskViews := make([]*views.ProcessIndicatorRiskView, 0, len(indicators))
+	err = suite.indicatorsDatastore.IterateOverProcessIndicatorsRiskView(suite.ctx, query, func(view *views.ProcessIndicatorRiskView) error {
+		riskViews = append(riskViews, view)
+		return nil
+	})
 	suite.NoError(err)
 	suite.Len(riskViews, 2)
 

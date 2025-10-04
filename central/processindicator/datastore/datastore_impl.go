@@ -225,12 +225,12 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 	return ds.storage.DeleteByQuery(ctx, q)
 }
 
-// GetProcessIndicatorsRiskView retrieves minimal fields from process indicator for risk evaluation
-func (ds *datastoreImpl) GetProcessIndicatorsRiskView(ctx context.Context, q *v1.Query) ([]*views.ProcessIndicatorRiskView, error) {
+// IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
+func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error {
 	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
-		return nil, err
+		return err
 	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	cloned := q.CloneVT()
@@ -246,13 +246,12 @@ func (ds *datastoreImpl) GetProcessIndicatorsRiskView(ctx context.Context, q *v1
 	}
 
 	// We do not need the entire process indicator to process risk.  That object is large.  Use a view instead
-	var results []*views.ProcessIndicatorRiskView
-	results, err := pgSearch.RunSelectRequestForSchema[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned)
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned, fn)
 	if err != nil {
-		log.Errorf("unable to retrieve indicators for risk processing: %v", err)
+		log.Errorf("unable to iterate over indicators for risk processing: %v", err)
 	}
 
-	return results, err
+	return err
 }
 
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {
