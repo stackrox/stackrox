@@ -12,6 +12,12 @@ import { SearchFilter } from 'types/search';
 import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 
 import { DefaultFilters } from '../types';
+import {
+    cveStatusClusterFixableDescriptor,
+    cveStatusFixableDescriptor,
+    cveSeverityFilterDescriptor,
+    cveSnoozedDescriptor,
+} from '../searchFilterConfig';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 
@@ -66,29 +72,17 @@ function AdvancedFiltersToolbar({
     children,
 }: AdvancedFiltersToolbarProps) {
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig)
-        .concat({
-            displayName: 'CVE snoozed',
-            searchFilterName: 'CVE Snoozed',
-        })
+        .concat(cveSnoozedDescriptor)
         .concat(
             includeCveSeverityFilters
-                ? makeDefaultFilterDescriptor(defaultFilters, {
-                      displayName: 'CVE severity',
-                      searchFilterName: 'SEVERITY',
-                  })
+                ? makeDefaultFilterDescriptor(defaultFilters, cveSeverityFilterDescriptor)
                 : []
         )
         .concat(
             includeCveStatusFilters
                 ? [
-                      makeDefaultFilterDescriptor(defaultFilters, {
-                          displayName: 'CVE status',
-                          searchFilterName: 'FIXABLE',
-                      }),
-                      makeDefaultFilterDescriptor(defaultFilters, {
-                          displayName: 'CVE status',
-                          searchFilterName: 'CLUSTER CVE FIXABLE',
-                      }),
+                      makeDefaultFilterDescriptor(defaultFilters, cveStatusFixableDescriptor),
+                      makeDefaultFilterDescriptor(defaultFilters, cveStatusClusterFixableDescriptor),
                   ]
                 : []
         );
