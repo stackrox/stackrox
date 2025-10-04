@@ -263,6 +263,11 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
+	// In case of update conflict we need to retrieve the current resources again,
+	// thus we retry from here.
+	retries := 0
+update:
+	retries++
 	// Retrieve the ScanSetting and ScanSettingBinding objects for update
 	resSS := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 	var ssObj *unstructured.Unstructured
@@ -322,6 +327,11 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		_, err := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Update(ctx, updatedScanSetting, v1.UpdateOptions{})
 		return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, updatedScanSetting.GetName())
 	})
+	// This indicates a race updating the resource.
+	// To retry again we need to retrieve the object again first.
+	if kubeAPIErr.IsConflict(err) && retries <= defaultMaxRetries {
+		goto update
+	}
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -332,6 +342,11 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 			_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Update(ctx, updatedScanSettingBinding, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
 		})
+		// This indicates a race updating the resource.
+		// To retry again we need to retrieve the object again first.
+		if kubeAPIErr.IsConflict(err) && retries <= defaultMaxRetries {
+			goto update
+		}
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
