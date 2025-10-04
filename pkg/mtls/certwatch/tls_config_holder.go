@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"sync/atomic"
-	"unsafe"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/tlscheck"
@@ -23,7 +22,7 @@ type TLSConfigHolder struct {
 
 	customTLSCertVerifier tlscheck.TLSCertVerifier
 
-	liveTLSConfig unsafe.Pointer
+	liveTLSConfig atomic.Pointer[tls.Config]
 }
 
 // NewTLSConfigHolder instantiates a new instance of TLSConfigHolder
@@ -62,11 +61,11 @@ func (c *TLSConfigHolder) UpdateTLSConfig() {
 		newTLSConfig.VerifyPeerCertificate = tlscheck.VerifyPeerCertFunc(newTLSConfig, c.customTLSCertVerifier)
 	}
 
-	atomic.StorePointer(&c.liveTLSConfig, (unsafe.Pointer)(newTLSConfig))
+	c.liveTLSConfig.Store(newTLSConfig)
 }
 
 func (c *TLSConfigHolder) liveConfig(_ *tls.ClientHelloInfo) (*tls.Config, error) {
-	liveCfg := (*tls.Config)(atomic.LoadPointer(&c.liveTLSConfig))
+	liveCfg := c.liveTLSConfig.Load()
 	if liveCfg == nil {
 		return nil, errNoTLSConfig
 	}

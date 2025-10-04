@@ -3,7 +3,6 @@ package basic
 import (
 	"context"
 	"sync/atomic"
-	"unsafe"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -14,23 +13,22 @@ import (
 
 // Manager manages basic auth user identities.
 type Manager struct {
-	hashFilePtr unsafe.Pointer
-	mapper      permissions.RoleMapper
+	hashFile atomic.Pointer[htpasswd.HashFile]
+	mapper   permissions.RoleMapper
 }
 
-func (m *Manager) hashFile() *htpasswd.HashFile {
-	return (*htpasswd.HashFile)(atomic.LoadPointer(&m.hashFilePtr))
+func (m *Manager) getHashFile() *htpasswd.HashFile {
+	return m.hashFile.Load()
 }
 
 // SetHashFile sets the hash file to be used for basic auth.
 func (m *Manager) SetHashFile(hashFile *htpasswd.HashFile) {
-	//#nosec G103
-	atomic.StorePointer(&m.hashFilePtr, unsafe.Pointer(hashFile))
+	m.hashFile.Store(hashFile)
 }
 
 // IdentityForCreds returns an identity for the given credentials.
 func (m *Manager) IdentityForCreds(ctx context.Context, username, password string, authProvider authproviders.Provider) (Identity, error) {
-	if !m.hashFile().Check(username, password) {
+	if !m.getHashFile().Check(username, password) {
 		return nil, errox.NotAuthorized.CausedBy("invalid username and/or password")
 	}
 
@@ -50,9 +48,9 @@ func (m *Manager) IdentityForCreds(ctx context.Context, username, password strin
 
 // NewManager creates a new manager for basic authentication.
 func NewManager(hashFile *htpasswd.HashFile, roleMapper permissions.RoleMapper) *Manager {
-	return &Manager{
-		//#nosec G103
-		hashFilePtr: unsafe.Pointer(hashFile),
-		mapper:      roleMapper,
+	m := &Manager{
+		mapper: roleMapper,
 	}
+	m.hashFile.Store(hashFile)
+	return m
 }
