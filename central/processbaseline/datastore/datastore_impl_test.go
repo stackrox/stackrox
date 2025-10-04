@@ -71,7 +71,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) mustSerializeKey(key *storage.ProcessBaselineKey) string {
-	serialized, err := keyToID(key)
+	serialized, err := KeyToID(key)
 	suite.Require().NoError(err)
 	return serialized
 }
@@ -307,7 +307,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestIDToKeyConversion() {
 		Namespace:     "namespace",
 	}
 
-	id, err := keyToID(key)
+	id, err := KeyToID(key)
 	suite.NoError(err)
 	resKey, err := IDToKey(id)
 	suite.NoError(err)
