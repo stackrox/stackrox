@@ -175,13 +175,6 @@ spec:
           value: "true"
         - name: FETCHED
           value: "$(steps.fetch-npm-cache.results.fetched)"
-    params:
-    - name: builder-image
-      value: $(params.builder-image)
-    - name: cache-bucket
-      value: $(params.cache-bucket)
-    - name: minio-host
-      value: $(params.minio-host)
 
   # Build Go binaries with caching
   - name: build-go-binaries
@@ -206,6 +199,9 @@ spec:
         type: string
       - name: minio-host
         type: string
+      results:
+      - name: target-arch
+        description: Target arch determined by go
       steps:
       # Fetch Go module cache
       - name: fetch-gomod-cache
@@ -270,6 +266,7 @@ spec:
           # Set up build environment with simple static values
           export CGO_ENABLED=0 # TODO: this breaks fips
           export GOTAGS="release"
+          go env GOARCH | tr -d '\n' | tee $(results.target-arch.path)
 
           # Simple static build flags without complex status.sh dependency
           LDFLAGS="-s -w -X github.com/stackrox/rox/pkg/version.MainVersion=local-dev"
@@ -310,7 +307,7 @@ spec:
           echo "Copying binaries to image directory..."
           cp bin/central image/rhel/bin/central
           cp bin/config-controller image/rhel/bin/config-controller
-          cp bin/roxctl image/rhel/bin/roxctl-$GOOS-$GOARCH
+          cp bin/roxctl image/rhel/bin/roxctl-$(go env GOOS)-$(go env GOARCH)
           cp bin/migrator image/rhel/bin/migrator
           cp bin/kubernetes-sensor        image/rhel/bin/kubernetes-sensor
           cp bin/init-tls-certs    image/rhel/bin/init-tls-certs
@@ -522,7 +519,7 @@ spec:
     - name: IMAGE
       value: $(params.registry)/stackrox/main:$(tasks.get-git-commit.results.git-commit)
     - name: BUILD_EXTRA_ARGS
-      value: "--build-arg TARGET_ARCH=arm64"
+      value: "--build-arg TARGET_ARCH=$(tasks.build-go-binaries.results.target-arch)"
     - name: PUSH_EXTRA_ARGS
       value: "--tls-verify=false"
     - name: CONTEXT

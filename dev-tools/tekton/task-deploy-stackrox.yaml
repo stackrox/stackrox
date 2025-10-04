@@ -38,13 +38,17 @@ spec:
       echo "Namespace: $(params.NAMESPACE)"
 
       # Use the roxctl binary from the image build
-      ROXCTL_PATH="./image/rhel/bin/roxctl"
+      ROXCTL_PATH="./image/rhel/bin/roxctl-$(go env GOOS)-$(go env GOARCH)"
 
       if [ ! -f "$ROXCTL_PATH" ]; then
         echo "roxctl not found at $ROXCTL_PATH, checking other locations..."
-        find . -name "roxctl" -type f 2>/dev/null || true
         echo "Attempting to use roxctl from PATH..."
-        ROXCTL_PATH="roxctl"
+        ROXCTL_PATH="find . -name "roxctl" -type f  | head -n 1"
+      fi
+
+      if [ ! -f "$ROXCTL_PATH" ]; then
+        echo "Failed to find roxctl"
+        exit 1
       fi
 
       echo "Using roxctl at: $ROXCTL_PATH"
