@@ -177,7 +177,7 @@ func makeRequestInfo(req *http.Request) *RequestInfo {
 	// `Hostname` should match what the client sees.
 	if fwdHost := req.Header.Get(forwardedHost); fwdHost != "" {
 		ri.Hostname = fwdHost
-	} else if tlsState != nil {
+	} else if tlsState != nil && tlsState.ServerName != "" {
 		ri.Hostname = tlsState.ServerName
 	}
 
