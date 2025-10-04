@@ -11,6 +11,12 @@ import type { ResourceCountByCveSeverityAndStatus } from '../components/CvesBySt
 import { isVulnerabilitySeverityLabel } from '../types';
 import type { FixableStatus } from '../types';
 import { severityLabelToSeverity } from '../utils/searchUtils';
+import {
+    CVE_EPSS_PROBABILITY_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../utils/sortFields';
 
 // Most if not all functions in this file will be removed once backend filtering is implemented.
 
@@ -71,10 +77,6 @@ export function getVirtualMachineCveSeverityStatusCounts(
     return counts;
 }
 
-function defaultCveTableSort(a: CveTableRow, b: CveTableRow): number {
-    return severityRankings[b.severity] - severityRankings[a.severity] || b.cvss - a.cvss;
-}
-
 function worstSeverity(a: VulnerabilitySeverity, b: VulnerabilitySeverity): VulnerabilitySeverity {
     return severityRankings[a] >= severityRankings[b] ? a : b;
 }
@@ -120,7 +122,7 @@ export function getVirtualMachineCveTableData(virtualMachine?: VirtualMachine): 
         });
     });
 
-    return Array.from(map.values()).sort(defaultCveTableSort);
+    return Array.from(map.values());
 }
 
 export function applyVirtualMachineCveTableFilters(
@@ -197,4 +199,42 @@ export function applyVirtualMachineCveTableFilters(
 
         return true; // passed all filter conditions
     });
+}
+
+export function applyVirtualMachineCveTableSort(
+    rows: CveTableRow[],
+    sortKey: string,
+    reversed: boolean
+): CveTableRow[] {
+    const comparator = (a: CveTableRow, b: CveTableRow) => {
+        let compareResult = 0;
+
+        switch (sortKey) {
+            case CVE_SORT_FIELD:
+                // Intl.Collator sorting would be better here, but it's not used in the backend
+                compareResult = a.cve.localeCompare(b.cve);
+                break;
+            case CVSS_SORT_FIELD:
+                compareResult = a.cvss - b.cvss;
+                break;
+            case CVE_EPSS_PROBABILITY_SORT_FIELD:
+                compareResult = a.epssProbability - b.epssProbability;
+                break;
+            case CVE_SEVERITY_SORT_FIELD:
+                compareResult = severityRankings[a.severity] - severityRankings[b.severity];
+                break;
+            default:
+                break;
+        }
+        if (compareResult !== 0) {
+            return reversed ? compareResult * -1 : compareResult;
+        }
+
+        // backup compare when rows are equal
+        // doesn't appear to be a consistent behavior in the backend between vulnerability pages
+        // however secondary sort of cve name (ignoring direction) seems to mimic node cve page behavior
+        return a.cve.localeCompare(b.cve);
+    };
+
+    return [...rows].sort(comparator);
 }
