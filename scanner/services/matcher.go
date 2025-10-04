@@ -186,7 +186,7 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 	sbom, err := s.matcher.GetSBOM(ctx, ir, &sbom.Options{
 		Name:      req.GetId(),
 		Namespace: req.GetUri(),
-		Comment:   fmt.Sprintf("Tech Preview - generated for '%s'", req.GetName()),
+		Comment:   fmt.Sprintf("Generated for '%s'", req.GetName()),
 	})
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("generating SBOM")
