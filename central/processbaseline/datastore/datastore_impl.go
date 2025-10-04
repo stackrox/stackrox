@@ -56,7 +56,7 @@ func (ds *datastoreImpl) GetProcessBaseline(ctx context.Context, key *storage.Pr
 	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, false, nil
 	}
-	id, err := keyToID(key)
+	id, err := KeyToID(key)
 	if err != nil {
 		return nil, false, err
 	}
@@ -72,7 +72,7 @@ func (ds *datastoreImpl) AddProcessBaseline(ctx context.Context, baseline *stora
 		return "", sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(baseline.GetKey())
+	id, err := KeyToID(baseline.GetKey())
 	if err != nil {
 		return "", err
 	}
@@ -122,7 +122,7 @@ func (ds *datastoreImpl) RemoveProcessBaseline(ctx context.Context, key *storage
 		return sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(key)
+	id, err := KeyToID(key)
 	if err != nil {
 		return err
 	}
@@ -252,7 +252,7 @@ func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key 
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(key)
+	id, err := KeyToID(key)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +273,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(key)
+	id, err := KeyToID(key)
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +320,7 @@ func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *stora
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(key)
+	id, err := KeyToID(key)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +350,7 @@ func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key 
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(key)
+	id, err := KeyToID(key)
 	if err != nil {
 		return nil, err
 	}

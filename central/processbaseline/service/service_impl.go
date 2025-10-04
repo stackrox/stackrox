@@ -8,6 +8,7 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/processbaseline"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -165,7 +166,7 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 	return resp, nil
 }
 
-func (s *serviceImpl) getKeys(ctx context.Context, clusterId string, namespaces []string) ([]*storage.ProcessBaselineKey, error) {
+func (s *serviceImpl) getKeys(ctx context.Context, clusterId string, namespaces []string, lock bool, ignoreObservationState bool) ([]*storage.ProcessBaselineKey, error) {
 	queryBuilder := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterId)
 
 	if len(namespaces) > 0 {
@@ -180,10 +181,16 @@ func (s *serviceImpl) getKeys(ctx context.Context, clusterId string, namespaces 
 		return nil, err
 	}
 
-	keys := make([]*storage.ProcessBaselineKey, len(baselines))
+	keys := make([]*storage.ProcessBaselineKey, 0, len(baselines))
 
-	for i := range baselines {
-		keys[i] = baselines[i].GetKey()
+	for _, baseline := range baselines {
+		// If baselines are being unlocked we want to unlock all baselines.
+		// If baselines are being locked and we want to lock all baselines regardless of observation state, lock all baselines.
+		// If baselines are being locked and we want to lock only those that are not in observation,
+		// lock only the baselines that are not in observation.
+		if !lock || ignoreObservationState || processbaseline.IsRoxLocked(baseline) {
+			keys = append(keys, baseline.GetKey())
+		}
 	}
 
 	return keys, nil
@@ -195,6 +202,11 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 
 	metrics.IncrementBulkProcessBaselineCallCounter(lock)
 
+	// This variable determines if all baselines are locked regardless if they are in observation or
+	// if only the baselines that are outside of observation are locked. For now it is hard coded,
+	// but in the future it could be configurable via the request.
+	ignoreObservationState := false
+
 	clusterId := request.GetClusterId()
 
 	if clusterId == "" {
@@ -202,7 +214,7 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 		return nil, err
 	}
 
-	keys, err := s.getKeys(ctx, clusterId, request.GetNamespaces())
+	keys, err := s.getKeys(ctx, clusterId, request.GetNamespaces(), lock, ignoreObservationState)
 	if err != nil {
 		return nil, err
 	}

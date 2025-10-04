@@ -14,7 +14,7 @@ const (
 	deploymentContainerKeyPrefix keyPrefix = "DC"
 )
 
-func keyToID(key *storage.ProcessBaselineKey) (string, error) {
+func KeyToID(key *storage.ProcessBaselineKey) (string, error) {
 	if stringutils.AllNotEmpty(key.GetClusterId(), key.GetNamespace(), key.GetDeploymentId(), key.GetContainerName()) {
 		return fmt.Sprintf("%s:%s:%s:%s:%s", deploymentContainerKeyPrefix, key.GetClusterId(), key.GetNamespace(), key.GetDeploymentId(), key.GetContainerName()), nil
 	}

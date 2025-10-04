@@ -6,6 +6,7 @@ import (
 	"context"
 	"slices"
 	"testing"
+	"time"
 
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
@@ -42,6 +43,13 @@ var (
 func fillDB(t *testing.T, ds datastore.DataStore, baselines []*storage.ProcessBaseline) {
 	for _, baseline := range baselines {
 		_, err := ds.AddProcessBaseline(hasWriteCtx, baseline)
+		assert.NoError(t, err)
+	}
+}
+
+func fillDBDirect(t *testing.T, store postgresStore.Store, baselines []*storage.ProcessBaseline) {
+	for _, baseline := range baselines {
+		err := store.Upsert(hasWriteCtx, baseline)
 		assert.NoError(t, err)
 	}
 }
@@ -97,6 +105,7 @@ func TestProcessBaselineService(t *testing.T) {
 
 type ProcessBaselineServiceTestSuite struct {
 	suite.Suite
+	store     postgresStore.Store
 	datastore datastore.DataStore
 	service   Service
 
@@ -114,14 +123,14 @@ func (suite *ProcessBaselineServiceTestSuite) SetupTest() {
 	pgtestbase := pgtest.ForT(suite.T())
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
-	store := postgresStore.New(suite.pool)
+	suite.store = postgresStore.New(suite.pool)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.resultDatastore = resultsMocks.NewMockDataStore(suite.mockCtrl)
 	suite.resultDatastore.EXPECT().DeleteBaselineResults(gomock.Any(), gomock.Any()).AnyTimes()
 
 	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
-	suite.datastore = datastore.New(store, suite.resultDatastore, suite.indicatorMockStore)
+	suite.datastore = datastore.New(suite.store, suite.resultDatastore, suite.indicatorMockStore)
 	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
 	suite.deployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.lifecycleManager = lifecycleMocks.NewMockManager(suite.mockCtrl)
@@ -349,7 +358,15 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 	}
 }
 
-func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespace() {
+func addIdsToBaselines(baselines []*storage.ProcessBaseline) {
+	for _, baseline := range baselines {
+		baseline.Id, _ = datastore.KeyToID(baseline.GetKey())
+	}
+}
+
+func (suite *ProcessBaselineServiceTestSuite) TestBulkUpdateProcessBaselines() {
+	pastTimestamp, _ := protocompat.ConvertTimeToTimestampOrError(time.Now().UTC().Add(-1 * time.Hour))
+
 	allBaselines := []*storage.ProcessBaseline{
 		{
 			Key: &storage.ProcessBaselineKey{
@@ -358,6 +375,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 				ClusterId:     fixtureconsts.Cluster1,
 				Namespace:     "namespace",
 			},
+			StackRoxLockedTimestamp: pastTimestamp,
 		},
 		{
 			Key: &storage.ProcessBaselineKey{
@@ -366,6 +384,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 				ClusterId:     fixtureconsts.Cluster1,
 				Namespace:     "namespace",
 			},
+			StackRoxLockedTimestamp: pastTimestamp,
 		},
 		{
 			Key: &storage.ProcessBaselineKey{
@@ -374,6 +393,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 				ClusterId:     fixtureconsts.Cluster1,
 				Namespace:     "default",
 			},
+			StackRoxLockedTimestamp: pastTimestamp,
 		},
 		{
 			Key: &storage.ProcessBaselineKey{
@@ -382,6 +402,18 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 				ClusterId:     fixtureconsts.Cluster2,
 				Namespace:     "namespace",
 			},
+			StackRoxLockedTimestamp: pastTimestamp,
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment5,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "namespace",
+			},
+			// This one does not get locked because it is still in the
+			// observation period
+			StackRoxLockedTimestamp: nil,
 		},
 		{
 			Key: &storage.ProcessBaselineKey{
@@ -390,9 +422,12 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 				ClusterId:     fixtureconsts.Cluster1,
 				Namespace:     "namespace",
 			},
-			UserLockedTimestamp: protocompat.TimestampNow(),
+			UserLockedTimestamp:     protocompat.TimestampNow(),
+			StackRoxLockedTimestamp: pastTimestamp,
 		},
 	}
+
+	addIdsToBaselines(allBaselines)
 
 	cases := []struct {
 		name           string
@@ -408,7 +443,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			clusterId:      fixtureconsts.Cluster1,
 			namespaces:     []string{"namespace"},
 			locked:         true,
-			baselines:      allBaselines[0:4],
+			baselines:      allBaselines[0:5],
 			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey()},
 			expectError:    false,
 		},
@@ -417,7 +452,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			clusterId:      fixtureconsts.Cluster2,
 			namespaces:     []string{"namespace"},
 			locked:         true,
-			baselines:      allBaselines[0:4],
+			baselines:      allBaselines[0:5],
 			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[3].GetKey()},
 			expectError:    false,
 		},
@@ -426,7 +461,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			clusterId:      fixtureconsts.Cluster1,
 			namespaces:     []string{"namespace", "default"},
 			locked:         true,
-			baselines:      allBaselines[0:4],
+			baselines:      allBaselines[0:5],
 			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
 			expectError:    false,
 		},
@@ -435,7 +470,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			clusterId:      fixtureconsts.Cluster1,
 			namespaces:     []string{"querty"},
 			locked:         true,
-			baselines:      allBaselines[0:4],
+			baselines:      allBaselines[0:5],
 			expectedLocked: []*storage.ProcessBaselineKey{},
 			expectError:    false,
 		},
@@ -444,7 +479,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			clusterId:      fixtureconsts.Cluster1,
 			namespaces:     []string{"namespace"},
 			locked:         false,
-			baselines:      allBaselines[0:4],
+			baselines:      allBaselines[0:5],
 			expectedLocked: []*storage.ProcessBaselineKey{},
 			expectError:    false,
 		},
@@ -453,7 +488,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			clusterId:      fixtureconsts.Cluster1,
 			namespaces:     []string{"namespace"},
 			locked:         false,
-			baselines:      allBaselines[1:5],
+			baselines:      allBaselines[1:6],
 			expectedLocked: []*storage.ProcessBaselineKey{},
 			expectError:    false,
 		},
@@ -462,7 +497,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			clusterId:      fixtureconsts.Cluster1,
 			namespaces:     []string{},
 			locked:         true,
-			baselines:      allBaselines[0:4],
+			baselines:      allBaselines[0:5],
 			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
 			expectError:    false,
 		},
@@ -471,7 +506,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			clusterId:      "",
 			namespaces:     []string{"namespace"},
 			locked:         true,
-			baselines:      allBaselines[0:4],
+			baselines:      allBaselines[0:5],
 			expectedLocked: []*storage.ProcessBaselineKey{},
 			expectError:    true,
 		},
@@ -479,7 +514,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			fillDB(t, suite.datastore, c.baselines)
+			fillDBDirect(t, suite.store, c.baselines)
 			defer emptyDB(t, suite.datastore, c.baselines)
 
 			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
@@ -515,7 +550,6 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			}
 
 			protoassert.ElementsMatch(suite.T(), c.expectedLocked, locked)
-
 		})
 	}
 }
