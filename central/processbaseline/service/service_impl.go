@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -31,6 +32,8 @@ var (
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			v1.ProcessBaselineService_UpdateProcessBaselines_FullMethodName,
 			v1.ProcessBaselineService_LockProcessBaselines_FullMethodName,
+			v1.ProcessBaselineService_BulkLockProcessBaselines_FullMethodName,
+			v1.ProcessBaselineService_BulkUnlockProcessBaselines_FullMethodName,
 			v1.ProcessBaselineService_DeleteProcessBaselines_FullMethodName,
 		},
 	})
@@ -160,6 +163,80 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 		}
 	}
 	return resp, nil
+}
+
+func (s *serviceImpl) getKeys(ctx context.Context, clusterId string, namespaces []string) ([]*storage.ProcessBaselineKey, error) {
+	queryBuilder := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterId)
+
+	if len(namespaces) > 0 {
+		queryBuilder = queryBuilder.AddExactMatches(search.Namespace, namespaces...)
+	}
+
+	query := queryBuilder.ProtoQuery()
+
+	baselines, err := s.dataStore.SearchRawProcessBaselines(ctx, query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	keys := make([]*storage.ProcessBaselineKey, len(baselines))
+
+	for i := range baselines {
+		keys[i] = baselines[i].GetKey()
+	}
+
+	return keys, nil
+}
+
+func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest, methodName string, lock bool) (*v1.BulkUpdateProcessBaselinesResponse, error) {
+	var resp *v1.UpdateProcessBaselinesResponse
+	defer s.reprocessUpdatedBaselines(&resp)
+
+	metrics.IncrementBulkProcessBaselineCallCounter(lock)
+
+	clusterId := request.GetClusterId()
+
+	if clusterId == "" {
+		err := errors.New("Cluster ID must be specified")
+		return nil, err
+	}
+
+	keys, err := s.getKeys(ctx, clusterId, request.GetNamespaces())
+	if err != nil {
+		return nil, err
+	}
+
+	updateFunc := func(key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
+		return s.dataStore.UserLockProcessBaseline(ctx, key, lock)
+	}
+
+	resp = bulkUpdate(keys, updateFunc)
+
+	for _, w := range resp.GetBaselines() {
+		err := s.lifecycleManager.SendBaselineToSensor(w)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	metrics.IncrementElementsImpactedCounter(methodName, len(resp.GetBaselines()))
+
+	success := &v1.BulkUpdateProcessBaselinesResponse{
+		Success: true,
+	}
+
+	return success, nil
+}
+
+func (s *serviceImpl) BulkLockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest) (*v1.BulkUpdateProcessBaselinesResponse, error) {
+	methodName := "BulkLockProcessBaselines"
+	return s.bulkLockOrUnlockProcessBaselines(ctx, request, methodName, true)
+}
+
+func (s *serviceImpl) BulkUnlockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest) (*v1.BulkUpdateProcessBaselinesResponse, error) {
+	methodName := "BulkUnlockProcessBaselines"
+	return s.bulkLockOrUnlockProcessBaselines(ctx, request, methodName, false)
 }
 
 func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.DeleteProcessBaselinesRequest) (*v1.DeleteProcessBaselinesResponse, error) {

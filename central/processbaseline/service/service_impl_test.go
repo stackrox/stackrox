@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
@@ -331,6 +332,166 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 				errorKeys = append(errorKeys, err.GetKey())
 			}
 			protoassert.ElementsMatch(t, c.expectedErrorKeys, errorKeys)
+		})
+	}
+}
+
+func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespace() {
+	allBaselines := []*storage.ProcessBaseline{
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment1,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "namespace",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment2,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "namespace",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment3,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "default",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment4,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster2,
+				Namespace:     "namespace",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment1,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "namespace",
+			},
+			UserLockedTimestamp: protocompat.TimestampNow(),
+		},
+	}
+
+	cases := []struct {
+		name           string
+		clusterId      string
+		namespaces     []string
+		locked         bool
+		baselines      []*storage.ProcessBaseline
+		expectedLocked []*storage.ProcessBaselineKey
+		expectError    bool
+	}{
+		{
+			name:           "Lock multiple process baselines",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey()},
+			expectError:    false,
+		},
+		{
+			name:           "Lock process baselines in other cluster",
+			clusterId:      fixtureconsts.Cluster2,
+			namespaces:     []string{"namespace"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[3].GetKey()},
+			expectError:    false,
+		},
+		{
+			name:           "Lock multiple namespaces",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace", "default"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
+			expectError:    false,
+		},
+		{
+			name:           "Lock non existant namespace",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"querty"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    false,
+		},
+		{
+			name:           "Unlock already unlocked baselines",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace"},
+			locked:         false,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    false,
+		},
+		{
+			name:           "Unlock a locked baseline",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace"},
+			locked:         false,
+			baselines:      allBaselines[1:5],
+			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    false,
+		},
+		{
+			name:           "Lock all baselines in cluster 1",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
+			expectError:    false,
+		},
+		{
+			name:           "Not specifying a cluster results in an error",
+			clusterId:      "",
+			namespaces:     []string{"namespace"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    true,
+		},
+	}
+
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			fillDB(t, suite.datastore, c.baselines)
+			defer emptyDB(t, suite.datastore, c.baselines)
+
+			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
+			suite.lifecycleManager.EXPECT().SendBaselineToSensor(gomock.Any()).AnyTimes()
+
+			request := &v1.BulkProcessBaselinesRequest{
+				ClusterId:  c.clusterId,
+				Namespaces: c.namespaces,
+			}
+
+			var response *v1.BulkUpdateProcessBaselinesResponse
+			var err error
+			if c.locked {
+				response, err = suite.service.BulkLockProcessBaselines(hasWriteCtx, request)
+			} else {
+				response, err = suite.service.BulkUnlockProcessBaselines(hasWriteCtx, request)
+			}
+
+			if !c.expectError {
+				suite.NoError(err)
+				suite.True(response.GetSuccess())
+			} else {
+				suite.Error(err)
+				suite.False(response.GetSuccess())
+			}
 		})
 	}
 }

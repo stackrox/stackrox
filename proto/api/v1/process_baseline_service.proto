@@ -30,6 +30,10 @@ message ProcessBaselineUpdateError {
   storage.ProcessBaselineKey key = 2;
 }
 
+message BulkUpdateProcessBaselinesResponse {
+  bool success = 1;
+}
+
 message UpdateProcessBaselinesResponse {
   repeated storage.ProcessBaseline baselines = 1;
   repeated ProcessBaselineUpdateError errors = 2;
@@ -38,6 +42,11 @@ message UpdateProcessBaselinesResponse {
 message LockProcessBaselinesRequest {
   repeated storage.ProcessBaselineKey keys = 1;
   bool locked = 2;
+}
+
+message BulkProcessBaselinesRequest {
+  string cluster_id = 1;
+  repeated string namespaces = 2;
 }
 
 message DeleteProcessBaselinesRequest {
@@ -72,6 +81,24 @@ service ProcessBaselineService {
   rpc LockProcessBaselines(LockProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
     option (google.api.http) = {
       put: "/v1/processbaselines/lock"
+      body: "*"
+    };
+  }
+
+  // `BulkLockProcessBaselines` locks process baselines given a cluster and
+  // an optional set of namespaces. It returns success or an error.
+  rpc BulkLockProcessBaselines(BulkProcessBaselinesRequest) returns (BulkUpdateProcessBaselinesResponse) {
+    option (google.api.http) = {
+      put: "/v1/processbaselines/bulk/lock"
+      body: "*"
+    };
+  }
+
+  // `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
+  // an optional set of namespaces. It returns success or an error.
+  rpc BulkUnlockProcessBaselines(BulkProcessBaselinesRequest) returns (BulkUpdateProcessBaselinesResponse) {
+    option (google.api.http) = {
+      put: "/v1/processbaselines/bulk/unlock"
       body: "*"
     };
   }
