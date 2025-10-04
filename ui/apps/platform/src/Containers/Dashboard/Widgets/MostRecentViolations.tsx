@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Flex, Title, Truncate } from '@patternfly/react-core';
-import { Table, Tbody, Tr, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Tr } from '@patternfly/react-table';
 
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import { policySeverityIconMap } from 'Components/PatternFly/SeverityIcons';

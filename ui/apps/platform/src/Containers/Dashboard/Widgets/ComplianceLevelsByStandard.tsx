@@ -3,17 +3,17 @@ import { useLocation } from 'react-router-dom-v5-compat';
 import {
     Button,
     EmptyState,
-    EmptyStateIcon,
     EmptyStateBody,
-    EmptyStateHeader,
     EmptyStateFooter,
+    EmptyStateHeader,
+    EmptyStateIcon,
     Flex,
     FlexItem,
     Form,
     FormGroup,
+    Title,
     ToggleGroup,
     ToggleGroupItem,
-    Title,
 } from '@patternfly/react-core';
 import { SyncIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, FlexItem, Title, Button } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Title } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import WidgetCard from 'Components/PatternFly/WidgetCard';

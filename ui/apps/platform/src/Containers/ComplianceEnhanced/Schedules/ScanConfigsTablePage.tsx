@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import type { ReactElement } from 'react';
-import { generatePath, Link } from 'react-router-dom-v5-compat';
+import { Link, generatePath } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import {

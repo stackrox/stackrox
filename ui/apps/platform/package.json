@@ -104,6 +104,7 @@
         "test-coverage": "TZ=UTC vitest run --coverage",
         "lint": "eslint --quiet",
         "lint:fast-dev": "eslint --quiet --rule 'import/namespace: off' --rule 'import/no-cycle: off'",
+        "lint:fast-dev-fix": "eslint --fix --quiet --rule 'import/namespace: off' --rule 'import/no-cycle: off'",
         "lint:fix": "eslint --fix --quiet",
         "tsc": "tsc",
         "cypress-open": "./scripts/cypress.sh open --e2e --config defaultBrowser=chrome",

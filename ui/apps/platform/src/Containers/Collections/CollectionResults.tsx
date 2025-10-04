@@ -4,6 +4,8 @@ import {
     Button,
     Divider,
     EmptyState,
+    EmptyStateFooter,
+    EmptyStateHeader,
     EmptyStateIcon,
     Flex,
     FlexItem,
@@ -11,8 +13,6 @@ import {
     Skeleton,
     Text,
     Title,
-    EmptyStateHeader,
-    EmptyStateFooter,
 } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon, ListIcon, SyncAltIcon } from '@patternfly/react-icons';

@@ -6,11 +6,11 @@ import type { ChartLabelProps } from '@patternfly/react-charts';
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
-    defaultChartHeight,
     defaultChartBarWidth,
+    defaultChartHeight,
     navigateOnClickEvent,
-    solidBlueChartColor,
     patternflySeverityTheme,
+    solidBlueChartColor,
 } from 'utils/chartUtils';
 
 const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceLevelByStandard[]) => {

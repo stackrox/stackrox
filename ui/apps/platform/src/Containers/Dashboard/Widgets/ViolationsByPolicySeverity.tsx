@@ -1,6 +1,6 @@
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
-import { Flex, FlexItem, Title, Button, Divider, Stack, StackItem } from '@patternfly/react-core';
+import { Button, Divider, Flex, FlexItem, Stack, StackItem, Title } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import WidgetCard from 'Components/PatternFly/WidgetCard';

@@ -12,8 +12,8 @@ import {
     FlexItem,
     PageSection,
     Tab,
-    Tabs,
     TabTitleText,
+    Tabs,
     Title,
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom-v5-compat';

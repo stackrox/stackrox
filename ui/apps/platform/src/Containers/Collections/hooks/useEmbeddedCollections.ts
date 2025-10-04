@@ -1,4 +1,4 @@
-import { useReducer, useEffect } from 'react';
+import { useEffect, useReducer } from 'react';
 import type { Dispatch } from 'react';
 import sortBy from 'lodash/sortBy';
 
