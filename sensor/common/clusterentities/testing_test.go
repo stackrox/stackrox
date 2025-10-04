@@ -2,11 +2,12 @@ package clusterentities
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/set"
-	"golang.org/x/exp/maps"
 )
 
 type operation string
@@ -70,7 +71,7 @@ func newTestPublicIPsListener(t *testing.T) *testPublicIPsListener {
 }
 
 func (p *testPublicIPsListener) String() string {
-	return fmt.Sprintf("%s", maps.Keys(p.data))
+	return fmt.Sprintf("%s", slices.Collect(maps.Keys(p.data)))
 }
 
 func (p *testPublicIPsListener) OnUpdate(ips set.Set[net.IPAddress]) {

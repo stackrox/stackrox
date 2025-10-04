@@ -7,12 +7,13 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"maps"
+	"slices"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -107,8 +108,8 @@ func ElementsMatch[S ~[]T, T message[V], V any](t testing.TB, expected, actual S
 // MapSliceEqual determines if the expected and actual maps (from key to slice) are equal.
 func MapSliceEqual[M ~map[K][]T, K comparable, T message[V], V any](t testing.TB, expected, actual M, msgAndArgs ...any) bool {
 	t.Helper()
-	expectedKeys := maps.Keys(expected)
-	actualKeys := maps.Keys(actual)
+	expectedKeys := slices.Collect(maps.Keys(expected))
+	actualKeys := slices.Collect(maps.Keys(actual))
 	if !assert.ElementsMatch(t, expectedKeys, actualKeys, append([]any{"keys differ:\n"}, msgAndArgs...)...) {
 		return false
 	}
@@ -123,8 +124,8 @@ func MapSliceEqual[M ~map[K][]T, K comparable, T message[V], V any](t testing.TB
 // MapEqual determines if the expected and actual maps are equal.
 func MapEqual[M ~map[K]T, K comparable, T message[V], V any](t testing.TB, expected, actual M, msgAndArgs ...any) bool {
 	t.Helper()
-	expectedKeys := maps.Keys(expected)
-	actualKeys := maps.Keys(actual)
+	expectedKeys := slices.Collect(maps.Keys(expected))
+	actualKeys := slices.Collect(maps.Keys(actual))
 	if !assert.ElementsMatch(t, expectedKeys, actualKeys, append([]any{"keys differ:\n"}, msgAndArgs...)...) {
 		return false
 	}

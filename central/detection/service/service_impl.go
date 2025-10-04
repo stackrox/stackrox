@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -49,7 +51,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -464,7 +465,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	return &apiV1.DeployDetectionResponse{
 		Runs:              runs,
 		IgnoredObjectRefs: ignoredObjectRefs,
-		Remarks:           maps.Values(remarks),
+		Remarks:           slices.Collect(maps.Values(remarks)),
 	}, nil
 }
 

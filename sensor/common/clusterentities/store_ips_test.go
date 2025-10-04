@@ -1,9 +1,10 @@
 package clusterentities
 
 import (
+	"maps"
+
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"golang.org/x/exp/maps"
 )
 
 func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
@@ -370,11 +371,11 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 				s.T().Logf("IP listener (tick %d): %s", tickNo, ipListener.String())
 				// convert to slice of strings to enable using Contains assertion
 				var historicalIPs []string
-				for _, address := range maps.Keys(store.podIPsStore.historicalIPs) {
+				for address := range maps.Keys(store.podIPsStore.historicalIPs) {
 					historicalIPs = append(historicalIPs, address.String())
 				}
 				var currentIPs []string
-				for _, address := range maps.Keys(store.podIPsStore.ipMap) {
+				for address := range maps.Keys(store.podIPsStore.ipMap) {
 					currentIPs = append(currentIPs, address.String())
 				}
 				for endpointIP, whereFound := range expect {

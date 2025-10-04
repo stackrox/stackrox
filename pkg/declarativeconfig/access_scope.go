@@ -1,12 +1,13 @@
 package declarativeconfig
 
 import (
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"go.yaml.in/yaml/v3"
-	"golang.org/x/exp/maps"
 )
 
 // AccessScope is representation of storage.AccessScope that supports transformation from YAML.
@@ -39,7 +40,7 @@ func (a *Operator) UnmarshalYAML(value *yaml.Node) error {
 	i, ok := storage.SetBasedLabelSelector_Operator_value[v]
 	if !ok {
 		return errox.InvalidArgs.Newf("operator %s is invalid, valid operators are: [%s]", v, strings.Join(
-			maps.Keys(storage.SetBasedLabelSelector_Operator_value), ","))
+			slices.Collect(maps.Keys(storage.SetBasedLabelSelector_Operator_value)), ","))
 	}
 	*a = Operator(i)
 	return nil

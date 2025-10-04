@@ -24,6 +24,7 @@ linters:
     - errcheck
     - forbidigo
     - gocritic
+    - exptostd
     - gosec
     - govet
     - ineffassign
