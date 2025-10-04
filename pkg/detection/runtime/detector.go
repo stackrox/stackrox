@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 // Detector provides an interface for getting and managing alerts and enforcements on deployments.
@@ -17,7 +18,13 @@ type Detector interface {
 	DetectForDeploymentAndKubeEvent(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
 	DetectForDeploymentAndNetworkFlow(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
 	DetectForAuditEvents(auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error)
+	DetectForHostFileActivity(activity *storage.FileActivity) ([]*storage.Alert, error)
+	DetectForDeploymentFileActivity(enhancedDeployment booleanpolicy.EnhancedDeployment, activity *storage.FileActivity) ([]*storage.Alert, error)
 }
+
+var (
+	log = logging.LoggerForModule()
+)
 
 // NewDetector returns a new instance of a Detector.
 func NewDetector(policySet detection.PolicySet) Detector {
@@ -67,6 +74,62 @@ func (d *detectorImpl) DetectForDeploymentAndNetworkFlow(
 	flow *augmentedobjs.NetworkFlowDetails,
 ) ([]*storage.Alert, error) {
 	return d.detectForDeployment(enhancedDeployment, nil, false, nil, flow)
+}
+
+func (d *detectorImpl) DetectForHostFileActivity(activity *storage.FileActivity) ([]*storage.Alert, error) {
+	return d.detectForFileActivity(nil, activity)
+}
+
+func (d *detectorImpl) DetectForDeploymentFileActivity(enhancedDeployment booleanpolicy.EnhancedDeployment, activity *storage.FileActivity) ([]*storage.Alert, error) {
+	return d.detectForFileActivity(&enhancedDeployment, activity)
+}
+
+func (d *detectorImpl) detectForFileActivity(enhancedDeployment *booleanpolicy.EnhancedDeployment, activity *storage.FileActivity) ([]*storage.Alert, error) {
+	var alerts []*storage.Alert
+	var cacheReceptable booleanpolicy.CacheReceptacle
+
+	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
+		if compiled.Policy().GetDisabled() {
+			return nil
+		}
+
+		if !compiled.AppliesTo(activity) {
+			return nil
+		}
+
+		log.Info("Detecting for policy", compiled.Policy().GetName())
+
+		if enhancedDeployment != nil {
+			log.Info("Deployment detection")
+			violation, err := compiled.MatchAgainstFileActivityAndDeployment(&cacheReceptable, *enhancedDeployment, activity)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; file activity %s/%s",
+					compiled.Policy().GetName(), activity.GetOperation(), activity.GetFile().GetPath())
+			}
+
+			if alert := constructFileAlert(compiled.Policy(), activity, enhancedDeployment.Deployment, violation); alert != nil {
+				alerts = append(alerts, alert)
+			}
+		} else {
+			log.Info("Host detection")
+			violation, err := compiled.MatchAgainstFileActivity(&cacheReceptable, activity)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; file activity %s/%s",
+					compiled.Policy().GetName(), activity.GetOperation(), activity.GetFile().GetPath())
+			}
+
+			if alert := constructFileAlert(compiled.Policy(), activity, nil, violation); alert != nil {
+				alerts = append(alerts, alert)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return alerts, nil
 }
 
 // detectForDeployment runs detection on a deployment, returning any generated alerts.

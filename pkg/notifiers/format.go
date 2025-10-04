@@ -54,6 +54,9 @@ const bplPolicyFormat = `
 	{{if .ProcessViolation}}
 		{{list .ProcessViolation.Message}}
 	{{end}}
+	{{if .FileViolation}}
+		{{list .FileViolation.Message}}
+	{{end}}
 {{header "Policy Definition:"}}
 	{{"Description:" | subheader}}
 	{{.Policy.Description | list}}

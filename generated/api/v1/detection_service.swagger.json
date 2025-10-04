@@ -145,9 +145,36 @@
         "UNSET",
         "DEPLOYMENT",
         "CONTAINER_IMAGE",
-        "RESOURCE"
+        "RESOURCE",
+        "HOST"
       ],
       "default": "UNSET"
+    },
+    "AlertFileSystemViolation": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "fileActivity": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageFileActivity"
+          }
+        }
+      }
+    },
+    "AlertHost": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "AlertProcessViolation": {
       "type": "object",
@@ -207,7 +234,8 @@
         "GENERIC",
         "K8S_EVENT",
         "NETWORK_FLOW",
-        "NETWORK_POLICY"
+        "NETWORK_POLICY",
+        "HOST_EVENT"
       ],
       "default": "GENERIC"
     },
@@ -256,6 +284,19 @@
       ],
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+    },
+    "FileActivityOperation": {
+      "type": "string",
+      "enum": [
+        "CREAT",
+        "UNLINK",
+        "RENAME",
+        "PERMISSION_CHANGE",
+        "OWNERSHIP_CHANGE",
+        "WRITE",
+        "OPEN"
+      ],
+      "default": "CREAT"
     },
     "KeyValueAttrsKeyValueAttr": {
       "type": "object",
@@ -506,6 +547,10 @@
           "$ref": "#/definitions/storageAlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
+        "host": {
+          "$ref": "#/definitions/AlertHost",
+          "title": "Represents an alert from a host.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
         "violations": {
           "type": "array",
           "items": {
@@ -516,6 +561,9 @@
         },
         "processViolation": {
           "$ref": "#/definitions/AlertProcessViolation"
+        },
+        "fileViolation": {
+          "$ref": "#/definitions/AlertFileSystemViolation"
         },
         "enforcement": {
           "$ref": "#/definitions/AlertEnforcement"
@@ -903,7 +951,8 @@
       "enum": [
         "NOT_APPLICABLE",
         "DEPLOYMENT_EVENT",
-        "AUDIT_LOG_EVENT"
+        "AUDIT_LOG_EVENT",
+        "HOST_EVENT"
       ],
       "default": "NOT_APPLICABLE"
     },
@@ -940,6 +989,59 @@
       "type": "object",
       "properties": {
         "name": {
+          "type": "string"
+        }
+      }
+    },
+    "storageFileActivity": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "process": {
+          "$ref": "#/definitions/storageProcessIndicator"
+        },
+        "operation": {
+          "$ref": "#/definitions/FileActivityOperation"
+        },
+        "file": {
+          "$ref": "#/definitions/storageFileActivityFile"
+        },
+        "moved": {
+          "$ref": "#/definitions/storageFileActivityFile"
+        },
+        "uid": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "gid": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "mode": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "username": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "unexpectedActivity": {
+          "type": "string"
+        }
+      }
+    },
+    "storageFileActivityFile": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "hostPath": {
           "type": "string"
         }
       }
@@ -1384,6 +1486,9 @@
             "$ref": "#/definitions/ProcessSignalLineageInfo"
           },
           "title": "Process LineageInfo"
+        },
+        "inRootMountNs": {
+          "type": "boolean"
         }
       }
     },
