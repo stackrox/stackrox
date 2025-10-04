@@ -762,6 +762,10 @@ ossls-notice: deps
 collector-tag:
 	@echo "$$(cat COLLECTOR_VERSION)"
 
+.PHONY: fact-tag
+fact-tag:
+	@echo "$$(cat FACT_VERSION)"
+
 .PHONY: scanner-tag
 scanner-tag:
 	@echo "$$(cat SCANNER_VERSION)"

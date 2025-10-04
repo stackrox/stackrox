@@ -62,6 +62,13 @@ image:
     name: null # string
     tag: null # string
     fullRef: null # string
+  fact:
+    registry: null # string
+    name: null # string
+    repository: null # string
+    tag: null # string
+    fullRef: null # string
+    pullPolicy: null # string
 env:
   grpcEnforceALPN: null # bool
   openshift: null # bool | int
@@ -142,6 +149,8 @@ collector:
     enabled: null # bool
   runtimeConfig:
     enabled: null # bool
+fact:
+  resources: null # string | dict
 auditLogs:
   disableCollection: null # bool
 autoLockProcessBaselines:
