@@ -109,7 +109,11 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 			sac.ResourceScopeKeys(resources.Administration)),
 	)
 
-	_, exists, err := h.blobStore.Get(ctx, common.GetReportBlobPath(rep.GetReportConfigurationId(), id), buf)
+	parentDir := rep.GetReportConfigurationId()
+	if rep.GetViewBasedVulnReportFilters() != nil {
+		parentDir = "view-based-report"
+	}
+	_, exists, err := h.blobStore.Get(ctx, common.GetReportBlobPath(parentDir, id), buf)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.New("Failed to fetch report data"))
 		return

@@ -413,7 +413,7 @@ func (s *serviceImpl) convertViewBasedProtoReportSnapshotstoV2(snapshots []*stor
 			Filter: &apiV2.ReportSnapshot_ViewBasedVulnReportFilters{
 				ViewBasedVulnReportFilters: viewBasedFilters,
 			},
-			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath("view-based", snapshot.GetReportId())),
+			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath("view-based-report", snapshot.GetReportId())),
 		}
 		v2snaps = append(v2snaps, snapshotv2)
 	}
@@ -468,7 +468,11 @@ func (s *serviceImpl) getExistingBlobNames(snapshots []*storage.ReportSnapshot) 
 		if status.GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
 			if status.GetRunState() == storage.ReportStatus_GENERATED ||
 				status.GetRunState() == storage.ReportStatus_DELIVERED {
-				blobNames = append(blobNames, common.GetReportBlobPath(snap.GetReportConfigurationId(), snap.GetReportId()))
+				parentDir := snap.GetReportConfigurationId()
+				if snap.GetViewBasedVulnReportFilters() != nil {
+					parentDir = "view-based-report"
+				}
+				blobNames = append(blobNames, common.GetReportBlobPath(parentDir, snap.GetReportId()))
 			}
 		}
 	}
