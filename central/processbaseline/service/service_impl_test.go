@@ -52,6 +52,19 @@ func emptyDB(t *testing.T, ds datastore.DataStore, baselines []*storage.ProcessB
 	}
 }
 
+func (suite *ProcessBaselineServiceTestSuite) getAllProcessBaselinesFromDB(t *testing.T, ds datastore.DataStore) []*storage.ProcessBaseline {
+	baselines := []*storage.ProcessBaseline{}
+	err := suite.datastore.WalkAll(hasReadCtx,
+		func(baseline *storage.ProcessBaseline) error {
+			baselines = append(baselines, baseline)
+			return nil
+		})
+
+	suite.NoError(err)
+
+	return baselines
+}
+
 func getIndicators(key *storage.ProcessBaselineKey) []*storage.ProcessIndicator {
 	return []*storage.ProcessIndicator{
 		{
@@ -492,6 +505,17 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 				suite.Error(err)
 				suite.False(response.GetSuccess())
 			}
+
+			baselinesFromDB := suite.getAllProcessBaselinesFromDB(t, suite.datastore)
+			locked := make([]*storage.ProcessBaselineKey, 0)
+			for _, baseline := range baselinesFromDB {
+				if baseline.GetUserLockedTimestamp() != nil {
+					locked = append(locked, baseline.GetKey())
+				}
+			}
+
+			protoassert.ElementsMatch(suite.T(), c.expectedLocked, locked)
+
 		})
 	}
 }
