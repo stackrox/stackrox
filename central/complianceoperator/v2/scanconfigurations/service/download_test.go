@@ -36,7 +36,7 @@ func TestDownloadReport(t *testing.T) {
 	}
 
 	t.Run("Method not allowed", func(t *testing.T) {
-		req, _ := http.NewRequest("POST", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", "snapshot-id"), nil)
+		req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", "snapshot-id"), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -48,7 +48,7 @@ func TestDownloadReport(t *testing.T) {
 	t.Run("Empty ID", func(t *testing.T) {
 		emptyID := ""
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", emptyID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", emptyID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -60,7 +60,7 @@ func TestDownloadReport(t *testing.T) {
 	t.Run("User not present in context", func(t *testing.T) {
 		snapshotID := "snapshot-1"
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -74,7 +74,7 @@ func TestDownloadReport(t *testing.T) {
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(nil, false, errors.New("some error"))
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -88,7 +88,7 @@ func TestDownloadReport(t *testing.T) {
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(nil, false, nil)
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -107,7 +107,7 @@ func TestDownloadReport(t *testing.T) {
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, ctxUser))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -123,7 +123,7 @@ func TestDownloadReport(t *testing.T) {
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -139,7 +139,7 @@ func TestDownloadReport(t *testing.T) {
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -155,7 +155,7 @@ func TestDownloadReport(t *testing.T) {
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -171,7 +171,7 @@ func TestDownloadReport(t *testing.T) {
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -187,7 +187,7 @@ func TestDownloadReport(t *testing.T) {
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 		blobDS.EXPECT().Get(gomock.Any(), common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshotID), gomock.Any()).Return(nil, false, errors.New("some error"))
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -203,7 +203,7 @@ func TestDownloadReport(t *testing.T) {
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 		blobDS.EXPECT().Get(gomock.Any(), common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshotID), gomock.Any()).Return(nil, false, nil)
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -226,7 +226,7 @@ func TestDownloadReport(t *testing.T) {
 			return errors.New("some error")
 		})
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)
@@ -248,7 +248,7 @@ func TestDownloadReport(t *testing.T) {
 			return nil
 		})
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/v2/compliance/scan/configurations/reports/download?id=%s", snapshotID), nil)
 		req = req.WithContext(getContextForUser(t, ctrl, ctx, user))
 		w := httptest.NewRecorder()
 		handler.handle(w, req)

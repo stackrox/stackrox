@@ -137,7 +137,7 @@ func (s *splunkComplianceAPITestSuite) TearDownTest() {
 
 func (s *splunkComplianceAPITestSuite) TestComplianceAPIResults() {
 	// set up http mocks
-	req, err := http.NewRequest("GET", "/api/splunk/ta/compliance", nil)
+	req, err := http.NewRequest(http.MethodGet, "/api/splunk/ta/compliance", nil)
 	require.NoError(s.T(), err)
 	responseRecorder := httptest.NewRecorder()
 

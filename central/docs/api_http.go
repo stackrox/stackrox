@@ -16,13 +16,13 @@ func Swagger() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		b, err := swaggerForRequest(req, "/stackrox/static-data/docs/api/v1/swagger.json")
 		if err != nil {
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			msg := err.Error()
 			_, _ = w.Write([]byte(msg))
 			return
 		}
 		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(b)
 	})
 }
@@ -34,13 +34,13 @@ func SwaggerV2() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		b, err := swaggerForRequest(req, "/stackrox/static-data/docs/api/v2/swagger.json")
 		if err != nil {
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			msg := err.Error()
 			_, _ = w.Write([]byte(msg))
 			return
 		}
 		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(b)
 	})
 }

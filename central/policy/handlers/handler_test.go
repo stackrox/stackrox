@@ -68,7 +68,7 @@ func (s *PolicyHandlerTestSuite) performRequest(body interface{}) *httptest.Resp
 		reqBody, err = json.Marshal(body)
 		s.NoError(err)
 	}
-	req := httptest.NewRequest("POST", "/url", bytes.NewBuffer(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/url", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	s.handler.ServeHTTP(s.mockRecorder, req)
 	return s.mockRecorder
