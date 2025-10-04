@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"io"
 	"runtime/pprof"
+	"slices"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -308,13 +308,8 @@ func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,
 	if err != nil {
 		return errors.Wrap(err, "marshalling cluster info")
 	}
-	batchManager := batcher.New(len(jsonBytes), clusterInfoChunkSize)
-	for {
-		start, end, ok := batchManager.Next()
-		if !ok {
-			break
-		}
-		if err := sendMsgCb(subCtx, makeChunk(jsonBytes[start:end])); err != nil {
+	for byteBatch := range slices.Chunk(jsonBytes, clusterInfoChunkSize) {
+		if err := sendMsgCb(subCtx, makeChunk(byteBatch)); err != nil {
 			return err
 		}
 	}

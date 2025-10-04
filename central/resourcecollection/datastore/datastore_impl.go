@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -65,13 +66,8 @@ func (ds *datastoreImpl) initGraph() error {
 	}
 
 	// add vertices by batches
-	for i := 0; i < len(ids); i += graphInitBatchSize {
-		var objs []*storage.ResourceCollection
-		if i+graphInitBatchSize < len(ids) {
-			objs, _, err = ds.storage.GetMany(ctx, ids[i:i+graphInitBatchSize])
-		} else {
-			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
-		}
+	for idBatch := range slices.Chunk(ids, graphInitBatchSize) {
+		objs, _, err := ds.storage.GetMany(ctx, idBatch)
 		if err != nil {
 			return errors.Wrap(err, "building collection graph")
 		}
@@ -91,13 +87,8 @@ func (ds *datastoreImpl) initGraph() error {
 	}
 
 	// then add edges by batches
-	for i := 0; i < len(ids); i += graphInitBatchSize {
-		var parents []*storage.ResourceCollection
-		if i+graphInitBatchSize < len(ids) {
-			parents, _, err = ds.storage.GetMany(ctx, ids[i:i+graphInitBatchSize])
-		} else {
-			parents, _, err = ds.storage.GetMany(ctx, ids[i:])
-		}
+	for idBatch := range slices.Chunk(ids, graphInitBatchSize) {
+		parents, _, err := ds.storage.GetMany(ctx, idBatch)
 		if err != nil {
 			return errors.Wrap(err, "building collection graph")
 		}
