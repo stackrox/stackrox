@@ -48,10 +48,17 @@ func toOperatingSystem(ref string) string {
 
 func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {
 	packages := r.GetContents().GetPackages()
+	if len(packages) == 0 {
+		packages = make(map[string]*v4.Package, len(r.GetContents().GetPackagesDEPRECATED()))
+		// Fallback to the deprecated slice, if needed.
+		for _, pkg := range r.GetContents().GetPackagesDEPRECATED() {
+			packages[pkg.GetId()] = pkg
+		}
+	}
 	result := make([]*storage.EmbeddedNodeScanComponent, 0, len(packages))
 
-	for _, pkg := range packages {
-		vulns := getPackageVulns(pkg.GetId(), r)
+	for id, pkg := range packages {
+		vulns := getPackageVulns(id, r)
 		result = append(result, createEmbeddedComponent(pkg, vulns))
 	}
 	return result
