@@ -25,12 +25,12 @@ export const VirtualMachineID: CompoundSearchFilterAttribute = {
     displayName: 'ID',
     filterChipLabel: 'Virtual machine ID',
     searchTerm: 'Virtual Machine ID',
-    inputType: 'autocomplete',
+    inputType: 'text',
 };
 
 export const VirtualMachineName: CompoundSearchFilterAttribute = {
     displayName: 'Name',
     filterChipLabel: 'Virtual machine name',
     searchTerm: 'Virtual Machine Name',
-    inputType: 'autocomplete',
+    inputType: 'text',
 };

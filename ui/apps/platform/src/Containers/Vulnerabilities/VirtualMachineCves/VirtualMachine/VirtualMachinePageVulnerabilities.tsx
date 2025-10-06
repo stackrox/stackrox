@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
     Flex,
     PageSection,
@@ -16,11 +16,10 @@ import {
     virtualMachineCVESearchFilterConfig,
     virtualMachineComponentSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
-import { getVirtualMachine } from 'services/VirtualMachineService';
+import type { VirtualMachine } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { getHasSearchApplied } from 'utils/searchUtils';
@@ -47,8 +46,12 @@ import {
 } from '../../utils/sortFields';
 import VirtualMachineVulnerabilitiesTable from './VirtualMachineVulnerabilitiesTable';
 
+// Currently we need all vm info to be fetched in the root component, hence this being passed in
+// there will likely be a call specific to this table in the future that should be made here
 export type VirtualMachinePageVulnerabilitiesProps = {
-    virtualMachineId: string;
+    virtualMachineData: VirtualMachine | undefined;
+    isLoadingVirtualMachineData: boolean;
+    errorVirtualMachineData: Error | undefined;
 };
 
 const searchFilterConfig = [
@@ -66,14 +69,10 @@ const sortFields = [
 const defaultSortOption = { field: CVE_SEVERITY_SORT_FIELD, direction: 'desc' } as const;
 
 function VirtualMachinePageVulnerabilities({
-    virtualMachineId,
+    virtualMachineData,
+    isLoadingVirtualMachineData,
+    errorVirtualMachineData,
 }: VirtualMachinePageVulnerabilitiesProps) {
-    const fetchVirtualMachines = useCallback(
-        () => getVirtualMachine(virtualMachineId),
-        [virtualMachineId]
-    );
-
-    const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
@@ -87,7 +86,10 @@ function VirtualMachinePageVulnerabilities({
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const isFiltered = getHasSearchApplied(searchFilter);
 
-    const virtualMachineTableData = useMemo(() => getVirtualMachineCveTableData(data), [data]);
+    const virtualMachineTableData = useMemo(
+        () => getVirtualMachineCveTableData(virtualMachineData),
+        [virtualMachineData]
+    );
 
     const filteredVirtualMachineTableData = useMemo(
         () => applyVirtualMachineCveTableFilters(virtualMachineTableData, searchFilter),
@@ -115,9 +117,9 @@ function VirtualMachinePageVulnerabilities({
     }, [sortedVirtualMachineTableData, page, perPage]);
 
     const tableState = getTableUIState({
-        isLoading,
+        isLoading: isLoadingVirtualMachineData,
         data: paginatedVirtualMachineTableData,
-        error,
+        error: errorVirtualMachineData,
         searchFilter,
     });
 
@@ -137,7 +139,10 @@ function VirtualMachinePageVulnerabilities({
                     setPage(1, 'replace');
                 }}
             />
-            <SummaryCardLayout isLoading={isLoading} error={error}>
+            <SummaryCardLayout
+                isLoading={isLoadingVirtualMachineData}
+                error={errorVirtualMachineData}
+            >
                 <SummaryCard
                     loadingText={'Loading virtual machine CVEs by severity summary'}
                     data={filteredVirtualMachineTableData}
@@ -165,10 +170,10 @@ function VirtualMachinePageVulnerabilities({
                     <SplitItem isFilled>
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">
-                                {!isLoading ? (
+                                {!isLoadingVirtualMachineData ? (
                                     `${pluralize(filteredVirtualMachineTableData.length, 'result')} found`
                                 ) : (
-                                    <Skeleton screenreaderText="Loading node vulnerability count" />
+                                    <Skeleton screenreaderText="Loading virtual machine vulnerability count" />
                                 )}
                             </Title>
                             {isFiltered && <DynamicTableLabel />}
