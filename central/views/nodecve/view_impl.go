@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/utils"
@@ -39,7 +40,7 @@ func (n *nodeCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, 
 		return nil, err
 	}
 
-	ret := make([]CveCore, 0)
+	ret := make([]CveCore, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
 	err := pgSearch.RunSelectRequestForSchemaFn[nodeCVECoreResponse](ctx, n.db, n.schema, withSelectQuery(q), func(r *nodeCVECoreResponse) error {
 		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
@@ -95,7 +96,7 @@ func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]st
 		search.NewQuerySelect(search.NodeID).Distinct().Proto(),
 	}
 
-	ret := make([]string, 0)
+	ret := make([]string, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
 	err := pgSearch.RunSelectRequestForSchemaFn[nodeResponse](ctx, n.db, n.schema, q, func(r *nodeResponse) error {
 		ret = append(ret, r.GetNodeID())
 		return nil

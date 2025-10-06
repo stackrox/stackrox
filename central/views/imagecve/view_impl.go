@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 )
@@ -105,7 +106,7 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	ret := make([]CveCore, 0)
+	ret := make([]CveCore, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
 	err = pgSearch.RunSelectRequestForSchemaFn[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, cveIDsToFilter, options), func(r *imageCVECoreResponse) error {
 		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
@@ -128,7 +129,7 @@ func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var ret []string
+	ret := make([]string, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
 	err := pgSearch.RunSelectRequestForSchemaFn[deploymentResponse](queryCtx, v.db, v.schema, q, func(r *deploymentResponse) error {
 		ret = append(ret, r.DeploymentID)
 		return nil
@@ -151,7 +152,7 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var ret []string
+	ret := make([]string, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
 	var err error
 	if features.FlattenImageData.Enabled() {
 		err = pgSearch.RunSelectRequestForSchemaFn[imageV2Response](queryCtx, v.db, v.schema, q, func(r *imageV2Response) error {
