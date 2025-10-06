@@ -160,6 +160,9 @@ func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query
 	if err != nil {
 		return nil, err
 	}
+	if len(ret) == 0 {
+		return nil, nil
+	}
 	return ret, nil
 }
 
@@ -195,6 +198,9 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 	}
 	if err != nil {
 		return nil, err
+	}
+	if len(ret) == 0 {
+		return nil, nil
 	}
 	return ret, nil
 }

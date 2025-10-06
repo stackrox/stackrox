@@ -82,6 +82,9 @@ func (v *platformCVECoreViewImpl) GetClusterIDs(ctx context.Context, q *v1.Query
 	if err != nil {
 		return nil, err
 	}
+	if len(ret) == 0 {
+		return nil, nil
+	}
 	return ret, nil
 }
 
