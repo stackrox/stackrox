@@ -114,7 +114,11 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
-	countResults, err := pgSearch.RunSelectRequestForSchema[ResourceResultCountByClusterScan](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	var countResults []*ResourceResultCountByClusterScan
+	err = pgSearch.RunSelectRequestForSchemaFn[ResourceResultCountByClusterScan](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultCountByClusterScan) error {
+		countResults = append(countResults, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +158,11 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
-	countResults, err := pgSearch.RunSelectRequestForSchema[ResourceResultCountByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	var countResults []*ResourceResultCountByProfile
+	err = pgSearch.RunSelectRequestForSchemaFn[ResourceResultCountByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultCountByProfile) error {
+		countResults = append(countResults, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +217,11 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
-	results, err := pgSearch.RunSelectRequestForSchema[ResourceResultsByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	var results []*ResourceResultsByProfile
+	err = pgSearch.RunSelectRequestForSchemaFn[ResourceResultsByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultsByProfile) error {
+		results = append(results, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +268,11 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
-	countResults, err := pgSearch.RunSelectRequestForSchema[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	var countResults []*ResultStatusCountByCluster
+	err = pgSearch.RunSelectRequestForSchemaFn[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResultStatusCountByCluster) error {
+		countResults = append(countResults, r)
+		return nil
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to retrieve data")
 	}

@@ -81,21 +81,32 @@ func (n *nodeCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) 
 		return nil, err
 	}
 
-	var results []*countByNodeCVESeverity
-	results, err = pgSearch.RunSelectRequestForSchema[countByNodeCVESeverity](ctx, n.db, n.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
+	var result *countByNodeCVESeverity
+	var hasResult bool
+	var resultCount int
+	err = pgSearch.RunSelectRequestForSchemaFn[countByNodeCVESeverity](ctx, n.db, n.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE), func(r *countByNodeCVESeverity) error {
+		if hasResult {
+			resultCount++
+		} else {
+			result = r
+			hasResult = true
+			resultCount = 1
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 0 {
+	if !hasResult {
 		return common.NewEmptyResourceCountByCVESeverity(), nil
 	}
-	if len(results) > 1 {
+	if resultCount > 1 {
 		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
 		utils.Should(err)
 		return common.NewEmptyResourceCountByCVESeverity(), err
 	}
 
-	return results[0], nil
+	return result, nil
 }
 
 func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]string, error) {

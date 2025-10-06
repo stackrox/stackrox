@@ -151,15 +151,13 @@ func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*deploymentResponse
-	results, err = pgSearch.RunSelectRequestForSchema[deploymentResponse](queryCtx, v.db, v.schema, q)
-	if err != nil || len(results) == 0 {
-		return nil, err
-	}
-
-	ret := make([]string, 0, len(results))
-	for _, r := range results {
+	var ret []string
+	err = pgSearch.RunSelectRequestForSchemaFn[deploymentResponse](queryCtx, v.db, v.schema, q, func(r *deploymentResponse) error {
 		ret = append(ret, r.DeploymentID)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return ret, nil
 }
@@ -182,28 +180,20 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
+	var ret []string
 	if features.FlattenImageData.Enabled() {
-		var results []*imageV2Response
-		results, err = pgSearch.RunSelectRequestForSchema[imageV2Response](queryCtx, v.db, v.schema, q)
-		if err != nil || len(results) == 0 {
-			return nil, err
-		}
-
-		ret := make([]string, 0, len(results))
-		for _, r := range results {
+		err = pgSearch.RunSelectRequestForSchemaFn[imageV2Response](queryCtx, v.db, v.schema, q, func(r *imageV2Response) error {
 			ret = append(ret, r.ImageID)
-		}
-		return ret, nil
+			return nil
+		})
+	} else {
+		err = pgSearch.RunSelectRequestForSchemaFn[imageResponse](queryCtx, v.db, v.schema, q, func(r *imageResponse) error {
+			ret = append(ret, r.ImageID)
+			return nil
+		})
 	}
-	var results []*imageResponse
-	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](queryCtx, v.db, v.schema, q)
-	if err != nil || len(results) == 0 {
+	if err != nil {
 		return nil, err
-	}
-
-	ret := make([]string, 0, len(results))
-	for _, r := range results {
-		ret = append(ret, r.ImageID)
 	}
 	return ret, nil
 }
@@ -287,14 +277,12 @@ func (v *imageCVECoreViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query)
 	// TODO(@charmik) : Update the SQL query generator to not include 'ORDER BY' and 'GROUP BY' fields in the select clause (before where).
 	//  SQL syntax does not need those fields in the select clause. The below query for example would work fine
 	//  "SELECT JSONB_AGG(DISTINCT(image_cves.Id)) AS cve_id FROM image_cves GROUP BY image_cves.CveBaseInfo_Cve ORDER BY MAX(image_cves.Cvss) DESC LIMIT 20;"
-	var identifiersList []*imageCVECoreResponse
-	identifiersList, err := pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q))
+	err := pgSearch.RunSelectRequestForSchemaFn[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q), func(r *imageCVECoreResponse) error {
+		cveIDsToFilter = append(cveIDsToFilter, r.CVEIDs...)
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	for _, idList := range identifiersList {
-		cveIDsToFilter = append(cveIDsToFilter, idList.CVEIDs...)
 	}
 
 	return cveIDsToFilter, nil

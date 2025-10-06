@@ -956,7 +956,10 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageV2RiskView, error) {
 	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
 	var results []*views.ImageV2RiskView
-	results, err := pgSearch.RunSelectRequestForSchema[views.ImageV2RiskView](ctx, s.db, pkgSchema.ImagesV2Schema, q)
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ImageV2RiskView](ctx, s.db, pkgSchema.ImagesV2Schema, q, func(r *views.ImageV2RiskView) error {
+		results = append(results, r)
+		return nil
+	})
 	if err != nil {
 		log.Errorf("unable to initialize image ranking: %v", err)
 	}

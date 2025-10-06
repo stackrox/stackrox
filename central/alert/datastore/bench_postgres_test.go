@@ -132,7 +132,11 @@ func runSearchListAlerts(ctx context.Context, t testing.TB, datastore DataStore,
 }
 
 func runSelectQuery(ctx context.Context, t testing.TB, testDB *pgtest.TestPostgres, q *v1.Query, expected []*violationsBySeverity) {
-	results, err := postgres.RunSelectRequestForSchema[violationsBySeverity](ctx, testDB.DB, schema.AlertsSchema, q)
+	var results []*violationsBySeverity
+	err := postgres.RunSelectRequestForSchemaFn[violationsBySeverity](ctx, testDB.DB, schema.AlertsSchema, q, func(r *violationsBySeverity) error {
+		results = append(results, r)
+		return nil
+	})
 	require.NoError(t, err)
 	assert.ElementsMatch(t, expected, results)
 }

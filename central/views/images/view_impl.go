@@ -39,15 +39,13 @@ func (v *imageCoreViewImpl) Get(ctx context.Context, query *v1.Query) ([]ImageCo
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*imageResponse
-	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](queryCtx, v.db, v.schema, query)
+	ret := make([]ImageCore, 0)
+	err = pgSearch.RunSelectRequestForSchemaFn[imageResponse](queryCtx, v.db, v.schema, query, func(r *imageResponse) error {
+		ret = append(ret, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	ret := make([]ImageCore, 0, len(results))
-	for _, r := range results {
-		ret = append(ret, r)
 	}
 	return ret, nil
 }
