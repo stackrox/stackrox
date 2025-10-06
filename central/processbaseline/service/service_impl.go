@@ -188,7 +188,7 @@ func (s *serviceImpl) getKeys(ctx context.Context, clusterId string, namespaces 
 	return keys, nil
 }
 
-func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest, methodName string, lock bool) (*v1.BulkUpdateProcessBaselinesResponse, error) {
+func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest, lock bool) (*v1.BulkUpdateProcessBaselinesResponse, error) {
 	var resp *v1.UpdateProcessBaselinesResponse
 	defer s.reprocessUpdatedBaselines(&resp)
 
@@ -224,13 +224,11 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 }
 
 func (s *serviceImpl) BulkLockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest) (*v1.BulkUpdateProcessBaselinesResponse, error) {
-	methodName := "BulkLockProcessBaselines"
-	return s.bulkLockOrUnlockProcessBaselines(ctx, request, methodName, true)
+	return s.bulkLockOrUnlockProcessBaselines(ctx, request, true)
 }
 
 func (s *serviceImpl) BulkUnlockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest) (*v1.BulkUpdateProcessBaselinesResponse, error) {
-	methodName := "BulkUnlockProcessBaselines"
-	return s.bulkLockOrUnlockProcessBaselines(ctx, request, methodName, false)
+	return s.bulkLockOrUnlockProcessBaselines(ctx, request, false)
 }
 
 func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.DeleteProcessBaselinesRequest) (*v1.DeleteProcessBaselinesResponse, error) {
