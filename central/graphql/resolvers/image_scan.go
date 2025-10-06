@@ -26,13 +26,6 @@ func init() {
 			"imageComponentCount(query: String): Int!",
 			"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 		}),
-		// deprecated fields
-		schema.AddExtraResolvers("ImageScan", []string{
-			"componentCount(query: String): Int! " +
-				"@deprecated(reason: \"use 'imageComponentCount'\")",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]! " +
-				"@deprecated(reason: \"use 'imageComponents'\")",
-		}),
 	)
 }
 
@@ -42,7 +35,7 @@ func (resolver *imageScanResolver) ImageComponents(_ context.Context, args Pagin
 		return nil, err
 	}
 	if features.FlattenCVEData.Enabled() {
-		return getImageComponentV2Resolvers(resolver.ctx, resolver.root, resolver.data, query)
+		return resolver.root.ImageComponents(resolver.ctx, args)
 	}
 	return getImageComponentResolvers(resolver.ctx, resolver.root, resolver.data, query)
 }
