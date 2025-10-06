@@ -251,17 +251,11 @@ func retryableRunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, 
 	}
 	defer rows.Close()
 
-	if !rows.Next() {
-		// No results found
-		return nil, rows.Err()
+	var row T
+	if err := scanAPI.ScanOne(&row, rows); err != nil {
+		return nil, errors.Wrap(err, "error scanning rows")
 	}
-
-	var result T
-	if err := scanAPI.NewRowScanner(rows).Scan(&result); err != nil {
-		return nil, err
-	}
-
-	return &result, rows.Err()
+	return &row, nil
 }
 
 func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, query *query, fn func(*T) error) error {

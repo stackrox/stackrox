@@ -34,14 +34,13 @@ func (v *deploymentViewImpl) Get(ctx context.Context, query *v1.Query) ([]Deploy
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	results, err := pgSearch.RunSelectRequestForSchema[deploymentResponse](queryCtx, v.db, v.schema, query)
+	var ret []DeploymentCore
+	err := pgSearch.RunSelectRequestForSchemaFn[deploymentResponse](queryCtx, v.db, v.schema, query, func(r *deploymentResponse) error {
+		ret = append(ret, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	ret := make([]DeploymentCore, 0, len(results))
-	for _, r := range results {
-		ret = append(ret, r)
 	}
 	return ret, nil
 }

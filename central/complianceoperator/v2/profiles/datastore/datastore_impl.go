@@ -120,7 +120,10 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query, clust
 	parsedQuery.Pagination = q.GetPagination()
 
 	var results []*distinctProfileName
-	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, parsedQuery)
+	err = pgSearch.RunSelectRequestForSchemaFn[distinctProfileName](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, parsedQuery, func(r *distinctProfileName) error {
+		results = append(results, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +162,10 @@ func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query, 
 	}
 
 	var results []*distinctProfileCount
-	results, err := pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName))
+	err := pgSearch.RunSelectRequestForSchemaFn[distinctProfileCount](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName), func(r *distinctProfileCount) error {
+		results = append(results, r)
+		return nil
+	})
 	if err != nil {
 		return 0, err
 	}
