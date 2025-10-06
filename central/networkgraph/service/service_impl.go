@@ -184,7 +184,7 @@ func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, reque
 
 	values := make([]*v1.ExternalNetworkFlowMetadata, 0, len(entityMeta))
 
-	for _, key := range slices.Sorted(keys) {
+	for _, key := range slices.Sorted(maps.Keys(entityMeta)) {
 		values = append(values, entityMeta[key])
 	}
 
