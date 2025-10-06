@@ -204,7 +204,7 @@ func readFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, er
 }
 
 func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
-	log.Debugf("Sending index report to sensor (vsockCID: %s)", report.VsockCid)
+	log.Infof("Sending index report to sensor (vsockCID: %s)", report.VsockCid)
 
 	req := &sensor.UpsertVirtualMachineIndexReportRequest{
 		IndexReport: report,
