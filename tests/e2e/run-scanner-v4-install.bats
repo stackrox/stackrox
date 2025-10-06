@@ -89,6 +89,9 @@ _end() {
     emit_timing_data "$test_identifier" "$current_label" "$begin_timestamp" "$end_timestamp"
     # Close post-processing stdout and stderr and restore from original fds.
     exec 1>&- 2>&- 1>&4 2>&5
+    if [ -z "$post_processor_pid" ]; then
+        die "_end called with empty post_processor_pid"
+    fi
     wait "$post_processor_pid" || echo "Failed to wait for output post processor (PID ${post_processor_pid})."
     post_processor_pid=""
     current_label=""
@@ -498,6 +501,15 @@ EOT
     verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
     _end
+}
+
+@test "Test crash" {
+    init
+    _begin "test-crash"
+    echo A
+    echo B
+    false
+    echo C
 }
 
 @test "Fresh installation of HEAD Helm charts in different namespaces and toggling Scanner V4" {
