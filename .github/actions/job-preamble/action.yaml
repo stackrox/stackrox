@@ -13,6 +13,7 @@ runs:
   steps:
     # auth prepares the gcp environment to authenticate.
     - name: Auth gcloud
+      if: ${{ inputs.gcp-account }}
       uses: 'google-github-actions/auth@v3'
       with:
         credentials_json: '${{ inputs.gcp-account }}'
@@ -141,7 +142,7 @@ runs:
       id: record_job_info
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
-      if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
+      if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' && inputs.gcp-account }}"
       with:
         shell: bash
         run: >
