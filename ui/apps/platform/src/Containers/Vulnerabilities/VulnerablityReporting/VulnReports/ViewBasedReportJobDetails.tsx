@@ -23,17 +23,19 @@ import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     clusterSearchFilterConfig,
-    cveStatusClusterFixableDescriptor,
-    cveStatusFixableDescriptor,
-    cveSeverityFilterDescriptor,
     deploymentSearchFilterConfig,
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
+} from '../../searchFilterConfig';
+import {
+    cveStatusClusterFixableDescriptor,
+    cveStatusFixableDescriptor,
+    cveSeverityFilterDescriptor,
     platformComponentDescriptor,
     vulnerabilityStateDescriptor,
-} from '../../searchFilterConfig';
+} from '../../filterChipDescriptors';
 
 // Build combined config for all possible filters in view-based reports
 const viewBasedReportFilterConfig = [

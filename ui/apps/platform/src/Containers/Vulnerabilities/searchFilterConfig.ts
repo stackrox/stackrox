@@ -1,5 +1,4 @@
 import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
-import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 import {
     clusterIdAttribute,
     clusterLabelAttribute,
@@ -98,38 +97,4 @@ export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEnti
     displayName: 'Component',
     searchCategory: 'SEARCH_UNSET', // doesn't matter since we don't have autocomplete for virtual machines
     attributes: [VirtualMachineComponentName, VirtualMachineComponentVersion],
-};
-
-// Special filter descriptors for filters not in CompoundSearchFilter config
-// These are used for SEVERITY, FIXABLE, and other special filters that are handled
-// separately from the standard CompoundSearchFilter system
-
-export const cveSeverityFilterDescriptor: FilterChipGroupDescriptor = {
-    displayName: 'CVE severity',
-    searchFilterName: 'SEVERITY',
-};
-
-export const cveStatusFixableDescriptor: FilterChipGroupDescriptor = {
-    displayName: 'CVE status',
-    searchFilterName: 'FIXABLE',
-};
-
-export const cveStatusClusterFixableDescriptor: FilterChipGroupDescriptor = {
-    displayName: 'CVE status',
-    searchFilterName: 'CLUSTER CVE FIXABLE',
-};
-
-export const cveSnoozedDescriptor: FilterChipGroupDescriptor = {
-    displayName: 'CVE snoozed',
-    searchFilterName: 'CVE Snoozed',
-};
-
-export const platformComponentDescriptor: FilterChipGroupDescriptor = {
-    displayName: 'Platform component',
-    searchFilterName: 'Platform Component',
-};
-
-export const vulnerabilityStateDescriptor: FilterChipGroupDescriptor = {
-    displayName: 'Vulnerability state',
-    searchFilterName: 'Vulnerability State',
 };

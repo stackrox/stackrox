@@ -17,7 +17,7 @@ import {
     cveStatusFixableDescriptor,
     cveSeverityFilterDescriptor,
     cveSnoozedDescriptor,
-} from '../searchFilterConfig';
+} from '../filterChipDescriptors';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 
@@ -82,7 +82,10 @@ function AdvancedFiltersToolbar({
             includeCveStatusFilters
                 ? [
                       makeDefaultFilterDescriptor(defaultFilters, cveStatusFixableDescriptor),
-                      makeDefaultFilterDescriptor(defaultFilters, cveStatusClusterFixableDescriptor),
+                      makeDefaultFilterDescriptor(
+                          defaultFilters,
+                          cveStatusClusterFixableDescriptor
+                      ),
                   ]
                 : []
         );
