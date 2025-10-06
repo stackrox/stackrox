@@ -141,9 +141,12 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 	}
 	metrics.IndexReportsReceived.Inc()
 
-	// Fill the vsock context ID - at the moment the agent does not populate this field; if that changes, this can be
-	// replaced with a sanity check.
-	indexReport.VsockCid = strconv.Itoa(int(vsockCID))
+	// Ensure the reported vsock CID is correct, to prevent spoofing
+	if indexReport.GetVsockCid() != strconv.FormatUint(uint64(vsockCID), 10) {
+		metrics.IndexReportsMismatchingVsockCID.Inc()
+		log.Errorf("Received index report with invalid vsock CID: %d", vsockCID)
+		return fmt.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), vsockCID)
+	}
 
 	if err = sendReportToSensor(ctx, indexReport, sensorClient); err != nil {
 		return errors.Wrapf(err, "sending report to sensor (vsock CID: %d)", vsockCID)

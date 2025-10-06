@@ -3,6 +3,7 @@ package virtualmachine
 import (
 	"context"
 	"net"
+	"strconv"
 	"testing"
 	"time"
 
@@ -67,16 +68,42 @@ func (s *relayTestSuite) TestExtractVsockCIDFromConnection() {
 	}
 }
 
-func (s *relayTestSuite) TestHandleVsockConnection_InjectsVsockCID() {
-	conn := s.defaultVsockConn().withVsockCID(42)
-	client := newMockSensorClient()
+func (s *relayTestSuite) TestHandleVsockConnection_RejectsMismatchingVsockCID() {
+	cases := map[string]struct {
+		indexReportVsockCID int
+		connVsockCID        int
+		shouldError         bool
+	}{
+		"mismatching vsock CID fails": {
+			indexReportVsockCID: 42,
+			connVsockCID:        99,
+			shouldError:         true,
+		},
+		"matching vsock CID succeeds": {
+			indexReportVsockCID: 42,
+			connVsockCID:        42,
+			shouldError:         false,
+		},
+	}
 
-	err := handleVsockConnection(s.ctx, conn, client, 10*time.Second)
-	s.Require().NoError(err)
+	for name, c := range cases {
+		s.Run(name, func() {
+			indexReport := &v1.IndexReport{VsockCid: strconv.Itoa(c.indexReportVsockCID)}
+			conn, err := newMockVsockConn().withVsockCID(uint32(c.connVsockCID)).withIndexReport(indexReport)
+			s.Require().NoError(err)
+			client := newMockSensorClient()
 
-	s.Require().Equal(1, len(client.capturedRequests))
-	s.Equal("42", client.capturedRequests[0].IndexReport.VsockCid)
-
+			err = handleVsockConnection(s.ctx, conn, client, 10*time.Second)
+			if c.shouldError {
+				s.Require().Error(err)
+				s.Contains(err.Error(), "mismatch")
+				s.Empty(client.capturedRequests)
+			} else {
+				s.Require().NoError(err)
+				s.Len(client.capturedRequests, 1)
+			}
+		})
+	}
 }
 
 func (s *relayTestSuite) TestHandleVsockConnection_RejectsMalformedData() {
@@ -196,7 +223,7 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 
 func (s *relayTestSuite) defaultVsockConn() *mockVsockConn {
 	c := newMockVsockConn().withVsockCID(1234)
-	c, err := c.withIndexReport(&v1.IndexReport{})
+	c, err := c.withIndexReport(&v1.IndexReport{VsockCid: "1234"})
 	s.Require().NoError(err)
 	return c
 }

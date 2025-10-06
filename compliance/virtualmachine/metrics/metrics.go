@@ -10,6 +10,17 @@ var (
 	StatusSuccessLabels = prometheus.Labels{"status": "success"}
 )
 
+// IndexReportsMismatchingVsockCID is a counter for the number of virtual machine index reports whose reported vsock CID does not
+// match the connection's vsock CID.
+var IndexReportsMismatchingVsockCID = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_index_reports_mismatching_vsock_cid_total",
+		Help:      "Total number of virtual machine index reports received by this Relay with mismatching vsock CID",
+	},
+)
+
 // IndexReportsReceived is a counter for the number of virtual machine index reports received.
 var IndexReportsReceived = prometheus.NewCounter(
 	prometheus.CounterOpts{
@@ -44,6 +55,7 @@ var VsockConnectionsAccepted = prometheus.NewCounter(
 
 func init() {
 	prometheus.MustRegister(
+		IndexReportsMismatchingVsockCID,
 		IndexReportsReceived,
 		IndexReportsSentToSensor,
 		VsockConnectionsAccepted,
