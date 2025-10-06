@@ -188,6 +188,7 @@ func readFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, er
 		return nil, errors.Wrap(err, "setting read deadline on connection")
 	}
 
+	// Even if not strictly required, we limit the amount of data to be read to protect Sensor against large workloads.
 	// Add 1 to the limit so we can detect oversized data. If we used exactly maxSize, we couldn't tell the difference
 	// between a valid message of exactly maxSize bytes and an invalid message that's larger than maxSize (both would
 	// read maxSize bytes). With maxSize+1, reading more than maxSize bytes means the original data was too large.
