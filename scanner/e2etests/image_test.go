@@ -137,8 +137,9 @@ func loadTestCases(s string) ([]*TestCase, error) {
 // mapNamespace creates a test case namespace from a vulnerability report.
 func mapNamespace(vr *v4.VulnerabilityReport) string {
 	if len(vr.GetContents().GetDistributions()) == 1 {
-		d := vr.GetContents().GetDistributions()[0]
-		return fmt.Sprintf("%s:%s", d.GetDid(), d.GetVersionId())
+		for _, d := range vr.GetContents().GetDistributions() {
+			return fmt.Sprintf("%s:%s", d.GetDid(), d.GetVersionId())
+		}
 	}
 	return "unknown"
 }
