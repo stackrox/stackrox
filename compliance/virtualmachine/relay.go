@@ -78,6 +78,7 @@ func (r *Relay) Run(ctx context.Context) error {
 	}()
 
 	for {
+		// Accept() is blocking, but it will return when ctx is cancelled and the above goroutine calls r.vsockServer.Stop()
 		conn, err := r.vsockServer.listener.Accept()
 		if err != nil {
 			if ctx.Err() != nil {
