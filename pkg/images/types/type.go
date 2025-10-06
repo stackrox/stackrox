@@ -42,6 +42,7 @@ func ToContainerImage(ci *storage.Image) *storage.ContainerImage {
 		NotPullable: ci.GetNotPullable(),
 	}
 	if features.FlattenImageData.Enabled() && ci.GetId() != "" {
+		log.Infof("Setting imagev2 id for name %s and digest %s", ci.GetName().GetFullName(), ci.GetId())
 		res.IdV2 = utils.NewImageV2ID(ci.GetName(), ci.GetId())
 	}
 	return res
