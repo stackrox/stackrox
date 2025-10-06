@@ -229,12 +229,12 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 }
 
 func (s *serviceImpl) BulkLockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest) (*v1.BulkUpdateProcessBaselinesResponse, error) {
-	methodName := "BulkLockProcessBaselines"
+	methodName := v1.ProcessBaselineService_BulkLockProcessBaselines_FullMethodName
 	return s.bulkLockOrUnlockProcessBaselines(ctx, request, methodName, true)
 }
 
 func (s *serviceImpl) BulkUnlockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest) (*v1.BulkUpdateProcessBaselinesResponse, error) {
-	methodName := "BulkUnlockProcessBaselines"
+	methodName := v1.ProcessBaselineService_BulkUnlockProcessBaselines_FullMethodName
 	return s.bulkLockOrUnlockProcessBaselines(ctx, request, methodName, false)
 }
 
