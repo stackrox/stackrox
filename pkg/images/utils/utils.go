@@ -63,7 +63,7 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 	}
 
 	if features.FlattenImageData.Enabled() && image.GetId() != "" {
-		log.Infof("Setting imagev2 id for name %s and digest %s", image.GetName().GetFullName(), image.GetId())
+		log.Infof("[chsheth] Setting imagev2 id for name %s and digest %s", image.GetName().GetFullName(), image.GetId())
 		image.IdV2 = NewImageV2ID(image.GetName(), image.GetId())
 	}
 
