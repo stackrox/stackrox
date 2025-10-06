@@ -104,7 +104,7 @@ func (s *PolicyHandlerTestSuite) TestSaveAsValidIDSucceeds() {
 	}
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"valid-id"}}
 
-	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(maps.Values(expectedNameToPolicies), nil, nil)
+	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(slices.Collect(maps.Values(expectedNameToPolicies)), nil, nil)
 	s.notifierStore.EXPECT().ForEachNotifier(s.ctx, gomock.Any()).DoAndReturn(
 		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
 			for _, n := range []*storage.Notifier{
