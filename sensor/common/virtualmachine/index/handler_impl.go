@@ -120,6 +120,16 @@ func (h *handlerImpl) Start() error {
 	return nil
 }
 
+func (h *handlerImpl) sendFakeVMIndexReport(toCentral chan *message.ExpiringMessage) {
+	ir := &v1.IndexReport{
+		VsockCid: "666",
+		IndexV4:  getHardcodedIndexReport(),
+	}
+	log.Infof("Sending one fake v1.IndexReport to Central...")
+	h.handleIndexReport(toCentral, ir)
+	log.Infof("Sent one fake v1.IndexReport to Central")
+}
+
 func (h *handlerImpl) Stop() {
 	close(h.indexReports)
 	if !h.stopper.Client().Stopped().IsDone() {
@@ -151,6 +161,9 @@ func (h *handlerImpl) run() (toCentral <-chan *message.ExpiringMessage) {
 				h.handleIndexReport(ch2Central, indexReport)
 			}
 		}
+	}()
+	go func() {
+		h.sendFakeVMIndexReport(ch2Central)
 	}()
 	return ch2Central
 }
