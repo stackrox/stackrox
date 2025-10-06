@@ -113,6 +113,8 @@ type NodeIndexerConfig struct {
 	Timeout time.Duration
 	// PackageDBFilter removes irrelevant packages. For node scanning, we are
 	// currently only interested in the RHCOS RPM database.
+	// Filters out all packages whose packageDB does not match the filter.
+	// Empty string corresponds to no filtering.
 	PackageDBFilter string
 }
 
