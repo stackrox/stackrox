@@ -12,13 +12,13 @@ Scans the VM for installed packages (RPM/DNF databases), creates vulnerability r
 
 ```bash
 # Single scan
-./agent
+sudo ./agent
 
 # Daemon mode (scans every 5 minutes)
-./agent --daemon
+sudo ./agent --daemon
 
 # Custom settings
-./agent --daemon --index-interval 10m --host-path /custom/path --port 2048
+sudo ./agent --daemon --index-interval 10m --host-path /custom/path --port 2048
 ```
 
 ## Flags
