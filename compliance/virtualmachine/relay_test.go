@@ -71,7 +71,7 @@ func (s *relayTestSuite) TestHandleVsockConnection_InjectsVsockCID() {
 	conn := s.defaultVsockConn().withVsockCID(42)
 	client := newMockSensorClient()
 
-	err := handleVsockConnection(s.ctx, conn, client)
+	err := handleVsockConnection(s.ctx, conn, client, 10*time.Second)
 	s.Require().NoError(err)
 
 	s.Equal("42", client.capturedRequests[0].IndexReport.VsockCid)
@@ -82,7 +82,7 @@ func (s *relayTestSuite) TestHandleVsockConnection_RejectsMalformedData() {
 	conn := s.defaultVsockConn().withData([]byte("malformed-data"))
 	client := newMockSensorClient()
 
-	err := handleVsockConnection(s.ctx, conn, client)
+	err := handleVsockConnection(s.ctx, conn, client, 10*time.Second)
 	s.Error(err)
 }
 
@@ -92,38 +92,54 @@ func (s *relayTestSuite) TestHandleVsockConnection_HandlesContextCancellation() 
 	ctx, cancel := context.WithTimeout(s.ctx, 100*time.Millisecond) // times out before sensor replies
 	defer cancel()
 
-	err := handleVsockConnection(ctx, conn, client)
+	err := handleVsockConnection(ctx, conn, client, 10*time.Second)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context deadline exceeded")
 }
 
-func (s *relayTestSuite) TestReadFromConn_EnforcesSizeLimit() {
+func (s *relayTestSuite) TestReadFromConn() {
 	data := []byte("Hello, world!")
 
 	cases := map[string]struct {
-		sizeLimit   int
+		delay       time.Duration
+		maxSize     int
+		readTimeout time.Duration
 		shouldError bool
 	}{
 		"data smaller than limit succeeds": {
-			sizeLimit:   2 * len(data),
+			maxSize:     2 * len(data),
+			readTimeout: 10 * time.Second,
 			shouldError: false,
 		},
 		"data of equal size as limit succeeds": {
-			sizeLimit:   len(data),
+			maxSize:     len(data),
+			readTimeout: 10 * time.Second,
 			shouldError: false,
 		},
 		"data larger than limit fails": {
-			sizeLimit:   len(data) - 1,
+			maxSize:     len(data) - 1,
+			readTimeout: 10 * time.Second,
 			shouldError: true,
+		},
+		"delay longer than timeout fails": {
+			maxSize:     len(data),
+			delay:       1 * time.Second,
+			readTimeout: 100 * time.Millisecond,
+			shouldError: true,
+		},
+		"delay shorter than timeout succeeds": {
+			maxSize:     len(data),
+			delay:       100 * time.Millisecond,
+			readTimeout: 1 * time.Second,
+			shouldError: false,
 		},
 	}
 
-	conn := s.defaultVsockConn().withData(data)
-	connTimeout := 10 * time.Second // Not relevant in these tests
-
 	for name, c := range cases {
 		s.Run(name, func() {
-			readData, err := readFromConn(conn, c.sizeLimit, connTimeout)
+			conn := s.defaultVsockConn().withData(data).withDelay(c.delay)
+
+			readData, err := readFromConn(conn, c.maxSize, c.readTimeout)
 			if c.shouldError {
 				s.Error(err)
 			} else {

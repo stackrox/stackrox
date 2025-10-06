@@ -52,6 +52,7 @@ type Relay struct {
 	vsockServer           VsockServer
 	sensorClient          sensor.VirtualMachineIndexReportServiceClient
 	waitAfterFailedAccept time.Duration
+	connectionReadTimeout time.Duration
 }
 
 func NewRelay(conn grpc.ClientConnInterface) *Relay {
@@ -60,6 +61,7 @@ func NewRelay(conn grpc.ClientConnInterface) *Relay {
 		sensorClient:          sensor.NewVirtualMachineIndexReportServiceClient(conn),
 		vsockServer:           VsockServer{port: uint32(port)},
 		waitAfterFailedAccept: time.Second,
+		connectionReadTimeout: 10 * time.Second,
 	}
 }
 
@@ -94,7 +96,7 @@ func (r *Relay) Run(ctx context.Context) error {
 				}
 			}()
 
-			if err := handleVsockConnection(ctx, conn, r.sensorClient); err != nil {
+			if err := handleVsockConnection(ctx, conn, r.sensorClient, r.connectionReadTimeout); err != nil {
 				log.Errorf("Error handling vsock connection: %v", err)
 			}
 		}()
@@ -115,7 +117,7 @@ func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	return remoteAddr.ContextID, nil
 }
 
-func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
+func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient, connectionReadTimeout time.Duration) error {
 	metrics.VsockConnectionsAccepted.Inc()
 
 	log.Infof("Handling vsock connection from %s", conn.RemoteAddr())
@@ -126,9 +128,8 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 	}
 
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
-	timeout := 10 * time.Second
-	log.Debugf("Reading from connection (max bytes: %d, timeout: %s", maxSizeBytes, timeout)
-	data, err := readFromConn(conn, maxSizeBytes, timeout)
+	log.Debugf("Reading from connection (max bytes: %d, timeout: %s", maxSizeBytes, connectionReadTimeout)
+	data, err := readFromConn(conn, maxSizeBytes, connectionReadTimeout)
 	if err != nil {
 		return errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}
