@@ -154,8 +154,7 @@ func (l *localNodeIndexer) GetIntervals() *utils.NodeScanIntervals {
 // IndexNode indexes a node at the configured host path mount.
 func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, error) {
 	// claircore no longer returns an error if the host path does not exist.
-	_, err := os.Stat(l.cfg.HostPath)
-	if err != nil {
+	if _, err := os.Stat(l.cfg.HostPath); err != nil {
 		return nil, errors.Wrapf(err, "host path %q does not exist", l.cfg.HostPath)
 	}
 
