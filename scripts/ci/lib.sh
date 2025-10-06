@@ -344,7 +344,6 @@ push_operator_image() {
         local tag="$2"
         local arch="$3"
 
-        docker tag "${registry}/stackrox-operator:${tag}" "${registry}/stackrox-operator:${tag}-${arch}"
         retry 5 true \
             docker push "${registry}/stackrox-operator:${tag}-${arch}" | cat
     }
@@ -357,12 +356,12 @@ push_operator_image() {
 
     registry_rw_login "$registry"
 
+    docker tag "${registry}/stackrox-operator:${tag}" "${registry}/stackrox-operator:${tag}-${arch}"
     _push_operator_image "$registry" "$tag" "$arch"
 
     if [[ "$push_context" == "merge-to-master" ]]; then
         docker tag "${registry}/stackrox-operator:${tag}" "${registry}/stackrox-operator:latest-${arch}"
-        retry 5 true \
-            docker push "${registry}/stackrox-operator:latest-${arch}" | cat
+        _push_operator_image "$registry" "$tag" "$arch"
     fi
 }
 
