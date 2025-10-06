@@ -20,7 +20,11 @@ import {
 } from 'utils/searchUtils';
 import { isVulnerabilitySeverity } from 'types/cve.proto';
 import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
+
+// CompoundSearchFilter utilities
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
+
+// Search filter configurations
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
@@ -29,6 +33,8 @@ import {
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from '../../searchFilterConfig';
+
+// Filter chip descriptors
 import {
     cveStatusClusterFixableDescriptor,
     cveStatusFixableDescriptor,
