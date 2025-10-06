@@ -37,8 +37,8 @@ type DataStore interface {
 
 	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error
 
-	// GetProcessIndicatorsRiskView retrieves minimal fields from process indicator for risk evaluation
-	GetProcessIndicatorsRiskView(ctx context.Context, q *v1.Query) ([]*views.ProcessIndicatorRiskView, error)
+	// IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
+	IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error
 
 	// Stop signals all goroutines associated with this object to terminate.
 	Stop()

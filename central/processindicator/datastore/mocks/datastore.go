@@ -111,19 +111,18 @@ func (mr *MockDataStoreMockRecorder) GetProcessIndicators(ctx, ids any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicators), ctx, ids)
 }
 
-// GetProcessIndicatorsRiskView mocks base method.
-func (m *MockDataStore) GetProcessIndicatorsRiskView(ctx context.Context, q *v1.Query) ([]*views.ProcessIndicatorRiskView, error) {
+// IterateOverProcessIndicatorsRiskView mocks base method.
+func (m *MockDataStore) IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProcessIndicatorsRiskView", ctx, q)
-	ret0, _ := ret[0].([]*views.ProcessIndicatorRiskView)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "IterateOverProcessIndicatorsRiskView", ctx, q, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// GetProcessIndicatorsRiskView indicates an expected call of GetProcessIndicatorsRiskView.
-func (mr *MockDataStoreMockRecorder) GetProcessIndicatorsRiskView(ctx, q any) *gomock.Call {
+// IterateOverProcessIndicatorsRiskView indicates an expected call of IterateOverProcessIndicatorsRiskView.
+func (mr *MockDataStoreMockRecorder) IterateOverProcessIndicatorsRiskView(ctx, q, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicatorsRiskView", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicatorsRiskView), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateOverProcessIndicatorsRiskView", reflect.TypeOf((*MockDataStore)(nil).IterateOverProcessIndicatorsRiskView), ctx, q, fn)
 }
 
 // PruneProcessIndicators mocks base method.
