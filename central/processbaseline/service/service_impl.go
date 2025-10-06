@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -193,8 +192,6 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 	var resp *v1.UpdateProcessBaselinesResponse
 	defer s.reprocessUpdatedBaselines(&resp)
 
-	metrics.IncrementBulkProcessBaselineCallCounter(lock)
-
 	clusterId := request.GetClusterId()
 
 	if clusterId == "" {
@@ -219,8 +216,6 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 			return nil, err
 		}
 	}
-
-	metrics.IncrementElementsImpactedCounter(methodName, len(resp.GetBaselines()))
 
 	success := &v1.BulkUpdateProcessBaselinesResponse{
 		Success: true,
