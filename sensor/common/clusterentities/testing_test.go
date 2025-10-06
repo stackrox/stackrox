@@ -2,8 +2,6 @@ package clusterentities
 
 import (
 	"fmt"
-	"maps"
-	"slices"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/net"
