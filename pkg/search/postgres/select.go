@@ -185,7 +185,7 @@ func retryableRunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, 
 	if err := scanAPI.ScanOne(&row, rows); err != nil {
 		return nil, errors.Wrap(err, "error scanning rows")
 	}
-	return &row, nil
+	return &row, pgutils.ErrNilIfNoRows(err)
 }
 
 func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, query *query, fn func(*T) error) error {

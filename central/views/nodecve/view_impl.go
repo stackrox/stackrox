@@ -4,7 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -14,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 type nodeCVECoreViewImpl struct {
@@ -82,31 +80,13 @@ func (n *nodeCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) 
 		return nil, err
 	}
 
-	var result *countByNodeCVESeverity
-	var hasResult bool
-	var resultCount int
-	err = pgSearch.RunSelectRequestForSchemaFn[countByNodeCVESeverity](ctx, n.db, n.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE), func(r *countByNodeCVESeverity) error {
-		if hasResult {
-			resultCount++
-		} else {
-			result = r
-			hasResult = true
-			resultCount = 1
-		}
-		return nil
-	})
+	result, err := pgSearch.RunSelectOneForSchema[countByNodeCVESeverity](ctx, n.db, n.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
 	if err != nil {
 		return nil, err
 	}
-	if !hasResult {
+	if result == nil {
 		return common.NewEmptyResourceCountByCVESeverity(), nil
 	}
-	if resultCount > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
-		return common.NewEmptyResourceCountByCVESeverity(), err
-	}
-
 	return result, nil
 }
 

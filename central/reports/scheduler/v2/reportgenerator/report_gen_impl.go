@@ -332,17 +332,15 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 	if len(watchedImages) != 0 {
 		query.WatchedImagesQuery.Pagination = watchedImagesQueryParts.Pagination
 		query.WatchedImagesQuery.Selects = watchedImagesQueryParts.Selects
-		var watchedImageCVEResponses []*ImageCVEQueryResponse
 		err := pgSearch.RunSelectRequestForSchemaFn[ImageCVEQueryResponse](reportGenCtx, rg.db,
 			watchedImagesQueryParts.Schema, query.WatchedImagesQuery, func(r *ImageCVEQueryResponse) error {
-				watchedImageCVEResponses = append(watchedImageCVEResponses, r)
+				cveResponses = append(cveResponses, r)
+				numWatchedImageResults++
 				return nil
 			})
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to collect report data for watched images")
 		}
-		numWatchedImageResults = len(watchedImageCVEResponses)
-		cveResponses = append(cveResponses, watchedImageCVEResponses...)
 	}
 
 	cveResponses, err = rg.withCVEReferenceLinks(cveResponses)
