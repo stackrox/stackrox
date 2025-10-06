@@ -13,13 +13,9 @@ var LazyLabels = []tracker.LazyLabel[*finding]{
 }
 
 type finding struct {
-	err     error
+	tracker.FindingWithErr
 	enabled bool
 	n       int
-}
-
-func (f *finding) GetError() error {
-	return f.err
 }
 
 func (f *finding) GetIncrement() int {

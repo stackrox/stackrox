@@ -38,16 +38,13 @@ var lazyLabels = []tracker.LazyLabel[*finding]{
 // The aggregator calls the lazy label's Getter function with every finding to
 // compute the values for the list of defined labels.
 type finding struct {
-	tracker.CommonFinding
-	err        error
+	tracker.FindingWithErr
 	deployment *storage.Deployment
 	image      *storage.Image
 	name       *storage.ImageName
 	component  *storage.EmbeddedImageScanComponent
 	vuln       *storage.EmbeddedVulnerability
 }
-
-func (f *finding) GetError() error { return f.err }
 
 func isPlatformWorkload(f *finding) string {
 	p, _ := matcher.Singleton().MatchDeployment(f.deployment)

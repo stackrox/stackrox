@@ -26,17 +26,20 @@ func track(ctx context.Context, ds policyDS.DataStore) iter.Seq[*finding] {
 			return
 		}
 		var f finding
+		var err error
 		qb := search.NewQueryBuilder()
 		qb.AddBools("Disabled", false)
 		f.enabled = true
-		f.n, f.err = ds.Count(ctx, qb.ProtoQuery())
+		f.n, err = ds.Count(ctx, qb.ProtoQuery())
+		f.SetError(err)
 		if !yield(&f) {
 			return
 		}
 		qb = search.NewQueryBuilder()
 		qb.AddBools("Disabled", true)
 		f.enabled = false
-		f.n, f.err = ds.Count(ctx, qb.ProtoQuery())
+		f.n, err = ds.Count(ctx, qb.ProtoQuery())
+		f.SetError(err)
 		if !yield(&f) {
 			return
 		}

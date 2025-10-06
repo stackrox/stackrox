@@ -15,23 +15,22 @@ func New(ds clusterDS.DataStore) *tracker.TrackerBase[*finding] {
 		"clusters",
 		LazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
-			return trackClusters(ctx, ds)
+			return track(ctx, ds)
 		},
 	)
 }
 
-func trackClusters(ctx context.Context, ds clusterDS.DataStore) iter.Seq[*finding] {
-	f := finding{}
+func track(ctx context.Context, ds clusterDS.DataStore) iter.Seq[*finding] {
 	return func(yield func(*finding) bool) {
 		if ds == nil {
 			return
 		}
-		_ = ds.WalkClusters(ctx, func(cluster *storage.Cluster) error {
-			f.cluster = cluster
-			if !yield(&f) {
-				return tracker.ErrStopIterator
-			}
-			return nil
-		})
+		var f finding
+		collect := tracker.NewFindingCollector(yield)
+		defer collect.Finally(&f)
+		f.SetError(ds.WalkClusters(ctx, func(cluster *storage.Cluster) error {
+			f.Cluster = cluster
+			return collect(&f)
+		}))
 	}
 }

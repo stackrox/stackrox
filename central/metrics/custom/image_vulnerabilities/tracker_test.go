@@ -8,6 +8,7 @@ import (
 
 	deploymentMockDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -178,9 +179,9 @@ func Test_forEachImageVuln(t *testing.T) {
 
 	t.Run("no panic on empty finding", func(t *testing.T) {
 		i = 0
-		assert.True(t, forEachImageVuln(interrupt, &finding{}))
+		assert.NoError(t, forEachImageVuln(tracker.NewFindingCollector(interrupt), &finding{}))
 		assert.Zero(t, i)
-		assert.True(t, forEachImageVuln(pass, &finding{}))
+		assert.NoError(t, forEachImageVuln(tracker.NewFindingCollector(pass), &finding{}))
 		assert.Zero(t, i)
 	})
 
@@ -192,12 +193,12 @@ func Test_forEachImageVuln(t *testing.T) {
 		cves := getTestCVEs(t)
 		image.withCVE(cves...)
 
-		assert.True(t, forEachImageVuln(pass, &finding{
+		assert.NoError(t, forEachImageVuln(tracker.NewFindingCollector(pass), &finding{
 			image: (*storage.Image)(image),
 		}))
 		assert.Equal(t, len(cves), i)
 
-		assert.False(t, forEachImageVuln(interrupt, &finding{
+		assert.Error(t, forEachImageVuln(tracker.NewFindingCollector(interrupt), &finding{
 			image: (*storage.Image)(image),
 		}))
 		assert.Equal(t, len(cves)+1, i)

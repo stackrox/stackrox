@@ -35,7 +35,7 @@ func track(ctx context.Context, s service.Service) iter.Seq[*finding] {
 				Component: v1.GetCertExpiry_Component(i),
 			})
 			f.component = component
-			f.err = err
+			f.SetError(err)
 			if result != nil {
 				f.hoursUntilExpiration = int(time.Until(result.GetExpiry().AsTime()).Hours())
 			}

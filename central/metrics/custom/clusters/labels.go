@@ -6,17 +6,17 @@ import (
 )
 
 var LazyLabels = []tracker.LazyLabel[*finding]{
-	{Label: "Cluster", Getter: func(f *finding) string { return f.cluster.GetName() }},
-	{Label: "Type", Getter: func(f *finding) string { return f.cluster.GetType().String() }},
+	{Label: "Cluster", Getter: func(f *finding) string { return f.GetName() }},
+	{Label: "Type", Getter: func(f *finding) string { return f.GetType().String() }},
 	{Label: "Status", Getter: func(f *finding) string {
-		return f.cluster.GetHealthStatus().GetOverallHealthStatus().String()
+		return f.GetHealthStatus().GetOverallHealthStatus().String()
 	}},
 	{Label: "Upgradability", Getter: func(f *finding) string {
-		return f.cluster.GetStatus().GetUpgradeStatus().GetUpgradability().String()
+		return f.GetStatus().GetUpgradeStatus().GetUpgradability().String()
 	}},
 }
 
 type finding struct {
-	tracker.CommonFinding
-	cluster *storage.Cluster
+	tracker.FindingWithErr
+	*storage.Cluster
 }

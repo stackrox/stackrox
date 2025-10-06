@@ -4,7 +4,6 @@ import (
 	"context"
 	"iter"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,27 +23,22 @@ func New(nodes nodeDS.DataStore) *tracker.TrackerBase[*finding] {
 func track(ctx context.Context, ds nodeDS.DataStore) iter.Seq[*finding] {
 	return func(yield func(*finding) bool) {
 		var f finding
-		f.err = ds.WalkByQuery(ctx, search.EmptyQuery(), func(node *storage.Node) error {
+		collector := tracker.NewFindingCollector(yield)
+		defer collector.Finally(&f)
+		f.SetError(ds.WalkByQuery(ctx, search.EmptyQuery(), func(node *storage.Node) error {
 			f.node = node
-			if !forEachNode(yield, &f) {
-				return tracker.ErrStopIterator
-			}
-			return nil
-		})
-		// Report walking error.
-		if f.err != nil && !errors.Is(f.err, tracker.ErrStopIterator) {
-			yield(&f)
-		}
+			return forEachNode(collector, &f)
+		}))
 	}
 }
 
-func forEachNode(yield func(*finding) bool, f *finding) bool {
+func forEachNode(collector tracker.Collector[*finding], f *finding) error {
 	for _, f.component = range f.node.GetScan().GetComponents() {
 		for _, f.vulnerability = range f.component.GetVulnerabilities() {
-			if !yield(f) {
-				return false
+			if err := collector(f); err != nil {
+				return err
 			}
 		}
 	}
-	return true
+	return nil
 }

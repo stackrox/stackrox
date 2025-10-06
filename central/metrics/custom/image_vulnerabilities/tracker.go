@@ -4,7 +4,6 @@ import (
 	"context"
 	"iter"
 
-	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,37 +24,35 @@ func New(ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 func track(ctx context.Context, ds deploymentDS.DataStore) iter.Seq[*finding] {
 	return func(yield func(*finding) bool) {
 		var f finding
-		f.err = ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
+		collector := tracker.NewFindingCollector(yield)
+		defer collector.Finally(&f)
+		f.SetError(ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
 			f.deployment = deployment
 			images, err := ds.GetImagesForDeployment(ctx, deployment)
 			if err != nil {
-				return nil // Nothing can be done with this error here.
+				return err
 			}
 			for _, f.image = range images {
-				if !forEachImageVuln(yield, &f) {
-					return tracker.ErrStopIterator
+				if err := forEachImageVuln(collector, &f); err != nil {
+					return err
 				}
 			}
 			return nil
-		})
-		// Report walking error.
-		if f.err != nil && !errors.Is(f.err, tracker.ErrStopIterator) {
-			yield(&f)
-		}
+		}))
 	}
 }
 
 // forEachImageVuln yields a finding for every vulnerability associated with
 // each image name.
-func forEachImageVuln(yield func(*finding) bool, f *finding) bool {
+func forEachImageVuln(collector tracker.Collector[*finding], f *finding) error {
 	for _, f.component = range f.image.GetScan().GetComponents() {
 		for _, f.vuln = range f.component.GetVulns() {
 			for _, f.name = range f.image.GetNames() {
-				if !yield(f) {
-					return false
+				if err := collector(f); err != nil {
+					return err
 				}
 			}
 		}
 	}
-	return true
+	return nil
 }

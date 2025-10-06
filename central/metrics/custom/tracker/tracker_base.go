@@ -11,7 +11,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,24 +24,8 @@ import (
 const inactiveGathererTTL = 2 * 24 * time.Hour
 
 var (
-	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
-	ErrStopIterator = errors.New("stopped")
+	log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
 )
-
-type Finding interface {
-	GetError() error
-	GetIncrement() int
-}
-
-type CommonFinding struct{}
-
-func (f *CommonFinding) GetError() error {
-	return nil
-}
-
-func (f *CommonFinding) GetIncrement() int {
-	return 1
-}
 
 // LazyLabel enables deferred evaluation of a label's value.
 // Computing and storing values for all labels for every finding would be
