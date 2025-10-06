@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/utils"
@@ -38,18 +37,6 @@ func newDBScanAPI(opts ...dbscan.APIOption) *dbscan.API {
 		utils.Must(err)
 	}
 	return api
-}
-
-// RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
-// explicitly specify select fields.
-// Deprecated: Use RunSelectRequestForSchemaFn
-func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
-	result := make([]*T, 0, paginated.GetLimit(q.Pagination.GetLimit(), 100))
-	err := RunSelectRequestForSchemaFn(ctx, db, schema, q, func(t *T) error {
-		result = append(result, t)
-		return nil
-	})
-	return result, err
 }
 
 // RunSelectOneForSchema executes a select request against the database for given schema. The input query must

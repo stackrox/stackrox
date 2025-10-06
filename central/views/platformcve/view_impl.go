@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 )
@@ -51,7 +52,7 @@ func (v *platformCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCo
 		return nil, err
 	}
 
-	ret := make([]CveCore, 0)
+	ret := make([]CveCore, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
 	err = pgSearch.RunSelectRequestForSchemaFn[platformCVECoreResponse](ctx, v.db, v.schema, withSelectQuery(q), func(r *platformCVECoreResponse) error {
 		ret = append(ret, r)
 		return nil
@@ -73,7 +74,7 @@ func (v *platformCVECoreViewImpl) GetClusterIDs(ctx context.Context, q *v1.Query
 		search.NewQuerySelect(search.ClusterID).Distinct().Proto(),
 	}
 
-	ret := make([]string, 0)
+	ret := make([]string, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
 	err = pgSearch.RunSelectRequestForSchemaFn[clusterResponse](ctx, v.db, v.schema, q, func(r *clusterResponse) error {
 		ret = append(ret, r.ClusterID)
 		return nil

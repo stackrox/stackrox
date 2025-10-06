@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
@@ -40,7 +41,7 @@ func (v *deploymentViewImpl) Get(ctx context.Context, query *v1.Query) ([]Deploy
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var ret []DeploymentCore
+	ret := make([]DeploymentCore, 0, paginated.GetLimit(query.GetPagination().GetLimit(), 100))
 	err = pgSearch.RunSelectRequestForSchemaFn[deploymentResponse](queryCtx, v.db, v.schema, query, func(r *deploymentResponse) error {
 		ret = append(ret, r)
 		return nil
