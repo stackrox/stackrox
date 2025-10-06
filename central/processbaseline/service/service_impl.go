@@ -195,8 +195,7 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 	clusterId := request.GetClusterId()
 
 	if clusterId == "" {
-		err := errors.New("Cluster ID must be specified")
-		return nil, err
+		return nil, errors.Wrap(errox.InvalidArgs, "no cluster ID specified")
 	}
 
 	keys, err := s.getKeys(ctx, clusterId, request.GetNamespaces())
