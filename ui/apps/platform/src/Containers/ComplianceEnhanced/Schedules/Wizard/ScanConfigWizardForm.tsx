@@ -5,8 +5,8 @@ import {
     Button,
     Modal,
     Wizard,
-    WizardStep,
     WizardFooter,
+    WizardStep,
     useWizardContext,
 } from '@patternfly/react-core';
 import type { WizardStepType } from '@patternfly/react-core';
