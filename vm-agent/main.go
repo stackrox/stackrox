@@ -15,7 +15,7 @@ func main() {
 	// Configure log format with microsecond precision
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 
-	var port = flag.Uint("port", 1024, "vsock port to connect to")
+	var port = flag.Uint("port", 818, "vsock port to connect to")
 	var packageCount = flag.Int("packages", 10, "number of packages to include in fake reports")
 	var intervalMs = flag.Int("interval", 10000, "interval between reports in milliseconds")
 	flag.Parse()
