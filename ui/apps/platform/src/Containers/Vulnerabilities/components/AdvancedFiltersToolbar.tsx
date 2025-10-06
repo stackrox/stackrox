@@ -17,7 +17,7 @@ import {
     cveStatusFixableDescriptor,
     cveSeverityFilterDescriptor,
     cveSnoozedDescriptor,
-} from '../filterChipDescriptors';
+} from '../filterChipDescriptor';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 

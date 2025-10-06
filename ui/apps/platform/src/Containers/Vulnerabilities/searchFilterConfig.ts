@@ -1,6 +1,9 @@
-// This file defines search filter configurations for vulnerability views.
-// If you add a new filter config that should be available in view-based reports,
-// add it to the viewBasedReportSearchFilterConfigs array at the bottom of this file.
+/*
+ * Search filter configurations for vulnerability views.
+ *
+ * If you add a new filter config that should be available in view-based reports,
+ * add it to the viewBasedReportSearchFilterConfigs array at the bottom of this file.
+ */
 
 import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
 import {
@@ -103,8 +106,8 @@ export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEnti
     attributes: [VirtualMachineComponentName, VirtualMachineComponentVersion],
 };
 
-// Combined export for view-based vulnerability reports
-// This array includes all filter configs that can be used in view-based reports
+// This array includes filter configs that are relevant to view-based reports.
+// Only add configs here if they should be available as filters in vulnerability reports.
 export const viewBasedReportSearchFilterConfigs = [
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,

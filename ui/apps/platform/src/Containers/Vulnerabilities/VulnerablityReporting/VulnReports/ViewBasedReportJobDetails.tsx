@@ -20,31 +20,14 @@ import {
 } from 'utils/searchUtils';
 import { isVulnerabilitySeverity } from 'types/cve.proto';
 import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
-
-// CompoundSearchFilter utilities
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-
-// Search filter configurations
 import { viewBasedReportSearchFilterConfigs } from '../../searchFilterConfig';
-
-// Filter chip descriptors
-import {
-    cveStatusClusterFixableDescriptor,
-    cveStatusFixableDescriptor,
-    cveSeverityFilterDescriptor,
-    platformComponentDescriptor,
-    vulnerabilityStateDescriptor,
-} from '../../filterChipDescriptors';
+import { viewBasedReportFilterChipDescriptors } from '../../filterChipDescriptor';
 
 // Create filter chip descriptors with proper display names and rendering
-const filterChipDescriptors = makeFilterChipDescriptors(viewBasedReportSearchFilterConfigs).concat([
-    // Add descriptors for special filters that aren't in CompoundSearchFilter config
-    cveSeverityFilterDescriptor,
-    cveStatusFixableDescriptor,
-    cveStatusClusterFixableDescriptor,
-    platformComponentDescriptor,
-    vulnerabilityStateDescriptor,
-]);
+const filterChipDescriptors = makeFilterChipDescriptors(viewBasedReportSearchFilterConfigs).concat(
+    viewBasedReportFilterChipDescriptors
+);
 
 export type ViewBasedReportJobDetailsProps = {
     reportSnapshot: ViewBasedReportSnapshot;

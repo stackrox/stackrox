@@ -1,8 +1,11 @@
-import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
+/*
+ * Descriptors for rendering search filters as chips in toolbars, reports, and other views.
+ *
+ * If you add a new descriptor that should be available in view-based reports,
+ * add it to the viewBasedReportFilterChipDescriptors array at the bottom of this file.
+ */
 
-// Filter chip descriptors for displaying filter values in chip format
-// These are used for rendering filter chips in reports, toolbars, and other views
-// where filters need to be displayed to users.
+import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 
 export const cveSeverityFilterDescriptor: FilterChipGroupDescriptor = {
     displayName: 'CVE severity',
@@ -33,3 +36,13 @@ export const vulnerabilityStateDescriptor: FilterChipGroupDescriptor = {
     displayName: 'Vulnerability state',
     searchFilterName: 'Vulnerability State',
 };
+
+// These descriptors represent special filters that aren't part of CompoundSearchFilter config.
+// Only add descriptors here if they should be available in view-based reports.
+export const viewBasedReportFilterChipDescriptors = [
+    cveSeverityFilterDescriptor,
+    cveStatusFixableDescriptor,
+    cveStatusClusterFixableDescriptor,
+    platformComponentDescriptor,
+    vulnerabilityStateDescriptor,
+];
