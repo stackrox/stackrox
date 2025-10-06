@@ -82,16 +82,5 @@ func runIndexer(ctx context.Context, cfg *config.AgentConfig) (*v4.IndexReport, 
 	if err != nil {
 		return nil, err
 	}
-	// This is currently needed because claircore 1.5.40 enumerates
-	// repositories as integers, but we reference repos by name in the
-	// environments.
-	report = fixupIndexReport(report)
 	return report, nil
-}
-
-func fixupIndexReport(report *v4.IndexReport) *v4.IndexReport {
-	for _, repo := range report.GetContents().GetRepositories() {
-		repo.Id = repo.GetName()
-	}
-	return report
 }
