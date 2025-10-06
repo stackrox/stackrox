@@ -71,7 +71,7 @@ func newTestPublicIPsListener(t *testing.T) *testPublicIPsListener {
 }
 
 func (p *testPublicIPsListener) String() string {
-	return fmt.Sprintf("%s", slices.Collect(maps.Keys(p.data)))
+	return fmt.Sprintf("%v", p.data.AsSlice())
 }
 
 func (p *testPublicIPsListener) OnUpdate(ips set.Set[net.IPAddress]) {
