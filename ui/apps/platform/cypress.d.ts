@@ -9,6 +9,18 @@ declare global {
             //
             // See issue: https://github.com/cypress-io/cypress/issues/24823
             get<T extends any = any>(alias: `@${string}`): Chainable<T>;
+
+            // Support command to spy on telemetry events
+            spyTelemetry(): Chainable;
+
+            getTelemetryEvents(): Chainable<{
+                page: { type: string; name: string; properties: Record<string, unknown> }[];
+                track: {
+                    event: string;
+                    properties: Record<string, unknown>;
+                    context: Record<string, unknown>;
+                }[];
+            }>;
         }
     }
 }

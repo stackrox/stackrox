@@ -17,7 +17,7 @@ import {
     Title,
     pluralize,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import { exceptionManagementPath } from 'routePaths';
 import useSet from 'hooks/useSet';

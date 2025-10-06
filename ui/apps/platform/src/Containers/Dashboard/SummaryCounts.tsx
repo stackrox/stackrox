@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import Raven from 'raven-js';
 import { Alert, Skeleton, Split, SplitItem } from '@patternfly/react-core';
@@ -8,7 +9,7 @@ import {
     configManagementPath,
     urlEntityListTypes,
     violationsFullViewPath,
-    vulnerabilitiesWorkloadCvesPath,
+    vulnerabilitiesAllImagesPath,
 } from 'routePaths';
 import { resourceTypes } from 'constants/entityTypes';
 import { getDateTime } from 'utils/dateUtils';
@@ -58,7 +59,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
         Alert: violationsFullViewPath,
         Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
         Image: generatePathWithQuery(
-            vulnerabilitiesWorkloadCvesPath,
+            vulnerabilitiesAllImagesPath,
             {},
             { customParams: { entityTab: 'Image' } }
         ),

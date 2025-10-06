@@ -35,7 +35,6 @@ func TestControlPlaneConfigChecks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(strings.ReplaceAll(c.name, ":", "-"), func(t *testing.T) {
-			t.Parallel()
 
 			standard := standards.NodeChecks[standards.CISKubernetes]
 			require.NotNil(t, standard)

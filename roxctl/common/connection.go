@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"net"
+	"strings"
 	"time"
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
@@ -15,10 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 // GRPCOption encodes behavior of a gRPC connection.
@@ -32,7 +34,7 @@ func WithRetryTimeout(timeout time.Duration) GRPCOption {
 }
 
 // GetGRPCConnection gets a grpc connection to Central with the correct auth
-func GetGRPCConnection(am auth.Method, logger logger.Logger, connectionOpts ...GRPCOption) (*grpc.ClientConn, error) {
+func GetGRPCConnection(am auth.Method, connectionOpts ...GRPCOption) (*grpc.ClientConn, error) {
 	endpoint, serverName, usePlaintext, err := ConnectNames()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get endpoint for gRPC connection")
@@ -41,7 +43,7 @@ func GetGRPCConnection(am auth.Method, logger logger.Logger, connectionOpts ...G
 	if err != nil {
 		return nil, errors.Wrapf(err, "obtaining auth information for %s", endpoint)
 	}
-	clientOpts, err := getClientOpts(logger)
+	clientOpts, err := getClientOpts()
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +93,25 @@ func addCommandHeaderStreamInterceptor(ctx context.Context, desc *grpc.StreamDes
 	return streamer(makeCtxWithCommandHeader(ctx), desc, cc, method, opts...)
 }
 
+func shouldRetry(err error) bool {
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return false
+	}
+	if strings.Contains(err.Error(), "x509: certificate") {
+		return false
+	}
+	if grpcErr, ok := status.FromError(err); ok {
+		code := grpcErr.Code()
+		if code == codes.DeadlineExceeded {
+			return true
+		}
+		if code != codes.Unavailable && code != codes.ResourceExhausted {
+			return false
+		}
+	}
+	return true
+}
+
 func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 	const initialBackoffDuration = 100 * time.Millisecond
 	retryOpts := []grpc_retry.CallOption{
@@ -98,6 +119,7 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 		// First retry after 100ms, last retry after 51.2s.
 		grpc_retry.WithMax(10),
 		grpc_retry.WithPerRetryTimeout(c.retryTimeout),
+		grpc_retry.WithRetriable(shouldRetry),
 	}
 
 	grpcDialOpts := []grpc.DialOption{
@@ -144,8 +166,8 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 	return connection, errors.WithStack(err)
 }
 
-func getClientOpts(logger logger.Logger) (clientconn.Options, error) {
-	tlsOpts, err := tlsConfigOptsForCentral(logger)
+func getClientOpts() (clientconn.Options, error) {
+	tlsOpts, err := tlsConfigOptsForCentral()
 	if err != nil {
 		return clientconn.Options{}, err
 	}

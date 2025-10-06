@@ -1,4 +1,4 @@
-import { EnforcementAction } from 'types/policy.proto';
+import type { EnforcementAction } from 'types/policy.proto';
 
 export const ENFORCEMENT_ACTIONS: Record<EnforcementAction, string> = Object.freeze({
     UNSET_ENFORCEMENT: 'UNSET_ENFORCEMENT',

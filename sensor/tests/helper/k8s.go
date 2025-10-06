@@ -31,71 +31,59 @@ func getGVR(api apiMetaV1.APIResource) schema.GroupVersionResource {
 
 // AssertResourceDoesExist asserts whether the given resource exits in the cluster
 func (c *TestContext) AssertResourceDoesExist(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource) *unstructured.Unstructured {
+	t.Helper()
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
-	var cli dynamic.ResourceInterface
 	var obj *unstructured.Unstructured
-	require.Eventually(t, func() bool {
-		cli = client.Resource(getGVR(api))
-		if namespace != "" {
-			cli = client.Resource(getGVR(api)).Namespace(namespace)
-		}
+	cli := clientForResource(client, api, namespace)
+	require.Eventuallyf(t, func() bool {
 		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err == nil
-	}, 30*time.Second, 10*time.Millisecond)
+	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should exist", namespace, resourceName, api.Kind)
 	return obj
 }
 
 // AssertResourceWasUpdated asserts whether the given resource was updated in the cluster
 func (c *TestContext) AssertResourceWasUpdated(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource, oldResourceVersion string) *unstructured.Unstructured {
+	t.Helper()
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
-	var cli dynamic.ResourceInterface
 	var obj *unstructured.Unstructured
-	require.Eventually(t, func() bool {
-		cli = client.Resource(getGVR(api))
-		if namespace != "" {
-			cli = client.Resource(getGVR(api)).Namespace(namespace)
-		}
+	cli := clientForResource(client, api, namespace)
+	require.Eventuallyf(t, func() bool {
 		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err == nil && obj.GetResourceVersion() != oldResourceVersion
-	}, 30*time.Second, 10*time.Millisecond)
+	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should be updated (old version: %s)", namespace, resourceName, api.Kind, oldResourceVersion)
 	return obj
 }
 
 // AssertResourceDoesNotExist asserts whether the given resource does not exit in the cluster
 func (c *TestContext) AssertResourceDoesNotExist(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource) {
+	t.Helper()
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
-	var cli dynamic.ResourceInterface
-	require.Eventually(t, func() bool {
-		cli = client.Resource(getGVR(api))
-		if namespace != "" {
-			cli = client.Resource(getGVR(api)).Namespace(namespace)
-		}
+	cli := clientForResource(client, api, namespace)
+	require.Eventuallyf(t, func() bool {
 		_, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err != nil && kubeAPIErr.IsNotFound(err)
-	}, 30*time.Second, 10*time.Millisecond)
+	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should not exist", namespace, resourceName, api.Kind)
 }
 
 // WaitForResourceDelete wait for a resource to be deleted
 func (c *TestContext) WaitForResourceDelete(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource) {
+	t.Helper()
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
-	var cli dynamic.ResourceInterface
 	var obj *unstructured.Unstructured
-	require.Eventually(t, func() bool {
-		cli = client.Resource(getGVR(api))
-		if namespace != "" {
-			cli = client.Resource(getGVR(api)).Namespace(namespace)
-		}
+	cli := clientForResource(client, api, namespace)
+	require.Eventuallyf(t, func() bool {
 		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err == nil || kubeAPIErr.IsNotFound(err)
-	}, 30*time.Second, 10*time.Millisecond)
+	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should be deleted or not found", namespace, resourceName, api.Kind)
 
 	if obj != nil {
 		if err := wait.For(conditions.New(c.r).ResourceDeleted(obj)); err != nil {
@@ -227,4 +215,11 @@ func (c *TestContext) GetIPFromService(obj k8s.Object) string {
 			return srv.Spec.ClusterIP
 		}
 	}
+}
+
+func clientForResource(client *dynamic.DynamicClient, api apiMetaV1.APIResource, namespace string) dynamic.ResourceInterface {
+	if namespace != "" {
+		return client.Resource(getGVR(api)).Namespace(namespace)
+	}
+	return client.Resource(getGVR(api))
 }

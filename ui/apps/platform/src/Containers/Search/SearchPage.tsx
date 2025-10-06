@@ -1,5 +1,5 @@
-import React, { useEffect, useState, ReactElement } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { ReactElement, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Bullseye,

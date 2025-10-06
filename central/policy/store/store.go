@@ -20,6 +20,7 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.Policy, []int, error)
 	Walk(ctx context.Context, fn func(obj *storage.Policy) error) error
 	GetIDs(ctx context.Context) ([]string, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.Policy) error) error
 
 	Upsert(ctx context.Context, obj *storage.Policy) error
 	UpsertMany(ctx context.Context, objs []*storage.Policy) error

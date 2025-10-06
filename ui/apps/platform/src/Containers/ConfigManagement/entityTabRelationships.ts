@@ -1,4 +1,4 @@
-import { ConfigurationManagementEntityType } from 'utils/entityRelationships';
+import type { ConfigurationManagementEntityType } from 'utils/entityRelationships';
 
 const entityTabsMap: Record<
     ConfigurationManagementEntityType,

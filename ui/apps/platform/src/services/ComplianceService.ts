@@ -1,5 +1,5 @@
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const standardsUrl = '/v1/compliance/standards';
 

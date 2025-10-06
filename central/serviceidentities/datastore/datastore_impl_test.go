@@ -13,7 +13,6 @@ import (
 )
 
 func TestServiceIdentityDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(serviceIdentityDataStoreTestSuite))
 }
 

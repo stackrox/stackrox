@@ -10,8 +10,8 @@ option java_package = "io.stackrox.proto.storage";
 
 // Next tag: 28
 message ImageV2 {
-  string id = 1; // @gotags: search:"Image ID,hidden" sql:"pk,type(uuid)"
-  string sha = 2; // @gotags: search:"Image Sha"
+  string id = 1; // @gotags: search:"Image ID,hidden" sql:"pk"
+  string digest = 2; // @gotags: search:"Image Sha"
   ImageName name = 3;
 
   ImageMetadata metadata = 4;
@@ -20,55 +20,59 @@ message ImageV2 {
   ImageSignatureVerificationData signature_verification_data = 6;
   ImageSignature signature = 7;
 
-  // Caching component count to avoid re-calculating it by joining on the component table.
-  int32 component_count = 8; // @gotags: search:"Component Count,hidden"
+  message ScanStats {
+    // Caching component count to avoid re-calculating it by joining on the component table.
+    int32 component_count = 1; // @gotags: search:"Component Count,hidden"
 
-  // Caching cve count to avoid re-calculating it by joining on the cve table.
-  int32 cve_count = 9; // @gotags: search:"Image CVE Count,hidden"
+    // Caching cve count to avoid re-calculating it by joining on the cve table.
+    int32 cve_count = 2; // @gotags: search:"Image CVE Count,hidden"
 
-  // Caching fixable cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_cve_count = 10; // @gotags: search:"Fixable CVE Count,hidden"
+    // Caching fixable cve count to avoid re-calculating it by joining on the cve table.
+    int32 fixable_cve_count = 3; // @gotags: search:"Fixable CVE Count,hidden"
 
-  // Caching unknown cve count to avoid re-calculating it by joining on the cve table.
-  int32 unknown_cve_count = 11; // @gotags: search:"Unknown CVE Count,hidden"
+    // Caching unknown cve count to avoid re-calculating it by joining on the cve table.
+    int32 unknown_cve_count = 4; // @gotags: search:"Unknown CVE Count,hidden"
 
-  // Caching fixable unknown cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_unknown_cve_count = 12; // @gotags: search:"Fixable Unknown CVE Count,hidden"
+    // Caching fixable unknown cve count to avoid re-calculating it by joining on the cve table.
+    int32 fixable_unknown_cve_count = 5; // @gotags: search:"Fixable Unknown CVE Count,hidden"
 
-  // Caching critical cve count to avoid re-calculating it by joining on the cve table.
-  int32 critical_cve_count = 13; // @gotags: search:"Critical CVE Count,hidden"
+    // Caching critical cve count to avoid re-calculating it by joining on the cve table.
+    int32 critical_cve_count = 6; // @gotags: search:"Critical CVE Count,hidden"
 
-  // Caching fixable critical cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_critical_cve_count = 14; // @gotags: search:"Fixable Critical CVE Count,hidden"
+    // Caching fixable critical cve count to avoid re-calculating it by joining on the cve table.
+    int32 fixable_critical_cve_count = 7; // @gotags: search:"Fixable Critical CVE Count,hidden"
 
-  // Caching important cve count to avoid re-calculating it by joining on the cve table.
-  int32 important_cve_count = 15; // @gotags: search:"Important CVE Count,hidden"
+    // Caching important cve count to avoid re-calculating it by joining on the cve table.
+    int32 important_cve_count = 8; // @gotags: search:"Important CVE Count,hidden"
 
-  // Caching fixable important cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_important_cve_count = 16; // @gotags: search:"Fixable Important CVE Count,hidden"
+    // Caching fixable important cve count to avoid re-calculating it by joining on the cve table.
+    int32 fixable_important_cve_count = 9; // @gotags: search:"Fixable Important CVE Count,hidden"
 
-  // Caching moderate cve count to avoid re-calculating it by joining on the cve table.
-  int32 moderate_cve_count = 17; // @gotags: search:"Moderate CVE Count,hidden"
+    // Caching moderate cve count to avoid re-calculating it by joining on the cve table.
+    int32 moderate_cve_count = 10; // @gotags: search:"Moderate CVE Count,hidden"
 
-  // Caching fixable moderate cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_moderate_cve_count = 18; // @gotags: search:"Fixable Moderate CVE Count,hidden"
+    // Caching fixable moderate cve count to avoid re-calculating it by joining on the cve table.
+    int32 fixable_moderate_cve_count = 11; // @gotags: search:"Fixable Moderate CVE Count,hidden"
 
-  // Caching low cve count to avoid re-calculating it by joining on the cve table.
-  int32 low_cve_count = 19; // @gotags: search:"Low CVE Count,hidden"
+    // Caching low cve count to avoid re-calculating it by joining on the cve table.
+    int32 low_cve_count = 12; // @gotags: search:"Low CVE Count,hidden"
 
-  // Caching fixable low cve count to avoid re-calculating it by joining on the cve table.
-  int32 fixable_low_cve_count = 20; // @gotags: search:"Fixable Low CVE Count,hidden"
+    // Caching fixable low cve count to avoid re-calculating it by joining on the cve table.
+    int32 fixable_low_cve_count = 13; // @gotags: search:"Fixable Low CVE Count,hidden"
+  }
 
-  google.protobuf.Timestamp last_updated = 21; // @gotags: search:"Last Updated,hidden"
+  ScanStats scan_stats = 8;
 
-  bool not_pullable = 22;
-  bool is_cluster_local = 23;
+  google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden"
 
-  int64 priority = 24; // @gotags: search:"Image Risk Priority,hidden"
-  float risk_score = 25; // @gotags: search:"Image Risk Score,hidden"
+  bool not_pullable = 10;
+  bool is_cluster_local = 11;
+
+  int64 priority = 12; // @gotags: search:"Image Risk Priority,hidden"
+  float risk_score = 13; // @gotags: search:"Image Risk Score,hidden"
 
   // Caching top cvss to avoid re-calculating it by joining on the cve table.
-  float top_cvss = 26; // @gotags: search:"Image Top CVSS,store"
+  float top_cvss = 14; // @gotags: search:"Image Top CVSS,store"
 
   enum Note {
     MISSING_METADATA = 0;
@@ -76,5 +80,18 @@ message ImageV2 {
     MISSING_SIGNATURE = 2;
     MISSING_SIGNATURE_VERIFICATION_DATA = 3;
   }
-  repeated Note notes = 27;
+  repeated Note notes = 15;
+}
+
+message ListImageV2 {
+  string id = 7;
+  string name = 2;
+  int32 component_count = 3;
+  int32 cve_count = 4;
+  int32 fixable_cve_count = 5;
+  google.protobuf.Timestamp created = 6;
+  google.protobuf.Timestamp last_updated = 8;
+
+  reserved 9; // was map<string, string> clusterns_scopes
+  int64 priority = 10;
 }

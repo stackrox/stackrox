@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/image/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -29,4 +30,7 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 
 	UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error
+
+	// GetImagesRiskView retrieves an image id and risk score to initialize rankers
+	GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageRiskView, error)
 }

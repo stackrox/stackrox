@@ -8,17 +8,19 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common/defaulting"
+	"github.com/stackrox/rox/operator/internal/securedcluster/defaults"
+	"github.com/stackrox/rox/pkg/features"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var defaultingFlows = []defaulting.SecuredClusterDefaultingFlow{
-	defaulting.SecuredClusterScannerV4DefaultingFlow,
+var defaultingFlows = []defaults.SecuredClusterDefaultingFlow{
+	defaults.SecuredClusterStaticDefaults, // Must go first
+	defaults.SecuredClusterScannerV4DefaultingFlow,
 }
 
-// This extension executes "defaulting flows". A Secured Cluster defaulting flow is of type
+// FeatureDefaultingExtension executes "defaulting flows". A Secured Cluster defaulting flow is of type
 // defaulting.SecuredClusterDefaultingFlow, which is essentially a function that acts on
 // `status`, `metadata.annotations` as well as `spec` and `defaults` (both of type `SecuredClusterSpec`)
 // of a SecuredCluster CR.
@@ -67,10 +69,15 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 }
 
 func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedCluster *platform.SecuredCluster, client ctrlClient.Client) error {
+	effectiveDefaultingFlows := defaultingFlows
+	if features.AdmissionControllerConfig.Enabled() {
+		effectiveDefaultingFlows = append(effectiveDefaultingFlows, defaults.SecuredClusterAdmissionControllerDefaultingFlow)
+	}
+
 	origSecuredCluster := securedCluster.DeepCopy()
 
 	// This may update securedCluster.Defaults and securedCluster's embedded annotations.
-	for _, flow := range defaultingFlows {
+	for _, flow := range effectiveDefaultingFlows {
 		if err := executeSingleDefaultingFlow(logger, securedCluster, flow); err != nil {
 			return err
 		}
@@ -87,7 +94,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedClust
 	return nil
 }
 
-func executeSingleDefaultingFlow(logger logr.Logger, securedCluster *platform.SecuredCluster, flow defaulting.SecuredClusterDefaultingFlow) error {
+func executeSingleDefaultingFlow(logger logr.Logger, securedCluster *platform.SecuredCluster, flow defaults.SecuredClusterDefaultingFlow) error {
 	logger = logger.WithName(fmt.Sprintf("defaulting-flow-%s", flow.Name))
 	annotations := securedCluster.GetAnnotations()
 	if annotations == nil {

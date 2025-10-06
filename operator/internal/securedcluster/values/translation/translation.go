@@ -13,10 +13,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/securedcluster"
 	"github.com/stackrox/rox/operator/internal/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/crs"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -100,11 +102,13 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v := translation.NewValuesBuilder()
 
-	v.SetStringValue("clusterName", sc.Spec.ClusterName)
+	if sc.Spec.ClusterName != nil {
+		v.SetStringValue("clusterName", *sc.Spec.ClusterName)
+	}
 	v.SetStringMap("clusterLabels", sc.Spec.ClusterLabels)
 
-	if sc.Spec.CentralEndpoint != "" {
-		v.SetStringValue("centralEndpoint", sc.Spec.CentralEndpoint)
+	if sc.Spec.CentralEndpoint != nil && *sc.Spec.CentralEndpoint != "" {
+		v.SetStringValue("centralEndpoint", *sc.Spec.CentralEndpoint)
 	}
 
 	v.AddAllFrom(t.getTLSValues(ctx, sc))
@@ -149,13 +153,15 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(sc.Spec.Monitoring))
 
-	if sc.Spec.RegistryOverride != "" {
-		v.SetStringValue("registryOverride", sc.Spec.RegistryOverride)
+	if sc.Spec.RegistryOverride != nil && *sc.Spec.RegistryOverride != "" {
+		v.SetStringValue("registryOverride", *sc.Spec.RegistryOverride)
 	}
 
 	if sc.Spec.Network != nil {
 		v.AddChild("network", translation.GetGlobalNetwork(sc.Spec.Network))
 	}
+
+	v.AddChild("autoLockProcessBaselines", getProcessBaselinesValues(sc.Spec.ProcessBaselines))
 
 	return v.Build()
 }
@@ -187,9 +193,47 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 		}
 		centralCA = string(ca)
 	}
+
+	// Attempt to get the CA bundle from the tls-ca-bundle ConfigMap, which is created by Sensor at runtime
+	// based on data received from Central, and may contain multiple CA certificates.
+	// This is needed so that the Operator can update the ValidatingWebhookConfiguration's caBundle field.
+	caBundle, err := t.getCABundleFromConfigMap(ctx, sc)
+	if err != nil {
+		return v.SetError(errors.Wrapf(err, "failed to get CA bundle from %q ConfigMap", pkgKubernetes.TLSCABundleConfigMapName))
+	} else if caBundle != "" {
+		centralCA = caBundle
+	}
+
 	v.SetStringMap("ca", map[string]string{"cert": centralCA})
 
 	return &v
+}
+
+// getCABundleFromConfigMap reads the CA bundle from the ConfigMap created by Sensor
+func (t Translator) getCABundleFromConfigMap(ctx context.Context, sc platform.SecuredCluster) (string, error) {
+	var configMap corev1.ConfigMap
+	key := ctrlClient.ObjectKey{
+		Namespace: sc.Namespace,
+		Name:      pkgKubernetes.TLSCABundleConfigMapName,
+	}
+
+	if err := t.client.Get(ctx, key, &configMap); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return "", nil // ConfigMap doesn't exist yet - this is normal for fresh installs
+		}
+		return "", errors.Wrapf(err, "failed to get CA bundle ConfigMap %s", key)
+	}
+
+	caBundlePEM, ok := configMap.Data[pkgKubernetes.TLSCABundleKey]
+	if !ok {
+		return "", errors.Errorf("key %q not found in ConfigMap %s", pkgKubernetes.TLSCABundleKey, key)
+	}
+
+	if caBundlePEM == "" {
+		return "", errors.Errorf("CA bundle is empty in ConfigMap %s", key)
+	}
+
+	return caBundlePEM, nil
 }
 
 func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.SecuredCluster) (*crs.CRS, error) {
@@ -212,7 +256,7 @@ func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.Sec
 
 	if multiErr != nil {
 		if notFound {
-			return nil, errors.Wrapf(multiErr, "some init-bundle secrets missing in namespace %q, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the correct namespace", sc.Namespace)
+			return nil, errors.Wrapf(multiErr, "%v", securedcluster.InitBundleSecretsMissingError(sc.Namespace))
 		}
 		return nil, multiErr
 	}
@@ -275,27 +319,12 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	acv := translation.NewValuesBuilder()
 
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
-	acv.SetBool("listenOnCreates", admissionControl.ListenOnCreates)
-	acv.SetBool("listenOnUpdates", admissionControl.ListenOnUpdates)
-	acv.SetBool("listenOnEvents", admissionControl.ListenOnEvents)
 	dynamic := translation.NewValuesBuilder()
 	// Unlike in the UI, both static and dynamic parts of config are driven by
-	// the single spec.admissionControl.listenOn* setting in CR. This is because
+	// the CR fields directly below spec.admissionControl. This is because
 	// redeployment is natively part of the CR lifecycle when we have an operator, so
 	// no need to distinguish between the static and dynamic part.
-	dynamic.SetBool("enforceOnCreates", admissionControl.ListenOnCreates)
-	dynamic.SetBool("enforceOnUpdates", admissionControl.ListenOnUpdates)
-	if admissionControl.ContactImageScanners != nil {
-		switch *admissionControl.ContactImageScanners {
-		case platform.ScanIfMissing:
-			dynamic.SetBoolValue("scanInline", true)
-		case platform.DoNotScanInline:
-			dynamic.SetBoolValue("scanInline", false)
-		default:
-			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.contactImageScanners setting %q", *admissionControl.ContactImageScanners))
-		}
-	}
-	dynamic.SetInt32("timeout", admissionControl.TimeoutSeconds)
+	acv.SetBool("enforce", admissionControl.Enforce)
 	if admissionControl.Bypass != nil {
 		switch *admissionControl.Bypass {
 		case platform.BypassBreakGlassAnnotation:
@@ -306,6 +335,7 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.bypass setting %q", *admissionControl.Bypass))
 		}
 	}
+	acv.SetString("failurePolicy", (*string)(admissionControl.FailurePolicy))
 	acv.AddChild("dynamic", &dynamic)
 	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
 	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, admissionControl.Tolerations))
@@ -331,6 +361,16 @@ func (t Translator) getAuditLogsValues(auditLogs *platform.AuditLogsSpec) *trans
 	default:
 		return cv.SetError(errors.Errorf("invalid spec.auditLogs.collection setting %q", *auditLogs.Collection))
 	}
+	return &cv
+}
+
+func getProcessBaselinesValues(processBaselines *platform.ProcessBaselinesSpec) *translation.ValuesBuilder {
+	if processBaselines == nil || processBaselines.AutoLock == nil {
+		return nil
+	}
+	cv := translation.NewValuesBuilder()
+	cv.SetBoolValue("enabled", *processBaselines.AutoLock == platform.ProcessBaselinesAutoLockModeEnabled)
+
 	return &cv
 }
 

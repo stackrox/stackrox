@@ -1,7 +1,7 @@
 import React from 'react';
 import { FormGroup, Radio } from '@patternfly/react-core';
 
-import { DelegatedRegistryConfigEnabledFor } from 'services/DelegatedRegistryConfigService';
+import type { DelegatedRegistryConfigEnabledFor } from 'services/DelegatedRegistryConfigService';
 
 type ToggleDelegatedScanningProps = {
     enabledFor: DelegatedRegistryConfigEnabledFor;

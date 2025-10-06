@@ -1,5 +1,7 @@
 import scopeSelectors from '../../helpers/scopeSelectors';
 
+const clusterPageSelector = `#main-page-container:has('a.pf-v5-c-breadcrumb__link:contains("Clusters")')`;
+
 export const selectors = {
     clusters: {
         // Ignore the first checkbox column and last delete column.
@@ -8,7 +10,7 @@ export const selectors = {
     clusterForm: scopeSelectors('[data-testid="cluster-form"]', {
         nameInput: 'input[name="name"]',
     }),
-    clusterHealth: scopeSelectors('[data-testid="cluster-page"]', {
+    clusterHealth: scopeSelectors(clusterPageSelector, {
         clusterStatus: '[data-testid="clusterStatus"]',
         sensorStatus: '[data-testid="sensorStatus"]',
         collectorStatus: '[data-testid="collectorStatus"]',

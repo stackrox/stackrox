@@ -1,6 +1,6 @@
 import React, { ElementType, ReactElement, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom-v5-compat';
 import { PageSection } from '@patternfly/react-core';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
@@ -49,6 +49,7 @@ import {
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
+    vulnerabilitiesVirtualMachineCvesPath,
 } from 'routePaths';
 
 import PageNotFound from 'Components/PageNotFound';
@@ -59,7 +60,7 @@ import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 import { selectors } from 'reducers';
 
-import asyncComponent from './AsyncComponent';
+import asyncComponent from './asyncComponent';
 import InviteUsersModal from './InviteUsers/InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
@@ -251,6 +252,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: makeVulnMgmtUserWorkloadView('user-workloads'),
         path: vulnerabilitiesUserWorkloadsPath,
     },
+    'vulnerabilities/virtual-machine-cves': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/VirtualMachineCves/VirtualMachineCvesPage')
+        ),
+        path: vulnerabilitiesVirtualMachineCvesPath,
+    },
     // Note: currently 'platform' is an implementation of the user-workloads view and
     // it is expected that this will change in the future as these views diverge
     'vulnerabilities/platform': {
@@ -274,10 +281,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
         ),
         path: vulnerabilityReportsPath,
-    },
-    'vulnerabilities/workload-cves': {
-        component: makeVulnMgmtUserWorkloadView('user-workloads'),
-        path: vulnerabilitiesWorkloadCvesPath,
     },
     'vulnerability-management': {
         component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
@@ -331,16 +334,14 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={mainPath} element={<Navigate to={dashboardPath} replace />} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
                     <Route path={deprecatedPoliciesPath} element={<DeprecatedPoliciesRedirect />} />
-                    {isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
-                        <Route
-                            // all prior workload-cves routes must redirect to the new path.
-                            path={`${vulnerabilitiesWorkloadCvesPath}/*`}
-                            // Since all subpaths and query parameters must be retained, we need to do
-                            // a search and replace of the subpath we are redirecting, which is accomplished
-                            // by using the WorkloadCvesRedirect component.
-                            element={<WorkloadCvesRedirect />}
-                        />
-                    )}
+                    <Route
+                        // all prior workload-cves routes must redirect to the new path.
+                        path={`${vulnerabilitiesWorkloadCvesPath}/*`}
+                        // Since all subpaths and query parameters must be retained, we need to do
+                        // a search and replace of the subpath we are redirecting, which is accomplished
+                        // by using the WorkloadCvesRedirect component.
+                        element={<WorkloadCvesRedirect />}
+                    />
                     {Object.keys(routeComponentMap)
                         .filter((routeKey) => isRouteEnabled(routePredicates, routeKey as RouteKey))
                         .map((routeKey) => {

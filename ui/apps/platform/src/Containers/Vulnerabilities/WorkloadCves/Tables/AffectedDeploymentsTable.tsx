@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Flex, pluralize, Truncate } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ExpandableRowContent } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
@@ -17,11 +17,10 @@ import {
     getHiddenColumnCount,
     ManagedColumns,
 } from 'hooks/useManagedColumns';
-import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import DeploymentComponentVulnerabilitiesTable, {
     DeploymentComponentVulnerability,
     ImageMetadataContext,
-    convertToFlatDeploymentComponentVulnerabilitiesFragment, // deploymentComponentVulnerabilitiesFragment
+    deploymentComponentVulnerabilitiesFragment,
     imageMetadataContextFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
@@ -30,6 +29,16 @@ import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCvesAffectedDeploymentsTable';
 export const defaultColumns = {
+    rowExpansion: {
+        title: 'Row expansion',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    deployment: {
+        title: 'Deployment',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     imagesBySeverity: {
         title: 'Images by severity',
         isShownByDefault: true,
@@ -56,6 +65,7 @@ export type DeploymentForCve = {
     id: string;
     name: string;
     namespace: string;
+    type: string;
     clusterName: string;
     created: string | null;
     unknownImageCount: number;
@@ -66,35 +76,29 @@ export type DeploymentForCve = {
     images: (ImageMetadataContext & { imageComponents: DeploymentComponentVulnerability[] })[];
 };
 
-// After release, replace temporary function
-// with deploymentsForCveFragment
-// that has unconditional deploymentComponentVulnerabilitiesFragment.
-export function convertToFlatDeploymentsForCveFragment(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${imageMetadataContextFragment}
-        ${convertToFlatDeploymentComponentVulnerabilitiesFragment(isFlattenCveDataEnabled)}
-        fragment DeploymentsForCVE on Deployment {
-            id
-            name
-            namespace
-            clusterName
-            created
-            unknownImageCount: imageCount(query: $unknownImageCountQuery)
-            lowImageCount: imageCount(query: $lowImageCountQuery)
-            moderateImageCount: imageCount(query: $moderateImageCountQuery)
-            importantImageCount: imageCount(query: $importantImageCountQuery)
-            criticalImageCount: imageCount(query: $criticalImageCountQuery)
-            images(query: $query) {
-                ...ImageMetadataContext
-                imageComponents(query: $query) {
-                    ...DeploymentComponentVulnerabilities
-                }
+export const deploymentsForCveFragment = gql`
+    ${imageMetadataContextFragment}
+    ${deploymentComponentVulnerabilitiesFragment}
+    fragment DeploymentsForCVE on Deployment {
+        id
+        name
+        namespace
+        type
+        clusterName
+        created
+        unknownImageCount: imageCount(query: $unknownImageCountQuery)
+        lowImageCount: imageCount(query: $lowImageCountQuery)
+        moderateImageCount: imageCount(query: $moderateImageCountQuery)
+        importantImageCount: imageCount(query: $importantImageCountQuery)
+        criticalImageCount: imageCount(query: $criticalImageCountQuery)
+        images(query: $query) {
+            ...ImageMetadataContext
+            imageComponents(query: $query) {
+                ...DeploymentComponentVulnerabilities
             }
         }
-    `;
-}
+    }
+`;
 
 export type AffectedDeploymentsTableProps = {
     tableState: TableUIState<DeploymentForCve>;
@@ -117,20 +121,25 @@ function AffectedDeploymentsTable({
     onClearFilters,
     tableConfig,
 }: AffectedDeploymentsTableProps) {
-    const { getAbsoluteUrl } = useWorkloadCveViewContext();
+    const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
 
-    const colSpan = 7 + -hiddenColumnCount;
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
     const colSpanForComponentVulnerabilitiesTable = colSpan - 1; // minus ExpandRowTh
 
     return (
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <ExpandRowTh />
-                    <Th sort={getSortParams('Deployment')}>Deployment</Th>
+                    <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
+                    <Th
+                        className={getVisibilityClass('deployment')}
+                        sort={getSortParams('Deployment')}
+                    >
+                        Deployment
+                    </Th>
                     <Th className={getVisibilityClass('imagesBySeverity')}>
                         Images by severity
                         {isFiltered && <DynamicColumnIcon />}
@@ -162,6 +171,7 @@ function AffectedDeploymentsTable({
                             id,
                             name,
                             namespace,
+                            type,
                             clusterName,
                             unknownImageCount,
                             lowImageCount,
@@ -182,24 +192,25 @@ function AffectedDeploymentsTable({
                             <Tbody key={id} isExpanded={isExpanded}>
                                 <Tr>
                                     <Td
+                                        className={getVisibilityClass('rowExpansion')}
                                         expand={{
                                             rowIndex,
                                             isExpanded,
                                             onToggle: () => expandedRowSet.toggle(id),
                                         }}
                                     />
-                                    <Td dataLabel="Deployment">
+                                    <Td
+                                        className={getVisibilityClass('deployment')}
+                                        dataLabel="Deployment"
+                                    >
                                         <Flex
                                             direction={{ default: 'column' }}
                                             spaceItems={{ default: 'spaceItemsNone' }}
                                         >
                                             <Link
-                                                to={getAbsoluteUrl(
-                                                    getWorkloadEntityPagePath(
-                                                        'Deployment',
-                                                        id,
-                                                        vulnerabilityState
-                                                    )
+                                                to={urlBuilder.workloadDetails(
+                                                    { id, namespace, name, type },
+                                                    vulnerabilityState
                                                 )}
                                             >
                                                 <Truncate position="middle" content={name} />
@@ -249,7 +260,7 @@ function AffectedDeploymentsTable({
                                     </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
-                                    <Td />
+                                    <Td className={getVisibilityClass('rowExpansion')} />
                                     <Td colSpan={colSpanForComponentVulnerabilitiesTable}>
                                         <ExpandableRowContent>
                                             <DeploymentComponentVulnerabilitiesTable

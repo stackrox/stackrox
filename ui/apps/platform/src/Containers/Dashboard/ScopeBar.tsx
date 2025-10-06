@@ -7,8 +7,9 @@ import useURLSearch from 'hooks/useURLSearch';
 
 import { flattenFilterValue } from 'utils/searchUtils';
 import NamespaceSelect from './NamespaceSelect';
-import ClusterSelect, { SelectionChangeAction } from './ClusterSelect';
-import { Cluster } from './types';
+import ClusterSelect from './ClusterSelect';
+import type { SelectionChangeAction } from './ClusterSelect';
+import type { Cluster } from './types';
 
 type NamespacesResponse = {
     clusters: Cluster[];

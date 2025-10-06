@@ -15,7 +15,6 @@ import (
 )
 
 func TestNotifierDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(notifierDataStoreTestSuite))
 }
 

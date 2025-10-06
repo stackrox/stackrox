@@ -12,6 +12,8 @@ status:
   - status: "True"
     type: Irreconcilable
   - status: "False"
+    type: Paused
+  - status: "False"
     type: ProxyConfigFailed
   - status: "Unknown"
     type: ReleaseFailed

@@ -9,7 +9,6 @@ import (
 )
 
 func TestDiffAnalyzeNetpolCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(diffAnalyzeNetpolTestSuite))
 }
 

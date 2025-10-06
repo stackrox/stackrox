@@ -1,7 +1,8 @@
 import axios from 'services/instance';
 import qs from 'qs';
 
-import { ComplianceProfileSummary, complianceV2Url } from './ComplianceCommon';
+import { complianceV2Url } from './ComplianceCommon';
+import type { ComplianceProfileSummary } from './ComplianceCommon';
 
 const complianceProfilesBaseUrl = `${complianceV2Url}/profiles`;
 

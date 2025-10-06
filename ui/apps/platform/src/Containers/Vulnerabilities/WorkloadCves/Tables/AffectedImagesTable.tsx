@@ -1,8 +1,9 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { gql } from '@apollo/client';
+import { LabelGroup } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
@@ -28,17 +29,27 @@ import {
     getEarliestDiscoveredAtTime,
 } from '../../utils/vulnerabilityUtils';
 import ImageNameLink from '../components/ImageNameLink';
+import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
-    convertToFlatImageComponentVulnerabilitiesFragment, // imageComponentVulnerabilitiesFragment
+    imageComponentVulnerabilitiesFragment,
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
 import { WatchStatus } from '../../types';
-import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export const tableId = 'WorkloadCvesAffectedImagesTable';
 export const defaultColumns = {
+    rowExpansion: {
+        title: 'Row expansion',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    image: {
+        title: 'Image',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     cveSeverity: {
         title: 'CVE severity',
         isShownByDefault: true,
@@ -97,33 +108,26 @@ export type ImageForCve = {
     })[];
 };
 
-// After release, replace temporary function
-// with imagesForCveFragment
-// that has unconditional imageComponentVulnerabilitiesFragment.
-export function convertToFlatImagesForCveFragment(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${imageMetadataContextFragment}
-        ${convertToFlatImageComponentVulnerabilitiesFragment(isFlattenCveDataEnabled)}
-        fragment ImagesForCVE on Image {
-            ...ImageMetadataContext
+export const imagesForCveFragment = gql`
+    ${imageMetadataContextFragment}
+    ${imageComponentVulnerabilitiesFragment}
+    fragment ImagesForCVE on Image {
+        ...ImageMetadataContext
 
-            operatingSystem
-            watchStatus
-            imageComponents(query: $query) {
-                imageVulnerabilities(query: $query) {
-                    discoveredAtImage
-                    cvss
-                    scoreVersion
-                    nvdCvss
-                    nvdScoreVersion
-                }
-                ...ImageComponentVulnerabilities
+        operatingSystem
+        watchStatus
+        imageComponents(query: $query) {
+            imageVulnerabilities(query: $query) {
+                discoveredAtImage
+                cvss
+                scoreVersion
+                nvdCvss
+                nvdScoreVersion
             }
+            ...ImageComponentVulnerabilities
         }
-    `;
-}
+    }
+`;
 
 export type AffectedImagesTableProps = {
     tableState: TableUIState<ImageForCve>;
@@ -149,17 +153,17 @@ function AffectedImagesTable({
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const colSpan = 8 + (isNvdCvssColumnEnabled ? 1 : 0) + -hiddenColumnCount;
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
     const colSpanForComponentVulnerabilitiesTable = colSpan - 1; // minus ExpandRowTh
 
     return (
-        <Table variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <ExpandRowTh />
-                    <Th sort={getSortParams('Image')}>Image</Th>
+                    <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
+                    <Th className={getVisibilityClass('image')} sort={getSortParams('Image')}>
+                        Image
+                    </Th>
                     <Th
                         className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams('Severity')}
@@ -171,9 +175,7 @@ function AffectedImagesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('cvss')}>CVSS</Th>
-                    {isNvdCvssColumnEnabled && (
-                        <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
-                    )}
+                    <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
                     <Th
                         className={getVisibilityClass('operatingSystem')}
                         sort={getSortParams('Operating System')}
@@ -208,28 +210,44 @@ function AffectedImagesTable({
                                 (imageVulnerability) => imageVulnerability.pendingExceptionCount > 0
                             )
                         );
+                        const labels: ReactNode[] = [];
+                        if (hasPendingException) {
+                            labels.push(
+                                <PendingExceptionLabel
+                                    cve={cve}
+                                    isCompact
+                                    vulnerabilityState={vulnerabilityState}
+                                />
+                            );
+                        }
 
                         const isExpanded = expandedRowSet.has(id);
 
+                        // Table borders={false} prop above and Tbody style prop below
+                        // to prevent unwanted border between main row and conditional labels row.
+                        //
+                        // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                        // and assumes adjacent empty cell has no paddingTop.
                         return (
-                            <Tbody key={id} isExpanded={isExpanded}>
+                            <Tbody
+                                key={id}
+                                style={{
+                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
+                                }}
+                                isExpanded={isExpanded}
+                            >
                                 <Tr>
                                     <Td
+                                        className={getVisibilityClass('rowExpansion')}
                                         expand={{
                                             rowIndex,
                                             isExpanded,
                                             onToggle: () => expandedRowSet.toggle(id),
                                         }}
                                     />
-                                    <Td dataLabel="Image">
+                                    <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
-                                            <PendingExceptionLabelLayout
-                                                hasPendingException={hasPendingException}
-                                                cve={cve}
-                                                vulnerabilityState={vulnerabilityState}
-                                            >
-                                                <ImageNameLink name={name} id={id} />
-                                            </PendingExceptionLabelLayout>
+                                            <ImageNameLink name={name} id={id} />
                                         ) : (
                                             'Image name not available'
                                         )}
@@ -258,18 +276,16 @@ function AffectedImagesTable({
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
 
-                                    {isNvdCvssColumnEnabled && (
-                                        <Td
-                                            className={getVisibilityClass('nvdCvss')}
-                                            dataLabel="NVD CVSS"
-                                            modifier="nowrap"
-                                        >
-                                            <CvssFormatted
-                                                cvss={nvdCvss}
-                                                scoreVersion={nvdScoreVersion}
-                                            />
-                                        </Td>
-                                    )}
+                                    <Td
+                                        className={getVisibilityClass('nvdCvss')}
+                                        dataLabel="NVD CVSS"
+                                        modifier="nowrap"
+                                    >
+                                        <CvssFormatted
+                                            cvss={nvdCvss}
+                                            scoreVersion={nvdScoreVersion}
+                                        />
+                                    </Td>
                                     <Td
                                         className={getVisibilityClass('operatingSystem')}
                                         dataLabel="Operating system"
@@ -297,8 +313,21 @@ function AffectedImagesTable({
                                         )}
                                     </Td>
                                 </Tr>
+                                {labels.length !== 0 && (
+                                    <Tr>
+                                        <Td />
+                                        <Td
+                                            colSpan={colSpanForComponentVulnerabilitiesTable - 1}
+                                            style={{ paddingTop: 0 }}
+                                        >
+                                            <LabelGroup numLabels={labels.length}>
+                                                {labels}
+                                            </LabelGroup>
+                                        </Td>
+                                    </Tr>
+                                )}
                                 <Tr isExpanded={isExpanded}>
-                                    <Td />
+                                    <Td className={getVisibilityClass('rowExpansion')} />
                                     <Td colSpan={colSpanForComponentVulnerabilitiesTable}>
                                         <ExpandableRowContent>
                                             <ImageComponentVulnerabilitiesTable

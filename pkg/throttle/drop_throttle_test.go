@@ -25,7 +25,6 @@ func maybeRunAndTrack(throttler DropThrottle, wg *sync.WaitGroup, f func()) {
 }
 
 func TestThrottlesFastCalls(t *testing.T) {
-	t.Parallel()
 
 	throttler := NewDropThrottle(500 * time.Millisecond)
 
@@ -65,7 +64,6 @@ func TestThrottlesFastCalls(t *testing.T) {
 }
 
 func TestThrottlesSlowCalls(t *testing.T) {
-	t.Parallel()
 
 	throttler := NewDropThrottle(500 * time.Millisecond)
 

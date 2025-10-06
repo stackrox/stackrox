@@ -1,6 +1,6 @@
 import FileSaver from 'file-saver';
 
-import { GenerateClusterRegistrationSecretResponse } from 'services/ClustersService';
+import type { GenerateClusterRegistrationSecretResponse } from 'services/ClustersService';
 
 export function downloadClusterRegistrationSecret(
     name: string,

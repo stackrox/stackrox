@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -56,11 +57,14 @@ var (
 			apiV2.ReportService_GetReportStatus_FullMethodName,
 			apiV2.ReportService_GetReportHistory_FullMethodName,
 			apiV2.ReportService_GetMyReportHistory_FullMethodName,
+			apiV2.ReportService_GetViewBasedReportHistory_FullMethodName,
+			apiV2.ReportService_GetViewBasedMyReportHistory_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			apiV2.ReportService_RunReport_FullMethodName,
 			apiV2.ReportService_CancelReport_FullMethodName,
 			apiV2.ReportService_DeleteReport_FullMethodName,
+			apiV2.ReportService_PostViewBasedReport_FullMethodName,
 		},
 	})
 )
@@ -459,6 +463,122 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 		return nil, errors.Wrapf(errox.InvariantViolation, "Failed to delete downloadable report %q", req.GetId())
 	}
 	return &apiV2.Empty{}, nil
+}
+
+// PostViewBasedReport validates a view-based report request and submits it to the report scheduler.
+func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.ReportRequestViewBased) (*apiV2.RunReportResponseViewBased, error) {
+	// Check if view-based reports feature is enabled
+	if !features.VulnerabilityViewBasedReports.Enabled() {
+		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
+	}
+
+	// Authorisation: must have write access on workflow administration.
+	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
+		return nil, err
+	}
+
+	if req == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty Request Body")
+	}
+
+	requesterID := authn.IdentityFromContextOrNil(ctx)
+	if requesterID == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	// Validate the request and build the scheduler payload.
+	reportReq, err := s.validator.ValidateAndGenerateViewBasedReportRequest(req, requesterID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Submit to scheduler. view-based reports are always on-demand, not re-submissions.
+	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
+	if err != nil {
+		return nil, errors.Wrapf(errox.ServerError, "Scheduler error:%s", err)
+	}
+
+	return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportReq.ReportSnapshot.GetName()}, nil
+}
+
+func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
+	// Check if view-based reports feature is enabled
+	if !features.VulnerabilityViewBasedReports.Enabled() {
+		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
+	}
+
+	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	conjunctionQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(
+			search.ReportRequestType,
+			storage.ReportStatus_VIEW_BASED.String()).ProtoQuery(),
+		parsedQuery,
+	)
+	// Fill in pagination.
+	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
+
+	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	if err != nil {
+		return nil, err
+	}
+	snapshots, err := s.convertViewBasedProtoReportSnapshotstoV2(results)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
+	}
+	res := apiV2.ReportHistoryResponse{
+		ReportSnapshots: snapshots,
+	}
+	return &res, nil
+}
+
+func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
+	// Check if view-based reports feature is enabled
+	if !features.VulnerabilityViewBasedReports.Enabled() {
+		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
+	}
+
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	err = verifyNoUserSearchLabels(parsedQuery)
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	conjunctionQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().
+			AddExactMatches(search.UserID, slimUser.GetId()).
+			AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String()).
+			ProtoQuery(),
+		parsedQuery,
+	)
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
+
+	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	if err != nil {
+		return nil, err
+	}
+	snapshots, err := s.convertViewBasedProtoReportSnapshotstoV2(results)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
+	}
+	res := apiV2.ReportHistoryResponse{
+		ReportSnapshots: snapshots,
+	}
+	return &res, nil
 }
 
 func verifyNoUserSearchLabels(q *v1.Query) error {

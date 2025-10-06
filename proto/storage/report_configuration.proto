@@ -79,3 +79,9 @@ message ResourceScope {
     string collection_id = 1; // @gotags: search:"Collection ID"
   }
 }
+
+// filter for view based reports
+message ViewBasedVulnerabilityReportFilters {
+  string query = 1;
+  repeated SimpleAccessScope.Rules access_scope_rules = 2;
+}

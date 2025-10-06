@@ -52,10 +52,12 @@ type MetaValues struct {
 	ScanInline                       bool
 	AdmissionControllerEnabled       bool
 	AdmissionControlEnforceOnUpdates bool
+	AdmissionControllerFailOnError   bool
 	ReleaseBuild                     bool
 	TelemetryEnabled                 bool
 	TelemetryKey                     string
 	TelemetryEndpoint                string
+	AutoLockProcessBaselines         bool
 
 	AutoSensePodSecurityPolicies bool
 	EnablePodSecurityPolicies    bool // Only used in the Helm chart if AutoSensePodSecurityPolicies is false.
@@ -86,19 +88,11 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		ImagePullSecrets:         imageFlavor.ImagePullSecrets,
 		Operator:                 false,
 		ReleaseBuild:             buildinfo.ReleaseBuild,
-		FeatureFlags:             getFeatureFlags(),
+		FeatureFlags:             features.GetFeatureFlagsAsGenericMap(),
 		TelemetryEnabled:         true,
 
 		AutoSensePodSecurityPolicies: true,
 	}
 
 	return &metaValues
-}
-
-func getFeatureFlags() map[string]interface{} {
-	featureFlagVals := make(map[string]interface{})
-	for _, feature := range features.Flags {
-		featureFlagVals[feature.EnvVar()] = feature.Enabled()
-	}
-	return featureFlagVals
 }

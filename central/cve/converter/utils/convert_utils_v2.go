@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 // ImageCVEV2ToEmbeddedVulnerability coverts a `*storage.ImageCVEV2` to an `*storage.EmbeddedVulnerability`.
@@ -100,12 +101,16 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, from 
 		Nvdcvss:              nvdCvss,
 		NvdScoreVersion:      nvdVersion,
 		Severity:             from.GetSeverity(),
-		ImageId:              imageID,
 		FirstImageOccurrence: from.GetFirstImageOccurrence(),
 		State:                from.GetState(),
 		IsFixable:            from.GetFixedBy() != "",
 		ImpactScore:          impactScore,
 		Advisory:             from.GetAdvisory(),
+	}
+	if !features.FlattenImageData.Enabled() {
+		ret.ImageId = imageID
+	} else {
+		ret.ImageIdV2 = imageID
 	}
 
 	if from.GetFixedBy() != "" {

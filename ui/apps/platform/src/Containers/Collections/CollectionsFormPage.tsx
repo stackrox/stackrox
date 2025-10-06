@@ -1,5 +1,6 @@
-import React, { ReactElement, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useRef, useState } from 'react';
+import type { ReactElement } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
     AlertActionCloseButton,
@@ -31,8 +32,9 @@ import PageTitle from 'Components/PageTitle';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { COLLECTION_CREATED } from 'hooks/useAnalytics';
-import { CollectionPageAction } from './collections.utils';
-import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
+import type { CollectionPageAction } from './collections.utils';
+import CollectionFormDrawer from './CollectionFormDrawer';
+import type { CollectionFormDrawerProps } from './CollectionFormDrawer';
 import useCollection from './hooks/useCollection';
 import CollectionsFormModal from './CollectionsFormModal';
 import CollectionLoadError from './CollectionLoadError';

@@ -13,7 +13,7 @@ runs:
   steps:
     # auth prepares the gcp environment to authenticate.
     - name: Auth gcloud
-      uses: 'google-github-actions/auth@v2'
+      uses: 'google-github-actions/auth@v3'
       with:
         credentials_json: '${{ inputs.gcp-account }}'
         export_environment_variables: true
@@ -25,7 +25,7 @@ runs:
       continue-on-error: true
       shell: bash
       run: |
-        gcloud info
+        which gcloud
 
     # setup-gcloud authenticates gcloud
     - name: Install gcloud CLI
@@ -41,25 +41,31 @@ runs:
         [GSUtil]
         use_gcloud_storage=True
         EOF
-        gsutil version -l
 
-    - name: List filesystems
+    - name: Check disk space
       id: disk-check
-      shell: bash
-      run: |
-        df --si
-        free=$(df -BGB --output=avail / | tail -1)
-        echo "free=${free}" | tee -a "$GITHUB_OUTPUT"
-
-    - name: Free disk space, delete unused tools
-      id: delete-unused-tools
       continue-on-error: true
       shell: bash
       run: |
-        set +e
-        # preinstalled tools not used. ordered by size asc
+        free=$(df -BGB --output=avail / | tail -1)
+        echo "free=${free}" | tee -a "$GITHUB_OUTPUT"
+        if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
+          echo "Reached requested free disk space ${{ inputs.free-disk-space }} [${free} free]."
+          exit 0
+        else
+          df --si
+          exit 1
+        fi
+
+    - name: Free disk space (delete unused tools)
+      id: delete-unused-tools
+      if: steps.disk-check.outcome == 'failure'
+      continue-on-error: true
+      shell: bash
+      run: |
+        # delete preinstalled unused tools
         cleanup=(
-          # always remove (on runner or container job):
+          # non-container jobs are first priority (every second may be a high % of the total)
           /usr/share/dotnet
           /usr/share/miniconda
           /usr/share/swift
@@ -69,36 +75,34 @@ runs:
           /opt/hostedtoolcache/Ruby
           /opt/az
           /usr/local/lib/android
-
-          # remove if container job:
-          /mnt/usr/local/lib/node_modules
-          /mnt/opt/hostedtoolcache/node
-          /mnt/opt/pipx
-          /mnt/opt/hostedtoolcache/Python
-          /mnt/opt/hostedtoolcache/go
+          # container jobs are lower priority: they are already slowed by container image pulls
+          /__t/CodeQL
+          /__t/Ruby
+          /__t/PyPy
+          /__t/Python
+          /__t/go
+          /__t/node
+          /__t/gcloud
         )
         for d in "${cleanup[@]}"; do
+          if [[ -d "$d" ]]; then
+            rm -rf -- "$d" && echo "deleted $d"
+          elif [[ -d "/mnt${d}" ]]; then
+            rm -rf -- "/mnt${d}" && echo "deleted /mnt${d}"
+          else
+            echo "$d not found"
+            continue
+          fi
           free=$(df -BGB --output=avail / | tail -1)
           if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
-            echo "Reached required free disk space ${{ inputs.free-disk-space }} [${free} free]."
+            echo "Reached requested free disk space ${{ inputs.free-disk-space }} [${free} free]."
             exit 0
           fi
-          if [[ -d "/mnt${d}" ]]; then
-            rm -rf "/mnt${d}"
-          elif [[ -d "$d" ]]; then
-            rm -rf "$d" \
-              || sudo rm -rf "$d"
-          fi
         done
-        df --si /
-        free=$(df -BGB --output=avail / | tail -1)
-        if [[ ${free%GB} -lt "${{ inputs.free-disk-space }}" ]]; then
-          printf "For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt" \
-            | tee -a "$GITHUB_STEP_SUMMARY"
-          exit 1
-        fi
+        echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]."
+        exit 1
 
-    - name: Free more disk space, docker system prune
+    - name: Free more disk space (docker system prune)
       id: delete-docker-cache
       if: steps.delete-unused-tools.outcome == 'failure'
       continue-on-error: true
@@ -106,20 +110,25 @@ runs:
       run: |
         printf 'Docker prune: '
         docker system prune --force --all
-        df --si /
-        free=$(df -BGB --output=avail / | tail -1)
-        [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
 
     - name: Verify free disk space
-      if: steps.delete-docker-cache.outcome == 'failure'
+      id: disk-check-cleaned
+      if: steps.disk-check.outcome == 'failure'
       continue-on-error: true
       shell: bash
       run: |
         free=$(df -BGB --output=avail / | tail -1)
-        echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
-          | tee -a "$GITHUB_STEP_SUMMARY"
-        df -BGB /
-        [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
+        echo "free=${free}" | tee -a "$GITHUB_OUTPUT"
+        if [[ ${free%GB} -lt "${{ inputs.free-disk-space }}" ]]; then
+          echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          if [[ ! -d /opt/hostedtoolcache && ! -d /mnt/opt/hostedtoolcache && ! -d /mnt/usr/local ]]; then
+            printf 'For container workflows, you can mount the host /usr and /opt to allow deleting more unused tools:\n```\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt\n```' \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          df --si /
+          exit 1
+        fi
 
     - name: Ignore dubious repository ownership
       run: |
@@ -129,20 +138,25 @@ runs:
 
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      id: record_job_info
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
       if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
       with:
         shell: bash
         run: >
-          source scripts/ci/lib.sh;
-          create_job_record "${{ github.job }}" "gha";
+          echo "started_at=${EPOCHSECONDS:-$(date -u +%s)}" >> "$GITHUB_OUTPUT"
         post: >
           source scripts/ci/lib.sh;
-          update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
-          df --si /;
+          save_job_record "${{ github.job }}" "gha" \
+            outcome "${{ job.status }}" \
+            started_at "${{ steps.record_job_info.outputs.started_at }}";
           free=$(df -BGB --output=avail / | tail -1);
-          echo "Free disk space before: ${{ steps.disk-check.outputs.free }}, and after: ${free}.";
+          echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
+            set -ex;\
+            df --si;\
+            du -ks /* 2>/dev/null | sort -V || true;\
+            du -k / 2>/dev/null | sort -V | tail -100 || true; \
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
           fi;

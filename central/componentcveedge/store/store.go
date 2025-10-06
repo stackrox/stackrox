@@ -18,4 +18,6 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.ComponentCVEEdge, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ComponentCVEEdge, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ComponentCVEEdge) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.ComponentCVEEdge) error) error
 }

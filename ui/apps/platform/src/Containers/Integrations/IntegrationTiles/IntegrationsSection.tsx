@@ -1,4 +1,5 @@
-import React, { ReactElement, ReactNode } from 'react';
+import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Gallery, PageSection, Title } from '@patternfly/react-core';
 
 type IntegrationsSectionProps = {

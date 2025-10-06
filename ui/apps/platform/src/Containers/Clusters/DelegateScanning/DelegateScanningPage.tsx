@@ -20,6 +20,8 @@ import { clustersBasePath } from 'routePaths';
 import {
     fetchDelegatedRegistryConfig,
     fetchDelegatedRegistryClusters,
+} from 'services/DelegatedRegistryConfigService';
+import type {
     DelegatedRegistryConfig,
     DelegatedRegistryCluster,
 } from 'services/DelegatedRegistryConfigService';

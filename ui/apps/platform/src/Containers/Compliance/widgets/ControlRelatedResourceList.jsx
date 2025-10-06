@@ -6,7 +6,7 @@ import useCases from 'constants/useCaseTypes';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import queryService from 'utils/queryService';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom-v5-compat';
 import searchContext from 'Containers/searchContext';
 
 import { entityNounOrdinaryCase } from '../entitiesForCompliance';

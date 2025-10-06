@@ -40,7 +40,6 @@ func (r *chunkReader) Read(buf []byte) (int, error) {
 }
 
 func TestInterruptibleReader_InterruptPreRead(t *testing.T) {
-	t.Parallel()
 
 	cr := newChunkReader()
 
@@ -62,7 +61,6 @@ func TestInterruptibleReader_InterruptPreRead(t *testing.T) {
 }
 
 func TestInterruptibleReader_InterruptDuringRead(t *testing.T) {
-	t.Parallel()
 
 	cr := newChunkReader()
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { matchPath, useLocation, useNavigate } from 'react-router-dom';
+import { matchPath, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Nav,
     Dropdown,
@@ -23,9 +23,11 @@ import {
     violationsPlatformViewPath,
     violationsUserWorkloadsViewPath,
     vulnerabilitiesPlatformCvesPath,
+    vulnerabilitiesVirtualMachineCvesPath,
 } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
+import { hasSearchKeyValue } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 import NavigationItem from './NavigationItem';
 import { filterNavDescriptions, isActiveLink, NavDescription } from './utils';
@@ -39,107 +41,110 @@ type SubnavParentKey = 'violations' | 'vulnerabilities';
  * of sub-navigation description items.
  */
 function getSubnavDescriptionGroups(
-    isFeatureFlagEnabled: IsFeatureFlagEnabled
+    isFeatureFlagEnabled: IsFeatureFlagEnabled // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Record<SubnavParentKey, NavDescription[]> {
     return {
-        violations: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-            ? [
-                  {
-                      type: 'link',
-                      content: 'User Workloads',
-                      path: violationsUserWorkloadsViewPath,
-                      isActive: (location) => {
-                          const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Applications view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
-                      },
-                      routeKey: 'violations',
-                  },
-                  {
-                      type: 'link',
-                      content: 'Platform',
-                      path: violationsPlatformViewPath,
-                      isActive: (location) => {
-                          const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Platform view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
-                      },
-                      routeKey: 'violations',
-                  },
-                  {
-                      type: 'link',
-                      content: 'All Violations',
-                      path: violationsFullViewPath,
-                      isActive: (location) => {
-                          const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Full view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
-                      },
-                      routeKey: 'violations',
-                  },
-              ]
-            : [],
-        vulnerabilities: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-            ? [
-                  {
-                      type: 'link',
-                      content: 'User Workloads',
-                      path: vulnerabilitiesUserWorkloadsPath,
-                      routeKey: 'vulnerabilities/user-workloads',
-                  },
-                  {
-                      type: 'link',
-                      content: 'Platform',
-                      path: vulnerabilitiesPlatformPath,
-                      routeKey: 'vulnerabilities/platform',
-                  },
-                  {
-                      type: 'link',
-                      content: 'Nodes',
-                      path: vulnerabilitiesNodeCvesPath,
-                      routeKey: 'vulnerabilities/node-cves',
-                  },
-                  {
-                      type: 'parent',
-                      key: 'More Views',
-                      title: 'More Views',
-                      children: [
-                          {
-                              type: 'link',
-                              content: 'All vulnerable images',
-                              description:
-                                  'Findings for user, platform, and inactive images simultaneously',
-                              path: vulnerabilitiesAllImagesPath,
-                              routeKey: 'vulnerabilities/all-images',
-                          },
-                          {
-                              type: 'link',
-                              content: 'Inactive images',
-                              description:
-                                  'Findings for watched images and images not currently deployed as workloads based on your image retention settings',
-                              path: vulnerabilitiesInactiveImagesPath,
-                              routeKey: 'vulnerabilities/inactive-images',
-                          },
-                          {
-                              type: 'link',
-                              content: 'Images without CVEs',
-                              description:
-                                  'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)',
-                              path: vulnerabilitiesImagesWithoutCvesPath,
-                              routeKey: 'vulnerabilities/images-without-cves',
-                          },
-                          {
-                              type: 'link',
-                              content: 'Kubernetes components',
-                              description:
-                                  'Vulnerabilities affecting the underlying Kubernetes infrastructure',
-                              path: vulnerabilitiesPlatformCvesPath,
-                              routeKey: 'vulnerabilities/platform-cves',
-                          },
-                      ],
-                  },
-              ]
-            : [],
+        violations: [
+            {
+                type: 'link',
+                content: 'User Workloads',
+                path: violationsUserWorkloadsViewPath,
+                isActive: (location) => {
+                    const search: string = location.search || '';
+                    return (
+                        hasSearchKeyValue(search, 'filteredWorkflowView', 'Applications view') ||
+                        hasSearchKeyValue(search, 'filteredWorkflowView', null)
+                    );
+                },
+                routeKey: 'violations',
+            },
+            {
+                type: 'link',
+                content: 'Platform',
+                path: violationsPlatformViewPath,
+                isActive: (location) => {
+                    const search: string = location.search || '';
+                    return hasSearchKeyValue(search, 'filteredWorkflowView', 'Platform view');
+                },
+                routeKey: 'violations',
+            },
+            {
+                type: 'link',
+                content: 'All Violations',
+                path: violationsFullViewPath,
+                isActive: (location) => {
+                    const search: string = location.search || '';
+                    return hasSearchKeyValue(search, 'filteredWorkflowView', 'Full view');
+                },
+                routeKey: 'violations',
+            },
+        ],
+
+        vulnerabilities: [
+            {
+                type: 'link',
+                content: 'User Workloads',
+                path: vulnerabilitiesUserWorkloadsPath,
+                routeKey: 'vulnerabilities/user-workloads',
+            },
+            {
+                type: 'link',
+                content: 'Platform',
+                path: vulnerabilitiesPlatformPath,
+                routeKey: 'vulnerabilities/platform',
+            },
+            {
+                type: 'link',
+                content: 'Nodes',
+                path: vulnerabilitiesNodeCvesPath,
+                routeKey: 'vulnerabilities/node-cves',
+            },
+            {
+                type: 'link',
+                content: 'Virtual Machines',
+                path: vulnerabilitiesVirtualMachineCvesPath,
+                routeKey: 'vulnerabilities/virtual-machine-cves',
+            },
+            {
+                type: 'parent',
+                key: 'More Views',
+                title: 'More Views',
+                children: [
+                    {
+                        type: 'link',
+                        content: 'All vulnerable images',
+                        description:
+                            'Findings for user, platform, and inactive images simultaneously',
+                        path: vulnerabilitiesAllImagesPath,
+                        routeKey: 'vulnerabilities/all-images',
+                    },
+                    {
+                        type: 'link',
+                        content: 'Inactive images',
+                        description:
+                            'Findings for watched images and images not currently deployed as workloads based on your image retention settings',
+                        path: vulnerabilitiesInactiveImagesPath,
+                        routeKey: 'vulnerabilities/inactive-images',
+                    },
+                    {
+                        type: 'link',
+                        content: 'Images without CVEs',
+                        description:
+                            'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)',
+                        path: vulnerabilitiesImagesWithoutCvesPath,
+                        routeKey: 'vulnerabilities/images-without-cves',
+                    },
+                    {
+                        type: 'link',
+                        content: 'Kubernetes components',
+                        description:
+                            'Vulnerabilities affecting the underlying Kubernetes infrastructure',
+                        path: vulnerabilitiesPlatformCvesPath,
+                        routeKey: 'vulnerabilities/platform-cves',
+                    },
+                ],
+            },
+        ],
     };
 }
 

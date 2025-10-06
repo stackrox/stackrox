@@ -96,12 +96,12 @@ func (suite *IndicatorDataStoreTestSuite) initPodToIndicatorsMap() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
-	suite.datastore = New(suite.storage, suite.plopStorage, nil)
+	suite.datastore = New(suite.postgres.DB, suite.storage, suite.plopStorage, nil)
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() *storeMocks.MockStore {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
-	suite.datastore = New(mockStorage, nil, nil)
+	suite.datastore = New(suite.postgres.DB, mockStorage, nil, nil)
 
 	return mockStorage
 }
@@ -312,7 +312,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 			return true
 		})
 	}
-	suite.datastore = New(suite.storage, suite.plopStorage, mockPrunerFactory)
+	suite.datastore = New(suite.postgres.DB, suite.storage, suite.plopStorage, mockPrunerFactory)
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
@@ -444,7 +444,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 	storeMock := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
+	storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil)
 
 	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, uuid.NewDummy().String())
 	suite.NoError(err, "expected no error trying to write with permissions")

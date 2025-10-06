@@ -22,12 +22,11 @@ type TypedServiceCertificateSuite struct {
 	suite.Suite
 }
 
-func testFile(name string) []byte {
+func testFile(name string) string {
 	path := fmt.Sprintf("testdata/%s", name)
 	content, err := testdata.ReadFile(path)
 	utils.Must(err)
-	content = []byte(strings.ReplaceAll(string(content), "PRIVATE TEST KEY", "PRIVATE KEY"))
-	return content
+	return strings.ReplaceAll(string(content), "PRIVATE TEST KEY", "PRIVATE KEY")
 }
 
 var (
@@ -39,12 +38,12 @@ var (
 	bogusCert     = testFile("bogus-cert.pem")
 )
 
-func makeTypedServiceCert(serviceType storage.ServiceType, certPem []byte, keyPem []byte) *storage.TypedServiceCertificate {
+func makeTypedServiceCert(serviceType storage.ServiceType, certPem string, keyPem string) *storage.TypedServiceCertificate {
 	return &storage.TypedServiceCertificate{
 		ServiceType: serviceType,
 		Cert: &storage.ServiceCertificate{
-			CertPem: certPem,
-			KeyPem:  keyPem,
+			CertPem: []byte(certPem),
+			KeyPem:  []byte(keyPem),
 		},
 	}
 }
@@ -53,7 +52,7 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 	cases := []struct {
 		description     string
 		input           *storage.TypedServiceCertificateSet
-		expectedFileMap map[string][]byte
+		expectedFileMap map[string]string
 		expectedErr     bool
 	}{
 		{
@@ -74,20 +73,20 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 		{
 			description: "no service certificates",
 			input: &storage.TypedServiceCertificateSet{
-				CaPem: caCert,
+				CaPem: []byte(caCert),
 			},
 			expectedErr: true,
 		},
 		{
 			description: "two certs",
 			input: &storage.TypedServiceCertificateSet{
-				CaPem: caCert,
+				CaPem: []byte(caCert),
 				ServiceCerts: []*storage.TypedServiceCertificate{
 					makeTypedServiceCert(storage.ServiceType_SENSOR_SERVICE, sensorCert, sensorKey),
 					makeTypedServiceCert(storage.ServiceType_COLLECTOR_SERVICE, collectorCert, collectorKey),
 				},
 			},
-			expectedFileMap: map[string][]byte{
+			expectedFileMap: map[string]string{
 				"ca-cert.pem":        caCert,
 				"collector-cert.pem": collectorCert,
 				"collector-key.pem":  collectorKey,
@@ -136,21 +135,21 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 	cases := []struct {
 		description                        string
-		input                              map[string][]byte
+		input                              map[string]string
 		expectedErr                        bool
 		expectedUnknownServices            []string
 		expectedTypedServiceCertificateSet *storage.TypedServiceCertificateSet
 	}{
 		{
 			description:                        "empty",
-			input:                              map[string][]byte{},
+			input:                              map[string]string{},
 			expectedErr:                        true,
 			expectedUnknownServices:            nil,
 			expectedTypedServiceCertificateSet: nil,
 		},
 		{
 			description: "missing CA",
-			input: map[string][]byte{
+			input: map[string]string{
 				"collector-cert.pem": collectorCert,
 				"collector-key.pem":  collectorKey,
 			},
@@ -160,7 +159,7 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 		},
 		{
 			description: "known services",
-			input: map[string][]byte{
+			input: map[string]string{
 				"ca-cert.pem":        caCert,
 				"collector-cert.pem": collectorCert,
 				"collector-key.pem":  collectorKey,
@@ -168,13 +167,13 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 			expectedErr:             false,
 			expectedUnknownServices: nil,
 			expectedTypedServiceCertificateSet: &storage.TypedServiceCertificateSet{
-				CaPem: caCert,
+				CaPem: []byte(caCert),
 				ServiceCerts: []*storage.TypedServiceCertificate{
 					{
 						ServiceType: storage.ServiceType_COLLECTOR_SERVICE,
 						Cert: &storage.ServiceCertificate{
-							CertPem: collectorCert,
-							KeyPem:  collectorKey,
+							CertPem: []byte(collectorCert),
+							KeyPem:  []byte(collectorKey),
 						},
 					},
 				},
@@ -182,16 +181,16 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 		},
 		{
 			description: "invalid key",
-			input: map[string][]byte{
+			input: map[string]string{
 				"ca-cert.pem":        caCert,
 				"collector-cert.pem": collectorCert,
-				"collector-key.pem":  []byte("invalid key"),
+				"collector-key.pem":  "invalid key",
 			},
 			expectedErr: true,
 		},
 		{
 			description: "wrong-cert",
-			input: map[string][]byte{
+			input: map[string]string{
 				"ca-cert.pem":        caCert,
 				"collector-cert.pem": bogusCert,
 				"collector-key.pem":  collectorKey,
@@ -200,25 +199,25 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 		},
 		{
 			description: "mixed known and unknown",
-			input: map[string][]byte{
+			input: map[string]string{
 				"ca-cert.pem":        caCert,
 				"collector-cert.pem": collectorCert,
 				"collector-key.pem":  collectorKey,
-				"foo-cert.pem":       []byte("cert 2"),
-				"foo-key.pem":        []byte("key 2"),
-				"bar-cert.pem":       []byte("cert 3"),
-				"bar-key.pem":        []byte("key 3"),
+				"foo-cert.pem":       "cert 2",
+				"foo-key.pem":        "key 2",
+				"bar-cert.pem":       "cert 3",
+				"bar-key.pem":        "key 3",
 			},
 			expectedErr:             false,
 			expectedUnknownServices: []string{"foo", "bar"},
 			expectedTypedServiceCertificateSet: &storage.TypedServiceCertificateSet{
-				CaPem: caCert,
+				CaPem: []byte(caCert),
 				ServiceCerts: []*storage.TypedServiceCertificate{
 					{
 						ServiceType: storage.ServiceType_COLLECTOR_SERVICE,
 						Cert: &storage.ServiceCertificate{
-							CertPem: collectorCert,
-							KeyPem:  collectorKey,
+							CertPem: []byte(collectorCert),
+							KeyPem:  []byte(collectorKey),
 						},
 					},
 				},
@@ -226,7 +225,7 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 		},
 		{
 			description: "invalid file names",
-			input: map[string][]byte{
+			input: map[string]string{
 				"collector-cert.pem": collectorCert,
 				"collector.pem":      collectorKey,
 			},

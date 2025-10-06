@@ -445,12 +445,6 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
-# Copy the original bundle to build/ directory.
-	mkdir -p build/
-	rm -rf build/bundle
-	cp -a bundle build/
-	cp -v ../config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml build/bundle/manifests/
-# Run Python script to post-process necessary files in the build/bundle/. Configure Python dependencies if not done already.
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
@@ -468,18 +462,12 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 	else \
 		echo "Operator index image for this version exists"; \
 	fi; \
-	./bundle_helpers/patch-csv.py \
-		--use-version $(VERSION) \
-		--first-version $${first_version} \
-		--operator-image $(IMG) \
-		$${unreleased_opt:-} \
+	./bundle_helpers/prepare-bundle-manifests.sh \
+		--use-version=$(VERSION) \
+		--first-version=$${first_version} \
+		--operator-image=$(IMG) \
 		--related-images-mode=omit \
-		--add-supported-arch amd64 \
-		--add-supported-arch arm64 \
-		--add-supported-arch ppc64le \
-		--add-supported-arch s390x \
-		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-		> build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+		$${unreleased_opt:-}
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 

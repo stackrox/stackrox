@@ -47,7 +47,7 @@ jobs:
       start-sha: ${{ fromJSON(format('["{0}","{1}"]', env.USER_REF, steps.find.outputs.merge_base))[env.USER_REF == ''] }}
     steps:
     - name: Check out code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.event.repository.default_branch }}
         fetch-depth: 0
@@ -124,13 +124,13 @@ jobs:
     steps:
       - name: Check out code (normal release)
         if: needs.variables.outputs.patch == 0
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.start-sha.outputs.start-sha }}
           fetch-depth: 0
       - name: Check out code (patch release)
         if: needs.variables.outputs.patch != 0
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.variables.outputs.branch }}
           submodules: true
@@ -187,6 +187,13 @@ jobs:
           git switch "${{needs.variables.outputs.branch}}"
           # This command pushes all new tags, not just the ones on the current branch. Therefore, it will push the tag we put on ${{env.main_branch}}.
           git push --follow-tags --set-upstream origin "${{needs.variables.outputs.branch}}"
+      - name: Push rc.0 tag when release branch exists
+        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'true'
+        env:
+          GH_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
+        run: |
+          # When the release branch already exists we only push the newly created rc.0 tag.
+          git push origin "${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}-rc.0"
 
   ci:
     name: Configure OpenShift CI jobs
@@ -213,7 +220,7 @@ jobs:
         run: |
           gh repo sync stackrox/openshift-release --source openshift/release
       - name: Check out stackrox/openshift-release
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: stackrox/openshift-release
           token: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
@@ -264,7 +271,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Working on `start-sha` instead of `env.main_branch` may help
           # to spot changes happened to CHANGELOG.md after `start-sha`.
@@ -290,7 +297,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ env.main_branch }}
       - name: Initialize mandatory git config

@@ -577,7 +577,6 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 }
 
 func TestConvert(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name               string
@@ -879,6 +878,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
+							AllowPrivilegeEscalation: true,
 							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
@@ -1242,6 +1242,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
+							AllowPrivilegeEscalation: true,
 							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",

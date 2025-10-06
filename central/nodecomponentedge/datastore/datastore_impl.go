@@ -3,7 +3,7 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/nodecomponentedge/search"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -11,28 +11,43 @@ import (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage store.Store
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchEdges(ctx, q)
-}
-
-func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.NodeComponentEdge, error) {
-	edges, err := ds.searcher.SearchRawEdges(ctx, q)
+	// TODO(ROX-29943): remove 2 pass database queries
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
+
+	edges, missingIndices, err := ds.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+	results = searchPkg.RemoveMissingResults(results, missingIndices)
+	return convertMany(edges, results)
+}
+
+func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.NodeComponentEdge, error) {
+	var edges []*storage.NodeComponentEdge
+	err := ds.storage.GetByQueryFn(ctx, q, func(edge *storage.NodeComponentEdge) error {
+		edges = append(edges, edge)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return edges, nil
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context) (int, error) {
-	return ds.searcher.Count(ctx, searchPkg.EmptyQuery())
+	return ds.storage.Count(ctx, searchPkg.EmptyQuery())
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.NodeComponentEdge, bool, error) {
@@ -58,4 +73,26 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 	return edges, nil
+}
+
+func convertMany(edges []*storage.NodeComponentEdge, results []searchPkg.Result) ([]*v1.SearchResult, error) {
+	if len(edges) != len(results) {
+		return nil, errors.Errorf("expected %d edges but got %d", len(results), len(edges))
+	}
+
+	outputResults := make([]*v1.SearchResult, len(edges))
+	for index, sar := range edges {
+		outputResults[index] = convertOne(sar, &results[index])
+	}
+	return outputResults, nil
+}
+
+func convertOne(obj *storage.NodeComponentEdge, result *searchPkg.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_NODE_COMPONENT_EDGE,
+		Id:             obj.GetId(),
+		Name:           obj.GetId(),
+		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

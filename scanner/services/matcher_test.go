@@ -94,7 +94,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 		ir := &claircore.IndexReport{Success: true}
 		s.indexerMock.
 			EXPECT().
-			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID), false).
 			Return(ir, true, nil)
 		s.matcherMock.
 			EXPECT().

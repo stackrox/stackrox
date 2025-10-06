@@ -1,9 +1,14 @@
 import qs from 'qs';
 
-import { ApiSortOption, GraphQLSortOption, SearchFilter, ApiSortOptionSingle } from 'types/search';
-import { RestSearchOption } from 'services/searchOptionsToQuery';
-import { Pagination } from 'services/types';
-import { ValueOf } from './type.utils';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
+import type { Pagination } from 'services/types';
+import type {
+    ApiSortOption,
+    ApiSortOptionSingle,
+    GraphQLSortOption,
+    SearchFilter,
+} from 'types/search';
+import type { ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
 
 /**
@@ -102,6 +107,41 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
         .filter(isNonEmptySearchEntry)
         .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
         .join('+');
+}
+
+/**
+ * Convert search filter string to SearchFilter object.
+ *
+ * @param searchString - Search filter format (e.g., "Cluster:production+Namespace:default")
+ * @returns SearchFilter object with parsed key-value pairs (e.g., { Cluster: 'production', Namespace: 'default' })
+ */
+export function getSearchFilterFromSearchString(searchString: string): SearchFilter {
+    const searchFilter: SearchFilter = {};
+
+    if (!searchString || searchString === '') {
+        return searchFilter;
+    }
+
+    // Split on '+' to get individual filter criteria
+    const filterPairs = searchString.split('+');
+
+    filterPairs.forEach((pair) => {
+        const colonIndex = pair.indexOf(':');
+        if (colonIndex > 0 && colonIndex < pair.length - 1) {
+            const key = pair.substring(0, colonIndex).trim();
+            const value = pair.substring(colonIndex + 1).trim();
+
+            if (key && value) {
+                // Split comma-separated values
+                const values = value.split(',');
+
+                // Store as array if multiple values, string if single value
+                searchFilter[key] = values.length > 1 ? values : value;
+            }
+        }
+    });
+
+    return searchFilter;
 }
 
 export function getUrlQueryStringForSearchFilter(
@@ -302,3 +342,47 @@ export const generatePathWithQuery = (
 
     return queryParams ? `${path}?${queryParams}` : path;
 };
+
+export function hasSearchKeyValue(search: string, key: string, value: string | null) {
+    const urlSearchParams = new URLSearchParams(search);
+    const encodedValue = encodeURIComponent(value ?? '');
+
+    return urlSearchParams.get(key) === value || urlSearchParams.get(key) === encodedValue;
+}
+
+/**
+ * Finds a value in an object by key case-insensitively.
+ *
+ * @param obj The object to search in
+ * @param targetKey The key to search for (case-insensitive)
+ * @returns The value associated with the key, or undefined if not found
+ */
+export function getValueByCaseInsensitiveKey<T extends Record<string, unknown>>(
+    obj: T,
+    targetKey: string
+): T[keyof T] | undefined {
+    const foundKey = Object.keys(obj).find(
+        (key) => key.toLowerCase() === targetKey.toLowerCase()
+    ) as keyof T | undefined;
+    return foundKey ? obj[foundKey] : undefined;
+}
+
+/**
+ * Deletes the keys from the `SearchFilter` regardless of case. The backend search
+ * API is case-insensitive, so we need to ensure that any keys we delete are also
+ * deleted regardless of case.
+ *
+ * @param searchFilter The `SearchFilter` to delete the keys from
+ * @param keysToDelete The keys to delete from the `SearchFilter`
+ * @returns A new `SearchFilter` with the keys deleted
+ */
+export function deleteKeysCaseInsensitive(searchFilter: SearchFilter, keysToDelete: string[]) {
+    const keysCaseInsensitive = keysToDelete.map((key) => key.toLowerCase());
+    const nextFilter = structuredClone(searchFilter);
+    Object.keys(nextFilter).forEach((key) => {
+        if (keysCaseInsensitive.includes(key.toLowerCase())) {
+            delete nextFilter[key];
+        }
+    });
+    return nextFilter;
+}

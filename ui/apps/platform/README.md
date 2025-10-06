@@ -59,6 +59,75 @@ If **stackrox/ui** is your workspace root folder, you can create or edit stackro
 }
 ```
 
+### Running as an OpenShift Console plugin
+
+A subset of the code can also be embedded in the OpenShift Console UI using webpack federated modules. The build tooling for
+this is completely separate from the build tooling for the standalone version, but both versions share a large amount of application code.
+
+**Prerequisites**
+
+For additional reference, see the [console-plugin-template](https://github.com/openshift/console-plugin-template?tab=readme-ov-file#development) repository.
+
+You need
+
+1. A running OpenShift cluster and kubeconfig available in order to run the plugin.
+2. `podman` or `docker`
+3. `oc`
+
+**Architecture**
+
+A plugin development environment has a handful of network components that can be configured in a variety of ways to talk to one another:
+
+1. A running OpenShift installation
+2. A local OpenShift console container
+3. A local development server for the plugin
+4. An API server for the `central` component
+
+> When using the plugin via the console web UI, all requests for data to `central` will first be proxied through the console backend. The console _may_ inject authorization
+> headers into each request, overwriting any `Authorization` header that is initially sent in the request. The token injected into this header is the current OpenShift user's opaque
+> access token, and must be handled correctly by the backend for this to succeed. **As of today, `central` is unable to do this and all requests will fail.** In other words, the default
+> behavior of the commands in the **Running the plugin** section below will not work without additional configuration. After the backend is developed, we should be able to revert
+> to the bare commands and removed the need for overrides.
+
+**Running the plugin**
+
+First, we need to generate an API token against the `central` instance that is intended to be used for development. If `central` was installed through the local `deploy` scripts and the current admin password is available in `../../../deploy/k8s/central-deploy/password` this can be done with the included script:
+
+```sh
+UI_API_TOKEN_NAME=ocp-console-dev UI_API_TOKEN_ROLE=Analyst ./scripts/get-auth-token.sh
+```
+
+Otherwise, generate a new API token via the UI and save it somewhere secure.
+
+Next, start the webpack dev server to make the plugin configuration files and js bundles available. Pass the token obtained above
+to the command:
+
+```sh
+# In a new terminal
+ACS_CONSOLE_DEV_TOKEN=<your-token> npm run start:ocp-plugin
+```
+
+This will run a webpack development server on http://localhost:9001 serving the plugin files and ensure the UI passes the token in the `Authorization` header of API requests.
+
+Next, start a local development version of the console in another terminal:
+
+```sh
+# With kubectx pointing to your openshift cluster, login via web browser
+oc login --web
+
+# Run the following script to start a local instance of the OCP console as a bridge for plugin development. Disable the console
+# token injection to ensure our API token from above is passed in all requests.
+ACS_INJECT_OCP_AUTH_TOKEN=false ./scripts/start-ocp-console.sh
+
+# By default, requests will be proxied to the detected central running in the cluster. If you wish to use an alternative central, instead run:
+ACS_INJECT_OCP_AUTH_TOKEN=false ACS_API_SERVICE_URL=<central-service-url> ./scripts/start-ocp-console.sh
+```
+
+This will start the console on http://localhost:9000 with user authentication disabled; you will be logged in automatically as kubeadmin using the token retrieved via `oc login --web` above. With token injection disabled, all requests will include the central API token specified when running the plugin server. Visit http://localhost:9000 in
+your browser to develop and test the plugin.
+
+_Note: At this time https is not supported for local plugin development._
+
 ### Testing
 
 #### Unit Tests
@@ -72,6 +141,36 @@ To bring up [Cypress](https://www.cypress.io/) UI use `npm run cypress-open`. To
 run all end-to-end tests in a headless mode use `npm run test-e2e-local`. To run
 one test suite specifically in headless mode, use
 `npm run cypress-spec <spec-file>`.
+
+#### End-to-end Tests (Cypress targeting console plugin)
+
+To run Cypress against the OCP console for dynamic plugin tests, there are two scenarios that are supported.
+
+1. Running against a locally deployed version of the development console with bridge authentication off
+
+```sh
+# If necessary, export the target URL
+export OPENSHIFT_CONSOLE_URL=<url-to-web-console-ui>
+# Set ORCHESTRATOR_FLAVOR, which is typically only available in CI
+export ORCHESTRATOR_FLAVOR='openshift'
+# Runs Cypress OCP tests ignoring authentication
+OCP_BRIDGE_AUTH_DISABLED=true npm run cypress-open:ocp
+```
+
+2. Running against a deployed version of the console with username/password credentials
+
+```sh
+# If necessary, export the target URL
+export OPENSHIFT_CONSOLE_URL=<url-to-web-console-ui>
+# Set ORCHESTRATOR_FLAVOR, which is typically only available in CI
+export ORCHESTRATOR_FLAVOR='openshift'
+# export credentials
+export OPENSHIFT_CONSOLE_USERNAME='kubeadmin'
+export OPENSHIFT_CONSOLE_PASSWORD=<password>
+
+# Runs Cypress OCP tests with a session initialization step
+npm run cypress-open:ocp
+```
 
 ### Feature flags
 

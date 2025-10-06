@@ -40,6 +40,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/serviceaccounts"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/virtualmachineindex"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/virtualmachines"
 )
 
 // NewFactory returns a new instance of a Factory that produces a pipeline handling all message types.
@@ -96,6 +98,8 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		complianceoperatorsuitesv2.GetPipeline(),
 		complianceoperatorremediationsv2.GetPipeline(),
 		nodeindex.GetPipeline(),
+		virtualmachineindex.GetPipeline(),
+		virtualmachines.GetPipeline(),
 	}
 
 	deduper := s.manager.GetDeduper(ctx, clusterID)

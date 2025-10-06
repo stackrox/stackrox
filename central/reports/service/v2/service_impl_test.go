@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -1341,10 +1342,356 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 	}
 }
 
+func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
+	// Enable the view-based reports feature flag for this test
+	s.T().Setenv(features.VulnerabilityViewBasedReports.EnvVar(), "true")
+
+	user := &storage.SlimUser{
+		Id:   "test-user-id",
+		Name: "test-user-name",
+	}
+	userContext := s.getContextForUser(user)
+
+	validRequest := &apiV2.ReportRequestViewBased{
+		Type: apiV2.ReportRequestViewBased_VULNERABILITY,
+		Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
+			ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
+				Query: "CVE Severity:CRITICAL",
+			},
+		},
+		AreaOfConcern: "User Workloads",
+	}
+
+	testCases := []struct {
+		desc    string
+		req     *apiV2.ReportRequestViewBased
+		ctx     context.Context
+		mockGen func()
+		isError bool
+		resp    *apiV2.RunReportResponseViewBased
+	}{
+		{
+			desc:    "Nil request",
+			req:     nil,
+			ctx:     userContext,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc:    "User info not present in context",
+			req:     validRequest,
+			ctx:     s.ctx,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Unsupported report type",
+			req: &apiV2.ReportRequestViewBased{
+				Type: 1,
+				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
+					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
+						Query: "",
+					},
+				},
+			},
+			ctx:     userContext,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Missing view-based vulnerability report filters",
+			req: &apiV2.ReportRequestViewBased{
+				Type:   apiV2.ReportRequestViewBased_VULNERABILITY,
+				Filter: nil,
+			},
+			ctx:     userContext,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Scheduler error",
+			req:  validRequest,
+			ctx:  userContext,
+			mockGen: func() {
+				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), gomock.Any(), false).
+					Return("", errors.New("scheduler error")).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Successful submission with all fields",
+			req:  validRequest,
+			ctx:  userContext,
+			mockGen: func() {
+				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), gomock.Any(), false).
+					Return("reportID123", nil).Times(1)
+			},
+			isError: false,
+			resp: &apiV2.RunReportResponseViewBased{
+				ReportID: "reportID123",
+			},
+		},
+		{
+			desc: "Successful submission with only deployed images",
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_VULNERABILITY,
+				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
+					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
+						Query: "CVE Severity:CRITICAL,IMPORTANT",
+					},
+				},
+				AreaOfConcern: "High severity vulnerabilities",
+			},
+			ctx: userContext,
+			mockGen: func() {
+				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), gomock.Any(), false).
+					Return("reportID789", nil).Times(1)
+			},
+			isError: false,
+			resp: &apiV2.RunReportResponseViewBased{
+				ReportID: "reportID789",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.mockGen()
+			response, err := s.service.PostViewBasedReport(tc.ctx, tc.req)
+			if tc.isError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(response.ReportID, tc.resp.ReportID)
+			}
+		})
+	}
+}
+
+func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
+	// Enable the view-based reports feature flag for this test
+	s.T().Setenv(features.VulnerabilityViewBasedReports.EnvVar(), "true")
+
+	testCases := []struct {
+		desc    string
+		req     *apiV2.GetViewBasedReportHistoryRequest
+		mockGen func()
+		isError bool
+	}{
+		{
+			desc: "Datastore error",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			mockGen: func() {
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return(nil, errors.New("datastore error")).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Successful request with empty query",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			mockGen: func() {
+				reportSnapshot := &storage.ReportSnapshot{
+					ReportId:              "test-report-id",
+					ReportConfigurationId: "test-config-id",
+					Name:                  "View Based Report",
+					ReportStatus: &storage.ReportStatus{
+						ErrorMsg:                 "",
+						ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+						RunState:                 storage.ReportStatus_GENERATED,
+						ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+					},
+				}
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return([]*storage.ReportSnapshot{reportSnapshot}, nil).Times(1)
+				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
+			},
+			isError: false,
+		},
+		{
+			desc: "Successful request with custom query",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
+				ReportParamQuery: &apiV2.RawQuery{Query: "Report Name:test"},
+			},
+			mockGen: func() {
+				reportSnapshot := &storage.ReportSnapshot{
+					ReportId:              "test-report-id",
+					ReportConfigurationId: "test-config-id",
+					Name:                  "View Based Test Report",
+					ReportStatus: &storage.ReportStatus{
+						ErrorMsg:                 "",
+						ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+						RunState:                 storage.ReportStatus_GENERATED,
+						ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+					},
+				}
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return([]*storage.ReportSnapshot{reportSnapshot}, nil).Times(1)
+				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
+			},
+			isError: false,
+		},
+		{
+			desc: "Successful request with pagination",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
+				ReportParamQuery: &apiV2.RawQuery{
+					Query: "",
+					Pagination: &apiV2.Pagination{
+						Limit:  10,
+						Offset: 0,
+					},
+				},
+			},
+			mockGen: func() {
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return([]*storage.ReportSnapshot{}, nil).Times(1)
+				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
+			},
+			isError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			if tc.mockGen != nil {
+				tc.mockGen()
+			}
+			response, err := s.service.GetViewBasedReportHistory(s.ctx, tc.req)
+			if tc.isError {
+				s.Error(err)
+				s.Nil(response)
+			} else {
+				s.NoError(err)
+				s.NotNil(response)
+				s.NotNil(response.ReportSnapshots)
+			}
+		})
+	}
+}
+
+func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
+	// Enable the view-based reports feature flag for this test
+	s.T().Setenv(features.VulnerabilityViewBasedReports.EnvVar(), "true")
+
+	userA := &storage.SlimUser{
+		Id:   "user-a",
+		Name: "user-a",
+	}
+	userContext := s.getContextForUser(userA)
+
+	testCases := []struct {
+		desc    string
+		req     *apiV2.GetViewBasedReportHistoryRequest
+		ctx     context.Context
+		mockGen func()
+		isError bool
+	}{
+		{
+			desc: "User info not present in context",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			ctx:     s.ctx,
+			isError: true,
+		},
+		{
+			desc: "Datastore error",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			ctx: userContext,
+			mockGen: func() {
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return(nil, errors.New("datastore error")).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Successful request with empty query",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			ctx: userContext,
+			mockGen: func() {
+				reportSnapshot := &storage.ReportSnapshot{
+					ReportId:              "test-report-id",
+					ReportConfigurationId: "test-config-id",
+					Name:                  "My View Based Report",
+					ReportStatus: &storage.ReportStatus{
+						ErrorMsg:                 "",
+						ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+						RunState:                 storage.ReportStatus_GENERATED,
+						ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+					},
+					Requester: userA,
+				}
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return([]*storage.ReportSnapshot{reportSnapshot}, nil).Times(1)
+				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
+			},
+			isError: false,
+		},
+		{
+			desc: "Successful request with pagination",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
+				ReportParamQuery: &apiV2.RawQuery{
+					Query: "",
+					Pagination: &apiV2.Pagination{
+						Limit:  5,
+						Offset: 10,
+					},
+				},
+			},
+			ctx: userContext,
+			mockGen: func() {
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return([]*storage.ReportSnapshot{}, nil).Times(1)
+				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
+			},
+			isError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			if tc.mockGen != nil {
+				tc.mockGen()
+			}
+			response, err := s.service.(*serviceImpl).GetViewBasedMyReportHistory(tc.ctx, tc.req)
+			if tc.isError {
+				s.Error(err)
+				s.Nil(response)
+			} else {
+				s.NoError(err)
+				s.NotNil(response)
+				s.NotNil(response.ReportSnapshots)
+			}
+		})
+	}
+}
+
 func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) context.Context {
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
 	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+
+	// Create a mock role with a default access scope for testing
+	accessScope := &storage.SimpleAccessScope{
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters: []string{"cluster-1"},
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+			},
+		},
+	}
+	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
+	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
+	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
+
 	return authn.ContextWithIdentity(s.ctx, mockID, s.T())
 }

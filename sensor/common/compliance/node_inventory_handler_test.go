@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -13,11 +14,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/goleak"
 )
 
 func TestNodeInventoryHandler(t *testing.T) {
@@ -103,17 +104,8 @@ type NodeInventoryHandlerTestSuite struct {
 	suite.Suite
 }
 
-func assertNoGoroutineLeaks(t *testing.T) {
-	goleak.VerifyNone(t,
-		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
-		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
-		// Ignore a known leak caused by importing the GCP cscc SDK.
-		goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start"),
-	)
-}
-
 func (s *NodeInventoryHandlerTestSuite) TearDownTest() {
-	assertNoGoroutineLeaks(s.T())
+	goleak.AssertNoGoroutineLeaks(s.T())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestExtractArch() {
@@ -323,7 +315,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 			result := consumeAndCountCompliance(s.T(), handler.ComplianceC(), tc.expectedACKCount+tc.expectedNACKCount)
 
 			for _, reply := range tc.centralReplies {
-				s.NoError(mockCentralReply(handler, reply))
+				s.NoError(mockCentralReply(s.T().Context(), handler, reply))
 			}
 
 			s.NoError(result.sc.Stopped().Wait())
@@ -375,7 +367,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 		result := consumeAndCountCompliance(s.T(), h.ComplianceC(), state.expectedACKCount+state.expectedNACKCount)
 
 		if state.event == common.SensorComponentEventCentralReachable {
-			s.NoError(mockCentralReply(h, central.NodeInventoryACK_ACK))
+			s.NoError(mockCentralReply(s.T().Context(), h, central.NodeInventoryACK_ACK))
 		}
 		s.NoError(result.sc.Stopped().Wait())
 		s.Equal(state.expectedACKCount, result.ACKCount)
@@ -387,10 +379,10 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	s.NoError(h.Stopped().Wait())
 }
 
-func mockCentralReply(h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
+func mockCentralReply(ctx context.Context, h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
 	select {
 	case <-h.ResponsesC():
-		return h.ProcessMessage(&central.MsgToSensor{
+		return h.ProcessMessage(ctx, &central.MsgToSensor{
 			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
 				ClusterId: "4",
 				NodeName:  "4",

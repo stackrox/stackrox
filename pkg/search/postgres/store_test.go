@@ -45,6 +45,8 @@ func TestNewGenericStore(t *testing.T) {
 		doNothingDurationTimeSetter,
 		globallyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
 		resources.Namespace,
+		nil,
+		nil,
 	))
 }
 
@@ -59,6 +61,8 @@ func TestNewGloballyScopedGenericStore(t *testing.T) {
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
 		resources.Namespace,
+		nil,
+		nil,
 	))
 }
 
@@ -422,7 +426,7 @@ func TestDeleteByQuery(t *testing.T) {
 	assert.NoError(t, errQueryFromEmpty)
 	assert.Empty(t, queriedObjectsFromEmpty)
 
-	_, deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
+	deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
 	assert.NoError(t, deleteFromEmptyErr)
 
 	assert.NoError(t, store.UpsertMany(ctx, testObjects))
@@ -433,7 +437,7 @@ func TestDeleteByQuery(t *testing.T) {
 		assert.NoError(t, errBefore)
 	}
 
-	_, deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
+	deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
 	assert.NoError(t, deleteFromPopulatedErr)
 
 	for idx, obj := range testObjects {
@@ -462,7 +466,7 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 	assert.NoError(t, errQueryFromEmpty)
 	assert.Empty(t, queriedObjectsFromEmpty)
 
-	deletedIDsFromEmpty, deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
+	deletedIDsFromEmpty, deleteFromEmptyErr := store.DeleteByQueryWithIDs(ctx, query)
 	assert.NoError(t, deleteFromEmptyErr)
 	assert.Empty(t, deletedIDsFromEmpty)
 
@@ -474,7 +478,7 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 		assert.NoError(t, errBefore)
 	}
 
-	deletedIDsFromPopulated, deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
+	deletedIDsFromPopulated, deleteFromPopulatedErr := store.DeleteByQueryWithIDs(ctx, query)
 	assert.NoError(t, deleteFromPopulatedErr)
 	expectedIDs := []string{pkGetter(testObjects[1]), pkGetter(testObjects[3])}
 	assert.ElementsMatch(t, deletedIDsFromPopulated, expectedIDs)
@@ -548,6 +552,8 @@ func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *s
 		doNothingDurationTimeSetter,
 		globallyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
 		resources.Namespace,
+		nil,
+		nil,
 	)
 }
 

@@ -1,14 +1,15 @@
 import qs from 'qs';
 
-import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
 import { saveFile } from 'services/DownloadService';
-import {
+import type {
     ClusterDefaultsResponse,
     ClusterResponse,
     ClustersResponse,
 } from 'types/clusterService.proto';
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const clustersUrl = '/v1/clusters';
 const clusterDefaultsUrl = '/v1/cluster-defaults';
@@ -160,7 +161,10 @@ export function saveCluster(cluster: Cluster) {
 /**
  * Downloads cluster YAML configuration.
  */
-export function downloadClusterYaml(id: string, createUpgraderSA = false): Promise<void> {
+export function downloadClusterYaml(
+    id: string,
+    createUpgraderSA = false
+): Promise<{ fileSizeBytes: number }> {
     return saveFile({
         method: 'post',
         url: '/api/extensions/clusters/zip',
@@ -171,7 +175,7 @@ export function downloadClusterYaml(id: string, createUpgraderSA = false): Promi
 /**
  * Downloads cluster Helm YAML configuration.
  */
-export function downloadClusterHelmValuesYaml(id: string): Promise<void> {
+export function downloadClusterHelmValuesYaml(id: string): Promise<{ fileSizeBytes: number }> {
     return saveFile({
         method: 'post',
         url: '/api/extensions/clusters/helm-config.yaml',

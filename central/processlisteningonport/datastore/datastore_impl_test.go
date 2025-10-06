@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -70,7 +71,7 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 
 	indicatorStorage := processIndicatorStorage.New(suite.postgres.DB)
 
-	suite.indicatorDataStore = processIndicatorDataStore.New(
+	suite.indicatorDataStore = processIndicatorDataStore.New(suite.postgres.DB,
 		indicatorStorage, suite.store, nil)
 	suite.datastore = New(suite.store, suite.indicatorDataStore, suite.postgres)
 }
@@ -2732,14 +2733,8 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) {
 	batchSize := 30000
 
-	nplops := len(plops)
-
-	for offset := 0; offset < nplops; offset += batchSize {
-		end := offset + batchSize
-		if end > nplops {
-			end = nplops
-		}
-		err := suite.datastore.AddProcessListeningOnPort(suite.hasWriteCtx, fixtureconsts.Cluster1, plops[offset:end]...)
+	for plopBatch := range slices.Chunk(plops, batchSize) {
+		err := suite.datastore.AddProcessListeningOnPort(suite.hasWriteCtx, fixtureconsts.Cluster1, plopBatch...)
 		suite.NoError(err)
 	}
 }

@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	views "github.com/stackrox/rox/central/processindicator/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
@@ -108,6 +109,20 @@ func (m *MockDataStore) GetProcessIndicators(ctx context.Context, ids []string) 
 func (mr *MockDataStoreMockRecorder) GetProcessIndicators(ctx, ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicators), ctx, ids)
+}
+
+// IterateOverProcessIndicatorsRiskView mocks base method.
+func (m *MockDataStore) IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IterateOverProcessIndicatorsRiskView", ctx, q, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IterateOverProcessIndicatorsRiskView indicates an expected call of IterateOverProcessIndicatorsRiskView.
+func (mr *MockDataStoreMockRecorder) IterateOverProcessIndicatorsRiskView(ctx, q, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateOverProcessIndicatorsRiskView", reflect.TypeOf((*MockDataStore)(nil).IterateOverProcessIndicatorsRiskView), ctx, q, fn)
 }
 
 // PruneProcessIndicators mocks base method.

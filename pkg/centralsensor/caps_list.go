@@ -64,7 +64,14 @@ const (
 	// SecuredClusterCertificatesRefresh identifies the capability to maintain the Secured Cluster TLS certificates refreshed
 	SecuredClusterCertificatesRefresh SensorCapability = "SecuredClusterCertificatesRefresh"
 
+	// SensorCARotationSupported identifies the capability of Sensor to connect to a Central that presents a TLS certificate signed
+	// by a different CA than the one that signed Sensor's certificate.
+	SensorCARotationSupported SensorCapability = "SensorCARotationSupported"
+
 	// ClusterRegistrationSecretSupported identifies the capability of Central to register new secured clusters
 	// using a Cluster Registration Secret (CRS).
 	ClusterRegistrationSecretSupported = "ClusterRegistrationSecretSupported"
+
+	// VirtualMachinesSupported identifies the capability of Central to receive virtual machine requests.
+	VirtualMachinesSupported = "VirtualMachinesSupported"
 )

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -148,6 +149,24 @@ func (s *ReportSnapshotDatastoreTestSuite) TestReportMetadataWorkflows() {
 	s.NoError(err)
 	s.False(found)
 	s.Nil(resultSnap)
+
+	// Test AddReportSnapshot: error with invalid config ID
+	snap = fixtures.GetReportSnapshot()
+	snap.ReportConfigurationId = uuid.NewDummy().String()
+	_, err = s.datastore.AddReportSnapshot(s.ctx, snap)
+	s.Error(err)
+
+	// Test AddReportSnapshot: success with NO config ID
+	snap = fixtures.GetReportSnapshot()
+	snap.ReportConfigurationId = ""
+	snap.ReportId, err = s.datastore.AddReportSnapshot(s.ctx, snap)
+	s.NoError(err)
+
+	// Test Get: returns report with read access
+	resultSnap, found, err = s.datastore.Get(s.ctx, snap.ReportId)
+	s.NoError(err)
+	s.True(found)
+	s.Equal(snap.ReportId, resultSnap.ReportId)
 }
 
 func (s *ReportSnapshotDatastoreTestSuite) storeNotifier(name string) *storage.NotifierConfiguration_Id {

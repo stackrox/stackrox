@@ -1,26 +1,31 @@
-import React, { ReactElement, useState, useReducer } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useDeepCompareEffect from 'use-deep-compare-effect';
+import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Bullseye,
     Button,
-    Divider,
+    DropdownItem,
     PageSection,
+    Spinner,
+    Text,
     Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
-    Spinner,
-    DropdownItem,
 } from '@patternfly/react-core';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import {
+    makeFilterChipDescriptors,
+    onURLSearch,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import useAnalytics, {
@@ -40,10 +45,9 @@ import {
     upgradeClusters,
     upgradeCluster,
 } from 'services/ClustersService';
-import { SearchCategory } from 'services/SearchService';
-import { RestSearchOption } from 'services/searchOptionsToQuery';
-import { Cluster } from 'types/cluster.proto';
-import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
+import type { SearchCategory } from 'services/SearchService';
+import type { Cluster } from 'types/cluster.proto';
+import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -64,16 +68,16 @@ import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import NoClustersPage from './NoClustersPage';
+import { searchFilterConfig } from './searchFilterConfig';
+
+const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
 export type ClustersTablePanelProps = {
     selectedClusterId: string;
     searchOptions: SearchCategory[];
 };
 
-function ClustersTablePanel({
-    selectedClusterId,
-    searchOptions,
-}: ClustersTablePanelProps): ReactElement {
+function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTablePanelProps) {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
 
@@ -107,11 +111,13 @@ function ClustersTablePanel({
 
     const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
     const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
-    const [pollingCount, setPollingCount] = useState(0);
     const [tableRef, setTableRef] = useState<CheckboxTable | null>(null);
     const [showDialog, setShowDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
+    const [isLoadingVisible, setIsLoadingVisible] = useState(false);
+
+    const restSearch = useMemo(() => convertToRestSearch(searchFilter ?? {}), [searchFilter]);
 
     const [currentClusters, setCurrentClusters] = useState<Cluster[]>([]);
     const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] =
@@ -152,45 +158,41 @@ function ClustersTablePanel({
         </div>
     ));
 
-    function refreshClusterList(restSearch?: RestSearchOption[]) {
-        // Although return works around typescript-eslint/no-floating-promises error elsewhere,
-        // removed here because it caused the error for callers.
-        // Anyway, catch block would be better.
-        fetchClustersWithRetentionInfo(restSearch)
-            .then((clustersResponse) => {
-                setCurrentClusters(clustersResponse.clusters);
-                setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
-                setErrorMessage('');
-                setHasFetchedClusters(true);
-            })
-            .catch((error) => {
-                setErrorMessage(getAxiosErrorMessage(error));
-            });
-    }
+    const fetchClustersList = useCallback(
+        (showLoadingSpinner: boolean) => {
+            if (showLoadingSpinner) {
+                setIsLoadingVisible(true);
+            }
 
-    const restSearch = convertToRestSearch(searchFilter || {});
+            fetchClustersWithRetentionInfo(restSearch)
+                .then(({ clusters, clusterIdToRetentionInfo }) => {
+                    setCurrentClusters(clusters);
+                    setClusterIdToRetentionInfo(clusterIdToRetentionInfo);
+                    setErrorMessage('');
+                    setHasFetchedClusters(true);
+                })
+                .catch((err) => setErrorMessage(getAxiosErrorMessage(err)))
+                .finally(() => showLoadingSpinner && setIsLoadingVisible(false));
+        },
+        [restSearch]
+    );
+
+    useEffect(() => {
+        fetchClustersList(true);
+    }, [fetchClustersList]);
+
+    useInterval(() => fetchClustersList(false), clusterTablePollingInterval);
 
     const tableState = getTableUIState({
-        isLoading: false,
+        isLoading: !hasFetchedClusters || isLoadingVisible,
         data: currentClusters,
         error: errorMessage ? new Error(errorMessage) : undefined,
         searchFilter,
     });
 
-    useDeepCompareEffect(() => {
-        refreshClusterList(restSearch);
-    }, [restSearch, pollingCount]);
-
-    // use a custom hook to set up polling, thanks Dan Abramov and Rob Stark
-    useInterval(() => {
-        setPollingCount(pollingCount + 1);
-    }, clusterTablePollingInterval);
-
-    // Do not render page heading now because of current NoClustersPage design (rendered below).
-    // PatternFly clusters page: reconsider whether to factor out minimal common heading.
-    //
     // Before there is a response:
-    if (!hasFetchedClusters) {
+    // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
+    if (!hasFetchedClusters && !isClustersPageMigrationEnabled) {
         return (
             <PageSection variant="light">
                 <Bullseye>
@@ -216,7 +218,8 @@ function ClustersTablePanel({
     // PatternFly clusters page: reconsider whether to factor out minimal common heading.
     //
     // After there is a response, if there are no clusters nor search filter:
-    if (currentClusters.length === 0 && !hasSearchApplied) {
+    // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
+    if (currentClusters.length === 0 && !hasSearchApplied && !isClustersPageMigrationEnabled) {
         return <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />;
     }
 
@@ -227,7 +230,7 @@ function ClustersTablePanel({
     function upgradeSingleCluster(id) {
         upgradeCluster(id)
             .then(() => {
-                refreshClusterList();
+                fetchClustersList(true);
             })
             .catch((error) => {
                 const serverError = getAxiosErrorMessage(error);
@@ -245,7 +248,7 @@ function ClustersTablePanel({
         return upgradeClusters(checkedClusterIds).then(() => {
             setCheckedClusterIds([]);
 
-            refreshClusterList();
+            fetchClustersList(true);
         });
     }
 
@@ -436,26 +439,41 @@ function ClustersTablePanel({
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
+                <Text className="pf-v5-u-font-size-md">
+                    View the status of secured cluster services
+                </Text>
+            </PageSection>
+            <PageSection>
+                <Toolbar>
                     <ToolbarContent>
                         <ToolbarGroup
                             variant="filter-group"
                             className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
                         >
                             <ToolbarItem variant="search-filter" className="pf-v5-u-w-100">
-                                <SearchFilterInput
-                                    className="w-full"
-                                    searchFilter={searchFilter}
-                                    searchOptions={searchOptions}
-                                    searchCategory="CLUSTERS"
-                                    placeholder="Filter clusters"
-                                    handleChangeSearchFilter={setSearchFilter}
-                                />
+                                {isClustersPageMigrationEnabled ? (
+                                    <CompoundSearchFilter
+                                        config={searchFilterConfig}
+                                        searchFilter={searchFilter}
+                                        onSearch={(payload) =>
+                                            onURLSearch(searchFilter, setSearchFilter, payload)
+                                        }
+                                    />
+                                ) : (
+                                    <SearchFilterInput
+                                        className="w-full"
+                                        searchFilter={searchFilter}
+                                        searchOptions={searchOptions}
+                                        searchCategory="CLUSTERS"
+                                        placeholder="Filter clusters"
+                                        handleChangeSearchFilter={setSearchFilter}
+                                    />
+                                )}
                             </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             {hasWriteAccessForAdministration && (
-                                <ToolbarItem>
+                                <ToolbarItem className="pf-v5-u-align-self-center">
                                     <AutoUpgradeToggle />
                                 </ToolbarItem>
                             )}
@@ -486,12 +504,18 @@ function ClustersTablePanel({
                                 </ToolbarItem>
                             )}
                         </ToolbarGroup>
+                        {isClustersPageMigrationEnabled && (
+                            <ToolbarGroup className="pf-v5-u-w-100">
+                                <SearchFilterChips
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
+                                    filterChipGroupDescriptors={filterChipGroupDescriptors}
+                                />
+                            </ToolbarGroup>
+                        )}
                     </ToolbarContent>
                 </Toolbar>
-            </PageSection>
-            <Divider component="div" />
-            <PageSection variant="light" isFilled>
-                {errorMessage && (
+                {errorMessage && !isClustersPageMigrationEnabled && (
                     <Alert
                         variant="warning"
                         isInline
@@ -516,9 +540,11 @@ function ClustersTablePanel({
                         onDeleteCluster={onDeleteHandler}
                         toggleAllClusters={toggleAllClusters}
                         toggleCluster={toggleCluster}
+                        upgradeSingleCluster={upgradeSingleCluster}
                     />
                 ) : (
                     <CheckboxTable
+                        className="pf-v5-u-background-color-100"
                         ref={(table) => {
                             setTableRef(table);
                         }}

@@ -1,4 +1,6 @@
 import React from 'react';
+import type { ReactNode } from 'react';
+import { LabelGroup } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
@@ -8,6 +10,8 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import { VulnerabilityState } from 'types/cve.proto';
 import CvssFormatted from 'Components/CvssFormatted';
 
+import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
+import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ImageNameLink from '../components/ImageNameLink';
 import {
     imageMetadataContextFragment,
@@ -16,42 +20,35 @@ import {
     sortTableData,
     flattenDeploymentComponentVulns,
 } from './table.utils';
-import FixedByVersion from '../components/FixedByVersion';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
-import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
-
-import AdvisoryLinkOrText from './AdvisoryLinkOrText';
+import FixedByVersion from '../../components/FixedByVersion';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, DeploymentComponentVulnerability };
 
-// After release, replace temporary function
-// with deploymentComponentVulnerabilitiesFragment
-// that has unconditional advisory property.
-export function convertToFlatDeploymentComponentVulnerabilitiesFragment(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        fragment DeploymentComponentVulnerabilities on ImageComponent {
-            name
-            version
-            location
-            source
-            layerIndex
-            imageVulnerabilities(query: $query) {
-                severity
-                cvss
-                scoreVersion
-                fixedByVersion
-                ${isFlattenCveDataEnabled ? 'advisory { name, link }' : ''}
-                discoveredAtImage
-                publishedOn
-                pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+export const deploymentComponentVulnerabilitiesFragment = gql`
+    fragment DeploymentComponentVulnerabilities on ImageComponent {
+        name
+        version
+        location
+        source
+        layerIndex
+        imageVulnerabilities(query: $query) {
+            severity
+            cvss
+            scoreVersion
+            fixedByVersion
+            advisory {
+                name
+                link
             }
+            discoveredAtImage
+            publishedOn
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
-    `;
-}
+    }
+`;
 
 const sortFields = ['Image', 'Component'];
 const defaultSortOption = { field: 'Image', direction: 'asc' } as const;
@@ -72,10 +69,7 @@ function DeploymentComponentVulnerabilitiesTable({
     vulnerabilityState,
 }: DeploymentComponentVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvisoryColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpanForDockerfileLayer = 8 + (isAdvisoryColumnEnabled ? 1 : 0);
 
@@ -127,19 +121,25 @@ function DeploymentComponentVulnerabilitiesTable({
                 const hasPendingException = componentVulns.some(
                     (vuln) => vuln.pendingExceptionCount > 0
                 );
+                const labels: ReactNode[] = [];
+                if (hasPendingException) {
+                    labels.push(
+                        <PendingExceptionLabel
+                            cve={cve}
+                            isCompact
+                            vulnerabilityState={vulnerabilityState}
+                        />
+                    );
+                }
 
+                // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                // and assumes adjacent empty cell has no paddingTop.
                 return (
                     <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
                             <Td dataLabel="Image">
                                 {image.name ? (
-                                    <PendingExceptionLabelLayout
-                                        hasPendingException={hasPendingException}
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
-                                    >
-                                        <ImageNameLink name={image.name} id={image.id} />
-                                    </PendingExceptionLabelLayout>
+                                    <ImageNameLink name={image.name} id={image.id} />
                                 ) : (
                                     'Image name not available'
                                 )}
@@ -165,6 +165,13 @@ function DeploymentComponentVulnerabilitiesTable({
                                 <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>
+                        {labels.length !== 0 && (
+                            <Tr>
+                                <Td colSpan={colSpanForDockerfileLayer} style={{ paddingTop: 0 }}>
+                                    <LabelGroup numLabels={labels.length}>{labels}</LabelGroup>
+                                </Td>
+                            </Tr>
+                        )}
                         <Tr>
                             <Td colSpan={colSpanForDockerfileLayer} className="pf-v5-u-pt-0">
                                 <DockerfileLayer layer={layer} />

@@ -235,6 +235,7 @@ func (m *StaticClusterConfig) CloneVT() *StaticClusterConfig {
 	r.TolerationsConfig = m.TolerationsConfig.CloneVT()
 	r.SlimCollector = m.SlimCollector
 	r.AdmissionControllerEvents = m.AdmissionControllerEvents
+	r.AdmissionControllerFailOnError = m.AdmissionControllerFailOnError
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -246,6 +247,23 @@ func (m *StaticClusterConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
+func (m *AutoLockProcessBaselinesConfig) CloneVT() *AutoLockProcessBaselinesConfig {
+	if m == nil {
+		return (*AutoLockProcessBaselinesConfig)(nil)
+	}
+	r := new(AutoLockProcessBaselinesConfig)
+	r.Enabled = m.Enabled
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *AutoLockProcessBaselinesConfig) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
 func (m *DynamicClusterConfig) CloneVT() *DynamicClusterConfig {
 	if m == nil {
 		return (*DynamicClusterConfig)(nil)
@@ -254,6 +272,7 @@ func (m *DynamicClusterConfig) CloneVT() *DynamicClusterConfig {
 	r.AdmissionControllerConfig = m.AdmissionControllerConfig.CloneVT()
 	r.RegistryOverride = m.RegistryOverride
 	r.DisableAuditLogs = m.DisableAuditLogs
+	r.AutoLockProcessBaselinesConfig = m.AutoLockProcessBaselinesConfig.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -339,6 +358,7 @@ func (m *Cluster) CloneVT() *Cluster {
 	r.MostRecentSensorId = m.MostRecentSensorId.CloneVT()
 	r.InitBundleId = m.InitBundleId
 	r.ManagedBy = m.ManagedBy
+	r.AdmissionControllerFailOnError = m.AdmissionControllerFailOnError
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -1051,11 +1071,33 @@ func (this *StaticClusterConfig) EqualVT(that *StaticClusterConfig) bool {
 	if this.AdmissionControllerEvents != that.AdmissionControllerEvents {
 		return false
 	}
+	if this.AdmissionControllerFailOnError != that.AdmissionControllerFailOnError {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
 func (this *StaticClusterConfig) EqualMessageVT(thatMsg proto.Message) bool {
 	that, ok := thatMsg.(*StaticClusterConfig)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *AutoLockProcessBaselinesConfig) EqualVT(that *AutoLockProcessBaselinesConfig) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Enabled != that.Enabled {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *AutoLockProcessBaselinesConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*AutoLockProcessBaselinesConfig)
 	if !ok {
 		return false
 	}
@@ -1074,6 +1116,9 @@ func (this *DynamicClusterConfig) EqualVT(that *DynamicClusterConfig) bool {
 		return false
 	}
 	if this.DisableAuditLogs != that.DisableAuditLogs {
+		return false
+	}
+	if !this.AutoLockProcessBaselinesConfig.EqualVT(that.AutoLockProcessBaselinesConfig) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1266,6 +1311,9 @@ func (this *Cluster) EqualVT(that *Cluster) bool {
 		if vx != vy {
 			return false
 		}
+	}
+	if this.AdmissionControllerFailOnError != that.AdmissionControllerFailOnError {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -2389,6 +2437,16 @@ func (m *StaticClusterConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.AdmissionControllerFailOnError {
+		i--
+		if m.AdmissionControllerFailOnError {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x58
+	}
 	if m.AdmissionControllerEvents {
 		i--
 		if m.AdmissionControllerEvents {
@@ -2473,6 +2531,49 @@ func (m *StaticClusterConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *AutoLockProcessBaselinesConfig) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AutoLockProcessBaselinesConfig) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *AutoLockProcessBaselinesConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Enabled {
+		i--
+		if m.Enabled {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *DynamicClusterConfig) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -2502,6 +2603,16 @@ func (m *DynamicClusterConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.AutoLockProcessBaselinesConfig != nil {
+		size, err := m.AutoLockProcessBaselinesConfig.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
 	}
 	if m.DisableAuditLogs {
 		i--
@@ -2716,6 +2827,18 @@ func (m *Cluster) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.AdmissionControllerFailOnError {
+		i--
+		if m.AdmissionControllerFailOnError {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0x80
 	}
 	if len(m.SensorCapabilities) > 0 {
 		for iNdEx := len(m.SensorCapabilities) - 1; iNdEx >= 0; iNdEx-- {
@@ -4055,6 +4178,22 @@ func (m *StaticClusterConfig) SizeVT() (n int) {
 	if m.AdmissionControllerEvents {
 		n += 2
 	}
+	if m.AdmissionControllerFailOnError {
+		n += 2
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *AutoLockProcessBaselinesConfig) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Enabled {
+		n += 2
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -4075,6 +4214,10 @@ func (m *DynamicClusterConfig) SizeVT() (n int) {
 	}
 	if m.DisableAuditLogs {
 		n += 2
+	}
+	if m.AutoLockProcessBaselinesConfig != nil {
+		l = m.AutoLockProcessBaselinesConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -4251,6 +4394,9 @@ func (m *Cluster) SizeVT() (n int) {
 			l = len(s)
 			n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.AdmissionControllerFailOnError {
+		n += 3
 	}
 	n += len(m.unknownFields)
 	return n
@@ -6004,6 +6150,97 @@ func (m *StaticClusterConfig) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.AdmissionControllerEvents = bool(v != 0)
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AdmissionControllerFailOnError", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AdmissionControllerFailOnError = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AutoLockProcessBaselinesConfig) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AutoLockProcessBaselinesConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AutoLockProcessBaselinesConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Enabled = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6143,6 +6380,42 @@ func (m *DynamicClusterConfig) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.DisableAuditLogs = bool(v != 0)
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AutoLockProcessBaselinesConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AutoLockProcessBaselinesConfig == nil {
+				m.AutoLockProcessBaselinesConfig = &AutoLockProcessBaselinesConfig{}
+			}
+			if err := m.AutoLockProcessBaselinesConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -7591,6 +7864,26 @@ func (m *Cluster) UnmarshalVT(dAtA []byte) error {
 			}
 			m.SensorCapabilities = append(m.SensorCapabilities, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
+		case 32:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AdmissionControllerFailOnError", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AdmissionControllerFailOnError = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10903,6 +11196,97 @@ func (m *StaticClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.AdmissionControllerEvents = bool(v != 0)
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AdmissionControllerFailOnError", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AdmissionControllerFailOnError = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AutoLockProcessBaselinesConfig) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AutoLockProcessBaselinesConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AutoLockProcessBaselinesConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Enabled = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -11046,6 +11430,42 @@ func (m *DynamicClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.DisableAuditLogs = bool(v != 0)
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AutoLockProcessBaselinesConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AutoLockProcessBaselinesConfig == nil {
+				m.AutoLockProcessBaselinesConfig = &AutoLockProcessBaselinesConfig{}
+			}
+			if err := m.AutoLockProcessBaselinesConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -12570,6 +12990,26 @@ func (m *Cluster) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.SensorCapabilities = append(m.SensorCapabilities, stringValue)
 			iNdEx = postIndex
+		case 32:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AdmissionControllerFailOnError", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AdmissionControllerFailOnError = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

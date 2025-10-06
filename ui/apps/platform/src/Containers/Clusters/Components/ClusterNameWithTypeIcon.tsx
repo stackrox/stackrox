@@ -1,7 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Flex } from '@patternfly/react-core';
-import { Cluster } from 'types/cluster.proto';
+import type { Cluster } from 'types/cluster.proto';
 import HelmIndicator from './HelmIndicator';
 import OperatorIndicator from './OperatorIndicator';
 

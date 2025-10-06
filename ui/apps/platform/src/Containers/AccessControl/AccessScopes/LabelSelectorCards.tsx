@@ -1,18 +1,16 @@
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Button, Label, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
-import {
+import type {
     LabelSelector,
     LabelSelectorRequirement,
     LabelSelectorsKey,
 } from 'services/AccessScopesService';
 
-import {
-    LabelSelectorsEditingState,
-    getIsEditingLabelSelectorOnTab,
-    getLabelSelectorActivity,
-} from './accessScopes.utils';
+import { getIsEditingLabelSelectorOnTab, getLabelSelectorActivity } from './accessScopes.utils';
+import type { LabelSelectorsEditingState } from './accessScopes.utils';
 import LabelSelectorCard from './LabelSelectorCard';
 
 export type LabelSelectorCardsProps = {

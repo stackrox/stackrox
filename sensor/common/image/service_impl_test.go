@@ -49,6 +49,7 @@ func (s *imageServiceSuite) createImageService() {
 		localScan:     s.mockLocalScan,
 		centralReady:  concurrency.NewSignal(),
 		centralClient: s.mockCentral,
+		clusterID:     &fakeClusterIDPeeker{},
 	}
 }
 
@@ -245,4 +246,10 @@ func createImageResponse(name, id string) *sensor.GetImageResponse {
 			Scan: &storage.ImageScan{},
 		},
 	}
+}
+
+type fakeClusterIDPeeker struct{}
+
+func (f *fakeClusterIDPeeker) GetNoWait() string {
+	return "fake-cluster-id"
 }

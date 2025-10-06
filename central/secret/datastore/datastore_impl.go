@@ -3,13 +3,14 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/secret/internal/store"
-	"github.com/stackrox/rox/central/secret/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/secret/convert"
 )
 
 var (
@@ -17,8 +18,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage store.Store
 }
 
 func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secret, bool, error) {
@@ -35,25 +35,40 @@ func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secr
 }
 
 func (d *datastoreImpl) SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return d.searcher.SearchSecrets(ctx, q)
+	// TODO(ROX-29943): remove 2 pass database queries
+	results, err := d.storage.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	secrets, missingIndices, err := d.resultsToListSecrets(ctx, results)
+	if err != nil {
+		return nil, err
+	}
+	results = pkgSearch.RemoveMissingResults(results, missingIndices)
+	return convertMany(secrets, results)
 }
 
 func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query) ([]*storage.ListSecret, error) {
-	return d.searcher.SearchListSecrets(ctx, request)
+	results, err := d.Search(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	secrets, _, err := d.resultsToListSecrets(ctx, results)
+	return secrets, err
 }
 
 func (d *datastoreImpl) SearchRawSecrets(ctx context.Context, request *v1.Query) ([]*storage.Secret, error) {
-	return d.searcher.SearchRawSecrets(ctx, request)
-}
-
-func (d *datastoreImpl) CountSecrets(ctx context.Context) (int, error) {
-	if ok, err := secretSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	} else if ok {
-		return d.storage.Count(ctx, pkgSearch.EmptyQuery())
+	var secrets []*storage.Secret
+	err := d.storage.GetByQueryFn(ctx, request, func(secret *storage.Secret) error {
+		secrets = append(secrets, secret)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	return d.Count(ctx, pkgSearch.EmptyQuery())
+	return secrets, nil
 }
 
 func (d *datastoreImpl) UpsertSecret(ctx context.Context, request *storage.Secret) error {
@@ -77,10 +92,47 @@ func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return d.searcher.Search(ctx, q)
+	return d.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+	return d.storage.Count(ctx, q)
+}
+
+// ToSecrets returns the secrets from the db for the given search results.
+func (d *datastoreImpl) resultsToListSecrets(ctx context.Context, results []pkgSearch.Result) ([]*storage.ListSecret, []int, error) {
+	ids := pkgSearch.ResultsToIDs(results)
+
+	secrets, missingIndices, err := d.storage.GetMany(ctx, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	listSecrets := make([]*storage.ListSecret, 0, len(secrets))
+	for _, s := range secrets {
+		listSecrets = append(listSecrets, convert.SecretToSecretList(s))
+	}
+	return listSecrets, missingIndices, nil
+}
+
+func convertMany(secrets []*storage.ListSecret, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
+	if len(secrets) != len(results) {
+		return nil, errors.Errorf("expected %d secrets but got %d", len(results), len(secrets))
+	}
+
+	outputResults := make([]*v1.SearchResult, len(secrets))
+	for index, sar := range secrets {
+		outputResults[index] = convertOne(sar, &results[index])
+	}
+	return outputResults, nil
+}
+
+func convertOne(secret *storage.ListSecret, result *pkgSearch.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_SECRETS,
+		Id:             secret.GetId(),
+		Name:           secret.GetName(),
+		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

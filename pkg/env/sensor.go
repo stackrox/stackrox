@@ -37,9 +37,6 @@ var (
 	// in the event the delegated scanning capabilities are causing unforeseen issues.
 	DelegatedScanningDisabled = RegisterBooleanSetting("ROX_DELEGATED_SCANNING_DISABLED", false)
 
-	// RegistryTLSCheckTTL will set the duration for which registry TLS checks will be cached.
-	RegistryTLSCheckTTL = registerDurationSetting("ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL", 15*time.Minute)
-
 	// DeduperStateSyncTimeout defines the maximum time Sensor will wait for the expected deduper state coming from Central.
 	DeduperStateSyncTimeout = registerDurationSetting("ROX_DEDUPER_STATE_TIMEOUT", 30*time.Second)
 
@@ -47,6 +44,23 @@ var (
 	// 1 Item in the buffer = ~100 bytes per flow
 	// 100 (per flow) * 1000 (flows) * 100 (buffer size) = 10 MB
 	NetworkFlowBufferSize = RegisterIntegerSetting("ROX_SENSOR_NETFLOW_OFFLINE_BUFFER_SIZE", 100)
+
+	// NetworkFlowClosedConnRememberDuration controls how long the categorized update computer will track
+	// timestamps for closed connections to handle late-arriving updates.
+	NetworkFlowClosedConnRememberDuration = registerDurationSetting("ROX_NETFLOW_CLOSED_CONN_REMEMBER_DURATION", 6*time.Minute)
+	// NetworkFlowUseLegacyUpdateComputer enables the Legacy update computer for the network flow enrichment pipeline
+	// updates sent to Central. Setting this to `true` enables the behavior as in 4.8 and earlier.
+	NetworkFlowUseLegacyUpdateComputer = RegisterBooleanSetting("ROX_NETFLOW_USE_LEGACY_UPDATE_COMPUTER", false)
+
+	// NetworkFlowDeduperHashingAlgorithm selects the hashing algorithm used for the deduper in the process of
+	// computing the updates for Central.
+	// Available choices and their effects (case-insensitive):
+	// - "FNV64" (default): Uses 64-bit FNV-1a algorithm that optimizes the memory consumption of Sensor.
+	//                      It is one of the fastest available 64-bit hashes with decent collision probability.
+	// - "String": Uses CPU-optimized string concatenation to produce a hash. This implementation makes the deduper
+	//             use more memory than FNV64 (roughly 3x more) but optimizes the CPU performance. It may be preferred
+	//             on less active clusters with little network traffic and processes or when CPU resource is limited.
+	NetworkFlowDeduperHashingAlgorithm = RegisterSetting("ROX_NETFLOW_DEDUPER_HASHING_ALGORITHM", WithDefault("FNV64"))
 
 	// ProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline.
 	// 1 Item in the buffer = ~300 bytes
@@ -90,6 +104,11 @@ var (
 	// Setting this variable to zero will disable this feature.
 	ResponsesChannelBufferSize = RegisterIntegerSetting("ROX_RESPONSES_CHANNEL_BUFFER_SIZE", 100000)
 
+	// RequestsChannelBufferSize defines how many messages from central are we buffering before dropping messages
+	// Setting this variable to zero will create an unlimited size queue..
+	// TODO: discover the better value
+	RequestsChannelBufferSize = RegisterIntegerSetting("ROX_REQUESTS_CHANNEL_BUFFER_SIZE", 100000)
+
 	// EnrichmentPurgerTickerMaxAge controls the max age of collector updates (network flows & container endpoints)
 	// for keeping them in  Sensor's memory. Entries that has not been enriched (due to a bug or error)
 	// will stay in Sensors memory until restart. Purger cleans all those entries based on rules.
@@ -104,7 +123,17 @@ var (
 	// (network flows & container endpoints) that stuck in Sensor's memory. Set to zero to completely disable the purger.
 	EnrichmentPurgerTickerCycle = registerDurationSetting("ROX_ENRICHMENT_PURGER_UPDATE_CYCLE", 30*time.Minute, WithDurationZeroAllowed())
 	// PastSensorsMaxEntries sets the limit of entries that Sensor stores about its past instances in the `sensor-past-instances` configmap.
-	PastSensorsMaxEntries = RegisterIntegerSetting("ROX_PAST_SENSORS_MAX_ENTRIES", 20).WithMinimum(2)
+	// Set to 0 to disable the feature - Sensor data about past instances won't be read nor written in the configmap.
+	PastSensorsMaxEntries = RegisterIntegerSetting("ROX_PAST_SENSORS_MAX_ENTRIES", 20).WithMinimum(2).AllowExplicitly(0)
 	// PastSensorsConfigmapName defines the name of the configmap where Sensor's metadata about past instances are stored
 	PastSensorsConfigmapName = RegisterSetting("ROX_PAST_SENSORS_CONFIG_MAP_NAME", WithDefault("sensor-past-instances"))
+
+	// ContainerIDResolutionGracePeriod defines a time period in which it is "okay" to not find the container ID in
+	// cluster entities store in Sensor. The enrichment will be retried while we are within this period. After
+	// this period, the connection will be marked as rotten and removed from the enrichment queue.
+	ContainerIDResolutionGracePeriod = registerDurationSetting("ROX_CONTAINER_ID_RESOLUTION_GRACE_PERIOD", 2*time.Minute)
+
+	// ClusterEntityResolutionWaitPeriod defines a time period in which we tolerate failed endpoint and IP lookups in the clusterEntitiesStore.
+	// All failures that happen within this period are considered "okay" and will be retried later.
+	ClusterEntityResolutionWaitPeriod = registerDurationSetting("ROX_CLUSTER_ENTITY_RESOLUTION_WAIT_PERIOD", 10*time.Second)
 )

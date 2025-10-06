@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Button,
     Divider,
@@ -9,7 +10,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { ActionsColumn, Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
@@ -18,15 +19,11 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import { allEnabled } from 'utils/featureFlagUtils';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
-import { isUserResource } from 'Containers/AccessControl/traits';
+import { isUserResource } from 'utils/traits.utils';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
-import {
-    Integration,
-    IntegrationSource,
-    IntegrationType,
-    getIsAPIToken,
-} from '../utils/integrationUtils';
+import { getIsAPIToken } from '../utils/integrationUtils';
+import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 
 function getNewButtonText(type) {
@@ -53,7 +50,7 @@ function IntegrationsTable({
     onDeleteIntegrations,
     onTriggerBackup,
     isReadOnly,
-}: IntegrationsTableProps): React.ReactElement {
+}: IntegrationsTableProps): ReactElement {
     const permissions = useIntegrationPermissions();
     const { source, type } = useParams() as { source: IntegrationSource; type: IntegrationType };
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();

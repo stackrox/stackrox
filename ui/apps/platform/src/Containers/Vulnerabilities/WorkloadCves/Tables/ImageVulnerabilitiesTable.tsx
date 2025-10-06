@@ -1,5 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
+import { LabelGroup } from '@patternfly/react-core';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -13,7 +15,7 @@ import {
 } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
+// import useFeatureFlags from 'hooks/useFeatureFlags'; // Ross CISA KEV
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
@@ -33,18 +35,26 @@ import {
     ManagedColumns,
 } from 'hooks/useManagedColumns';
 import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
-import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
+/*
+// Ross CISA KEV
+import {
+    getIsSomeVulnerabilityFixable,
+    hasKnownExploit,
+    hasKnownRansomwareCampaignUse,
+} from '../../utils/vulnerabilityUtils';
+*/
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
     ImageMetadataContext,
-    convertToFlatImageComponentVulnerabilitiesFragment, // imageComponentVulnerabilitiesFragment
+    imageComponentVulnerabilitiesFragment,
 } from './ImageComponentVulnerabilitiesTable';
 
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
+// import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV
+import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
-import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { infoForEpssProbability } from './infoForTh';
@@ -54,6 +64,21 @@ import { formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
 export const defaultColumns = {
+    rowExpansion: {
+        title: 'Row expansion',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    cveSelection: {
+        title: 'CVE selection',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    cve: {
+        title: 'CVE',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     cveSeverity: {
         title: 'CVE severity',
         isShownByDefault: true,
@@ -93,38 +118,41 @@ export const defaultColumns = {
         title: 'Published',
         isShownByDefault: true,
     },
+    requestDetails: {
+        title: 'Request details',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    rowActions: {
+        title: 'Row actions',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
 } as const;
 
-// After release, replace temporary function
-// with imageVulnerabilitiesFragment
-// that has unconditional imageComponentVulnerabilitiesFragment.
-export function convertToFlatImageVulnerabilitiesFragment(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${convertToFlatImageComponentVulnerabilitiesFragment(isFlattenCveDataEnabled)}
-        fragment ImageVulnerabilityFields on ImageVulnerability {
-            severity
-            cve
-            summary
-            cvss
-            scoreVersion
-            nvdCvss
-            nvdScoreVersion
-            cveBaseInfo {
-                epss {
-                    epssProbability
-                }
-            }
-            discoveredAtImage
-            publishedOn
-            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
-            imageComponents(query: $query) {
-                ...ImageComponentVulnerabilities
+export const imageVulnerabilitiesFragment = gql`
+    ${imageComponentVulnerabilitiesFragment}
+    fragment ImageVulnerabilityFields on ImageVulnerability {
+        severity
+        cve
+        summary
+        cvss
+        scoreVersion
+        nvdCvss
+        nvdScoreVersion
+        cveBaseInfo {
+            epss {
+                epssProbability
             }
         }
-    `;
-}
+        discoveredAtImage
+        publishedOn
+        pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+        imageComponents(query: $query) {
+            ...ImageComponentVulnerabilities
+        }
+    }
+`;
 
 export type ImageVulnerability = {
     severity: string;
@@ -146,7 +174,6 @@ export type ImageVulnerabilitiesTableProps = {
     tableState: TableUIState<ImageVulnerability>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
-    canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
     vulnerabilityState: VulnerabilityState;
     createTableActions?: (cve: {
@@ -163,48 +190,32 @@ function ImageVulnerabilitiesTable({
     tableState,
     getSortParams,
     isFiltered,
-    canSelectRows,
     selectedCves,
     vulnerabilityState,
-    createTableActions,
+    createTableActions = () => [],
     onClearFilters,
     tableConfig,
 }: ImageVulnerabilitiesTableProps) {
-    const { getAbsoluteUrl } = useWorkloadCveViewContext();
+    // const { isFeatureFlagEnabled } = useFeatureFlags(); // Ross CISA KEV
+    const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
-    const showExceptionDetailsLink = vulnerabilityState !== 'OBSERVED';
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
-    // totalAdvisories out of scope for MVP
-    /*
-    const isAdvisoryColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
-    */
-
-    const colSpan =
-        7 +
-        (isNvdCvssColumnEnabled ? 1 : 0) +
-        (isEpssProbabilityColumnEnabled ? 1 : 0) +
-        // totalAdvisories out of scope for MVP
-        // (isAdvisoryColumnEnabled ? 1 : 0) +
-        (canSelectRows ? 1 : 0) +
-        (createTableActions ? 1 : 0) +
-        (showExceptionDetailsLink ? 1 : 0) +
-        -hiddenColumnCount;
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     return (
-        <Table variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <ExpandRowTh />
-                    {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
-                    <Th sort={getSortParams('CVE')}>CVE</Th>
+                    <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
+                    <CVESelectionTh
+                        className={getVisibilityClass('cveSelection')}
+                        selectedCves={selectedCves}
+                    />
+                    <Th className={getVisibilityClass('cve')} sort={getSortParams('CVE')}>
+                        CVE
+                    </Th>
                     <Th
                         className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams('Severity')}
@@ -218,18 +229,14 @@ function ImageVulnerabilitiesTable({
                     <Th className={getVisibilityClass('cvss')} sort={getSortParams('CVSS')}>
                         CVSS
                     </Th>
-                    {isNvdCvssColumnEnabled && (
-                        <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
-                    )}
-                    {isEpssProbabilityColumnEnabled && (
-                        <Th
-                            className={getVisibilityClass('epssProbability')}
-                            info={infoForEpssProbability}
-                            sort={getSortParams('EPSS Probability')}
-                        >
-                            EPSS probability
-                        </Th>
-                    )}
+                    <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
+                    <Th
+                        className={getVisibilityClass('epssProbability')}
+                        info={infoForEpssProbability}
+                        sort={getSortParams('EPSS Probability')}
+                    >
+                        EPSS probability
+                    </Th>
                     {/* isAdvisoryColumnEnabled && (
                         <Th className={getVisibilityClass('totalAdvisories')}>Advisories</Th>
                     ) */}
@@ -243,16 +250,16 @@ function ImageVulnerabilitiesTable({
                     <Th className={getVisibilityClass('publishedOn')} modifier="nowrap">
                         Published
                     </Th>
-                    {showExceptionDetailsLink && (
-                        <TooltipTh tooltip="View information about this exception request">
-                            Request details
-                        </TooltipTh>
-                    )}
-                    {createTableActions && (
-                        <Th>
-                            <span className="pf-v5-screen-reader">Row actions</span>
-                        </Th>
-                    )}
+                    <TooltipTh
+                        className={getVisibilityClass('requestDetails')}
+                        tooltip="View information about this exception request"
+                    >
+                        Request details
+                    </TooltipTh>
+                    {/* eslint-disable-next-line generic/Th-defaultColumns */}
+                    <Th className={getVisibilityClass('rowActions')}>
+                        <span className="pf-v5-screen-reader">Row actions</span>
+                    </Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -283,43 +290,77 @@ function ImageVulnerabilitiesTable({
                         const epssProbability = cveBaseInfo?.epss?.epssProbability;
                         // totalAdvisories out of scope for MVP
                         // const totalAdvisories = undefined;
+
+                        const labels: ReactNode[] = [];
+                        /*
+                        // Ross CISA KEV
+                        if (
+                            isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+                            isFeatureFlagEnabled('ROX_KEV_EXPLOIT') &&
+                            hasKnownExploit(cveBaseInfo?.exploit)
+                        ) {
+                            labels.push(<KnownExploitLabel key="exploit" isCompact />);
+                            // Future code if design decision is separate labels.
+                            // if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit) {
+                            //     labels.push(
+                            //         <KnownExploitLabel
+                            //             key="knownRansomwareCampaignUse"
+                            //             isCompact
+                            //             isKnownToBeUsedInRansomwareCampaigns
+                            //         />
+                            //     );
+                            // }
+                        }
+                        */
+                        if (pendingExceptionCount > 0) {
+                            labels.push(
+                                <PendingExceptionLabel
+                                    key="pendingExceptionCount"
+                                    cve={cve}
+                                    isCompact
+                                    vulnerabilityState={vulnerabilityState}
+                                />
+                            );
+                        }
+
                         const isExpanded = expandedRowSet.has(cve);
 
+                        // Table borders={false} prop above and Tbody style prop below
+                        // to prevent unwanted border between main row and conditional labels row.
+                        //
+                        // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                        // and assumes adjacent empty cell has no paddingTop.
                         return (
-                            <Tbody key={cve} isExpanded={isExpanded}>
+                            <Tbody
+                                key={cve}
+                                style={{
+                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
+                                }}
+                                isExpanded={isExpanded}
+                            >
                                 <Tr>
                                     <Td
+                                        className={getVisibilityClass('rowExpansion')}
                                         expand={{
                                             rowIndex,
                                             isExpanded,
                                             onToggle: () => expandedRowSet.toggle(cve),
                                         }}
                                     />
-                                    {canSelectRows && (
-                                        <CVESelectionTd
-                                            selectedCves={selectedCves}
-                                            rowIndex={rowIndex}
-                                            item={{ cve, summary, numAffectedImages: 1 }}
-                                        />
-                                    )}
-                                    <Td dataLabel="CVE" modifier="nowrap">
-                                        <PendingExceptionLabelLayout
-                                            hasPendingException={pendingExceptionCount > 0}
-                                            cve={cve}
-                                            vulnerabilityState={vulnerabilityState}
-                                        >
-                                            <Link
-                                                to={getAbsoluteUrl(
-                                                    getWorkloadEntityPagePath(
-                                                        'CVE',
-                                                        cve,
-                                                        vulnerabilityState
-                                                    )
-                                                )}
-                                            >
-                                                {cve}
-                                            </Link>
-                                        </PendingExceptionLabelLayout>
+                                    <CVESelectionTd
+                                        className={getVisibilityClass('cveSelection')}
+                                        selectedCves={selectedCves}
+                                        rowIndex={rowIndex}
+                                        item={{ cve, summary, numAffectedImages: 1 }}
+                                    />
+                                    <Td
+                                        className={getVisibilityClass('cve')}
+                                        dataLabel="CVE"
+                                        modifier="nowrap"
+                                    >
+                                        <Link to={urlBuilder.cveDetails(cve, vulnerabilityState)}>
+                                            {cve}
+                                        </Link>
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cveSeverity')}
@@ -346,27 +387,23 @@ function ImageVulnerabilitiesTable({
                                     >
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
-                                    {isNvdCvssColumnEnabled && (
-                                        <Td
-                                            className={getVisibilityClass('nvdCvss')}
-                                            modifier="nowrap"
-                                            dataLabel="NVD CVSS"
-                                        >
-                                            <CvssFormatted
-                                                cvss={nvdCvss ?? 0}
-                                                scoreVersion={nvdScoreVersion ?? 'UNKNOWN_VERSION'}
-                                            />
-                                        </Td>
-                                    )}
-                                    {isEpssProbabilityColumnEnabled && (
-                                        <Td
-                                            className={getVisibilityClass('epssProbability')}
-                                            modifier="nowrap"
-                                            dataLabel="EPSS probability"
-                                        >
-                                            {formatEpssProbabilityAsPercent(epssProbability)}
-                                        </Td>
-                                    )}
+                                    <Td
+                                        className={getVisibilityClass('nvdCvss')}
+                                        modifier="nowrap"
+                                        dataLabel="NVD CVSS"
+                                    >
+                                        <CvssFormatted
+                                            cvss={nvdCvss ?? 0}
+                                            scoreVersion={nvdScoreVersion ?? 'UNKNOWN_VERSION'}
+                                        />
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('epssProbability')}
+                                        modifier="nowrap"
+                                        dataLabel="EPSS probability"
+                                    >
+                                        {formatEpssProbabilityAsPercent(epssProbability)}
+                                    </Td>
                                     {/* isAdvisoryColumnEnabled && (
                                         <Td
                                             className={getVisibilityClass('totalAdvisories')}
@@ -400,28 +437,38 @@ function ImageVulnerabilitiesTable({
                                             'Not available'
                                         )}
                                     </Td>
-                                    {showExceptionDetailsLink && (
-                                        <ExceptionDetailsCell
-                                            cve={cve}
-                                            vulnerabilityState={vulnerabilityState}
-                                        />
-                                    )}
-                                    {createTableActions && (
-                                        <Td isActionCell>
-                                            <ActionsColumn
-                                                // menuAppendTo={() => document.body}
-                                                items={createTableActions({
-                                                    cve,
-                                                    summary,
-                                                    numAffectedImages: 1,
-                                                })}
+                                    <Td className={getVisibilityClass('requestDetails')}>
+                                        {vulnerabilityState !== 'OBSERVED' && (
+                                            <ExceptionDetailsCell
+                                                cve={cve}
+                                                vulnerabilityState={vulnerabilityState}
                                             />
-                                        </Td>
-                                    )}
+                                        )}
+                                    </Td>
+                                    <Td className={getVisibilityClass('rowActions')} isActionCell>
+                                        <ActionsColumn
+                                            // menuAppendTo={() => document.body}
+                                            items={createTableActions({
+                                                cve,
+                                                summary,
+                                                numAffectedImages: 1,
+                                            })}
+                                        />
+                                    </Td>
                                 </Tr>
+                                {labels.length !== 0 && (
+                                    <Tr>
+                                        <Td colSpan={2} />
+                                        <Td colSpan={colSpan - 2} style={{ paddingTop: 0 }}>
+                                            <LabelGroup numLabels={labels.length}>
+                                                {labels}
+                                            </LabelGroup>
+                                        </Td>
+                                    </Tr>
+                                )}
                                 <Tr isExpanded={isExpanded}>
-                                    <Td />
-                                    <Td colSpan={colSpan}>
+                                    <Td className={getVisibilityClass('rowExpansion')} />
+                                    <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
                                             <>
                                                 {summary && (

@@ -64,7 +64,6 @@ func TestPointerWaiter(t *testing.T) {
 }
 
 func TestWaitCancel(t *testing.T) {
-	t.Parallel()
 	wm := NewManager[string]()
 	wm.Start(context.Background())
 
@@ -87,7 +86,6 @@ func TestWaitCancel(t *testing.T) {
 }
 
 func TestWaitClose(t *testing.T) {
-	t.Parallel()
 	wm := NewManager[string]()
 	wm.Start(context.Background())
 
@@ -112,7 +110,6 @@ func TestWaitClose(t *testing.T) {
 }
 
 func TestCloseManager(t *testing.T) {
-	t.Parallel()
 	wm := NewManager[string]()
 	ctx, cancel := context.WithCancel(context.Background())
 	wm.Start(ctx)
@@ -133,7 +130,6 @@ func TestCloseManager(t *testing.T) {
 }
 
 func TestCloseManagerMany(t *testing.T) {
-	t.Parallel()
 	wm := NewManager[string]()
 	ctx, cancel := context.WithCancel(context.Background())
 	wm.Start(ctx)
@@ -163,7 +159,6 @@ func TestCloseManagerMany(t *testing.T) {
 }
 
 func TestSendToClosedWaiter(t *testing.T) {
-	t.Parallel()
 	wm := NewManager[string]()
 	wm.Start(context.Background())
 
@@ -179,7 +174,6 @@ func TestSendToClosedWaiter(t *testing.T) {
 }
 
 func TestNewWaiterOnShutdownManager(t *testing.T) {
-	t.Parallel()
 	wm := NewManager[string]()
 	ctx, cancel := context.WithCancel(context.Background())
 	wm.Start(ctx)

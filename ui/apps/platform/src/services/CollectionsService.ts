@@ -1,11 +1,12 @@
 import qs from 'qs';
 
-import { ListDeployment } from 'types/deployment.proto';
-import { SearchFilter, ApiSortOption } from 'types/search';
+import type { ListDeployment } from 'types/deployment.proto';
+import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import { makeCancellableAxiosRequest } from './cancellationUtils';
+import type { CancellableRequest } from './cancellationUtils';
 import axios from './instance';
-import { Empty, FilterQuery } from './types';
+import type { Empty, FilterQuery } from './types';
 
 export const collectionsBaseUrl = '/v1/collections';
 export const collectionsCountUrl = '/v1/collectionscount';

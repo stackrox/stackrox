@@ -12,6 +12,7 @@ central/networkgraph/service/service_impl_test.go
 central/networkpolicies/graph/evaluator_test.go
 central/processlisteningonport/datastore/datastore_impl_test.go
 central/pruning/pruning_test.go
+central/reports/service/v2/service_impl_test.go
 central/splunk/violations_test.go
 central/testutils/testdata/imgdata.json.gz
 central/vulnmgmt/vulnerabilityrequest/datastore/datastore_impl_postgres_test.go
@@ -32,9 +33,12 @@ pkg/docker/types/types_easyjson.go
 pkg/fixtures/graph.go
 pkg/fixtures/image.go
 pkg/fixtures/image/files/*
+pkg/images/enricher/enricher_impl_test.go
+pkg/images/enricher/enricher_v2_impl_test.go
 pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
 pkg/scannerv4/mappers/mappers_test.go
+pkg/search/postgres/common_test.go
 pkg/sliceutils/gen-builtins-generic.go
 proto/storage/proto.lock
 qa-tests-backend/artifacts/**/*
@@ -51,7 +55,6 @@ scanner/e2etests/testdata/image_tests.orig.json
 scanner/enricher/csaf/testdata/*
 scanner/enricher/nvd/testdata/feed.json
 scripts/ci/lib.sh
-sensor/common/networkflow/manager/manager_impl.go
 sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
 tests/e2e/lib.sh

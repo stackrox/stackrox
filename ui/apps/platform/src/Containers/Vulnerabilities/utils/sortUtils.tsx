@@ -69,7 +69,19 @@ export function getWorkloadCveOverviewSortFields(
                 'Image Scan Time',
             ];
         case 'Deployment':
-            return ['Deployment', 'Cluster', 'Namespace', 'Created'];
+            return [
+                'Deployment',
+                [
+                    'Critical Severity Count',
+                    'Important Severity Count',
+                    'Moderate Severity Count',
+                    'Low Severity Count',
+                    'Unknown Severity Count',
+                ],
+                'Cluster',
+                'Namespace',
+                'Created',
+            ];
         default:
             return ensureExhaustive(entityTab);
     }

@@ -181,18 +181,17 @@ export_test_environment() {
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
-    ci_export ROX_CVE_ADVISORY_SEPARATION "${ROX_CVE_ADVISORY_SEPARATION:-true}"
     ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
-    ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-false}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "${ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
     ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-true}"
     ci_export ROX_FLATTEN_IMAGE_DATA "${ROX_FLATTEN_IMAGE_DATA:-false}"
-    ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
+    ci_export ROX_VULNERABILITY_VIEW_BASED_REPORTS "${ROX_VULNERABILITY_VIEW_BASED_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
+    ci_export ROX_LLM_RISK_RECOMMENDATION "${ROX_LLM_RISK_RECOMMENDATION:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -322,12 +321,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_CVE_ADVISORY_SEPARATION'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
-    customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_EXTERNAL_IPS'
@@ -340,11 +335,13 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_FLATTEN_IMAGE_DATA'
     customize_envVars+=$'\n        value: "false"'
-    customize_envVars+=$'\n      - name: ROX_VULNERABILITY_ON_DEMAND_REPORTS'
+    customize_envVars+=$'\n      - name: ROX_VULNERABILITY_VIEW_BASED_REPORTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_ADMISSION_CONTROLLER_CONFIG'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_LLM_RISK_RECOMMENDATION'
     customize_envVars+=$'\n        value: "true"'
 
     local scannerV4ScannerComponent="Default"
@@ -1301,7 +1298,8 @@ _record_build_info() {
         build_info="${build_info},-race"
     fi
 
-    update_job_record "build" "${build_info}"
+    setup_gcp
+    set_ci_shared_export "build" "${build_info}"
 }
 
 restore_4_6_postgres_backup() {
@@ -1310,6 +1308,7 @@ restore_4_6_postgres_backup() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
+    setup_gcp
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
 
     roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \

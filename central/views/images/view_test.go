@@ -9,9 +9,12 @@ import (
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -26,8 +29,9 @@ import (
 type lessFunc func(records []*imageResponse) func(i, j int) bool
 
 type filterImpl struct {
-	matchImage func(image *storage.Image) bool
-	matchVuln  func(vuln *storage.EmbeddedVulnerability) bool
+	matchImage   func(image *storage.Image) bool
+	matchImageV2 func(image *storage.ImageV2) bool
+	matchVuln    func(vuln *storage.EmbeddedVulnerability) bool
 }
 
 func matchAllFilter() *filterImpl {
@@ -35,6 +39,7 @@ func matchAllFilter() *filterImpl {
 		matchImage: func(_ *storage.Image) bool {
 			return true
 		},
+		matchImageV2: func(_ *storage.ImageV2) bool { return true },
 		matchVuln: func(_ *storage.EmbeddedVulnerability) bool {
 			return true
 		},
@@ -46,6 +51,7 @@ func matchNoneFilter() *filterImpl {
 		matchImage: func(_ *storage.Image) bool {
 			return false
 		},
+		matchImageV2: func(_ *storage.ImageV2) bool { return false },
 		matchVuln: func(_ *storage.EmbeddedVulnerability) bool {
 			return false
 		},
@@ -54,6 +60,11 @@ func matchNoneFilter() *filterImpl {
 
 func (f *filterImpl) withImageFilter(fn func(image *storage.Image) bool) *filterImpl {
 	f.matchImage = fn
+	return f
+}
+
+func (f *filterImpl) withImageV2Filter(fn func(image *storage.ImageV2) bool) *filterImpl {
+	f.matchImageV2 = fn
 	return f
 }
 
@@ -72,6 +83,7 @@ type ImageViewTestSuite struct {
 	testDB          *pgtest.TestPostgres
 	imagesView      ImageView
 	testImagesMap   map[string]*storage.Image
+	testImagesV2Map map[string]*storage.ImageV2
 	scopeToImageIDs map[string]set.StringSet
 }
 
@@ -80,44 +92,101 @@ func (s *ImageViewTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	// Initialize the datastores
-	imageStore := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	deploymentStore, err := deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.Require().NoError(err)
-
-	// Upsert test images
-	images := testImages()
-	for _, image := range images {
-		s.Require().NoError(imageStore.UpsertImage(ctx, image))
-	}
-
-	s.testImagesMap = make(map[string]*storage.Image)
-	for _, image := range images {
-		actual, found, err := imageStore.GetImage(ctx, image.GetId())
+	if features.FlattenImageData.Enabled() {
+		imageStore := imageV2DS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+		deploymentStore, err := deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 		s.Require().NoError(err)
-		s.Require().True(found)
-		s.testImagesMap[actual.GetId()] = actual
-	}
 
-	s.imagesView = NewImageView(s.testDB.DB)
+		// Upsert test images
+		imagesV1 := testImages()
+		imagesV2 := make([]*storage.ImageV2, 0, len(imagesV1))
+		for _, image := range imagesV1 {
+			imageV2 := utils.ConvertToV2(image)
+			imagesV2 = append(imagesV2, imageV2)
+			s.Require().NoError(imageStore.UpsertImage(ctx, imageV2))
+		}
 
-	deployments := []*storage.Deployment{
-		fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, s.testImagesMap["sha1"]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, s.testImagesMap["sha1"]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, s.testImagesMap["sha2"]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, s.testImagesMap["sha3"]),
-	}
-	for _, d := range deployments {
-		s.Require().NoError(deploymentStore.UpsertDeployment(ctx, d))
-	}
+		s.testImagesV2Map = make(map[string]*storage.ImageV2, len(imagesV2))
+		for _, image := range imagesV2 {
+			actual, found, err := imageStore.GetImage(ctx, image.GetId())
+			s.Require().NoError(err)
+			s.Require().True(found)
+			s.testImagesV2Map[actual.GetId()] = image
+		}
 
-	s.scopeToImageIDs = map[string]set.StringSet{
-		testutils.UnrestrictedReadWriteCtx:       set.NewStringSet("sha1", "sha2", "sha3", "sha4"),
-		testutils.Cluster1ReadWriteCtx:           set.NewStringSet("sha1"),
-		testutils.Cluster1NamespaceAReadWriteCtx: set.NewStringSet("sha1"),
-		testutils.Cluster2ReadWriteCtx:           set.NewStringSet("sha2", "sha3"),
-		testutils.Cluster2NamespaceBReadWriteCtx: set.NewStringSet("sha2", "sha3"),
-		testutils.Cluster3ReadWriteCtx:           set.NewStringSet(),
-		testutils.Cluster3NamespaceCReadWriteCtx: set.NewStringSet(),
+		s.imagesView = NewImageView(s.testDB.DB)
+
+		deployments := []*storage.Deployment{
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster1, testconsts.NamespaceA, s.testImagesV2Map[imagesV2[0].GetId()]),
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster1, testconsts.NamespaceA, s.testImagesV2Map[imagesV2[0].GetId()]),
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster2, testconsts.NamespaceB, s.testImagesV2Map[imagesV2[1].GetId()]),
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster2, testconsts.NamespaceB, s.testImagesV2Map[imagesV2[2].GetId()]),
+		}
+
+		for _, d := range deployments {
+			s.Require().NoError(deploymentStore.UpsertDeployment(ctx, d))
+		}
+		var sha1, sha2, sha3, sha4 *storage.ImageV2
+		for _, i := range imagesV2 {
+			switch i.GetDigest() {
+			case "sha1":
+				sha1 = i
+			case "sha2":
+				sha2 = i
+			case "sha3":
+				sha3 = i
+			case "sha4":
+				sha4 = i
+			}
+		}
+		s.scopeToImageIDs = map[string]set.StringSet{
+			testutils.UnrestrictedReadWriteCtx:       set.NewStringSet(sha1.GetId(), sha2.GetId(), sha3.GetId(), sha4.GetId()),
+			testutils.Cluster1ReadWriteCtx:           set.NewStringSet(sha1.GetId()),
+			testutils.Cluster1NamespaceAReadWriteCtx: set.NewStringSet(sha1.GetId()),
+			testutils.Cluster2ReadWriteCtx:           set.NewStringSet(sha2.GetId(), sha3.GetId()),
+			testutils.Cluster2NamespaceBReadWriteCtx: set.NewStringSet(sha2.GetId(), sha3.GetId()),
+			testutils.Cluster3ReadWriteCtx:           set.NewStringSet(),
+			testutils.Cluster3NamespaceCReadWriteCtx: set.NewStringSet(),
+		}
+	} else {
+		imageStore := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+		deploymentStore, err := deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+		s.Require().NoError(err)
+
+		// Upsert test images
+		images := testImages()
+		for _, image := range images {
+			s.Require().NoError(imageStore.UpsertImage(ctx, image))
+		}
+
+		s.testImagesMap = make(map[string]*storage.Image)
+		for _, image := range images {
+			actual, found, err := imageStore.GetImage(ctx, image.GetId())
+			s.Require().NoError(err)
+			s.Require().True(found)
+			s.testImagesMap[actual.GetId()] = actual
+		}
+
+		s.imagesView = NewImageView(s.testDB.DB)
+
+		deployments := []*storage.Deployment{
+			fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, s.testImagesMap["sha1"]),
+			fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, s.testImagesMap["sha1"]),
+			fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, s.testImagesMap["sha2"]),
+			fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, s.testImagesMap["sha3"]),
+		}
+		for _, d := range deployments {
+			s.Require().NoError(deploymentStore.UpsertDeployment(ctx, d))
+		}
+		s.scopeToImageIDs = map[string]set.StringSet{
+			testutils.UnrestrictedReadWriteCtx:       set.NewStringSet("sha1", "sha2", "sha3", "sha4"),
+			testutils.Cluster1ReadWriteCtx:           set.NewStringSet("sha1"),
+			testutils.Cluster1NamespaceAReadWriteCtx: set.NewStringSet("sha1"),
+			testutils.Cluster2ReadWriteCtx:           set.NewStringSet("sha2", "sha3"),
+			testutils.Cluster2NamespaceBReadWriteCtx: set.NewStringSet("sha2", "sha3"),
+			testutils.Cluster3ReadWriteCtx:           set.NewStringSet(),
+			testutils.Cluster3NamespaceCReadWriteCtx: set.NewStringSet(),
+		}
 	}
 }
 
@@ -158,9 +227,19 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 			matchFilter: matchAllFilter(),
 			less: func(records []*imageResponse) func(i int, j int) bool {
 				return func(i int, j int) bool {
-					scorei := s.testImagesMap[records[i].ImageID].RiskScore
-					scorej := s.testImagesMap[records[j].ImageID].RiskScore
+					var scorei float32
+					var scorej float32
+					if features.FlattenImageData.Enabled() {
+						scorei = s.testImagesV2Map[records[i].ImageV2ID].RiskScore
+						scorej = s.testImagesV2Map[records[j].ImageV2ID].RiskScore
+					} else {
+						scorei = s.testImagesMap[records[i].ImageID].RiskScore
+						scorej = s.testImagesMap[records[j].ImageID].RiskScore
+					}
 					if scorei == scorej {
+						if features.FlattenImageData.Enabled() {
+							return records[i].ImageV2ID < records[j].ImageV2ID
+						}
 						return records[i].ImageID < records[j].ImageID
 					}
 					return scorei > scorej
@@ -182,9 +261,19 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 			}),
 			less: func(records []*imageResponse) func(i int, j int) bool {
 				return func(i int, j int) bool {
-					scorei := s.testImagesMap[records[i].ImageID].RiskScore
-					scorej := s.testImagesMap[records[j].ImageID].RiskScore
+					var scorei float32
+					var scorej float32
+					if features.FlattenImageData.Enabled() {
+						scorei = s.testImagesV2Map[records[i].ImageV2ID].RiskScore
+						scorej = s.testImagesV2Map[records[j].ImageV2ID].RiskScore
+					} else {
+						scorei = s.testImagesMap[records[i].ImageID].RiskScore
+						scorej = s.testImagesMap[records[j].ImageID].RiskScore
+					}
 					if scorei == scorej {
+						if features.FlattenImageData.Enabled() {
+							return records[i].ImageV2ID < records[j].ImageV2ID
+						}
 						return records[i].ImageID < records[j].ImageID
 					}
 					return scorei > scorej
@@ -293,6 +382,8 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 			ignoreOrder: true,
 			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
 				return s.scopeToImageIDs[testutils.Cluster1ReadWriteCtx].Contains(image.GetId())
+			}).withImageV2Filter(func(image *storage.ImageV2) bool {
+				return s.scopeToImageIDs[testutils.Cluster1ReadWriteCtx].Contains(image.GetId())
 			}),
 		},
 		{
@@ -301,6 +392,8 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 			query:       search.EmptyQuery(),
 			ignoreOrder: true,
 			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
+				return s.scopeToImageIDs[testutils.Cluster1NamespaceAReadWriteCtx].Contains(image.GetId())
+			}).withImageV2Filter(func(image *storage.ImageV2) bool {
 				return s.scopeToImageIDs[testutils.Cluster1NamespaceAReadWriteCtx].Contains(image.GetId())
 			}),
 		},
@@ -316,6 +409,8 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 				ProtoQuery(),
 			hasSortBySeverityCounts: true,
 			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
+				return s.scopeToImageIDs[testutils.Cluster2ReadWriteCtx].Contains(image.GetId())
+			}).withImageV2Filter(func(image *storage.ImageV2) bool {
 				return s.scopeToImageIDs[testutils.Cluster2ReadWriteCtx].Contains(image.GetId())
 			}),
 			less: func(records []*imageResponse) func(i int, j int) bool {
@@ -342,6 +437,8 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 				ProtoQuery(),
 			hasSortBySeverityCounts: true,
 			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
+				return s.scopeToImageIDs[testutils.Cluster2NamespaceBReadWriteCtx].Contains(image.GetId())
+			}).withImageV2Filter(func(image *storage.ImageV2) bool {
 				return s.scopeToImageIDs[testutils.Cluster2NamespaceBReadWriteCtx].Contains(image.GetId())
 			}),
 			less: func(records []*imageResponse) func(i int, j int) bool {
@@ -391,55 +488,109 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 
 func (s *ImageViewTestSuite) compileExpected(filter *filterImpl, less lessFunc, hasVulnFilters, hasSortBySeverityCounts bool) []ImageCore {
 	expected := make([]*imageResponse, 0)
-	for _, image := range s.testImagesMap {
-		if !filter.matchImage(image) {
-			continue
-		}
+	if features.FlattenImageData.Enabled() {
+		for _, image := range s.testImagesV2Map {
+			if !filter.matchImageV2(image) {
+				continue
+			}
 
-		val := &imageResponse{
-			ImageID: image.GetId(),
-		}
-		if !hasVulnFilters && !hasSortBySeverityCounts {
-			expected = append(expected, val)
-			continue
-		}
+			val := &imageResponse{
+				ImageV2ID: image.GetId(),
+			}
+			if !hasVulnFilters && !hasSortBySeverityCounts {
+				expected = append(expected, val)
+				continue
+			}
 
-		matchedVulnCount := 0
-		for _, component := range image.GetScan().GetComponents() {
-			for _, vuln := range component.GetVulns() {
-				if !filter.matchVuln(vuln) {
-					continue
-				}
-				matchedVulnCount += 1
+			matchedVulnCount := 0
+			for _, component := range image.GetScan().GetComponents() {
+				for _, vuln := range component.GetVulns() {
+					if !filter.matchVuln(vuln) {
+						continue
+					}
+					matchedVulnCount += 1
 
-				if hasSortBySeverityCounts {
-					switch vuln.GetSeverity() {
-					case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
-						val.CriticalSeverityCount += 1
-						if vuln.GetFixedBy() != "" {
-							val.FixableCriticalSeverityCount += 1
-						}
-					case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
-						val.ImportantSeverityCount += 1
-						if vuln.GetFixedBy() != "" {
-							val.FixableImportantSeverityCount += 1
-						}
-					case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
-						val.ModerateSeverityCount += 1
-						if vuln.GetFixedBy() != "" {
-							val.FixableModerateSeverityCount += 1
-						}
-					case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
-						val.LowSeverityCount += 1
-						if vuln.GetFixedBy() != "" {
-							val.FixableLowSeverityCount += 1
+					if hasSortBySeverityCounts {
+						switch vuln.GetSeverity() {
+						case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+							val.CriticalSeverityCount += 1
+							if vuln.GetFixedBy() != "" {
+								val.FixableCriticalSeverityCount += 1
+							}
+						case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+							val.ImportantSeverityCount += 1
+							if vuln.GetFixedBy() != "" {
+								val.FixableImportantSeverityCount += 1
+							}
+						case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+							val.ModerateSeverityCount += 1
+							if vuln.GetFixedBy() != "" {
+								val.FixableModerateSeverityCount += 1
+							}
+						case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+							val.LowSeverityCount += 1
+							if vuln.GetFixedBy() != "" {
+								val.FixableLowSeverityCount += 1
+							}
 						}
 					}
 				}
 			}
+			if matchedVulnCount > 0 {
+				expected = append(expected, val)
+			}
 		}
-		if matchedVulnCount > 0 {
-			expected = append(expected, val)
+	} else {
+		for _, image := range s.testImagesMap {
+			if !filter.matchImage(image) {
+				continue
+			}
+
+			val := &imageResponse{
+				ImageID: image.GetId(),
+			}
+			if !hasVulnFilters && !hasSortBySeverityCounts {
+				expected = append(expected, val)
+				continue
+			}
+
+			matchedVulnCount := 0
+			for _, component := range image.GetScan().GetComponents() {
+				for _, vuln := range component.GetVulns() {
+					if !filter.matchVuln(vuln) {
+						continue
+					}
+					matchedVulnCount += 1
+
+					if hasSortBySeverityCounts {
+						switch vuln.GetSeverity() {
+						case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+							val.CriticalSeverityCount += 1
+							if vuln.GetFixedBy() != "" {
+								val.FixableCriticalSeverityCount += 1
+							}
+						case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+							val.ImportantSeverityCount += 1
+							if vuln.GetFixedBy() != "" {
+								val.FixableImportantSeverityCount += 1
+							}
+						case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+							val.ModerateSeverityCount += 1
+							if vuln.GetFixedBy() != "" {
+								val.FixableModerateSeverityCount += 1
+							}
+						case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+							val.LowSeverityCount += 1
+							if vuln.GetFixedBy() != "" {
+								val.FixableLowSeverityCount += 1
+							}
+						}
+					}
+				}
+			}
+			if matchedVulnCount > 0 {
+				expected = append(expected, val)
+			}
 		}
 	}
 

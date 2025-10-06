@@ -32,8 +32,17 @@ export type EPSS = {
     epssPercentile: number; // float fraction between 0 and 1 inclusive
 };
 
+export type Exploit = {
+    dateAdded: string; // ISO 8601 yyyy-mm-dd
+    shortDescription: string;
+    requiredAction: string;
+    dueDate: string; // ISO 8601 yyyy-mm-dd
+    knownRansomwareCampaignUse: string; // Known or Unknown
+};
+
 export type CveBaseInfo = {
     epss: EPSS | null;
+    exploit: Exploit | null; // null if no known exploit
 };
 
 export type CVSSV2 = {

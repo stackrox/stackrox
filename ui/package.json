@@ -5,7 +5,7 @@
     "license": "UNLICENSED",
     "private": true,
     "engines": {
-        "node": ">=18.0.0"
+        "node": ">=20.0.0"
     },
     "scripts": {
         "clean": "rm -rf build test-results; npm --prefix apps/platform run clean",
@@ -13,10 +13,11 @@
         "lint": "npm --prefix apps/platform run lint",
         "test": "CI=true npm --prefix apps/platform run test",
         "test-e2e": "TEST_RESULTS_OUTPUT_DIR=../../test-results npm --prefix apps/platform run test-e2e",
+        "test-e2e:ocp": "TEST_RESULTS_OUTPUT_DIR=../../test-results npm --prefix apps/platform run test-e2e:ocp",
         "test-component": "npm --prefix apps/platform run test-component",
         "posttest-e2e:coverage": "mv apps/platform/coverage/ ./test-results/artifacts/",
         "prebuild": "npm run clean",
-        "build": "npm --prefix apps/platform run build",
+        "build": "npm --prefix apps/platform run build && npm --prefix apps/platform run build:ocp-plugin",
         "postbuild": "mv apps/platform/build/ .",
         "connect": "../scripts/connect-ui.sh ${1}",
         "deploy": "../deploy/k8s/deploy.sh",

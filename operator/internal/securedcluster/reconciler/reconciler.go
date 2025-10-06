@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/legacy"
 	"github.com/stackrox/rox/operator/internal/proxy"
 	"github.com/stackrox/rox/operator/internal/reconciler"
@@ -12,13 +13,17 @@ import (
 	scTranslation "github.com/stackrox/rox/operator/internal/securedcluster/values/translation"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/values/translation"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/securedcluster"
 	"github.com/stackrox/rox/pkg/version"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
+	renderCache := rendercache.NewRenderCache()
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	extraEventWatcher := pkgReconciler.WithExtraWatch(
 		source.Kind[*platform.Central](
@@ -38,10 +43,33 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
+		pkgReconciler.WithPreExtension(extensions.SensorCAHashExtension(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger(), renderCache)),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+6)
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+8)
 	opts = append(opts, extraEventWatcher)
+	// Watch the CABundle ConfigMap that Sensor creates
+	opts = append(opts, pkgReconciler.WithExtraWatch(
+		source.Kind(
+			mgr.GetCache(),
+			&corev1.ConfigMap{},
+			reconciler.HandleSiblings[*corev1.ConfigMap](platform.SecuredClusterGVK, mgr),
+			&utils.ResourceWithNamePredicate[*corev1.ConfigMap]{
+				Name: pkgKubernetes.TLSCABundleConfigMapName,
+			},
+		),
+	))
+	// Watch the Sensor TLS secret that triggers rollout restarts when CA rotation occurs.
+	opts = append(opts, pkgReconciler.WithExtraWatch(
+		source.Kind(
+			mgr.GetCache(),
+			&corev1.Secret{},
+			reconciler.HandleSiblings[*corev1.Secret](platform.SecuredClusterGVK, mgr),
+			&utils.ResourceWithNamePredicate[*corev1.Secret]{
+				Name: securedcluster.SensorTLSSecretName,
+			},
+		),
+	))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
@@ -72,6 +100,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
 			pullSecretRefInjector,
 		),
+		renderCache,
 		opts...,
 	)
 }

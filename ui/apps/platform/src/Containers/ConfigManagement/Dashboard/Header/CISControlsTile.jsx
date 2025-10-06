@@ -1,6 +1,6 @@
 import React from 'react';
 import URLService from 'utils/URLService';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import entityTypes from 'constants/entityTypes';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { gql, useQuery } from '@apollo/client';

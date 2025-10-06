@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Pagination,
     Text,
@@ -13,14 +13,17 @@ import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternf
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import type {
+    CompoundSearchFilterConfig,
+    OnSearchPayload,
+} from 'Components/CompoundSearchFilter/types';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { ComplianceCheckResult } from 'services/ComplianceResultsService';
-import { TableUIState } from 'utils/getTableUIState';
-import { SearchFilter } from 'types/search';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { ComplianceCheckResult } from 'services/ComplianceResultsService';
+import type { TableUIState } from 'utils/getTableUIState';
+import type { SearchFilter } from 'types/search';
 
 import { DETAILS_TAB, TAB_NAV_QUERY } from './CheckDetailsPage';
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';

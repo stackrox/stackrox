@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import IntegrationsSection from './IntegrationsSection';
 import PaladinCloudTile from './PaladinCloudTile';
 import OcmTile from './OcmTile';

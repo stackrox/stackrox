@@ -1,6 +1,8 @@
 package config
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -76,7 +78,11 @@ func (c *configHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
-func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (c *configHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetAuditLogSync() != nil || msg.GetClusterConfig() != nil
+}
+
+func (c *configHandlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	if msg.GetAuditLogSync() != nil {
 		err := c.parseMessage(func() {
 			log.Infof("Received audit log sync state from Central: %s", protoutils.NewWrapper(msg.GetAuditLogSync()))

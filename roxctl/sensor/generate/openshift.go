@@ -7,6 +7,7 @@ import (
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -20,7 +21,6 @@ type sensorGenerateOpenShiftCommand struct {
 	*sensorGenerateCommand
 
 	openshiftVersion          int
-	admissionControllerEvents *bool
 	disableAuditLogCollection *bool
 }
 
@@ -35,14 +35,7 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 		return errox.InvalidArgs.Newf("invalid OpenShift version %d, supported values are '3' and '4'", s.openshiftVersion)
 	}
 
-	if s.admissionControllerEvents == nil {
-		s.admissionControllerEvents = pointers.Bool(s.cluster.Type == storage.ClusterType_OPENSHIFT4_CLUSTER) // enable for OpenShift 4 only
-	} else if *s.admissionControllerEvents && s.cluster.Type == storage.ClusterType_OPENSHIFT_CLUSTER {
-		// The below `Validate` call would also catch this, but catching it here allows us to print more
-		// CLI-relevant error messages that reference flag names.
-		return errox.InvalidArgs.New(errorAdmCntrlNotSupportedOnOpenShift3x)
-	}
-	s.cluster.AdmissionControllerEvents = *s.admissionControllerEvents
+	s.cluster.AdmissionControllerEvents = s.cluster.Type == storage.ClusterType_OPENSHIFT4_CLUSTER
 
 	// This is intentionally NOT feature-flagged, because we always want to set the correct (auto) value,
 	// even if we turn off the flag before shipping.
@@ -75,8 +68,12 @@ func openshift(generateCmd *sensorGenerateCommand) *cobra.Command {
 		}),
 	}
 	c.PersistentFlags().IntVar(&openshiftCommand.openshiftVersion, "openshift-version", 0, "OpenShift major version to generate deployment files for.")
-	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.admissionControllerEvents, "admission-controller-listen-on-events", "", "Enable admission controller webhook to listen on Kubernetes events.", "auto")
-	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.disableAuditLogCollection, "disable-audit-logs", "", "Disable audit log collection for runtime detection.", "auto")
+	var ignoredBoolFlag bool
+	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-listen-on-events", true, "Enable admission controller webhook to listen on Kubernetes events.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-events", WarningAdmissionControllerListenOnEventsSet))
+
+	// Audit log collection should be enabled by default, disabled = false, as with the proto
+	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.disableAuditLogCollection, "disable-audit-logs", "", "Disable audit log collection for runtime detection.", "false")
 
 	return c
 }

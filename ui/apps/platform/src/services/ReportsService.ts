@@ -1,17 +1,26 @@
 import queryString from 'qs';
 
 import {
-    OnDemandReportSnapshot,
+    isConfiguredReportSnapshot,
+    isViewBasedReportSnapshot,
+} from 'services/ReportsService.types';
+import type {
+    ConfiguredReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
-    ReportSnapshot,
+    ReportRequestViewBased,
     RunReportResponse,
+    RunReportResponseViewBased,
+    ViewBasedReportSnapshot,
 } from 'services/ReportsService.types';
-import { ApiSortOption, SearchFilter } from 'types/search';
-import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
-import { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
+import type { ApiSortOption, SearchFilter } from 'types/search';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import type { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
+import { sanitizeFilename } from 'utils/fileUtils';
+
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
+import { saveFile } from './DownloadService';
 
 // The following functions are built around the new VM Reporting Enhancements
 export const reportDownloadURL = '/api/reports/jobs/download';
@@ -100,7 +109,7 @@ export function fetchReportHistory({
     perPage,
     sortOption,
     showMyHistory,
-}: FetchReportHistoryServiceParams): Promise<ReportSnapshot[]> {
+}: FetchReportHistoryServiceParams): Promise<ConfiguredReportSnapshot[]> {
     const params = queryString.stringify(
         {
             reportParamQuery: {
@@ -115,11 +124,12 @@ export function fetchReportHistory({
             `/v2/reports/configurations/${id}/${showMyHistory ? 'my-history' : 'history'}?${params}`
         )
         .then((response) => {
-            return response.data?.reportSnapshots ?? [];
+            const snapshots = response.data?.reportSnapshots ?? [];
+            return snapshots.filter(isConfiguredReportSnapshot);
         });
 }
 
-export type FetchOnDemandReportHistoryServiceParams = {
+export type FetchViewBasedReportHistoryServiceParams = {
     searchFilter: SearchFilter;
     page: number;
     perPage: number;
@@ -127,49 +137,31 @@ export type FetchOnDemandReportHistoryServiceParams = {
     showMyHistory: boolean;
 };
 
-// @TODO: Pass API query information and set up API call to endpoint
-export function fetchOnDemandReportHistory({
+export function fetchViewBasedReportHistory({
     searchFilter,
     page,
     perPage,
     sortOption,
-    // @TODO: Use the showMyHistory value to determine which endpoint to use
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     showMyHistory,
-}: FetchOnDemandReportHistoryServiceParams): Promise<OnDemandReportSnapshot[]> {
-    // @TODO: Use the params in the future API call
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
-
-    const mockOnDemandReportJobs: OnDemandReportSnapshot[] = [
+}: FetchViewBasedReportHistoryServiceParams): Promise<ViewBasedReportSnapshot[]> {
+    const params = queryString.stringify(
         {
-            reportJobId: '3dde30b0-179b-49b4-922d-0d05606c21fb',
-            isOnDemand: true,
-            name: '',
-            requestName: 'SC-040925-01',
-            areaOfConcern: 'User workloads',
-            vulnReportFilters: {
-                imageTypes: ['DEPLOYED'],
-                includeNvdCvss: false,
-                includeEpssProbability: false,
-                query: '',
+            reportParamQuery: {
+                query: getRequestQueryStringForSearchFilter(searchFilter),
+                pagination: getPaginationParams({ page, perPage, sortOption }),
             },
-            reportStatus: {
-                runState: 'GENERATED',
-                completedAt: '2024-11-13T18:45:32.997367670Z',
-                errorMsg: '',
-                reportRequestType: 'ON_DEMAND',
-                reportNotificationMethod: 'DOWNLOAD',
-            },
-            user: {
-                id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
-                name: 'admin',
-            },
-            isDownloadAvailable: true,
         },
-    ];
+        { arrayFormat: 'repeat', allowDots: true }
+    );
 
-    return Promise.resolve(mockOnDemandReportJobs);
+    const endpoint = showMyHistory
+        ? '/v2/reports/view-based/my-history'
+        : '/v2/reports/view-based/history';
+
+    return axios.get<ReportHistoryResponse>(`${endpoint}?${params}`).then((response) => {
+        const snapshots = response.data?.reportSnapshots ?? [];
+        return snapshots.filter(isViewBasedReportSnapshot);
+    });
 }
 
 export function createReportConfiguration(
@@ -223,5 +215,49 @@ export function downloadReport(reportId: string) {
 export function deleteDownloadableReport(reportId: string) {
     return axios.delete<Empty>(`/v2/reports/jobs/${reportId}/delete`).then((response) => {
         return response.data;
+    });
+}
+
+export function runViewBasedReport({
+    query,
+    areaOfConcern,
+}: {
+    query: string;
+    areaOfConcern: string;
+}): Promise<RunReportResponseViewBased> {
+    const requestBody: ReportRequestViewBased = {
+        type: 'VULNERABILITY',
+        viewBasedVulnReportFilters: {
+            query,
+        },
+        areaOfConcern,
+    };
+
+    return axios
+        .post<RunReportResponseViewBased>('/v2/reports/view-based/run', requestBody)
+        .then((response) => response.data);
+}
+
+/**
+ * Downloads a report file by job ID and saves it to the user's device with a sanitized filename
+ * Returns file size in bytes for analytics tracking
+ */
+export function downloadReportByJobId({
+    reportJobId,
+    filename,
+    fileExtension,
+}: {
+    reportJobId: string;
+    filename: string;
+    fileExtension: string;
+}): Promise<{ fileSizeBytes?: number }> {
+    const sanitizedFilename = sanitizeFilename(filename);
+
+    return saveFile({
+        method: 'get',
+        url: `/api/reports/jobs/download?id=${reportJobId}`,
+        data: null,
+        timeout: 300000,
+        name: `${sanitizedFilename}.${fileExtension}`,
     });
 }

@@ -5,6 +5,7 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -24,6 +25,7 @@ func initialize() {
 	manager = New(nodeDS.Singleton(),
 		deploymentDS.Singleton(),
 		imageDS.Singleton(),
+		imageV2DS.Singleton(),
 		riskDS.Singleton(),
 
 		nodeScorer.GetScorer(),

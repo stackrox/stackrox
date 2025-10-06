@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import useURLParameter, { HistoryAction } from './useURLParameter';
+import useURLParameter from './useURLParameter';
+import type { HistoryAction } from './useURLParameter';
 
 export type UseURLPaginationResult = {
     page: number;

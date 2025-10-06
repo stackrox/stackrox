@@ -11,10 +11,10 @@ import {
 } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import { vulnerabilitiesAllImagesPath } from 'routePaths';
 import { SetResult } from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -200,7 +200,7 @@ function RequestCVEsTable({
                                     },
                                 };
 
-                                const cveURL = `${vulnerabilitiesWorkloadCvesPath}/${getWorkloadEntityPagePath(
+                                const cveURL = `${vulnerabilitiesAllImagesPath}/${getWorkloadEntityPagePath(
                                     'CVE',
                                     cve,
                                     vulnerabilityState,

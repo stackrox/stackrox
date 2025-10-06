@@ -38,13 +38,13 @@ function CreateReportDropdown({ onSelect }: CreateReportDropdownProps) {
                     </MenuToggle>
                 )}
                 shouldFocusToggleOnSelect
-                popperProps={{ position: 'right' }}
+                popperProps={{ position: 'right', appendTo: () => document.body }}
             >
                 <DropdownList>
                     <DropdownItem
                         value="Export report as CSV"
                         key="Export report as CSV"
-                        description="Export an on-demand CSV report from this view using the filters you've applied."
+                        description="Export a view-based CSV report from this view using the filters you've applied."
                     >
                         Export report as CSV
                     </DropdownItem>

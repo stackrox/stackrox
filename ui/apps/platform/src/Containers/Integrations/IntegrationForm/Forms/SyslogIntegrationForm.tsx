@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Button,
     Checkbox,
@@ -20,14 +21,14 @@ import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
 import merge from 'lodash/merge';
 
-import { SyslogNotifierIntegration as SyslogIntegration } from 'types/notifier.proto';
+import type { SyslogNotifierIntegration as SyslogIntegration } from 'types/notifier.proto';
 
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';

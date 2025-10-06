@@ -24,7 +24,6 @@ import (
 )
 
 func TestSignatureDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(signatureDataStoreTestSuite))
 }
 
@@ -276,6 +275,55 @@ func newSignatureIntegration(name string) *storage.SignatureIntegration {
 		},
 	}
 	return signatureIntegration
+}
+
+// TestDefaultIntegrationProtection tests that built-in integrations cannot be created, updated or deleted.
+// The protection is achieved by means of the origin trait (see traits.proto). While traits are generally used as part
+// of the declarative configuration framework, we only use the origin trait internally to implement the protection:
+// built-in integrations are created with the DEFAULT origin trait, and the add/update/remove functions check the trait
+// and reject the operations accordingly.
+func (s *signatureDataStoreTestSuite) TestDefaultIntegrationProtection() {
+	// 1. Built-in integrations cannot be created
+	defaultIntegration := newSignatureIntegration("default-integration")
+	defaultIntegration.Traits = &storage.Traits{Origin: storage.Traits_DEFAULT}
+	_, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, defaultIntegration)
+	s.ErrorIs(err, errox.InvalidArgs)
+
+	// 2. Add it directly in storage, to verify it can't be updated or deleted
+	defaultIntegration.Id = GenerateSignatureIntegrationID()
+	err = s.storage.Upsert(s.hasWriteCtx, defaultIntegration)
+	s.Require().NoError(err)
+
+	// 3. Built-in integrations cannot be updated
+	defaultIntegration.Name = "updated-integration"
+	_, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, defaultIntegration)
+	s.ErrorIs(err, errox.InvalidArgs)
+
+	// 4. Built-in integrations cannot be deleted
+	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, defaultIntegration.GetId())
+	s.ErrorIs(err, errox.InvalidArgs)
+}
+
+// TestUserProvidedTraitsRejection tests that user-provided traits are rejected when creating or updating an integration.
+// We use the DEFAULT origin trait internally to prevent creation/modification/deletion of built-in integrations (see
+// TestDefaultIntegrationProtection), but the rest of the declarative configuration framework, which uses traits, is
+// not supported. In order to prevent user confusion and issues with future changes, traits are rejected in create
+// and update operations.
+func (s *signatureDataStoreTestSuite) TestUserProvidedTraitsRejection() {
+	// 1. User-provided traits are rejected when creating an integration
+	integration := newSignatureIntegration("integration-with-traits")
+	integration.Traits = &storage.Traits{}
+	_, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, integration)
+	s.ErrorIs(err, errox.InvalidArgs)
+
+	// 2. Create a regular integration to test update
+	integration, err = s.dataStore.AddSignatureIntegration(s.hasWriteCtx, newSignatureIntegration("regular-integration"))
+	s.Require().NoError(err)
+
+	// 3. Adding any trait is rejected when updating it
+	integration.Traits = &storage.Traits{}
+	_, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, integration)
+	s.ErrorIs(err, errox.InvalidArgs)
 }
 
 func TestRemovePoliciesInvisibleToUser(t *testing.T) {

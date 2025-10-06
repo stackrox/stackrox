@@ -8,17 +8,19 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common/defaulting"
+	"github.com/stackrox/rox/operator/internal/central/defaults"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var defaultingFlows = []defaulting.CentralDefaultingFlow{
-	defaulting.CentralScannerV4DefaultingFlow,
+var defaultingFlows = []defaults.CentralDefaultingFlow{
+	defaults.CentralStaticDefaults, // Must go first.
+	defaults.CentralScannerV4DefaultingFlow,
+	defaults.CentralDBPersistenceDefaultingFlow,
 }
 
-// This extension executes "defaulting flows". A Central defaulting flow is of type
+// FeatureDefaultingExtension executes "defaulting flows". A Central defaulting flow is of type
 // defaulting.CentralDefaultingFlow, which is essentially a function that acts on
 // `status`, `metadata.annotations` as well as `spec` and `defaults` (both of type `CentralSpec`)
 // of a Central CR.
@@ -87,7 +89,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, central *pla
 	return nil
 }
 
-func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, client ctrlClient.Client, flow defaulting.CentralDefaultingFlow) error {
+func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, client ctrlClient.Client, flow defaults.CentralDefaultingFlow) error {
 	logger = logger.WithName(fmt.Sprintf("defaulting-flow-%s", flow.Name))
 	annotations := central.GetAnnotations()
 	if annotations == nil {

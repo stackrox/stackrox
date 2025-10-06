@@ -1,5 +1,5 @@
 import React, { useCallback, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Breadcrumb,
@@ -17,7 +17,7 @@ import {
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';

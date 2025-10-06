@@ -1,4 +1,4 @@
-import { truncate, pluralizeHas, dedupeDelimitedString } from './textUtils';
+import { dedupeDelimitedString, pluralizeHas, truncate } from './textUtils';
 
 describe('truncate pipe', () => {
     it('should return the same string if shorter than length', () => {

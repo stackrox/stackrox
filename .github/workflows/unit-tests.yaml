@@ -27,12 +27,9 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -98,16 +95,13 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Set Postgres version
       run: |
         echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -158,16 +152,13 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Set Postgres version
       run: |
         echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -208,12 +199,9 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -247,12 +235,9 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.9
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -293,12 +278,9 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -337,12 +319,9 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -374,12 +353,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -399,7 +375,7 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -464,7 +440,7 @@ jobs:
       actions: read
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Slack message
       env:

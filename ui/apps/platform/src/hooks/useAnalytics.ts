@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
-import { useSelector } from 'react-redux';
 import Raven from 'raven-js';
 import mapValues from 'lodash/mapValues';
 
-import { Telemetry } from 'types/config.proto';
-import { selectors } from 'reducers';
-import { UnionFrom, ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
+import type { Telemetry } from 'types/config.proto';
+import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
+import type { UnionFrom } from 'utils/type.utils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import usePublicConfig from './usePublicConfig';
 
 // Event Name Constants
 
@@ -41,6 +41,10 @@ export const COLLECTION_CREATED = 'Collection Created';
 export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
+export const VIEW_BASED_REPORT_GENERATED = 'View Based Report Generated';
+export const VIEW_BASED_REPORT_FILTER_APPLIED = 'View Based Report Filter Applied';
+export const VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED = 'View Based Report Download Attempted';
+export const VIEW_BASED_REPORT_JOB_DETAILS_VIEWED = 'View Based Report Job Details Viewed';
 export const IMAGE_SBOM_GENERATED = 'Image SBOM Generated';
 
 // node and platform CVEs
@@ -266,6 +270,46 @@ export type AnalyticsEvent =
      * Tracks each time the user sends a vulnerability report manually.
      */
     | typeof VULNERABILITY_REPORT_SENT_MANUALLY
+    /**
+     * Tracks each time the user generates a view-based CSV report.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_GENERATED;
+          properties: {
+              areaOfConcern: string;
+              hasFilters: AnalyticsBoolean;
+              filterCount: number;
+          };
+      }
+    /**
+     * Tracks when filters are applied to the view-based reports table.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_FILTER_APPLIED;
+          properties: { category: string; filter: string } | { category: string };
+      }
+    /**
+     * Tracks download attempts for view-based reports.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED;
+          properties: {
+              success: AnalyticsBoolean;
+              reportAgeInDays?: number;
+              fileSizeBytes?: number;
+              errorType?: string;
+          };
+      }
+    /**
+     * Tracks when users view job details for view-based reports.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_JOB_DETAILS_VIEWED;
+          properties: {
+              reportStatus: string;
+              isOwnReport: AnalyticsBoolean;
+          };
+      }
     /**
      * Tracks each time the user generates an SBOM for an image.
      */
@@ -535,8 +579,8 @@ export function getRedactedOriginProperties(location: string) {
 }
 
 const useAnalytics = () => {
-    const telemetry = useSelector(selectors.publicConfigTelemetrySelector);
-    const { enabled: isTelemetryEnabled } = telemetry || ({} as Telemetry);
+    const { publicConfig } = usePublicConfig();
+    const { enabled: isTelemetryEnabled } = publicConfig?.telemetry || ({} as Telemetry);
 
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {

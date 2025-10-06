@@ -89,7 +89,7 @@ type ImageComponentResolver interface {
 	FixedBy(ctx context.Context) string
 	Id(ctx context.Context) graphql.ID
 	ImageCount(ctx context.Context, args RawQuery) (int32, error)
-	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
+	Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error)
 	ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
 	ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
 	ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error)
@@ -357,7 +357,11 @@ func getImageIDFromScope(contexts ...context.Context) string {
 	var scope scoped.Scope
 	var hasScope bool
 	for _, ctx := range contexts {
-		if scope, hasScope = scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES); hasScope {
+		searchCategory := v1.SearchCategory_IMAGES
+		if features.FlattenImageData.Enabled() {
+			searchCategory = v1.SearchCategory_IMAGES_V2
+		}
+		if scope, hasScope = scoped.GetScopeAtLevel(ctx, searchCategory); hasScope {
 			if len(scope.IDs) != 1 {
 				return ""
 			}
@@ -477,7 +481,13 @@ func (resolver *imageComponentResolver) ActiveState(ctx context.Context, args Ra
 			return nil, err
 		}
 	} else {
-		query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
+		var searchField search.FieldLabel
+		if features.FlattenImageData.Enabled() {
+			searchField = search.ImageID
+		} else {
+			searchField = search.ImageSHA
+		}
+		query := search.NewQueryBuilder().AddExactMatches(searchField, imageID).ProtoQuery()
 		results, err := resolver.root.ActiveComponent.Search(ctx, query)
 		if err != nil {
 			return nil, err
@@ -514,7 +524,7 @@ func (resolver *imageComponentResolver) ImageCount(ctx context.Context, args Raw
 	return resolver.root.ImageCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
-func (resolver *imageComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *imageComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
 	return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
 }
@@ -559,6 +569,33 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 		return &graphql.Time{Time: *scanTime}, nil
 	}
 
+	if features.FlattenImageData.Enabled() {
+		imageLoader, err := loaders.GetImageV2Loader(resolver.ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		q := resolver.componentQuery()
+		q.Pagination = &v1.QueryPagination{
+			Limit:  1,
+			Offset: 0,
+			SortOptions: []*v1.QuerySortOption{
+				{
+					Field:    search.ImageScanTime.String(),
+					Reversed: true,
+				},
+			},
+		}
+
+		images, err := imageLoader.FromQuery(resolver.ctx, q)
+		if err != nil || len(images) == 0 {
+			return nil, err
+		} else if len(images) > 1 {
+			return nil, errors.New("multiple images matched for last scanned image component query")
+		}
+
+		return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
+	}
 	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
 		return nil, err
@@ -610,7 +647,13 @@ func (resolver *imageComponentResolver) Location(ctx context.Context, args RawQu
 		return "", nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
+	query := search.NewQueryBuilder().AddExactMatches(searchField, imageID).AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
 	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return "", err
@@ -715,7 +758,7 @@ func (resolver *imageComponentV2Resolver) ImageCount(ctx context.Context, args R
 	return resolver.root.ImageCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
-func (resolver *imageComponentV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *imageComponentV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
 	return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
 }
@@ -760,6 +803,22 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 		return &graphql.Time{Time: *scanTime}, nil
 	}
 
+	if features.FlattenImageData.Enabled() {
+		imageLoader, err := loaders.GetImageV2Loader(resolver.ctx)
+		if err != nil {
+			return nil, err
+		}
+		q := search.NewQueryBuilder().AddExactMatches(search.ImageID, resolver.data.GetImageIdV2()).ProtoQuery()
+
+		images, err := imageLoader.FromQuery(resolver.ctx, q)
+		if err != nil || len(images) == 0 {
+			return nil, err
+		} else if len(images) > 1 {
+			return nil, errors.New("multiple images matched for last scanned image component query")
+		}
+
+		return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
+	}
 	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
 		return nil, err

@@ -89,4 +89,14 @@ message ProcessSignal {
     uint32 parent_uid = 1;
     string parent_exec_file_path = 2;
   }
+
+  // SFA fields
+  // User ID used for login to the system
+  uint32 login_uid = 12;
+
+  // string representation of the process uid
+  string username = 13;
+
+  // whether the process is running on the root mount namespace
+  bool in_root_mount_ns = 14;
 }

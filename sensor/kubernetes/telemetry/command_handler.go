@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"io"
 	"runtime/pprof"
+	"slices"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -109,7 +109,11 @@ func (h *commandHandler) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetTelemetryDataRequest() != nil || msg.GetCancelPullTelemetryDataRequest() != nil
+}
+
+func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
 	case *central.MsgToSensor_TelemetryDataRequest:
 		return h.processRequest(m.TelemetryDataRequest)
@@ -304,13 +308,8 @@ func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,
 	if err != nil {
 		return errors.Wrap(err, "marshalling cluster info")
 	}
-	batchManager := batcher.New(len(jsonBytes), clusterInfoChunkSize)
-	for {
-		start, end, ok := batchManager.Next()
-		if !ok {
-			break
-		}
-		if err := sendMsgCb(subCtx, makeChunk(jsonBytes[start:end])); err != nil {
+	for byteBatch := range slices.Chunk(jsonBytes, clusterInfoChunkSize) {
+		if err := sendMsgCb(subCtx, makeChunk(byteBatch)); err != nil {
 			return err
 		}
 	}

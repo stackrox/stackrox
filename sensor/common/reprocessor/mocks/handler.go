@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
@@ -41,6 +42,20 @@ func NewMockHandler(ctrl *gomock.Controller) *MockHandler {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockHandler) EXPECT() *MockHandlerMockRecorder {
 	return m.recorder
+}
+
+// Accepts mocks base method.
+func (m *MockHandler) Accepts(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Accepts", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Accepts indicates an expected call of Accepts.
+func (mr *MockHandlerMockRecorder) Accepts(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accepts", reflect.TypeOf((*MockHandler)(nil).Accepts), msg)
 }
 
 // Capabilities mocks base method.
@@ -98,17 +113,17 @@ func (mr *MockHandlerMockRecorder) ProcessInvalidateImageCache(arg0 any) *gomock
 }
 
 // ProcessMessage mocks base method.
-func (m *MockHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *MockHandler) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg)
+	ret := m.ctrl.Call(m, "ProcessMessage", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockHandlerMockRecorder) ProcessMessage(msg any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) ProcessMessage(ctx, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockHandler)(nil).ProcessMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockHandler)(nil).ProcessMessage), ctx, msg)
 }
 
 // ProcessReprocessDeployments mocks base method.

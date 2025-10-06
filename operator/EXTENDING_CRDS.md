@@ -3,9 +3,11 @@
 This document describes the required steps for extending the CRDs (for *StackRox Central* and *StackRox Secured Cluster*) supported by our Kubernetes Operator alongside 
 some general rules and best practices for modifying the CRDs.
 
+## Guide: How to add a new field
+
 Let us assume that there is a new (fictitious) feature "Low Energy Consumption Mode", which we would like to implement support for. Prerequisite is that support for this new feature has already been implemented in the relevant Helm charts (`stackrox-central-services` and/or `stackrox-secured-cluster-services`). See [a separate document on how to do this](../image/templates/CHANGING_CHARTS.md).
 
-## Add new Setting
+### 1. Add the new setting to the API
 
 Add a new setting for the feature to the appropriate structs within `operator/api/<VERSION>/securedcluster_types.go` and/or `operator/api/<VERSION>/central_types.go`.
 Note the [style recommendations](#style-recommendations) below.
@@ -19,15 +21,17 @@ type EnergyConsumptionMode string
 
 const (
 	// EnergyConsumptionModeHigh configures central to use as much energy as it needs.
-    EnergyConsumptionModeHigh EnergyConsumptionMode = "High"
+	EnergyConsumptionModeHigh EnergyConsumptionMode = "High"
 	// EnergyConsumptionModeLow configures central to save energy, at the cost of some performance.
-    EnergyConsumptionModeLow EnergyConsumptionMode = "Low"
+	EnergyConsumptionModeLow EnergyConsumptionMode = "Low"
 )
 
 type CentralSpec struct {
-	...
-	// Central energy consumption mode. Default is High.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=42
+	// ...
+
+	// Central energy consumption mode.
+	// The default is: High.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=42,displayName="Energy consumption mode"
 	EnergyConsumptionMode *EnergyConsumptionMode `json:"energyConsumptionMode,omitempty"`
 }
 ```
@@ -36,21 +40,43 @@ Note the leaf field should be a pointer, and specify `json:"omitempty"` (unless 
 
 The `operator-sdk` CSV marker in the comment is used for exposing the setting as a user-visible configuration option during operator installation.
 See [API markers](https://sdk.operatorframework.io/docs/building-operators/golang/references/markers/) for more information on this.
+You can also have a look at other fields in the file, to see how the markers are being used.
 
 The `kubebuilder` validation marker ensures the only possible values are the enumerated ones.
 For a description of the `kubebuilder`-markers we use in `central_types.go` and `securedcluster_types.go`, see the
-[kubebuilder manual](https://book.kubebuilder.io/reference/markers.html). Note that as of May 2025 we avoid using static
-default values, as in e.g.
+[kubebuilder manual](https://book.kubebuilder.io/reference/markers.html).
+
+Note that as of 2025 Q3 we no longer use static default values, as in e.g.
 
 ```go
 //+kubebuilder:default=...
 ```
 
-You might still see examples of these in legacy code. They are being removed as part of ROX-22588.
-Instead, we use runtime defaulting in the operator code. The field description should explain how the default is set.
-Note that it is possible to use different defaults for upgrade vs. new installation scenarios.
+Instead, we use:
+- a line in the field's description comment to describe the default (see above), and
+- runtime defaulting in the operator code, which you will add next
 
-## Update generated Files
+
+### 2. Set the default value
+
+Add something like this in the [central](https://github.com/stackrox/stackrox/blob/master/operator/internal/central/defaults/static.go) `static.go` file:
+
+```go
+var staticDefaults = platform.CentralSpec{
+	// ...
+
+	EnergyConsumptionMode: platform.EnergyConsumptionModeHigh,
+}
+```
+
+There is also a [secured cluster](https://github.com/stackrox/stackrox/blob/master/operator/internal/securedcluster/defaults/static.go) counterpart if you are modifying the `SecuredCluster` CRD.
+
+Note that the last line in the field description should explain how the default is set, using the specific syntax shown above.
+There are unit tests that enforce that the comment matches the default set in the code.
+
+See the [separate document on defaulting](DEFAULTING.md) below for more details, if you have more complex needs than a static default.
+
+### 3. Update generated files
 
 Run the following command:
 
@@ -67,9 +93,11 @@ operator/config/crd/bases/platform.stackrox.io_centrals.yaml
 operator/config/manifests/bases/rhacs-operator.clusterserviceversion.yaml
 ```
 
-## Map CRD Setting to Helm chart configuration
+### 4. Map CRD Setting to Helm chart configuration
 
-In order for the new setting to be effective, the new field added to a CRD needs to be translated into the appropriate Helm chart configuration. This translation needs to be added to `operator/pkg/central/values/translation/translation.go` and/or `operator/pkg/securedcluster/values/translation/translation.go`. Tests related to the translation of the new setting need to be added to the corresponding `translation_test.go` files.
+In order for the new setting to be effective, the new field added to a CRD needs to be translated into the appropriate Helm chart configuration.
+This translation needs to be added to `operator/pkg/central/values/translation/translation.go` and/or `operator/pkg/securedcluster/values/translation/translation.go`.
+Tests related to the translation of the new setting need to be added to the corresponding `translation_test.go` files.
 
 For example, assuming that the corresponding Helm chart setting is a boolean named `lowEnergyConsumption`, use something like
 
@@ -79,62 +107,14 @@ if c.Spec.EnergyConsumption != nil {
 }
 ```
 
-Regarding defaulting, note that there exist different kinds of defaults:
+### 5. Prepare a pull request
 
-* Schema-level (a.k.a. static) defaults: These are set in the schema via `+kubebuilder` directives. 
-  If a field value is not set by the user, the default will be inserted automatically upon object creation and persisted.
-  These values will be visible during translation, but only if the enclosing struct field is already present. Changing a schema-level default
-  counts as a breaking API change, but it is treated as such only semantically, nothing will fail at runtime (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/apis/platform/v1alpha1/central_types.go#L188))
+Please make sure you include the generated files in your PR.
 
-  As mentioned above, as of May 2025 we stopped adding such static defaults. 
-
-* Defaults on the level of translation logic: The translation logic will recognize an absent (`nil`) value, decide on its meaning, and will set a corresponding
-  value in the Helm values (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L120)).
-
-* Propagating chart-level defaults: The translation logic will set the corresponding Helm values field only for explicitly set values; for absent
-  values, it will do nothing, thus deferring to the chart's defaulting logic (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L86)).
-
-* For more complex use cases, defaults can be set using a special `DefaultingExtension` (see below).
-
-## Defaulting Extension Mechanism
-
-The DefaultingExtension runs early in the reconcilliation process and executes "defaulting flows" in sequence.
-Each defaulting flow has the ability to populate `Central.Defaults` (of type `CentralSpec`) resp. `SecuredCluster.Defaults` (of type `SecuredClusterSpec`)
-using the custom resource's spec, status and metadata annotations (see below). More precisely, a defaulting flow can
-  - Implement complex defaulting logic (beyond what static CRD defaulting supports).
-  - Persist defaulting decisions in the custom resource's metadata as feature-specific annotation.
-  - Differentiate between green-field (fresh installation) and brown-field (upgrade) scenarios when making defaulting decision.
-  - Ensure that subsequent reconciler extensions work with a custom resource spec that already includes all relevant defaulting decisions.
-
-### Annotation Format
-
-Every defaulting decision that is persisted as an annotation should follow this naming convention:
-```
-metadata:
-  annotations:
-    "feature-defaults.platform.stackrox.io/<FEATURE_IDENTIFIER>": "<VALUE>"
-```
-
-Example:
-```
-metadata:
-  annotations:
-    "feature-defaults.platform.stackrox.io/scannerV4": "Enabled"
-```
-This annotation is added by the defaulting flow responsible for determining whether Scanner V4 should be enabled.
-If the defaulting logic decides that Scanner V4 should be enabled by default, it adds this annotation to the custom resource.
-This preserves the decision across reconciliation cycles and ensures consistent behavior during future upgrades.
-
-### Reference Implementation
-
-The two defaulting flows
-
-* [`operator/internal/common/defaulting/central_scanner_v4_enabling.go`](https://github.com/stackrox/stackrox/blob/3864927b0825ebb95a1377daf8fb6afb0da8cfa7/operator/internal/common/defaulting/central_scanner_v4_enabling.go)
-* [`operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go`](https://github.com/stackrox/stackrox/blob/3864927b0825ebb95a1377daf8fb6afb0da8cfa7/operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go)
-
-can be used as blueprints when implementing new defaulting flows. New defaulting flows need to be added to
-`operator/internal/central/extensions/reconcile_defaulting.go:defaultingFlows` resp.
-`operator/internal/securedcluster/extensions/reconcile_defaulting.go:defaultingFlows`.
+Also, unless the field you added is hidden, please:
+- [deploy your changed operator using OLM](README.md#installing-operator-via-olm)
+- go to the OpenShift console for creating a new `Central` or `SecuredCluster` resource, as appropriate
+- make a screenshot that shows your new field and paste it in the PR description
 
 ## Breaking changes
 
@@ -219,6 +199,7 @@ Some data types are discouraged, in particular:
 * Constants/Enums: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#constants).
 * Unions: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#unions).
 * Defaulting: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#defaulting) and [Kubernetes Documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#defaulting).
+  Note however that we depart somewhat from the conventions as described in [DEFAULTING.md](DEFAULTING.md).
 * Nullability: See [Kubernetes Documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#defaulting-and-nullable).
 * Late initialization: See [API Conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#late-initialization).
 * Labels, Selector and Annotations: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#label-selector-and-annotation-conventions).

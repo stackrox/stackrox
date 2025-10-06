@@ -2,20 +2,26 @@ package datastore
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/store"
+	"github.com/stackrox/rox/central/processindicator/views"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
@@ -24,9 +30,13 @@ const (
 
 var (
 	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
+
+	addBatchSize = env.ProcessAddBatchSize.IntegerSetting()
 )
 
 type datastoreImpl struct {
+	db postgres.DB
+
 	storage store.Store
 	// ProcessListeningOnPort storage is needed for correct pruning. It
 	// logically belongs to the datastore implementation of PLOP, but this way
@@ -94,7 +104,16 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.UpsertMany(ctx, indicators)
+	for identifierBatch := range slices.Chunk(indicators, addBatchSize) {
+		err := ds.storage.UpsertMany(ctx, identifierBatch)
+		if err != nil {
+			log.Warnf("error adding a batch of indicators: %v", err)
+		} else {
+			log.Debugf("successfully added a batch of %d process indicators", len(identifierBatch))
+		}
+	}
+
+	return nil
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
@@ -166,12 +185,12 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string) int 
 
 		q := pkgSearch.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
-		deletedIDs, err := ds.storage.DeleteByQuery(ctx, q)
+		err := ds.storage.DeleteByQuery(ctx, q)
 		if err != nil {
 			log.Warnf("error pruning a batch of indicators: %v", err)
 		} else {
-			successfullyPruned = successfullyPruned + len(deletedIDs)
-			log.Debugf("successfully pruned a batch of %d process indicators", len(deletedIDs))
+			successfullyPruned = successfullyPruned + len(identifierBatch)
+			log.Debugf("successfully pruned a batch of %d process indicators", len(identifierBatch))
 		}
 
 		// Move the slice forward to start the next batch
@@ -189,8 +208,36 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 		return sac.ErrResourceAccessDenied
 	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
-	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
-	return storeErr
+	return ds.storage.DeleteByQuery(ctx, q)
+}
+
+// IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
+func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	cloned := q.CloneVT()
+	// Add the select fields of the view to the query.
+	cloned.Selects = []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ContainerName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessExecPath).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessContainerStartTime).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessCreationTime).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ProcessArguments).Proto(),
+	}
+
+	// We do not need the entire process indicator to process risk.  That object is large.  Use a view instead
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned, fn)
+	if err != nil {
+		log.Errorf("unable to iterate over indicators for risk processing: %v", err)
+	}
+
+	return err
 }
 
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {

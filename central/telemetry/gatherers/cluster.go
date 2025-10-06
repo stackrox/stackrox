@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/telemetry"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 )
@@ -32,6 +33,13 @@ type ClusterGatherer struct {
 var (
 	log = logging.LoggerForModule()
 )
+
+// shouldIncludeCluster determines if a cluster should be included based on the cluster filter.
+// If clusterFilter is nil or empty, all clusters are included.
+// Otherwise, only clusters whose names are in the filter are included.
+func shouldIncludeCluster(clusterName string, clusterFilter set.StringSet) bool {
+	return clusterFilter.Cardinality() == 0 || clusterFilter.Contains(clusterName)
+}
 
 // newClusterGatherer returns a new ClusterGatherer which will query connected Sensors for telemetry info and collect
 // the latest info for offline sensors using the given datastores.
@@ -49,7 +57,7 @@ func newClusterGatherer(clusterDatastore clusterDatastore.DataStore, nodeDatasto
 }
 
 // Gather returns a list of stats about all the clusters monitored by this StackRox installation.
-func (c *ClusterGatherer) Gather(ctx context.Context, pullFromSensors bool) []*data.ClusterInfo {
+func (c *ClusterGatherer) Gather(ctx context.Context, pullFromSensors bool, clusterFilter set.StringSet) []*data.ClusterInfo {
 	var clusterList []*data.ClusterInfo
 
 	clusters, err := c.clusterDatastore.GetClusters(ctx)
@@ -66,6 +74,10 @@ func (c *ClusterGatherer) Gather(ctx context.Context, pullFromSensors bool) []*d
 	if pullFromSensors {
 		for _, conn := range c.sensorConnMgr.GetActiveConnections() {
 			cluster := clusterMap[conn.ClusterID()]
+			if !shouldIncludeCluster(cluster.GetName(), clusterFilter) {
+				continue
+			}
+
 			gatherPool.Go(func(ctx context.Context) (clusterFromSensorResponse, error) {
 				return c.clusterFromSensor(ctx, conn, cluster), nil
 			})
@@ -92,6 +104,10 @@ func (c *ClusterGatherer) Gather(ctx context.Context, pullFromSensors bool) []*d
 
 	// Get inactive clusters.
 	for _, storageCluster := range clusterMap {
+		if !shouldIncludeCluster(storageCluster.GetName(), clusterFilter) {
+			continue
+		}
+
 		clusterList = append(clusterList, c.clusterFromDatastores(ctx, storageCluster))
 	}
 

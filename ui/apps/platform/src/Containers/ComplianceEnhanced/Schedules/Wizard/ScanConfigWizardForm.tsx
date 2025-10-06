@@ -1,5 +1,6 @@
-import React, { ReactElement, useCallback, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useRef, useState } from 'react';
+import type { ReactElement, RefObject } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
     Modal,
@@ -30,7 +31,8 @@ import ProfileSelection from './ProfileSelection';
 import ReportConfiguration from './ReportConfiguration';
 import ReviewConfig from './ReviewConfig';
 import useFormikScanConfig from './useFormikScanConfig';
-import { convertFormikToScanConfig, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import { convertFormikToScanConfig } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 const PARAMETERS = 'Set parameters';
 const PARAMETERS_ID = 'parameters';
@@ -47,10 +49,10 @@ type ScanConfigWizardFormProps = {
     initialFormValues?: ScanConfigFormValues;
 };
 
-type CustomFooterProps = {
+type CustomWizardFooterProps = {
     stepId: string;
     formik: ReturnType<typeof useFormikScanConfig>;
-    alertRef: React.RefObject<HTMLDivElement>;
+    alertRef: RefObject<HTMLDivElement>;
     openModal: () => void;
     validate?: () => boolean;
 };
@@ -61,7 +63,7 @@ function CustomWizardFooter({
     alertRef,
     openModal,
     validate = () => true,
-}: CustomFooterProps) {
+}: CustomWizardFooterProps) {
     const { activeStep, goToNextStep, goToPrevStep } = useWizardContext();
 
     function scrollToAlert() {

@@ -4,13 +4,17 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 
+	"github.com/cloudflare/cfssl/csr"
+	"github.com/cloudflare/cfssl/initca"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -19,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -39,7 +44,7 @@ func TestServiceImpl(t *testing.T) {
 }
 
 func TestAuthz(t *testing.T) {
-	testutils.AssertAuthzWorks(t, &serviceImpl{})
+	testutils.AssertAuthzWorks(t, New().(*serviceImpl))
 }
 
 type serviceImplTestSuite struct {
@@ -62,7 +67,7 @@ func (s *serviceImplTestSuite) SetupTest() {
 }
 
 func (s *serviceImplTestSuite) TestTLSChallenge() {
-	service := serviceImpl{}
+	service := New().(*serviceImpl)
 	req := &v1.TLSChallengeRequest{
 		ChallengeToken: validChallengeToken,
 	}
@@ -92,7 +97,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge() {
 }
 
 func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_ShouldFail() {
-	service := serviceImpl{}
+	service := New().(*serviceImpl)
 	req := &v1.TLSChallengeRequest{
 		ChallengeToken: validChallengeToken,
 	}
@@ -117,7 +122,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_Should
 }
 
 func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithoutChallenge() {
-	service := serviceImpl{}
+	service := New().(*serviceImpl)
 	req := &v1.TLSChallengeRequest{}
 
 	resp, err := service.TLSChallenge(context.TODO(), req)
@@ -127,7 +132,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithoutChallenge() {
 }
 
 func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithInvalidToken() {
-	service := serviceImpl{}
+	service := New().(*serviceImpl)
 	req := &v1.TLSChallengeRequest{
 		ChallengeToken: invalidChallengeToken,
 	}
@@ -203,7 +208,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 	s.Run("when managed central", func() {
 		s.T().Setenv("ROX_MANAGED_CENTRAL", "true")
 
-		caps, err := (&serviceImpl{}).GetCentralCapabilities(ctx, nil)
+		caps, err := New().GetCentralCapabilities(ctx, nil)
 
 		s.NoError(err)
 		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralScanningCanUseContainerIamRoleForEcr())
@@ -219,7 +224,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 		s.Run(fmt.Sprintf("when not managed central (%s)", name), func() {
 			s.T().Setenv("ROX_MANAGED_CENTRAL", val)
 
-			caps, err := (&serviceImpl{}).GetCentralCapabilities(ctx, nil)
+			caps, err := New().GetCentralCapabilities(ctx, nil)
 
 			s.NoError(err)
 			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralScanningCanUseContainerIamRoleForEcr)
@@ -228,4 +233,170 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanUpdateCert)
 		})
 	}
+}
+
+func (s *serviceImplTestSuite) TestIssueSecondaryCALeafCert() {
+	secondaryCA := s.createTestCA("Test Secondary CA", "17520h")
+
+	s.Run("successful certificate generation", func() {
+		mockProvider := &testCertificateProvider{
+			secondaryCA:         secondaryCA,
+			shouldFailSecondary: false,
+		}
+
+		cert, err := issueSecondaryCALeafCert(mockProvider)
+		s.Require().NoError(err)
+		s.Require().NotNil(cert.PrivateKey)
+		s.Require().Len(cert.Certificate, 1)
+
+		parsedCert, err := x509.ParseCertificate(cert.Certificate[0])
+		s.Require().NoError(err)
+		s.Equal(mtls.CentralSubject.CN(), parsedCert.Subject.CommonName)
+	})
+
+	s.Run("secondary CA loading failure", func() {
+		mockProvider := &testCertificateProvider{
+			secondaryCA:         secondaryCA,
+			shouldFailSecondary: true,
+			failSecondaryErr:    errors.New("secondary CA file not found"),
+		}
+
+		_, err := issueSecondaryCALeafCert(mockProvider)
+		s.Require().Error(err)
+		s.Contains(err.Error(), "failed to load secondary CA for signing")
+		s.Contains(err.Error(), "secondary CA file not found")
+	})
+}
+
+func (s *serviceImplTestSuite) createTestCA(commonName, expiry string) mtls.CA {
+	caCert, _, caKey, err := initca.New(&csr.CertificateRequest{
+		CN:         commonName,
+		KeyRequest: csr.NewKeyRequest(),
+		CA: &csr.CAConfig{
+			Expiry: expiry,
+		},
+	})
+	s.Require().NoError(err)
+
+	ca, err := mtls.LoadCAForSigning(caCert, caKey)
+	s.Require().NoError(err)
+	return ca
+}
+
+type testCertificateProvider struct {
+	primaryCA           mtls.CA
+	secondaryCA         mtls.CA
+	primaryLeafCert     tls.Certificate
+	shouldFailSecondary bool
+	failSecondaryErr    error
+}
+
+func (m *testCertificateProvider) GetPrimaryCACert() (*x509.Certificate, []byte, error) {
+	cert := m.primaryCA.Certificate()
+	return cert, cert.Raw, nil
+}
+
+func (m *testCertificateProvider) GetPrimaryLeafCert() (tls.Certificate, error) {
+	return m.primaryLeafCert, nil
+}
+
+func (m *testCertificateProvider) GetSecondaryCAForSigning() (mtls.CA, error) {
+	if m.shouldFailSecondary {
+		if m.failSecondaryErr != nil {
+			return nil, m.failSecondaryErr
+		}
+		return nil, errors.New("secondary CA not found")
+	}
+	return m.secondaryCA, nil
+}
+
+func (m *testCertificateProvider) GetSecondaryCACert() (*x509.Certificate, []byte, error) {
+	if m.shouldFailSecondary {
+		if m.failSecondaryErr != nil {
+			return nil, nil, m.failSecondaryErr
+		}
+		return nil, nil, errors.New("secondary CA not found")
+	}
+	cert := m.secondaryCA.Certificate()
+	return cert, cert.Raw, nil
+}
+
+func (m *testCertificateProvider) GetSecondaryLeafCert() (tls.Certificate, error) {
+	return issueSecondaryCALeafCert(m)
+}
+
+func (s *serviceImplTestSuite) TestTLSChallengeWithSecondaryCA() {
+	// Create test CAs
+	primaryCA := s.createTestCA("Test Primary CA", "8760h")
+	secondaryCA := s.createTestCA("Test Secondary CA", "17520h")
+
+	// Create a primary leaf certificate
+	issuedCert, err := primaryCA.IssueCertForSubject(mtls.CentralSubject)
+	s.Require().NoError(err)
+	primaryLeafCert, err := tls.X509KeyPair(issuedCert.CertPEM, issuedCert.KeyPEM)
+	s.Require().NoError(err)
+
+	s.Run("with both primary and secondary CA", func() {
+		mockProvider := &testCertificateProvider{
+			primaryCA:           primaryCA,
+			secondaryCA:         secondaryCA,
+			primaryLeafCert:     primaryLeafCert,
+			shouldFailSecondary: false,
+		}
+
+		service := &serviceImpl{
+			certProvider: mockProvider,
+		}
+
+		req := &v1.TLSChallengeRequest{
+			ChallengeToken: validChallengeToken,
+		}
+
+		resp, err := service.TLSChallenge(context.TODO(), req)
+		s.Require().NoError(err)
+		s.Require().NotNil(resp)
+
+		trustInfo := &v1.TrustInfo{}
+		err = trustInfo.UnmarshalVTUnsafe(resp.GetTrustInfoSerialized())
+		s.Require().NoError(err)
+
+		// Verify primary certificate chain
+		s.Require().Len(trustInfo.GetCertChain(), 2)
+		s.Equal(validChallengeToken, trustInfo.GetSensorChallenge())
+		s.NotEmpty(trustInfo.GetCentralChallenge())
+
+		// Verify secondary certificate chain and signature are present
+		s.Require().Len(trustInfo.GetSecondaryCertChain(), 2)
+		s.NotEmpty(resp.GetSignatureSecondaryCa())
+		s.NotEqual(trustInfo.GetCertChain()[0], trustInfo.GetSecondaryCertChain()[0])
+	})
+
+	s.Run("with broken secondary CA", func() {
+		mockProvider := &testCertificateProvider{
+			primaryCA:           primaryCA,
+			secondaryCA:         secondaryCA,
+			primaryLeafCert:     primaryLeafCert,
+			shouldFailSecondary: true,
+		}
+
+		service := &serviceImpl{
+			certProvider: mockProvider,
+		}
+
+		req := &v1.TLSChallengeRequest{
+			ChallengeToken: validChallengeToken,
+		}
+
+		resp, err := service.TLSChallenge(context.TODO(), req)
+		s.Require().NoError(err) // broken secondary CA should not fail the entire request
+		s.Require().NotNil(resp)
+
+		trustInfo := &v1.TrustInfo{}
+		err = trustInfo.UnmarshalVTUnsafe(resp.GetTrustInfoSerialized())
+		s.Require().NoError(err)
+
+		s.Require().Len(trustInfo.GetCertChain(), 2)
+		s.Empty(trustInfo.GetSecondaryCertChain())
+		s.Empty(resp.GetSignatureSecondaryCa())
+	})
 }

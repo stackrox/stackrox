@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Badge,
     Button,
@@ -17,9 +18,10 @@ import {
 import { OutlinedQuestionCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 import { Table, Tbody, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { LabelSelectorRequirement, LabelSelectorsKey } from 'services/AccessScopesService';
+import type { LabelSelectorRequirement, LabelSelectorsKey } from 'services/AccessScopesService';
 
-import { Activity, getIsValidRequirements, getRequirementActivity } from './accessScopes.utils';
+import { getIsValidRequirements, getRequirementActivity } from './accessScopes.utils';
+import type { Activity } from './accessScopes.utils';
 import RequirementRow from './RequirementRow';
 import RequirementRowAddKey from './RequirementRowAddKey';
 

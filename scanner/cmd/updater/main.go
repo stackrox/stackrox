@@ -37,7 +37,7 @@ func main() {
 	}
 
 	var exportCmd = &cobra.Command{
-		Use:   "export [--split] [--manual-url <url>] <output-dir>",
+		Use:   "export [--manual-url <url>] <output-dir>",
 		Short: "Export vulnerabilities and write bundle(s) to <output-dir>.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

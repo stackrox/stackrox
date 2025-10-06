@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 import {
     Button,
@@ -16,13 +16,14 @@ import isEqual from 'lodash/isEqual';
 import { vulnManagementImagesPath } from 'routePaths';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
 
-import ImagesAtMostRiskTable, { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
+import ImagesAtMostRiskTable from './ImagesAtMostRiskTable';
+import type { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
 import WidgetOptionsMenu from './WidgetOptionsMenu';

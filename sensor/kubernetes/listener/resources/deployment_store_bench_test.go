@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/selector"
@@ -24,11 +23,6 @@ const charset = "abcdef0123456789"
 type namespaceAndSelector struct {
 	namespace string
 	selector  selector.Selector
-}
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-
 }
 
 // BenchmarkBuildDeployments_NoChange uses one deployment and generates

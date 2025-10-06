@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
@@ -37,7 +36,6 @@ type ProcessBaselineDataStoreTestSuite struct {
 	requestContext     context.Context
 	datastore          DataStore
 	storage            store.Store
-	searcher           baselineSearch.Searcher
 	indicatorMockStore *indicatorMocks.MockDataStore
 
 	pool postgres.DB
@@ -60,13 +58,11 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 	suite.pool = pgtestbase.DB
 	suite.storage = postgresStore.New(suite.pool)
 
-	suite.searcher = baselineSearch.New(suite.storage)
-
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.baselineResultsStore = mocks.NewMockDataStore(suite.mockCtrl)
 	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
-	suite.datastore = New(suite.storage, suite.searcher, suite.baselineResultsStore, suite.indicatorMockStore)
+	suite.datastore = New(suite.storage, suite.baselineResultsStore, suite.indicatorMockStore)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {

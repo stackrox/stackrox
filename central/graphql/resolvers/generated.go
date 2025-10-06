@@ -146,6 +146,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"port: Int!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Violation_Type(0)))
+	utils.Must(builder.AddType("AutoLockProcessBaselinesConfig", []string{
+		"enabled: Boolean!",
+	}))
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
 		"subscriptionId: String!",
 	}))
@@ -270,6 +273,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Cluster", []string{
 		"admissionController: Boolean!",
 		"admissionControllerEvents: Boolean!",
+		"admissionControllerFailOnError: Boolean!",
 		"admissionControllerUpdates: Boolean!",
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
@@ -595,6 +599,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("DynamicClusterConfig", []string{
 		"admissionControllerConfig: AdmissionControllerConfig",
+		"autoLockProcessBaselinesConfig: AutoLockProcessBaselinesConfig",
 		"disableAuditLogs: Boolean!",
 		"registryOverride: String!",
 	}))
@@ -606,6 +611,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"allowUnauthenticatedSmtp: Boolean!",
 		"disableTLS: Boolean!",
 		"from: String!",
+		"hostnameHeloEhlo: String!",
 		"password: String!",
 		"sender: String!",
 		"server: String!",
@@ -744,6 +750,37 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"verifierId: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageSignatureVerificationResult_Status(0)))
+	utils.Must(builder.AddType("ImageV2", []string{
+		"digest: String!",
+		"id: ID!",
+		"isClusterLocal: Boolean!",
+		"lastUpdated: Time",
+		"metadata: ImageMetadata",
+		"name: ImageName",
+		"notPullable: Boolean!",
+		"notes: [ImageV2_Note!]!",
+		"priority: Int!",
+		"riskScore: Float!",
+		"signature: ImageSignature",
+		"signatureVerificationData: ImageSignatureVerificationData",
+		"topCvss: Float!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageV2_Note(0)))
+	utils.Must(builder.AddType("ImageV2_ScanStats", []string{
+		"componentCount: Int!",
+		"criticalCveCount: Int!",
+		"cveCount: Int!",
+		"fixableCriticalCveCount: Int!",
+		"fixableCveCount: Int!",
+		"fixableImportantCveCount: Int!",
+		"fixableLowCveCount: Int!",
+		"fixableModerateCveCount: Int!",
+		"fixableUnknownCveCount: Int!",
+		"importantCveCount: Int!",
+		"lowCveCount: Int!",
+		"moderateCveCount: Int!",
+		"unknownCveCount: Int!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Image_Note(0)))
 	utils.Must(builder.AddType("Jira", []string{
 		"defaultFieldsJson: String!",
@@ -1360,6 +1397,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("StaticClusterConfig", []string{
 		"admissionController: Boolean!",
 		"admissionControllerEvents: Boolean!",
+		"admissionControllerFailOnError: Boolean!",
 		"admissionControllerUpdates: Boolean!",
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
@@ -2813,6 +2851,53 @@ func toAlert_Violation_Types(values *[]string) []storage.Alert_Violation_Type {
 	return output
 }
 
+type autoLockProcessBaselinesConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AutoLockProcessBaselinesConfig
+}
+
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfig(value *storage.AutoLockProcessBaselinesConfig, ok bool, err error) (*autoLockProcessBaselinesConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &autoLockProcessBaselinesConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfigs(values []*storage.AutoLockProcessBaselinesConfig, err error) ([]*autoLockProcessBaselinesConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*autoLockProcessBaselinesConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &autoLockProcessBaselinesConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfigWithContext(ctx context.Context, value *storage.AutoLockProcessBaselinesConfig, ok bool, err error) (*autoLockProcessBaselinesConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &autoLockProcessBaselinesConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfigsWithContext(ctx context.Context, values []*storage.AutoLockProcessBaselinesConfig, err error) ([]*autoLockProcessBaselinesConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*autoLockProcessBaselinesConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &autoLockProcessBaselinesConfigResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *autoLockProcessBaselinesConfigResolver) Enabled(ctx context.Context) bool {
+	value := resolver.data.GetEnabled()
+	return value
+}
+
 type azureProviderMetadataResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -4030,6 +4115,11 @@ func (resolver *clusterResolver) AdmissionController(ctx context.Context) bool {
 
 func (resolver *clusterResolver) AdmissionControllerEvents(ctx context.Context) bool {
 	value := resolver.data.GetAdmissionControllerEvents()
+	return value
+}
+
+func (resolver *clusterResolver) AdmissionControllerFailOnError(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionControllerFailOnError()
 	return value
 }
 
@@ -7192,6 +7282,11 @@ func (resolver *dynamicClusterConfigResolver) AdmissionControllerConfig(ctx cont
 	return resolver.root.wrapAdmissionControllerConfig(value, true, nil)
 }
 
+func (resolver *dynamicClusterConfigResolver) AutoLockProcessBaselinesConfig(ctx context.Context) (*autoLockProcessBaselinesConfigResolver, error) {
+	value := resolver.data.GetAutoLockProcessBaselinesConfig()
+	return resolver.root.wrapAutoLockProcessBaselinesConfig(value, true, nil)
+}
+
 func (resolver *dynamicClusterConfigResolver) DisableAuditLogs(ctx context.Context) bool {
 	value := resolver.data.GetDisableAuditLogs()
 	return value
@@ -7308,6 +7403,11 @@ func (resolver *emailResolver) DisableTLS(ctx context.Context) bool {
 
 func (resolver *emailResolver) From(ctx context.Context) string {
 	value := resolver.data.GetFrom()
+	return value
+}
+
+func (resolver *emailResolver) HostnameHeloEhlo(ctx context.Context) string {
+	value := resolver.data.GetHostnameHeloEhlo()
 	return value
 }
 
@@ -8832,6 +8932,275 @@ func toImageSignatureVerificationResult_Statuses(values *[]string) []storage.Ima
 		output[i] = toImageSignatureVerificationResult_Status(&v)
 	}
 	return output
+}
+
+type imageV2Resolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageV2
+	list *storage.ListImageV2
+}
+
+func (resolver *Resolver) wrapImageV2(value *storage.ImageV2, ok bool, err error) (*imageV2Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageV2Resolver{root: resolver, data: value, list: nil}, nil
+}
+
+func (resolver *Resolver) wrapImageV2s(values []*storage.ImageV2, err error) ([]*imageV2Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageV2Resolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2Resolver{root: resolver, data: v, list: nil}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapImageV2WithContext(ctx context.Context, value *storage.ImageV2, ok bool, err error) (*imageV2Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageV2Resolver{ctx: ctx, root: resolver, data: value, list: nil}, nil
+}
+
+func (resolver *Resolver) wrapImageV2sWithContext(ctx context.Context, values []*storage.ImageV2, err error) ([]*imageV2Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageV2Resolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2Resolver{ctx: ctx, root: resolver, data: v, list: nil}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapListImageV2s(values []*storage.ListImageV2, err error) ([]*imageV2Resolver, error) {
+	if err != nil || values == nil {
+		return nil, err
+	}
+	output := make([]*imageV2Resolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2Resolver{root: resolver, data: nil, list: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageV2Resolver) ensureData(ctx context.Context) {
+	if resolver.data == nil {
+		resolver.data = resolver.root.getImageV2(ctx, resolver.list.GetId())
+	}
+}
+
+func (resolver *imageV2Resolver) Digest(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetDigest()
+	return value
+}
+
+func (resolver *imageV2Resolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	if resolver.data == nil {
+		value = resolver.list.GetId()
+	}
+	return graphql.ID(value)
+}
+
+func (resolver *imageV2Resolver) IsClusterLocal(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetIsClusterLocal()
+	return value
+}
+
+func (resolver *imageV2Resolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastUpdated()
+	if resolver.data == nil {
+		value = resolver.list.GetLastUpdated()
+	}
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *imageV2Resolver) Metadata(ctx context.Context) (*imageMetadataResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetMetadata()
+	return resolver.root.wrapImageMetadata(value, true, nil)
+}
+
+func (resolver *imageV2Resolver) Name(ctx context.Context) (*imageNameResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetName()
+	return resolver.root.wrapImageName(value, true, nil)
+}
+
+func (resolver *imageV2Resolver) NotPullable(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNotPullable()
+	return value
+}
+
+func (resolver *imageV2Resolver) Notes(ctx context.Context) []string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNotes()
+	return stringSlice(value)
+}
+
+func (resolver *imageV2Resolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	if resolver.data == nil {
+		value = resolver.list.GetPriority()
+	}
+	return int32(value)
+}
+
+func (resolver *imageV2Resolver) RiskScore(ctx context.Context) float64 {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetRiskScore()
+	return float64(value)
+}
+
+func (resolver *imageV2Resolver) Signature(ctx context.Context) (*imageSignatureResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetSignature()
+	return resolver.root.wrapImageSignature(value, true, nil)
+}
+
+func (resolver *imageV2Resolver) SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetSignatureVerificationData()
+	return resolver.root.wrapImageSignatureVerificationData(value, true, nil)
+}
+
+func (resolver *imageV2Resolver) TopCvss(ctx context.Context) float64 {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetTopCvss()
+	return float64(value)
+}
+
+func toImageV2_Note(value *string) storage.ImageV2_Note {
+	if value != nil {
+		return storage.ImageV2_Note(storage.ImageV2_Note_value[*value])
+	}
+	return storage.ImageV2_Note(0)
+}
+
+func toImageV2_Notes(values *[]string) []storage.ImageV2_Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ImageV2_Note, len(*values))
+	for i, v := range *values {
+		output[i] = toImageV2_Note(&v)
+	}
+	return output
+}
+
+type imageV2_ScanStatsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageV2_ScanStats
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStats(value *storage.ImageV2_ScanStats, ok bool, err error) (*imageV2_ScanStatsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageV2_ScanStatsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStatses(values []*storage.ImageV2_ScanStats, err error) ([]*imageV2_ScanStatsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageV2_ScanStatsResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2_ScanStatsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStatsWithContext(ctx context.Context, value *storage.ImageV2_ScanStats, ok bool, err error) (*imageV2_ScanStatsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageV2_ScanStatsResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStatsesWithContext(ctx context.Context, values []*storage.ImageV2_ScanStats, err error) ([]*imageV2_ScanStatsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageV2_ScanStatsResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2_ScanStatsResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageV2_ScanStatsResolver) ComponentCount(ctx context.Context) int32 {
+	value := resolver.data.GetComponentCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) CriticalCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetCriticalCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) CveCount(ctx context.Context) int32 {
+	value := resolver.data.GetCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableCriticalCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableCriticalCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableImportantCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableImportantCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableLowCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableLowCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableModerateCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableModerateCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableUnknownCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableUnknownCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) ImportantCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetImportantCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) LowCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetLowCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) ModerateCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetModerateCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) UnknownCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetUnknownCveCount()
+	return value
 }
 
 func toImage_Note(value *string) storage.Image_Note {
@@ -14773,6 +15142,11 @@ func (resolver *staticClusterConfigResolver) AdmissionController(ctx context.Con
 
 func (resolver *staticClusterConfigResolver) AdmissionControllerEvents(ctx context.Context) bool {
 	value := resolver.data.GetAdmissionControllerEvents()
+	return value
+}
+
+func (resolver *staticClusterConfigResolver) AdmissionControllerFailOnError(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionControllerFailOnError()
 	return value
 }
 

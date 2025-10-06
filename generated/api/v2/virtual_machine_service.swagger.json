@@ -1,0 +1,601 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/virtual_machine_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "VirtualMachineService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/virtualmachines": {
+      "get": {
+        "operationId": "VirtualMachineService_ListVirtualMachines",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListVirtualMachinesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineService"
+        ]
+      }
+    },
+    "/v2/virtualmachines/{id}": {
+      "get": {
+        "operationId": "VirtualMachineService_GetVirtualMachine",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2VirtualMachine"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "stripDescription",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "CVSSV3AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK",
+        "ATTACK_PHYSICAL"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "CVSSV3Complexity": {
+      "type": "string",
+      "enum": [
+        "COMPLEXITY_LOW",
+        "COMPLEXITY_HIGH"
+      ],
+      "default": "COMPLEXITY_LOW"
+    },
+    "CVSSV3Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_LOW",
+        "IMPACT_HIGH"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "CVSSV3Privileges": {
+      "type": "string",
+      "enum": [
+        "PRIVILEGE_NONE",
+        "PRIVILEGE_LOW",
+        "PRIVILEGE_HIGH"
+      ],
+      "default": "PRIVILEGE_NONE"
+    },
+    "CVSSV3Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "NONE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "default": "UNKNOWN"
+    },
+    "CVSSV3UserInteraction": {
+      "type": "string",
+      "enum": [
+        "UI_NONE",
+        "UI_REQUIRED"
+      ],
+      "default": "UI_NONE"
+    },
+    "VirtualMachineScanNote": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "OS_UNKNOWN",
+        "OS_UNSUPPORTED"
+      ],
+      "default": "UNSET"
+    },
+    "VirtualMachineState": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "STOPPED",
+        "RUNNING"
+      ],
+      "default": "UNKNOWN"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2Advisory": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
+    "v2AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v2Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v2CVSSScore": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/v2Source"
+        },
+        "url": {
+          "type": "string"
+        },
+        "cvssv3": {
+          "$ref": "#/definitions/v2CVSSV3"
+        }
+      }
+    },
+    "v2CVSSV3": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/CVSSV3AttackVector"
+        },
+        "attackComplexity": {
+          "$ref": "#/definitions/CVSSV3Complexity"
+        },
+        "privilegesRequired": {
+          "$ref": "#/definitions/CVSSV3Privileges"
+        },
+        "userInteraction": {
+          "$ref": "#/definitions/CVSSV3UserInteraction"
+        },
+        "scope": {
+          "$ref": "#/definitions/v2CVSSV3Scope"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/CVSSV3Severity"
+        }
+      }
+    },
+    "v2CVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
+    },
+    "v2EPSS": {
+      "type": "object",
+      "properties": {
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "epssPercentile": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "title": "EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile"
+    },
+    "v2EmbeddedVulnerability": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastModified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "firstSystemOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
+        },
+        "cvssMetrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2CVSSScore"
+          },
+          "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
+        },
+        "epss": {
+          "$ref": "#/definitions/v2EPSS"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/v2VulnerabilitySeverity"
+        },
+        "advisory": {
+          "$ref": "#/definitions/v2Advisory"
+        }
+      }
+    },
+    "v2ListVirtualMachinesResponse": {
+      "type": "object",
+      "properties": {
+        "virtualMachines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VirtualMachine"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v2SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2RawQuery": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v2Pagination"
+        }
+      },
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+    },
+    "v2ScanComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "vulns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2EmbeddedVulnerability"
+          }
+        },
+        "source": {
+          "$ref": "#/definitions/v2SourceType",
+          "title": "TODO (ROX-30352): Review the use of executable and if it applies to virtual machines"
+        }
+      }
+    },
+    "v2SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v2AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2Source": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN",
+        "SOURCE_RED_HAT",
+        "SOURCE_OSV",
+        "SOURCE_NVD"
+      ],
+      "default": "SOURCE_UNKNOWN"
+    },
+    "v2SourceType": {
+      "type": "string",
+      "enum": [
+        "OS",
+        "PYTHON",
+        "JAVA",
+        "RUBY",
+        "NODEJS",
+        "GO",
+        "DOTNETCORERUNTIME",
+        "INFRASTRUCTURE"
+      ],
+      "default": "OS"
+    },
+    "v2VirtualMachine": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "facts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "vsockCid": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "state": {
+          "$ref": "#/definitions/VirtualMachineState"
+        },
+        "scan": {
+          "$ref": "#/definitions/v2VirtualMachineScan"
+        }
+      }
+    },
+    "v2VirtualMachineScan": {
+      "type": "object",
+      "properties": {
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operatingSystem": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VirtualMachineScanNote"
+          }
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ScanComponent"
+          }
+        }
+      }
+    },
+    "v2VulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    }
+  }
+}

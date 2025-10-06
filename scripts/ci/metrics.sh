@@ -53,6 +53,48 @@ _create_job_record() {
     bq_create_job_record "$id" "$name" "$repo" "$branch" "$pr_number" "$commit_sha" "$ci_system"
 }
 
+save_job_record() {
+    _save_job_record "$@" || {
+        info "WARNING: Job record creation failed"
+    }
+}
+
+_save_job_record() {
+    info "Creating a job record for this test run"
+
+    if [[ "$#" -lt 2 ]]; then
+        die "missing arg. usage: save_job_record <job name> <ci system> [<field name> <value> ...]"
+    fi
+
+    if is_OPENSHIFT_CI && [[ -z "${BUILD_ID:-}" ]]; then
+        info "Skipping job record for jobs without a BUILD_ID (bin, images)"
+        return
+    fi
+
+    local name="$1"
+    local ci_system="$2"
+    shift; shift
+
+    local id
+    id="$(_get_metrics_job_id)"
+
+    local repo
+    repo="$(get_repo_full_name)"
+
+    local branch
+    branch="$(get_branch_name)"
+
+    local pr_number="NULL"
+    if is_in_PR_context; then
+        pr_number="$(get_PR_number)"
+    fi
+
+    local commit_sha
+    commit_sha="$(get_commit_sha)"
+
+    bq_save_job_record id "$id" name "$name" repo "$repo" branch "$branch" pr_number "$pr_number" commit_sha "$commit_sha" ci_system "$ci_system" "$@"
+}
+
 _get_metrics_job_id() {
     local id
     if is_OPENSHIFT_CI; then
@@ -82,6 +124,7 @@ _get_metrics_job_id() {
 }
 
 bq_create_job_record() {
+    info "WARNING: Job record creation is deprecated. Use save_job_record instead"
     setup_gcp
 
     bq query \
@@ -98,6 +141,55 @@ bq_create_job_record() {
         VALUES
             (@id, @name, @repo, @branch, @pr_number, @commit_sha, CURRENT_TIMESTAMP(), @ci_system)"
 }
+
+bq_save_job_record() {
+    setup_gcp
+
+    local -a sql_params
+    sql_params=()
+
+    local columns="stopped_at"
+    local values="TIMESTAMP_SECONDS(${EPOCHSECONDS:-$(date -u +%s)})"
+
+    # Process additional field-value pairs
+    while [[ "$#" -ne 0 ]]; do
+        local field="$1"
+        local value="$2"
+        shift; shift
+
+        # Let's handle null values from jq
+        if [[ "$value" == "null" ]]; then
+            continue
+        fi
+
+        local type=""
+        columns="$columns, $field"
+
+        if [[ "$field" == "pr_number" ]]; then
+            type="INTEGER"
+        fi
+
+        if [[ "$field" == "started_at" ]]; then
+            type="INTEGER"
+            values="$values, TIMESTAMP_SECONDS(@$field)"
+        else
+            values="$values, @$field"
+        fi
+        sql_params+=("--parameter=${field}:$type:$value")
+    done
+
+    info "${sql_params[@]}"
+    info "INSERT INTO ${_JOBS_TABLE_NAME} ($columns) VALUES ($values)"
+
+    bq --nosync query --batch \
+        --use_legacy_sql=false \
+        "${sql_params[@]}" \
+        "INSERT INTO ${_JOBS_TABLE_NAME}
+            ($columns)
+        VALUES
+            ($values)"
+}
+
 
 update_job_record() {
     _update_job_record "$@" || {
@@ -123,6 +215,7 @@ _update_job_record() {
 }
 
 bq_update_job_record() {
+    info "WARNING: Job record update is deprecated. Use save_job_record instead"
     setup_gcp
 
     local id="$1"

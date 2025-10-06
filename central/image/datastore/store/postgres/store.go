@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
+	"github.com/stackrox/rox/central/image/views"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,7 +27,9 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 	"github.com/stackrox/rox/pkg/set"
 	"gorm.io/gorm"
 )
@@ -791,6 +794,8 @@ func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Image")
 
+	q = applyDefaultSort(q)
+
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
 	})
@@ -1178,6 +1183,8 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.Image) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Image")
 
+	q = applyDefaultSort(q)
+
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Image")
 	if err != nil {
 		return err
@@ -1335,6 +1342,18 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 	return pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
 }
 
+// GetImagesRiskView retrieves an image id and risk score to initialize rankers
+func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageRiskView, error) {
+	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
+	var results []*views.ImageRiskView
+	results, err := pgSearch.RunSelectRequestForSchema[views.ImageRiskView](ctx, s.db, pkgSchema.ImagesSchema, q)
+	if err != nil {
+		log.Errorf("unable to initialize image ranking: %v", err)
+	}
+
+	return results, err
+}
+
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Update, "UpdateVulnState")
 
@@ -1412,4 +1431,14 @@ func gatherKeys(parts *imagePartsAsSlice) [][]byte {
 		keys = append(keys, []byte(vuln.GetId()))
 	}
 	return keys
+}
+
+func applyDefaultSort(q *v1.Query) *v1.Query {
+	q = sortfields.TransformSortOptions(q, pkgSchema.ImagesSchema.OptionsMap)
+
+	defaultSortOption := &v1.QuerySortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }

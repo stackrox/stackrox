@@ -589,7 +589,7 @@ function launch_central {
       "${COMMON_DIR}/monitoring.sh"
     fi
 
-    if [[ -n "$CI" ]]; then
+    if [[ -n "$CI" ]] && ! kubectl config current-context | grep -q kind; then
         # Needed for GKE and OpenShift clusters
         echo "Sleep for 2 minutes to allow for stabilization"
         sleep 120
@@ -649,6 +649,11 @@ function launch_sensor {
       extra_config+=("--admission-controller-listen-on-events=${bool_val}")
     	extra_json_config+=", \"admissionControllerEvents\": ${bool_val}"
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
+    fi
+
+    if [[ "${SECURED_CLUSTER_AUTO_LOCK_PROCESS_BASELINES:-}" == "true" ]]; then
+        extra_config+=("--auto-lock-process-baselines=true")
+        extra_helm_config+=(--set "autoLockProcessBaselines.enabled=true")
     fi
 
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then

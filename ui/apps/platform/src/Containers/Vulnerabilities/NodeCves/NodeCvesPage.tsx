@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom-v5-compat';
 import { PageSection } from '@patternfly/react-core';
 
 import PageNotFound from 'Components/PageNotFound';

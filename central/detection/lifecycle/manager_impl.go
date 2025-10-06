@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
@@ -20,9 +21,12 @@ import (
 	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -40,7 +44,7 @@ import (
 var (
 	lifecycleMgrCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image,
+			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.Cluster,
 				resources.DeploymentExtension, resources.WorkflowAdministration, resources.Namespace)))
 
 	genDuration = env.BaselineGenerationDuration.DurationSetting()
@@ -62,6 +66,7 @@ type managerImpl struct {
 
 	alertManager alertmanager.AlertManager
 
+	clusterDataStore        clusterDatastore.DataStore
 	deploymentDataStore     deploymentDatastore.DataStore
 	processesDataStore      processIndicatorDatastore.DataStore
 	baselines               baselineDataStore.DataStore
@@ -81,6 +86,8 @@ type managerImpl struct {
 	removedOrDisabledPolicies set.StringSet
 
 	processAggregator aggregator.ProcessAggregator
+
+	connectionManager connection.Manager
 }
 
 func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIndicator {
@@ -164,9 +171,70 @@ func (m *managerImpl) flushBaselineQueue() {
 		// Grab the first deployment to baseline.
 		// NOTE:  This is the only place from which Pull is called.
 		deployment := m.deploymentObservationQueue.Pull()
+		deploymentId := deployment.DeploymentID
 
-		m.addBaseline(deployment.DeploymentID)
+		baselines := m.addBaseline(deploymentId)
+
+		fullDeployment, found, err := m.deploymentDataStore.GetDeployment(lifecycleMgrCtx, deploymentId)
+
+		if !found {
+			log.Errorf("Error: Cluster not found for deployment %s", deploymentId)
+			continue
+		}
+
+		if err != nil {
+			log.Errorf("Error getting cluster for deployment %s: %+v", deploymentId, err)
+			continue
+		}
+
+		if m.isAutoLockEnabledForCluster(fullDeployment.GetClusterId()) {
+			m.autoLockProcessBaselines(baselines)
+		}
 	}
+}
+
+func (m *managerImpl) autoLockProcessBaselines(baselines []*storage.ProcessBaseline) {
+	for _, baseline := range baselines {
+		if baseline == nil || baseline.GetUserLockedTimestamp() != nil {
+			continue
+		}
+
+		baseline.UserLockedTimestamp = protocompat.TimestampNow()
+		_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), true)
+		if err != nil {
+			log.Errorf("Error setting user lock for %+v: %v", baseline.GetKey(), err)
+			continue
+		}
+		err = m.SendBaselineToSensor(baseline)
+		if err != nil {
+			log.Errorf("Error sending process baseline %+v: %v", baseline, err)
+		}
+	}
+}
+
+// Perhaps the cluster config should be kept in memory and calling the database should not be needed
+func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
+	if !features.AutoLockProcessBaselines.Enabled() {
+		return false
+	}
+
+	cluster, found, err := m.clusterDataStore.GetCluster(lifecycleMgrCtx, clusterId)
+
+	if err != nil {
+		log.Errorf("Error getting cluster config %s: %v", clusterId, err)
+		return false
+	}
+
+	if !found {
+		log.Errorf("Error: Unable to find cluster %s", clusterId)
+		return false
+	}
+
+	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL || cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
+		return cluster.GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
+	}
+
+	return cluster.GetHelmConfig().GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
 }
 
 func (m *managerImpl) flushIndicatorQueue() {
@@ -219,7 +287,7 @@ func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
 	}
 }
 
-func (m *managerImpl) addBaseline(deploymentID string) {
+func (m *managerImpl) addBaseline(deploymentID string) []*storage.ProcessBaseline {
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "AddBaseline")
 
 	// Simply use search to find the process indicators for the deployment
@@ -230,10 +298,10 @@ func (m *managerImpl) addBaseline(deploymentID string) {
 			ProtoQuery(),
 	)
 
-	m.buildMapAndCheckBaseline(indicatorSlice)
+	return m.buildMapAndCheckBaseline(indicatorSlice)
 }
 
-func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.ProcessIndicator) {
+func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.ProcessIndicator) []*storage.ProcessBaseline {
 	// Group the processes into particular baseline segments
 	baselineMap := make(map[processBaselineKey][]*storage.ProcessIndicator)
 	for _, indicator := range indicatorSlice {
@@ -241,14 +309,37 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 		baselineMap[key] = append(baselineMap[key], indicator)
 	}
 
+	baselines := make([]*storage.ProcessBaseline, 0)
+
 	for key, indicators := range baselineMap {
-		if _, err := m.checkAndUpdateBaseline(key, indicators); err != nil {
+		if baseline, _, err := m.checkAndUpdateBaseline(key, indicators); err != nil {
 			log.Errorf("error checking and updating baseline for %+v: %v", key, err)
+		} else if baseline != nil {
+			baselines = append(baselines, baseline)
 		}
 	}
+
+	return baselines
 }
 
-func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
+func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) error {
+	clusterId := baseline.GetKey().GetClusterId()
+	err := m.connectionManager.SendMessage(clusterId, &central.MsgToSensor{
+		Msg: &central.MsgToSensor_BaselineSync{
+			BaselineSync: &central.BaselineSync{
+				Baselines: []*storage.ProcessBaseline{baseline},
+			}},
+	})
+	if err != nil {
+		log.Errorf("Error sending process baseline to cluster %q: %v", clusterId, err)
+		return err
+	}
+	log.Infof("Successfully sent process baseline to cluster %q: %s", clusterId, baseline.GetId())
+
+	return nil
+}
+
+func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (*storage.ProcessBaseline, bool, error) {
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  baselineKey.deploymentID,
 		ContainerName: baselineKey.containerName,
@@ -258,14 +349,15 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 
 	// TODO joseph what to do if exclusions ("baseline" in the old non-inclusive language) doesn't exist?  Always create for now?
 	baseline, exists, err := m.baselines.GetProcessBaseline(lifecycleMgrCtx, key)
+
 	if err != nil {
-		return false, err
+		return baseline, false, err
 	}
 
 	// If the baseline does not exist AND this deployment is in the observation period, we
 	// need not process further at this time.
 	if !exists && m.deploymentObservationQueue.InObservation(key.GetDeploymentId()) {
-		return false, nil
+		return baseline, false, nil
 	}
 
 	existingProcess := set.NewStringSet()
@@ -287,11 +379,11 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		elements = append(elements, insertableElement)
 	}
 	if len(elements) == 0 {
-		return false, nil
+		return baseline, false, nil
 	}
 	if !exists {
-		_, err = m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
-		return false, err
+		baseline, err = m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
+		return baseline, false, err
 	}
 
 	userBaseline := processbaseline.IsUserLocked(baseline)
@@ -301,10 +393,10 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
 	} else {
 		// So we have a baseline, but not locked.  Now we need to add these elements to the unlocked baseline
-		_, err = m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true)
+		baseline, err = m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true)
 	}
 
-	return userBaseline, err
+	return baseline, userBaseline, err
 }
 
 func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error {

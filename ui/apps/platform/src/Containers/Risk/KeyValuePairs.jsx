@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import PropTypes from 'prop-types';
 import isObject from 'lodash/isObject';
 import isArray from 'lodash/isArray';
 import isEmpty from 'lodash/isEmpty';
 
-import { vulnerabilitiesPlatformPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import { vulnerabilitiesUserWorkloadsPath, vulnerabilitiesPlatformPath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const isNumeric = (x) => (typeof x === 'number' || typeof x === 'string') && Number(x) >= 0;
@@ -17,7 +17,6 @@ class KeyValuePairs extends Component {
             label: PropTypes.string,
             className: PropTypes.string,
         }),
-        isFeatureFlagEnabled: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
@@ -53,7 +52,7 @@ class KeyValuePairs extends Component {
 
     render() {
         const keys = this.getKeys();
-        const { data, isFeatureFlagEnabled } = this.props;
+        const { data } = this.props;
         const mapping = this.props.keyValueMap;
         return keys.map((key) => {
             if (!data[key] || !mapping[key] || (isObject(data[key]) && isEmpty(data[key]))) {
@@ -69,7 +68,6 @@ class KeyValuePairs extends Component {
             }
 
             const usePlatformWorkloadCvePath =
-                isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') &&
                 typeof data === 'object' &&
                 'platformComponent' in data &&
                 // eslint-disable-next-line react/prop-types
@@ -77,7 +75,7 @@ class KeyValuePairs extends Component {
 
             const vulnMgmtBasePath = usePlatformWorkloadCvePath
                 ? vulnerabilitiesPlatformPath
-                : vulnerabilitiesWorkloadCvesPath;
+                : vulnerabilitiesUserWorkloadsPath;
 
             return (
                 <div
@@ -105,4 +103,8 @@ function KeyValuePairsHoC(props) {
     return <KeyValuePairs isFeatureFlagEnabled={isFeatureFlagEnabled} {...props} />;
 }
 
+// Encapsulate KeyValuePairsHoC as implementation detail,
+// especially since KeyValue appears in Find results.
+// Soon we will remove the need for HoC and therefore exception.
+// eslint-disable-next-line limited/react-export-default
 export default KeyValuePairsHoC;

@@ -10,7 +10,7 @@ import {
     GradientDefs,
 } from 'react-vis';
 import max from 'lodash/max';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import PropTypes from 'prop-types';
 import BarGradient from 'Components/visuals/BarGradient';
 

@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -582,7 +583,7 @@ func makePVC(owner *platform.Central, name string, size resource.Quantity, stora
 }
 
 func newReconcilePVCExtensionRun(t *testing.T, testCase pvcReconciliationTestCase, client ctrlClient.Client) reconcilePVCExtensionRun {
-	persistence, err := getPersistenceByTarget(testCase.Central, testCase.Target, logr.Discard())
+	persistence, err := getPersistenceByTarget(testCase.Central.Spec.Central, testCase.Target)
 	require.NoError(t, err)
 
 	return reconcilePVCExtensionRun{
@@ -601,5 +602,351 @@ func newReconcilePVCExtensionRun(t *testing.T, testCase pvcReconciliationTestCas
 func makeHostPathSpec(path string) *platform.HostPathSpec {
 	return &platform.HostPathSpec{
 		Path: &path,
+	}
+}
+
+func Test_getPersistenceByTarget(t *testing.T) {
+	tests := map[string]struct {
+		central *platform.CentralComponentSpec
+		target  PVCTarget
+		want    *platform.DBPersistence
+		wantErr assert.ErrorAssertionFunc
+	}{
+		"stackrox-db with nil central component spec": {
+			central: nil,
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with nil DB": {
+			central: &platform.CentralComponentSpec{},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with nil persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with empty persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{},
+				},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with empty hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{},
+					},
+				},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+					},
+				},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with hostPath and pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+						},
+					},
+				},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{},
+				},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+
+		"central-db with nil central component spec": {
+			central: nil,
+			target:  PVCTargetCentralDB,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db with nil DB": {
+			central: &platform.CentralComponentSpec{},
+			target:  PVCTargetCentralDB,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db with nil persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{},
+			},
+			target:  PVCTargetCentralDB,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db with empty persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{},
+				},
+			},
+			target:  PVCTargetCentralDB,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db with empty hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{},
+					},
+				},
+			},
+			target: PVCTargetCentralDB,
+			want: &platform.DBPersistence{
+				HostPath: &platform.HostPathSpec{},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db with hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDB,
+			want: &platform.DBPersistence{
+				HostPath: &platform.HostPathSpec{
+					Path: ptr.To("/foo/bar"),
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db with hostPath and pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDB,
+			want: &platform.DBPersistence{HostPath: &platform.HostPathSpec{
+				Path: ptr.To("/foo/bar"),
+			}},
+			wantErr: assert.NoError,
+		},
+		"central-db with empty pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{},
+				},
+			},
+			target:  PVCTargetCentralDB,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db with pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+							Size:      ptr.To("100Gi"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDB,
+			want: &platform.DBPersistence{
+				PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+					ClaimName: ptr.To(DefaultCentralDBPVCName),
+					Size:      ptr.To("100Gi"),
+				},
+			},
+			wantErr: assert.NoError,
+		},
+
+		"central-db-backup with nil central component spec": {
+			central: nil,
+			target:  PVCTargetCentralDBBackup,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with nil DB": {
+			central: &platform.CentralComponentSpec{},
+			target:  PVCTargetCentralDBBackup,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with nil persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{},
+			},
+			target:  PVCTargetCentralDBBackup,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with empty persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{},
+				},
+			},
+			target:  PVCTargetCentralDBBackup,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with empty hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			want: &platform.DBPersistence{
+				HostPath: &platform.HostPathSpec{},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			want: &platform.DBPersistence{
+				HostPath: &platform.HostPathSpec{
+					Path: ptr.To("/foo/bar"),
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with hostPath and pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			want: &platform.DBPersistence{HostPath: &platform.HostPathSpec{
+				Path: ptr.To("/foo/bar"),
+			}},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with empty pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			want: &platform.DBPersistence{
+				PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+							Size:      ptr.To("100Gi"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			want: &platform.DBPersistence{
+				PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+					ClaimName: ptr.To("central-db-backup"),
+					Size:      ptr.To("200Gi"),
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with pvc with broken size": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+							Size:      ptr.To("1 Badger"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorContains(t, err, "failed to calculate backup volume size: parsing main central-db PVC size \"1 Badger\" failed", i)
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := getPersistenceByTarget(tt.central, tt.target)
+			if !tt.wantErr(t, err, fmt.Sprintf("getPersistenceByTarget(%v, %v)", tt.central, tt.target)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "getPersistenceByTarget(%v, %v)", tt.central, tt.target)
+		})
 	}
 }

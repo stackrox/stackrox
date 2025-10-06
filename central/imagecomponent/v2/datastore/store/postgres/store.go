@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -41,7 +43,8 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -71,6 +74,8 @@ func New(db postgres.DB) Store {
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
+		pgSearch.GetDefaultSort(search.Component.String(), false),
+		pkgSchema.ImagesSchema.OptionsMap,
 	)
 }
 
@@ -107,7 +112,7 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 		obj.GetOperatingSystem(),
 		obj.GetImageId(),
 		obj.GetLocation(),
-		obj.GetImageIdV2(),
+		pgutils.NilOrString(obj.GetImageIdV2()),
 		serialized,
 	}
 
@@ -118,10 +123,10 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 }
 
 func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageComponentV2) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -143,52 +148,51 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 		"serialized",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
+			serialized, marshalErr := obj.MarshalVT()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			inputRows = append(inputRows, []interface{}{
+				obj.GetId(),
+				obj.GetName(),
+				obj.GetVersion(),
+				obj.GetPriority(),
+				obj.GetSource(),
+				obj.GetRiskScore(),
+				obj.GetTopCvss(),
+				obj.GetOperatingSystem(),
+				obj.GetImageId(),
+				obj.GetLocation(),
+				pgutils.NilOrString(obj.GetImageIdV2()),
+				serialized,
+			})
+
+			// Add the ID to be deleted.
+			deletes = append(deletes, obj.GetId())
 		}
 
-		inputRows = append(inputRows, []interface{}{
-			obj.GetId(),
-			obj.GetName(),
-			obj.GetVersion(),
-			obj.GetPriority(),
-			obj.GetSource(),
-			obj.GetRiskScore(),
-			obj.GetTopCvss(),
-			obj.GetOperatingSystem(),
-			obj.GetImageId(),
-			obj.GetLocation(),
-			obj.GetImageIdV2(),
-			serialized,
-		})
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
 
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = deletes[:0]
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
 		}
+		// clear the inserts and vals for the next batch
+		deletes = deletes[:0]
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	return nil

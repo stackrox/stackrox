@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import store from 'store';
 
-import axios from 'services/instance';
 import queryString from 'qs';
 
-import { Role } from 'services/RolesService';
+import { authProviderLabels } from 'constants/accessControl';
+import type { Role } from 'services/RolesService';
+import type { Empty } from 'services/types';
+import type { Traits } from 'types/traits.proto';
+import { isUserResource } from 'utils/traits.utils';
 
-import { Empty } from 'services/types';
+import axios from '../instance';
 import AccessTokenManager from './AccessTokenManager';
 import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
 } from './addTokenRefreshInterceptors';
-import { authProviderLabels } from '../../constants/accessControl';
-import { Traits } from '../../types/traits.proto';
-import { isUserResource } from '../../Containers/AccessControl/traits';
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import type { ReactNode } from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { ActionsColumn, IAction, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Flex, Label } from '@patternfly/react-core';
+import { Flex, Label, LabelGroup } from '@patternfly/react-core';
 import { EyeIcon } from '@patternfly/react-icons';
 import isEmpty from 'lodash/isEmpty';
 
@@ -27,13 +28,20 @@ import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { SignatureVerificationResult, VulnerabilitySeverityLabel, WatchStatus } from '../../types';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabel';
-import VerifiedSignatureLabel from '../components/VerifiedSignatureLabel';
+import VerifiedSignatureLabel, {
+    getVerifiedSignatureInResults,
+} from '../components/VerifiedSignatureLabel';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { getSeveritySortOptions } from '../../utils/sortUtils';
 
 export const tableId = 'WorkloadCvesImageOverviewTable';
 
 export const defaultColumns = {
+    image: {
+        title: 'Image',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     cvesBySeverity: {
         title: 'CVEs by severity',
         isShownByDefault: true,
@@ -53,6 +61,11 @@ export const defaultColumns = {
     scanTime: {
         title: 'Scan time',
         isShownByDefault: true,
+    },
+    rowActions: {
+        title: 'Row actions',
+        isShownByDefault: true,
+        isUntoggleAble: true,
     },
 } as const;
 
@@ -144,7 +157,6 @@ export type ImageOverviewTableProps = {
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: (imageName: string) => void;
     onUnwatchImage: (imageName: string) => void;
-    showCveDetailFields: boolean;
     onClearFilters: () => void;
     columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
@@ -157,7 +169,6 @@ function ImageOverviewTable({
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
-    showCveDetailFields,
     onClearFilters,
     columnVisibilityState,
 }: ImageOverviewTableProps) {
@@ -166,29 +177,28 @@ function ImageOverviewTable({
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
-    const hasActionColumn = hasWriteAccessForWatchedImage || hasWriteAccessForImage;
-    const colSpan =
-        5 + (hasActionColumn ? 1 : 0) + (showCveDetailFields ? 1 : 0) + -hiddenColumnCount;
+
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
     const [sbomTargetImage, setSbomTargetImage] = useState<string>();
 
     return (
         <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th sort={getSortParams('Image')}>Image</Th>
-                    {showCveDetailFields && (
-                        <TooltipTh
-                            className={getVisibilityClass('cvesBySeverity')}
-                            tooltip="CVEs by severity across this image"
-                            sort={getSortParams(
-                                'CVEs By Severity',
-                                getSeveritySortOptions(filteredSeverities)
-                            )}
-                        >
-                            CVEs by severity
-                            {isFiltered && <DynamicColumnIcon />}
-                        </TooltipTh>
-                    )}
+                    <Th className={getVisibilityClass('image')} sort={getSortParams('Image')}>
+                        Image
+                    </Th>
+                    <TooltipTh
+                        className={getVisibilityClass('cvesBySeverity')}
+                        tooltip="CVEs by severity across this image"
+                        sort={getSortParams(
+                            'CVEs By Severity',
+                            getSeveritySortOptions(filteredSeverities)
+                        )}
+                    >
+                        CVEs by severity
+                        {isFiltered && <DynamicColumnIcon />}
+                    </TooltipTh>
                     <Th
                         className={getVisibilityClass('operatingSystem')}
                         sort={getSortParams('Image OS')}
@@ -211,11 +221,10 @@ function ImageOverviewTable({
                     >
                         Scan time
                     </Th>
-                    {hasActionColumn && (
-                        <Th>
-                            <span className="pf-v5-screen-reader">Row actions</span>
-                        </Th>
-                    )}
+                    {/* eslint-disable-next-line generic/Th-defaultColumns */}
+                    <Th className={getVisibilityClass('rowActions')}>
+                        <span className="pf-v5-screen-reader">Row actions</span>
+                    </Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -280,6 +289,44 @@ function ImageOverviewTable({
                             });
                         }
 
+                        const labels: ReactNode[] = [];
+                        const verifiedSignatureResults = getVerifiedSignatureInResults(
+                            signatureVerificationData?.results
+                        );
+                        if (verifiedSignatureResults.length !== 0) {
+                            labels.push(
+                                <VerifiedSignatureLabel
+                                    key="verifiedSignatureResults"
+                                    verifiedSignatureResults={verifiedSignatureResults}
+                                    isCompact
+                                    variant="outline"
+                                />
+                            );
+                        }
+                        if (isWatchedImage) {
+                            labels.push(
+                                <Label
+                                    key="isWatchedImage"
+                                    isCompact
+                                    variant="outline"
+                                    color="grey"
+                                    icon={<EyeIcon />}
+                                >
+                                    Watched image
+                                </Label>
+                            );
+                        }
+                        if (hasScanMessage) {
+                            labels.push(
+                                <ImageScanningIncompleteLabel
+                                    key="hasScanMessage"
+                                    scanMessage={scanMessage}
+                                />
+                            );
+                        }
+
+                        // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                        // and assumes adjacent empty cell has no paddingTop.
                         return (
                             <Tbody
                                 key={id}
@@ -288,52 +335,27 @@ function ImageOverviewTable({
                                 }}
                             >
                                 <Tr>
-                                    <Td dataLabel="Image">
+                                    <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
-                                            <ImageNameLink name={name} id={id}>
-                                                <VerifiedSignatureLabel
-                                                    results={signatureVerificationData?.results}
-                                                    className="pf-v5-u-mt-xs"
-                                                    isCompact
-                                                    variant="outline"
-                                                />
-                                                {isWatchedImage && (
-                                                    <Label
-                                                        isCompact
-                                                        variant="outline"
-                                                        color="grey"
-                                                        className="pf-v5-u-mt-xs"
-                                                        icon={<EyeIcon />}
-                                                    >
-                                                        Watched image
-                                                    </Label>
-                                                )}
-                                                {hasScanMessage && (
-                                                    <ImageScanningIncompleteLabel
-                                                        scanMessage={scanMessage}
-                                                    />
-                                                )}
-                                            </ImageNameLink>
+                                            <ImageNameLink name={name} id={id} />
                                         ) : (
                                             'Image name not available'
                                         )}
                                     </Td>
-                                    {showCveDetailFields && (
-                                        <Td
-                                            className={getVisibilityClass('cvesBySeverity')}
-                                            dataLabel="CVEs by severity"
-                                        >
-                                            <SeverityCountLabels
-                                                criticalCount={criticalCount}
-                                                importantCount={importantCount}
-                                                moderateCount={moderateCount}
-                                                lowCount={lowCount}
-                                                unknownCount={unknownCount}
-                                                entity="image"
-                                                filteredSeverities={filteredSeverities}
-                                            />
-                                        </Td>
-                                    )}
+                                    <Td
+                                        className={getVisibilityClass('cvesBySeverity')}
+                                        dataLabel="CVEs by severity"
+                                    >
+                                        <SeverityCountLabels
+                                            criticalCount={criticalCount}
+                                            importantCount={importantCount}
+                                            moderateCount={moderateCount}
+                                            lowCount={lowCount}
+                                            unknownCount={unknownCount}
+                                            entity="image"
+                                            filteredSeverities={filteredSeverities}
+                                        />
+                                    </Td>
                                     <Td
                                         dataLabel="Operating system"
                                         className={getVisibilityClass('operatingSystem')}
@@ -372,15 +394,22 @@ function ImageOverviewTable({
                                     >
                                         {scanTime ? <DateDistance date={scanTime} /> : 'unknown'}
                                     </Td>
-                                    {hasActionColumn && (
-                                        <Td isActionCell>
-                                            <ActionsColumn
-                                                popperProps={ACTION_COLUMN_POPPER_PROPS}
-                                                items={rowActions}
-                                            />
-                                        </Td>
-                                    )}
+                                    <Td className={getVisibilityClass('rowActions')} isActionCell>
+                                        <ActionsColumn
+                                            popperProps={ACTION_COLUMN_POPPER_PROPS}
+                                            items={rowActions}
+                                        />
+                                    </Td>
                                 </Tr>
+                                {labels.length !== 0 && (
+                                    <Tr>
+                                        <Td colSpan={colSpan} style={{ paddingTop: 0 }}>
+                                            <LabelGroup isCompact numLabels={labels.length}>
+                                                {labels}
+                                            </LabelGroup>
+                                        </Td>
+                                    </Tr>
+                                )}
                             </Tbody>
                         );
                     })

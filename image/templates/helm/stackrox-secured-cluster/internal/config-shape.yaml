@@ -101,6 +101,7 @@ admissionControl:
     disableBypass: null # bool
     timeout: null # natural number
     enforceOnUpdates: null # bool
+  enforce: null # bool
   imagePullPolicy: null # string
   replicas: null # int
   affinity: null # dict
@@ -143,6 +144,8 @@ collector:
     enabled: null # bool
 auditLogs:
   disableCollection: null # bool
+autoLockProcessBaselines:
+  enabled: null # bool
 customize:
   labels: {} # dict
   annotations: {} # dict

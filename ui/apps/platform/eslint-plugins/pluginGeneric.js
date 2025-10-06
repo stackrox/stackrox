@@ -1,4 +1,6 @@
-/* globals module */
+/* globals module require */
+
+const path = require('node:path');
 
 const rules = {
     // ESLint naming convention for positive rules:
@@ -306,51 +308,6 @@ const rules = {
             };
         },
     },
-    /*
-    // Add require to globals comment, and then paste following it:
-    // const path = require('node:path');
-    'export-default-react': {
-        // Prevent mistaken assumptions about results from Find in Files.
-        meta: {
-            type: 'problem',
-            docs: {
-                description:
-                    'Require that file name be consistent with export default of React component name',
-            },
-            schema: [],
-        },
-        create(context) {
-            return {
-                ExportDefaultDeclaration(node) {
-                    if (typeof node.declaration?.name === 'string') {
-                        const { name } = node.declaration;
-                        const { filename } = context;
-                        const basenameWithoutExtension = path.basename(
-                            filename,
-                            path.extname(filename)
-                        );
-                        if (basenameWithoutExtension !== name) {
-                            const ancestors = context.sourceCode.getAncestors(node);
-                            const hasReactImportDeclaration = ancestors[0]?.body?.some(
-                                (child) =>
-                                    child.type === 'ImportDeclaration' &&
-                                    child.source?.value === 'react'
-                            );
-                            // Omit from previous condition, because hooks do not import React.
-                            // child.specifiers?.[0]?.local?.name === 'React'
-                            if (hasReactImportDeclaration) {
-                                context.report({
-                                    node,
-                                    message: `Require that file name be consistent with export default of React component name: ${name}`,
-                                });
-                            }
-                        }
-                    }
-                },
-            };
-        },
-    },
-    */
     'getVersionedDocs-subPath': {
         meta: {
             type: 'problem',
@@ -388,6 +345,50 @@ const rules = {
             };
         },
     },
+    'import-type-order': {
+        // Require import type to follow corresponding import statement (if it exists).
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require import type to follow corresponding import statement (if it exists).',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.importKind === 'type' && typeof node.source?.value === 'string') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            Array.isArray(ancestors[ancestors.length - 1].body)
+                        ) {
+                            const hasImportKindTypeAndSourceValue = (child) =>
+                                child.type === 'ImportDeclaration' &&
+                                child.importKind === 'type' &&
+                                child.source?.value === node.source.value;
+                            const hasImportKindValueAndSourceValue = (child) =>
+                                child.type === 'ImportDeclaration' &&
+                                child.importKind === 'value' &&
+                                child.source?.value === node.source.value;
+
+                            const { body } = ancestors[ancestors.length - 1];
+                            const indexType = body.findIndex(hasImportKindTypeAndSourceValue);
+                            const indexValue = body.findIndex(hasImportKindValueAndSourceValue);
+                            if (indexType >= 0 && indexValue >= 0 && indexType !== indexValue + 1) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Move import type to follow corresponding import statement',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'pagination-function-call': {
         // Require that pagination property has function call like getPaginationParams.
         // Some classic pages have queryService.getPagination function call instead.
@@ -409,6 +410,60 @@ const rules = {
                                 message:
                                     'Require that pagination property has function call like getPaginationParams',
                             });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'react-props-name': {
+        // Prevent mistaken assumptions about results from Find in Files.
+        // For the most common component definition patterns in TypeScript React files:
+        //
+        // function Whatever(({ … }: WhateverProps) {}
+        // export default Whatever;
+        //
+        // export default function Whatever({ … }: WhateverProps) {}
+        //
+        // function Whatever({ … }: WhateverProps) {}
+        //
+        // Use eslint-disable comment if application-specific component has PatternFly props name.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Require that React component has consistent props name',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                TSTypeReference(node) {
+                    const nameOfPropsType = node?.typeName?.name;
+                    const upperRegExp = /^[A-Z]/; // usual convention for React component name
+                    if (
+                        typeof nameOfPropsType === 'string' &&
+                        path.extname(context.filename) === '.tsx'
+                    ) {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            Array.isArray(ancestors) &&
+                            ancestors.length > 3 &&
+                            ancestors[ancestors.length - 1].type === 'TSTypeAnnotation' &&
+                            ancestors[ancestors.length - 2].type === 'ObjectPattern' &&
+                            ancestors[ancestors.length - 3].type === 'FunctionDeclaration'
+                        ) {
+                            const name = ancestors[ancestors.length - 3]?.id?.name;
+                            if (typeof name === 'string' && upperRegExp.test(name)) {
+                                // specialized case: WhateverIntegrationFormProps endsWith IntegrationFormProps
+                                // current baseline: Whatever endsWith WhateverProps
+                                // possible minimal: WhateverProps endsWith Props
+                                if (!`${name}Props`.endsWith(nameOfPropsType)) {
+                                    context.report({
+                                        node,
+                                        message: `Require that React component ${name} has consistent props name: ${nameOfPropsType}`,
+                                    });
+                                }
+                            }
                         }
                     }
                 },

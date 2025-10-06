@@ -1,4 +1,4 @@
-import { VulnerabilitySeverity } from 'types/cve.proto';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
 
 export const severityRankings: Record<VulnerabilitySeverity, number> = {
     UNKNOWN_VULNERABILITY_SEVERITY: 0,

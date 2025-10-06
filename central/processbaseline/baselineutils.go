@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/processindicator/views"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -78,6 +79,26 @@ func IsStartupProcess(process *storage.ProcessIndicator) bool {
 	if process.ContainerStartTime == nil {
 		return false
 	}
+	// TODO(ROX-31107): Determine if nil SignalTime should be considered startup task.  By this logic it is.
 	durationBetweenProcessAndContainerStart := protoutils.Sub(process.GetSignal().GetTime(), process.GetContainerStartTime())
 	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
+}
+
+// IsStartupProcessView determines if the process is a startup process
+// A process is considered a startup process if it happens within the first ContainerStartupDuration and was not scraped
+// but instead pulled from exec
+func IsStartupProcessView(process *views.ProcessIndicatorRiskView) bool {
+	if process.ContainerStartTime == nil {
+		return false
+	}
+	// TODO(ROX-31107): Determine if nil SignalTime should be considered startup task.  By this logic it is.
+	durationBetweenProcessAndContainerStart := protoutils.Sub(protocompat.ConvertTimeToTimestampOrNil(process.SignalTime),
+		protocompat.ConvertTimeToTimestampOrNil(process.ContainerStartTime))
+	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
+}
+
+// BaselineItemFromProcessView returns what we baseline for a given process.
+// It exists to make sure that we're using the same thing in every place (name vs execfilepath).
+func BaselineItemFromProcessView(process *views.ProcessIndicatorRiskView) string {
+	return process.ExecFilePath
 }

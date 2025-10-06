@@ -1,10 +1,11 @@
-import React, { FunctionComponent, ReactElement, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import type { FunctionComponent, PropsWithChildren, ReactElement } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
-import { isUserResource } from 'Containers/AccessControl/traits';
+import { isUserResource } from 'utils/traits.utils';
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { integrationsPath } from 'routePaths';
-import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 // image integrations
 import ArtifactRegistryIntegrationForm from './Forms/ArtifactRegistryIntegrationForm';
@@ -29,7 +30,7 @@ import EmailIntegrationForm from './Forms/EmailIntegrationForm';
 import GenericWebhookIntegrationForm from './Forms/GenericWebhookIntegrationForm';
 import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
 import JiraIntegrationForm from './Forms/JiraIntegrationForm';
-import MicrosoftSentinelForm from './Forms/MicrosoftSentinelForm';
+import MicrosoftSentinelIntegrationForm from './Forms/MicrosoftSentinelIntegrationForm';
 import PagerDutyIntegrationForm from './Forms/PagerDutyIntegrationForm';
 import SlackIntegrationForm from './Forms/SlackIntegrationForm';
 import SplunkIntegrationForm from './Forms/SplunkIntegrationForm';
@@ -102,7 +103,7 @@ const ComponentFormMap = {
         email: EmailIntegrationForm,
         generic: GenericWebhookIntegrationForm,
         jira: JiraIntegrationForm,
-        microsoftSentinel: MicrosoftSentinelForm,
+        microsoftSentinel: MicrosoftSentinelIntegrationForm,
         pagerduty: PagerDutyIntegrationForm,
         slack: SlackIntegrationForm,
         splunk: SplunkIntegrationForm,
@@ -115,7 +116,7 @@ const ComponentFormMap = {
     },
 } as Record<
     IntegrationSource,
-    Record<IntegrationType, FunctionComponent<React.PropsWithChildren<FormProps>>>
+    Record<IntegrationType, FunctionComponent<PropsWithChildren<FormProps>>>
 >;
 
 function IntegrationForm({
@@ -136,7 +137,7 @@ function IntegrationForm({
         }
     }, [canUseCloudBackupIntegrations, source, navigate]);
 
-    const Form: FunctionComponent<React.PropsWithChildren<FormProps>> =
+    const Form: FunctionComponent<PropsWithChildren<FormProps>> =
         ComponentFormMap?.[source]?.[type];
     if (!Form) {
         throw new Error(

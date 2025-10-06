@@ -21,14 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     outputs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:
     - name: Checkout stackrox/stackrox
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -38,7 +35,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout crd-schema-checker
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         repository: openshift/crd-schema-checker
         path: .crd-schema-checker
@@ -56,7 +53,7 @@ jobs:
         echo "released_version=$released_version" >> "$GITHUB_OUTPUT"
 
     - name: Checkout previous released version
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ steps.get_previous_released_version.outputs.released_version }}

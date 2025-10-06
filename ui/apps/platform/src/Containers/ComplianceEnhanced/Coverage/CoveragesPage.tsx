@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useState } from 'react';
-import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
     Divider,
@@ -21,16 +21,14 @@ import {
     makeFilterChipDescriptors,
     onURLSearch,
 } from 'Components/CompoundSearchFilter/utils/utils';
-import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSearch from 'hooks/useURLSearch';
-import {
-    ComplianceProfileScanStats,
-    getComplianceProfilesStats,
-} from 'services/ComplianceResultsStatsService';
+import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsService';
+import type { ComplianceProfileScanStats } from 'services/ComplianceResultsStatsService';
 import { defaultChartHeight } from 'utils/chartUtils';
 
 import { coverageProfileChecksPath } from './compliance.coverage.routes';

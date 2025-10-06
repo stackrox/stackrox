@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -108,7 +109,11 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (c *nodeInventoryHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetNodeInventoryAck() != nil
+}
+
+func (c *nodeInventoryHandlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	ackMsg := msg.GetNodeInventoryAck()
 	if ackMsg == nil {
 		return nil

@@ -5,7 +5,7 @@ import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { CriticalSeverityIcon, ImportantSeverityIcon } from 'Components/PatternFly/SeverityIcons';
 import { noViolationsColor } from 'constants/severityColors';
-import { ImageName } from 'types/image.proto';
+import type { ImageName } from 'types/image.proto';
 import { vulnManagementPath } from 'routePaths';
 
 type VulnCounts = {
@@ -47,7 +47,7 @@ function countImportant(
         : imageVulnerabilityCounter.important.total;
 }
 
-export type ImagesAtMostRiskProps = {
+export type ImagesAtMostRiskTableProps = {
     imageData: ImageData;
     cveStatusOption: CveStatusOption;
 };
@@ -56,7 +56,10 @@ function linkToImage(id: string) {
     return `${vulnManagementPath}/image/${id}#image-findings`;
 }
 
-function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: ImagesAtMostRiskProps) {
+function ImagesAtMostRiskTable({
+    imageData: { images },
+    cveStatusOption,
+}: ImagesAtMostRiskTableProps) {
     return (
         <Table variant="compact" borders={false}>
             <Thead>

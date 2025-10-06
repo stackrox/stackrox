@@ -17,7 +17,6 @@ import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 import { CancelledPromiseError } from 'services/cancellationUtils';
-import useAnalytics from 'hooks/useAnalytics';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { VIOLATION_STATES } from 'constants/violationStates';
@@ -26,7 +25,6 @@ import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import { SearchFilter } from 'types/search';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useURLSort from 'hooks/useURLSort';
@@ -35,7 +33,6 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import FilteredWorkflowViewSelector from 'Components/FilteredWorkflowViewSelector/FilteredWorkflowViewSelector';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import { getViolationsTableColumnDescriptors } from './violationsTableColumnDescriptors';
@@ -110,16 +107,13 @@ function getDescriptionForSelectedViolationState(
 }
 
 function ViolationsTablePage(): ReactElement {
-    const { analyticsTrack } = useAnalytics();
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
 
     const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
         'violationState',
         violationStateTabs
     );
-    const { filteredWorkflowView, setFilteredWorkflowView } = useFilteredWorkflowViewURLState();
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
 
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&
@@ -160,13 +154,6 @@ function ViolationsTablePage(): ReactElement {
 
     const onSearch = (payload: OnSearchPayload) => {
         onURLSearch(searchFilter, setSearchFilter, payload);
-    };
-
-    const onChangeFilteredWorkflowView = (value) => {
-        setFilteredWorkflowView(value);
-        setSearchFilter({});
-        setPage(1);
-        analyticsTrack({ event: 'Filtered Workflow View Selected', properties: { value } });
     };
 
     useEffectAfterFirstRender(() => {
@@ -278,19 +265,15 @@ function ViolationsTablePage(): ReactElement {
                     spaceItems={{ default: 'spaceItemsNone' }}
                     className="pf-v5-u-flex-grow-1"
                 >
-                    <Title headingLevel="h1">
-                        {isPlatformCveSplitEnabled ? title : 'Violations'}
-                    </Title>
-                    {isPlatformCveSplitEnabled && (
-                        <Popover
-                            aria-label="More information about the current page"
-                            bodyContent={description}
-                        >
-                            <Button title="Page description" variant="plain">
-                                <OutlinedQuestionCircleIcon />
-                            </Button>
-                        </Popover>
-                    )}
+                    <Title headingLevel="h1">{title}</Title>
+                    <Popover
+                        aria-label="More information about the current page"
+                        bodyContent={description}
+                    >
+                        <Button title="Page description" variant="plain">
+                            <OutlinedQuestionCircleIcon />
+                        </Button>
+                    </Popover>
                 </Flex>
             </PageSection>
             <PageSection variant="light" className="pf-v5-u-py-0">
@@ -321,21 +304,9 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            {!isPlatformCveSplitEnabled && (
-                <PageSection className="pf-v5-u-py-md" component="div" variant="light">
-                    <FilteredWorkflowViewSelector
-                        filteredWorkflowView={filteredWorkflowView}
-                        onChangeFilteredWorkflowView={onChangeFilteredWorkflowView}
-                    />
-                </PageSection>
-            )}
-            {isPlatformCveSplitEnabled && (
-                <PageSection variant="light">
-                    <Text>
-                        {getDescriptionForSelectedViolationState(selectedViolationStateTab)}
-                    </Text>
-                </PageSection>
-            )}
+            <PageSection variant="light">
+                <Text>{getDescriptionForSelectedViolationState(selectedViolationStateTab)}</Text>
+            </PageSection>
             <PageSection variant="default" id={tabContentId}>
                 {isLoadingAlerts && (
                     <Bullseye>

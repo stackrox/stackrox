@@ -1,14 +1,20 @@
-import { useSelector } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import { createContext, useContext } from 'react';
 
-import { selectors } from 'reducers';
-import { Access } from 'types/role.proto';
-import { ResourceName } from 'types/roleResources';
+import type { Access } from 'types/role.proto';
+import type { ResourceName } from 'types/roleResources';
 import { replacedResourceMapping } from 'constants/accessControl';
 
 export type HasNoAccess = (resourceName: ResourceName) => boolean;
 export type HasReadAccess = (resourceName: ResourceName) => boolean;
 export type HasReadWriteAccess = (resourceName: ResourceName) => boolean;
+
+export const UserPermissionContext = createContext<{
+    userRolePermissions: { resourceToAccess: Partial<Record<ResourceName, Access>> } | null;
+    isLoadingPermissions: boolean;
+}>({
+    userRolePermissions: { resourceToAccess: {} },
+    isLoadingPermissions: false,
+});
 
 type UsePermissionsResponse = {
     hasNoAccess: HasNoAccess;
@@ -17,16 +23,8 @@ type UsePermissionsResponse = {
     isLoadingPermissions: boolean;
 };
 
-const stateSelector = createStructuredSelector<{
-    userRolePermissions: { resourceToAccess: Record<ResourceName, Access> };
-    isLoadingPermissions: boolean;
-}>({
-    userRolePermissions: selectors.getUserRolePermissions,
-    isLoadingPermissions: selectors.getIsLoadingUserRolePermissions,
-});
-
 const usePermissions = (): UsePermissionsResponse => {
-    const { userRolePermissions, isLoadingPermissions } = useSelector(stateSelector);
+    const { userRolePermissions, isLoadingPermissions } = useContext(UserPermissionContext);
 
     function hasNoAccess(resourceName: ResourceName) {
         const access = userRolePermissions?.resourceToAccess[resourceName];

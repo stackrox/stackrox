@@ -1,28 +1,62 @@
 import React from 'react';
-import { createMemoryHistory } from 'history';
-import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
-import { HistoryRouter as Router } from 'redux-first-history/rr6';
+import type { ReactNode } from 'react';
+// import { createMemoryHistory } from 'history';
+import { Route, MemoryRouter as Router } from 'react-router-dom';
+import type { RouteComponentProps } from 'react-router-dom';
+// import { HistoryRouter as Router } from 'redux-first-history/rr6';
+import { CompatRouter } from 'react-router-dom-v5-compat';
 import { renderHook } from '@testing-library/react';
 
-import actAndFlushTaskQueue from 'test-utils/flushTaskQueue';
 import { URLSearchParams } from 'url';
+import actAndFlushTaskQueue from 'test-utils/flushTaskQueue';
+
 import useURLParameter from './useURLParameter';
+
+type WrapperProps = {
+    children: ReactNode;
+    onRouteRender: (renderResult: RouteComponentProps) => void;
+    initialEntries: string[];
+};
+
+// This Wrapper component allows the `useURLParameter` hook to simulate the browser's
+// URL bar in JSDom via the MemoryRouter
+function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps) {
+    return (
+        <Router
+            initialEntries={initialEntries}
+            initialIndex={Math.max(0, initialEntries.length - 1)}
+        >
+            <CompatRouter>
+                <Route path="*" render={onRouteRender} />
+                {children}
+            </CompatRouter>
+        </Router>
+    );
+}
+
+const createWrapper = (props) => {
+    return function CreatedWrapper({ children }) {
+        return <Wrapper {...props}>{children}</Wrapper>;
+    };
+};
+
+beforeAll(() => {
+    vitest.useFakeTimers();
+});
 
 test('should read/write scoped string value in URL parameter without changing existing URL parameters', async () => {
     let params;
     let testLocation;
 
-    const { result } = renderHook(
-        () => {
-            testLocation = useLocation();
-            return useURLParameter('testKey', undefined);
-        },
-        {
-            wrapper: ({ children }) => (
-                <MemoryRouter initialEntries={['?oldKey=test']}>{children}</MemoryRouter>
-            ),
-        }
-    );
+    const { result } = renderHook(() => useURLParameter('testKey', undefined), {
+        wrapper: createWrapper({
+            children: [],
+            onRouteRender: ({ location }) => {
+                testLocation = location;
+            },
+            initialEntries: ['?oldKey=test'],
+        }),
+    });
 
     // Check new and existing values before setter function is called
     params = new URLSearchParams(testLocation.search);
@@ -59,14 +93,15 @@ test('should allow multiple sequential parameter updates without data loss', asy
     let testLocation;
 
     const { result } = renderHook(
-        () => {
-            testLocation = useLocation();
-            return [useURLParameter('key1', 'oldValue1'), useURLParameter('key2', undefined)];
-        },
+        () => [useURLParameter('key1', 'oldValue1'), useURLParameter('key2', undefined)],
         {
-            wrapper: ({ children }) => (
-                <MemoryRouter initialEntries={['?key1=oldValue1']}>{children}</MemoryRouter>
-            ),
+            wrapper: createWrapper({
+                children: [],
+                onRouteRender: ({ location }) => {
+                    testLocation = location;
+                },
+                initialEntries: ['?key1=oldValue1'],
+            }),
         }
     );
 
@@ -102,18 +137,15 @@ test('should read/write scoped complex object in URL parameter without changing 
     };
 
     const emptyState: StateObject = { clusters: [] };
-
-    const { result } = renderHook(
-        () => {
-            testLocation = useLocation();
-            return useURLParameter('testKey', emptyState);
-        },
-        {
-            wrapper: ({ children }) => (
-                <MemoryRouter initialEntries={['?oldKey=test']}>{children}</MemoryRouter>
-            ),
-        }
-    );
+    const { result } = renderHook(() => useURLParameter('testKey', emptyState), {
+        wrapper: createWrapper({
+            children: [],
+            onRouteRender: ({ location }) => {
+                testLocation = location;
+            },
+            initialEntries: ['?oldKey=test'],
+        }),
+    });
 
     function isStateObject(obj: unknown): obj is StateObject {
         return typeof obj === 'object' && obj !== null && 'clusters' in obj;
@@ -171,27 +203,21 @@ test('should read/write scoped complex object in URL parameter without changing 
     expect(Array.from(params.entries())).toHaveLength(1);
 });
 
-test('should implement push and replace state for navigate', async () => {
-    let testNavigate;
+test('should implement push and replace state for history', async () => {
+    let testHistory;
     let testLocation;
 
-    const { result } = renderHook(
-        () => {
-            testLocation = useLocation();
-            testNavigate = useNavigate();
-            return useURLParameter('testKey', undefined);
-        },
-        {
-            wrapper: ({ children }) => (
-                <MemoryRouter
-                    initialEntries={['/main/dashboard', '/main/clusters?oldKey=test']}
-                    initialIndex={1}
-                >
-                    {children}
-                </MemoryRouter>
-            ),
-        }
-    );
+    const { result } = renderHook(() => useURLParameter('testKey', undefined), {
+        wrapper: createWrapper({
+            children: [],
+            onRouteRender: ({ history, location }) => {
+                testHistory = history;
+                testLocation = location;
+            },
+            initialIndex: 1,
+            initialEntries: ['/main/dashboard', '/main/clusters?oldKey=test'],
+        }),
+    });
 
     // Test the the default behavior is to push URL parameter changes to the history stack
     await actAndFlushTaskQueue(() => {
@@ -201,7 +227,7 @@ test('should implement push and replace state for navigate', async () => {
     expect(testLocation.pathname).toBe('/main/clusters');
     expect(testLocation.search).toBe('?oldKey=test&testKey=testValue');
     await actAndFlushTaskQueue(() => {
-        testNavigate(-1);
+        testHistory.goBack();
     });
     expect(testLocation.pathname).toBe('/main/clusters');
     expect(testLocation.search).toBe('?oldKey=test');
@@ -214,7 +240,7 @@ test('should implement push and replace state for navigate', async () => {
     expect(testLocation.pathname).toBe('/main/clusters');
     expect(testLocation.search).toBe('?oldKey=test&testKey=newTestValue');
     await actAndFlushTaskQueue(() => {
-        testNavigate(-1);
+        testHistory.goBack();
     });
     expect(testLocation.pathname).toBe('/main/dashboard');
     expect(testLocation.search).toBe('');
@@ -223,26 +249,28 @@ test('should implement push and replace state for navigate', async () => {
 test('should batch URL parameter updates', async () => {
     let params;
     let testLocation;
-
-    const history = createMemoryHistory({
-        initialEntries: [''],
-    });
+    let testHistory;
 
     const { result } = renderHook(
-        () => {
-            testLocation = useLocation();
-            return {
-                hook1: useURLParameter('testKey1', undefined),
-                hook2: useURLParameter('testKey2', undefined),
-            };
-        },
+        () => ({
+            hook1: useURLParameter('testKey1', undefined),
+            hook2: useURLParameter('testKey2', undefined),
+        }),
         {
-            wrapper: ({ children }) => <Router history={history}>{children}</Router>,
+            wrapper: createWrapper({
+                children: [],
+                onRouteRender: ({ history, location }) => {
+                    testHistory = history;
+                    testLocation = location;
+                },
+                initialIndex: 1,
+                initialEntries: [''],
+            }),
         }
     );
 
     params = new URLSearchParams(testLocation.search);
-    expect(history.index).toBe(0);
+    expect(testHistory.length).toBe(1);
     expect(params.get('testKey1')).toBeNull();
     expect(params.get('testKey2')).toBeNull();
     expect(result.current.hook1[0]).toBeUndefined();
@@ -255,7 +283,7 @@ test('should batch URL parameter updates', async () => {
     });
 
     params = new URLSearchParams(testLocation.search);
-    expect(history.index).toBe(1);
+    expect(testHistory.length).toBe(2);
     expect(params.get('testKey1')).toBe('testValue');
     expect(params.get('testKey2')).toBeNull();
     expect(result.current.hook1[0]).toBe('testValue');
@@ -271,7 +299,7 @@ test('should batch URL parameter updates', async () => {
     });
 
     params = new URLSearchParams(testLocation.search);
-    expect(history.index).toBe(2);
+    expect(testHistory.length).toBe(3);
     expect(params.get('testKey1')).toBe('newValue1');
     expect(params.get('testKey2')).toBe('newValue3');
     expect(result.current.hook1[0]).toBe('newValue1');
@@ -284,7 +312,7 @@ test('should batch URL parameter updates', async () => {
     });
 
     params = new URLSearchParams(testLocation.search);
-    expect(history.index).toBe(2);
+    expect(testHistory.length).toBe(3);
     expect(params.get('testKey1')).toBe('newTestValue');
     expect(params.get('testKey2')).toBe('newValue3');
     expect(result.current.hook1[0]).toBe('newTestValue');
@@ -299,7 +327,7 @@ test('should batch URL parameter updates', async () => {
     });
 
     params = new URLSearchParams(testLocation.search);
-    expect(history.index).toBe(3);
+    expect(testHistory.length).toBe(4);
     expect(params.get('testKey1')).toBe('newValue4');
     expect(params.get('testKey2')).toBe('newValue5');
     expect(result.current.hook1[0]).toBe('newValue4');

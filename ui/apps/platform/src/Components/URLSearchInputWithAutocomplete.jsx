@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import PropTypes from 'prop-types';
 import { components } from 'react-select';
 import queryString from 'qs';
 import { connect } from 'react-redux';
-import * as Icon from 'react-feather';
+import { Filter } from 'react-feather';
 
 import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplete';
 import { Creatable } from 'Components/ReactSelect';
@@ -52,7 +52,7 @@ export const Option = ({ children, ...rest }) => {
 export const ValueContainer = ({ ...props }) => (
     <>
         <span className="text-base-500 flex h-full items-center pl-2 pr-1 pointer-events-none">
-            <Icon.Filter color="currentColor" size={18} />
+            <Filter color="currentColor" size={18} />
         </span>
         <components.ValueContainer {...props} />
     </>

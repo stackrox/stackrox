@@ -1,4 +1,4 @@
-import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
+import type { AuthMachineToMachineConfig } from 'services/MachineAccessService';
 
 export type IntegrationSource =
     | 'authProviders'

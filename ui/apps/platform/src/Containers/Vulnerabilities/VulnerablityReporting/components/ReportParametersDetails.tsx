@@ -1,3 +1,5 @@
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     DescriptionList,
     DescriptionListDescription,
@@ -7,7 +9,6 @@ import {
     FlexItem,
     Title,
 } from '@patternfly/react-core';
-import React, { ReactElement } from 'react';
 
 import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import { fixabilityLabels } from 'constants/reportConstants';
@@ -29,16 +30,43 @@ function ReportParametersDetails({
     formValues,
 }: ReportParametersDetailsProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isIncludeAdvisoryEnabled =
+    const optionalColumnsDescriptions: ReactElement[] = [];
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && formValues.reportParameters.includeNvdCvss) {
+        optionalColumnsDescriptions.push(
+            <DescriptionListDescription key="includeNvdCvss">NVDCVSS</DescriptionListDescription>
+        );
+    }
+    if (
         isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
-    const hasIncludeAdvisory =
-        isIncludeAdvisoryEnabled && formValues.reportParameters.includeAdvisory;
-    const isIncludeEpssProbabilityEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const hasIncludeEpssProbability =
-        isIncludeEpssProbabilityEnabled && formValues.reportParameters.includeEpssProbability;
-    const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const hasIncludeNvdCvss = isIncludeNvdCvssEnabled && formValues.reportParameters.includeNvdCvss;
+        formValues.reportParameters.includeEpssProbability
+    ) {
+        optionalColumnsDescriptions.push(
+            <DescriptionListDescription key="includeEpssProbability">
+                EPSS Probability Percentage
+            </DescriptionListDescription>
+        );
+    }
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && formValues.reportParameters.includeAdvisory) {
+        optionalColumnsDescriptions.push(
+            <DescriptionListDescription key="includeAdvisory">
+                Advisory Name and Advisory Link
+            </DescriptionListDescription>
+        );
+    }
+    /*
+    // Ross CISA KEV
+    if (
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_KEV_EXPLOIT') &&
+        formValues.reportParameters.includeExploitable
+    ) {
+        optionalColumnsDescriptions.push(
+            <DescriptionListDescription key="includeExploitable">
+                TBD
+            </DescriptionListDescription>
+        );
+    }
+    */
 
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
@@ -138,22 +166,10 @@ function ReportParametersDetails({
                         <DescriptionListDescription>Discovered At</DescriptionListDescription>
                         <DescriptionListDescription>Reference</DescriptionListDescription>
                     </DescriptionListGroup>
-                    {(hasIncludeNvdCvss || hasIncludeEpssProbability || hasIncludeAdvisory) && (
+                    {optionalColumnsDescriptions.length !== 0 && (
                         <DescriptionListGroup>
                             <DescriptionListTerm>Optional columns</DescriptionListTerm>
-                            {hasIncludeNvdCvss && (
-                                <DescriptionListDescription>NVDCVSS</DescriptionListDescription>
-                            )}
-                            {hasIncludeEpssProbability && (
-                                <DescriptionListDescription>
-                                    EPSS Probability Percentage
-                                </DescriptionListDescription>
-                            )}
-                            {hasIncludeAdvisory && (
-                                <DescriptionListDescription>
-                                    Advisory Name and Advisory Link
-                                </DescriptionListDescription>
-                            )}
+                            {optionalColumnsDescriptions}
                         </DescriptionListGroup>
                     )}
                 </DescriptionList>

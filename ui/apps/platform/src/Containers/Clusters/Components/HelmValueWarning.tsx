@@ -1,6 +1,6 @@
-import React, { ReactElement } from 'react';
-
-import { inputTextClassName } from 'constants/form.constants';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Alert } from '@patternfly/react-core';
 
 export type HelmValueWarningProps = {
     currentValue: unknown;
@@ -34,9 +34,9 @@ function HelmValueWarning({ currentValue, helmValue }: HelmValueWarningProps): R
         }
     }
     return (
-        <div className={`${inputTextClassName} border-warning-300 bg-warning-300`}>
-            Value in current Helm chart is: <code>{normalizedValue}</code>
-        </div>
+        <Alert variant="warning" title="Value in current Helm chart" component="p" isInline>
+            {normalizedValue}
+        </Alert>
     );
 }
 

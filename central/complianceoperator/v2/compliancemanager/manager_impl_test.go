@@ -639,11 +639,9 @@ func (suite *complianceManagerTestSuite) TestProcessRescanRequest() {
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(multiCluster, true, nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(errors.New("Failed to send message to sensor")).Times(1)
-				suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(1)
-				suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), mockScanID, testconsts.Cluster1, "Failed to send message to sensor", "test_cluster").Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster3, gomock.Any()).Return(nil).Times(1)
 			},
-			isErrorTest: false,
+			isErrorTest: true,
 		},
 	}
 	for _, tc := range cases {

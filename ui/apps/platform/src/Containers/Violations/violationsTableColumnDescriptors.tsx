@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 import startCase from 'lodash/startCase';
 import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
@@ -60,13 +60,13 @@ function CategoriesTableCell({ value }: CategoriesTableCellProps): ReactElement 
     );
 }
 
-type EnforcementTableCellProps = {
+type EnforcementColumnProps = {
     original: ListAlert;
 };
 
 // Display the enforcement.
 // ////////////////////////
-function EnforcementColumn({ original }: EnforcementTableCellProps): ReactElement {
+function EnforcementColumn({ original }: EnforcementColumnProps): ReactElement {
     if (BLOCKING_ENFORCEMENT_ACTIONS.has(original.enforcementAction)) {
         const message = `${ENFORCEMENT_ACTIONS_AS_PAST_TENSE[original?.enforcementAction]}`;
         return (

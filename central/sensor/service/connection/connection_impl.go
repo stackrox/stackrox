@@ -325,7 +325,8 @@ func shallDedupe(msg *central.MsgFromSensor) bool {
 	// the vulnerabilities database in scanner may get updated and new vulnerabilities may affect those packages.
 	ev := msg.GetEvent()
 	if ev.GetAction() != central.ResourceAction_REMOVE_RESOURCE {
-		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil {
+		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil ||
+			ev.GetVirtualMachine() != nil || ev.GetVirtualMachineIndexReport() != nil {
 			return false
 		}
 	}
@@ -400,7 +401,9 @@ func (c *sensorConnection) processIssueSecuredClusterCertsRequest(ctx context.Co
 		err = errors.New("requestID is required to issue the certificates for a Secured Cluster")
 	} else {
 		var certificates *storage.TypedServiceCertificateSet
-		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID)
+		sensorSupportsRotation := c.capabilities.Contains(centralsensor.SensorCARotationSupported)
+		caFingerprint := request.GetCaFingerprint()
+		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID, sensorSupportsRotation, caFingerprint)
 		response = &central.IssueSecuredClusterCertsResponse{
 			RequestId: requestID,
 			Response: &central.IssueSecuredClusterCertsResponse_Certificates{

@@ -1,6 +1,6 @@
 import React from 'react';
 import { gql } from '@apollo/client';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import entityTypes from 'constants/entityTypes';
 import Query from 'Components/ThrowingQuery';
 import EntityTileLink from 'Components/EntityTileLink';

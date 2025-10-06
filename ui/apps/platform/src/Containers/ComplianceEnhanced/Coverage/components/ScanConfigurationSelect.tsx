@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
+import type { MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
     Button,
     Divider,
     Flex,
     MenuToggle,
-    MenuToggleElement,
     Select,
     SelectGroup,
     SelectList,
     SelectOption,
     Spinner,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { TimesCircleIcon } from '@patternfly/react-icons';
 
-import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 
 const ALL_SCAN_SCHEDULES_OPTION = 'All scan schedules';
 
@@ -39,7 +40,7 @@ function ScanConfigurationSelect({
     };
 
     const onSelect = (
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
         const selectedValue = value === ALL_SCAN_SCHEDULES_OPTION ? undefined : (value as string);
@@ -47,7 +48,7 @@ function ScanConfigurationSelect({
         setIsOpen(false);
     };
 
-    const renderToggle = (toggleRef: React.Ref<HTMLButtonElement | MenuToggleElement>) => {
+    const renderToggle = (toggleRef: Ref<HTMLButtonElement | MenuToggleElement>) => {
         return (
             <MenuToggle ref={toggleRef} onClick={onToggleClick} isExpanded={isOpen}>
                 {selectedScanConfigName || ALL_SCAN_SCHEDULES_OPTION}

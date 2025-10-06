@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 
-import { getClustersForPermissions, ClusterScopeObject } from 'services/RolesService';
-import { ResourceName } from 'types/roleResources';
+import { getClustersForPermissions } from 'services/RolesService';
+import type { ClusterScopeObject } from 'services/RolesService';
+import type { ResourceName } from 'types/roleResources';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type Result = {

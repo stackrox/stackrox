@@ -14,11 +14,11 @@ import './PolicyCriteriaForm.css';
 
 const MAX_POLICY_SECTIONS = 16;
 
-type PolicyBehaviorFormProps = {
+type PolicyCriteriaFormProps = {
     hasActiveViolations: boolean;
 };
 
-function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
+function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
     const { values, setFieldValue } = useFormikContext<ClientPolicy>();
     const { criteriaLocked } = values;
     const { isFeatureFlagEnabled } = useFeatureFlags();

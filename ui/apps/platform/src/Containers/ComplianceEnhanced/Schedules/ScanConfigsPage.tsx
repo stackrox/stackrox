@@ -1,11 +1,11 @@
 import React from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 import { Banner } from '@patternfly/react-core';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
-import { PageActions } from './compliance.scanConfigs.utils';
+import type { PageActions } from './compliance.scanConfigs.utils';
 import CreateScanConfigPage from './CreateScanConfigPage';
 import ComplianceNotFoundPage from '../ComplianceNotFoundPage';
 import ScanConfigDetailPage from './ScanConfigDetailPage';

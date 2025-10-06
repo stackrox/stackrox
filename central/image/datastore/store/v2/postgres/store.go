@@ -1,11 +1,7 @@
 package postgres
 
 import (
-	"cmp"
 	"context"
-	"slices"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -15,6 +11,7 @@ import (
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
+	"github.com/stackrox/rox/central/image/views"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,7 +23,9 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -520,6 +519,8 @@ func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Image")
 
+	q = applyDefaultSort(q)
+
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
 	})
@@ -594,17 +595,6 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 			}
 			cveParts = append(cveParts, cvePart)
 		}
-
-		// TODO(remove when hashing cve):  Adding the index of where the vuln appeared in the component
-		// is not likely sustainable.  We cannot easily guarantee the order is the same when
-		// we pull the data out.  This sort is temporary to keep moving, and will be
-		// removed when the ID of the CVE is adjusted to no longer use the index of where
-		// the CVE occurs in the component list.
-		slices.SortStableFunc(cveParts, func(cvePartA, cvePartB common.CVEParts) int {
-			cveICompIndex := getCVEComponentIndex(cvePartA.CVEV2.GetId())
-			cveJCompIndex := getCVEComponentIndex(cvePartB.CVEV2.GetId())
-			return cmp.Compare(cveICompIndex, cveJCompIndex)
-		})
 
 		child := common.ComponentParts{
 			ComponentV2: component,
@@ -845,6 +835,8 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.Image) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Image")
 
+	q = applyDefaultSort(q)
+
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Image")
 	if err != nil {
 		return err
@@ -923,6 +915,18 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery()
 	return pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
+}
+
+// GetImagesRiskView retrieves an image id and risk score to initialize rankers
+func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageRiskView, error) {
+	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
+	var results []*views.ImageRiskView
+	results, err := pgSearch.RunSelectRequestForSchema[views.ImageRiskView](ctx, s.db, pkgSchema.ImagesSchema, q)
+	if err != nil {
+		log.Errorf("unable to initialize image ranking: %v", err)
+	}
+
+	return results, err
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
@@ -1045,19 +1049,6 @@ func gatherKeys(parts *imagePartsAsSlice) [][]byte {
 	return keys
 }
 
-func getCVEComponentIndex(s string) int {
-	lastIndex := strings.LastIndex(s, "#")
-	if lastIndex == -1 {
-		return 0
-	}
-
-	index, err := strconv.Atoi(s[lastIndex+1:])
-	if err != nil {
-		return 0
-	}
-	return index
-}
-
 func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) (bool, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
 	count, err := pgSearch.RunCountRequestForSchema(ctx, pkgSchema.ImageComponentV2Schema, q, s.db)
@@ -1065,4 +1056,14 @@ func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) 
 		return false, err
 	}
 	return count < 1, nil
+}
+
+func applyDefaultSort(q *v1.Query) *v1.Query {
+	q = sortfields.TransformSortOptions(q, pkgSchema.ImagesSchema.OptionsMap)
+
+	defaultSortOption := &v1.QuerySortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }

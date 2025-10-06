@@ -28,11 +28,13 @@ var (
 			reflect.TypeOf((*storage.FalsePositiveRequest)(nil)),
 			reflect.TypeOf((*storage.Group)(nil)),
 			reflect.TypeOf((*storage.Image)(nil)),
+			reflect.TypeOf((*storage.ImageV2)(nil)),
 			reflect.TypeOf((*storage.K8SRole)(nil)),
 			reflect.TypeOf((*storage.K8SRoleBinding)(nil)),
 			reflect.TypeOf((*storage.ListAlert)(nil)),
 			reflect.TypeOf((*storage.ListDeployment)(nil)),
 			reflect.TypeOf((*storage.ListImage)(nil)),
+			reflect.TypeOf((*storage.ListImageV2)(nil)),
 			reflect.TypeOf((*storage.ListSecret)(nil)),
 			reflect.TypeOf((*storage.MitreAttackVector)(nil)),
 			reflect.TypeOf((*storage.NetworkFlow)(nil)),
@@ -82,6 +84,14 @@ var (
 			{
 				ParentType: reflect.TypeOf(storage.Image{}),
 				FieldName:  "Scan",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.ImageV2{}),
+				FieldName:  "Scan",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.ImageV2{}),
+				FieldName:  "ScanStats",
 			},
 			{
 				ParentType: reflect.TypeOf(storage.ImageScan{}),

@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"context"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -66,12 +67,19 @@ func (c *commandHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return c.stopper.Client().Stopped()
 }
 
-func (c *commandHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (c *commandHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetScrapeCommand() != nil
+}
+
+func (c *commandHandlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	command := msg.GetScrapeCommand()
 	if command == nil {
 		return nil
 	}
 	select {
+	case <-ctx.Done():
+		// TODO(ROX-30333): Pass this context together with `msg` to `c.commands`
+		return errors.Wrapf(ctx.Err(), "message processing in component %s", c.Name())
 	case c.commands <- command:
 		return nil
 	case <-c.stopper.Flow().StopRequested():

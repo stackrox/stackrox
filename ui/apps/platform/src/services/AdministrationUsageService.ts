@@ -1,10 +1,12 @@
 import qs from 'qs';
-import axios from './instance';
-import {
+
+import type {
     MaxSecuredUnitsUsageResponse,
     SecuredUnitsUsage,
     TimeRange,
-} from '../types/administrationUsage.proto';
+} from 'types/administrationUsage.proto';
+
+import axios from './instance';
 import { saveFile } from './DownloadService';
 
 export function fetchCurrentAdministrationUsage() {
@@ -31,7 +33,10 @@ export function fetchMaxCurrentUsage({ from, to }: TimeRange) {
         });
 }
 
-export function downloadAdministrationUsageCsv({ from, to }: TimeRange): Promise<void> {
+export function downloadAdministrationUsageCsv({
+    from,
+    to,
+}: TimeRange): Promise<{ fileSizeBytes: number }> {
     const queryString = qs.stringify(
         {
             from,

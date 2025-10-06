@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, generatePath, useNavigate } from 'react-router-dom';
+import { Link, generatePath, useNavigate } from 'react-router-dom-v5-compat';
 import isEmpty from 'lodash/isEmpty';
 import {
     Alert,

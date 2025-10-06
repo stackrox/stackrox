@@ -1,16 +1,17 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom-v5-compat';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import searchContext from 'Containers/searchContext';
-import Entity from 'Containers/ConfigManagement/Entity';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
+
+import Entity from '../Entity';
 import BreadCrumbs from './BreadCrumbs';
 
 const SidePanel = ({

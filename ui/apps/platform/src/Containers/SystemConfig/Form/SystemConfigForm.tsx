@@ -1,5 +1,4 @@
 import React, { ReactElement, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import {
     Alert,
     Button,
@@ -25,19 +24,19 @@ import {
     TextArea,
     TextInput,
     Title,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
-import { PublicConfigAction } from 'reducers/publicConfig';
 import { saveSystemConfig } from 'services/SystemConfigService';
 import { PlatformComponentsConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { selectors } from 'reducers';
 import { initializeAnalytics } from 'init/initializeAnalytics';
+import usePublicConfig from 'hooks/usePublicConfig';
+import useTelemetryConfig from 'hooks/useTelemetryConfig';
 
 import FormSelect from './FormSelect';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
@@ -113,11 +112,9 @@ const SystemConfigForm = ({
     isCustomizingPlatformComponentsEnabled,
     defaultRedHatLayeredProductsRule,
 }: SystemConfigFormProps): ReactElement => {
-    const dispatch = useDispatch();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
-    const telemetryConfig = useSelector(selectors.getTelemetryConfig);
-
+    const { isTelemetryConfigured, telemetryConfig } = useTelemetryConfig();
+    const { refetchPublicConfig } = usePublicConfig();
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
     const platformComponentConfigRules = getPlatformComponentsConfigRules(
@@ -172,20 +169,13 @@ const SystemConfigForm = ({
                 platformComponentConfig,
             })
                 .then((data) => {
-                    // Simulate fetchPublicConfig response to update Redux state.
-                    const action: PublicConfigAction = {
-                        type: 'config/FETCH_PUBLIC_CONFIG_SUCCESS',
-                        response: data.publicConfig || {
-                            footer: null,
-                            header: null,
-                            loginNotice: null,
-                            telemetry: null,
-                        },
-                    };
+                    // Refetch public config to update the Context state
+                    refetchPublicConfig();
 
                     const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
                     const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
-                    if (isTelemetryEnabledCurr && isTelemetryConfigured) {
+
+                    if (isTelemetryEnabledCurr && isTelemetryConfigured && telemetryConfig) {
                         initializeAnalytics(
                             telemetryConfig.storageKeyV1,
                             telemetryConfig.endpoint,
@@ -193,7 +183,6 @@ const SystemConfigForm = ({
                         );
                     }
 
-                    dispatch(action);
                     setSystemConfig(data);
                     setErrorMessage(null);
                     setSubmitting(false);
@@ -360,7 +349,7 @@ const SystemConfigForm = ({
                         </GridItem>
                         <GridItem>
                             <FormGroup
-                                label="Images no longer deployed"
+                                label="Images no longer deployed or watched"
                                 isRequired
                                 fieldId="privateConfig.imageRetentionDurationDays"
                             >
@@ -624,9 +613,15 @@ const SystemConfigForm = ({
                                                         }
                                                         onChange={onCustomChange}
                                                     >
-                                                        <SelectOption key={0} value="SMALL" />
-                                                        <SelectOption key={1} value="MEDIUM" />
-                                                        <SelectOption key={2} value="LARGE" />
+                                                        <SelectOption key={0} value="SMALL">
+                                                            SMALL
+                                                        </SelectOption>
+                                                        <SelectOption key={1} value="MEDIUM">
+                                                            MEDIUM
+                                                        </SelectOption>
+                                                        <SelectOption key={2} value="LARGE">
+                                                            LARGE
+                                                        </SelectOption>
                                                     </FormSelect>
                                                 </FormGroup>
                                             </GridItem>
@@ -732,9 +727,15 @@ const SystemConfigForm = ({
                                                         }
                                                         onChange={onCustomChange}
                                                     >
-                                                        <SelectOption key={0} value="SMALL" />
-                                                        <SelectOption key={1} value="MEDIUM" />
-                                                        <SelectOption key={2} value="LARGE" />
+                                                        <SelectOption key={0} value="SMALL">
+                                                            SMALL
+                                                        </SelectOption>
+                                                        <SelectOption key={1} value="MEDIUM">
+                                                            MEDIUM
+                                                        </SelectOption>
+                                                        <SelectOption key={2} value="LARGE">
+                                                            LARGE
+                                                        </SelectOption>
                                                     </FormSelect>
                                                 </FormGroup>
                                             </GridItem>

@@ -32,10 +32,10 @@ jobs:
         uses: n1hility/cancel-previous-runs@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Go 1.21
+      - name: Set up Go 1.24
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.24"
       - name: Cache go module
         uses: actions/cache@v4
         with:
@@ -50,14 +50,14 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       - name: Checkout stackrox/acs-fleet-manager repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: stackrox/acs-fleet-manager
           path: acs-fleet-manager
           ref: main
           fetch-depth: 0
       - name: Checkout stackrox/stackrox repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: stackrox/stackrox
           ref: ${{ github.event.pull_request.head.sha }}

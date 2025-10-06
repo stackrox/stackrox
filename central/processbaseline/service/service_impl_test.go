@@ -10,12 +10,10 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
-	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	resultsMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/reprocessor/mocks"
-	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -93,7 +91,6 @@ type ProcessBaselineServiceTestSuite struct {
 	reprocessor        *mocks.MockLoop
 	resultDatastore    *resultsMocks.MockDataStore
 	indicatorMockStore *indicatorMocks.MockDataStore
-	connectionMgr      *connectionMocks.MockManager
 	mockCtrl           *gomock.Controller
 	deployments        *deploymentMocks.MockDataStore
 	lifecycleManager   *lifecycleMocks.MockManager
@@ -104,19 +101,17 @@ func (suite *ProcessBaselineServiceTestSuite) SetupTest() {
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
 	store := postgresStore.New(suite.pool)
-	searcher := baselineSearch.New(store)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.resultDatastore = resultsMocks.NewMockDataStore(suite.mockCtrl)
 	suite.resultDatastore.EXPECT().DeleteBaselineResults(gomock.Any(), gomock.Any()).AnyTimes()
 
 	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
-	suite.datastore = datastore.New(store, searcher, suite.resultDatastore, suite.indicatorMockStore)
+	suite.datastore = datastore.New(store, suite.resultDatastore, suite.indicatorMockStore)
 	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
-	suite.connectionMgr = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.deployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.lifecycleManager = lifecycleMocks.NewMockManager(suite.mockCtrl)
-	suite.service = New(suite.datastore, suite.reprocessor, suite.connectionMgr, suite.deployments, suite.lifecycleManager)
+	suite.service = New(suite.datastore, suite.reprocessor, suite.deployments, suite.lifecycleManager)
 }
 
 func (suite *ProcessBaselineServiceTestSuite) TearDownTest() {
@@ -307,7 +302,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 			}
 			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
 			for range c.expectedSuccessKeys {
-				suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any())
+				suite.lifecycleManager.EXPECT().SendBaselineToSensor(gomock.Any())
 			}
 			response, err := suite.service.UpdateProcessBaselines(hasWriteCtx, request)
 			assert.NoError(t, err)

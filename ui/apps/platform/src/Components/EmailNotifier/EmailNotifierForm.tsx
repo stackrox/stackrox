@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ReactElement, useState } from 'react';
-import { Alert, Checkbox, Form, PageSection, Popover, TextInput } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import {
+    Alert,
+    Checkbox,
+    Form,
+    PageSection,
+    Popover,
+    SelectOption,
+    TextInput,
+} from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import { FormikErrors, FormikTouched } from 'formik';
 
@@ -306,6 +313,26 @@ function EmailNotifierForm({
                                 values.notifier.email.disableTLS &&
                                 values.notifier.email.startTLSAuthMethod === 'DISABLED'
                             }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Hostname for SMTP HELO/EHLO"
+                        fieldId="notifier.email.hostnameHeloEhlo"
+                        helperText={
+                            <span className="pf-v5-u-font-size-sm">
+                                If left blank, localhost will be used
+                            </span>
+                        }
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            type="text"
+                            id="notifier.email.hostnameHeloEhlo"
+                            value={values.notifier.email.hostnameHeloEhlo}
+                            placeholder="example, smtp.client.com"
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
                         />
                     </FormLabelGroup>
                 </Form>

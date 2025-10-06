@@ -17,7 +17,7 @@ jobs:
         image: [main, roxctl]
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -47,13 +47,13 @@ jobs:
       SCALE_WORKLOAD_CLUSTERS: 10
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Checkout workflow scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "stackrox/workflow"
           path: workflow
@@ -71,11 +71,11 @@ jobs:
 
       # Fetch infractl artifacts
       - uses: stackrox/actions/infra/install-infractl@v1
-      - uses: "google-github-actions/auth@v2"
+      - uses: "google-github-actions/auth@v3"
         with:
           credentials_json: "${{ secrets.GCP_PERFORMANCE_TESTER_CI_SA }}"
       - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v2"
+        uses: "google-github-actions/setup-gcloud@v3"
         with:
           install_components: "gke-gcloud-auth-plugin"
       - name: Test cluster readiness
@@ -172,7 +172,7 @@ jobs:
           paths: performance-results/report.xml
 
       - name: Upload results to GCS
-        uses: google-github-actions/upload-cloud-storage@v2
+        uses: google-github-actions/upload-cloud-storage@v3
         with:
           path: performance-results
           destination: acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/${{ github.run_id }}/${{ github.run_attempt }}

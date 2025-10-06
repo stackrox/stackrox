@@ -10,13 +10,13 @@ import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
 
 import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
-type NetworkPoliciesYAMLProp = {
+type NetworkPoliciesYAMLProps = {
     yaml: string;
     style?: CSSProperties;
     additionalControls?: ReactNode;
 };
 
-function NetworkPoliciesYAML({ yaml, style, additionalControls }: NetworkPoliciesYAMLProp) {
+function NetworkPoliciesYAML({ yaml, style, additionalControls }: NetworkPoliciesYAMLProps) {
     const { analyticsTrack } = useAnalytics();
     const { searchFilter } = useSearchFilter();
 

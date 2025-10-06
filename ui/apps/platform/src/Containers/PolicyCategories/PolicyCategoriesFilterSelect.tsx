@@ -1,45 +1,44 @@
-import React, { useState } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import React from 'react';
+import { SelectOption } from '@patternfly/react-core';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 
-export type CategoryFilter = 'Default categories' | 'Custom categories';
+export type CategoryFilter = 'All categories' | 'Default categories' | 'Custom categories';
 
 type PolicyCategoriesFilterSelectProps = {
-    selectedFilters: CategoryFilter[];
-    setSelectedFilters: (selectedFilters: CategoryFilter[]) => void;
+    selectedFilter: CategoryFilter;
+    setSelectedFilter: (selectedFilter: CategoryFilter) => void;
     isDisabled: boolean;
 };
 
 function PolicyCategoriesFilterSelect({
-    selectedFilters,
-    setSelectedFilters,
+    selectedFilter,
+    setSelectedFilter,
     isDisabled,
 }: PolicyCategoriesFilterSelectProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    function onSelect(e, selection) {
-        if (selectedFilters.includes(selection)) {
-            setSelectedFilters(selectedFilters.filter((item) => item !== selection));
-        } else {
-            setSelectedFilters([...selectedFilters, selection]);
-        }
-    }
+    const handleChange = (_name: string, value: string) => {
+        setSelectedFilter(value as CategoryFilter);
+    };
 
     return (
-        <Select
-            variant="checkbox"
-            onToggle={(_event, val) => setIsOpen(val)}
-            onSelect={onSelect}
-            isOpen={isOpen}
-            selections={selectedFilters}
-            isCheckboxSelectionBadgeHidden
+        <SelectSingle
+            id="policy-categories-filter"
+            value={selectedFilter}
+            handleSelect={handleChange}
             isDisabled={isDisabled}
-            placeholderText={
-                selectedFilters.length === 1 ? selectedFilters[0] : 'Show all categories'
-            }
+            placeholderText="Select category filter"
+            toggleAriaLabel="Policy categories filter"
+            maxWidth="100%"
         >
-            <SelectOption key={0} value="Default categories" />
-            <SelectOption key={1} value="Custom categories" />
-        </Select>
+            <SelectOption key={0} value="All categories">
+                All categories
+            </SelectOption>
+            <SelectOption key={1} value="Default categories">
+                Default categories
+            </SelectOption>
+            <SelectOption key={2} value="Custom categories">
+                Custom categories
+            </SelectOption>
+        </SelectSingle>
     );
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"slices"
 	"strconv"
 )
 
@@ -15,6 +16,8 @@ type IntegerSetting struct {
 	// Optional validation of the value
 	minimumValue int
 	maximumValue int
+	allowList    []int
+	disallowRest bool
 }
 
 // EnvVar returns the string name of the environment variable
@@ -39,7 +42,16 @@ func (s *IntegerSetting) IntegerSetting() int {
 		return s.defaultValue
 	}
 	v, err := strconv.Atoi(val)
-	if err != nil || (v < s.minimumValue) || (v > s.maximumValue) {
+	if err != nil {
+		return s.defaultValue
+	}
+	if slices.Contains(s.allowList, v) {
+		return v
+	}
+	if s.disallowRest {
+		return s.defaultValue
+	}
+	if (v < s.minimumValue) || (v > s.maximumValue) {
 		return s.defaultValue
 	}
 	return v
@@ -69,7 +81,33 @@ func (s *IntegerSetting) WithMaximum(max int) *IntegerSetting {
 	return s.mustValidate()
 }
 
+// AllowExplicitly specifies the values that are explicitly allowed for the IntegerSetting.
+// Those values will not be affected by `WithMinimum` and `WithMaximum`.
+// This is mainly useful for allowing 0 as a special value to disable a setting.
+func (s *IntegerSetting) AllowExplicitly(values ...int) *IntegerSetting {
+	s.allowList = values
+	return s.mustValidate()
+}
+
+// DisallowRest configures the validation, so that only the numbers on specified by `AllowExplicitly` will pass.
+func (s *IntegerSetting) DisallowRest() *IntegerSetting {
+	s.disallowRest = true
+	return s.mustValidate()
+}
+
 func (s *IntegerSetting) mustValidate() *IntegerSetting {
+	if slices.Contains(s.allowList, s.defaultValue) {
+		return s
+	}
+	if s.disallowRest {
+		if len(s.allowList) == 0 {
+			panic(fmt.Errorf("programmer error: no values are allowed - allow-list is empty for %q."+
+				"`DisallowAllOther` must be called after `AllowExplicitly`", s.envVar).Error())
+		}
+		panic(fmt.Errorf("programmer error: default value %d is not on allow-list: %q for %q", s.defaultValue,
+			s.allowList, s.envVar,
+		).Error())
+	}
 	if s.defaultValue < s.minimumValue {
 		panic(fmt.Errorf("programmer error: default value %d is smaller than the minimum %d for %q",
 			s.defaultValue, s.minimumValue, s.envVar,

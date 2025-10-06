@@ -1,6 +1,6 @@
 import { differenceInDays, distanceInWordsStrict } from 'date-fns';
 
-import { CertExpiryComponent } from 'types/credentialExpiryService.proto';
+import type { CertExpiryComponent } from 'types/credentialExpiryService.proto';
 import { getDateTime } from './dateUtils';
 
 export function getCredentialExpiryPhrase(expirationDate: string, currentDatetime: Date) {

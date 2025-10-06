@@ -1,11 +1,12 @@
-import React, { ReactElement } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Route, Routes } from 'react-router-dom-v5-compat';
 
 import {
-    loginPath,
-    testLoginResultsPath,
     authResponsePrefix,
     authorizeRoxctlPath,
+    loginPath,
+    testLoginResultsPath,
 } from 'routePaths';
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import AuthenticatedRoutes from 'Containers/MainPage/AuthenticatedRoutes';

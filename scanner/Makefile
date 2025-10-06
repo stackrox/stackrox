@@ -8,17 +8,6 @@ export PATH
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
-ifeq ($(TAG),)
-	TAG := $(shell $(MAKE) -C ../ --quiet --no-print-directory tag)
-endif
-
-# Set expiration on Quay.io for non-release tags.
-ifeq ($(findstring x,$(TAG)),x)
-QUAY_TAG_EXPIRATION=13w
-else
-QUAY_TAG_EXPIRATION=never
-endif
-
 # CGO is disabled for Scanner V4 builds because:
 #
 # 1. Local builds aren't dockerized. And, upon packaging the locally-built scanner in a container when e.g. host
@@ -189,9 +178,10 @@ image-scanner: $(if $(CI),,image/scanner/bin/scanner) \
                ossls-notice
 	@echo "+ $@"
 	$(DOCKERBUILD) \
-        -t stackrox/$(image-prefix):$(TAG) \
-        $(DOCKERBUILD_ARGS) \
-        -f image/scanner/Dockerfile image/scanner
+            -t stackrox/$(image-prefix):$(TAG) \
+            -t $(DEFAULT_IMAGE_REGISTRY)/$(image-prefix):$(TAG) \
+            $(DOCKERBUILD_ARGS) \
+            -f image/scanner/Dockerfile image/scanner
 
 $(image-db-init-d):
 	mkdir -p $@
@@ -223,10 +213,24 @@ endif
 image-db: $(image-db-init-t)
 	@echo "+ $@"
 	$(DOCKERBUILD) \
-        -t stackrox/$(image-prefix)-db:$(TAG) \
-        $(DOCKERBUILD_ARGS) \
-        $(DB_DOCKERBUILD_ARGS) \
-        -f image/db/Dockerfile image/db
+            -t stackrox/$(image-prefix)-db:$(TAG) \
+            -t $(DEFAULT_IMAGE_REGISTRY)/$(image-prefix)-db:$(TAG) \
+            $(DOCKERBUILD_ARGS) \
+            $(DB_DOCKERBUILD_ARGS) \
+            -f image/db/Dockerfile image/db
+
+image/scannerctl/bin/scannerctl: bin/scannerctl
+	@echo "+ $@"
+	mkdir -p $(@D)
+	cp $< $@
+
+.PHONY: image-scannerctl
+image-scannerctl: image/scannerctl/bin/scannerctl
+	@echo "+ $@"
+	$(DOCKERBUILD) \
+	    -t stackrox/$(image-prefix)-scannerctl:$(TAG) \
+	    $(DOCKERBUILD_ARGS) \
+            -f image/scannerctl/Dockerfile image/scannerctl
 
 ###########
 ## Tools ##

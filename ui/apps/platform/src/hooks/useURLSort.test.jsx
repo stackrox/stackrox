@@ -1,6 +1,6 @@
 import React from 'react';
 import { renderHook } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom-v5-compat';
 import cloneDeep from 'lodash/cloneDeep';
 
 import actAndFlushTaskQueue from 'test-utils/flushTaskQueue';

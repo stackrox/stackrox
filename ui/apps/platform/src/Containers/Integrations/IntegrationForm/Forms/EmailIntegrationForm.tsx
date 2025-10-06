@@ -1,21 +1,30 @@
 /* eslint-disable no-void */
-import React, { ReactElement, useState } from 'react';
-import { Alert, Checkbox, Form, PageSection, TextInput, Popover } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
+import {
+    Alert,
+    Checkbox,
+    Form,
+    PageSection,
+    TextInput,
+    Popover,
+    SelectOption,
+} from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 import SelectSingle from 'Components/SelectSingle';
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+
+import usePageState from '../../hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
@@ -32,6 +41,7 @@ export type EmailIntegration = {
         skipTLSVerify: boolean;
         startTLSAuthMethod: 'DISABLED' | 'PLAIN' | 'LOGIN';
         allowUnauthenticatedSmtp: boolean;
+        hostnameHeloEhlo: string;
     };
     type: 'email';
 } & NotifierIntegrationBase;
@@ -125,6 +135,7 @@ export const defaultValues: EmailIntegrationFormValues = {
             skipTLSVerify: false,
             startTLSAuthMethod: 'DISABLED',
             allowUnauthenticatedSmtp: false,
+            hostnameHeloEhlo: '',
         },
         labelDefault: '',
         labelKey: '',
@@ -469,6 +480,27 @@ function EmailIntegrationForm({
                                 (values.notifier.email.disableTLS &&
                                     values.notifier.email.startTLSAuthMethod === 'DISABLED')
                             }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Hostname for SMTP HELO/EHLO"
+                        fieldId="notifier.email.hostnameHeloEhlo"
+                        helperText={
+                            <span className="pf-v5-u-font-size-sm">
+                                If left blank, localhost will be used
+                            </span>
+                        }
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            type="text"
+                            id="notifier.email.hostnameHeloEhlo"
+                            value={values.notifier.email.hostnameHeloEhlo}
+                            placeholder="example, smtp.client.com"
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>

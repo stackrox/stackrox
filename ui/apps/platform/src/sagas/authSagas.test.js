@@ -1,11 +1,22 @@
-import { select, call } from 'redux-saga/effects';
-import { push } from 'redux-first-history';
+import { call, select } from 'redux-saga/effects';
+import { push } from 'connected-react-router';
 import { expectSaga } from 'redux-saga-test-plan';
 import { dynamic, throwError } from 'redux-saga-test-plan/providers';
 
 import { selectors } from 'reducers';
-import { actions, AUTH_STATUS } from 'reducers/auth';
-import * as AuthService from 'services/AuthService';
+import { AUTH_STATUS, actions } from 'reducers/auth';
+import {
+    AuthHttpError as AuthServiceAuthHttpError,
+    exchangeAuthToken as authServiceExchangeAuthToken,
+    fetchAvailableProviderTypes as authServiceFetchAvailableProviderTypes,
+    fetchLoginAuthProviders as authServiceFetchLoginAuthProviders,
+    getAccessToken as authServiceGetAccessToken,
+    getAndClearRequestedLocation as authServiceGetAndClearRequestedLocation,
+    getAuthStatus as authServiceGetAuthStatus,
+    logout as authServiceLogout,
+    storeAccessToken as authServiceStoreAccessToken,
+    storeRequestedLocation as authServiceStoreRequestedLocation,
+} from 'services/AuthService';
 import { fetchUserRolePermissions } from 'services/RolesService';
 import saga from './authSagas';
 import createLocationChange from './sagaTestUtils';
@@ -22,10 +33,10 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
-                [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
-                [call(AuthService.logout), null],
+                [call(authServiceFetchLoginAuthProviders), dynamic(fetchMock)],
+                [call(authServiceLogout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .dispatch(createLocationChange('/'))
             .dispatch(createLocationChange('/main/policies'))
@@ -40,11 +51,11 @@ describe('Auth Sagas', () => {
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.ANONYMOUS_ACCESS),
-                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), null],
-                [call(AuthService.logout), null],
+                [call(authServiceFetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(authServiceGetAccessToken), null],
+                [call(authServiceLogout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .put(actions.logout())
             .dispatch(createLocationChange('/'))
@@ -54,11 +65,11 @@ describe('Auth Sagas', () => {
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }]),
-                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
-                [call(AuthService.getAuthStatus), 'ok'],
+                [call(authServiceFetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(authServiceGetAccessToken), 'my-token'],
+                [call(authServiceGetAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .put(actions.login('ok'))
             .dispatch(createLocationChange('/'))
@@ -68,12 +79,12 @@ describe('Auth Sagas', () => {
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }]),
-                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
-                [call(AuthService.getAuthStatus), throwError(new Error('401'))],
-                [call(AuthService.logout), null],
+                [call(authServiceFetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(authServiceGetAccessToken), 'my-token'],
+                [call(authServiceGetAuthStatus), throwError(new Error('401'))],
+                [call(authServiceLogout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .put(actions.logout())
             .dispatch(createLocationChange('/'))
@@ -84,11 +95,11 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
-                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
-                [call(AuthService.logout), dynamic(logout)],
+                [call(authServiceFetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(authServiceGetAccessToken), 'my-token'],
+                [call(authServiceLogout), dynamic(logout)],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .dispatch(createLocationChange('/'))
             .dispatch(actions.logout())
@@ -104,11 +115,11 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
-                [call(AuthService.fetchLoginAuthProviders), { response: [] }],
-                [call(AuthService.logout), null],
-                [call(AuthService.storeRequestedLocation, from), dynamic(storeLocationMock)],
+                [call(authServiceFetchLoginAuthProviders), { response: [] }],
+                [call(authServiceLogout), null],
+                [call(authServiceStoreRequestedLocation, from), dynamic(storeLocationMock)],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .dispatch(createLocationChange('/'))
             .dispatch(createLocationChange('/login', from))
@@ -127,16 +138,16 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
-                [call(AuthService.fetchLoginAuthProviders), { response: [] }],
+                [call(authServiceFetchLoginAuthProviders), { response: [] }],
                 [
-                    call(AuthService.exchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
+                    call(authServiceExchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
                     { token: exchangedToken },
                 ],
-                [call(AuthService.storeAccessToken, exchangedToken), dynamic(storeAccessTokenMock)],
-                [call(AuthService.getAndClearRequestedLocation), requestedLocation],
-                [call(AuthService.logout), null],
+                [call(authServiceStoreAccessToken, exchangedToken), dynamic(storeAccessTokenMock)],
+                [call(authServiceGetAndClearRequestedLocation), requestedLocation],
+                [call(authServiceLogout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .put(push(requestedLocation))
             .dispatch(
@@ -164,16 +175,16 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
-                [call(AuthService.fetchLoginAuthProviders), { response: [] }],
+                [call(authServiceFetchLoginAuthProviders), { response: [] }],
                 [
-                    call(AuthService.exchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
+                    call(authServiceExchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
                     { token, clientState: callbackURL },
                 ],
-                [call(AuthService.storeAccessToken, token), dynamic(storeAccessTokenMock)],
-                [call(AuthService.getAndClearRequestedLocation), requestedLocation],
-                [call(AuthService.logout), null],
+                [call(authServiceStoreAccessToken, token), dynamic(storeAccessTokenMock)],
+                [call(authServiceGetAndClearRequestedLocation), requestedLocation],
+                [call(authServiceLogout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .put(push(requestedLocation))
             .dispatch(
@@ -202,20 +213,20 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
-                [call(AuthService.fetchLoginAuthProviders), { response: [] }],
+                [call(authServiceFetchLoginAuthProviders), { response: [] }],
                 // TODO: mock auth action call, too
                 // [
                 //     call(actions.setAuthProviderTestResults, {}),
                 //     dynamic(setAuthProviderTestResultsMock),
                 // ],
-                [call(AuthService.getAndClearRequestedLocation), requestedLocation],
+                [call(authServiceGetAndClearRequestedLocation), requestedLocation],
                 [
-                    call(AuthService.storeRequestedLocation, requestedLocation),
+                    call(authServiceStoreRequestedLocation, requestedLocation),
                     dynamic(storeLocationMock),
                 ],
-                [call(AuthService.logout), null],
+                [call(authServiceLogout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .put(push(requestedLocation))
             .dispatch(
@@ -237,29 +248,29 @@ describe('Auth Sagas', () => {
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
-                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
-                [call(AuthService.logout), null],
+                [call(authServiceFetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(authServiceGetAccessToken), 'my-token'],
+                [call(authServiceLogout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .put(actions.logout())
             .dispatch(createLocationChange('/'))
-            .dispatch(actions.handleAuthHttpError(new AuthService.AuthHttpError('error', 401)))
+            .dispatch(actions.handleAuthHttpError(new AuthServiceAuthHttpError('error', 401)))
             .silentRun());
 
     it('should ignore 403 HTTP error', () =>
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
-                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
-                [call(AuthService.logout), null],
+                [call(authServiceFetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(authServiceGetAccessToken), 'my-token'],
+                [call(authServiceLogout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
             .not.put(actions.logout())
             .dispatch(createLocationChange('/'))
-            .dispatch(actions.handleAuthHttpError(new AuthService.AuthHttpError('error', 403)))
+            .dispatch(actions.handleAuthHttpError(new AuthServiceAuthHttpError('error', 403)))
             .silentRun());
 });

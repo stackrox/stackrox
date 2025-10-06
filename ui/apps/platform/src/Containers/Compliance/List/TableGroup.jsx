@@ -2,13 +2,13 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Table from 'Components/Table';
 import Collapsible from 'react-collapsible';
-import * as Icon from 'react-feather';
+import { ChevronDown, ChevronUp } from 'react-feather';
 
 import { entityCountNounOrdinaryCase } from '../entitiesForCompliance';
 
 const icons = {
-    opened: <Icon.ChevronUp size="14" />,
-    closed: <Icon.ChevronDown size="14" />,
+    opened: <ChevronUp size="14" />,
+    closed: <ChevronDown size="14" />,
 };
 
 class TableGroup extends Component {

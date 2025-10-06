@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/glob"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
@@ -54,12 +53,6 @@ var (
 		apiPathsCampaign(),
 		userAgentsCampaign(),
 	}
-	campaignMux       sync.RWMutex
-	telemetryCampaign phonehome.APICallCampaign
-
-	interceptors = map[string][]phonehome.Interceptor{
-		"API Call": {apiCall, addDefaultProps},
-	}
 )
 
 // apiPathsCampaign constructs an API paths campaign from the apiWhiteList
@@ -92,17 +85,19 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 	return true
 }
 
-// apiCall enables API Call events for the API paths specified in the
+// apiCallInterceptor enables API Call events for the API paths specified in the
 // trackedPaths ("*" value enables all paths) or for the calls with the
 // User-Agent containing the substrings specified in the trackedUserAgents, and
 // have no match in the ignoredPaths list.
-func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
-	campaignMux.RLock()
-	defer campaignMux.RUnlock()
-	return !ignoredPaths.Match(rp.Path) && telemetryCampaign.CountFulfilled(rp,
-		func(cc *phonehome.APICallCampaignCriterion) {
-			addCustomHeaders(rp, cc, props)
-		}) > 0
+func (c *CentralClient) apiCallInterceptor() phonehome.Interceptor {
+	return func(rp *phonehome.RequestParams, props map[string]any) bool {
+		c.campaignMux.RLock()
+		defer c.campaignMux.RUnlock()
+		return !ignoredPaths.Match(rp.Path) && c.telemetryCampaign.CountFulfilled(rp,
+			func(cc *phonehome.APICallCampaignCriterion) {
+				addCustomHeaders(rp, cc, props)
+			}) > 0
+	}
 }
 
 // addCustomHeaders adds additional properties to the event if the telemetry
@@ -111,8 +106,6 @@ func addCustomHeaders(rp *phonehome.RequestParams, cc *phonehome.APICallCampaign
 	if rp.Headers == nil || cc == nil {
 		return
 	}
-	campaignMux.RLock()
-	defer campaignMux.RUnlock()
 	for header := range cc.Headers {
 		values := rp.Headers(header)
 		if len(values) != 0 {

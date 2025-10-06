@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -112,14 +112,13 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
-          free-disk-space: 30
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - uses: ./.github/actions/cache-ui-dependencies
@@ -143,12 +142,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -186,7 +182,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -253,7 +249,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -315,9 +311,6 @@ jobs:
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Setup build env
         run: |
@@ -352,7 +345,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -522,7 +515,7 @@ jobs:
         } >> "$GITHUB_ENV"
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -585,16 +578,13 @@ jobs:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     strategy:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -672,7 +662,7 @@ jobs:
     - pre-build-go-binaries
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -734,7 +724,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -801,7 +791,7 @@ jobs:
       actions: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Slack message
         env:
