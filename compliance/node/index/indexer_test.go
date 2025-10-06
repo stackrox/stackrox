@@ -239,5 +239,6 @@ func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
 	report, err := indexer.IndexNode(context.Background())
 
 	s.ErrorContains(err, "no such file or directory")
+	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(report)
 }
