@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -32,7 +31,6 @@ type cveDataStoreSACTestSuite struct {
 	suite.Suite
 
 	testGraphDatastore graphDBTestUtils.TestGraphDataStore
-	imageCVEStore      imageCVEDataStore.DataStore
 	nodeCVEStore       nodeCVEDataStore.DataStore
 
 	nodeTestContexts  map[string]context.Context
@@ -44,7 +42,6 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
 	pool := s.testGraphDatastore.GetPostgresPool()
-	s.imageCVEStore = imageCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
 	s.nodeCVEStore, err = nodeCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
 	s.Require().NoError(err)
 	s.imageTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
