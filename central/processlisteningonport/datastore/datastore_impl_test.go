@@ -91,7 +91,7 @@ func (suite *PLOPDataStoreTestSuite) getPlopsFromDB() []*storage.ProcessListenin
 
 func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndicator {
 	indicatorsFromDB := []*storage.ProcessIndicator{}
-	err := suite.indicatorDataStore.WalkAll(suite.hasWriteCtx,
+	err := suite.indicatorDataStore.WalkByQuery(suite.hasWriteCtx, nil,
 		func(processIndicator *storage.ProcessIndicator) error {
 			indicatorsFromDB = append(indicatorsFromDB, processIndicator)
 			return nil
