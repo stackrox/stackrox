@@ -2,7 +2,7 @@
 
 Runs inside VMs to scan for vulnerabilities and report back to the host via vsock.
 While not directly related to the `compliance` feature, the agent utilizes compliance
-node scannig code for package scanning in the virtual machine.
+node scanning code for package scanning in the virtual machine.
 
 ## What it does
 
