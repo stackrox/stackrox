@@ -122,6 +122,20 @@ func (mr *MockDataStoreMockRecorder) SearchRawVirtualMachines(ctx, query any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawVirtualMachines", reflect.TypeOf((*MockDataStore)(nil).SearchRawVirtualMachines), ctx, query)
 }
 
+// UpdateVirtualMachineScan mocks base method.
+func (m *MockDataStore) UpdateVirtualMachineScan(ctx context.Context, vmID string, scan *storage.VirtualMachineScan) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateVirtualMachineScan", ctx, vmID, scan)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateVirtualMachineScan indicates an expected call of UpdateVirtualMachineScan.
+func (mr *MockDataStoreMockRecorder) UpdateVirtualMachineScan(ctx, vmID, scan any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVirtualMachineScan", reflect.TypeOf((*MockDataStore)(nil).UpdateVirtualMachineScan), ctx, vmID, scan)
+}
+
 // UpsertVirtualMachine mocks base method.
 func (m *MockDataStore) UpsertVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
 	m.ctrl.T.Helper()

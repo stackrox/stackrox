@@ -11,7 +11,9 @@ import (
 	vmStore "github.com/stackrox/rox/central/virtualmachine/datastore/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -156,6 +158,86 @@ func (s *VirtualMachineDataStoreTestSuite) TestUpsertVirtualMachine() {
 	s.NoError(err)
 	s.False(foundVM2)
 	s.Nil(retrievedVM2)
+}
+
+// Test UpdateVirtualMachineScan
+func (s *VirtualMachineDataStoreTestSuite) TestUpdateVirtualMachineScan() {
+	priorVirtualMachineScan := &storage.VirtualMachineScan{
+		Notes: []storage.VirtualMachineScan_Note{
+			storage.VirtualMachineScan_OS_UNKNOWN,
+		},
+	}
+	testVirtualMachineScan := &storage.VirtualMachineScan{
+		Components: []*storage.EmbeddedVirtualMachineScanComponent{
+			{
+				Name:    "my-test-package",
+				Version: "1.2.3",
+			},
+		},
+	}
+
+	fullAccessCtx := sac.WithAllAccess(s.T().Context())
+	// Inject a VM without scan data (to enrich)
+	testVM1 := s.createTestVM(1)
+	s.Require().NoError(s.datastore.UpsertVirtualMachine(fullAccessCtx, testVM1))
+	expectedVM1 := testVM1.CloneVT()
+	expectedVM1.Scan = testVirtualMachineScan
+	// Inject a VM with scan data (to clean)
+	testVM2 := s.createTestVM(2)
+	testVM2.Scan = testVirtualMachineScan
+	s.Require().NoError(s.datastore.UpsertVirtualMachine(fullAccessCtx, testVM2))
+	expectedVM2 := testVM2.CloneVT()
+	expectedVM2.Scan = nil
+	// Inject a VM with scan data (to update)
+	testVM3 := s.createTestVM(3)
+	testVM3.Scan = priorVirtualMachineScan
+	s.Require().NoError(s.datastore.UpsertVirtualMachine(fullAccessCtx, testVM3))
+	expectedVM3 := testVM3.CloneVT()
+	expectedVM3.Scan = testVirtualMachineScan
+
+	tests := map[string]struct {
+		targetVMID    string
+		inputScan     *storage.VirtualMachineScan
+		expectedError error
+		expectedVM    *storage.VirtualMachine
+	}{
+		"Scan update to a non-existing VM returns NotFound error": {
+			targetVMID:    uuid.NewTestUUID(0).String(),
+			inputScan:     testVirtualMachineScan,
+			expectedError: errox.NotFound,
+		},
+		"Scan update with scan to an existing VM with no scan results in VM with scan data": {
+			targetVMID: testVM1.GetId(),
+			inputScan:  testVirtualMachineScan,
+			expectedVM: expectedVM1,
+		},
+		"Scan update with nil scan to an existing VM with scan data results in VM with no scan data": {
+			targetVMID: testVM2.GetId(),
+			inputScan:  nil,
+			expectedVM: expectedVM2,
+		},
+		"Scan update with scan to an existing VM with prior scan data results in VM with updated scan data": {
+			targetVMID: testVM3.GetId(),
+			inputScan:  testVirtualMachineScan,
+			expectedVM: expectedVM3,
+		},
+	}
+
+	for name, tc := range tests {
+		s.Run(name, func() {
+			updateErr := s.datastore.UpdateVirtualMachineScan(fullAccessCtx, tc.targetVMID, tc.inputScan)
+			if tc.expectedError != nil {
+				s.ErrorIs(updateErr, tc.expectedError)
+			} else {
+				s.NoError(updateErr)
+
+				updatedVM, found, fetchErr := s.datastore.GetVirtualMachine(fullAccessCtx, tc.targetVMID)
+				s.NoError(fetchErr)
+				s.True(found)
+				protoassert.Equal(s.T(), tc.expectedVM, updatedVM)
+			}
+		})
+	}
 }
 
 // Test DeleteVirtualMachines in one call
