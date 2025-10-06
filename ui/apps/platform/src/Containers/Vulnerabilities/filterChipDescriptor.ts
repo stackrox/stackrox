@@ -5,7 +5,18 @@
  * add it to the viewBasedReportFilterChipDescriptors array at the bottom of this file.
  */
 
+import React from 'react';
 import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
+
+function renderFixableStatus(value: string): React.ReactNode {
+    if (value === 'true') {
+        return 'Fixable';
+    }
+    if (value === 'false') {
+        return 'Not fixable';
+    }
+    return value;
+}
 
 export const cveSeverityFilterDescriptor: FilterChipGroupDescriptor = {
     displayName: 'CVE severity',
@@ -15,11 +26,13 @@ export const cveSeverityFilterDescriptor: FilterChipGroupDescriptor = {
 export const cveStatusFixableDescriptor: FilterChipGroupDescriptor = {
     displayName: 'CVE status',
     searchFilterName: 'FIXABLE',
+    render: renderFixableStatus,
 };
 
 export const cveStatusClusterFixableDescriptor: FilterChipGroupDescriptor = {
     displayName: 'CVE status',
     searchFilterName: 'CLUSTER CVE FIXABLE',
+    render: renderFixableStatus,
 };
 
 export const cveSnoozedDescriptor: FilterChipGroupDescriptor = {
