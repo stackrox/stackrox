@@ -70,6 +70,11 @@ _begin() {
 
     current_label="$label"
 
+    echo "current status during _begin (pid=$post_processor_pid):"
+    ls -l /proc/self/fd
+    jobs
+    ps axfu
+
     # Save original stdout and stderr fds as 4 and 5.
     exec 4>&1 5>&2
     # Connect new stdout and stderr fds with a pipe to post-processor.
@@ -89,6 +94,12 @@ _end() {
     emit_timing_data "$test_identifier" "$current_label" "$begin_timestamp" "$end_timestamp"
     # Close post-processing stdout and stderr and restore from original fds.
     exec 1>&- 2>&- 1>&4 2>&5
+
+    echo "current status during _end (pid=$post_processor_pid):"
+    ls -l /proc/self/fd
+    jobs
+    ps axfu
+
     if [ -z "$post_processor_pid" ]; then
         die "_end called with empty post_processor_pid"
     fi
@@ -446,6 +457,16 @@ collect_analysis_data() {
 }
 export -f collect_analysis_data
 
+@test "Test crash first" {
+    init
+    _begin "test-crash"
+    echo A
+    echo B
+    false
+    echo C
+}
+
+
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     init
 
@@ -503,7 +524,7 @@ EOT
     _end
 }
 
-@test "Test crash" {
+@test "Test crash mid way" {
     init
     _begin "test-crash"
     echo A
@@ -977,6 +998,15 @@ EOT
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
 
     _end
+}
+
+@test "Test crash after" {
+    init
+    _begin "test-crash"
+    echo A
+    echo B
+    false
+    echo C
 }
 
 get_central_endpoint() {
