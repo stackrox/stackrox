@@ -371,7 +371,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 				s.T().Logf("IP listener (tick %d): %s", tickNo, ipListener.String())
 				// convert to slice of strings to enable using Contains assertion
 				var historicalIPs []string
-				for address := range maps.Keys(store.podIPsStore.historicalIPs) {
+				for address := range store.podIPsStore.historicalIPs {
 					historicalIPs = append(historicalIPs, address.String())
 				}
 				var currentIPs []string
