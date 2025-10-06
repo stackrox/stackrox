@@ -131,6 +131,9 @@ var (
 
 	// Locks process baselines when their deployments leave the observation period
 	AutoLockProcessBaselines = registerFeature("Locks process baselines when their deployments leave the observation period", "ROX_AUTO_LOCK_PROCESS_BASELINES")
+
+	// SFA enables monitoring of sensitive files.
+	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY")
 )
 
 // The following feature flags are related to Scanner V4.

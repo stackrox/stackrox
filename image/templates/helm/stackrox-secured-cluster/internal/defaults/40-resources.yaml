@@ -42,3 +42,12 @@ collector:
     limits:
       memory: "500Mi"
       cpu: "1"
+
+fact:
+  resources:
+    requests:
+      memory: "320Mi"
+      cpu: "50m"
+    limits:
+      memory: "1Gi"
+      cpu: "750m"
