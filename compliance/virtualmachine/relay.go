@@ -222,7 +222,8 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 			// This can't happen as of this writing (Success is only false when an error is returned) but is
 			// theoretically possible, let's add retries too.
 			if err == nil {
-				err = retry.MakeRetryable(errors.New("Sensor failed to handle virtual machine index report"))
+				log.Errorf("Sending index report didn't return an error but response indicated failure: %v", resp)
+				err = retry.MakeRetryable(errors.New("sensor failed to handle virtual machine index report"))
 			}
 		}
 
