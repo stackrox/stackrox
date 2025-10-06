@@ -1,16 +1,16 @@
 {
   "iibs": {
-    "4.12": "ocp-v4-12-97bcaf7afc9edbb240636abce0177b15d9b1dbb9-fast",
-    "4.13": "ocp-v4-13-97bcaf7afc9edbb240636abce0177b15d9b1dbb9-fast",
-    "4.14": "ocp-v4-14-97bcaf7afc9edbb240636abce0177b15d9b1dbb9-fast",
-    "4.15": "ocp-v4-15-97bcaf7afc9edbb240636abce0177b15d9b1dbb9-fast",
-    "4.16": "ocp-v4-16-97bcaf7afc9edbb240636abce0177b15d9b1dbb9-fast",
-    "4.17": "ocp-v4-17-97bcaf7afc9edbb240636abce0177b15d9b1dbb9-fast",
-    "4.18": "ocp-v4-18-97bcaf7afc9edbb240636abce0177b15d9b1dbb9-fast",
-    "4.19": "ocp-v4-19-97bcaf7afc9edbb240636abce0177b15d9b1dbb9-fast"
+    "4.12": "ocp-v4-12-2758dd00d57205bb639dfffa97dbff40c2845618-fast",
+    "4.13": "ocp-v4-13-2758dd00d57205bb639dfffa97dbff40c2845618-fast",
+    "4.14": "ocp-v4-14-7109fea8c6bdf4a134814b636a9ed05f9a0aaceb-fast",
+    "4.15": "ocp-v4-15-7109fea8c6bdf4a134814b636a9ed05f9a0aaceb-fast",
+    "4.16": "ocp-v4-16-7109fea8c6bdf4a134814b636a9ed05f9a0aaceb-fast",
+    "4.17": "ocp-v4-17-7109fea8c6bdf4a134814b636a9ed05f9a0aaceb-fast",
+    "4.18": "ocp-v4-18-7109fea8c6bdf4a134814b636a9ed05f9a0aaceb-fast",
+    "4.19": "ocp-v4-19-7109fea8c6bdf4a134814b636a9ed05f9a0aaceb-fast"
   },
   "operator": {
-    "version": "4.8.0",
+    "version": "4.8.4",
     "channel": "stable"
   }
 }
