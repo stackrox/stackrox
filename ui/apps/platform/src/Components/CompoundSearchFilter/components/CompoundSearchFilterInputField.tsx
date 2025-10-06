@@ -9,6 +9,7 @@ import {
 
 import { SearchFilter } from 'types/search';
 import CheckboxSelect from 'Components/CheckboxSelect';
+import SelectSingle from 'Components/SelectSingle';
 import { ensureString, ensureStringArray } from 'utils/ensure';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
@@ -175,6 +176,36 @@ function CompoundSearchFilterInputField({
         const { searchTerm } = attribute;
         const selection = ensureStringArray(searchFilter?.[searchTerm]);
 
+        if (
+            !hasGroupedSelectOptions(attribute.inputProps) &&
+            hasSelectOptions(attribute.inputProps) &&
+            attribute.inputProps.options.length !== 0 &&
+            !!attribute.inputProps.hasCheckbox
+        ) {
+            return (
+                <SelectSingle
+                    id={attribute.searchTerm}
+                    isFullWidth={false}
+                    placeholderText={`Filter by ${attributeLabel}`}
+                    value={selection.length === 0 ? '' : selection[0]}
+                    handleSelect={(_name, value: string) => {
+                        // onChange(value);
+                        onSearch({
+                            action: 'REPLACE',
+                            category: attribute.searchTerm,
+                            value,
+                        });
+                    }}
+                >
+                    {attribute.inputProps.options.map((option) => (
+                        <SelectOption key={option.value} value={option.value}>
+                            {option.label}
+                        </SelectOption>
+                    ))}
+                </SelectSingle>
+            );
+        }
+
         let content: JSX.Element | JSX.Element[] = (
             <SelectList>
                 <SelectOption isDisabled>No options available</SelectOption>
@@ -193,7 +224,6 @@ function CompoundSearchFilterInputField({
                                 {options.map((option) => (
                                     <SelectOption
                                         key={option.value}
-                                        hasCheckbox
                                         value={option.value}
                                         isSelected={selection.includes(option.value)}
                                     >
