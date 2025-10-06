@@ -74,6 +74,7 @@ func (s *relayTestSuite) TestHandleVsockConnection_InjectsVsockCID() {
 	err := handleVsockConnection(s.ctx, conn, client, 10*time.Second)
 	s.Require().NoError(err)
 
+	s.Require().Equal(1, len(client.capturedRequests))
 	s.Equal("42", client.capturedRequests[0].IndexReport.VsockCid)
 
 }
