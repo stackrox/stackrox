@@ -244,7 +244,7 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 		retry.WithExponentialBackoff())
 
 	if err != nil {
-		metrics.IndexReportsSentToSensor.With(metrics.StatusFailLabels).Inc()
+		metrics.IndexReportsSentToSensor.With(metrics.StatusErrorLabels).Inc()
 		log.Errorf("Error sending index report to sensor (vsock CID: %s): %v", report.VsockCid, err)
 	} else {
 		metrics.IndexReportsSentToSensor.With(metrics.StatusSuccessLabels).Inc()

@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	StatusFailLabels    = prometheus.Labels{"status": "fail"}
+	StatusErrorLabels   = prometheus.Labels{"status": "error"}
 	StatusSuccessLabels = prometheus.Labels{"status": "success"}
 )
 
