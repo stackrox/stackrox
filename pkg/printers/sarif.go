@@ -2,7 +2,6 @@ package printers
 
 import (
 	"io"
-	"maps"
 	"slices"
 	"strings"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/gjson"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -182,9 +180,8 @@ func (s *SarifPrinter) addEntry(run *sarif.Run, entry sarifEntry) {
 }
 
 func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[string]string) ([]sarifEntry, error) {
-	pathExpr := set.NewStringSet(slices.Collect(maps.Keys(pathExpressions))...)
 	for _, requiredKey := range requiredKeys {
-		if !pathExpr.Contains(requiredKey) {
+		if _, contains := pathExpressions[requiredKey]; !contains {
 			return nil, errox.InvalidArgs.Newf("not all required JSON path expressions given, ensure JSON "+
 				"path expression are given for: [%s]", strings.Join(requiredKeys, ","))
 		}

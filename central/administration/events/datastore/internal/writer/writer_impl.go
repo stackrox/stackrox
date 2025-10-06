@@ -46,7 +46,7 @@ func (c *writerImpl) flushNoLock(ctx context.Context) error {
 		return nil
 	}
 
-	eventsToAdd := slices.Collect(maps.Values(c.buffer)))
+	eventsToAdd := slices.Collect(maps.Values(c.buffer))
 
 	ids := protoutils.GetIDs(eventsToAdd)
 	// The events we currently hold in the buffer are de-duplicated within the context of the buffer. However, they are
