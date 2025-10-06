@@ -64,7 +64,7 @@ jobs:
   clusters:
     name: Setup demo clusters
     needs: trim-cluster-names
-    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@jv-ROX-28976-optimize-berserker-load-in-long-running-cluster
     secrets: inherit
     with:
       version: ${{github.event.inputs.version}}
