@@ -58,3 +58,20 @@ func (mr *MockEnricherMockRecorder) EnrichDeployment(ctx, enrichCtx, deployment 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichDeployment", reflect.TypeOf((*MockEnricher)(nil).EnrichDeployment), ctx, enrichCtx, deployment)
 }
+
+// EnrichDeploymentV2 mocks base method.
+func (m *MockEnricher) EnrichDeploymentV2(ctx context.Context, enrichCtx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.ImageV2, []int, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnrichDeploymentV2", ctx, enrichCtx, deployment)
+	ret0, _ := ret[0].([]*storage.ImageV2)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(bool)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// EnrichDeploymentV2 indicates an expected call of EnrichDeploymentV2.
+func (mr *MockEnricherMockRecorder) EnrichDeploymentV2(ctx, enrichCtx, deployment any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichDeploymentV2", reflect.TypeOf((*MockEnricher)(nil).EnrichDeploymentV2), ctx, enrichCtx, deployment)
+}
