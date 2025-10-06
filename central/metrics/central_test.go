@@ -72,3 +72,34 @@ func TestIncrementMsgToSensorNotSentCounter(t *testing.T) {
 		assert.Equal(t, 1.0, testutil.ToFloat64(reprocessDeploySignalCounter))
 	})
 }
+
+func TestIncrementBulkProcessBaselineCallCounter(t *testing.T) {
+	// Clear any prior values.
+	prometheus.Unregister(bulkProcessBaselineCallCounter)
+	require.NoError(t, prometheus.Register(bulkProcessBaselineCallCounter))
+
+	// Get references to the counters.
+	lockedCounter, err := bulkProcessBaselineCallCounter.GetMetricWith(
+		prometheus.Labels{"lock": "true"},
+	)
+	require.NoError(t, err)
+
+	unlockedCounter, err := bulkProcessBaselineCallCounter.GetMetricWith(
+		prometheus.Labels{"lock": "false"},
+	)
+	require.NoError(t, err)
+
+	// Sanity check.
+	assert.Equal(t, 0.0, testutil.ToFloat64(lockedCounter))
+	assert.Equal(t, 0.0, testutil.ToFloat64(unlockedCounter))
+
+	IncrementBulkProcessBaselineCallCounter(true)
+
+	assert.Equal(t, 1.0, testutil.ToFloat64(lockedCounter))
+	assert.Equal(t, 0.0, testutil.ToFloat64(unlockedCounter))
+
+	IncrementBulkProcessBaselineCallCounter(false)
+
+	assert.Equal(t, 1.0, testutil.ToFloat64(lockedCounter))
+	assert.Equal(t, 1.0, testutil.ToFloat64(unlockedCounter))
+}

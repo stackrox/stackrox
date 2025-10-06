@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -188,9 +189,11 @@ func (s *serviceImpl) getKeys(ctx context.Context, clusterId string, namespaces 
 	return keys, nil
 }
 
-func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest, lock bool) (*v1.BulkUpdateProcessBaselinesResponse, error) {
+func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest, methodName string, lock bool) (*v1.BulkUpdateProcessBaselinesResponse, error) {
 	var resp *v1.UpdateProcessBaselinesResponse
 	defer s.reprocessUpdatedBaselines(&resp)
+
+	metrics.IncrementBulkProcessBaselineCallCounter(lock)
 
 	clusterId := request.GetClusterId()
 
@@ -216,6 +219,8 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 		}
 	}
 
+	metrics.IncrementElementsImpactedCounter(methodName, len(resp.GetBaselines()))
+
 	success := &v1.BulkUpdateProcessBaselinesResponse{
 		Success: true,
 	}
@@ -224,11 +229,13 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 }
 
 func (s *serviceImpl) BulkLockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest) (*v1.BulkUpdateProcessBaselinesResponse, error) {
-	return s.bulkLockOrUnlockProcessBaselines(ctx, request, true)
+	methodName := "BulkLockProcessBaselines"
+	return s.bulkLockOrUnlockProcessBaselines(ctx, request, methodName, true)
 }
 
 func (s *serviceImpl) BulkUnlockProcessBaselines(ctx context.Context, request *v1.BulkProcessBaselinesRequest) (*v1.BulkUpdateProcessBaselinesResponse, error) {
-	return s.bulkLockOrUnlockProcessBaselines(ctx, request, false)
+	methodName := "BulkUnlockProcessBaselines"
+	return s.bulkLockOrUnlockProcessBaselines(ctx, request, methodName, false)
 }
 
 func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.DeleteProcessBaselinesRequest) (*v1.DeleteProcessBaselinesResponse, error) {

@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -277,6 +278,20 @@ var (
 		Name:      "msg_to_sensor_not_sent_count",
 		Help:      "Total messages not sent to Sensor due to errors or other reasons",
 	}, []string{"ClusterID", "type", "reason"})
+
+	bulkProcessBaselineCallCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "bulk_process_baseline_call_count",
+		Help:      "The total number of times that the service to lock or unlock process baselines in bulk has been called",
+	}, []string{"lock"})
+
+	elementsImpactedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "elements_impacted_count",
+		Help:      "The total number of elements impacted by an API call",
+	}, []string{"method"})
 )
 
 // Reasons for a message not being sent.
@@ -496,6 +511,14 @@ func IncrementMsgToSensorNotSentCounter(clusterID string, msg *central.MsgToSens
 	}
 	typ := event.GetEventTypeWithoutPrefix(msg.GetMsg())
 	msgToSensorNotSentCounter.With(prometheus.Labels{"ClusterID": clusterID, "type": typ, "reason": reason}).Inc()
+}
+
+func IncrementBulkProcessBaselineCallCounter(lock bool) {
+	bulkProcessBaselineCallCounter.With(prometheus.Labels{"lock": strconv.FormatBool(lock)}).Inc()
+}
+
+func IncrementElementsImpactedCounter(method string, nImpacted int) {
+	elementsImpactedCounter.With(prometheus.Labels{"method": method}).Add(float64(nImpacted))
 }
 
 // SetSignatureVerificationReprocessorDuration registers how long a signature verification reprocessing step took.
