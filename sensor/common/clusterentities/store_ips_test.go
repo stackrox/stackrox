@@ -375,7 +375,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 					historicalIPs = append(historicalIPs, address.String())
 				}
 				var currentIPs []string
-				for address := range maps.Keys(store.podIPsStore.ipMap) {
+				for address := range store.podIPsStore.ipMap {
 					currentIPs = append(currentIPs, address.String())
 				}
 				for endpointIP, whereFound := range expect {
