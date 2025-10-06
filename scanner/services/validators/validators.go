@@ -123,6 +123,13 @@ func validateContents(contents *v4.Contents) error {
 			}
 		}
 	}
+	for k, envs := range contents.GetEnvironmentsDEPRECATED() {
+		for idx, env := range envs.GetEnvironments() {
+			if env == nil {
+				return fmt.Errorf("Contents.EnvironmentsDEPRECATED[%q] element #%d is empty", k, idx+1)
+			}
+		}
+	}
 	return nil
 }
 
