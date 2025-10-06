@@ -40,7 +40,7 @@ require (
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/cockroachdb/pebble/v2 v2.1.0
 	github.com/containers/image/v5 v5.36.2
-	github.com/coreos/go-oidc/v3 v3.15.0
+	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/coreos/go-systemd/v22 v22.6.0
 	github.com/dave/jennifer v1.7.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
@@ -49,7 +49,7 @@ require (
 	github.com/facebookincubator/nvdtools v0.1.5
 	github.com/fatih/color v1.18.0
 	github.com/georgysavva/scany/v2 v2.1.4
-	github.com/go-jose/go-jose/v4 v4.1.2
+	github.com/go-jose/go-jose/v4 v4.1.3
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/gobwas/glob v0.2.3
