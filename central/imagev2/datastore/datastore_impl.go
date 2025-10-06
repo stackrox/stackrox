@@ -310,24 +310,16 @@ func (ds *datastoreImpl) initializeRankers() {
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.ImageV2) {
 	for _, image := range images {
 		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
-		for _, component := range image.GetScan().GetComponents() {
-			componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
-			if err != nil {
-				log.Error(err)
-				continue
-			}
+		for index, component := range image.GetScan().GetComponents() {
+			componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
 			component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
 		}
 	}
 }
 
 func (ds *datastoreImpl) updateComponentRisk(image *storage.ImageV2) {
-	for _, component := range image.GetScan().GetComponents() {
-		componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
-		if err != nil {
-			log.Error(err)
-			continue
-		}
+	for index, component := range image.GetScan().GetComponents() {
+		componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
 		component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
 	}
 }
