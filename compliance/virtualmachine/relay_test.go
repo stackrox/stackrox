@@ -89,7 +89,7 @@ func (s *relayTestSuite) TestHandleVsockConnection_RejectsMalformedData() {
 
 func (s *relayTestSuite) TestHandleVsockConnection_HandlesContextCancellation() {
 	conn := s.defaultVsockConn()
-	client := newMockSensorClient().withDelay(1 * time.Second)
+	client := newMockSensorClient().withDelay(time.Second)
 	ctx, cancel := context.WithTimeout(s.ctx, 100*time.Millisecond) // times out before sensor replies
 	defer cancel()
 

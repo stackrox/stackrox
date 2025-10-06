@@ -49,19 +49,19 @@ func (s *VsockServer) Stop() {
 }
 
 type Relay struct {
-	vsockServer           VsockServer
-	sensorClient          sensor.VirtualMachineIndexReportServiceClient
-	waitAfterFailedAccept time.Duration
 	connectionReadTimeout time.Duration
+	sensorClient          sensor.VirtualMachineIndexReportServiceClient
+	vsockServer           VsockServer
+	waitAfterFailedAccept time.Duration
 }
 
 func NewRelay(conn grpc.ClientConnInterface) *Relay {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	return &Relay{
+		connectionReadTimeout: 10 * time.Second,
 		sensorClient:          sensor.NewVirtualMachineIndexReportServiceClient(conn),
 		vsockServer:           VsockServer{port: uint32(port)},
 		waitAfterFailedAccept: time.Second,
-		connectionReadTimeout: 10 * time.Second,
 	}
 }
 
