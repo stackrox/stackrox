@@ -358,6 +358,12 @@ push_operator_image() {
     registry_rw_login "$registry"
 
     _push_operator_image "$registry" "$tag" "$arch"
+
+    if [[ "$push_context" == "merge-to-master" ]]; then
+        docker tag "${registry}/stackrox-operator:${tag}" "${registry}/stackrox-operator:latest-${arch}"
+        retry 5 true \
+            docker push "${registry}/stackrox-operator:latest-${arch}" | cat
+    fi
 }
 
 push_scanner_image_manifest_lists() {
