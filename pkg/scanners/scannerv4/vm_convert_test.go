@@ -26,38 +26,6 @@ var (
 		Availability:        storage.CVSSV3_IMPACT_NONE,
 		Severity:            storage.CVSSV3_LOW,
 	}
-
-	testCVE2CVSSV3 = &storage.CVSSV3{
-		Vector:              "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
-		ExploitabilityScore: 2.8,
-		ImpactScore:         5.9,
-		AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-		AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-		PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-		UserInteraction:     storage.CVSSV3_UI_REQUIRED,
-		Scope:               storage.CVSSV3_UNCHANGED,
-		Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
-		Integrity:           storage.CVSSV3_IMPACT_HIGH,
-		Availability:        storage.CVSSV3_IMPACT_HIGH,
-		Score:               8.8,
-		Severity:            storage.CVSSV3_HIGH,
-	}
-
-	testCVE3CVSSV3 = &storage.CVSSV3{
-		Vector:              "CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-		ExploitabilityScore: 2.8,
-		ImpactScore:         5.9,
-		AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
-		AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-		PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-		UserInteraction:     storage.CVSSV3_UI_NONE,
-		Scope:               storage.CVSSV3_UNCHANGED,
-		Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
-		Integrity:           storage.CVSSV3_IMPACT_HIGH,
-		Availability:        storage.CVSSV3_IMPACT_HIGH,
-		Score:               9.8,
-		Severity:            storage.CVSSV3_CRITICAL,
-	}
 )
 
 func TestNoVMConversionPanic(t *testing.T) {
