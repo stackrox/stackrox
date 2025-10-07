@@ -9,8 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
-// BinaryHash represents a 64-bit hash as an 8-byte array for memory-efficient key storage
-type BinaryHash [8]byte
+// BinaryHash represents a 64-bit hash for memory-efficient key storage.
+// Using uint64 directly avoids conversion overhead and provides faster map operations
+// compared to [8]byte (single-instruction comparison vs byte-by-byte).
+// Switching to a 128-bit hash would require using [16]byte.
+type BinaryHash uint64
 
 // ProcessInfo represents process information used in indicators
 type ProcessInfo struct {

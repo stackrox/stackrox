@@ -358,7 +358,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 	ep1hash := ep1.BinaryKey()
 	p1hash := p1.BinaryKey()
 	p2hash := p2.BinaryKey()
-	emptyHash := indicator.BinaryHash{}
+	emptyHash := indicator.BinaryHash(0)
 	emptyDeduper := map[indicator.BinaryHash]indicator.BinaryHash{}
 
 	closedNow := timestamp.Now()

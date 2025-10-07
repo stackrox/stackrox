@@ -72,8 +72,8 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumContainerLookups: 1,
 					expectedNumUpdatesEndpoint:  1,
 					expectedNumUpdatesProcess:   0,
-					expectedDeduperState: map[string]string{
-						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): "",
+					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
+						e1p1open.endpointIndicator(deploymentID).BinaryKey(): indicator.BinaryHash(0),
 					},
 					expectedUpdatedProcesses: nil,
 				},
@@ -83,7 +83,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumContainerLookups: 1,
 					expectedNumUpdatesEndpoint:  1,
 					expectedNumUpdatesProcess:   0,
-					expectedDeduperState:        map[string]string{},
+					expectedDeduperState:        map[indicator.BinaryHash]indicator.BinaryHash{},
 					expectedUpdatedProcesses:    nil,
 				},
 			},
