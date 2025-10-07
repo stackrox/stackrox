@@ -86,6 +86,9 @@ func (r *Relay) Run(ctx context.Context) error {
 				log.Info("Stopping virtual machine relay")
 				return ctx.Err()
 			}
+			// We deliberately not kill the listener on errors. The only way to stop that is to cancel the context.
+			// If we had return here on fatal errors, then compliance would continue working without the relay
+			// and that would make it an invisible problem to the user.
 			log.Errorf("Error accepting connection: %v", err)
 			time.Sleep(r.waitAfterFailedAccept) // Prevent a tight loop
 			continue
