@@ -18,12 +18,13 @@ func main() {
 	var port = flag.Uint("port", 818, "vsock port to connect to")
 	var packageCount = flag.Int("packages", 10, "number of packages to include in fake reports")
 	var intervalMs = flag.Int("interval", 10000, "interval between reports in milliseconds")
+	var parallelWorkers = flag.Int("parallel-workers", 1, "number of parallel workers sending reports")
 	flag.Parse()
 
-	log.Printf("Starting VM agent, connecting to vsock port %d with %d packages per report, sending every %d ms", *port, *packageCount, *intervalMs)
+	log.Printf("Starting VM agent, connecting to vsock port %d with %d packages per report, sending every %d ms with %d parallel workers", *port, *packageCount, *intervalMs, *parallelWorkers)
 
 	// Create the fake agent
-	fakeAgent := agent.NewFakeAgent(uint32(*port), *packageCount, *intervalMs)
+	fakeAgent := agent.NewFakeAgent(uint32(*port), *packageCount, *intervalMs, *parallelWorkers)
 
 	// Set up context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())

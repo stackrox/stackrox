@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/mdlayher/vsock"
@@ -15,51 +16,75 @@ import (
 
 // FakeAgent generates and sends index reports over vsock
 type FakeAgent struct {
-	port         uint32
-	packageCount int
-	intervalMs   int
+	port            uint32
+	packageCount    int
+	intervalMs      int
+	parallelWorkers int
 }
 
 // NewFakeAgent creates a new fake agent
-func NewFakeAgent(port uint32, packageCount int, intervalMs int) *FakeAgent {
+func NewFakeAgent(port uint32, packageCount int, intervalMs int, parallelWorkers int) *FakeAgent {
 	return &FakeAgent{
-		port:         port,
-		packageCount: packageCount,
-		intervalMs:   intervalMs,
+		port:            port,
+		packageCount:    packageCount,
+		intervalMs:      intervalMs,
+		parallelWorkers: parallelWorkers,
 	}
 }
 
 // Run starts the fake agent that generates and sends index reports
 func (a *FakeAgent) Run(ctx context.Context) error {
-	log.Printf("Fake agent starting - will send reports every %d ms on port %d", a.intervalMs, a.port)
+	log.Printf("Fake agent starting - will send reports every %d ms on port %d with %d parallel workers", a.intervalMs, a.port, a.parallelWorkers)
 
-	// Send first report immediately, then every 10 seconds
+	var wg sync.WaitGroup
+
+	// Start parallel workers
+	for i := 0; i < a.parallelWorkers; i++ {
+		wg.Add(1)
+		workerID := i + 1
+		go func(id int) {
+			defer wg.Done()
+			a.runWorker(ctx, id)
+		}(workerID)
+	}
+
+	// Wait for all workers to complete
+	wg.Wait()
+	log.Println("All workers stopped")
+	return nil
+}
+
+// runWorker is the main loop for a single worker
+func (a *FakeAgent) runWorker(ctx context.Context, workerID int) {
+	log.Printf("Worker %d starting", workerID)
+
+	// Send first report immediately, then every interval
 	for {
 		// Check for shutdown before each iteration
 		select {
 		case <-ctx.Done():
-			log.Println("Fake agent stopping")
-			return nil
+			log.Printf("Worker %d stopping", workerID)
+			return
 		default:
 		}
 
-		log.Printf("🔄 Starting to generate and send index report...")
+		log.Printf("[Worker %d] 🔄 Starting to generate and send index report...", workerID)
 		report := a.generateIndexReport()
-		log.Printf("📊 Generated report with vsock_cid: %s, hash_id: %s, packages: %d, distributions: %d, repositories: %d",
-			report.VsockCid, report.IndexV4.HashId, len(report.IndexV4.Contents.Packages), len(report.IndexV4.Contents.Distributions), len(report.IndexV4.Contents.Repositories))
+		log.Printf("[Worker %d] 📊 Generated report with vsock_cid: %s, hash_id: %s, packages: %d, distributions: %d, repositories: %d",
+			workerID, report.VsockCid, report.IndexV4.HashId, len(report.IndexV4.Contents.Packages), len(report.IndexV4.Contents.Distributions), len(report.IndexV4.Contents.Repositories))
 
 		// Connect, send, and close for each report
 		if err := a.connectAndSendReport(report); err != nil {
-			log.Printf("❌ Failed to send report: %v", err)
+			log.Printf("[Worker %d] ❌ Failed to send report: %v", workerID, err)
 		} else {
-			log.Printf("✅ Successfully sent index report with vsock_cid: %s, hash_id: %s", report.VsockCid, report.IndexV4.HashId)
+			log.Printf("[Worker %d] ✅ Successfully sent index report with vsock_cid: %s, hash_id: %s", workerID, report.VsockCid, report.IndexV4.HashId)
 		}
 
 		// Wait before next report
 		select {
 		case <-ctx.Done():
-			log.Println("Fake agent stopping")
-			return nil
+			log.Printf("Worker %d stopping", workerID)
+			return
 		case <-time.After(time.Duration(a.intervalMs) * time.Millisecond):
 			// Continue to next iteration
 		}
@@ -92,8 +117,8 @@ func (a *FakeAgent) connectAndSendReport(report *vmv1.IndexReport) error {
 
 // generateIndexReport creates a realistic virtualmachine.v1.IndexReport with various packages
 func (a *FakeAgent) generateIndexReport() *vmv1.IndexReport {
-	// Generate a unique hash ID
-	hashID := fmt.Sprintf("vm-report-%d", time.Now().Unix())
+	// Generate a unique hash ID with nanosecond precision for better uniqueness
+	hashID := fmt.Sprintf("vm-report-%d", time.Now().UnixNano())
 
 	vsockCID, err := vsock.ContextID()
 	if err != nil {
