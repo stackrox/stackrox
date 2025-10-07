@@ -18584,6 +18584,11 @@
                 "name": "fixed_by",
                 "type": "string",
                 "oneof_parent": "set_fixed_by"
+              },
+              {
+                "id": 4,
+                "name": "cvss",
+                "type": "float"
               }
             ]
           },
