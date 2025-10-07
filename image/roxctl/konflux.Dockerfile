@@ -46,7 +46,8 @@ LABEL \
     io.k8s.display-name="roxctl" \
     io.openshift.tags="rhacs,roxctl,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-roxctl-rhel8" \
+    name="advanced-cluster-security/rhacs-roxctl-rhel8" \
+    cpe="cpe:/a:redhat:advanced_cluster_security:4.8::el8" \
     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="The CLI for Red Hat Advanced Cluster Security for Kubernetes" \
