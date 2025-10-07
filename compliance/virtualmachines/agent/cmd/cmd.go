@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/compliance/virtualmachines/agent/config"
+	"github.com/stackrox/rox/compliance/virtualmachines/agent/common"
 	"github.com/stackrox/rox/compliance/virtualmachines/agent/index"
 	"github.com/stackrox/rox/compliance/virtualmachines/agent/vsock"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,7 +22,7 @@ func RootCmd(ctx context.Context) *cobra.Command {
 		SilenceUsage: true,
 	}
 	cmd.SetContext(ctx)
-	cfg := &config.AgentConfig{}
+	cfg := &common.Config{}
 	cmd.Flags().BoolVar(&cfg.DaemonMode, "daemon", false,
 		"Run in daemon mode. Sends index reports continuously.",
 	)

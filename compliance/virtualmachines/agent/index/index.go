@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/compliance/node/index"
-	"github.com/stackrox/rox/compliance/virtualmachines/agent/config"
+	"github.com/stackrox/rox/compliance/virtualmachines/agent/common"
 	"github.com/stackrox/rox/compliance/virtualmachines/agent/vsock"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -21,7 +21,7 @@ const (
 	mappingClientTimeout = 30 * time.Second
 )
 
-func RunDaemon(ctx context.Context, cfg *config.AgentConfig, client *vsock.Client) error {
+func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
 	// Create the initial index report immediately.
 	if err := RunSingle(ctx, cfg, client); err != nil {
 		log.Errorf("Failed to run initial index: %v", err)
@@ -42,7 +42,7 @@ func RunDaemon(ctx context.Context, cfg *config.AgentConfig, client *vsock.Clien
 	}
 }
 
-func RunSingle(ctx context.Context, cfg *config.AgentConfig, client *vsock.Client) error {
+func RunSingle(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
 	report, err := runIndexer(ctx, cfg)
 	if err != nil {
 		return fmt.Errorf("creating index report: %w", err)
@@ -64,7 +64,7 @@ func RunSingle(ctx context.Context, cfg *config.AgentConfig, client *vsock.Clien
 	return nil
 }
 
-func runIndexer(ctx context.Context, cfg *config.AgentConfig) (*v4.IndexReport, error) {
+func runIndexer(ctx context.Context, cfg *common.Config) (*v4.IndexReport, error) {
 	indexerCfg := index.NodeIndexerConfig{
 		HostPath: cfg.IndexHostPath,
 		// Client used to fetch the repo to cpe mapping json.

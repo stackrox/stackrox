@@ -1,8 +1,8 @@
-package config
+package common
 
 import "time"
 
-type AgentConfig struct {
+type Config struct {
 	DaemonMode          bool
 	IndexHostPath       string
 	IndexInterval       time.Duration
