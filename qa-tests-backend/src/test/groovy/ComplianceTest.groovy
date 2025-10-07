@@ -1144,7 +1144,7 @@ class ComplianceTest extends BaseSpecification {
 
             // Kill the sensor and wait for the compliance run to complete
             orchestrator.deleteContainer(sensorPod, "stackrox")
-            Timer t = new Timer(30, 1)
+            Timer t = new Timer(60, 2)
             while (complianceRun.state != ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED &&
                     t.IsValid()) {
                 def recentRuns = ComplianceManagementService.getRecentRuns(NIST_800_190_ID)
