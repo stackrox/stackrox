@@ -63,7 +63,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.13.2'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.61.2"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.61.3"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -78,7 +78,7 @@ dependencies {
     implementation "org.spockframework:spock-junit4"
     implementation 'io.rest-assured:rest-assured:5.5.6'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.5'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.19'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
@@ -117,7 +117,7 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.23")
     }
 
-    implementation 'org.javers:javers-core:7.8.6'
+    implementation 'org.javers:javers-core:7.9.0'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15.2'
 
     implementation 'commons-codec:commons-codec:1.19.0'

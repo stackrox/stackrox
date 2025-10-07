@@ -44,8 +44,7 @@ jobs:
             "pre_build_go_binaries": { "name":[], "arch":[] },
             "build_and_push_main": { "name":[], "arch":[] },
             "push_main_multiarch_manifests": { "name":[] },
-            "build_and_push_operator": { "name":[], "arch":[] },
-            "push_operator_multiarch_manifests": { "name":[] },
+            "build_and_push_operator": { "name":[] },
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
 
@@ -59,10 +58,6 @@ jobs:
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
-
-          matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
@@ -584,7 +579,6 @@ jobs:
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
     strategy:
-      fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
@@ -600,12 +594,7 @@ jobs:
           free-disk-space: 30
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Cache Go dependencies
-        env:
-          GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
@@ -631,46 +620,19 @@ jobs:
         run: |
           make -C operator/ bundle bundle-build
 
-      - name: Operator unit tests
-        if: matrix.arch == 'amd64'
-        run: |
-          scripts/lib.sh retry 2 true make -C operator/ test
-
       - name: Build Operator image
         run: |
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
-
-      - name: Set up QEMU
-        if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v3
+          scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Check that Operator image is runnable
-        run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
+        run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
 
-      - name: Push image
+      - name: Push images
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-            source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
-            echo "Starting operator image push for context: \"$push_context\", branding: \"${{ env.ROX_PRODUCT_BRANDING }}\", arch: \"${{ matrix.arch }}\""
-            if ! push_operator_image "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"; then
-              echo "ERROR: push_operator_image failed" >&2
-              exit 1
-            fi
-            echo "Operator image push completed successfully"
-
-      - name: Push bundle image
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        run: |
-          make -C operator/ docker-push-bundle | cat
+          make -C operator/ docker-push docker-push-bundle | cat
 
       # Index image can only be built once bundle was pushed
       - name: Build index
@@ -686,72 +648,6 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           make -C operator/ docker-push-index | cat
-
-  push-operator-manifests:
-    runs-on: ubuntu-latest
-    needs:
-    - define-job-matrix
-    - build-and-push-operator
-    # This step will run even if some of the build-and-push-matrix steps failed.
-    # By following this approach as much of the build matrix as possible is
-    # completed despite transient issues e.g. docker pull timeouts. In this way
-    # some e2e jobs that require some part of the build matrix can still
-    # proceed.
-    if: ${{ !cancelled() }}
-    strategy:
-      # Supports image builds (see Setup build env):
-      # RHACS_BRANDING
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_operator_multiarch_manifests }}
-    env:
-      ROX_PRODUCT_BRANDING: ""
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      env:
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-    steps:
-    - name: Setup build env
-      run: |
-        case "${{ matrix.name }}" in
-          RHACS_BRANDING)
-            brand="RHACS_BRANDING"
-            ;;
-          *)
-            echo "Unsupported build: ${{ matrix.name }}"
-            exit 1
-        esac
-
-        {
-          echo "ROX_PRODUCT_BRANDING=${brand}"
-        } >> "$GITHUB_ENV"
-
-    - name: Checkout
-      uses: actions/checkout@v5
-      with:
-        fetch-depth: 0
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - uses: ./.github/actions/handle-tagged-build
-
-    - name: Push operator manifest lists
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      run: |
-        source ./scripts/ci/lib.sh
-        echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-        push_context=""
-        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-          push_context="merge-to-master"
-        fi
-        push_operator_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" ${{ matrix.archs }}
 
   scan-go-binaries:
     if: |

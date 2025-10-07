@@ -13,6 +13,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-30645: Two new API endpoints are added for locking/unlocking process baselines given a cluster ID and an optional set of namespaces.
 - ROX-30279: The `admissionControl.enforce` field has been added to the SecuredCluster CRD as a high-level way to toggle admission controller enforcement.
 - ROX-30279: The `admissionControl.enforce` field defaults to true for new installations.
   [This is currently behind the ROX_ADMISSION_CONTROLLER_CONFIG feature flag, but the plan is to enable it for 4.9.]
@@ -25,7 +26,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 for policy evaluation and enforcement as well as image scanning, out of the box - without requiring a user to specify command line
 options to "roxctl sensor generate".
 - ROX-30034,ROX-29995,ROX-29996: Support for two new admission controller configuration related options in roxctl sensor generate
-  - `--admission-controller-enforcement` defaults to true. If set to false, admission controller webhook will be 
+  - `--admission-controller-enforcement` defaults to true. If set to false, admission controller webhook will be
   configured to not enforce policies on any admission review request.
   - `--admission-controller-fail-on-error` defaults to false, which means admission controller webhook will fail open.
   If set to true, the admission controller webhook will fail closed i.e. the review request will be blocked in case of timeouts or errors.
@@ -78,7 +79,7 @@ since 4.7 and prior.
   - `--admission-controller-listen-on-events`
   - `--admission-controller-timeout`
   Using them has no effect.
-
+- The current hierarchical implementation for defining Collections is deprecated and will be replaced by a more comprehensive search-based definition in the future.
 
 ### Technical Changes
 - ROX-29793: Accessing the Compliance menus (OpenShift Coverage and OpenShift Schedules) and API endpoints (`/v2/compliance/*`) now additionally requires read permissions for the `Cluster` resource.
@@ -91,6 +92,7 @@ since 4.7 and prior.
     - `rox_sensor_component_process_message_duration_seconds`: Tracks processing time for messages from Central in each sensor component
     - `rox_sensor_component_queue_operations_total`: Tracks operations on component buffer queues
     - `rox_sensor_component_process_message_errors_total`: Tracks processing errors in each sensor component
+- ROX-30729: Allow to spin up a Sensitive File Activity monitoring agent via `ROX_SENSITIVE_FILE_ACTIVITY` env var. The agent itself is in dev preview and is not supposed to be used in production in this version.
 
 ## [4.8.0]
 

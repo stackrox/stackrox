@@ -9724,7 +9724,7 @@
               },
               {
                 "id": 2,
-                "name": "sha",
+                "name": "digest",
                 "type": "string"
               },
               {
@@ -9754,104 +9754,116 @@
               },
               {
                 "id": 8,
-                "name": "component_count",
-                "type": "int32"
+                "name": "scan_stats",
+                "type": "ScanStats"
               },
               {
                 "id": 9,
-                "name": "cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 10,
-                "name": "fixable_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 11,
-                "name": "unknown_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 12,
-                "name": "fixable_unknown_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 13,
-                "name": "critical_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 14,
-                "name": "fixable_critical_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 15,
-                "name": "important_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 16,
-                "name": "fixable_important_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 17,
-                "name": "moderate_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 18,
-                "name": "fixable_moderate_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 19,
-                "name": "low_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 20,
-                "name": "fixable_low_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 21,
                 "name": "last_updated",
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 22,
+                "id": 10,
                 "name": "not_pullable",
                 "type": "bool"
               },
               {
-                "id": 23,
+                "id": 11,
                 "name": "is_cluster_local",
                 "type": "bool"
               },
               {
-                "id": 24,
+                "id": 12,
                 "name": "priority",
                 "type": "int64"
               },
               {
-                "id": 25,
+                "id": 13,
                 "name": "risk_score",
                 "type": "float"
               },
               {
-                "id": 26,
+                "id": 14,
                 "name": "top_cvss",
                 "type": "float"
               },
               {
-                "id": 27,
+                "id": 15,
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "ScanStats",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "component_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 2,
+                    "name": "cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 3,
+                    "name": "fixable_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 4,
+                    "name": "unknown_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 5,
+                    "name": "fixable_unknown_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 6,
+                    "name": "critical_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 7,
+                    "name": "fixable_critical_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 8,
+                    "name": "important_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 9,
+                    "name": "fixable_important_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 10,
+                    "name": "moderate_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 11,
+                    "name": "fixable_moderate_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 12,
+                    "name": "low_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 13,
+                    "name": "fixable_low_cve_count",
+                    "type": "int32"
+                  }
+                ]
               }
             ]
           },
@@ -18387,6 +18399,22 @@
                 "integer": 2
               }
             ]
+          },
+          {
+            "name": "VirtualMachineScan.Note",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "OS_UNKNOWN",
+                "integer": 1
+              },
+              {
+                "name": "OS_UNSUPPORTED",
+                "integer": 2
+              }
+            ]
           }
         ],
         "messages": [
@@ -18438,6 +18466,11 @@
                 "id": 10,
                 "name": "state",
                 "type": "State"
+              },
+              {
+                "id": 11,
+                "name": "scan",
+                "type": "VirtualMachineScan"
               }
             ],
             "maps": [
@@ -18450,11 +18483,207 @@
                 }
               }
             ]
+          },
+          {
+            "name": "VirtualMachineScan",
+            "fields": [
+              {
+                "id": 1,
+                "name": "scan_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 2,
+                "name": "operating_system",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "components",
+                "type": "EmbeddedVirtualMachineScanComponent",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineScanComponent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "top_cvss",
+                "type": "float",
+                "oneof_parent": "set_top_cvss"
+              },
+              {
+                "id": 4,
+                "name": "risk_score",
+                "type": "float"
+              },
+              {
+                "id": 5,
+                "name": "vulnerabilities",
+                "type": "VirtualMachineVulnerability",
+                "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "source",
+                "type": "SourceType"
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineVulnerability",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve_base_info",
+                "type": "VirtualMachineCVEInfo"
+              },
+              {
+                "id": 2,
+                "name": "severity",
+                "type": "VulnerabilitySeverity"
+              },
+              {
+                "id": 3,
+                "name": "fixed_by",
+                "type": "string",
+                "oneof_parent": "set_fixed_by"
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineCVEInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "summary",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "link",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "published_on",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "created_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "last_modified",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "references",
+                "type": "Reference",
+                "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "cvss_metrics",
+                "type": "CVSSScore",
+                "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "epss",
+                "type": "VirtualMachineEPSS"
+              },
+              {
+                "id": 10,
+                "name": "advisory",
+                "type": "VirtualMachineAdvisory"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Reference",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "URI",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "tags",
+                    "type": "string",
+                    "is_repeated": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineEPSS",
+            "fields": [
+              {
+                "id": 1,
+                "name": "epss_probability",
+                "type": "float"
+              },
+              {
+                "id": 2,
+                "name": "epss_percentile",
+                "type": "float"
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineAdvisory",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "link",
+                "type": "string"
+              }
+            ]
           }
         ],
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/cve.proto"
+          },
+          {
+            "path": "storage/image.proto"
           }
         ],
         "package": {

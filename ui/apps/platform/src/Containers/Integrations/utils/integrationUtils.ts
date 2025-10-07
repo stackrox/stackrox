@@ -2,11 +2,11 @@ import isEqual from 'lodash/isEqual';
 import set from 'lodash/set';
 import pluralize from 'pluralize';
 
-import { IntegrationBase } from 'services/IntegrationsService';
-import { IntegrationSource, IntegrationType } from 'types/integration';
-import { ImageIntegrationCategory } from 'types/imageIntegration.proto';
+import type { IntegrationBase } from 'services/IntegrationsService';
+import type { IntegrationSource, IntegrationType } from 'types/integration';
+import type { ImageIntegrationCategory } from 'types/imageIntegration.proto';
 
-import { Traits } from 'types/traits.proto';
+import type { Traits } from 'types/traits.proto';
 
 export type { IntegrationSource, IntegrationType };
 

@@ -115,8 +115,18 @@ collector:
     enabled: true
   [<- end >]
 
+[<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+fact:
+  exposeMonitoring: {{ ._rox.exposeMonitoring }}
+[<- end >]
+
 auditLogs:
   disableCollection: {{ ne ._rox.env.openshift 4 }}
+
+[<- if .FeatureFlags.ROX_AUTO_LOCK_PROCESS_BASELINES >]
+autoLockProcessBaselines:
+  enabled: false
+[<- end >]
 
 network:
   enableNetworkPolicies: true

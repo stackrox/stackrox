@@ -110,6 +110,11 @@ type ProcessListening struct {
 	Port          uint16             // 2 bytes
 }
 
+type ProcessListeningWithTimestamp struct {
+	ProcessListening *ProcessListening
+	LastSeen         timestamp.MicroTS
+}
+
 func (i *ProcessListening) ToProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
 	proto := &storage.ProcessListeningOnPortFromSensor{
 		Port:     uint32(i.Port),

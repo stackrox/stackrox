@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
@@ -30,8 +31,8 @@ import {
     downloadClusterYaml,
     getClusterDefaults,
 } from 'services/ClustersService';
-import { Cluster, ClusterManagerType } from 'types/cluster.proto';
-import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
+import type { Cluster, ClusterManagerType } from 'types/cluster.proto';
+import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersBasePath } from 'routePaths';
 

@@ -405,12 +405,11 @@ func (m *networkFlowManager) enrichAndSend() {
 	// and updates them by adding data from different sources (enriching).
 	// It updates m.activeEndpoints and m.activeConnections if EE is open (i.e., lastSeen is set to null by Collector).
 	// Enriched-entities for which the enrichment should be retried are not returned from currentEnrichedConnsAndEndpoints!
-	currentConns, currentEndpoints, currentProcesses := m.currentEnrichedConnsAndEndpoints()
+	currentConns, currentEndpointsProcesses := m.currentEnrichedConnsAndEndpoints()
 
 	// The new changes are sent to Central using the update computer implementation.
 	updatedConns := m.updateComputer.ComputeUpdatedConns(currentConns)
-	updatedEndpoints := m.updateComputer.ComputeUpdatedEndpoints(currentEndpoints)
-	updatedProcesses := m.updateComputer.ComputeUpdatedProcesses(currentProcesses)
+	updatedEndpoints, updatedProcesses := m.updateComputer.ComputeUpdatedEndpointsAndProcesses(currentEndpointsProcesses)
 
 	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("connections").Add(float64(len(updatedConns)))
 	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
@@ -426,14 +425,15 @@ func (m *networkFlowManager) enrichAndSend() {
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
 		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
 			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSend(currentConns, currentEndpoints, nil)
+			m.updateComputer.OnSuccessfulSendConnections(currentConns)
+			m.updateComputer.OnSuccessfulSendEndpoints(currentEndpointsProcesses)
 		}
 	}
 
 	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
 		if sent := m.sendProcesses(updatedProcesses); sent {
 			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSend(nil, nil, currentProcesses)
+			m.updateComputer.OnSuccessfulSendProcesses(currentEndpointsProcesses)
 		}
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
@@ -479,20 +479,18 @@ func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListening
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 	enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS,
-	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
-	enrichedProcesses map[indicator.ProcessListening]timestamp.MicroTS,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 ) {
 	now := timestamp.Now()
 	allHostConns := m.getAllHostConnections()
 
 	enrichedConnections = make(map[indicator.NetworkConn]timestamp.MicroTS)
-	enrichedEndpoints = make(map[indicator.ContainerEndpoint]timestamp.MicroTS)
-	enrichedProcesses = make(map[indicator.ProcessListening]timestamp.MicroTS)
+	enrichedEndpointsProcesses = make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 	for _, hostConns := range allHostConns {
 		m.enrichHostConnections(now, hostConns, enrichedConnections)
-		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses)
+		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpointsProcesses)
 	}
-	return enrichedConnections, enrichedEndpoints, enrichedProcesses
+	return enrichedConnections, enrichedEndpointsProcesses
 }
 
 func (m *networkFlowManager) getAllHostConnections() []*hostConnections {

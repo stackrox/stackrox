@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Chart,
@@ -20,10 +20,10 @@ import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLa
 import type { AlertGroup } from 'services/AlertsService';
 import { severityLabels } from 'messages/common';
 import {
-    navigateOnClickEvent,
-    patternflySeverityTheme,
     defaultChartHeight as chartHeight,
     defaultChartBarWidth,
+    navigateOnClickEvent,
+    patternflySeverityTheme,
 } from 'utils/chartUtils';
 import { getQueryString } from 'utils/queryStringUtils';
 import { violationsBasePath } from 'routePaths';

@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Button,
     Divider,
@@ -21,12 +22,8 @@ import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import { isUserResource } from 'utils/traits.utils';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
-import {
-    Integration,
-    IntegrationSource,
-    IntegrationType,
-    getIsAPIToken,
-} from '../utils/integrationUtils';
+import { getIsAPIToken } from '../utils/integrationUtils';
+import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 
 function getNewButtonText(type) {
@@ -53,7 +50,7 @@ function IntegrationsTable({
     onDeleteIntegrations,
     onTriggerBackup,
     isReadOnly,
-}: IntegrationsTableProps): React.ReactElement {
+}: IntegrationsTableProps): ReactElement {
     const permissions = useIntegrationPermissions();
     const { source, type } = useParams() as { source: IntegrationSource; type: IntegrationType };
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();

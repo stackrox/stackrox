@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Button,
@@ -13,11 +14,8 @@ import {
 } from '@patternfly/react-core';
 
 import useAnalytics, { REVOKE_INIT_BUNDLE } from 'hooks/useAnalytics';
-import {
-    ClusterInitBundle,
-    ImpactedCluster,
-    revokeClusterInitBundles,
-} from 'services/ClustersService';
+import { revokeClusterInitBundles } from 'services/ClustersService';
+import type { ClusterInitBundle, ImpactedCluster } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type RevokeBundleModalProps = {

@@ -741,11 +741,8 @@ module.exports = [
             'src/Components/**',
             'src/Containers/AccessControl/**',
             'src/Containers/Clusters/**',
-            'src/Containers/Collections/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
-            'src/Containers/Dashboard/**',
             'src/Containers/Integrations/**',
             'src/Containers/MainPage/**',
             'src/Containers/NetworkGraph/**',
@@ -768,10 +765,7 @@ module.exports = [
         files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: [
             'src/Components/**',
-            'src/Containers/AccessControl/**',
-            'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/Integrations/**',
             'src/Containers/MainPage/**',
             'src/Containers/MitreAttackVectors/**',
             'src/Containers/NetworkGraph/**',
@@ -799,6 +793,7 @@ module.exports = [
         rules: {
             '@typescript-eslint/consistent-type-imports': 'error',
             'limited/no-qualified-name-react': 'error',
+            'limited/no-absolute-path-within-container-in-import': 'error',
             'limited/no-relative-path-to-src-in-import': 'error',
         },
     },

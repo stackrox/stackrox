@@ -36,8 +36,8 @@ import { integrationsPath } from 'routePaths';
  *    featureFlagDependency: ['ROX_WHATEVER_1', 'ROX_WHATEVER_2'],
  */
 
-import { FeatureFlagEnvVar } from 'types/featureFlag';
-import {
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type {
     AuthProviderType,
     BackupIntegrationType,
     CloudSourceIntegrationType,

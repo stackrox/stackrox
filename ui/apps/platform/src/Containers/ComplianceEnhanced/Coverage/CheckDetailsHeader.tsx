@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, FlexItem, Title, Skeleton, Alert, Label, LabelGroup } from '@patternfly/react-core';
+import { Alert, Flex, FlexItem, Label, LabelGroup, Skeleton, Title } from '@patternfly/react-core';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import type { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';

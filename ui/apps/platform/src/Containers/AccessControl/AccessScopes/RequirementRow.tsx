@@ -1,4 +1,5 @@
-import React, { ReactElement, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import {
     CheckCircleIcon,
@@ -9,10 +10,11 @@ import {
 } from '@patternfly/react-icons';
 import { Td, Tr } from '@patternfly/react-table';
 
-import { LabelSelectorRequirement } from 'services/AccessScopesService';
+import type { LabelSelectorRequirement } from 'services/AccessScopesService';
 import { getIsValidLabelValue } from 'utils/labels';
 
-import { Activity, getIsKeyInSetOperator, getOpText, getValueText } from './accessScopes.utils';
+import { getIsKeyInSetOperator, getOpText, getValueText } from './accessScopes.utils';
+import type { Activity } from './accessScopes.utils';
 
 /*
  * Render a requirement with editing interaction if hasAction.

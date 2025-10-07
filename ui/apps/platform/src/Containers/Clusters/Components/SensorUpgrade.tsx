@@ -1,9 +1,10 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { findUpgradeState, sensorUpgradeStyles } from '../cluster.helpers';
-import { SensorUpgradeStatus } from '../clusterTypes';
+import type { SensorUpgradeStatus } from '../clusterTypes';
 
 const testId = 'sensorUpgrade';
 

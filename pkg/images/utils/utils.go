@@ -175,7 +175,7 @@ func GetSHA(img *storage.Image) string {
 // GetSHAV2 returns the SHA of the imageV2, if it exists.
 func GetSHAV2(img *storage.ImageV2) string {
 	return stringutils.FirstNonEmpty(
-		img.GetSha(),
+		img.GetDigest(),
 		img.GetMetadata().GetV2().GetDigest(),
 		img.GetMetadata().GetV1().GetDigest(),
 	)
@@ -358,4 +358,99 @@ func IsRedHatImageName(imgName *storage.ImageName) bool {
 	}
 
 	return quayIoRedHatRemotes.Contains(imgName.GetRemote())
+}
+
+type cveStats struct {
+	fixable  bool
+	severity storage.VulnerabilitySeverity
+}
+
+// FillScanStatsV2 fills in the higher level stats from the scan data.
+func FillScanStatsV2(i *storage.ImageV2) {
+	if i.GetScan() == nil {
+		return
+	}
+	if i.GetScanStats() != nil {
+		return
+	}
+	i.ScanStats = &storage.ImageV2_ScanStats{}
+	i.GetScanStats().ComponentCount = int32(len(i.GetScan().GetComponents()))
+
+	var imageTopCVSS float32
+	vulns := make(map[string]*cveStats)
+
+	// This enriches the incoming component.  When enriching any additional component fields,
+	// be sure to update `ComponentIDV2` to ensure enriched fields like `TopCVSS` are not
+	// included in the hash calculation
+	for _, c := range i.GetScan().GetComponents() {
+		var componentTopCVSS float32
+		var hasVulns bool
+		for _, v := range c.GetVulns() {
+			hasVulns = true
+			if _, ok := vulns[v.GetCve()]; !ok {
+				vulns[v.GetCve()] = &cveStats{
+					fixable:  false,
+					severity: v.GetSeverity(),
+				}
+			}
+
+			if v.GetCvss() > componentTopCVSS {
+				componentTopCVSS = v.GetCvss()
+			}
+
+			if v.GetSetFixedBy() == nil {
+				continue
+			}
+
+			if v.GetFixedBy() != "" {
+				vulns[v.GetCve()].fixable = true
+			}
+		}
+
+		if hasVulns {
+			c.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{
+				TopCvss: componentTopCVSS,
+			}
+		}
+
+		if componentTopCVSS > imageTopCVSS {
+			imageTopCVSS = componentTopCVSS
+		}
+	}
+
+	i.GetScanStats().CveCount = int32(len(vulns))
+	i.TopCvss = imageTopCVSS
+
+	for _, vuln := range vulns {
+		if vuln.fixable {
+			i.GetScanStats().FixableCveCount++
+		}
+		switch vuln.severity {
+		case storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY:
+			i.GetScanStats().UnknownCveCount++
+			if vuln.fixable {
+				i.GetScanStats().FixableUnknownCveCount++
+			}
+		case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+			i.GetScanStats().CriticalCveCount++
+			if vuln.fixable {
+				i.GetScanStats().FixableCriticalCveCount++
+			}
+		case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+			i.GetScanStats().ImportantCveCount++
+			if vuln.fixable {
+				i.GetScanStats().FixableImportantCveCount++
+			}
+		case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+			i.GetScanStats().ModerateCveCount++
+			if vuln.fixable {
+				i.GetScanStats().FixableModerateCveCount++
+			}
+		case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+			i.GetScanStats().LowCveCount++
+			if vuln.fixable {
+				i.GetScanStats().FixableLowCveCount++
+			}
+		}
+	}
 }

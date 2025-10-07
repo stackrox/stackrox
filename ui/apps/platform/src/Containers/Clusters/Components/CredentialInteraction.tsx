@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 
 import { generateSecuredClusterCertSecret } from 'services/CertGenerationService';
 import { rotateClusterCerts } from 'services/ClustersService';
@@ -11,7 +12,7 @@ import {
     isCertificateExpiringSoon,
     isUpToDateStateObject,
 } from '../cluster.helpers';
-import { CertExpiryStatus, SensorUpgradeStatus } from '../clusterTypes';
+import type { CertExpiryStatus, SensorUpgradeStatus } from '../clusterTypes';
 
 /*
  * The heading is a simple explanation of what did not happen because of the error.

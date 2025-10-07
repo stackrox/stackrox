@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -466,6 +467,11 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 
 // PostViewBasedReport validates a view-based report request and submits it to the report scheduler.
 func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.ReportRequestViewBased) (*apiV2.RunReportResponseViewBased, error) {
+	// Check if view-based reports feature is enabled
+	if !features.VulnerabilityViewBasedReports.Enabled() {
+		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
+	}
+
 	// Authorisation: must have write access on workflow administration.
 	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
@@ -496,6 +502,11 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 }
 
 func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
+	// Check if view-based reports feature is enabled
+	if !features.VulnerabilityViewBasedReports.Enabled() {
+		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
+	}
+
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
@@ -525,6 +536,11 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 }
 
 func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
+	// Check if view-based reports feature is enabled
+	if !features.VulnerabilityViewBasedReports.Enabled() {
+		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
+	}
+
 	slimUser := authn.UserFromContext(ctx)
 	if slimUser == nil {
 		return nil, errors.New("Could not determine user identity from provided context")

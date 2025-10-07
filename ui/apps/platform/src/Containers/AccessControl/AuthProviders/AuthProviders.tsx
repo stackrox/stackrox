@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
@@ -26,7 +27,7 @@ import { actions as authActions, types as authActionTypes } from 'reducers/auth'
 import { actions as groupActions } from 'reducers/groups';
 import { actions as inviteActions } from 'reducers/invite';
 import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
-import { AuthProvider, AuthProviderInfo, Group } from 'services/AuthService';
+import type { AuthProvider, AuthProviderInfo, Group } from 'services/AuthService';
 import usePermissions from 'hooks/usePermissions';
 import { integrationsPath } from 'routePaths';
 import { getVersionedDocs } from 'utils/versioning';

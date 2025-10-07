@@ -30,7 +30,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.depMock = mocks.NewMockFragment(suite.mockCtrl)
 
-	suite.tested = NewClusterPipeline("clusterID", manager.NewDeduper(make(map[string]uint64)), suite.depMock)
+	suite.tested = NewClusterPipeline("clusterID", manager.NewDeduper(make(map[string]uint64), "clusterID"), suite.depMock)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
