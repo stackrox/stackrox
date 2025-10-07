@@ -246,28 +246,55 @@
 
 For fastest path to a working demo, prioritize these tasks in order:
 
-1. **Setup Ollama** (Phase 1: 3 tasks)
-   - Install Ollama, pull model, test connection
+**Critical Path Total:** 34 tasks (achievable in 1 day) | **Progress:** 0/34
 
-2. **Basic Types** (Phase 1: 2 tasks)
-   - Create type definition files
+### 1. Setup Ollama (3 tasks)
+- [ ] Install Ollama locally (`brew install ollama` or equivalent)
+- [ ] Pull llama3.2 model (`ollama pull llama3.2`)
+- [ ] Test Ollama is running (`curl http://localhost:11434/api/generate`)
 
-3. **Ollama Provider Only** (Phase 2: 5 tasks)
-   - Build just Ollama provider, skip others for now
+### 2. Basic Types (2 tasks)
+- [ ] Create base type definitions file: `apps/platform/src/Components/NaturalLanguageSearch/types.ts`
+- [ ] Create provider types file: `apps/platform/src/services/aiProviders/types.ts`
 
-4. **Core Parser** (Phase 3: 10 tasks)
-   - Input sanitization, filter schema, prompt, parser service, basic tests
+### 3. Ollama Provider Only (5 tasks)
+- [ ] Define `AIProvider` interface in `services/aiProviders/types.ts`
+- [ ] Define `AIResponse` type with `content`, `confidence`, `reasoning` fields
+- [ ] Create `services/aiProviders/ollamaProvider.ts`
+- [ ] Implement `generateCompletion()` using Ollama REST API
+- [ ] Add error handling for connection failures
 
-5. **Basic UI Component** (Phase 4: 6 tasks)
-   - NaturalLanguageSearchInput with basic features, skip polish
+### 4. Core Parser (10 tasks)
+- [ ] Create `services/inputSanitizer.ts`
+- [ ] Implement max length validation (500 chars)
+- [ ] Implement XSS prevention (strip HTML tags, escape special chars)
+- [ ] Create `services/filterSchemaBuilder.ts`
+- [ ] Implement `buildFilterSchema(config: CompoundSearchFilterConfig)`
+- [ ] Design base prompt template in `services/aiSearchParserService.ts`
+- [ ] Include filter schema in prompt
+- [ ] Create `services/aiSearchParserService.ts`
+- [ ] Implement `parseNaturalLanguageQuery(query, filterConfig): Promise<ParseResult>`
+- [ ] Parse AI response and extract `searchFilter`, `confidence`, `reasoning`
 
-6. **Integration** (Phase 5: 7 tasks)
-   - Connect to WorkloadCvesOverviewPage, basic E2E tests
+### 5. Basic UI Component (6 tasks)
+- [ ] Define component prop types in `Components/NaturalLanguageSearch/types.ts`
+- [ ] Create `Components/NaturalLanguageSearch/NaturalLanguageSearchInput.tsx`
+- [ ] Implement TextInput with placeholder and max length
+- [ ] Add loading state with PatternFly Spinner
+- [ ] Add Enter key handler to trigger search
+- [ ] Integrate `parseNaturalLanguageQuery()` on search
 
-7. **Demo Prep** (Phase 6: 1 task)
-   - Prepare demo queries and talking points
+### 6. Integration (7 tasks)
+- [ ] Find WorkloadCvesOverviewPage component file
+- [ ] Identify AdvancedFiltersToolbar usage
+- [ ] Add feature flag check for `ROX_AI_POWERED_SEARCH`
+- [ ] Import NaturalLanguageSearchInput component
+- [ ] Pass `searchFilterConfig` prop
+- [ ] Implement `onFilterGenerated` callback to update URL search params
+- [ ] Test simple query: "critical CVEs" → verify SEVERITY filter applied
 
-**Critical Path Total:** 34 tasks (achievable in 1 day)
+### 7. Demo Prep (1 task)
+- [ ] Prepare 3-5 impressive demo queries
 
 ---
 
