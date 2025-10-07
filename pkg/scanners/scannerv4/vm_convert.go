@@ -34,7 +34,26 @@ func toVirtualMachineScanNotes(notes []v4.VulnerabilityReport_Note) []storage.Vi
 	return result
 }
 
+func hasValidCPE(repositories map[string]*v4.Repository, environments map[string]*v4.Environment_List, pkg *v4.Package) bool {
+	envList, ok := environments[pkg.GetId()]
+	if !ok {
+		return false
+	}
+
+	for _, env := range envList.GetEnvironments() {
+		for _, repoID := range env.GetRepositoryIds() {
+			if repositories[repoID].GetCpe() != "" {
+				// A valid CPE is found, therefore the package is scannable.
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func toVirtualMachineComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedVirtualMachineScanComponent {
+	repositories := r.GetContents().GetRepositories()
+	environments := r.GetContents().GetEnvironments()
 	packages := r.GetContents().GetPackages()
 	result := make([]*storage.EmbeddedVirtualMachineScanComponent, 0, len(packages))
 	for _, pkg := range packages {
@@ -45,6 +64,9 @@ func toVirtualMachineComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedVi
 			Version: pkg.GetVersion(),
 			// Architecture ?
 			Vulnerabilities: toVirtualMachineScanComponentVulnerabilities(vulnerabilitiesByID, vulnerabilityIDs),
+		}
+		if !hasValidCPE(repositories, environments, pkg) {
+			component.Notes = append(component.Notes, storage.EmbeddedVirtualMachineScanComponent_UNSCANNED)
 		}
 		result = append(result, component)
 	}
