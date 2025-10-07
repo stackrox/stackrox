@@ -40,6 +40,10 @@ func TestClient_writeIndexReport_LocalSocket(t *testing.T) {
 
 	receivedData := make(chan []byte, 1)
 	listenerErr := make(chan error, 1)
+	defer func() {
+		close(receivedData)
+		close(listenerErr)
+	}()
 
 	go func() {
 		conn, err := listener.Accept()
@@ -73,10 +77,8 @@ func TestClient_writeIndexReport_LocalSocket(t *testing.T) {
 		require.NoError(t, err, "should be able to unmarshal received data")
 		protoassert.Equal(t, testReport, &receivedReport)
 	case err := <-listenerErr:
-		close(receivedData)
-		t.Fatalf("listener error: %v", err)
+		require.NoError(t, err, "listener error")
 	case <-time.After(5 * time.Second):
-		close(receivedData)
-		t.Fatal("timeout waiting for data")
+		t.Errorf("timeout waiting for data")
 	}
 }
