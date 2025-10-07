@@ -6,7 +6,7 @@ node scanning code for package scanning in the virtual machine.
 
 ## What it does
 
-Scans the VM for installed packages (RPM/DNF databases), creates vulnerability reports, and sends them to the host over vsock. Can run once or continuously in daemon mode.
+Scans the VM for installed packages (`rpm`/`dnf` databases), creates vulnerability reports, and sends them to the host over vsock. Can run once or continuously in daemon mode. Requires `sudo` privileges to scan packages.
 
 ## Usage
 
@@ -33,8 +33,8 @@ sudo ./agent --daemon --index-interval 10m --host-path /custom/path --port 2048
 
 ## How it works
 
-1. Scans filesystem for RPM/DNF package databases.
-2. Pulls repo-to-CPE mappings from Red Hat.
+1. Scans filesystem for `rpm`/`dnf` package databases.
+2. Pulls repo-to-CPE mappings from Red Hat. Network connection to the public Internet or to Sensor is required.
 3. Creates protobuf index report.
 4. Sends report to host via vsock.
 
@@ -58,7 +58,8 @@ GOOS=linux GOARCH=amd64 go build -o agent-linux .
 
 **No packages found**
 - Check `--host-path` points to the right place.
-- Verify RPM/DNF databases exist and are readable.
+- Verify `rpm`/`dnf` databases exist and are readable.
+- Use `--verbose` to examine the index report and compare with the content from `rpm`/`dnf` databases.
 
 **Scan failures**
 - Check internet access for repo-to-CPE downloads.
