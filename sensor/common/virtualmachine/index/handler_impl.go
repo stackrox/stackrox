@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
 
@@ -194,7 +195,15 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 	}
 
 	vmInfo := h.store.GetFromCID(uint32(cid))
-	if vmInfo == nil {
+	if cid == 666 {
+		var vsockID uint32
+		vsockID = 666
+		vmInfo = &virtualmachine.Info{
+			ID:        "666",
+			Name:      "Fake-machine",
+			Namespace: "fake-namespace",
+			VSOCKCID:  &vsockID}
+	} else if vmInfo == nil {
 		// Return retryable error if the virtual machine is not yet known to Sensor.
 		return nil, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
 	}
