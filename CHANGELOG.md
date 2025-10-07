@@ -80,6 +80,7 @@ since 4.7 and prior.
   - `--admission-controller-timeout`
   Using them has no effect.
 - The current hierarchical implementation for defining Collections is deprecated and will be replaced by a more comprehensive search-based definition in the future.
+- The manifest install method is now deprecated and will be removed in the future.
 
 ### Technical Changes
 - ROX-29793: Accessing the Compliance menus (OpenShift Coverage and OpenShift Schedules) and API endpoints (`/v2/compliance/*`) now additionally requires read permissions for the `Cluster` resource.
