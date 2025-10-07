@@ -168,6 +168,9 @@ func TestToVirtualMachineScan(t *testing.T) {
 						},
 					},
 				},
+				Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+					storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+				},
 			},
 		},
 	}
@@ -252,6 +255,9 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 				{
 					Name:    "glib2",
 					Version: "2.68.4-14.el9",
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
 				},
 			},
 		},
@@ -272,6 +278,9 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 				{
 					Name:    "glib2",
 					Version: "2.68.4-14.el9",
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
 				},
 			},
 		},
@@ -309,6 +318,9 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 				{
 					Name:    "glib2",
 					Version: "2.68.4-14.el9",
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
 				},
 				{
 					Name:    "postgres",
@@ -320,6 +332,9 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 								Summary: "some vulnerability description",
 							},
 						},
+					},
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
 					},
 				},
 			},
@@ -358,6 +373,9 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 				{
 					Name:    "glib2",
 					Version: "2.68.4-14.el9",
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
 				},
 				{
 					Name:    "postgres",
@@ -370,6 +388,49 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 							},
 						},
 					},
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
+				},
+			},
+		},
+		{
+			name: "scan component with valid CPE",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"1": {
+							Id:      "1",
+							Name:    "my-test-package",
+							Version: "1.2.3",
+						},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhel-9-for-x86_64-appstream-rpms": {
+							Id:   "rhel-9-for-x86_64-appstream-rpms",
+							Name: "rhel-9-for-x86_64-appstream-rpms",
+							Cpe:  "cpe:2.3:a:redhat:enterprise_linux:9:*:appstream:*:*:*:*:*",
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb: "sqlite:var/lib/rpm",
+									RepositoryIds: []string{
+										"rhel-9-for-x86_64-appstream-rpms",
+										"rhel-9-for-x86_64-baseos-rpms",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedVirtualMachineScanComponent{
+				{
+					Name:    "my-test-package",
+					Version: "1.2.3",
 				},
 			},
 		},

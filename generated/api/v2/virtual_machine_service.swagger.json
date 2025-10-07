@@ -185,15 +185,6 @@
       ],
       "default": "UI_NONE"
     },
-    "VirtualMachineScanNote": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "OS_UNKNOWN",
-        "OS_UNSUPPORTED"
-      ],
-      "default": "UNSET"
-    },
     "VirtualMachineState": {
       "type": "string",
       "enum": [
@@ -477,10 +468,24 @@
           }
         },
         "source": {
-          "$ref": "#/definitions/v2SourceType",
-          "title": "TODO (ROX-30352): Review the use of executable and if it applies to virtual machines"
+          "$ref": "#/definitions/v2SourceType"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ScanComponentNote"
+          }
         }
       }
+    },
+    "v2ScanComponentNote": {
+      "type": "string",
+      "enum": [
+        "UNSPECIFIED",
+        "UNSCANNED"
+      ],
+      "default": "UNSPECIFIED",
+      "description": "Note specifies a conditional status of the scan component.\n\n - UNSCANNED: Scan components remain unscanned if the corresponding package is not\nassociated with a valid Common Platform Enumeration (CPE)."
     },
     "v2SortOption": {
       "type": "object",
@@ -574,7 +579,7 @@
         "notes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/VirtualMachineScanNote"
+            "$ref": "#/definitions/v2VirtualMachineScanNote"
           }
         },
         "components": {
@@ -585,6 +590,15 @@
           }
         }
       }
+    },
+    "v2VirtualMachineScanNote": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "OS_UNKNOWN",
+        "OS_UNSUPPORTED"
+      ],
+      "default": "UNSET"
     },
     "v2VulnerabilitySeverity": {
       "type": "string",
