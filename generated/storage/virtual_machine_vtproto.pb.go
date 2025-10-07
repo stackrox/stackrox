@@ -112,6 +112,11 @@ func (m *EmbeddedVirtualMachineScanComponent) CloneVT() *EmbeddedVirtualMachineS
 		}
 		r.Vulnerabilities = tmpContainer
 	}
+	if rhs := m.Notes; rhs != nil {
+		tmpContainer := make([]EmbeddedVirtualMachineScanComponent_Note, len(rhs))
+		copy(tmpContainer, rhs)
+		r.Notes = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -139,6 +144,7 @@ func (m *VirtualMachineVulnerability) CloneVT() *VirtualMachineVulnerability {
 	r := new(VirtualMachineVulnerability)
 	r.CveBaseInfo = m.CveBaseInfo.CloneVT()
 	r.Severity = m.Severity
+	r.Cvss = m.Cvss
 	if m.SetFixedBy != nil {
 		r.SetFixedBy = m.SetFixedBy.(interface {
 			CloneVT() isVirtualMachineVulnerability_SetFixedBy
@@ -419,6 +425,15 @@ func (this *EmbeddedVirtualMachineScanComponent) EqualVT(that *EmbeddedVirtualMa
 	if this.Source != that.Source {
 		return false
 	}
+	if len(this.Notes) != len(that.Notes) {
+		return false
+	}
+	for i, vx := range this.Notes {
+		vy := that.Notes[i]
+		if vx != vy {
+			return false
+		}
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -468,6 +483,9 @@ func (this *VirtualMachineVulnerability) EqualVT(that *VirtualMachineVulnerabili
 		return false
 	}
 	if this.Severity != that.Severity {
+		return false
+	}
+	if this.Cvss != that.Cvss {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -903,6 +921,27 @@ func (m *EmbeddedVirtualMachineScanComponent) MarshalToSizedBufferVT(dAtA []byte
 		}
 		i -= size
 	}
+	if len(m.Notes) > 0 {
+		var pksize2 int
+		for _, num := range m.Notes {
+			pksize2 += protohelpers.SizeOfVarint(uint64(num))
+		}
+		i -= pksize2
+		j1 := i
+		for _, num1 := range m.Notes {
+			num := uint64(num1)
+			for num >= 1<<7 {
+				dAtA[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
+			}
+			dAtA[j1] = uint8(num)
+			j1++
+		}
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
+		i--
+		dAtA[i] = 0x3a
+	}
 	if m.Source != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Source))
 		i--
@@ -994,6 +1033,12 @@ func (m *VirtualMachineVulnerability) MarshalToSizedBufferVT(dAtA []byte) (int, 
 			return 0, err
 		}
 		i -= size
+	}
+	if m.Cvss != 0 {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.Cvss))))
+		i--
+		dAtA[i] = 0x25
 	}
 	if m.Severity != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Severity))
@@ -1415,6 +1460,13 @@ func (m *EmbeddedVirtualMachineScanComponent) SizeVT() (n int) {
 	if m.Source != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Source))
 	}
+	if len(m.Notes) > 0 {
+		l = 0
+		for _, e := range m.Notes {
+			l += protohelpers.SizeOfVarint(uint64(e))
+		}
+		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1443,6 +1495,9 @@ func (m *VirtualMachineVulnerability) SizeVT() (n int) {
 	}
 	if vtmsg, ok := m.SetFixedBy.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
+	}
+	if m.Cvss != 0 {
+		n += 5
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2473,6 +2528,75 @@ func (m *EmbeddedVirtualMachineScanComponent) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 7:
+			if wireType == 0 {
+				var v EmbeddedVirtualMachineScanComponent_Note
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= EmbeddedVirtualMachineScanComponent_Note(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Notes = append(m.Notes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.Notes) == 0 {
+					m.Notes = make([]EmbeddedVirtualMachineScanComponent_Note, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v EmbeddedVirtualMachineScanComponent_Note
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= EmbeddedVirtualMachineScanComponent_Note(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Notes = append(m.Notes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2611,6 +2735,17 @@ func (m *VirtualMachineVulnerability) UnmarshalVT(dAtA []byte) error {
 			}
 			m.SetFixedBy = &VirtualMachineVulnerability_FixedBy{FixedBy: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
+		case 4:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.Cvss = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4278,6 +4413,75 @@ func (m *EmbeddedVirtualMachineScanComponent) UnmarshalVTUnsafe(dAtA []byte) err
 					break
 				}
 			}
+		case 7:
+			if wireType == 0 {
+				var v EmbeddedVirtualMachineScanComponent_Note
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= EmbeddedVirtualMachineScanComponent_Note(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Notes = append(m.Notes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.Notes) == 0 {
+					m.Notes = make([]EmbeddedVirtualMachineScanComponent_Note, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v EmbeddedVirtualMachineScanComponent_Note
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= EmbeddedVirtualMachineScanComponent_Note(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Notes = append(m.Notes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4420,6 +4624,17 @@ func (m *VirtualMachineVulnerability) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.SetFixedBy = &VirtualMachineVulnerability_FixedBy{FixedBy: stringValue}
 			iNdEx = postIndex
+		case 4:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.Cvss = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

@@ -20,6 +20,7 @@ func EmbeddedVirtualMachineScanComponent(cmp *storage.EmbeddedVirtualMachineScan
 		RiskScore: cmp.GetRiskScore(),
 		Vulns:     VirtualMachineVulnerabilities(cmp.GetVulnerabilities()),
 		Source:    convertSourceType(cmp.GetSource()),
+		Notes:     scanComponentNotes(cmp.GetNotes()),
 	}
 	if cmp.GetSetTopCvss() != nil {
 		result.SetTopCvss = &v2.ScanComponent_TopCvss{
@@ -49,5 +50,18 @@ func convertSourceType(source storage.SourceType) v2.SourceType {
 		return v2.SourceType_INFRASTRUCTURE
 	default:
 		return v2.SourceType_OS
+	}
+}
+
+func scanComponentNotes(notes []storage.EmbeddedVirtualMachineScanComponent_Note) []v2.ScanComponent_Note {
+	return helpers.ConvertEnumArray(notes, convertScanComponentNoteType)
+}
+
+func convertScanComponentNoteType(note storage.EmbeddedVirtualMachineScanComponent_Note) v2.ScanComponent_Note {
+	switch note {
+	case storage.EmbeddedVirtualMachineScanComponent_UNSCANNED:
+		return v2.ScanComponent_UNSCANNED
+	default:
+		return v2.ScanComponent_UNSPECIFIED
 	}
 }

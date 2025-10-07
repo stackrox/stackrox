@@ -12,7 +12,7 @@ message VirtualMachine {
   string namespace = 2; // @gotags: search:"Namespace,store"
   string name = 3; // @gotags: search:"Virtual Machine Name,store"
   string cluster_id = 4; // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
-  string cluster_name = 5;
+  string cluster_name = 5; // @gotags: search:"Cluster,store"
   map<string, string> facts = 6;
 
   google.protobuf.Timestamp last_updated = 7;
@@ -57,6 +57,11 @@ message EmbeddedVirtualMachineScanComponent {
   float risk_score = 4;
   repeated VirtualMachineVulnerability vulnerabilities = 5;
   SourceType source = 6;
+  enum Note {
+    UNSPECIFIED = 0;
+    UNSCANNED = 1;
+  }
+  repeated Note notes = 7;
 }
 
 message VirtualMachineVulnerability {
@@ -65,6 +70,7 @@ message VirtualMachineVulnerability {
   oneof set_fixed_by {
     string fixed_by = 3;
   }
+  float cvss = 4;
 }
 
 // VirtualMachineCVEInfo is a clone of the CVEInfo message from cve.proto, stripped from its search tags

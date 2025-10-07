@@ -255,12 +255,16 @@ func ObserveNodeIndexReport(report *v4.IndexReport, nodeName string) {
 
 	if contents.GetPackages() != nil {
 		rhelPackageCount = len(contents.GetPackages())
+	} else if contents.GetPackagesDEPRECATED() != nil {
+		rhelPackageCount = len(contents.GetPackagesDEPRECATED())
 	}
 	observePackages(nodeName, "", ScannerVersionV4, rhelPackageCount)
 
 	rhelContentSets := 0
 	if contents.GetRepositories() != nil {
 		rhelContentSets = len(contents.GetRepositories())
+	} else if contents.GetRepositoriesDEPRECATED() != nil {
+		rhelContentSets = len(contents.GetRepositoriesDEPRECATED())
 	}
 	observeContentSets(nodeName, "", ScannerVersionV4, rhelContentSets)
 }

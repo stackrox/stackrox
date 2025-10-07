@@ -8,7 +8,6 @@ import (
 )
 
 func TestVulnToSeverity(t *testing.T) {
-	_ = t
 	tests := map[string]struct {
 		input *vulnScoreInfo
 		want  storage.VulnerabilitySeverity
