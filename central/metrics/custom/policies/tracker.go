@@ -2,7 +2,6 @@ package policies
 
 import (
 	"context"
-	"iter"
 
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	policyDS "github.com/stackrox/rox/central/policy/datastore"
@@ -14,14 +13,14 @@ func New(ds policyDS.DataStore) *tracker.TrackerBase[*finding] {
 		"cfg",
 		"policies",
 		LazyLabels,
-		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
+		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, ds)
 		},
 	)
 }
 
-func track(ctx context.Context, ds policyDS.DataStore) iter.Seq[*finding] {
-	return func(yield func(*finding) bool) {
+func track(ctx context.Context, ds policyDS.DataStore) tracker.FindingErrorSequence[*finding] {
+	return func(yield func(*finding, error) bool) {
 		if ds == nil {
 			return
 		}
@@ -31,16 +30,14 @@ func track(ctx context.Context, ds policyDS.DataStore) iter.Seq[*finding] {
 		qb.AddBools("Disabled", false)
 		f.enabled = true
 		f.n, err = ds.Count(ctx, qb.ProtoQuery())
-		f.SetError(err)
-		if !yield(&f) {
+		if !yield(&f, err) {
 			return
 		}
 		qb = search.NewQueryBuilder()
 		qb.AddBools("Disabled", true)
 		f.enabled = false
 		f.n, err = ds.Count(ctx, qb.ProtoQuery())
-		f.SetError(err)
-		if !yield(&f) {
+		if !yield(&f, err) {
 			return
 		}
 	}

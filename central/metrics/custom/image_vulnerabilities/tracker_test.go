@@ -174,8 +174,8 @@ rox_central_image_vuln_Severity_count{Severity="MODERATE_VULNERABILITY_SEVERITY"
 
 func Test_forEachImageVuln(t *testing.T) {
 	i := 0
-	interrupt := func(*finding) bool { i++; return false }
-	pass := func(*finding) bool { i++; return true }
+	interrupt := func(*finding, error) bool { i++; return false }
+	pass := func(*finding, error) bool { i++; return true }
 
 	t.Run("no panic on empty finding", func(t *testing.T) {
 		i = 0

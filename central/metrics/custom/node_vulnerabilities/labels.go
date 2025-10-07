@@ -30,7 +30,6 @@ var lazyLabels = []tracker.LazyLabel[*finding]{
 }
 
 type finding struct {
-	tracker.FindingWithErr
 	node          *storage.Node
 	component     *storage.EmbeddedNodeScanComponent
 	vulnerability *storage.NodeVulnerability

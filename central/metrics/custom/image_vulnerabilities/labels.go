@@ -38,7 +38,6 @@ var lazyLabels = []tracker.LazyLabel[*finding]{
 // The aggregator calls the lazy label's Getter function with every finding to
 // compute the values for the list of defined labels.
 type finding struct {
-	tracker.FindingWithErr
 	deployment *storage.Deployment
 	image      *storage.Image
 	name       *storage.ImageName

@@ -17,6 +17,5 @@ var LazyLabels = []tracker.LazyLabel[*finding]{
 }
 
 type finding struct {
-	tracker.FindingWithErr
 	*storage.Cluster
 }

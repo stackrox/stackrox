@@ -2,7 +2,6 @@ package clusters
 
 import (
 	"context"
-	"iter"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
@@ -14,23 +13,22 @@ func New(ds clusterDS.DataStore) *tracker.TrackerBase[*finding] {
 		"health",
 		"clusters",
 		LazyLabels,
-		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
+		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, ds)
 		},
 	)
 }
 
-func track(ctx context.Context, ds clusterDS.DataStore) iter.Seq[*finding] {
-	return func(yield func(*finding) bool) {
+func track(ctx context.Context, ds clusterDS.DataStore) tracker.FindingErrorSequence[*finding] {
+	return func(yield func(*finding, error) bool) {
 		if ds == nil {
 			return
 		}
 		var f finding
-		collect := tracker.NewFindingCollector(yield)
-		defer collect.Finally(&f)
-		f.SetError(ds.WalkClusters(ctx, func(cluster *storage.Cluster) error {
+		collector := tracker.NewFindingCollector(yield)
+		collector.Finally(ds.WalkClusters(ctx, func(cluster *storage.Cluster) error {
 			f.Cluster = cluster
-			return collect(&f)
+			return collector.Yield(&f)
 		}))
 	}
 }

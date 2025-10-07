@@ -34,7 +34,6 @@ var lazyLabels = []tracker.LazyLabel[*finding]{
 }
 
 type finding struct {
-	tracker.FindingWithErr
 	*storage.Alert
 	*storage.Alert_Violation
 }

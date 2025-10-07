@@ -2,7 +2,6 @@ package image_vulnerabilities
 
 import (
 	"context"
-	"iter"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
@@ -15,18 +14,17 @@ func New(ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 		"image_vuln",
 		"image vulnerabilities",
 		lazyLabels,
-		func(ctx context.Context, md tracker.MetricDescriptors) iter.Seq[*finding] {
+		func(ctx context.Context, md tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, ds)
 		},
 	)
 }
 
-func track(ctx context.Context, ds deploymentDS.DataStore) iter.Seq[*finding] {
-	return func(yield func(*finding) bool) {
+func track(ctx context.Context, ds deploymentDS.DataStore) tracker.FindingErrorSequence[*finding] {
+	return func(yield func(*finding, error) bool) {
 		var f finding
 		collector := tracker.NewFindingCollector(yield)
-		defer collector.Finally(&f)
-		f.SetError(ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
+		collector.Finally(ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
 			f.deployment = deployment
 			images, err := ds.GetImagesForDeployment(ctx, deployment)
 			if err != nil {
@@ -48,7 +46,7 @@ func forEachImageVuln(collector tracker.Collector[*finding], f *finding) error {
 	for _, f.component = range f.image.GetScan().GetComponents() {
 		for _, f.vuln = range f.component.GetVulns() {
 			for _, f.name = range f.image.GetNames() {
-				if err := collector(f); err != nil {
+				if err := collector.Yield(f); err != nil {
 					return err
 				}
 			}

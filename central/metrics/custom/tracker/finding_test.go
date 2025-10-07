@@ -3,26 +3,19 @@ package tracker
 import (
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type testFindingTypeBase struct {
-	FindingBase
-	value string
-}
-
-type testFindingTypeErr struct {
-	FindingWithErr
 	value string
 }
 
 func TestNewFindingCollector_base(t *testing.T) {
 	n := 0
-	yield := func(f *testFindingTypeBase) bool {
+	yield := func(f *testFindingTypeBase, _ error) bool {
 		n++
-		return f.value != "error value"
+		return f.value != "stop value"
 	}
 	var f testFindingTypeBase
 	collector := NewFindingCollector(yield)
@@ -30,73 +23,61 @@ func TestNewFindingCollector_base(t *testing.T) {
 	t.Run("initial values", func(t *testing.T) {
 		assert.Zero(t, n)
 		require.NotNil(t, f)
-		assert.NoError(t, f.GetError())
-		assert.Equal(t, 1, f.GetIncrement())
 		assert.Empty(t, f.value)
 	})
 
 	t.Run("no error", func(t *testing.T) {
 		f.value = "test value"
-		err := collector(&f)
+		err := collector.Yield(&f)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, n)
 	})
 
 	t.Run("yield stops", func(t *testing.T) {
-		f.value = "error value"
-		err := collector(&f)
+		f.value = "stop value"
+		err := collector.Yield(&f)
 		assert.ErrorIs(t, err, ErrStopIterator)
 		assert.Equal(t, 2, n)
 	})
 }
 
-func TestNewFindingCollector_withErr(t *testing.T) {
-	n := 0
-	yield := func(f *testFindingTypeErr) bool {
-		n++
-		return f.value != "error value"
+func TestCollector_errors(t *testing.T) {
+	var finding *testFindingTypeBase
+	var err error
+	var collector Collector[*testFindingTypeBase] = func(f *testFindingTypeBase, e error) bool {
+		finding, err = f, e
+		return true
 	}
 
-	var f testFindingTypeErr
-	collector := NewFindingCollector(yield)
-
-	t.Run("initial values", func(t *testing.T) {
-		assert.Zero(t, n)
-		require.NotNil(t, f)
-		assert.NoError(t, f.GetError())
-		assert.Equal(t, 1, f.GetIncrement())
-		assert.Empty(t, f.value)
+	t.Run("random error", func(t *testing.T) {
+		collector.Error(errInvalidConfiguration)
+		assert.ErrorIs(t, err, errInvalidConfiguration)
+		assert.Nil(t, finding)
 	})
 
-	t.Run("no error", func(t *testing.T) {
-		f.value = "test value"
-		err := collector(&f)
-		assert.NoError(t, err)
-		assert.Equal(t, 1, n)
+	t.Run("nil error", func(t *testing.T) {
+		err = errInvalidConfiguration
+		collector.Error(nil)
+		assert.ErrorIs(t, err, errInvalidConfiguration)
+		assert.Nil(t, finding)
 	})
 
-	t.Run("yield stops", func(t *testing.T) {
-		f.value = "error value"
-		err := collector(&f)
+	t.Run("stop iterator", func(t *testing.T) {
+		collector.Error(ErrStopIterator)
 		assert.ErrorIs(t, err, ErrStopIterator)
-		assert.Equal(t, 2, n)
+		assert.Nil(t, finding)
 	})
 
-	t.Run("finally do not yield if no error", func(t *testing.T) {
-		f.SetError(nil)
-		collector.Finally(&f)
-		assert.Equal(t, 2, n)
+	t.Run("finally", func(t *testing.T) {
+		collector.Finally(errInvalidConfiguration)
+		assert.ErrorIs(t, err, errInvalidConfiguration)
+		assert.Nil(t, finding)
 	})
 
-	t.Run("finally do not yield if ErrStopIterator", func(t *testing.T) {
-		f.SetError(ErrStopIterator)
-		collector.Finally(&f)
-		assert.Equal(t, 2, n)
-	})
-
-	t.Run("finally yield error", func(t *testing.T) {
-		f.SetError(errors.New("some error"))
-		collector.Finally(&f)
-		assert.Equal(t, 3, n)
+	t.Run("finally", func(t *testing.T) {
+		err = nil
+		collector.Finally(ErrStopIterator)
+		assert.NoError(t, err)
+		assert.Nil(t, finding)
 	})
 }
