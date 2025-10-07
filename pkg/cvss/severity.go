@@ -74,32 +74,48 @@ func VulnToSeverity(v VulnI) storage.VulnerabilitySeverity {
 	}
 
 	if v.GetCvssV3() != nil {
-		switch v.GetCvssV3().GetSeverity() {
-		case storage.CVSSV3_UNKNOWN:
-			return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-		case storage.CVSSV3_NONE, storage.CVSSV3_LOW:
-			return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
-		case storage.CVSSV3_MEDIUM:
-			return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
-		case storage.CVSSV3_HIGH:
-			return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
-		case storage.CVSSV3_CRITICAL:
-			return storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
-		}
+		return ConvertCVSSV3SeverityToVulnerabilitySeverity(v.GetCvssV3().GetSeverity())
 	}
 	if v.GetCvssV2() != nil {
-		switch v.GetCvssV2().GetSeverity() {
-		case storage.CVSSV2_UNKNOWN:
-			return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-		case storage.CVSSV2_LOW:
-			return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
-		case storage.CVSSV2_MEDIUM:
-			return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
-		case storage.CVSSV2_HIGH:
-			return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
-		}
+		return ConvertCVSSV2SeverityToVulnerabilitySeverity(v.GetCvssV2().GetSeverity())
 	}
 	return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+}
+
+// ConvertCVSSV3SeverityToVulnerabilitySeverity returns the storage VulnerabilitySeverity enum value
+// matching the input CVSSV3_Severity one
+func ConvertCVSSV3SeverityToVulnerabilitySeverity(severity storage.CVSSV3_Severity) storage.VulnerabilitySeverity {
+	switch severity {
+	case storage.CVSSV3_UNKNOWN:
+		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	case storage.CVSSV3_NONE, storage.CVSSV3_LOW:
+		return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+	case storage.CVSSV3_MEDIUM:
+		return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
+	case storage.CVSSV3_HIGH:
+		return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
+	case storage.CVSSV3_CRITICAL:
+		return storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+	default:
+		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	}
+}
+
+// ConvertCVSSV2SeverityToVulnerabilitySeverity returns the storage VulnerabilitySeverity enum value
+// matching the input CVSSV2_Severity one
+func ConvertCVSSV2SeverityToVulnerabilitySeverity(severity storage.CVSSV2_Severity) storage.VulnerabilitySeverity {
+	switch severity {
+	case storage.CVSSV2_UNKNOWN:
+		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	case storage.CVSSV2_LOW:
+		return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+	case storage.CVSSV2_MEDIUM:
+		return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
+	case storage.CVSSV2_HIGH:
+		return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
+	default:
+		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	}
 }
 
 // FormatSeverity converts the given storage.VulnerabilitySeverity to a more human-readable string.

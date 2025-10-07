@@ -12,8 +12,10 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
 )
 
 var (
@@ -24,18 +26,23 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return newPipeline(vmDatastore.Singleton())
+	return newPipeline(
+		vmDatastore.Singleton(),
+		vmEnricher.Singleton(),
+	)
 }
 
 // newPipeline returns a new instance of Pipeline.
-func newPipeline(vms vmDatastore.DataStore) pipeline.Fragment {
+func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher) pipeline.Fragment {
 	return &pipelineImpl{
 		vmDatastore: vms,
+		enricher:    enricher,
 	}
 }
 
 type pipelineImpl struct {
 	vmDatastore vmDatastore.DataStore
+	enricher    vmEnricher.VirtualMachineEnricher
 }
 
 func (p *pipelineImpl) OnFinish(_ string) {
@@ -53,9 +60,12 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetVirtualMachineIndexReport() != nil
 }
 
-func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
 
+	if !features.VirtualMachines.Enabled() {
+		return nil
+	}
 	event := msg.GetEvent()
 	index := event.GetVirtualMachineIndexReport()
 	if index == nil {
@@ -70,13 +80,30 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return nil
 	}
 
-	log.Debugf("Received virtual machine index report message: %s", index.GetId())
+	log.Debugf("Received virtual machine index report: %s", index.GetId())
 
-	// TODO: This is where the virtual machine enrichment would be run. See `nodeindex` pipeline.
-	// Here we just do a dummy conversion instead.
-	if err := p.vmDatastore.UpsertVirtualMachine(ctx, &storage.VirtualMachine{Id: index.GetId()}); err != nil {
-		return errors.Wrap(err, "failed to upsert virtual machine to datstore")
+	// Get or create VM
+	vm := &storage.VirtualMachine{Id: index.GetId()}
+
+	// Extract Scanner V4 index report from VM index report event
+	indexV4 := index.GetIndex().GetIndexV4()
+	if indexV4 == nil {
+		return errors.Errorf("VM index report %s missing Scanner V4 index data", index.GetId())
 	}
+
+	// Enrich VM with vulnerabilities
+	err := p.enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexV4)
+	if err != nil {
+		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
+	}
+
+	// Store enriched VM
+	if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
+		return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
+	}
+
+	log.Infof("Successfully enriched and stored VM %s with %d components",
+		vm.GetId(), len(vm.GetScan().GetComponents()))
 
 	return nil
 }
