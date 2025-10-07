@@ -479,6 +479,10 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 							},
 						},
 					},
+					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+						Probability: .42,
+						Percentile:  .84,
+					},
 				},
 			},
 			vulnerabilityIDs: []string{"CVE-2025-8713-ID", "CVE-2025-8713-ID"},
@@ -493,6 +497,10 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 									Cvssv3: testCVE1CVSSV3,
 								},
 							},
+						},
+						Epss: &storage.VirtualMachineEPSS{
+							EpssProbability: .42,
+							EpssPercentile:  .84,
 						},
 					},
 					Cvss:     3.1,
