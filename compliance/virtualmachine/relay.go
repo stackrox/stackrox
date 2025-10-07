@@ -91,17 +91,17 @@ func (r *Relay) Run(ctx context.Context) error {
 			continue
 		}
 
-		go func() {
-			defer func() {
+		go func(conn net.Conn) {
+			defer func(conn net.Conn) {
 				if err := conn.Close(); err != nil {
 					log.Errorf("Failed to close connection: %v", err)
 				}
-			}()
+			}(conn)
 
 			if err := handleVsockConnection(ctx, conn, r.sensorClient, r.connectionReadTimeout); err != nil {
 				log.Errorf("Error handling vsock connection: %v", err)
 			}
-		}()
+		}(conn)
 	}
 }
 
