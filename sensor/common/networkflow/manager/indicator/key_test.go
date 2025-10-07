@@ -74,7 +74,7 @@ func TestContainerEndpoint_KeyGeneration(t *testing.T) {
 			key1Hash := ep1.BinaryKey()
 			key2Hash := ep2.BinaryKey()
 			assert.Equal(t, key1Hash, key2Hash)
-			assert.Len(t, key1Hash, 8)
+			assert.NotZero(t, key1Hash)
 
 			// Additional validation using the hash method directly
 			assert.Equal(t, ep1.binaryKeyHash(), ep2.binaryKeyHash())
@@ -120,7 +120,7 @@ func TestProcessListening_KeyGeneration(t *testing.T) {
 			key1Hash := proc1.BinaryKey()
 			key2Hash := proc2.BinaryKey()
 			assert.Equal(t, key1Hash, key2Hash)
-			assert.Len(t, key1Hash, 8)
+			assert.NotZero(t, key1Hash)
 
 			// Additional validation using the hash method directly
 			assert.Equal(t, proc1.binaryKeyHash(), proc2.binaryKeyHash())
@@ -275,8 +275,7 @@ func TestKeyUtilities_PortAndProtocolHandling(t *testing.T) {
 
 			binaryHashKey := endpoint.BinaryKey()
 
-			assert.NotEmpty(t, binaryHashKey)
-			assert.Len(t, binaryHashKey, 8)
+			assert.NotZero(t, binaryHashKey)
 		})
 	}
 }

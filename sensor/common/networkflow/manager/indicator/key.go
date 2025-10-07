@@ -1,7 +1,6 @@
 package indicator
 
 import (
-	"encoding/binary"
 	"hash"
 	"hash/fnv"
 
@@ -67,10 +66,7 @@ func (i *ContainerEndpoint) binaryKeyHash() BinaryHash {
 	h := fnv.New64a()
 	hashStrings(h, i.Entity.ID)
 	hashPortAndProtocol(h, i.Port, i.Protocol)
-
-	var result [8]byte
-	binary.BigEndian.PutUint64(result[:], h.Sum64())
-	return result
+	return BinaryHash(h.Sum64())
 }
 
 // Binary key generation methods for ProcessListening
@@ -83,8 +79,5 @@ func (i *ProcessListening) binaryKeyHash() BinaryHash {
 	hashStrings(h, i.PodID, i.ContainerName, i.Process.ProcessName, i.Process.ProcessExec, i.Process.ProcessArgs)
 	// From: containerEndpoint - identifies the endpoint
 	hashPortAndProtocol(h, i.Port, i.Protocol)
-
-	var result [8]byte
-	binary.BigEndian.PutUint64(result[:], h.Sum64())
-	return result
+	return BinaryHash(h.Sum64())
 }
