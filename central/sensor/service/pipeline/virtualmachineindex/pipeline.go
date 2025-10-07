@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
@@ -59,9 +60,12 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetVirtualMachineIndexReport() != nil
 }
 
-func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
 
+	if !features.VirtualMachines.Enabled() {
+		return nil
+	}
 	event := msg.GetEvent()
 	index := event.GetVirtualMachineIndexReport()
 	if index == nil {

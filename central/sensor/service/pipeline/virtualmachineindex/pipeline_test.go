@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	vmEnricherMocks "github.com/stackrox/rox/pkg/virtualmachine/enricher/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -107,6 +108,7 @@ func (suite *PipelineTestSuite) TestMatch_VirtualMachineMessage() {
 }
 
 func (suite *PipelineTestSuite) TestRun_NilVirtualMachine() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
@@ -125,6 +127,7 @@ func (suite *PipelineTestSuite) TestRun_NilVirtualMachine() {
 }
 
 func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
 	vmID := "vm-1"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
@@ -220,6 +223,7 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(features.VirtualMachines.EnvVar(), "true")
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -263,6 +267,7 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 
 // Test edge cases with malformed messages
 func TestPipelineEdgeCases(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -314,4 +319,24 @@ func TestPipelineEdgeCases(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected resource type")
 	})
+}
+
+func TestPipelineRun_DisabledFeature(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "false")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+	}
+
+	vmID := "vm-1"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_CREATE_RESOURCE)
+
+	err := pipeline.Run(ctx, testClusterID, msg, nil)
+
+	assert.NoError(t, err)
 }

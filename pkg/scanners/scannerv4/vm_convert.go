@@ -3,12 +3,7 @@ package scannerv4
 import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
-	pkgCVSS "github.com/stackrox/rox/pkg/cvss"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ToVirtualMachineScan converts a scan report to the format needed to enrich a virtual machine with scan data.
@@ -39,26 +34,7 @@ func toVirtualMachineScanNotes(notes []v4.VulnerabilityReport_Note) []storage.Vi
 	return result
 }
 
-func hasValidCPE(repositories map[string]*v4.Repository, environments map[string]*v4.Environment_List, pkg *v4.Package) bool {
-	envList, ok := environments[pkg.GetId()]
-	if !ok {
-		return false
-	}
-
-	for _, env := range envList.GetEnvironments() {
-		for _, repoID := range env.GetRepositoryIds() {
-			if repositories[repoID].GetCpe() != "" {
-				// A valid CPE is found, therefore the package is scannable.
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func toVirtualMachineComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedVirtualMachineScanComponent {
-	repositories := r.GetContents().GetRepositories()
-	environments := r.GetContents().GetEnvironments()
 	packages := r.GetContents().GetPackages()
 	result := make([]*storage.EmbeddedVirtualMachineScanComponent, 0, len(packages))
 	for _, pkg := range packages {
@@ -70,9 +46,6 @@ func toVirtualMachineComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedVi
 			// Architecture ?
 			Vulnerabilities: toVirtualMachineScanComponentVulnerabilities(vulnerabilitiesByID, vulnerabilityIDs),
 		}
-		if !hasValidCPE(repositories, environments, pkg) {
-			component.Notes = append(component.Notes, storage.EmbeddedVirtualMachineScanComponent_UNSCANNED)
-		}
 		result = append(result, component)
 	}
 	return result
@@ -82,44 +55,35 @@ func toVirtualMachineScanComponentVulnerabilities(
 	vulnerabilitiesByID map[string]*v4.VulnerabilityReport_Vulnerability,
 	vulnerabilityIDs []string,
 ) []*storage.VirtualMachineVulnerability {
-	result := make([]*storage.VirtualMachineVulnerability, 0, len(vulnerabilityIDs))
-	processedVulnerabilityIDs := set.NewStringSet()
-	for _, vulnerabilityID := range vulnerabilityIDs {
-		if shouldProcess := processedVulnerabilityIDs.Add(vulnerabilityID); !shouldProcess {
-			continue
-		}
-		reportVulnerability, found := vulnerabilitiesByID[vulnerabilityID]
-		if !found {
-			continue
-		}
-		vulnerability := &storage.VirtualMachineVulnerability{
+	embeddedVulns := vulnerabilities(vulnerabilitiesByID, vulnerabilityIDs)
+	result := make([]*storage.VirtualMachineVulnerability, 0, len(embeddedVulns))
+	for _, vuln := range embeddedVulns {
+		resultVuln := &storage.VirtualMachineVulnerability{
 			CveBaseInfo: &storage.VirtualMachineCVEInfo{
-				Cve:         reportVulnerability.GetName(),
-				Summary:     reportVulnerability.GetDescription(),
-				Link:        link(reportVulnerability.GetLink()),
-				PublishedOn: reportVulnerability.GetIssued(),
-				Advisory:    toVirtualMachineAdvisory(reportVulnerability.GetAdvisory()),
+				Cve:          vuln.GetCve(),
+				Summary:      vuln.GetSummary(),
+				Link:         vuln.GetLink(),
+				PublishedOn:  vuln.GetPublishedOn(),
+				LastModified: vuln.GetLastModified(),
+				CvssMetrics:  vuln.GetCvssMetrics(),
+				Epss:         toVirtualMachineEPSS(vuln.GetEpss()),
+				Advisory:     toVirtualMachineAdvisory(vuln.GetAdvisory()),
 			},
-			Severity: normalizedSeverity(reportVulnerability.GetNormalizedSeverity()),
+			Severity: vuln.GetSeverity(),
+			Cvss:     vuln.GetCvss(),
 		}
-		vulnerabilityMetrics := reportVulnerability.GetCvssMetrics()
-		if err := setVirtualMachineScoresAndScoreVersions(vulnerability, vulnerabilityMetrics); err != nil {
-			utils.Should(err)
-		}
-
-		if reportVulnerability.GetFixedInVersion() != "" {
-			vulnerability.SetFixedBy = &storage.VirtualMachineVulnerability_FixedBy{
-				FixedBy: reportVulnerability.GetFixedInVersion(),
+		if vuln.GetSetFixedBy() != nil {
+			resultVuln.SetFixedBy = &storage.VirtualMachineVulnerability_FixedBy{
+				FixedBy: vuln.GetFixedBy(),
 			}
 		}
-
-		result = append(result, vulnerability)
+		result = append(result, resultVuln)
 	}
 	return result
 }
 
 func toVirtualMachineAdvisory(
-	advisory *v4.VulnerabilityReport_Advisory,
+	advisory *storage.Advisory,
 ) *storage.VirtualMachineAdvisory {
 	if advisory == nil {
 		return nil
@@ -130,59 +94,12 @@ func toVirtualMachineAdvisory(
 	}
 }
 
-func setVirtualMachineScoresAndScoreVersions(
-	vulnerability *storage.VirtualMachineVulnerability,
-	cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS,
-) error {
-	if vulnerability == nil || vulnerability.CveBaseInfo == nil {
-		return errox.InvalidArgs.CausedBy("Cannot enrich CVSS information on a nil vulnerability object")
-	}
-	severity := vulnerability.GetSeverity()
-	cvssV3Propagated := false
-	if len(cvssMetrics) == 0 {
+func toVirtualMachineEPSS(epss *storage.EPSS) *storage.VirtualMachineEPSS {
+	if epss == nil {
 		return nil
 	}
-	cve := vulnerability.GetCveBaseInfo().GetCve()
-	errList := errorhelpers.NewErrorList("failed to get CVSS metrics")
-	var scores []*storage.CVSSScore
-	for _, cvss := range cvssMetrics {
-		score := &storage.CVSSScore{
-			Source: CVSSSource(cvss.GetSource()),
-			Url:    cvss.GetUrl(),
-		}
-		if cvss.GetV2() != nil {
-			_, cvssV2, v2Err := toCVSSV2Scores(cvss, cve)
-			if v2Err == nil && cvssV2 != nil {
-				score.CvssScore = &storage.CVSSScore_Cvssv2{Cvssv2: cvssV2}
-				if severity == storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY && !cvssV3Propagated {
-					vulnerability.Severity = pkgCVSS.ConvertCVSSV2SeverityToVulnerabilitySeverity(cvssV2.GetSeverity())
-				}
-			} else {
-				errList.AddError(v2Err)
-			}
-		}
-		if cvss.GetV3() != nil {
-			_, cvssV3, v3Err := toCVSSV3Scores(cvss, cve)
-			if v3Err == nil && cvssV3 != nil {
-				score.CvssScore = &storage.CVSSScore_Cvssv3{Cvssv3: cvssV3}
-				// CVSS metrics has maximum two entries, one from NVD, one from Rox updater if available
-				if len(cvssMetrics) == 1 || (len(cvssMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
-					vulnerability.CveBaseInfo.Link = cvss.GetUrl()
-					if severity == storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY {
-						vulnerability.Severity = pkgCVSS.ConvertCVSSV3SeverityToVulnerabilitySeverity(cvssV3.GetSeverity())
-						cvssV3Propagated = true
-					}
-				}
-			} else {
-				errList.AddError(v3Err)
-			}
-		}
-		if score.CvssScore != nil {
-			scores = append(scores, score)
-		}
+	return &storage.VirtualMachineEPSS{
+		EpssProbability: epss.GetEpssProbability(),
+		EpssPercentile:  epss.GetEpssPercentile(),
 	}
-	if len(scores) > 0 {
-		vulnerability.CveBaseInfo.CvssMetrics = scores
-	}
-	return errList.ToError()
 }

@@ -224,16 +224,16 @@ func (mr *MockDataStoreMockRecorder) Wait(cancelWhen any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Wait", reflect.TypeOf((*MockDataStore)(nil).Wait), cancelWhen)
 }
 
-// WalkAll mocks base method.
-func (m *MockDataStore) WalkAll(ctx context.Context, fn func(*storage.ProcessIndicator) error) error {
+// WalkByQuery mocks base method.
+func (m *MockDataStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WalkAll", ctx, fn)
+	ret := m.ctrl.Call(m, "WalkByQuery", ctx, query, fn)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// WalkAll indicates an expected call of WalkAll.
-func (mr *MockDataStoreMockRecorder) WalkAll(ctx, fn any) *gomock.Call {
+// WalkByQuery indicates an expected call of WalkByQuery.
+func (mr *MockDataStoreMockRecorder) WalkByQuery(ctx, query, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockDataStore)(nil).WalkAll), ctx, fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockDataStore)(nil).WalkByQuery), ctx, query, fn)
 }

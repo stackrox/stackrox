@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"go.yaml.in/yaml/v3"
-	"golang.org/x/exp/maps"
 )
 
 func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command {
@@ -81,17 +81,16 @@ func (p *permissionSetCmd) Validate() error {
 
 	// Keep an alphabetic order within the resources.
 	resources := maps.Keys(accessMap)
-	slices.Sort(resources)
 
 	// TODO(ROX-16330): Resources are currently defined within central/role/resources, and hence cannot be reused here yet.
 	// There are plans to move the resource definition to a shared place however, in which case we can reuse them here.
 	var invalidAccessErrors *multierror.Error
-	for _, resource := range resources {
+	for _, resource := range slices.Sorted(resources) {
 		accessVal, ok := storage.Access_value[strings.ToUpper(accessMap[resource])]
 		if !ok {
 			invalidAccessErrors = multierror.Append(invalidAccessErrors, errox.InvalidArgs.
 				Newf("invalid access specified for resource %s: %s. The allowed values for access are: [%s]",
-					resource, accessMap[resource], strings.Join(maps.Keys(storage.Access_value), ",")))
+					resource, accessMap[resource], strings.Join(slices.Collect(maps.Keys(storage.Access_value)), ",")))
 			continue
 		}
 		resourceWithAccess = append(resourceWithAccess, declarativeconfig.ResourceWithAccess{

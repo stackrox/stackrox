@@ -534,6 +534,7 @@ type VirtualMachineVulnerability struct {
 	//
 	//	*VirtualMachineVulnerability_FixedBy
 	SetFixedBy    isVirtualMachineVulnerability_SetFixedBy `protobuf_oneof:"set_fixed_by"`
+	Cvss          float32                                  `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -596,6 +597,13 @@ func (x *VirtualMachineVulnerability) GetFixedBy() string {
 		}
 	}
 	return ""
+}
+
+func (x *VirtualMachineVulnerability) GetCvss() float32 {
+	if x != nil {
+		return x.Cvss
+	}
+	return 0
 }
 
 type isVirtualMachineVulnerability_SetFixedBy interface {
@@ -942,11 +950,12 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\x04Note\x12\x0f\n" +
 	"\vUNSPECIFIED\x10\x00\x12\r\n" +
 	"\tUNSCANNED\x10\x01B\x0e\n" +
-	"\fset_top_cvss\"\xca\x01\n" +
+	"\fset_top_cvss\"\xde\x01\n" +
 	"\x1bVirtualMachineVulnerability\x12B\n" +
 	"\rcve_base_info\x18\x01 \x01(\v2\x1e.storage.VirtualMachineCVEInfoR\vcveBaseInfo\x12:\n" +
 	"\bseverity\x18\x02 \x01(\x0e2\x1e.storage.VulnerabilitySeverityR\bseverity\x12\x1b\n" +
-	"\bfixed_by\x18\x03 \x01(\tH\x00R\afixedByB\x0e\n" +
+	"\bfixed_by\x18\x03 \x01(\tH\x00R\afixedBy\x12\x12\n" +
+	"\x04cvss\x18\x04 \x01(\x02R\x04cvssB\x0e\n" +
 	"\fset_fixed_by\"\xb4\x04\n" +
 	"\x15VirtualMachineCVEInfo\x12\x10\n" +
 	"\x03cve\x18\x01 \x01(\tR\x03cve\x12\x18\n" +

@@ -2,12 +2,13 @@ package clusterentities
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
-	"golang.org/x/exp/maps"
 )
 
 type containerIDsStore struct {
@@ -174,6 +175,6 @@ func (e *containerIDsStore) String() string {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
 	return fmt.Sprintf("Current: %s\n Historical: %s",
-		maps.Keys(e.containerIDMap),
+		slices.Collect(maps.Keys(e.containerIDMap)),
 		prettyPrintHistoricalData(e.historicalContainerIDs))
 }
