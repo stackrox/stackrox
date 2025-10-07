@@ -383,7 +383,17 @@ func extractArch(rpm *v4.IndexReport) string {
 			return distro.GetArch()
 		}
 	}
+	for _, distro := range rpm.GetContents().GetDistributionsDEPRECATED() {
+		if distro.GetArch() != "" && distro.GetArch() != "noarch" {
+			return distro.GetArch()
+		}
+	}
 	for _, p := range rpm.GetContents().GetPackages() {
+		if p.GetArch() != "" && p.GetArch() != "noarch" {
+			return p.GetArch()
+		}
+	}
+	for _, p := range rpm.GetContents().GetPackagesDEPRECATED() {
 		if p.GetArch() != "" && p.GetArch() != "noarch" {
 			return p.GetArch()
 		}
@@ -393,7 +403,11 @@ func extractArch(rpm *v4.IndexReport) string {
 
 func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport {
 	idCandidate := 600 // Arbitrary selected. RHCOS has usually 520-560 rpm packages.
-	for idTaken(rpm.GetContents().GetEnvironments(), idCandidate) {
+	envs := rpm.GetContents().GetEnvironments()
+	if len(envs) == 0 {
+		envs = rpm.GetContents().GetEnvironmentsDEPRECATED()
+	}
+	for idTaken(envs, idCandidate) {
 		idCandidate++
 	}
 	strID := strconv.Itoa(idCandidate)
@@ -409,7 +423,11 @@ func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport
 	for envId, list := range rpm.GetContents().GetEnvironments() {
 		oci.Contents.Environments[envId] = list
 	}
+	for envId, list := range rpm.GetContents().GetEnvironmentsDEPRECATED() {
+		oci.Contents.EnvironmentsDEPRECATED[envId] = list
+	}
 	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
+	oci.Contents.DistributionsDEPRECATED = rpm.GetContents().GetDistributionsDEPRECATED()
 	return oci
 }
 
