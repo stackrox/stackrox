@@ -26,13 +26,12 @@ import { savePoliciesAsCustomResource } from 'services/PolicyCustomResourceServi
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import useURLSort from 'hooks/useURLSort';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
-import { getSearchOptionsForCategory } from 'services/SearchService';
 import { ListPolicy } from 'types/policy.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { ApiSortOption, SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { applyRegexSearchModifiers, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
 import ImportPolicyJSONModal from '../Modal/ImportPolicyJSONModal';
@@ -42,7 +41,7 @@ import { columns } from './PoliciesTable.utils';
 type PoliciesTablePageProps = {
     hasWriteAccessForPolicy: boolean;
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
-    searchFilter?: SearchFilter;
+    searchFilter: SearchFilter;
 };
 
 export const sortFields = ['Policy', 'Status', 'Origin', 'Notifiers', 'Severity', 'Lifecycle'];
@@ -65,11 +64,11 @@ function PoliciesTablePage({
     const [errorMessage, setErrorMessage] = useState('');
     const { toasts, addToast, removeToast } = useToasts();
 
-    const [searchOptions, setSearchOptions] = useState<string[]>([]);
-
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
-    const query = searchFilter ? getRequestQueryStringForSearchFilter(searchFilter) : '';
+    const query = searchFilter
+        ? getRequestQueryStringForSearchFilter(applyRegexSearchModifiers(searchFilter))
+        : '';
 
     function onClickCreatePolicy() {
         navigate(`${policiesBasePath}/?action=create`);
@@ -201,19 +200,6 @@ function PoliciesTablePage({
     }, []);
 
     useEffect(() => {
-        const { request, cancel } = getSearchOptionsForCategory('POLICIES');
-        request
-            .then((options) => {
-                setSearchOptions(options);
-            })
-            .catch(() => {
-                // TODO
-            });
-
-        return cancel;
-    }, []);
-
-    useEffect(() => {
         fetchPolicies(query, sortOption);
     }, [query, sortOption]);
 
@@ -252,7 +238,6 @@ function PoliciesTablePage({
                 onClickReassessPolicies={onClickReassessPolicies}
                 getSortParams={getSortParams}
                 searchFilter={searchFilter}
-                searchOptions={searchOptions}
             />
         );
     }

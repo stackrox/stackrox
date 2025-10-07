@@ -101,6 +101,40 @@ export const EntityType: CompoundSearchFilterAttribute = {
     },
 };
 
+export const Description: CompoundSearchFilterAttribute = {
+    displayName: 'Description',
+    filterChipLabel: 'Description',
+    searchTerm: 'Description',
+    inputType: 'autocomplete',
+};
+
+export const Enforcement: CompoundSearchFilterAttribute = {
+    displayName: 'Enforcement',
+    filterChipLabel: 'Enforcement',
+    searchTerm: 'Enforcement',
+    inputType: 'autocomplete',
+};
+
+export const Status: CompoundSearchFilterAttribute = {
+    displayName: 'Status',
+    filterChipLabel: 'Status',
+    searchTerm: 'Disabled',
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { label: 'Disabled', value: 'true' },
+            { label: 'Enabled', value: 'false' },
+        ],
+    },
+};
+
+export const LastUpdated: CompoundSearchFilterAttribute = {
+    displayName: 'Last updated',
+    filterChipLabel: 'Last updated',
+    searchTerm: 'Policy Last Updated',
+    inputType: 'date-picker',
+};
+
 export const policyAttributes = [
     Name,
     Category,
