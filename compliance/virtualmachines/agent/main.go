@@ -4,10 +4,10 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/stackrox/rox/compliance/virtualmachines/agent/cmd"
 	"github.com/stackrox/rox/pkg/logging"
-	"golang.org/x/sys/unix"
 )
 
 var log = logging.LoggerForModule()
@@ -19,7 +19,7 @@ func main() {
 	defer cancel()
 	go func() {
 		sigC := make(chan os.Signal, 1)
-		signal.Notify(sigC, unix.SIGINT, unix.SIGTERM)
+		signal.Notify(sigC, syscall.SIGINT, syscall.SIGTERM)
 		sig := <-sigC
 		log.Errorf("%s caught, shutting down...", sig)
 		// Cancel the main context.
