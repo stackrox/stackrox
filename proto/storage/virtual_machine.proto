@@ -12,7 +12,7 @@ message VirtualMachine {
   string namespace = 2; // @gotags: search:"Namespace,store"
   string name = 3; // @gotags: search:"Virtual Machine Name,store"
   string cluster_id = 4; // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
-  string cluster_name = 5;
+  string cluster_name = 5; // @gotags: search:"Cluster,store"
   map<string, string> facts = 6;
 
   google.protobuf.Timestamp last_updated = 7;
