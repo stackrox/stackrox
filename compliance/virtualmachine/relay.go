@@ -10,6 +10,7 @@ import (
 
 	"github.com/mdlayher/vsock"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/compliance/virtualmachine/metrics"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -244,11 +245,7 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 		retry.OnlyRetryableErrors(),
 		retry.WithExponentialBackoff())
 
-	if err != nil {
-		metrics.IndexReportsSentToSensor.With(metrics.StatusErrorLabels).Inc()
-	} else {
-		metrics.IndexReportsSentToSensor.With(metrics.StatusSuccessLabels).Inc()
-	}
+	metrics.IndexReportsSentToSensor.With(prometheus.Labels{"failed": strconv.FormatBool(err != nil)}).Inc()
 
 	return err
 }

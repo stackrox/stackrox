@@ -5,11 +5,6 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
-var (
-	StatusErrorLabels   = prometheus.Labels{"status": "error"}
-	StatusSuccessLabels = prometheus.Labels{"status": "success"}
-)
-
 // IndexReportsMismatchingVsockCID is a counter for the number of virtual machine index reports whose reported vsock CID does not
 // match the connection's vsock CID.
 var IndexReportsMismatchingVsockCID = prometheus.NewCounter(
@@ -39,7 +34,7 @@ var IndexReportsSentToSensor = prometheus.NewCounterVec(
 		Name:      "virtual_machine_relay_index_reports_sent_total",
 		Help:      "Total number of virtual machine index reports sent to sensor by this Relay",
 	},
-	[]string{"status"},
+	[]string{"failed"},
 )
 
 // VsockConnectionsAccepted is a counter for the number of vsock connections accepted by this relay. A mismatch between
