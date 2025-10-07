@@ -65,6 +65,7 @@ message VirtualMachineVulnerability {
   oneof set_fixed_by {
     string fixed_by = 3;
   }
+  float cvss = 4;
 }
 
 // VirtualMachineCVEInfo is a clone of the CVEInfo message from cve.proto, stripped from its search tags
