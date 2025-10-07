@@ -182,7 +182,7 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 		update, transition := categorizeUpdate(prevTS, currTS, prevTsFound, key, c.connectionsDeduper, &c.connectionsDeduperMutex)
 		updateMetrics(update, transition, ee)
 		// Each transition may require updating the deduper.
-		action := getDeduperAction(transition)
+		action := getConnectionDeduperAction(transition)
 		switch action {
 		case deduperActionAdd:
 			c.connectionsDeduper.Add(key)
@@ -243,8 +243,8 @@ func categorizeUpdate(
 
 }
 
-// getDeduperAction returns action to be executed on a deduper (or noop) for a given transition between states.
-func getDeduperAction(tt TransitionType) deduperAction {
+// getConnectionDeduperAction returns action to be executed on a deduper (or noop) for a given transition between states.
+func getConnectionDeduperAction(tt TransitionType) deduperAction {
 	switch tt {
 	case TransitionTypeOpen2Closed:
 		// When a previously open EE is being closed, we must remove it from the deduper.
@@ -256,10 +256,6 @@ func getDeduperAction(tt TransitionType) deduperAction {
 		// Rarity. An EE was closed in the previous tick, but now is open.
 		// We treat is as a new EE and thus add it to deduper.
 		return deduperActionAdd
-	case TransitionTypeOpen2Open:
-		// Applicable to endpoints. If we get two open messages for the same endpoint, it may mean that the process
-		// has been updated, so we must update the deduper.
-		return deduperActionUpdateProcess
 	default:
 		// All other cases:
 		// 1. Closed -> Closed - the first observation of closed EE would remove it from deduper.
