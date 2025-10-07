@@ -2,8 +2,10 @@ package registrymirror
 
 import (
 	"bytes"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -18,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	"golang.org/x/exp/maps"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -343,5 +344,5 @@ func (s *FileStore) getAllMirrorSets() ([]*operatorV1Alpha1.ImageContentSourcePo
 	s.ruleRWMutex.RLock()
 	defer s.ruleRWMutex.RUnlock()
 
-	return maps.Values(s.icspRules), maps.Values(s.idmsRules), maps.Values(s.itmsRules)
+	return slices.Collect(maps.Values(s.icspRules)), slices.Collect(maps.Values(s.idmsRules)), slices.Collect(maps.Values(s.itmsRules))
 }
