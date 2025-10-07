@@ -356,6 +356,9 @@ jobs:
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v3
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         with:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
