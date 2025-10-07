@@ -336,6 +336,7 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 							},
 						},
 					},
+					Cvss:     3.1,
 					Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 				},
 			},
@@ -376,6 +377,7 @@ func TestToVirtualMachineScanComponentVulnerabilities(t *testing.T) {
 							},
 						},
 					},
+					Cvss:     3.1,
 					Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 				},
 				{
