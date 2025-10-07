@@ -11,14 +11,14 @@ import (
 // Panics on error so it can be used in tests and examples without boilerplate.
 func getHardcodedIndexReport() *v4.IndexReport {
 	var m v4.IndexReport
-	if err := protojson.Unmarshal([]byte(IndexReportJSON_1539), &m); err != nil {
+	if err := protojson.Unmarshal([]byte(Indexreportjson1539), &m); err != nil {
 		panic(fmt.Errorf("unmarshal IndexReport: %w", err))
 	}
 	return &m
 }
 
-// IndexReportJSON_1539 is the canonical JSON used to build IndexReport_1539.
-const IndexReportJSON_1539 = `{
+// Indexreportjson1539 is the canonical JSON used to build IndexReport_1539.
+const Indexreportjson1539 = `{
   "contents": {
     "environments": {
       "0": {
