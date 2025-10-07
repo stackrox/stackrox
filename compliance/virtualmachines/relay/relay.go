@@ -121,7 +121,7 @@ func (r *Relay) handleVsockConnection(conn net.Conn) error {
 	}
 
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
-	log.Debugf("Reading from connection (max bytes: %d, timeout: %s", maxSizeBytes, r.connectionReadTimeout)
+	log.Debugf("Reading from connection (max bytes: %d, timeout: %s)", maxSizeBytes, r.connectionReadTimeout)
 	data, err := readFromConn(conn, maxSizeBytes, r.connectionReadTimeout)
 	if err != nil {
 		return errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
