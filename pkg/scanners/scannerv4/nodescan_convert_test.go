@@ -17,8 +17,8 @@ type indexReportConvertSuite struct {
 	suite.Suite
 }
 
-func (s *indexReportConvertSuite) TestToNodeInventory() {
-	r := createVulnerabilityReport()
+func (s *indexReportConvertSuite) TestNodeScan() {
+	r := mockVulnReport
 	expected := &storage.EmbeddedNodeScanComponent{
 		Name:    "openssh-clients",
 		Version: "8.7p1-38.el9",
@@ -91,16 +91,17 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 		},
 	}
 
-	actual := toNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
+	actual := nodeScan("Red Hat Enterprise Linux CoreOS 417.94.202409121747-0", r)
 
 	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
+	s.Equal("rhcos:4.17", actual.GetOperatingSystem())
 	s.Len(actual.GetComponents(), 2)
 	s.Len(actual.GetNotes(), 0)
 
 	protoassert.SliceContains(s.T(), actual.GetComponents(), expected)
 }
 
-func (s *indexReportConvertSuite) TestEmptyReportConversionNoPanic() {
+func (s *indexReportConvertSuite) TestNodeScan_Empty() {
 	r := &v4.VulnerabilityReport{
 		HashId:                 "",
 		Vulnerabilities:        nil,
@@ -112,7 +113,7 @@ func (s *indexReportConvertSuite) TestEmptyReportConversionNoPanic() {
 	var actual *storage.NodeScan
 
 	s.NotPanics(func() {
-		actual = toNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
+		actual = nodeScan("Red Hat Enterprise Linux CoreOS 417.94.202409121747-0", r)
 	})
 
 	s.NotNil(actual)
@@ -120,8 +121,8 @@ func (s *indexReportConvertSuite) TestEmptyReportConversionNoPanic() {
 
 }
 
-func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
-	in := createOutOfBoundsReport()
+func (s *indexReportConvertSuite) TestNodeComponents_OutOfBounds() {
+	in := mockVulnReportOutOfBounds
 	expectedCVE := &storage.EmbeddedVulnerability{
 		Cve:               "RHSA-2024:4616",
 		Cvss:              8.2,
@@ -190,7 +191,7 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 		},
 	}
 
-	actual := toStorageComponents(in)
+	actual := nodeComponents(in)
 
 	s.Len(actual, 2)
 	for _, c := range actual {
@@ -199,42 +200,47 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 	}
 }
 
-func (s *indexReportConvertSuite) TestGetPackageVulnsBrokenMapping() {
-	r := &v4.VulnerabilityReport{
-		PackageVulnerabilities: map[string]*v4.StringList{"1": {Values: []string{"CVE1-ID"}}},
-	}
-	actual := getPackageVulns("DOESNTEXIST", r)
-	s.Len(actual, 0)
-}
-
-func (s *indexReportConvertSuite) TestGetPackageVulnsBrokenVulnereability() {
-	r := &v4.VulnerabilityReport{
-		PackageVulnerabilities: map[string]*v4.StringList{"1": {Values: []string{"DOESNTEXIST", "V2"}}},
-		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-			"V2": {
-				Id:                 "V2",
-				Name:               "CVE-Name",
-				FixedInVersion:     "v99",
-				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
-			},
+func (s *indexReportConvertSuite) TestNodeNotes() {
+	testcases := map[string]struct {
+		in       []v4.VulnerabilityReport_Note
+		osImage  string
+		expected []storage.NodeScan_Note
+	}{
+		"RHCOS 0": {
+			in:       []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN, v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED},
+			osImage:  "Red Hat Enterprise Linux CoreOS",
+			expected: []storage.NodeScan_Note{},
+		},
+		"RHCOS 1": {
+			in:       []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED, v4.VulnerabilityReport_NOTE_UNSPECIFIED},
+			osImage:  "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0",
+			expected: []storage.NodeScan_Note{storage.NodeScan_UNSET},
+		},
+		"RHCOS 2": {
+			in:       []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_UNSPECIFIED, v4.VulnerabilityReport_NOTE_OS_UNKNOWN, v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED},
+			osImage:  "Red Hat Enterprise Linux CoreOS",
+			expected: []storage.NodeScan_Note{storage.NodeScan_UNSET},
+		},
+		"RHCOS 3": {
+			in:       []v4.VulnerabilityReport_Note{},
+			osImage:  "Red Hat Enterprise Linux CoreOS",
+			expected: []storage.NodeScan_Note{},
+		},
+		"Non-RHCOS": {
+			in:       []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED, v4.VulnerabilityReport_NOTE_UNSPECIFIED},
+			osImage:  "Oracle Linux Server release 6.8",
+			expected: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_UNSET},
 		},
 	}
-	actual := getPackageVulns("1", r)
-	s.Len(actual, 1)
-	s.Equal("CVE-Name", actual[0].GetCve())
-}
-
-func (s *indexReportConvertSuite) TestConvertNodeNotes() {
-	in := []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_UNSPECIFIED, v4.VulnerabilityReport_NOTE_OS_UNKNOWN, v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}
-	expected := []storage.NodeScan_Note{storage.NodeScan_UNSET, storage.NodeScan_UNSUPPORTED, storage.NodeScan_UNSUPPORTED}
-
-	actual := toStorageNotes(in)
-	for i, note := range actual {
-		s.Equal(note, expected[i])
+	for name, tc := range testcases {
+		s.T().Run(name, func(tt *testing.T) {
+			notes := nodeNotes(&v4.VulnerabilityReport{Notes: tc.in}, tc.osImage)
+			s.ElementsMatch(tc.expected, notes, name)
+		})
 	}
 }
 
-func (s *indexReportConvertSuite) TestToOperatingSystem() {
+func (s *indexReportConvertSuite) TestNodeOS() {
 	cases := map[string]struct {
 		in       string
 		expected string
@@ -249,48 +255,23 @@ func (s *indexReportConvertSuite) TestToOperatingSystem() {
 		},
 		"non-RHCOS": {
 			in:       "Oracle Linux Server release 6.8",
-			expected: "",
+			expected: "unknown",
 		},
 		"blank": {
 			in:       "",
-			expected: "",
+			expected: "unknown",
 		},
 	}
 	for name, c := range cases {
 		s.T().Run(name, func(tt *testing.T) {
-			actual := toOperatingSystem(c.in)
+			actual := nodeOS(c.in)
 			s.Equal(c.expected, actual)
 		})
 	}
 }
 
-func (s *indexReportConvertSuite) TestFixNotes() {
-	cases := map[string]struct {
-		in       []storage.NodeScan_Note
-		osRef    string
-		expected []storage.NodeScan_Note
-	}{
-		"RHCOS": {
-			in:       []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_UNSET},
-			osRef:    "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0",
-			expected: []storage.NodeScan_Note{storage.NodeScan_UNSET},
-		},
-		"Non-RHCOS": {
-			in:       []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_UNSET},
-			osRef:    "Oracle Linux Server release 6.8",
-			expected: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_UNSET},
-		},
-	}
-	for name, c := range cases {
-		s.T().Run(name, func(tt *testing.T) {
-			actual := fixNotes(c.in, c.osRef)
-			s.Equal(c.expected, actual)
-		})
-	}
-}
-
-func createVulnerabilityReport() *v4.VulnerabilityReport {
-	return &v4.VulnerabilityReport{
+var (
+	mockVulnReport = &v4.VulnerabilityReport{
 		HashId: "",
 		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
 			"7401229": {
@@ -393,10 +374,8 @@ func createVulnerabilityReport() *v4.VulnerabilityReport {
 		},
 		Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
 	}
-}
 
-func createOutOfBoundsReport() *v4.VulnerabilityReport {
-	return &v4.VulnerabilityReport{
+	mockVulnReportOutOfBounds = &v4.VulnerabilityReport{
 		HashId: "",
 		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
 			"7401229": {
@@ -499,4 +478,4 @@ func createOutOfBoundsReport() *v4.VulnerabilityReport {
 		},
 		Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
 	}
-}
+)
