@@ -163,6 +163,9 @@ jobs:
     strategy:
       matrix:
         image: ["collector", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
+    # Skip for external contributions.
+    if: |
+      github.event_name == 'push' || !github.event.pull_request.head.repo.fork
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
