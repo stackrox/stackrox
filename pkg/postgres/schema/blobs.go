@@ -91,7 +91,7 @@ var (
 )
 
 func getBlobSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if blobSchema.OptionsMap == nil {
 		blobSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_BLOB, blobSearchFields))
 	}

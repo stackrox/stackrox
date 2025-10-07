@@ -170,7 +170,7 @@ var (
 )
 
 func getPodSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if podSchema.OptionsMap == nil {
 		podSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PODS, podSearchFields))
 	}

@@ -97,7 +97,7 @@ var (
 )
 
 func getProcessBaselineSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if processBaselineSchema.OptionsMap == nil {
 		processBaselineSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PROCESS_BASELINES, processBaselineSearchFields))
 	}

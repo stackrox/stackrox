@@ -121,7 +121,7 @@ var (
 )
 
 func getServiceAccountSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if serviceAccountSchema.OptionsMap == nil {
 		serviceAccountSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SERVICE_ACCOUNTS, serviceAccountSearchFields))
 	}

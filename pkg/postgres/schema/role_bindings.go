@@ -30,7 +30,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = getK8SRoleBindingSchema()
+		schema = getK8sRoleBindingSchema()
 		schema.ScopingResource = resources.K8sRoleBinding
 		RegisterTable(schema, CreateTableRoleBindingsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, schema)
@@ -69,79 +69,79 @@ type RoleBindingsSubjects struct {
 }
 
 var (
-	k8SRoleBindingSearchFields = map[search.FieldLabel]*search.Field{
+	k8sRoleBindingSearchFields = map[search.FieldLabel]*search.Field{
 		search.FieldLabel("Cluster"): {
-			FieldPath: "k8srolebinding.cluster_name",
+			FieldPath: ".cluster_name",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Cluster ID"): {
-			FieldPath: "k8srolebinding.cluster_id",
+			FieldPath: ".cluster_id",
 			Store:     true,
 			Hidden:    true,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Cluster Role"): {
-			FieldPath: "k8srolebinding.cluster_role",
+			FieldPath: ".cluster_role",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Namespace"): {
-			FieldPath: "k8srolebinding.namespace",
+			FieldPath: ".namespace",
 			Store:     true,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Role Binding"): {
-			FieldPath: "k8srolebinding.name",
+			FieldPath: ".name",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Role Binding Annotation"): {
-			FieldPath: "k8srolebinding.annotations",
+			FieldPath: ".annotations",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Role Binding ID"): {
-			FieldPath: "k8srolebinding.id",
+			FieldPath: ".id",
 			Store:     false,
 			Hidden:    true,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Role Binding Label"): {
-			FieldPath: "k8srolebinding.labels",
+			FieldPath: ".labels",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Role ID"): {
-			FieldPath: "k8srolebinding.role_id",
+			FieldPath: ".role_id",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Subject"): {
-			FieldPath: "k8srolebinding.subjects.name",
+			FieldPath: ".subjects.name",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 		search.FieldLabel("Subject Kind"): {
-			FieldPath: "k8srolebinding.subjects.kind",
+			FieldPath: ".subjects.kind",
 			Store:     false,
 			Hidden:    false,
 			Category:  v1.SearchCategory_ROLEBINDINGS,
 		},
 	}
 
-	k8SRoleBindingSchema = &walker.Schema{
+	k8sRoleBindingSchema = &walker.Schema{
 		Table:    "role_bindings",
 		Type:     "*storage.K8SRoleBinding",
-		TypeName: "K8SRoleBinding",
+		TypeName: "K8sRoleBinding",
 		Fields: []walker.Field{
 			{
 				Name:       "Id",
@@ -149,6 +149,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Role Binding ID",
+					Enabled:   true,
+				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -159,6 +163,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Role Binding",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Namespace",
@@ -166,6 +174,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterId",
@@ -173,6 +185,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterName",
@@ -180,6 +196,10 @@ var (
 				Type:       "string",
 				SQLType:    "varchar",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "ClusterRole",
@@ -187,6 +207,10 @@ var (
 				Type:       "bool",
 				SQLType:    "bool",
 				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Cluster Role",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Labels",
@@ -194,6 +218,10 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Role Binding Label",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "Annotations",
@@ -201,6 +229,10 @@ var (
 				Type:       "map[string]string",
 				SQLType:    "jsonb",
 				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Role Binding Annotation",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "RoleId",
@@ -208,6 +240,10 @@ var (
 				Type:       "string",
 				SQLType:    "uuid",
 				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Role ID",
+					Enabled:   true,
+				},
 			},
 			{
 				Name:       "serialized",
@@ -272,14 +308,14 @@ var (
 	}
 )
 
-func getK8SRoleBindingSchema() *walker.Schema {
-	// Set up search options if not already done
-	if k8SRoleBindingSchema.OptionsMap == nil {
-		k8SRoleBindingSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ROLEBINDINGS, k8SRoleBindingSearchFields))
+func getK8sRoleBindingSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if k8sRoleBindingSchema.OptionsMap == nil {
+		k8sRoleBindingSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ROLEBINDINGS, k8sRoleBindingSearchFields))
 	}
 	// Set Schema back-reference on all fields
-	for i := range k8SRoleBindingSchema.Fields {
-		k8SRoleBindingSchema.Fields[i].Schema = k8SRoleBindingSchema
+	for i := range k8sRoleBindingSchema.Fields {
+		k8sRoleBindingSchema.Fields[i].Schema = k8sRoleBindingSchema
 	}
 	// Set Schema back-reference on all child schema fields
 	var setChildSchemaReferences func(*walker.Schema)
@@ -291,6 +327,6 @@ func getK8SRoleBindingSchema() *walker.Schema {
 			setChildSchemaReferences(child)
 		}
 	}
-	setChildSchemaReferences(k8SRoleBindingSchema)
-	return k8SRoleBindingSchema
+	setChildSchemaReferences(k8sRoleBindingSchema)
+	return k8sRoleBindingSchema
 }

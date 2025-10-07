@@ -271,7 +271,7 @@ var (
 )
 
 func getPolicySchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if policySchema.OptionsMap == nil {
 		policySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICIES, policySearchFields))
 	}

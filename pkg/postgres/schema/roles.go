@@ -71,7 +71,7 @@ var (
 )
 
 func getRoleSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if roleSchema.OptionsMap == nil {
 		roleSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, roleSearchFields))
 	}

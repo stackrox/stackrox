@@ -176,7 +176,7 @@ var (
 )
 
 func getImageComponentV2Schema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if imageComponentV2Schema.OptionsMap == nil {
 		imageComponentV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_COMPONENTS_V2, imageComponentV2SearchFields))
 	}

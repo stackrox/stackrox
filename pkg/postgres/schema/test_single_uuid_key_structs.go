@@ -157,7 +157,7 @@ var (
 )
 
 func getTestSingleUUIDKeyStructSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if testSingleUUIDKeyStructSchema.OptionsMap == nil {
 		testSingleUUIDKeyStructSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(115), testSingleUUIDKeyStructSearchFields))
 	}

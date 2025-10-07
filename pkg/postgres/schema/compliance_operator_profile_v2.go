@@ -191,7 +191,7 @@ var (
 )
 
 func getComplianceOperatorProfileV2Schema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if complianceOperatorProfileV2Schema.OptionsMap == nil {
 		complianceOperatorProfileV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_PROFILES, complianceOperatorProfileV2SearchFields))
 	}

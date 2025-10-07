@@ -89,7 +89,7 @@ var (
 )
 
 func getNetworkBaselineSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if networkBaselineSchema.OptionsMap == nil {
 		networkBaselineSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_BASELINE, networkBaselineSearchFields))
 	}

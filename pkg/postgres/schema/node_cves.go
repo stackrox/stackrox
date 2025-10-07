@@ -180,7 +180,7 @@ var (
 )
 
 func getNodeCVESchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if nodeCVESchema.OptionsMap == nil {
 		nodeCVESchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NODE_VULNERABILITIES, nodeCVESearchFields))
 	}

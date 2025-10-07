@@ -179,7 +179,7 @@ var (
 )
 
 func getReportConfigurationSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if reportConfigurationSchema.OptionsMap == nil {
 		reportConfigurationSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_REPORT_CONFIGURATIONS, reportConfigurationSearchFields))
 	}

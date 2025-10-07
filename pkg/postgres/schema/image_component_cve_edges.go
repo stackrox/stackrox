@@ -127,7 +127,7 @@ var (
 )
 
 func getComponentCVEEdgeSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if componentCVEEdgeSchema.OptionsMap == nil {
 		componentCVEEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPONENT_VULN_EDGE, componentCVEEdgeSearchFields))
 	}

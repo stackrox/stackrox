@@ -71,7 +71,7 @@ var (
 )
 
 func getComplianceOperatorScanSettingBindingSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if complianceOperatorScanSettingBindingSchema.OptionsMap == nil {
 		complianceOperatorScanSettingBindingSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, complianceOperatorScanSettingBindingSearchFields))
 	}

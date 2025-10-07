@@ -165,7 +165,7 @@ var (
 )
 
 func getReportSnapshotSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if reportSnapshotSchema.OptionsMap == nil {
 		reportSnapshotSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_REPORT_SNAPSHOT, reportSnapshotSearchFields))
 	}

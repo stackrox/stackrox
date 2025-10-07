@@ -90,7 +90,7 @@ var (
 )
 
 func getCloudSourceSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if cloudSourceSchema.OptionsMap == nil {
 		cloudSourceSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLOUD_SOURCES, cloudSourceSearchFields))
 	}

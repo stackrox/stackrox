@@ -109,7 +109,7 @@ var (
 )
 
 func getComplianceOperatorClusterScanConfigStatusSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if complianceOperatorClusterScanConfigStatusSchema.OptionsMap == nil {
 		complianceOperatorClusterScanConfigStatusSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, complianceOperatorClusterScanConfigStatusSearchFields))
 	}

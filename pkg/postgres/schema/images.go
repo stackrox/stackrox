@@ -547,7 +547,7 @@ var (
 )
 
 func getImageSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if imageSchema.OptionsMap == nil {
 		imageSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGES, imageSearchFields))
 	}

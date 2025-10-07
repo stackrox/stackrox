@@ -297,7 +297,7 @@ var (
 )
 
 func getTestStructSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if testStructSchema.OptionsMap == nil {
 		testStructSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(101), testStructSearchFields))
 	}

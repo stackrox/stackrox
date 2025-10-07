@@ -239,7 +239,7 @@ func TestMultiTableQueries(t *testing.T) {
 				"deployments_containers":    Left,
 				"deployments":               Left,
 			},
-			expectedData:           []interface{}{"false", "0"},
+			expectedData:           []interface{}{"false", "OBSERVED"},
 			expectedFlattenedWhere: "((deployments.PlatformComponent = $$ or deployments.PlatformComponent is null) and image_cves_v2.State = $$)",
 			expectedFlattenedJoinTables: map[string]JoinType{
 				"image_cves_v2":          Inner,
@@ -501,7 +501,7 @@ func TestCountQueries(t *testing.T) {
 				inner join image_cves on image_component_cve_edges.ImageCveId = image_cves.Id
 				inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId)
 				where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)`),
-			expectedData: []interface{}{"false", "0"},
+			expectedData: []interface{}{"false", "OBSERVED"},
 			expectedFlattenedStatement: normalizeStatement(`select count(distinct(images.Id)) from images
 				left join deployments_containers on images.Id = deployments_containers.Image_Id
 				left join deployments on deployments_containers.deployments_Id = deployments.Id

@@ -71,7 +71,7 @@ var (
 )
 
 func getServiceIdentitySchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if serviceIdentitySchema.OptionsMap == nil {
 		serviceIdentitySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, serviceIdentitySearchFields))
 	}

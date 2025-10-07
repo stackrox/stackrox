@@ -227,7 +227,7 @@ var (
 )
 
 func getComplianceOperatorReportSnapshotV2Schema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if complianceOperatorReportSnapshotV2Schema.OptionsMap == nil {
 		complianceOperatorReportSnapshotV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT, complianceOperatorReportSnapshotV2SearchFields))
 	}

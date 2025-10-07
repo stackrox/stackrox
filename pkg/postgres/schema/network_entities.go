@@ -97,7 +97,7 @@ var (
 )
 
 func getNetworkEntitySchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if networkEntitySchema.OptionsMap == nil {
 		networkEntitySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_ENTITY, networkEntitySearchFields))
 	}

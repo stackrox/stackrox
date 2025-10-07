@@ -79,7 +79,7 @@ var (
 )
 
 func getSignatureIntegrationSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if signatureIntegrationSchema.OptionsMap == nil {
 		signatureIntegrationSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, signatureIntegrationSearchFields))
 	}

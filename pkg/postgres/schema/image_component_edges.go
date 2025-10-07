@@ -119,7 +119,7 @@ var (
 )
 
 func getImageComponentEdgeSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if imageComponentEdgeSchema.OptionsMap == nil {
 		imageComponentEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_COMPONENT_EDGE, imageComponentEdgeSearchFields))
 	}

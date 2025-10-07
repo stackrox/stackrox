@@ -99,7 +99,7 @@ var (
 )
 
 func getTestParent2Schema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if testParent2Schema.OptionsMap == nil {
 		testParent2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(111), testParent2SearchFields))
 	}

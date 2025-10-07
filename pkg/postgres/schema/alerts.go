@@ -576,7 +576,7 @@ var (
 )
 
 func getAlertSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if alertSchema.OptionsMap == nil {
 		alertSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ALERTS, alertSearchFields))
 	}

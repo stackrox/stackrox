@@ -106,7 +106,7 @@ var (
 )
 
 func getRiskSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if riskSchema.OptionsMap == nil {
 		riskSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_RISKS, riskSearchFields))
 	}

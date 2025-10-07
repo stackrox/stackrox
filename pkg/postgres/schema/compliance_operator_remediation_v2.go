@@ -98,7 +98,7 @@ var (
 )
 
 func getComplianceOperatorRemediationV2Schema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if complianceOperatorRemediationV2Schema.OptionsMap == nil {
 		complianceOperatorRemediationV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_REMEDIATIONS, complianceOperatorRemediationV2SearchFields))
 	}

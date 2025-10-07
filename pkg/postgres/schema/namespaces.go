@@ -135,7 +135,7 @@ var (
 )
 
 func getNamespaceMetadataSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if namespaceMetadataSchema.OptionsMap == nil {
 		namespaceMetadataSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NAMESPACES, namespaceMetadataSearchFields))
 	}

@@ -63,7 +63,7 @@ var (
 )
 
 func getDelegatedRegistryConfigSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if delegatedRegistryConfigSchema.OptionsMap == nil {
 		delegatedRegistryConfigSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, delegatedRegistryConfigSearchFields))
 	}

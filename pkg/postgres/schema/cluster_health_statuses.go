@@ -132,7 +132,7 @@ var (
 )
 
 func getClusterHealthStatusSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if clusterHealthStatusSchema.OptionsMap == nil {
 		clusterHealthStatusSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTER_HEALTH, clusterHealthStatusSearchFields))
 	}

@@ -89,7 +89,7 @@ var (
 )
 
 func getNetworkPolicySchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if networkPolicySchema.OptionsMap == nil {
 		networkPolicySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_POLICIES, networkPolicySearchFields))
 	}

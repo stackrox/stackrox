@@ -235,7 +235,7 @@ var (
 )
 
 func getImageCVEV2Schema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if imageCVEV2Schema.OptionsMap == nil {
 		imageCVEV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_VULNERABILITIES_V2, imageCVEV2SearchFields))
 	}

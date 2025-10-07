@@ -91,7 +91,7 @@ var (
 )
 
 func getTokenMetadataSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if tokenMetadataSchema.OptionsMap == nil {
 		tokenMetadataSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_API_TOKEN, tokenMetadataSearchFields))
 	}

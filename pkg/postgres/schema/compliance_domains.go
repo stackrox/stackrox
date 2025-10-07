@@ -73,7 +73,7 @@ var (
 )
 
 func getComplianceDomainSchema() *walker.Schema {
-	// Set up search options if not already done
+	// Set up search options using pre-computed search fields (no runtime reflection)
 	if complianceDomainSchema.OptionsMap == nil {
 		complianceDomainSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_DOMAIN, complianceDomainSearchFields))
 	}
