@@ -63,7 +63,8 @@ const (
 	// explicitly.
 
 	// WarnLevel log level
-	WarnLevel = zapcore.WarnLevel
+	WarnLevel  = zapcore.WarnLevel
+	DebugLevel = zapcore.DebugLevel
 )
 
 var (
