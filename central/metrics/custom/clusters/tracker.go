@@ -5,7 +5,6 @@ import (
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
-	"github.com/stackrox/rox/generated/storage"
 )
 
 func New(ds clusterDS.DataStore) *tracker.TrackerBase[*finding] {
@@ -24,11 +23,7 @@ func track(ctx context.Context, ds clusterDS.DataStore) tracker.FindingErrorSequ
 		if ds == nil {
 			return
 		}
-		var f finding
 		collector := tracker.NewFindingCollector(yield)
-		collector.Finally(ds.WalkClusters(ctx, func(cluster *storage.Cluster) error {
-			f.Cluster = cluster
-			return collector.Yield(&f)
-		}))
+		collector.Finally(ds.WalkClusters(ctx, collector.Yield))
 	}
 }
