@@ -155,7 +155,9 @@ END
 
 function gather_olm_resources() {
   local -r operator_ns="$1"
+  local -r msg="Gathering OLM resources for troubleshooting..."
 
+  log "${msg}"
   log "Dumping install plans..."
   "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "installplan.operators.coreos.com" || true
   log "Dumping pod descriptions..."
@@ -165,16 +167,16 @@ function gather_olm_resources() {
   log "Dumping jobs..."
   "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "job.batch" || true
   if [[ -n ${CI:-} ]]; then
-    log "Running oc adm must-gather..."
     local -r path="/tmp/k8s-service-logs/olm-must-gather"
+    log "Running oc adm must-gather in ${path} (which will be collected along with other CI artifacts)..."
     mkdir -p "${path}"
-    ( cd "${path}" && run_oc_adm_must_gather > "oc-adm-must-gather-output.txt"; )
+    ( cd "${path}" && run_oc_adm_must_gather >> "oc-adm-must-gather-output.txt"; )
   fi
+  log "Resource collection completed, look before '${msg}' above for the cause of the failure."
 }
 
 function run_oc_adm_must_gather() {
   if ! oc adm must-gather 2>&1; then
     log "Running oc adm must-gather failed, perhaps this is not an OpenShift cluster?"
-    log "The oc failure is never fatal. Look earlier in the log for the root cause of this failure of this run."
   fi
 }
