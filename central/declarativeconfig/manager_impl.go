@@ -2,11 +2,9 @@ package declarativeconfig
 
 import (
 	"context"
-	"maps"
 	"os"
 	"path"
 	"reflect"
-	"slices"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -24,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -238,7 +235,7 @@ func (m *managerImpl) runReconciliation() {
 }
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
-  log.Debugf("Run reconciliation for the next handlers: %d", len(transformedMessagesByHandler))
+	log.Debugf("Run reconciliation for the next handlers: %d", len(transformedMessagesByHandler))
 
 	hasChanges := m.calculateHashAndIndicateChanges(transformedMessagesByHandler)
 
