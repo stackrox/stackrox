@@ -361,7 +361,7 @@ push_operator_image() {
 
     if [[ "$push_context" == "merge-to-master" ]]; then
         docker tag "${registry}/stackrox-operator:${tag}" "${registry}/stackrox-operator:latest-${arch}"
-        _push_operator_image "$registry" "$tag" "$arch"
+        _push_operator_image "$registry" "latest" "$arch"
     fi
 }
 
