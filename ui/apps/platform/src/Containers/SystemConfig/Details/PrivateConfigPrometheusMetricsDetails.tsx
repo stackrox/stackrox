@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-import { PrivateConfig } from 'types/config.proto';
+import { PrivateConfig, PrometheusMetricsCategory } from 'types/config.proto';
 import { PrometheusMetricsCard } from './components/PrometheusMetricsCard';
 
 export type PrivateConfigPrometheusMetricsDetailsProps = {
@@ -10,33 +10,24 @@ export type PrivateConfigPrometheusMetricsDetailsProps = {
 const PrivateConfigPrometheusMetricsDetails = ({
     privateConfig,
 }: PrivateConfigPrometheusMetricsDetailsProps): ReactElement[] => {
-    const imageVulnerabilitiesCfg = privateConfig?.metrics?.imageVulnerabilities;
-    const nodeVulnerabilitiesCfg = privateConfig?.metrics?.nodeVulnerabilities;
-    const policyViolationsCfg = privateConfig?.metrics?.policyViolations;
+    const categoryTitles: Record<PrometheusMetricsCategory, string> = {
+        imageVulnerabilities: 'Image vulnerabilities',
+        nodeVulnerabilities: 'Node vulnerabilities',
+        policyViolations: 'Policy violations',
+    };
 
-    return [
-        <PrometheusMetricsCard
-            category="imageVulnerabilities"
-            key="imageVulnerabilities"
-            period={imageVulnerabilitiesCfg?.gatheringPeriodMinutes || 0}
-            descriptors={imageVulnerabilitiesCfg?.descriptors}
-            title="Image vulnerabilities"
-        />,
-        <PrometheusMetricsCard
-            category="nodeVulnerabilities"
-            key="nodeVulnerabilities"
-            period={nodeVulnerabilitiesCfg?.gatheringPeriodMinutes || 0}
-            descriptors={nodeVulnerabilitiesCfg?.descriptors}
-            title="Node vulnerabilities"
-        />,
-        <PrometheusMetricsCard
-            category="policyViolations"
-            key="policyViolations"
-            period={policyViolationsCfg?.gatheringPeriodMinutes || 0}
-            descriptors={policyViolationsCfg?.descriptors}
-            title="Policy violations"
-        />,
-    ];
+    return Object.entries(categoryTitles).map(([category, title]) => {
+        const config = privateConfig?.metrics?.[category];
+        return (
+            <PrometheusMetricsCard
+                category={category as PrometheusMetricsCategory}
+                key={category}
+                period={config?.gatheringPeriodMinutes || 0}
+                descriptors={config?.descriptors}
+                title={title}
+            />
+        );
+    });
 };
 
 export default PrivateConfigPrometheusMetricsDetails;
