@@ -97,6 +97,7 @@ type localSensorConfig struct {
 	PprofServer        bool
 	CentralEndpoint    string
 	FakeCollector      bool
+	Namespace          string
 }
 
 const (
@@ -166,6 +167,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		PprofServer:        false,
 		CentralEndpoint:    "",
 		FakeCollector:      false,
+		Namespace:          "stackrox",
 	}
 	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
 	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
@@ -184,6 +186,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
 	flag.BoolVar(&sensorConfig.PprofServer, "with-pprof-server", sensorConfig.PprofServer, "enables the pprof server on port :6060")
 	flag.StringVar(&sensorConfig.CentralEndpoint, "connect-central", sensorConfig.CentralEndpoint, "connects to a Central instance rather than a fake Central")
+	flag.StringVar(&sensorConfig.Namespace, "namespace", sensorConfig.Namespace, "namespace where sensor is deployed (used for certificate generation when connecting to real Central)")
 	flag.BoolVar(&sensorConfig.FakeCollector, "with-fake-collector", sensorConfig.FakeCollector, "enables sensor to allow connections from a fake collector")
 	flag.Parse()
 
@@ -325,6 +328,14 @@ func main() {
 		WithLocalSensor(true).
 		WithWorkloadManager(workloadManager)
 
+	// When connecting to real Central, override deployment identification with explicit namespace
+	// to avoid panic during certificate generation (namespace is required but cannot be detected
+	// when running outside a Kubernetes pod without service account files)
+	if !isFakeCentral {
+		deploymentID := createDeploymentIdentificationWithNamespace(localConfig.Namespace)
+		sensorConfig = sensorConfig.WithDeploymentIdentification(deploymentID)
+	}
+
 	if localConfig.FakeCollector {
 		acceptAnyFn := func(ctx context.Context, _ string) (context.Context, error) {
 			return ctx, nil
@@ -418,6 +429,17 @@ func main() {
 		dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput, localConfig.OutputFormat)
 
 		spyCentral.KillSwitch.Signal()
+	}
+}
+
+// createDeploymentIdentificationWithNamespace creates a minimal DeploymentIdentification
+// for local-sensor connecting to real Central. Only AppNamespace is required for certificate
+// generation; other fields (namespace IDs, service account ID) can remain empty for local development.
+func createDeploymentIdentificationWithNamespace(namespace string) *storage.SensorDeploymentIdentification {
+	return &storage.SensorDeploymentIdentification{
+		AppNamespace: namespace,
+		// SystemNamespaceId, DefaultNamespaceId, AppNamespaceId, AppServiceaccountId
+		// are not required for certificate generation and can be empty for local-sensor
 	}
 }
 
