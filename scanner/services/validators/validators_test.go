@@ -28,17 +28,32 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 	// Add stuff to the properties of contents.
 	addPackage := func(p *v4.Package) opts {
 		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
-			r.Contents.Packages = append(r.Contents.Packages, p)
+			r.Contents.Packages[p.GetId()] = p
+		})
+	}
+	addPackageDEPRECATED := func(p *v4.Package) opts {
+		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
+			r.Contents.PackagesDEPRECATED = append(r.Contents.PackagesDEPRECATED, p)
 		})
 	}
 	addDistribution := func(d *v4.Distribution) opts {
 		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
-			r.Contents.Distributions = append(r.Contents.Distributions, d)
+			r.Contents.Distributions[d.GetId()] = d
+		})
+	}
+	addDistributionDEPRECATED := func(d *v4.Distribution) opts {
+		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
+			r.Contents.DistributionsDEPRECATED = append(r.Contents.DistributionsDEPRECATED, d)
 		})
 	}
 	addRepository := func(d *v4.Repository) opts {
 		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
-			r.Contents.Repositories = append(r.Contents.Repositories, d)
+			r.Contents.Repositories[d.GetId()] = d
+		})
+	}
+	addRepositoryDEPRECATED := func(d *v4.Repository) opts {
+		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
+			r.Contents.RepositoriesDEPRECATED = append(r.Contents.RepositoriesDEPRECATED, d)
 		})
 	}
 	addEnvironment := func(pkgId string, d *v4.Environment) opts {
@@ -50,6 +65,19 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			if !ok {
 				envs = &v4.Environment_List{}
 				r.Contents.Environments[pkgId] = envs
+			}
+			envs.Environments = append(envs.Environments, d)
+		})
+	}
+	addEnvironmentDEPRECATED := func(pkgId string, d *v4.Environment) opts {
+		return withContent(func(r *v4.GetVulnerabilitiesRequest) {
+			if r.Contents.EnvironmentsDEPRECATED == nil {
+				r.Contents.EnvironmentsDEPRECATED = make(map[string]*v4.Environment_List)
+			}
+			envs, ok := r.Contents.EnvironmentsDEPRECATED[pkgId]
+			if !ok {
+				envs = &v4.Environment_List{}
+				r.Contents.EnvironmentsDEPRECATED[pkgId] = envs
 			}
 			envs.Environments = append(envs.Environments, d)
 		})
@@ -71,35 +99,47 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			argOpts: []opts{nilContent},
 		},
 		"when one of the packages is empty": {
-			wantErr: "Contents.Packages element #2 is empty",
+			wantErr: "Contents.Packages element \"\" is empty",
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addPackage(nil),
+				addPackageDEPRECATED(&v4.Package{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addPackageDEPRECATED(nil),
 			},
 		},
 		"when one of the packages doesn't have id": {
-			wantErr: `Contents.Packages element #2: Id is empty`,
+			wantErr: `Contents.Packages element "": ID is empty`,
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addPackage(&v4.Package{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addPackageDEPRECATED(&v4.Package{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addPackageDEPRECATED(&v4.Package{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when one of the packages has an invalid CPE": {
-			wantErr: `Contents.Packages element #2 (id: "bar"): invalid CPE`,
+			wantErr: `Contents.Packages element "bar": invalid CPE: cpe: string does not appear to be a bound WFN: "something weird"`,
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addPackage(&v4.Package{Id: "bar", Cpe: "something weird"}),
+				addPackageDEPRECATED(&v4.Package{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addPackageDEPRECATED(&v4.Package{Id: "bar", Cpe: "something weird"}),
 			},
 		},
 		"when a package does not have a source package": {
 			argOpts: []opts{
 				addPackage(&v4.Package{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addPackageDEPRECATED(&v4.Package{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when a package has a source package with another source package": {
-			wantErr: `Contents.Packages element #1 (id: "foo"): package ID="foo" has a source with a source`,
+			wantErr: `Contents.Packages element "foo": package ID="foo" has a source with a source`,
 			argOpts: []opts{
 				addPackage(&v4.Package{
+					Id:     "foo",
+					Cpe:    "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+					Source: &v4.Package{Id: "foobar", Source: &v4.Package{}},
+				}),
+				addPackageDEPRECATED(&v4.Package{
 					Id:     "foo",
 					Cpe:    "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 					Source: &v4.Package{Id: "foobar", Source: &v4.Package{}},
@@ -107,45 +147,57 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			},
 		},
 		"when one of the distributions is empty": {
-			wantErr: "Contents.Distributions element #2 is empty",
+			wantErr: "Contents.Distributions element \"\" is empty",
 			argOpts: []opts{
 				addDistribution(&v4.Distribution{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addDistribution(nil),
+				addDistributionDEPRECATED(&v4.Distribution{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addDistributionDEPRECATED(nil),
 			},
 		},
 		"when one of the distributions doesn't have id": {
-			wantErr: "Contents.Distributions element #2: Id is empty",
+			wantErr: "Contents.Distributions element \"\": ID is empty",
 			argOpts: []opts{
 				addDistribution(&v4.Distribution{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addDistribution(&v4.Distribution{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addDistributionDEPRECATED(&v4.Distribution{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addDistributionDEPRECATED(&v4.Distribution{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when one of the distributions has an invalid CPE": {
-			wantErr: `Contents.Distributions element #2 (id: "bar"): invalid CPE`,
+			wantErr: `Contents.Distributions element "bar": invalid CPE: cpe: string does not appear to be a bound WFN: "something weird"`,
 			argOpts: []opts{
 				addDistribution(&v4.Distribution{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addDistribution(&v4.Distribution{Id: "bar", Cpe: "something weird"}),
+				addDistributionDEPRECATED(&v4.Distribution{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addDistributionDEPRECATED(&v4.Distribution{Id: "bar", Cpe: "something weird"}),
 			},
 		},
 		"when one of the repositories is empty": {
-			wantErr: "Contents.Repositories element #2 is empty",
+			wantErr: "Contents.Repositories element \"\" is empty",
 			argOpts: []opts{
 				addRepository(&v4.Repository{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addRepository(nil),
+				addRepositoryDEPRECATED(&v4.Repository{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addRepositoryDEPRECATED(nil),
 			},
 		},
 		"when one of the repositories doesn't have an id": {
-			wantErr: "Contents.Repositories element #2: Id is empty",
+			wantErr: "Contents.Repositories element \"\": ID is empty",
 			argOpts: []opts{
 				addRepository(&v4.Repository{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addRepository(&v4.Repository{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addRepositoryDEPRECATED(&v4.Repository{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addRepositoryDEPRECATED(&v4.Repository{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
 		"when one of the repositories has an invalid CPE": {
-			wantErr: `Contents.Repositories element #2 (id: "bar"): invalid CPE`,
+			wantErr: `Contents.Repositories element "bar": invalid CPE: cpe: string does not appear to be a bound WFN: "something weird"`,
 			argOpts: []opts{
 				addRepository(&v4.Repository{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 				addRepository(&v4.Repository{Id: "bar", Cpe: "something weird"}),
+				addRepositoryDEPRECATED(&v4.Repository{Id: "foo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
+				addRepositoryDEPRECATED(&v4.Repository{Id: "bar", Cpe: "something weird"}),
 			},
 		},
 		"when one of the envs reference an invalid valid layer digest": {
@@ -154,6 +206,12 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 					IntroducedIn: "sha256:0f2e5032c45d68a9585f035970708802bbc7e2688e1552a4c3d8a7c38c3090c3",
 				}),
 				addEnvironment("bar", &v4.Environment{
+					IntroducedIn: "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
+				}),
+				addEnvironmentDEPRECATED("foo", &v4.Environment{
+					IntroducedIn: "sha256:0f2e5032c45d68a9585f035970708802bbc7e2688e1552a4c3d8a7c38c3090c3",
+				}),
+				addEnvironmentDEPRECATED("bar", &v4.Environment{
 					IntroducedIn: "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
 				}),
 			},
@@ -166,6 +224,12 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 				addEnvironment("bar", &v4.Environment{
 					IntroducedIn: "unexpected layer digest",
 				}),
+				addEnvironmentDEPRECATED("foo", &v4.Environment{
+					IntroducedIn: "sha256:0f2e5032c45d68a9585f035970708802bbc7e2688e1552a4c3d8a7c38c3090c3",
+				}),
+				addEnvironmentDEPRECATED("bar", &v4.Environment{
+					IntroducedIn: "unexpected layer digest",
+				}),
 			},
 		},
 	}
@@ -176,9 +240,9 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 				tt.arg = &v4.GetVulnerabilitiesRequest{
 					HashId: "/v4/containerimage/foobar",
 					Contents: &v4.Contents{
-						Packages:      []*v4.Package{},
-						Distributions: []*v4.Distribution{},
-						Repositories:  []*v4.Repository{},
+						Packages:      map[string]*v4.Package{},
+						Distributions: map[string]*v4.Distribution{},
+						Repositories:  map[string]*v4.Repository{},
 						Environments:  map[string]*v4.Environment_List{},
 					},
 				}
@@ -230,12 +294,12 @@ func Test_validateGetSBOMRequest(t *testing.T) {
 				Name: "name",
 				Uri:  "uri",
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{},
+					Packages: map[string]*v4.Package{
+						"": {},
 					},
 				},
 			},
-			wantErr: "Id is empty",
+			wantErr: "Contents.Packages element \"\": ID is empty",
 		},
 		"no error on valid req": {
 			req: &v4.GetSBOMRequest{

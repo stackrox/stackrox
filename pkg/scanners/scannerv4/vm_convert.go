@@ -41,9 +41,15 @@ func toVirtualMachineScanNotes(notes []v4.VulnerabilityReport_Note) []storage.Vi
 
 func toVirtualMachineComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedVirtualMachineScanComponent {
 	packages := r.GetContents().GetPackages()
+	if len(packages) == 0 {
+		packages = make(map[string]*v4.Package, len(r.GetContents().GetPackagesDEPRECATED()))
+		for _, pkg := range r.GetContents().GetPackagesDEPRECATED() {
+			packages[pkg.GetId()] = pkg
+		}
+	}
 	result := make([]*storage.EmbeddedVirtualMachineScanComponent, 0, len(packages))
-	for _, pkg := range packages {
-		vulnerabilityIDs := r.GetPackageVulnerabilities()[pkg.GetId()].GetValues()
+	for id, pkg := range packages {
+		vulnerabilityIDs := r.GetPackageVulnerabilities()[id].GetValues()
 		vulnerabilitiesByID := r.GetVulnerabilities()
 		component := &storage.EmbeddedVirtualMachineScanComponent{
 			Name:    pkg.GetName(),
