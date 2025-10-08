@@ -293,7 +293,7 @@ export function PrometheusMetricsCard({
                         </>
                     ) : (
                         <EmptyState variant="xs">
-                            <EmptyStateHeader>No metrics has been configured</EmptyStateHeader>
+                            <EmptyStateHeader>No metrics configured</EmptyStateHeader>
                             <EmptyStateBody>
                                 Edit the configuration, or call <code>/v1/config</code> API to add
                                 custom metrics.

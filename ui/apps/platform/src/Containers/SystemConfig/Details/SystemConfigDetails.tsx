@@ -87,9 +87,9 @@ function SystemConfigDetails({
                     Prometheus metrics configuration
                 </Title>
                 <Text>
-                    The Prometheus metrics are exposed on the API endpoint, at the{' '}
-                    <code>/metrics</code> path and require permissions to view Administration
-                    resources.
+                    The following Prometheus metrics are exposed on the API endpoint at the{' '}
+                    <code>/metrics</code> path. Scrape requests require permissions to view
+                    Administration resources and are subject for the scoped access control.
                 </Text>
                 <Grid hasGutter>
                     <PrivateConfigPrometheusMetricsDetails
