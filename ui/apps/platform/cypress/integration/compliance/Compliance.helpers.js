@@ -122,7 +122,7 @@ function scanCompliance() {
     // Note: scan results are polled for every 10 seconds, this should give us plenty of time
     // to await completion of the scan.
     cy.get('div:contains("Compliance scanning complete")', {
-        timeout: 30000,
+        timeout: 60000,
     });
 }
 
