@@ -10,6 +10,7 @@ import type {
 } from 'Containers/Vulnerabilities/types';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import usePermissions from 'hooks/usePermissions';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
@@ -17,6 +18,9 @@ import type { VulnerabilityState } from 'types/cve.proto';
 import type { SearchFilter } from 'types/search';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { getHasSearchApplied } from 'utils/searchUtils';
+
+import NaturalLanguageSearchInput from 'Components/NaturalLanguageSearch/NaturalLanguageSearchInput';
+import type { ParseResult, ParseError } from 'Components/NaturalLanguageSearch/types';
 
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
@@ -99,6 +103,9 @@ function VulnerabilitiesOverview({
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isAIPoweredSearchEnabled = isFeatureFlagEnabled('ROX_AI_POWERED_SEARCH');
+
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
@@ -123,6 +130,25 @@ function VulnerabilitiesOverview({
         Image: data?.imageCount ?? 0,
         Deployment: data?.deploymentCount ?? 0,
     };
+
+    // Handle AI-generated filter
+    function handleFilterGenerated(result: ParseResult) {
+        setSearchFilter(result.searchFilter);
+        pagination.setPage(1);
+        // Track AI search usage - note: we're using a simple payload since
+        // AI search generates multiple filters at once
+        trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, {
+            action: 'ADD',
+            category: 'AI Search',
+            value: result.originalQuery,
+        });
+    }
+
+    // Handle AI search errors
+    function handleAISearchError(error: ParseError) {
+        // For now, just log the error. In future iterations, we could show a toast notification
+        console.error('AI search error:', error);
+    }
 
     const filterToolbar = (
         <AdvancedFiltersToolbar
@@ -166,6 +192,15 @@ function VulnerabilitiesOverview({
                 >
                     {additionalHeaderItems}
                 </Flex>
+            )}
+            {isAIPoweredSearchEnabled && (
+                <div className="pf-v5-u-px-md pf-v5-u-pb-md">
+                    <NaturalLanguageSearchInput
+                        searchFilterConfig={searchFilterConfig}
+                        onFilterGenerated={handleFilterGenerated}
+                        onError={handleAISearchError}
+                    />
+                </div>
             )}
             {activeEntityTabKey === 'CVE' && (
                 <CVEsTableContainer
