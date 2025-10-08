@@ -41,7 +41,7 @@ type OllamaGenerateResponse = {
 const DEFAULT_CONFIG = {
     url: 'http://localhost:11434',
     model: 'gemma3:4b',
-    timeout: 10000, // 10 seconds
+    timeout: 30000, // 30 seconds - gemma3:4b typically takes 10-24s
 };
 
 /**

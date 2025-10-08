@@ -56,8 +56,10 @@ function NaturalLanguageSearchInput({
         setIsLoading(true);
 
         try {
-            // Create AI provider and parser service
-            const provider = createOllamaProvider();
+            // Create AI provider and parser service with extended timeout for slower models
+            const provider = createOllamaProvider({
+                timeout: 30000, // 30 seconds - gemma3:4b typically takes 10-24s
+            });
             const parserService = createAISearchParserService({ provider });
 
             // Parse the natural language query
