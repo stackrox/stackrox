@@ -28,6 +28,7 @@ pkg/search/**/*                     @stackrox/core-workflows
 */declarativeconfig/**/*          @stackrox/sensor-ecosystem
 */discoveredclusters/**/          @stackrox/sensor-ecosystem
 */signatureintegration/**/*       @stackrox/sensor-ecosystem
+compliance/virtualmachines/**/*   @stackrox/sensor-ecosystem
 pkg/features/**/*                 @stackrox/sensor-ecosystem
 pkg/images/defaults/**/*          @stackrox/sensor-ecosystem
 pkg/sac/**/*                      @stackrox/sensor-ecosystem
