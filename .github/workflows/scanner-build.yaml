@@ -1,6 +1,12 @@
 name: Scanner build and push images
 
 on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Commit SHA to build'
+        required: true
+        type: string
   workflow_call:
   push:
     tags:
@@ -28,7 +34,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v5
       with:
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - name: Define the matrix for build jobs
       id: define-scanner-job-matrix
