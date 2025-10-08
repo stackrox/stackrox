@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Text, TextContent, TextVariants } from '@patternfly/react-core';
 
 type FlowsTableHeaderTextProps = {

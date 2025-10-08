@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Divider,
     Flex,
@@ -19,8 +20,8 @@ import {
     getNetworkFlows,
     getNumFlows,
 } from '../utils/flowUtils';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import type { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import AdvancedFlowsFilter, {
     defaultAdvancedFlowsFilters,

@@ -13,7 +13,8 @@ import {
 import useTimeout from 'hooks/useTimeout';
 import { getHasDuplicateCIDRNames, getHasDuplicateCIDRAddresses } from './cidrFormUtils';
 import DefaultCIDRToggle from './DefaultCIDRToggle';
-import CIDRForm, { emptyCIDRBlockRow, CIDRBlockEntity, CIDRBlockEntities } from './CIDRForm';
+import CIDRForm, { emptyCIDRBlockRow } from './CIDRForm';
+import type { CIDRBlockEntity, CIDRBlockEntities } from './CIDRForm';
 
 const validationSchema = Yup.object().shape({
     entities: Yup.array().of(

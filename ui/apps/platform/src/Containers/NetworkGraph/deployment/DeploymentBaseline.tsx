@@ -20,9 +20,9 @@ import { HelpIcon } from '@patternfly/react-icons';
 
 import download from 'utils/download';
 import usePermissions from 'hooks/usePermissions';
-import { Deployment } from 'types/deployment.proto';
-import { NetworkPolicyModification } from 'types/networkPolicy.proto';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import type { Deployment } from 'types/deployment.proto';
+import type { NetworkPolicyModification } from 'types/networkPolicy.proto';
+import type { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { filterNetworkFlows, getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
 
 import AdvancedFlowsFilter, {
@@ -33,7 +33,7 @@ import FlowsTable from '../common/FlowsTable';
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 import FlowsBulkActions from '../common/FlowsBulkActions';
 import useFetchNetworkBaselines from '../api/useFetchNetworkBaselines';
-import { Flow } from '../types/flow.type';
+import type { Flow } from '../types/flow.type';
 import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
 import useToggleAlertingOnBaselineViolation from '../api/useToggleAlertingOnBaselineViolation';
 import useFetchBaselineNetworkPolicy from '../api/useFetchBaselineNetworkPolicy';

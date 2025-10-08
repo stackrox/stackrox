@@ -768,7 +768,6 @@ module.exports = [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/MainPage/**',
             'src/Containers/MitreAttackVectors/**',
-            'src/Containers/NetworkGraph/**',
             'src/Containers/Policies/**',
             'src/Containers/PolicyCategories/**',
             'src/Containers/PolicyManagement/**',

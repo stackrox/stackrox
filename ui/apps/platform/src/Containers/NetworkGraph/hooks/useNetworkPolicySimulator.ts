@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import * as networkService from 'services/NetworkService';
 import { ensureExhaustive } from 'utils/type.utils';
-import { NetworkPolicyModification } from 'types/networkPolicy.proto';
+import type { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useDeepCompareEffect from 'use-deep-compare-effect';
-import { Simulation } from '../utils/getSimulation';
+import type { Simulation } from '../utils/getSimulation';
 import { getSearchFilterFromScopeHierarchy } from '../utils/simulatorUtils';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type NetworkPolicySimulator =
     | {
