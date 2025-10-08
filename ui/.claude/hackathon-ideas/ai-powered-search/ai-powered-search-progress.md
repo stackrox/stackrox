@@ -10,14 +10,14 @@
 
 | Phase | Status | Completion |
 |-------|--------|------------|
-| Phase 1: Foundation & Setup | 🟡 In Progress | 53% (8/15) |
+| Phase 1: Foundation & Setup | 🟡 In Progress | 60% (9/15) |
 | Phase 2: AI Provider Integration | 🟡 In Progress | 28% (5/18) |
 | Phase 3: Core Search Parsing | ✅ Complete | 100% (21/21) |
 | Phase 4: UI Components | 🟡 In Progress | 38% (6/16) |
-| Phase 5: Integration & Testing | ⬜ Not Started | 0% |
+| Phase 5: Integration & Testing | 🟡 In Progress | 43% (6/14) |
 | Phase 6: Polish & Demo | ⬜ Not Started | 0% |
 
-**Overall Progress:** 40/87 tasks complete (46%)
+**Overall Progress:** 47/87 tasks complete (54%)
 
 ---
 
@@ -39,9 +39,9 @@
   - `ROX_AI_SEARCH_MAX_QUERY_LENGTH=500`
   - `ROX_AI_SEARCH_CONFIDENCE_THRESHOLD=0.7`
 
-### Feature Flag Setup
-- [ ] Add `ROX_AI_POWERED_SEARCH` to `apps/platform/src/types/featureFlag.ts`
-- [ ] Add feature flag check utility/hook if needed
+### Feature Flag Setup ✅ COMPLETE
+- [x] Add `ROX_AI_POWERED_SEARCH` to `apps/platform/src/types/featureFlag.ts`
+- [ ] Add feature flag check utility/hook if needed (using useFeatureFlags hook)
 - [ ] Document feature flag usage in code comments
 
 ### Project Structure
@@ -189,15 +189,15 @@
 
 **Goal:** Integrate the NaturalLanguageSearchInput into WorkloadCvesOverviewPage, test end-to-end flows, and refine based on results.
 
-**Status:** ⬜ Not Started | **Progress:** 0/14
+**Status:** 🟡 In Progress | **Progress:** 6/14
 
-### WorkloadCvesOverviewPage Integration
-- [ ] Find WorkloadCvesOverviewPage component file
-- [ ] Identify AdvancedFiltersToolbar usage
-- [ ] Add feature flag check for `ROX_AI_POWERED_SEARCH`
-- [ ] Import NaturalLanguageSearchInput component
-- [ ] Pass `searchFilterConfig` prop
-- [ ] Implement `onFilterGenerated` callback to update URL search params
+### WorkloadCvesOverviewPage Integration ✅ COMPLETE
+- [x] Find WorkloadCvesOverviewPage component file
+- [x] Identify AdvancedFiltersToolbar usage
+- [x] Add feature flag check for `ROX_AI_POWERED_SEARCH`
+- [x] Import NaturalLanguageSearchInput component
+- [x] Pass `searchFilterConfig` prop
+- [x] Implement `onFilterGenerated` callback to update URL search params
 - [ ] Test that existing filters still work
 
 ### End-to-End Testing
@@ -246,7 +246,7 @@
 
 For fastest path to a working demo, prioritize these tasks in order:
 
-**Critical Path Total:** 34 tasks (achievable in 1 day) | **Progress:** 26/34
+**Critical Path Total:** 34 tasks (achievable in 1 day) | **Progress:** 32/34
 
 ### 1. Setup Ollama (3 tasks) ✅ COMPLETE
 - [x] Install Ollama locally (`brew install ollama` or equivalent)
@@ -284,13 +284,13 @@ For fastest path to a working demo, prioritize these tasks in order:
 - [x] Add Enter key handler to trigger search
 - [x] Integrate `parseNaturalLanguageQuery()` on search
 
-### 6. Integration (7 tasks)
-- [ ] Find WorkloadCvesOverviewPage component file
-- [ ] Identify AdvancedFiltersToolbar usage
-- [ ] Add feature flag check for `ROX_AI_POWERED_SEARCH`
-- [ ] Import NaturalLanguageSearchInput component
-- [ ] Pass `searchFilterConfig` prop
-- [ ] Implement `onFilterGenerated` callback to update URL search params
+### 6. Integration (7 tasks) 🟡 In Progress (6/7)
+- [x] Find WorkloadCvesOverviewPage component file
+- [x] Identify AdvancedFiltersToolbar usage
+- [x] Add feature flag check for `ROX_AI_POWERED_SEARCH`
+- [x] Import NaturalLanguageSearchInput component
+- [x] Pass `searchFilterConfig` prop
+- [x] Implement `onFilterGenerated` callback to update URL search params
 - [ ] Test simple query: "critical CVEs" → verify SEVERITY filter applied
 
 ### 7. Demo Prep (1 task)
@@ -361,6 +361,18 @@ For fastest path to a working demo, prioritize these tasks in order:
 - ✅ Component Props (`Components/NaturalLanguageSearch/types.ts`):
   - Added `searchFilterConfig` prop requirement
   - Full TypeScript type definitions for component API
+
+#### Integration (Phase 5 - In Progress)
+- ✅ Feature Flag Setup:
+  - Added `ROX_AI_POWERED_SEARCH` to feature flag types
+  - Integrated with `useFeatureFlags` hook
+- ✅ WorkloadCvesOverviewPage Integration (`Containers/Vulnerabilities/WorkloadCves/Overview/VulnerabilitiesOverview.tsx`):
+  - Imported NaturalLanguageSearchInput component
+  - Added feature flag conditional rendering
+  - Implemented `handleFilterGenerated` callback to update search filters
+  - Implemented `handleAISearchError` callback for error handling
+  - Integrated with analytics tracking
+  - Component renders above the entity tabs when feature flag is enabled
 
 ---
 
