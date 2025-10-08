@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 import startCase from 'lodash/startCase';
@@ -15,8 +16,8 @@ import {
 import { resourceTypes } from 'constants/entityTypes';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { violationsBasePath } from 'routePaths';
-import { ListAlert } from 'types/alert.proto';
-import { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
+import type { ListAlert } from 'types/alert.proto';
+import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import { getDateTime } from 'utils/dateUtils';
 
 type EntityTableCellProps = {
