@@ -40,9 +40,8 @@ const predefinedMetrics: Record<
     Record<string, PrometheusMetricsLabels>
 > = {
     imageVulnerabilities: {
-        namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
-        registry_severity: {
-            labels: ['Cluster', 'Namespace', 'ImageRegistry', 'Severity'],
+        namespace_severity: {
+            labels: ['Cluster', 'Namespace', 'IsPlatformWorkload', 'IsFixable', 'Severity'],
         },
         deployment_severity: {
             labels: [
@@ -54,30 +53,34 @@ const predefinedMetrics: Record<
                 'Severity',
             ],
         },
-    },
-    policyViolations: {
-        namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
-        action: {
-            labels: ['Cluster', 'Namespace', 'IsPlatformComponent', 'State', 'Severity', 'Action'],
-        },
-        stage_severity: {
-            labels: [
-                'Cluster',
-                'Namespace',
-                'IsPlatformComponent',
-                'Categories',
-                'Stage',
-                'State',
-                'Severity',
-            ],
+        cve_severity: {
+            labels: ['Cluster', 'CVE', 'IsPlatformWorkload', 'IsFixable', 'Severity'],
         },
     },
     nodeVulnerabilities: {
         node_severity: {
-            labels: ['Cluster', 'Node', 'Severity'],
+            labels: ['Cluster', 'Node', 'IsFixable', 'Severity'],
         },
         component_severity: {
-            labels: ['Cluster', 'Node', 'Component', 'IsFixable', 'IsSnoozed', 'Severity'],
+            labels: ['Cluster', 'Node', 'Component', 'IsFixable', 'Severity'],
+        },
+        cve_severity: {
+            labels: ['Cluster', 'CVE', 'IsFixable', 'Severity'],
+        },
+    },
+    policyViolations: {
+        namespace_severity: {
+            labels: ['Cluster', 'Namespace', 'IsPlatformComponent', 'Action', 'Severity'],
+        },
+        deployment_severity: {
+            labels: [
+                'Cluster',
+                'Namespace',
+                'Deployment',
+                'IsPlatformComponent',
+                'Action',
+                'Severity',
+            ],
         },
     },
 };
