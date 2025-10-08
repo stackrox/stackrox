@@ -129,6 +129,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		)
 
 		tracker.Gather(ctx)
+		tracker.cleanupWG.Wait()
 		assert.ElementsMatch(t, cfg0.toAdd, registered)
 		assert.Empty(t, unregistered)
 		assert.ElementsMatch(t, cfg0.toAdd, slices.Compact(trackedMetricNames))
@@ -150,6 +151,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 
 		// Less than period since last Gather, gathering ignored:
 		tracker.Gather(ctx)
+		tracker.cleanupWG.Wait()
 		assert.Empty(t, trackedMetricNames)
 
 		{ // Reset lastGather
@@ -163,6 +165,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			g.running.Store(false)
 		}
 		tracker.Gather(ctx)
+		tracker.cleanupWG.Wait()
 
 		assert.ElementsMatch(t, slices.Compact(trackedMetricNames), metricNames[1:])
 
@@ -336,8 +339,9 @@ func TestTrackerBase_getGatherer(t *testing.T) {
 	g.running.Store(false)
 	_, ok := tracker.gatherers.Load("Admin")
 	assert.True(t, ok)
-	// This call should delete the "Admin" gatherer:
 	tracker.getGatherer("Donkey", cfg).running.Store(false)
+	// This call should delete the "Admin" gatherer:
+	tracker.cleanupInactiveGatherers()
 	tracker.cleanupWG.Wait()
 	_, ok = tracker.gatherers.Load("Admin")
 	assert.False(t, ok)
