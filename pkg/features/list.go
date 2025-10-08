@@ -140,7 +140,7 @@ var (
 	// CISAKEV enables support for CISA Known Exploited Vulnerabilities (KEV) data.
 	//
 	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
-	CISAKEV = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV", enabled)
+	CISAKEV = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV")
 )
 
 // The following feature flags are related to Scanner V4.
