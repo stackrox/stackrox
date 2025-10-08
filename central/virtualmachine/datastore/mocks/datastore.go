@@ -149,3 +149,17 @@ func (mr *MockDataStoreMockRecorder) UpsertVirtualMachine(ctx, virtualMachine an
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertVirtualMachine", reflect.TypeOf((*MockDataStore)(nil).UpsertVirtualMachine), ctx, virtualMachine)
 }
+
+// Walk mocks base method.
+func (m *MockDataStore) Walk(ctx context.Context, fn func(*storage.VirtualMachine) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Walk indicates an expected call of Walk.
+func (mr *MockDataStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockDataStore)(nil).Walk), ctx, fn)
+}
