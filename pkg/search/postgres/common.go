@@ -1172,6 +1172,11 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 		return nil, err
 	}
 
+	// The query that was passed did not make sense given the context of the query, so we return nothing
+	if preparedQuery == nil {
+		return nil, nil
+	}
+
 	queryStr := preparedQuery.AsSQL()
 
 	tx, err := db.Begin(ctx)
