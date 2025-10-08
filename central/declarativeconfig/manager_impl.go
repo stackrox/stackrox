@@ -2,11 +2,9 @@ package declarativeconfig
 
 import (
 	"context"
-	"maps"
 	"os"
 	"path"
 	"reflect"
-	"slices"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -237,7 +235,7 @@ func (m *managerImpl) runReconciliation() {
 }
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
-	log.Debugf("Run reconciliation for the next handlers: %v", slices.Collect(maps.Keys(transformedMessagesByHandler)))
+	log.Debugf("Run reconciliation for the next handlers: %d", len(transformedMessagesByHandler))
 
 	hasChanges := m.calculateHashAndIndicateChanges(transformedMessagesByHandler)
 

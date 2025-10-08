@@ -12,6 +12,12 @@ import { SearchFilter } from 'types/search';
 import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 
 import { DefaultFilters } from '../types';
+import {
+    cveStatusClusterFixableDescriptor,
+    cveStatusFixableDescriptor,
+    cveSeverityFilterDescriptor,
+    cveSnoozedDescriptor,
+} from '../filterChipDescriptor';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 
@@ -65,33 +71,24 @@ function AdvancedFiltersToolbar({
     additionalContextFilter,
     children,
 }: AdvancedFiltersToolbarProps) {
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig)
-        .concat({
-            displayName: 'CVE snoozed',
-            searchFilterName: 'CVE Snoozed',
-        })
-        .concat(
-            includeCveSeverityFilters
-                ? makeDefaultFilterDescriptor(defaultFilters, {
-                      displayName: 'CVE severity',
-                      searchFilterName: 'SEVERITY',
-                  })
-                : []
-        )
-        .concat(
-            includeCveStatusFilters
-                ? [
-                      makeDefaultFilterDescriptor(defaultFilters, {
-                          displayName: 'CVE status',
-                          searchFilterName: 'FIXABLE',
-                      }),
-                      makeDefaultFilterDescriptor(defaultFilters, {
-                          displayName: 'CVE status',
-                          searchFilterName: 'CLUSTER CVE FIXABLE',
-                      }),
-                  ]
-                : []
-        );
+    const baseDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+
+    const severityDescriptors = includeCveSeverityFilters
+        ? [makeDefaultFilterDescriptor(defaultFilters, cveSeverityFilterDescriptor)]
+        : [];
+
+    const statusDescriptors = includeCveStatusFilters
+        ? [
+              makeDefaultFilterDescriptor(defaultFilters, cveStatusFixableDescriptor),
+              makeDefaultFilterDescriptor(defaultFilters, cveStatusClusterFixableDescriptor),
+          ]
+        : [];
+
+    const filterChipGroupDescriptors = baseDescriptors.concat(
+        cveSnoozedDescriptor,
+        severityDescriptors,
+        statusDescriptors
+    );
 
     function onFilterApplied({ category, value, action }: OnSearchPayload) {
         const selectedSearchFilter = searchValueAsArray(searchFilter[category]);

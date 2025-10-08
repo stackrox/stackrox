@@ -43,9 +43,10 @@ const (
 
 // VirtualMachines holds the Gorm model for Postgres table `virtual_machines`.
 type VirtualMachines struct {
-	ID         string `gorm:"column:id;type:uuid;primaryKey"`
-	Namespace  string `gorm:"column:namespace;type:varchar;index:virtualmachines_sac_filter,type:btree"`
-	Name       string `gorm:"column:name;type:varchar"`
-	ClusterID  string `gorm:"column:clusterid;type:uuid;index:virtualmachines_sac_filter,type:btree"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ID          string `gorm:"column:id;type:uuid;primaryKey"`
+	Namespace   string `gorm:"column:namespace;type:varchar;index:virtualmachines_sac_filter,type:btree"`
+	Name        string `gorm:"column:name;type:varchar"`
+	ClusterID   string `gorm:"column:clusterid;type:uuid;index:virtualmachines_sac_filter,type:btree"`
+	ClusterName string `gorm:"column:clustername;type:varchar"`
+	Serialized  []byte `gorm:"column:serialized;type:bytea"`
 }
