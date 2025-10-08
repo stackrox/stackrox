@@ -2,6 +2,7 @@
  * Types for Natural Language Search components
  */
 
+import type { CompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
 import { SearchFilter } from 'types/search';
 
 /**
@@ -34,6 +35,8 @@ export type ParseError = {
  * Props for NaturalLanguageSearchInput component
  */
 export type NaturalLanguageSearchInputProps = {
+    /** Filter configuration to use for parsing queries */
+    searchFilterConfig: CompoundSearchFilterConfig;
     /** Callback when a filter is successfully generated */
     onFilterGenerated: (result: ParseResult) => void;
     /** Callback when an error occurs */
