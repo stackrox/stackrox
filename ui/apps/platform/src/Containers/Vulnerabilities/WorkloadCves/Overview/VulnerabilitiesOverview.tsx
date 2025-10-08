@@ -104,7 +104,8 @@ function VulnerabilitiesOverview({
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAIPoweredSearchEnabled = isFeatureFlagEnabled('ROX_AI_POWERED_SEARCH');
+    // TODO: Remove hardcoded override after testing
+    const isAIPoweredSearchEnabled = true; // isFeatureFlagEnabled('ROX_AI_POWERED_SEARCH');
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
