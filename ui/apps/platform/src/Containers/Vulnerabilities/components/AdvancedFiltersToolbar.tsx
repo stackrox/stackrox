@@ -56,6 +56,8 @@ type AdvancedFiltersToolbarProps = {
     defaultSearchFilterEntity?: string;
     additionalContextFilter?: SearchFilter;
     children?: ReactNode;
+    /** Hide filter input controls, only show applied filter chips */
+    hideInputControls?: boolean;
 };
 
 function AdvancedFiltersToolbar({
@@ -70,6 +72,7 @@ function AdvancedFiltersToolbar({
     defaultSearchFilterEntity,
     additionalContextFilter,
     children,
+    hideInputControls = false,
 }: AdvancedFiltersToolbarProps) {
     const baseDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
@@ -106,48 +109,52 @@ function AdvancedFiltersToolbar({
     return (
         <Toolbar className={`advanced-filters-toolbar ${className}`}>
             <ToolbarContent>
-                <ToolbarGroup
-                    variant="filter-group"
-                    className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
-                >
-                    <CompoundSearchFilter
-                        config={searchFilterConfig}
-                        searchFilter={searchFilter}
-                        additionalContextFilter={additionalContextFilter}
-                        onSearch={onFilterApplied}
-                        defaultEntity={defaultSearchFilterEntity}
-                    />
-                </ToolbarGroup>
-                {(includeCveSeverityFilters || includeCveStatusFilters) && (
-                    <ToolbarGroup>
-                        {includeCveSeverityFilters && (
-                            <CVESeverityDropdown
+                {!hideInputControls && (
+                    <>
+                        <ToolbarGroup
+                            variant="filter-group"
+                            className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
+                        >
+                            <CompoundSearchFilter
+                                config={searchFilterConfig}
                                 searchFilter={searchFilter}
-                                onSelect={(category, checked, value) =>
-                                    onFilterApplied({
-                                        category,
-                                        value,
-                                        action: checked ? 'ADD' : 'REMOVE',
-                                    })
-                                }
+                                additionalContextFilter={additionalContextFilter}
+                                onSearch={onFilterApplied}
+                                defaultEntity={defaultSearchFilterEntity}
                             />
+                        </ToolbarGroup>
+                        {(includeCveSeverityFilters || includeCveStatusFilters) && (
+                            <ToolbarGroup>
+                                {includeCveSeverityFilters && (
+                                    <CVESeverityDropdown
+                                        searchFilter={searchFilter}
+                                        onSelect={(category, checked, value) =>
+                                            onFilterApplied({
+                                                category,
+                                                value,
+                                                action: checked ? 'ADD' : 'REMOVE',
+                                            })
+                                        }
+                                    />
+                                )}
+                                {includeCveStatusFilters && (
+                                    <CVEStatusDropdown
+                                        filterField={cveStatusFilterField}
+                                        searchFilter={searchFilter}
+                                        onSelect={(category, checked, value) =>
+                                            onFilterApplied({
+                                                category,
+                                                value,
+                                                action: checked ? 'ADD' : 'REMOVE',
+                                            })
+                                        }
+                                    />
+                                )}
+                            </ToolbarGroup>
                         )}
-                        {includeCveStatusFilters && (
-                            <CVEStatusDropdown
-                                filterField={cveStatusFilterField}
-                                searchFilter={searchFilter}
-                                onSelect={(category, checked, value) =>
-                                    onFilterApplied({
-                                        category,
-                                        value,
-                                        action: checked ? 'ADD' : 'REMOVE',
-                                    })
-                                }
-                            />
-                        )}
-                    </ToolbarGroup>
+                        {children}
+                    </>
                 )}
-                {children}
                 {getHasSearchApplied(searchFilter) && (
                     <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                         <SearchFilterChips

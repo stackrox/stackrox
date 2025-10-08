@@ -151,6 +151,7 @@ function VulnerabilitiesOverview({
         console.error('AI search error:', error);
     }
 
+    // Hide filter input controls when AI search is enabled, but keep filter chips visible
     const filterToolbar = (
         <AdvancedFiltersToolbar
             className="pf-v5-u-py-md"
@@ -169,6 +170,7 @@ function VulnerabilitiesOverview({
             includeCveSeverityFilters={isViewingWithCves}
             includeCveStatusFilters={isViewingWithCves}
             defaultSearchFilterEntity={defaultSearchFilterEntity}
+            hideInputControls={isAIPoweredSearchEnabled}
         >
             {additionalToolbarItems}
         </AdvancedFiltersToolbar>
