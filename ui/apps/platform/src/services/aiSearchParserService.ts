@@ -201,6 +201,13 @@ export class AISearchParserService {
             let parsedResponse;
             try {
                 parsedResponse = parseAIResponse(aiResponse.content);
+
+                // Log the parsed result for debugging
+                console.log('📊 Parsed AI Result:', {
+                    searchFilter: parsedResponse.searchFilter,
+                    confidence: parsedResponse.confidence,
+                    reasoning: parsedResponse.reasoning,
+                });
             } catch (error) {
                 const message = error instanceof Error ? error.message : 'Invalid JSON';
                 throw this.createParseError(

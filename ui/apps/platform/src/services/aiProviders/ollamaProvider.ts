@@ -124,6 +124,15 @@ export class OllamaProvider implements AIProvider {
 
             const data: OllamaGenerateResponse = await response.json();
 
+            // Log the full response for debugging
+            console.log('🤖 Ollama API Response:', {
+                model: data.model,
+                response: data.response,
+                done: data.done,
+                total_duration_ms: data.total_duration ? Math.round(data.total_duration / 1000000) : null,
+                eval_count: data.eval_count,
+            });
+
             if (!data.response) {
                 throw new Error('Ollama response missing content');
             }
