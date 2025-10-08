@@ -766,7 +766,6 @@ module.exports = [
         ignores: [
             'src/Components/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/MainPage/**',
             'src/Containers/MitreAttackVectors/**',
             'src/Containers/NetworkGraph/**',
             'src/Containers/Policies/**',
