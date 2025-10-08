@@ -26,7 +26,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -94,7 +97,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Set Postgres version
       run: |
@@ -151,7 +157,10 @@ jobs:
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Set Postgres version
       run: |
@@ -198,7 +207,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -234,7 +246,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.9-3-g197bcc25d6
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -277,7 +292,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -318,7 +336,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -352,7 +373,10 @@ jobs:
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
       - name: Checkout
         uses: actions/checkout@v5
