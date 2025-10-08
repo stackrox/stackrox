@@ -65,6 +65,18 @@ func (m *mockDataStore) SearchRawVirtualMachines(ctx context.Context, query *v1.
 	return m.vms, nil
 }
 
+func (m *mockDataStore) Walk(ctx context.Context, fn func(vm *storage.VirtualMachine) error) error {
+	if m.err != nil {
+		return m.err
+	}
+	for _, vm := range m.vms {
+		if err := fn(vm); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func TestVirtualMachineTelemetry(t *testing.T) {
 	// Ensure feature flag is enabled for these tests
 	t.Setenv(features.VirtualMachines.EnvVar(), "true")

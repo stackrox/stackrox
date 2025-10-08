@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
@@ -34,6 +33,7 @@ var (
 // When the ROX_VIRTUAL_MACHINES feature flag is disabled, this function returns
 // an empty map without performing any database queries, ensuring no performance impact.
 func Gather(ds DataStore) phonehome.GatherFunc {
+	log.Debugf("Gathering Virtual machines telemetry")
 	return func(ctx context.Context) (map[string]any, error) {
 		// Early return if virtual machines feature is disabled - zero performance impact
 		if !features.VirtualMachines.Enabled() {
@@ -48,19 +48,15 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 			),
 		)
 
-		// Fetch all virtual machines
-		vms, err := ds.SearchRawVirtualMachines(ctx, search.EmptyQuery())
-		if err != nil {
-			return nil, err
-		}
-
-		// Count distinct cluster IDs with running VMs using memory-efficient set
+		// Process VMs one-by-one without loading all into memory
 		clusterIDsWithRunningVMs := set.NewStringSet()
-		totalVMs := len(vms)
+		totalVMs := 0
 		vmsWithActiveAgents := 0
 		now := time.Now()
 
-		for _, vm := range vms {
+		err := ds.Walk(ctx, func(vm *storage.VirtualMachine) error {
+			totalVMs++
+
 			// Count VMs with active agents (scan received within threshold)
 			if scan := vm.GetScan(); scan != nil {
 				scanTime, err := protocompat.ConvertTimestampToTimeOrError(scan.GetScanTime())
@@ -77,10 +73,15 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 				if clusterID == "" {
 					// Log empty cluster IDs at debug level for troubleshooting
 					log.Debugf("Virtual machine %s has empty cluster_id", vm.GetId())
-					continue
+					return nil
 				}
 				clusterIDsWithRunningVMs.Add(clusterID)
 			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
 		}
 
 		props := map[string]any{
@@ -88,6 +89,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 			"Total Virtual Machines":                               totalVMs,
 			"Total Virtual Machines With Active Agents (Last 24h)": vmsWithActiveAgents,
 		}
+		log.Debugf("Virtual machines telemetry update: %v", props)
 		return props, nil
 	}
 }
