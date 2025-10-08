@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	// activeAgentScanRecencyThreshold defines how recent a scan must be to consider
+	// activeVMAgentMaxAgeLimitTelemetry defines how recent a scan must be to consider
 	// the VM agent as active. This threshold is included in the telemetry metric name.
-	activeAgentScanRecencyThreshold = 24 * time.Hour
+	activeVMAgentMaxAgeLimitTelemetry = 24 * time.Hour
 
 	// Metric name constants to ensure consistency between implementation and tests
 	metricClustersWithVMs     = "Total Secured Clusters With Virtual Machines"
@@ -71,7 +71,7 @@ func gatherWithTime(ds DataStore, nowFunc func() time.Time) phonehome.GatherFunc
 				scanTime, err := protocompat.ConvertTimestampToTimeOrError(scan.GetScanTime())
 				if err != nil {
 					log.Debugf("Virtual machine %s has invalid scan_time: %v", vm.GetId(), err)
-				} else if now.Sub(scanTime) <= activeAgentScanRecencyThreshold {
+				} else if now.Sub(scanTime) <= activeVMAgentMaxAgeLimitTelemetry {
 					vmsWithActiveAgents++
 				}
 			}
@@ -82,11 +82,10 @@ func gatherWithTime(ds DataStore, nowFunc func() time.Time) phonehome.GatherFunc
 				if clusterID == "" {
 					// Log empty cluster IDs at debug level for troubleshooting
 					log.Debugf("Virtual machine %s has empty cluster_id", vm.GetId())
-					return nil
+				} else {
+					clusterIDsWithRunningVMs.Add(clusterID)
 				}
-				clusterIDsWithRunningVMs.Add(clusterID)
 			}
-
 			return nil
 		})
 		if err != nil {
