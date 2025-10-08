@@ -72,12 +72,12 @@ async function testAISearchParserIntegration() {
         process.exit(1);
     }
 
-    // Test 4: Ambiguous query (should have lower confidence)
-    console.log('Test 4: Testing ambiguous query - "some vulnerabilities"');
+    // Test 4: Ambiguous/typo query (should have lower confidence or handle gracefully)
+    console.log('Test 4: Testing query with potential issues - "high severity vulns in prod images"');
     try {
         const startTime = Date.now();
         const result = await parser.parseNaturalLanguageQuery(
-            'some vulnerabilities',
+            'high severity vulns in prod images',
             filterConfig
         );
         const duration = Date.now() - startTime;
@@ -87,8 +87,9 @@ async function testAISearchParserIntegration() {
         console.log(`💭 Reasoning: ${result.reasoning || 'none'}`);
         console.log(`🔍 Filter:`, JSON.stringify(result.searchFilter, null, 2));
 
-        if (result.confidence < 0.7) {
-            console.log('✅ Correctly identified as low confidence query');
+        // Check if it correctly handled abbreviations and informal language
+        if (result.searchFilter.Severity || result.searchFilter['Image Name']) {
+            console.log('✅ Successfully interpreted abbreviated/informal query');
         }
         console.log();
     } catch (error) {
