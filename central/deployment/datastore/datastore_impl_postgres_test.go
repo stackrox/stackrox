@@ -83,19 +83,16 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(s.deploymentDatastore.UpsertDeployment(ctx, dep2))
 	s.NoError(s.deploymentDatastore.UpsertDeployment(ctx, dep3))
 
-	componentIDImg2, err := scancomponent.ComponentIDV2(
+	componentIDImg2 := scancomponent.ComponentIDV2(
 		img2.GetScan().GetComponents()[0],
-		img2.GetId())
-	s.NoError(err)
+		img2.GetId(), 0)
 
-	componentIDImg1, err := scancomponent.ComponentIDV2(
+	componentIDImg1 := scancomponent.ComponentIDV2(
 		img1.GetScan().GetComponents()[0],
-		img1.GetId())
-	s.NoError(err)
-	cveID, err := cve.IDV2(
+		img1.GetId(), 0)
+	cveID := cve.IDV2(
 		img1.GetScan().GetComponents()[0].GetVulns()[0],
-		componentIDImg1)
-	s.NoError(err)
+		componentIDImg1, 0)
 
 	for _, tc := range []struct {
 		desc         string

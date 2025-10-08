@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -41,13 +43,19 @@ func splitComponents(parts ImagePartsV2) ([]ComponentPartsV2, error) {
 			return nil, err
 		}
 
-		// dedupe components within the component
-		if _, ok := componentMap[generatedComponentV2.GetId()]; ok {
+		// dedupe components within the component using content-based key
+		dedupKey := fmt.Sprintf("%s:%s:%d:%s:%s",
+			component.GetName(),
+			component.GetVersion(),
+			component.GetLayerIndex(),
+			component.GetSource().String(),
+			component.GetLocation())
+		if _, ok := componentMap[dedupKey]; ok {
 			log.Infof("Component %s-%s has already been processed in the image. Skipping...", component.GetName(), component.GetVersion())
 			continue
 		}
 
-		componentMap[generatedComponentV2.GetId()] = component
+		componentMap[dedupKey] = component
 
 		cves, err := splitCVEs(parts.Image.GetId(), generatedComponentV2.GetId(), component)
 		if err != nil {
@@ -74,13 +82,19 @@ func splitCVEs(imageID string, componentID string, embedded *storage.EmbeddedIma
 			return nil, err
 		}
 
-		// dedupe CVEs within the component
-		if _, ok := cveMap[convertedCVE.GetId()]; ok {
+		// dedupe CVEs within the component using content-based key
+		dedupKey := fmt.Sprintf("%s:%s:%s:%s:%v",
+			cve.GetCve(),
+			cve.GetFixedBy(),
+			cve.GetSummary(),
+			cve.GetLink(),
+			cve.GetCvss())
+		if _, ok := cveMap[dedupKey]; ok {
 			log.Infof("CVE %s has already been processed in the image. Skipping...", cve.GetCve())
 			continue
 		}
 
-		cveMap[convertedCVE.GetId()] = cve
+		cveMap[dedupKey] = cve
 
 		cp := CVEPartsV2{
 			CVEV2: convertedCVE,
