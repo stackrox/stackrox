@@ -65,6 +65,10 @@ func (ds *datastoreImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Q
 	return ds.storage.GetByQuery(ctx, q)
 }
 
+func (ds *datastoreImpl) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessIndicator) error) error {
+	return ds.storage.GetByQueryFn(ctx, query, fn)
+}
+
 func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error) {
 	indicator, exists, err := ds.storage.Get(ctx, id)
 	if err != nil || !exists {

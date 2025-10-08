@@ -117,6 +117,20 @@ func (mr *MockStoreMockRecorder) GetByQuery(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockStore)(nil).GetByQuery), ctx, q)
 }
 
+// GetByQueryFn mocks base method.
+func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetByQueryFn indicates an expected call of GetByQueryFn.
+func (mr *MockStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockStore)(nil).GetByQueryFn), ctx, query, fn)
+}
+
 // GetMany mocks base method.
 func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, []int, error) {
 	m.ctrl.T.Helper()

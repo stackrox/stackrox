@@ -289,15 +289,21 @@ func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
 func (m *managerImpl) addBaseline(deploymentID string) []*storage.ProcessBaseline {
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "AddBaseline")
 
-	// Simply use search to find the process indicators for the deployment
-	indicatorSlice, _ := m.processesDataStore.SearchRawProcessIndicators(
-		lifecycleMgrCtx,
-		search.NewQueryBuilder().
-			AddExactMatches(search.DeploymentID, deploymentID).
-			ProtoQuery(),
-	)
+	// Group the processes into particular baseline segments
+	baselineMap := make(map[processBaselineKey][]*storage.ProcessIndicator)
 
-	return m.buildMapAndCheckBaseline(indicatorSlice)
+	fn := func(indicator *storage.ProcessIndicator) error {
+		key := indicatorToBaselineKey(indicator)
+		baselineMap[key] = append(baselineMap[key], indicator)
+		return nil
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, deploymentID).
+		ProtoQuery()
+	_ = m.processesDataStore.GetByQueryFn(lifecycleMgrCtx, query, fn)
+
+	return m.processBaselineMap(baselineMap)
 }
 
 func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.ProcessIndicator) []*storage.ProcessBaseline {
@@ -308,7 +314,11 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 		baselineMap[key] = append(baselineMap[key], indicator)
 	}
 
-	baselines := make([]*storage.ProcessBaseline, 0)
+	return m.processBaselineMap(baselineMap)
+}
+
+func (m *managerImpl) processBaselineMap(baselineMap map[processBaselineKey][]*storage.ProcessIndicator) []*storage.ProcessBaseline {
+	baselines := make([]*storage.ProcessBaseline, 0, len(baselineMap))
 
 	for key, indicators := range baselineMap {
 		if baseline, _, err := m.checkAndUpdateBaseline(key, indicators); err != nil {
