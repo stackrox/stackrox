@@ -43,7 +43,7 @@ var (
 
 // Define the maximum batch size for messages sent to Central.
 // This is a new constant for the batching requirement.
-const maxMessageBatchSize = 1000
+const maxMessageBatchSize = 10
 
 type hostConnections struct {
 	hostname    string
