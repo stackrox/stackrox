@@ -148,7 +148,7 @@ require (
 	golang.org/x/text v0.30.0
 	golang.org/x/time v0.13.0
 	golang.org/x/tools v0.37.0
-	golang.stackrox.io/grpc-http1 v0.4.0
+	golang.stackrox.io/grpc-http1 v0.5.1
 	google.golang.org/api v0.252.0
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
 	google.golang.org/genproto/googleapis/api v0.0.0-20250929231259-57b25ae835d4
@@ -260,7 +260,7 @@ require (
 	github.com/cockroachdb/redact v1.1.6 // indirect
 	github.com/cockroachdb/swiss v0.0.0-20250624142022-d6e517c1d961 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
-	github.com/coder/websocket v1.8.12 // indirect
+	github.com/coder/websocket v1.8.14 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/containerd/containerd v1.7.27 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
