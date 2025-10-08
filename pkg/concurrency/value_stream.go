@@ -2,7 +2,6 @@ package concurrency
 
 import (
 	"sync/atomic"
-	"unsafe"
 )
 
 // ValueStream is a stream of values that can be pushed sequentially by a sender and observed in the same sequence
@@ -47,20 +46,19 @@ import (
 //	  fmt.Fprintln("Context error aborted iteration: %v", err)
 //	}
 type ValueStream[T any] struct {
-	curr unsafe.Pointer // always holds a *valueStreamStrictIter[T]
+	curr atomic.Pointer[valueStreamStrictIter[T]] // always holds a *valueStreamStrictIter[T]
 }
 
 // NewValueStream initializes a value stream with an initial value.
 func NewValueStream[T any](initVal T) *ValueStream[T] {
-	return &ValueStream[T]{
-		//#nosec G103
-		curr: unsafe.Pointer(&valueStreamStrictIter[T]{
-			valueStreamIterBase: valueStreamIterBase[T]{
-				currVal: initVal,
-				nextC:   make(chan struct{}),
-			},
-		}),
-	}
+	vs := &ValueStream[T]{}
+	vs.curr.Store(&valueStreamStrictIter[T]{
+		valueStreamIterBase: valueStreamIterBase[T]{
+			currVal: initVal,
+			nextC:   make(chan struct{}),
+		},
+	})
+	return vs
 }
 
 // ValueStreamIter is an iterator that points to a position in a ValueStream.
@@ -173,8 +171,7 @@ func (s *ValueStream[T]) Push(val T) (T, ValueStreamIter[T]) {
 		},
 	}
 
-	//#nosec G103
-	oldIter := (*valueStreamStrictIter[T])(atomic.SwapPointer(&s.curr, unsafe.Pointer(newIter)))
+	oldIter := s.curr.Swap(newIter)
 	oldIter.next = newIter
 	close(oldIter.nextC)
 
@@ -182,7 +179,7 @@ func (s *ValueStream[T]) Push(val T) (T, ValueStreamIter[T]) {
 }
 
 func (s *ValueStream[T]) current() *valueStreamStrictIter[T] {
-	return (*valueStreamStrictIter[T])(atomic.LoadPointer(&s.curr))
+	return s.curr.Load()
 }
 
 // Iterator obtains an iterator to the current value in the stream. If strict is true, it returns an iterator that
