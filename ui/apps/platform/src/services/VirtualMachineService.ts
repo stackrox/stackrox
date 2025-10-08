@@ -1,7 +1,6 @@
 import axios from 'services/instance';
 import type { ScanComponent } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
-import { getListQueryParams } from 'utils/searchUtils';
 import { buildNestedRawQueryParams } from './ComplianceCommon';
 
 export type VirtualMachine = {

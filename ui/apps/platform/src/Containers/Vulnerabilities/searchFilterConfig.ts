@@ -106,3 +106,9 @@ export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEnti
     searchCategory: 'SEARCH_UNSET', // doesn't matter since we don't have autocomplete for virtual machines
     attributes: [VirtualMachineComponentName, VirtualMachineComponentVersion],
 };
+
+export const virtualMachinesClusterSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Cluster',
+    searchCategory: 'CLUSTERS',
+    attributes: [clusterIdAttribute, clusterNameAttribute],
+};

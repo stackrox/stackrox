@@ -15,8 +15,7 @@ import DateDistance from 'Components/DateDistance';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import {
-    clusterSearchFilterConfig,
-    namespaceSearchFilterConfig,
+    virtualMachinesClusterSearchFilterConfig,
     virtualMachinesSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import useRestQuery from 'hooks/useRestQuery';
@@ -34,8 +33,7 @@ import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
 
 const searchFilterConfig = [
     virtualMachinesSearchFilterConfig,
-    clusterSearchFilterConfig,
-    namespaceSearchFilterConfig,
+    virtualMachinesClusterSearchFilterConfig,
 ];
 
 function VirtualMachinesCvesTable() {
