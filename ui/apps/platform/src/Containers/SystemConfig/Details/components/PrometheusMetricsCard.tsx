@@ -306,11 +306,17 @@ export function PrometheusMetricsCard({
     );
 }
 
-function prometheusMetricsPeriodForm(
-    pcfg: PrivateConfig,
-    category: PrometheusMetricsCategory,
-    onChange: (value, event) => Promise<void> | Promise<FormikErrors<FormikValues>>
-): ReactElement {
+type PrometheusMetricsPeriodFormProps = {
+    pcfg: PrivateConfig;
+    category: PrometheusMetricsCategory;
+    onChange: (value, event) => Promise<void> | Promise<FormikErrors<FormikValues>>;
+};
+
+function PrometheusMetricsPeriodForm({
+    pcfg,
+    category,
+    onChange,
+}: PrometheusMetricsPeriodFormProps): ReactElement {
     return (
         <FormGroup
             label="Gathering period in minutes (set to 0 to disable)"
@@ -359,7 +365,11 @@ export function PrometheusMetricsForm({
                     <FormSection>
                         <Grid hasGutter>
                             <GridItem md={12}>
-                                {prometheusMetricsPeriodForm(pcfg, category, onChange)}
+                                <PrometheusMetricsPeriodForm
+                                    pcfg={pcfg}
+                                    category={category}
+                                    onChange={onChange}
+                                />
                             </GridItem>
                             <GridItem md={12}>
                                 <FormGroup label="Metrics configuration" role="group">
