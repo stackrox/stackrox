@@ -9,7 +9,7 @@ import { searchValueAsArray } from 'utils/searchUtils';
 import { severityToQuerySeverityKeys } from '../components/BySeveritySummaryCard';
 import type { ResourceCountByCveSeverityAndStatus } from '../components/CvesByStatusSummaryCard';
 import { isVulnerabilitySeverityLabel } from '../types';
-import type { FixableStatus } from '../types';
+import type { FixableStatus, ScannableStatus } from '../types';
 import { severityLabelToSeverity } from '../utils/searchUtils';
 import {
     CVE_EPSS_PROBABILITY_SORT_FIELD,
@@ -237,4 +237,82 @@ export function applyVirtualMachineCveTableSort(
     };
 
     return [...rows].sort(comparator);
+}
+
+export type PackageTableRow = {
+    name: ScanComponent['name'];
+    version: string;
+    isScannable: boolean;
+};
+
+export function getVirtualMachinePackagesTableData(
+    virtualMachine?: VirtualMachine
+): PackageTableRow[] {
+    if (!virtualMachine) {
+        return [];
+    }
+
+    const packagesTableData: PackageTableRow[] = [];
+
+    virtualMachine.scan?.components?.forEach((component) => {
+        packagesTableData.push({
+            name: component.name,
+            version: component.version,
+            isScannable: !component.notes.includes('UNSCANNED'),
+        });
+    });
+
+    return packagesTableData;
+}
+
+export function applyVirtualMachinePackagesTableFilters(
+    packagesTableData: PackageTableRow[],
+    searchFilter: SearchFilter
+): PackageTableRow[] {
+    if (!searchFilter || Object.keys(searchFilter).length === 0) {
+        return packagesTableData;
+    }
+
+    const componentFilters = searchValueAsArray(searchFilter.Component).map((component) =>
+        component.toLowerCase()
+    );
+    const componentVersionFilters = searchValueAsArray(searchFilter['Component Version']).map(
+        (version) => version.toLowerCase()
+    );
+
+    const scannableFilters = searchValueAsArray(searchFilter.SCANNABLE);
+
+    return packagesTableData.filter((packageTableRow) => {
+        // "Component" filter, case insensitive and substring
+        if (componentFilters.length > 0) {
+            const componentNameLowerCase = packageTableRow.name.toLowerCase();
+            if (!componentFilters.some((filter) => componentNameLowerCase.includes(filter))) {
+                return false;
+            }
+        }
+
+        // "Component Version" filter, case insensitive and substring
+        if (componentVersionFilters.length > 0) {
+            const componentVersionLowerCase = packageTableRow.version.toLowerCase();
+            if (
+                !componentVersionFilters.some((filter) =>
+                    componentVersionLowerCase.includes(filter)
+                )
+            ) {
+                return false;
+            }
+        }
+
+        // "SCANNABLE" filter, exact
+        if (scannableFilters.length > 0) {
+            const rowScannable: ScannableStatus = packageTableRow.isScannable
+                ? 'Scanned'
+                : 'Not scanned';
+            if (!scannableFilters.includes(rowScannable)) {
+                return false;
+            }
+        }
+
+        return true; // passed all filter conditions
+    });
 }
