@@ -18415,6 +18415,18 @@
                 "integer": 2
               }
             ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineScanComponent.Note",
+            "enum_fields": [
+              {
+                "name": "UNSPECIFIED"
+              },
+              {
+                "name": "UNSCANNED",
+                "integer": 1
+              }
+            ]
           }
         ],
         "messages": [
@@ -18545,6 +18557,12 @@
                 "id": 6,
                 "name": "source",
                 "type": "SourceType"
+              },
+              {
+                "id": 7,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
               }
             ]
           },

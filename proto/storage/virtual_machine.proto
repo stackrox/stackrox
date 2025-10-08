@@ -57,6 +57,11 @@ message EmbeddedVirtualMachineScanComponent {
   float risk_score = 4;
   repeated VirtualMachineVulnerability vulnerabilities = 5;
   SourceType source = 6;
+  enum Note {
+    UNSPECIFIED = 0;
+    UNSCANNED = 1;
+  }
+  repeated Note notes = 7;
 }
 
 message VirtualMachineVulnerability {
