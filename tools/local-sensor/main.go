@@ -42,6 +42,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"k8s.io/apimachinery/pkg/util/validation"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
@@ -167,7 +168,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		PprofServer:        false,
 		CentralEndpoint:    "",
 		FakeCollector:      false,
-		Namespace:          "stackrox",
+		Namespace:          certs.DefaultNamespace,
 	}
 	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
 	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
@@ -209,6 +210,10 @@ func mustGetCommandLineArgs() localSensorConfig {
 
 	if !isValidOutputFormat(sensorConfig.OutputFormat) {
 		log.Fatalf("invalid format '%s'", sensorConfig.OutputFormat)
+	}
+
+	if errs := validation.IsDNS1123Label(sensorConfig.Namespace); len(errs) > 0 {
+		log.Fatalf("invalid namespace '%s': %s", sensorConfig.Namespace, errs[0])
 	}
 
 	sensorConfig.ReplayK8sTraceFile = path.Clean(sensorConfig.ReplayK8sTraceFile)

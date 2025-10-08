@@ -18,6 +18,9 @@ const (
 	helmConfigEnvName   = "ROX_HELM_CONFIG_FILE_OVERRIDE"
 	clusterNameEnvName  = "ROX_HELM_CLUSTER_NAME_FILE_OVERRIDE"
 	helmConfigFPEnvName = "ROX_HELM_CLUSTER_CONFIG_FP"
+
+	// DefaultNamespace is the standard namespace for StackRox/RHACS deployments
+	DefaultNamespace = "stackrox"
 )
 
 // OptionFunc provides options for the CertificateFetcher.
@@ -75,7 +78,7 @@ func NewCertificateFetcher(k8s client.Interface, opts ...OptionFunc) *Certificat
 	fetcher := &CertificateFetcher{
 		k8s:        k8s,
 		outputDir:  "tmp/",
-		namespace:  "stackrox",
+		namespace:  DefaultNamespace,
 		secretName: "tls-cert-sensor",
 		certNames: map[string]string{
 			certEnvName:       "ca.pem",
