@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
-	"github.stackrox.io/stackrox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
@@ -40,9 +39,6 @@ const connectionDeletionGracePeriod = 5 * time.Minute
 var (
 	emptyProcessInfo = indicator.ProcessInfo{}
 	enricherCycle    = time.Second * 30
-
-	// log is a logger object. Assumed to exist or will be added.
-	log = logging.LoggerForModule()
 )
 
 // Define the maximum batch size for messages sent to Central.
@@ -852,21 +848,4 @@ func (m *networkFlowManager) PublicIPsValueStream() concurrency.ReadOnlyValueStr
 
 func (m *networkFlowManager) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList] {
 	return m.externalSrcs.ExternalSrcsValueStream()
-}
-
-// connStatus is a struct assumed to be defined elsewhere but required for the code to compile
-type connStatus struct {
-	firstSeen timestamp.MicroTS
-	tsAdded   timestamp.MicroTS
-	lastSeen  timestamp.MicroTS
-}
-
-// HostNetworkInfo is an interface assumed to be defined elsewhere but required for the code to compile
-type HostNetworkInfo interface {
-	Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error
-}
-
-// EntityStore is an interface assumed to be defined elsewhere but required for the code to compile
-type EntityStore interface {
-	RecordTick()
 }
