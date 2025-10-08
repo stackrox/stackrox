@@ -92,8 +92,15 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 		proxyEndpoint    = proxyServiceName + "." + proxyNs + ":443"
 	)
 
+	deploy, err := ts.k8s.AppsV1().Deployments(s).Get(ts.ctx, sensorDeployment, metaV1.GetOptions{})
+	ts.Require().NoError(err, "getting sensor deployment before patching")
+	oldGeneration := deploy.GetGeneration()
+	ts.logf("Current sensor deployment generation: %d", oldGeneration)
+
 	ts.logf("Pointing sensor at the proxy...")
 	ts.mustSetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
+	ts.logf("Waiting for sensor deployment to rollout new generation and become ready...")
+	ts.waitUntilK8sDeploymentNewGenerationReady(ts.ctx, s, sensorDeployment, oldGeneration)
 	ts.logf("Sensor will now attempt connecting via the nginx proxy.")
 
 	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection",
@@ -117,6 +124,8 @@ func (ts *TLSChallengeSuite) setupProxy(centralEndpoint string) {
 	ts.createProxyConfigMap(centralEndpoint, nginxConfigName)
 	ts.createService(ts.ctx, proxyNs, name, nginxLabels, map[int32]int32{443: 8443})
 	ts.createProxyDeployment(name, nginxLabels, nginxConfigName, nginxTLSSecretName)
+	ts.logf("Waiting for nginx proxy deployment to become ready...")
+	ts.waitUntilK8sDeploymentReady(ts.ctx, proxyNs, name)
 	ts.logf("Nginx proxy is now set up in namespace %q.", proxyNs)
 }
 

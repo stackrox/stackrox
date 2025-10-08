@@ -503,7 +503,7 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 			require.NoError(ks.T(), err, "getting deployment %q from namespace %q", deploymentName, namespace)
 
 			if deploy.GetGeneration() != deploy.Status.ObservedGeneration {
-				ks.logf("deployment %q in namespace %q NOT ready, generation %d, observed generation", deploymentName, namespace, deploy.GetGeneration(), deploy.Status.ObservedGeneration)
+				ks.logf("deployment %q in namespace %q NOT ready, generation %d, observed generation %d", deploymentName, namespace, deploy.GetGeneration(), deploy.Status.ObservedGeneration)
 				continue
 			}
 
@@ -511,10 +511,47 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 				ks.logf("deployment %q in namespace %q NOT ready (%d/%d ready replicas)", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
 				continue
 			}
+
+			// Ensure all pods are from the current generation (no old pods during rollout).
+			if deploy.Status.UpdatedReplicas > 0 && deploy.Status.UpdatedReplicas != deploy.Status.Replicas {
+				ks.logf("deployment %q in namespace %q NOT ready, rollout incomplete (%d/%d updated replicas)", deploymentName, namespace, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
+				continue
+			}
+
 			ks.logf("deployment %q in namespace %q READY (%d/%d ready replicas)", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
 			return
 		case <-timer.C:
 			ks.T().Fatalf("Timed out waiting for deployment %s", deploymentName)
+		}
+	}
+}
+
+// waitUntilK8sDeploymentNewGenerationReady waits until a deployment reaches a new generation (higher than minGeneration) and becomes ready.
+func (ks *KubernetesSuite) waitUntilK8sDeploymentNewGenerationReady(ctx context.Context, namespace string, deploymentName string, minGeneration int64) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(waitTimeout)
+	defer timer.Stop()
+
+	ks.logf("Waiting for deployment %q in namespace %q to reach generation > %d", deploymentName, namespace, minGeneration)
+	for {
+		select {
+		case <-ctx.Done():
+			require.NoError(ks.T(), ctx.Err())
+		case <-ticker.C:
+			deploy, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
+			require.NoError(ks.T(), err, "getting deployment %q from namespace %q", deploymentName, namespace)
+
+			currentGen := deploy.GetGeneration()
+			if currentGen > minGeneration {
+				ks.logf("deployment %q in namespace %q reached new generation %d (was %d)", deploymentName, namespace, currentGen, minGeneration)
+				ks.waitUntilK8sDeploymentReady(ctx, namespace, deploymentName)
+				return
+			}
+			ks.logf("deployment %q in namespace %q waiting for generation update (current: %d, need > %d)", deploymentName, namespace, currentGen, minGeneration)
+		case <-timer.C:
+			ks.T().Fatalf("Timed out waiting for deployment %s to reach new generation", deploymentName)
 		}
 	}
 }
