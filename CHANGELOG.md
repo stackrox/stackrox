@@ -9,6 +9,12 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.8.5]
+
+### Technical Changes
+
+- ROX-31088: If Compliance Operator is installed, its version is now correctly reported through telemetry.
+
 ## [4.8.4]
 
 ### Technical Changes
