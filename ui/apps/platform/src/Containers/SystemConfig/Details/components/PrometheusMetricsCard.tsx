@@ -328,7 +328,7 @@ function PrometheusMetricsPeriodForm({
                 type="number"
                 id={`privateConfig.metrics.${category}.gatheringPeriodMinutes`}
                 name={`privateConfig.metrics.${category}.gatheringPeriodMinutes`}
-                value={pcfg?.metrics?.[category]?.gatheringPeriodMinutes || 0}
+                value={pcfg?.metrics?.[category]?.gatheringPeriodMinutes}
                 onChange={(event, value) => onChange(value, event)}
                 min={0}
             />
