@@ -43,7 +43,6 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 
 // gatherWithTime allows injecting a time function for deterministic testing.
 func gatherWithTime(ds DataStore, nowFunc func() time.Time) phonehome.GatherFunc {
-	log.Debugf("Gathering Virtual machines telemetry")
 	return func(ctx context.Context) (map[string]any, error) {
 		// Early return if virtual machines feature is disabled - zero performance impact
 		if !features.VirtualMachines.Enabled() {
