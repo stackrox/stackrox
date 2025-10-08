@@ -20,63 +20,6 @@ var (
 	arbitraryNowFunc = func() time.Time { return arbitraryNow }
 )
 
-// createScanWithAge creates a scan with a timestamp at the specified duration before arbitraryNow.
-// For example, createScanWithAge(1 * time.Hour) creates a scan from 1 hour ago.
-func createScanWithAge(age time.Duration) *storage.VirtualMachineScan {
-	scanTime := arbitraryNow.Add(-age)
-	return &storage.VirtualMachineScan{
-		ScanTime: protocompat.ConvertTimeToTimestampOrNil(&scanTime),
-	}
-}
-
-type mockDataStore struct {
-	vms []*storage.VirtualMachine
-	err error
-}
-
-func (m *mockDataStore) CountVirtualMachines(ctx context.Context, query *v1.Query) (int, error) {
-	return 0, nil
-}
-
-func (m *mockDataStore) GetVirtualMachine(ctx context.Context, id string) (*storage.VirtualMachine, bool, error) {
-	return nil, false, nil
-}
-
-func (m *mockDataStore) UpsertVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
-	return nil
-}
-
-func (m *mockDataStore) UpdateVirtualMachineScan(ctx context.Context, vmID string, scan *storage.VirtualMachineScan) error {
-	return nil
-}
-
-func (m *mockDataStore) DeleteVirtualMachines(ctx context.Context, ids ...string) error {
-	return nil
-}
-
-func (m *mockDataStore) Exists(ctx context.Context, id string) (bool, error) {
-	return false, nil
-}
-
-func (m *mockDataStore) SearchRawVirtualMachines(ctx context.Context, query *v1.Query) ([]*storage.VirtualMachine, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	return m.vms, nil
-}
-
-func (m *mockDataStore) Walk(ctx context.Context, fn func(vm *storage.VirtualMachine) error) error {
-	if m.err != nil {
-		return m.err
-	}
-	for _, vm := range m.vms {
-		if err := fn(vm); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func TestVirtualMachineTelemetry(t *testing.T) {
 	// Ensure feature flag is enabled for these tests
 	t.Setenv(features.VirtualMachines.EnvVar(), "true")
@@ -261,4 +204,61 @@ func TestVirtualMachineTelemetryWithFeatureFlagDisabled(t *testing.T) {
 	// When feature flag is disabled, should return empty map
 	// No database query should have been performed
 	assert.Empty(t, props, "Should return empty map when feature flag is disabled")
+}
+
+// createScanWithAge creates a scan with a timestamp at the specified duration before arbitraryNow.
+// For example, createScanWithAge(1 * time.Hour) creates a scan from 1 hour ago.
+func createScanWithAge(age time.Duration) *storage.VirtualMachineScan {
+	scanTime := arbitraryNow.Add(-age)
+	return &storage.VirtualMachineScan{
+		ScanTime: protocompat.ConvertTimeToTimestampOrNil(&scanTime),
+	}
+}
+
+type mockDataStore struct {
+	vms []*storage.VirtualMachine
+	err error
+}
+
+func (m *mockDataStore) CountVirtualMachines(ctx context.Context, query *v1.Query) (int, error) {
+	return 0, nil
+}
+
+func (m *mockDataStore) GetVirtualMachine(ctx context.Context, id string) (*storage.VirtualMachine, bool, error) {
+	return nil, false, nil
+}
+
+func (m *mockDataStore) UpsertVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
+	return nil
+}
+
+func (m *mockDataStore) UpdateVirtualMachineScan(ctx context.Context, vmID string, scan *storage.VirtualMachineScan) error {
+	return nil
+}
+
+func (m *mockDataStore) DeleteVirtualMachines(ctx context.Context, ids ...string) error {
+	return nil
+}
+
+func (m *mockDataStore) Exists(ctx context.Context, id string) (bool, error) {
+	return false, nil
+}
+
+func (m *mockDataStore) SearchRawVirtualMachines(ctx context.Context, query *v1.Query) ([]*storage.VirtualMachine, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.vms, nil
+}
+
+func (m *mockDataStore) Walk(ctx context.Context, fn func(vm *storage.VirtualMachine) error) error {
+	if m.err != nil {
+		return m.err
+	}
+	for _, vm := range m.vms {
+		if err := fn(vm); err != nil {
+			return err
+		}
+	}
+	return nil
 }
