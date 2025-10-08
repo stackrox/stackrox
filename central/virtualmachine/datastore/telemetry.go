@@ -18,6 +18,11 @@ const (
 	// activeAgentScanRecencyThreshold defines how recent a scan must be to consider
 	// the VM agent as active. This threshold is included in the telemetry metric name.
 	activeAgentScanRecencyThreshold = 24 * time.Hour
+
+	// Metric name constants to ensure consistency between implementation and tests
+	metricClustersWithVMs     = "Total Secured Clusters With Virtual Machines"
+	metricTotalVMs            = "Total Virtual Machines"
+	metricVMsWithActiveAgents = "Total Virtual Machines With Active Agents (Last 24h)"
 )
 
 var (
@@ -33,6 +38,11 @@ var (
 // When the ROX_VIRTUAL_MACHINES feature flag is disabled, this function returns
 // an empty map without performing any database queries, ensuring no performance impact.
 func Gather(ds DataStore) phonehome.GatherFunc {
+	return gatherWithTime(ds, time.Now)
+}
+
+// gatherWithTime allows injecting a time function for deterministic testing.
+func gatherWithTime(ds DataStore, nowFunc func() time.Time) phonehome.GatherFunc {
 	log.Debugf("Gathering Virtual machines telemetry")
 	return func(ctx context.Context) (map[string]any, error) {
 		// Early return if virtual machines feature is disabled - zero performance impact
@@ -52,7 +62,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 		clusterIDsWithRunningVMs := set.NewStringSet()
 		totalVMs := 0
 		vmsWithActiveAgents := 0
-		now := time.Now()
+		now := nowFunc()
 
 		err := ds.Walk(ctx, func(vm *storage.VirtualMachine) error {
 			totalVMs++
@@ -85,9 +95,9 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 		}
 
 		props := map[string]any{
-			"Total Secured Clusters With Virtual Machines":         clusterIDsWithRunningVMs.Cardinality(),
-			"Total Virtual Machines":                               totalVMs,
-			"Total Virtual Machines With Active Agents (Last 24h)": vmsWithActiveAgents,
+			metricClustersWithVMs:     clusterIDsWithRunningVMs.Cardinality(),
+			metricTotalVMs:            totalVMs,
+			metricVMsWithActiveAgents: vmsWithActiveAgents,
 		}
 		log.Debugf("Virtual machines telemetry update: %v", props)
 		return props, nil
