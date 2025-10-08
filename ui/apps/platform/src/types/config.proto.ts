@@ -52,6 +52,24 @@ export type AdministrationEventsConfig = {
     retentionDurationDays: number; // uint32
 };
 
+export type PrometheusMetricsLabels = {
+    labels: string[];
+};
+
+export type PrometheusMetricsGroup = {
+    gatheringPeriodMinutes?: number; // uint32
+    descriptors?: Record<string, PrometheusMetricsLabels>;
+};
+
+// The type list of known metrics categories.
+export type PrometheusMetricsCategory = keyof PrometheusMetrics;
+
+export type PrometheusMetrics = {
+    imageVulnerabilities?: PrometheusMetricsGroup | null;
+    policyViolations?: PrometheusMetricsGroup | null;
+    nodeVulnerabilities?: PrometheusMetricsGroup | null;
+};
+
 export type PrivateConfig = {
     alertConfig: AlertRetentionConfig;
     imageRetentionDurationDays: number; // int32
@@ -59,6 +77,7 @@ export type PrivateConfig = {
     decommissionedClusterRetention: DecommissionedClusterRetentionConfig;
     reportRetentionConfig: ReportRetentionConfig;
     administrationEventsConfig: AdministrationEventsConfig;
+    metrics?: PrometheusMetrics | null;
 };
 
 export type PlatformComponentRule = {
