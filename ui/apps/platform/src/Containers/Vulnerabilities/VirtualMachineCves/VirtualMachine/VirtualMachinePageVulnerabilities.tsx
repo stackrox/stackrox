@@ -33,6 +33,7 @@ import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from '../../components/CvesByStatusSummaryCard';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
+import VirtualMachineScanScopeAlert from '../components/VirtualMachineScanScopeAlert';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
@@ -130,6 +131,7 @@ function VirtualMachinePageVulnerabilities({
 
     return (
         <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
+            <VirtualMachineScanScopeAlert />
             <AdvancedFiltersToolbar
                 className="pf-v5-u-px-sm pf-v5-u-pb-0"
                 searchFilter={searchFilter}
