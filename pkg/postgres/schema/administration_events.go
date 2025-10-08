@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -28,8 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.AdministrationEvent)(nil)), "administration_events")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ADMINISTRATION_EVENTS, "administrationevent", (*storage.AdministrationEvent)(nil)))
+		schema = getAdministrationEventSchema()
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableAdministrationEventsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_EVENTS, schema)
@@ -53,4 +51,105 @@ type AdministrationEvents struct {
 	LastOccurredAt *time.Time                       `gorm:"column:lastoccurredat;type:timestamp"`
 	CreatedAt      *time.Time                       `gorm:"column:createdat;type:timestamp"`
 	Serialized     []byte                           `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	administrationEventSearchFields = map[search.FieldLabel]*search.Field{}
+
+	administrationEventSchema = &walker.Schema{
+		Table:    "administration_events",
+		Type:     "*storage.AdministrationEvent",
+		TypeName: "AdministrationEvent",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Type",
+				ColumnName: "Type",
+				Type:       "storage.AdministrationEventType",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "Level",
+				ColumnName: "Level",
+				Type:       "storage.AdministrationEventLevel",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "Domain",
+				ColumnName: "Domain",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Type",
+				ColumnName: "Resource_Type",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "NumOccurrences",
+				ColumnName: "NumOccurrences",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "LastOccurredAt",
+				ColumnName: "LastOccurredAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "CreatedAt",
+				ColumnName: "CreatedAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getAdministrationEventSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if administrationEventSchema.OptionsMap == nil {
+		administrationEventSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ADMINISTRATION_EVENTS, administrationEventSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range administrationEventSchema.Fields {
+		administrationEventSchema.Fields[i].Schema = administrationEventSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(administrationEventSchema)
+	return administrationEventSchema
 }

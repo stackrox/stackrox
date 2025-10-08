@@ -3,8 +3,6 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -32,8 +30,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), "role_bindings")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLEBINDINGS, "k8srolebinding", (*storage.K8SRoleBinding)(nil)))
+		schema = getK8sRoleBindingSchema()
 		schema.ScopingResource = resources.K8sRoleBinding
 		RegisterTable(schema, CreateTableRoleBindingsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, schema)
@@ -69,4 +66,267 @@ type RoleBindingsSubjects struct {
 	Kind            storage.SubjectKind `gorm:"column:kind;type:integer"`
 	Name            string              `gorm:"column:name;type:varchar"`
 	RoleBindingsRef RoleBindings        `gorm:"foreignKey:role_bindings_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	k8sRoleBindingSearchFields = map[search.FieldLabel]*search.Field{
+		search.FieldLabel("Cluster"): {
+			FieldPath: ".cluster_name",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Cluster ID"): {
+			FieldPath: ".cluster_id",
+			Store:     true,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Cluster Role"): {
+			FieldPath: ".cluster_role",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Namespace"): {
+			FieldPath: ".namespace",
+			Store:     true,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Role Binding"): {
+			FieldPath: ".name",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Role Binding Annotation"): {
+			FieldPath: ".annotations",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Role Binding ID"): {
+			FieldPath: ".id",
+			Store:     false,
+			Hidden:    true,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Role Binding Label"): {
+			FieldPath: ".labels",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Role ID"): {
+			FieldPath: ".role_id",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Subject"): {
+			FieldPath: ".subjects.name",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+		search.FieldLabel("Subject Kind"): {
+			FieldPath: ".subjects.kind",
+			Store:     false,
+			Hidden:    false,
+			Category:  v1.SearchCategory_ROLEBINDINGS,
+		},
+	}
+
+	k8sRoleBindingSchema = &walker.Schema{
+		Table:    "role_bindings",
+		Type:     "*storage.K8SRoleBinding",
+		TypeName: "K8sRoleBinding",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Role Binding ID",
+					Enabled:   true,
+				},
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Role Binding",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Namespace",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ClusterName",
+				ColumnName: "ClusterName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Cluster",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "ClusterRole",
+				ColumnName: "ClusterRole",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+				Search: walker.SearchField{
+					FieldName: "Cluster Role",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Role Binding Label",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "Annotations",
+				ColumnName: "Annotations",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+				Search: walker.SearchField{
+					FieldName: "Role Binding Annotation",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "RoleId",
+				ColumnName: "RoleId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Search: walker.SearchField{
+					FieldName: "Role ID",
+					Enabled:   true,
+				},
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{
+
+			&walker.Schema{
+				Table:    "role_bindings_subjects",
+				Type:     "*storage.Subject",
+				TypeName: "Subject",
+				Fields: []walker.Field{
+					{
+						Name:       "roleBindingID",
+						ColumnName: "role_bindings_Id",
+						Type:       "string",
+						SQLType:    "uuid",
+						DataType:   postgres.String,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "idx",
+						ColumnName: "idx",
+						Type:       "int",
+						SQLType:    "integer",
+						DataType:   postgres.Integer,
+						Options: walker.PostgresOptions{
+							PrimaryKey: true,
+						},
+					},
+					{
+						Name:       "Kind",
+						ColumnName: "Kind",
+						Type:       "storage.SubjectKind",
+						SQLType:    "integer",
+						DataType:   postgres.Enum,
+						Search: walker.SearchField{
+							FieldName: "Subject Kind",
+							Enabled:   true,
+						},
+					},
+					{
+						Name:       "Name",
+						ColumnName: "Name",
+						Type:       "string",
+						SQLType:    "varchar",
+						DataType:   postgres.String,
+						Search: walker.SearchField{
+							FieldName: "Subject",
+							Enabled:   true,
+						},
+					},
+				},
+				Children: []*walker.Schema{},
+			},
+		},
+	}
+)
+
+func getK8sRoleBindingSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if k8sRoleBindingSchema.OptionsMap == nil {
+		k8sRoleBindingSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ROLEBINDINGS, k8sRoleBindingSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range k8sRoleBindingSchema.Fields {
+		k8sRoleBindingSchema.Fields[i].Schema = k8sRoleBindingSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(k8sRoleBindingSchema)
+	return k8sRoleBindingSchema
 }

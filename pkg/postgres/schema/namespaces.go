@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NamespaceMetadata)(nil)), "namespaces")
+		schema = getNamespaceMetadataSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -36,7 +34,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NAMESPACES, "namespacemetadata", (*storage.NamespaceMetadata)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
@@ -71,4 +68,91 @@ type Namespaces struct {
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	namespaceMetadataSearchFields = map[search.FieldLabel]*search.Field{}
+
+	namespaceMetadataSchema = &walker.Schema{
+		Table:    "namespaces",
+		Type:     "*storage.NamespaceMetadata",
+		TypeName: "NamespaceMetadata",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterName",
+				ColumnName: "ClusterName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+			},
+			{
+				Name:       "Annotations",
+				ColumnName: "Annotations",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getNamespaceMetadataSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if namespaceMetadataSchema.OptionsMap == nil {
+		namespaceMetadataSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NAMESPACES, namespaceMetadataSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range namespaceMetadataSchema.Fields {
+		namespaceMetadataSchema.Fields[i].Schema = namespaceMetadataSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(namespaceMetadataSchema)
+	return namespaceMetadataSchema
 }
