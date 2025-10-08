@@ -1219,6 +1219,9 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 	if err != nil {
 		return errors.Wrap(err, "prepare cursor")
 	}
+	if cursor == nil {
+		return nil
+	}
 	defer cursor.close()
 
 	for {
