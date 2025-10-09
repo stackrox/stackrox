@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Divider, Flex, FlexItem, Label, PageSection, Text } from '@patternfly/react-core';
 import { Table, TableText, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { Link } from 'react-router-dom';
 
 import DateDistance from 'Components/DateDistance';
 import { SignatureVerificationResult, VerifiedStatus } from '../../types';
+import useIntegrations from '../../../Integrations/hooks/useIntegrations';
+import useFetchIntegrations from '../../../Integrations/hooks/useFetchIntegrations';
+import useIntegrationPermissions from '../../../Integrations/hooks/useIntegrationPermissions';
+import { integrationsPath } from 'routePaths';
 
 export type ImagePageSignatureVerificationProps = {
     results?: SignatureVerificationResult[];
@@ -46,6 +51,50 @@ function getStatusMessage({ status, description }: SignatureVerificationResult) 
 }
 
 function ImagePageSignatureVerification({ results }: ImagePageSignatureVerificationProps) {
+    const signatureIntegrations = useIntegrations({
+        source: 'signatureIntegrations',
+        type: 'signature',
+    });
+    const fetchSignatureIntegrations = useFetchIntegrations('signatureIntegrations');
+    const { signatureIntegrations: integrationPermissions } = useIntegrationPermissions();
+
+    useEffect(() => {
+        if (integrationPermissions.read) {
+            fetchSignatureIntegrations();
+        }
+    }, [fetchSignatureIntegrations, integrationPermissions.read]);
+
+    const getIntegrationDetailsUrl = (verifierId: string): string => {
+        return `${integrationsPath}/signatureIntegrations/signature/view/${verifierId}`;
+    };
+
+    const getIntegrationDisplayName = (verifierId: string): string => {
+        if (!integrationPermissions.read) {
+            return verifierId;
+        }
+
+        const integration = signatureIntegrations.find(
+            (integration) => integration.id === verifierId
+        );
+        return integration?.name || verifierId;
+    };
+
+    const renderIntegrationCell = (result: SignatureVerificationResult) => {
+        const displayName = getIntegrationDisplayName(result.verifierId);
+        const hasReadAccess = integrationPermissions.read;
+        const integration = signatureIntegrations.find(
+            (integration) => integration.id === result.verifierId
+        );
+
+        // Show as link only if user has permissions and we found the integration
+        if (hasReadAccess && integration) {
+            return <Link to={getIntegrationDetailsUrl(result.verifierId)}>{displayName}</Link>;
+        }
+
+        // Fallback to plain text
+        return displayName;
+    };
+
     return (
         <>
             <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
@@ -75,7 +124,9 @@ function ImagePageSignatureVerification({ results }: ImagePageSignatureVerificat
                                     }}
                                 >
                                     <Tr>
-                                        <Td dataLabel="Integration">{result.verifierId}</Td>
+                                        <Td dataLabel="Integration">
+                                            {renderIntegrationCell(result)}
+                                        </Td>
                                         <Td dataLabel="Status">{getStatusMessage(result)}</Td>
                                         <Td dataLabel="Verification time">
                                             <DateDistance date={result.verificationTime} />
