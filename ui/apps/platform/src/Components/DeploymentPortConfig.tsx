@@ -11,7 +11,7 @@ import {
     StackItem,
 } from '@patternfly/react-core';
 
-import { PortConfig } from 'types/deployment.proto';
+import type { PortConfig } from 'types/deployment.proto';
 
 type DeploymentPortConfigProps = {
     port: PortConfig;
