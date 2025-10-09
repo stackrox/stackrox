@@ -44,12 +44,13 @@ func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 		}
 
 		// Create content-based deduplication key (not including index)
-		dedupKey := fmt.Sprintf("%s:%s:%d:%s:%s",
+		dedupKey := fmt.Sprintf("%s:%s:%d:%s:%s:%d",
 			component.GetName(),
 			component.GetVersion(),
 			component.GetLayerIndex(),
 			component.GetSource().String(),
-			component.GetLocation())
+			component.GetLocation(),
+			index)
 
 		// dedupe components within the component
 		if _, ok := componentMap[dedupKey]; ok {

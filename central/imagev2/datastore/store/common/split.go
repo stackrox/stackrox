@@ -44,12 +44,13 @@ func splitComponents(parts ImagePartsV2) ([]ComponentPartsV2, error) {
 		}
 
 		// dedupe components within the component using content-based key
-		dedupKey := fmt.Sprintf("%s:%s:%d:%s:%s",
+		dedupKey := fmt.Sprintf("%s:%s:%d:%s:%s:%d",
 			component.GetName(),
 			component.GetVersion(),
 			component.GetLayerIndex(),
 			component.GetSource().String(),
-			component.GetLocation())
+			component.GetLocation(),
+			index)
 		if _, ok := componentMap[dedupKey]; ok {
 			log.Infof("Component %s-%s has already been processed in the image. Skipping...", component.GetName(), component.GetVersion())
 			continue
