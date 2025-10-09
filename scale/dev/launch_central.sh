@@ -13,7 +13,7 @@ fi
 # Launch Central
 $DIR/../../deploy/k8s/central.sh
 
-kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0  ROX_SCALE_TEST=true
+kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0  ROX_SCALE_TEST=true ROX_GRPC_MAX_MESSAGE_SIZE=1024
 if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
   exit 0
 fi
