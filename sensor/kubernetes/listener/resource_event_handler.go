@@ -107,8 +107,11 @@ func (k *listenerImpl) handleAllEvents() {
 	var syncingResources concurrency.Flag
 	syncingResources.Set(true)
 
-	// This might block if a cluster ID is initially unavailable, which is okay.
-	clusterID := clusterid.Get()
+	clusterID, err := clusterid.GetWithWait(&k.stopSig)
+	if err != nil {
+		log.Info("handleAllEvents was stopped while waiting for the cluster ID")
+		return
+	}
 
 	var crdSharedInformerFactory dynamicinformer.DynamicSharedInformerFactory
 	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
