@@ -52,11 +52,9 @@ function VirtualMachinePageHeader({
                 <DeveloperPreviewLabel />
             </Flex>
             <LabelGroup numLabels={5}>
-                <Label>GuestOS: PR#17110</Label>
                 <Label>
                     In: {virtualMachineData.clusterName}/{virtualMachineData.namespace}
                 </Label>
-                <Label>Agent: ?</Label>
                 {virtualMachineData.scan?.scanTime && (
                     <Label>Scan time: {getDateTime(virtualMachineData.scan.scanTime)}</Label>
                 )}

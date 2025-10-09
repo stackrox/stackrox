@@ -102,7 +102,6 @@ function VirtualMachinesCvesTable() {
                         <Tr>
                             <Th>Virtual machine</Th>
                             <Th>CVEs by severity</Th>
-                            <Th>Guest OS</Th>
                             <Th>Cluster</Th>
                             <Th>Namespace</Th>
                             <Th>Scanned packages</Th>
@@ -154,7 +153,6 @@ function VirtualMachinesCvesTable() {
                                                     }
                                                 />
                                             </Td>
-                                            <Td dataLabel="Guest OS">PR#17110</Td>
                                             <Td dataLabel="Cluster">
                                                 {virtualMachine.clusterName}
                                             </Td>
