@@ -9,15 +9,12 @@ var LazyLabels = []tracker.LazyLabel[*finding]{
 }
 
 type finding struct {
-	err                  error
 	component            string
 	hoursUntilExpiration int
-}
-
-func (f *finding) GetError() error {
-	return f.err
 }
 
 func (f *finding) GetIncrement() int {
 	return f.hoursUntilExpiration
 }
+
+var _ tracker.WithIncrement = (*finding)(nil)

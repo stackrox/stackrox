@@ -1,4 +1,4 @@
-package virtualmachine
+package relay
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/mdlayher/vsock"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/compliance/virtualmachine/metrics"
+	"github.com/stackrox/rox/compliance/virtualmachines/relay/metrics"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/env"

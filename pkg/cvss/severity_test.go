@@ -8,7 +8,6 @@ import (
 )
 
 func TestVulnToSeverity(t *testing.T) {
-	_ = t
 	tests := map[string]struct {
 		input *vulnScoreInfo
 		want  storage.VulnerabilitySeverity
@@ -70,11 +69,11 @@ func TestVulnToSeverity(t *testing.T) {
 		"known CVSS V3 takes precedence over CVSS V2 severity if the base severity is unknown": {
 			input: &vulnScoreInfo{
 				severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
-				cvssv2: &storage.CVSSV2{
-					Severity: storage.CVSSV2_HIGH,
-				},
 				cvssV3: &storage.CVSSV3{
 					Severity: storage.CVSSV3_LOW,
+				},
+				cvssv2: &storage.CVSSV2{
+					Severity: storage.CVSSV2_HIGH,
 				},
 			},
 			want: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
