@@ -359,3 +359,57 @@ func TestResetClusterLocal(t *testing.T) {
 		})
 	}
 }
+
+// TestEnrichLocalImageInternal_ImageNames ensures that image names are
+// populated from the existing image in Central DB when the image
+// requires re-enrichment. (ie: when scan has expired)
+func TestEnrichLocalImageInternal_ImageNames(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+
+	genImageName := func(img string) *storage.ImageName {
+		imgName, _, err := utils.GenerateImageNameFromString(img)
+		require.NoError(t, err)
+		return imgName
+	}
+
+	imageEnricherMock := enricherMocks.NewMockImageEnricher(ctrl)
+	imageEnricherMock.EXPECT().EnrichWithVulnerabilities(gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return(enricher.EnrichmentResult{}, nil)
+	imageEnricherMock.EXPECT().EnrichWithSignatureVerificationData(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return(enricher.EnrichmentResult{}, nil)
+
+	imageDSMock := imageDSMocks.NewMockDataStore(ctrl)
+	imageDSMock.EXPECT().GetImage(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return(&storage.Image{
+			Id:   "fake-id",
+			Scan: nil, // A nil scan should trigger a re-scan.
+			Names: []*storage.ImageName{
+				genImageName("fake/image:A"),
+				genImageName("fake/image:B"),
+			},
+		}, true, nil)
+
+	riskManagerMock := riskManagerMocks.NewMockManager(ctrl)
+	riskManagerMock.EXPECT().CalculateRiskAndUpsertImage(gomock.Any()).
+		AnyTimes().
+		Return(nil)
+
+	s := serviceImpl{
+		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+		enricher:              imageEnricherMock,
+		datastore:             imageDSMock,
+		riskManager:           riskManagerMock,
+	}
+
+	resp, err := s.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
+		ImageId:   "fake-id",
+		ImageName: genImageName("fake/image:C"),
+	})
+	require.NoError(t, err)
+	// Verify that the names from the cached image are carried forward.
+	require.Len(t, resp.GetImage().GetNames(), 3)
+}
