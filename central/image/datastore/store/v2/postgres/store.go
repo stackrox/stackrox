@@ -400,7 +400,7 @@ func (s *storeImpl) isUpdated(oldImage, image *storage.Image) (bool, bool, error
 
 	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
 	if protocompat.CompareTimestamps(oldImage.GetScan().GetScanTime(), image.GetScan().GetScanTime()) > 0 {
-		image.Scan = oldImage.Scan
+		image.Scan = oldImage.GetScan()
 	} else {
 		scanUpdated = true
 	}
@@ -573,7 +573,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 }
 
 func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *storage.Image) error {
-	components, err := getImageComponents(ctx, tx, image.Id)
+	components, err := getImageComponents(ctx, tx, image.GetId())
 	if err != nil {
 		return err
 	}

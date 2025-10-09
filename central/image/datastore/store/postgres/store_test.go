@@ -99,7 +99,7 @@ func (s *ImagesStoreSuite) TestStore() {
 	s.True(exists)
 
 	// Reconcile the timestamps that are set during upsert.
-	cloned.LastUpdated = foundImage.LastUpdated
+	cloned.LastUpdated = foundImage.GetLastUpdated()
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	s.NoError(store.Delete(ctx, image.GetId()))

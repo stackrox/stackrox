@@ -378,7 +378,7 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 		// Overwrite the image Name as a workaround to the fact that we fetch the image by ID
 		// The ID may actually have many names that refer to it. e.g. busybox:latest and busybox:1.31 could have the
 		// exact same ID
-		image.Name = deployment.Containers[imgResult.containerIdx].GetImage().GetName()
+		image.Name = deployment.GetContainers()[imgResult.containerIdx].GetImage().GetName()
 		images[imgResult.containerIdx] = &image
 	}
 	return images

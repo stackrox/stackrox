@@ -78,7 +78,7 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 		},
 	}
 	otherRequest := request.CloneVT()
-	s.Require().NotEmpty(otherRequest.Peers)
+	s.Require().NotEmpty(otherRequest.GetPeers())
 	otherRequest.Peers[0].Entity.Id = deploymentUtils.GetMaskedDeploymentID(entityID, testPeerDeploymentName)
 
 	// If we don't have any baseline, then it is in observation and not created yet, so we will create
@@ -96,15 +96,15 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
 	rsp, err := s.service.GetNetworkBaselineStatusForFlows(allAllowedCtx, request)
 	s.Nil(err)
-	s.Equal(1, len(rsp.Statuses))
-	s.Equal(v1.NetworkBaselinePeerStatus_BASELINE, rsp.Statuses[0].GetStatus())
+	s.Equal(1, len(rsp.GetStatuses()))
+	s.Equal(v1.NetworkBaselinePeerStatus_BASELINE, rsp.GetStatuses()[0].GetStatus())
 
 	// Check the request with the masked ID for the baseline peer deployment flags the flow as baseline
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
 	rsp2, err := s.service.GetNetworkBaselineStatusForFlows(allAllowedCtx, otherRequest)
 	s.Nil(err)
-	s.Equal(1, len(rsp2.Statuses))
-	s.Equal(v1.NetworkBaselinePeerStatus_BASELINE, rsp2.Statuses[0].GetStatus())
+	s.Equal(1, len(rsp2.GetStatuses()))
+	s.Equal(v1.NetworkBaselinePeerStatus_BASELINE, rsp2.GetStatuses()[0].GetStatus())
 
 	// If we change some baseline details, then the flow should be marked as anomaly
 	baseline =
@@ -117,8 +117,8 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
 	rsp, err = s.service.GetNetworkBaselineStatusForFlows(allAllowedCtx, request)
 	s.Nil(err)
-	s.Equal(1, len(rsp.Statuses))
-	s.Equal(v1.NetworkBaselinePeerStatus_ANOMALOUS, rsp.Statuses[0].Status)
+	s.Equal(1, len(rsp.GetStatuses()))
+	s.Equal(v1.NetworkBaselinePeerStatus_ANOMALOUS, rsp.GetStatuses()[0].GetStatus())
 }
 
 func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaseline() {
@@ -324,9 +324,9 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForExterna
 
 		s.Nil(err)
 
-		protoassert.ElementsMatch(s.T(), tc.expectedAnomalous, resp.Anomalous)
-		protoassert.ElementsMatch(s.T(), tc.expectedBaseline, resp.Baseline)
-		s.Equal(len(externalPeers), int(resp.TotalAnomalous+resp.TotalBaseline))
+		protoassert.ElementsMatch(s.T(), tc.expectedAnomalous, resp.GetAnomalous())
+		protoassert.ElementsMatch(s.T(), tc.expectedBaseline, resp.GetBaseline())
+		s.Equal(len(externalPeers), int(resp.GetTotalAnomalous()+resp.GetTotalBaseline()))
 	}
 
 }

@@ -80,7 +80,7 @@ func podPortForwardViolationMsg(event *storage.KubernetesEvent) (string, []*stor
 
 func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 	object := event.GetObject()
-	readableResourceName := strings.ToLower(object.Resource.String())
+	readableResourceName := strings.ToLower(object.GetResource().String())
 
 	var singularResourceName string
 	if strings.HasSuffix(readableResourceName, "ies") {

@@ -84,7 +84,7 @@ func NVDCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) 
 			return nil, err
 		}
 		cve.CvssV2 = cvssv2
-		cve.Cvss = cvssv2.Score
+		cve.Cvss = cvssv2.GetScore()
 		cve.ScoreVersion = storage.EmbeddedVulnerability_V2
 	}
 
@@ -95,7 +95,7 @@ func NVDCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) 
 			return nil, err
 		}
 		cve.CvssV3 = cvssv3
-		cve.Cvss = cvssv3.Score
+		cve.Cvss = cvssv3.GetScore()
 		cve.ScoreVersion = storage.EmbeddedVulnerability_V3
 	}
 
@@ -254,10 +254,10 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 		SuppressActivation: from.GetSuppressActivation(),
 		SuppressExpiry:     from.GetSuppressExpiry(),
 	}
-	if ret.CvssV3 != nil {
+	if ret.GetCvssV3() != nil {
 		ret.ScoreVersion = storage.CVE_V3
 		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
-	} else if ret.CvssV2 != nil {
+	} else if ret.GetCvssV2() != nil {
 		ret.ScoreVersion = storage.CVE_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
@@ -274,7 +274,7 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 	nvdCvss = 0
 	nvdVersion := storage.CvssScoreVersion_UNKNOWN_VERSION
 	for _, score := range from.GetCvssMetrics() {
-		if score.Source == storage.Source_SOURCE_NVD {
+		if score.GetSource() == storage.Source_SOURCE_NVD {
 			if score.GetCvssv3() != nil {
 				nvdCvss = score.GetCvssv3().GetScore()
 				nvdVersion = storage.CvssScoreVersion_V3

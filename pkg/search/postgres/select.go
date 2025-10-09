@@ -44,7 +44,7 @@ func newDBScanAPI(opts ...dbscan.APIOption) *dbscan.API {
 // explicitly specify select fields.
 // Deprecated: Use RunSelectRequestForSchemaFn
 func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
-	result := make([]*T, 0, paginated.GetLimit(q.Pagination.GetLimit(), 100))
+	result := make([]*T, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
 	err := RunSelectRequestForSchemaFn(ctx, db, schema, q, func(t *T) error {
 		result = append(result, t)
 		return nil

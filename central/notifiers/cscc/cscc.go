@@ -72,7 +72,7 @@ func newCSCC(protoNotifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 		return nil, err
 	}
 
-	decCreds := conf.ServiceAccount
+	decCreds := conf.GetServiceAccount()
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
 		if protoNotifier.GetNotifierSecret() == "" {
@@ -96,7 +96,7 @@ func newCSCC(protoNotifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 		client:   client,
 		config: &config{
 			ServiceAccount: decCreds,
-			SourceID:       conf.SourceId,
+			SourceID:       conf.GetSourceId(),
 		},
 	}, nil
 }
@@ -164,5 +164,5 @@ func (c *cscc) initFinding(_ context.Context, alert *storage.Alert,
 	}
 	providerMetadata := cluster.GetStatus().GetProviderMetadata()
 
-	return convertAlertToFinding(alert, c.config.SourceID, c.Notifier.UiEndpoint, providerMetadata)
+	return convertAlertToFinding(alert, c.config.SourceID, c.Notifier.GetUiEndpoint(), providerMetadata)
 }

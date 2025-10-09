@@ -68,7 +68,7 @@ func (s *CommandHandlerTestSuite) getScrapeUpdate() {
 		message := update.GetMsg()
 		scrapeUpdate, ok := message.(*central.MsgFromSensor_ScrapeUpdate)
 		s.Require().True(ok)
-		s.Assert().Equal("foo", scrapeUpdate.ScrapeUpdate.ScrapeId)
+		s.Assert().Equal("foo", scrapeUpdate.ScrapeUpdate.GetScrapeId())
 	case <-time.After(time.Second * 2):
 		s.Require().Fail("Timed out waiting for update")
 	}

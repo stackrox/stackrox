@@ -60,20 +60,20 @@ func (s *migrationTestSuite) TestMigration() {
 	assert.ElementsMatch(s.T(), collectIDs(clusters...), collectIDs(result...))
 
 	result, err = store.GetByQuery(s.ctx,
-		search.NewQueryBuilder().AddExactMatches(search.Cluster, clusters[0].Name).ProtoQuery())
+		search.NewQueryBuilder().AddExactMatches(search.Cluster, clusters[0].GetName()).ProtoQuery())
 	assert.NoError(s.T(), err)
 
-	assert.EqualValues(s.T(), result[0].HelmConfig.DynamicConfig.AdmissionControllerConfig.ScanInline, false)
-	assert.EqualValues(s.T(), result[0].HelmConfig.DynamicConfig.AdmissionControllerConfig.Enabled, true)
-	assert.EqualValues(s.T(), result[0].HelmConfig.DynamicConfig.AdmissionControllerConfig.EnforceOnUpdates, false)
+	assert.EqualValues(s.T(), result[0].HelmConfig.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(), false)
+	assert.EqualValues(s.T(), result[0].HelmConfig.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(), true)
+	assert.EqualValues(s.T(), result[0].HelmConfig.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(), false)
 
 	result, err = store.GetByQuery(s.ctx,
-		search.NewQueryBuilder().AddExactMatches(search.Cluster, clusters[1].Name).ProtoQuery())
+		search.NewQueryBuilder().AddExactMatches(search.Cluster, clusters[1].GetName()).ProtoQuery())
 	assert.NoError(s.T(), err)
 
-	assert.EqualValues(s.T(), result[0].DynamicConfig.AdmissionControllerConfig.ScanInline, true)
-	assert.EqualValues(s.T(), result[0].DynamicConfig.AdmissionControllerConfig.Enabled, true)
-	assert.EqualValues(s.T(), result[0].DynamicConfig.AdmissionControllerConfig.EnforceOnUpdates, true)
+	assert.EqualValues(s.T(), result[0].DynamicConfig.GetAdmissionControllerConfig().GetScanInline(), true)
+	assert.EqualValues(s.T(), result[0].DynamicConfig.GetAdmissionControllerConfig().GetEnabled(), true)
+	assert.EqualValues(s.T(), result[0].DynamicConfig.GetAdmissionControllerConfig().GetEnforceOnUpdates(), true)
 
 }
 

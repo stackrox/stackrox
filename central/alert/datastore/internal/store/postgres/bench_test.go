@@ -26,7 +26,7 @@ func BenchmarkMany(b *testing.B) {
 
 	var idx []string
 	for _, a := range alerts {
-		idx = append(idx, a.Id)
+		idx = append(idx, a.GetId())
 	}
 
 	testDB := pgtest.ForT(b)

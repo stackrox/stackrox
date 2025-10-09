@@ -50,7 +50,7 @@ func (s *service) initialize() error {
 	if err != nil {
 		return err
 	}
-	s.autoTriggerFlag.Set(defaultConfig.EnableAutoUpgrade)
+	s.autoTriggerFlag.Set(defaultConfig.GetEnableAutoUpgrade())
 	return nil
 }
 
@@ -131,7 +131,7 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
-	s.autoTriggerFlag.Set(req.GetConfig().EnableAutoUpgrade)
+	s.autoTriggerFlag.Set(req.GetConfig().GetEnableAutoUpgrade())
 	return &v1.Empty{}, nil
 }
 

@@ -121,7 +121,7 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db postgres.DB) error {
 
 	// read all categories and get category name to id map
 	if err = categoriesStore.Walk(ctx, func(category *storage.PolicyCategory) error {
-		categoryNameToIDMap[category.Name] = category.Id
+		categoryNameToIDMap[category.GetName()] = category.GetId()
 		return nil
 	}); err != nil {
 		return err
@@ -137,9 +137,9 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db postgres.DB) error {
 	policiesToUpdate := make([]*storage.Policy, 0, policyCount)
 	// read all policies, create policy id -> category ids edge map for each policy
 	err = policyStore.Walk(ctx, func(p *storage.Policy) error {
-		policyToCategoryIDsMap[p.Id] = make([]string, 0)
+		policyToCategoryIDsMap[p.GetId()] = make([]string, 0)
 		categorySet := set.NewStringSet()
-		for _, c := range p.Categories {
+		for _, c := range p.GetCategories() {
 			if strings.TrimSpace(c) == "" {
 				continue
 			}
@@ -150,7 +150,7 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db postgres.DB) error {
 			}
 			if categoryID, exists := categoryNameToIDMap[categoryName]; exists {
 				// category exists
-				policyToCategoryIDsMap[p.Id] = append(policyToCategoryIDsMap[p.Id], categoryID)
+				policyToCategoryIDsMap[p.GetId()] = append(policyToCategoryIDsMap[p.GetId()], categoryID)
 			} else {
 				// category does not exist, has to be a non default category
 				id := uuid.NewV4().String()
@@ -161,7 +161,7 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db postgres.DB) error {
 				}); err != nil {
 					return err
 				}
-				policyToCategoryIDsMap[p.Id] = append(policyToCategoryIDsMap[p.Id], id)
+				policyToCategoryIDsMap[p.GetId()] = append(policyToCategoryIDsMap[p.GetId()], id)
 				categoryNameToIDMap[categoryName] = id
 			}
 		}

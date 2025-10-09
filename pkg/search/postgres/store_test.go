@@ -253,7 +253,7 @@ func TestWalk(t *testing.T) {
 	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
 
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		walkedObjects = append(walkedObjects, obj)
 		return nil
 	}

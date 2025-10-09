@@ -140,7 +140,7 @@ func setVirtualMachineScoresAndScoreVersions(
 	vulnerability *storage.VirtualMachineVulnerability,
 	cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS,
 ) error {
-	if vulnerability == nil || vulnerability.CveBaseInfo == nil {
+	if vulnerability == nil || vulnerability.GetCveBaseInfo() == nil {
 		return errox.InvalidArgs.CausedBy("Cannot enrich CVSS information on a nil vulnerability object")
 	}
 	severity := vulnerability.GetSeverity()
@@ -172,7 +172,7 @@ func setVirtualMachineScoresAndScoreVersions(
 			if v3Err == nil && cvssV3 != nil {
 				score.CvssScore = &storage.CVSSScore_Cvssv3{Cvssv3: cvssV3}
 				// CVSS metrics has maximum two entries, one from NVD, one from Rox updater if available
-				if len(cvssMetrics) == 1 || (len(cvssMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
+				if len(cvssMetrics) == 1 || (len(cvssMetrics) > 1 && cvss.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
 					vulnerability.CveBaseInfo.Link = cvss.GetUrl()
 					if severity == storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY {
 						vulnerability.Severity = pkgCVSS.ConvertCVSSV3SeverityToVulnerabilitySeverity(cvssV3.GetSeverity())

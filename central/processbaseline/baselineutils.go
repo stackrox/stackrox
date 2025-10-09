@@ -76,7 +76,7 @@ func Processes(baseline *storage.ProcessBaseline, mode EvaluationMode) *set.Stri
 // A process is considered a startup process if it happens within the first ContainerStartupDuration and was not scraped
 // but instead pulled from exec
 func IsStartupProcess(process *storage.ProcessIndicator) bool {
-	if process.ContainerStartTime == nil {
+	if process.GetContainerStartTime() == nil {
 		return false
 	}
 	// TODO(ROX-31107): Determine if nil SignalTime should be considered startup task.  By this logic it is.

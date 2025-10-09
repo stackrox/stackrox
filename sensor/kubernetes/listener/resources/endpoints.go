@@ -162,7 +162,7 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 		PortName: port.Name,
 	}
 	if portCfg := deployment.portConfigs[service.PortRefOf(port)]; portCfg != nil {
-		targetInfo.ContainerPort = uint16(portCfg.ContainerPort)
+		targetInfo.ContainerPort = uint16(portCfg.GetContainerPort())
 	} else {
 		targetInfo.ContainerPort = uint16(port.TargetPort.IntValue())
 	}

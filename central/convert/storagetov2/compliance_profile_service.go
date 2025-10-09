@@ -86,12 +86,12 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 		}
 		if _, found := profileSummaryMap[summary.GetName()]; !found {
 			profileSummaryMap[summary.GetName()] = &v2.ComplianceProfileSummary{
-				Name:           summary.Name,
-				ProductType:    summary.ProductType,
-				Description:    summary.Description,
-				Title:          summary.Title,
-				RuleCount:      int32(len(summary.Rules)),
-				ProfileVersion: summary.ProfileVersion,
+				Name:           summary.GetName(),
+				ProductType:    summary.GetProductType(),
+				Description:    summary.GetDescription(),
+				Title:          summary.GetTitle(),
+				RuleCount:      int32(len(summary.GetRules())),
+				ProfileVersion: summary.GetProfileVersion(),
 				Standards:      profileBenchmarkNameMap[summary.GetName()],
 			}
 			orderedProfiles = append(orderedProfiles, summary.GetName())

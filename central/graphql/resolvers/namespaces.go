@@ -68,14 +68,14 @@ func init() {
 func (resolver *namespaceResolver) getClusterNamespaceRawQuery() string {
 	return search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).
+		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
 		Query()
 }
 
 func (resolver *namespaceResolver) getClusterNamespaceQuery() *v1.Query {
 	return search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).
+		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
 		ProtoQuery()
 }
 
@@ -325,7 +325,7 @@ func (resolver *namespaceResolver) getApplicablePolicies(ctx context.Context, q 
 		return nil, err
 	}
 
-	applicable, _ := matcher.NewNamespaceMatcher(resolver.data.Metadata).FilterApplicablePolicies(policies)
+	applicable, _ := matcher.NewNamespaceMatcher(resolver.data.GetMetadata()).FilterApplicablePolicies(policies)
 	return applicable, nil
 }
 
@@ -569,7 +569,7 @@ func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, _ Raw
 	networkPolicyCount, err := resolver.root.NetworkPoliciesStore.CountMatchingNetworkPolicies(
 		ctx,
 		resolver.data.GetMetadata().GetClusterId(),
-		resolver.data.Metadata.GetName(),
+		resolver.data.GetMetadata().GetName(),
 	)
 	if err != nil {
 		return 0, errors.Wrap(err, "counting network policies")

@@ -342,7 +342,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 					s.Assert().NotNil(msg)
 					msgFromSensor, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 					s.Require().True(ok, "the message received is not a NetworkFlowUpdate message")
-					expectedMsg, ok := state.expectedSensorMessage.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
+					expectedMsg, ok := state.expectedSensorMessage.GetMsg().(*central.MsgFromSensor_NetworkFlowUpdate)
 					s.Require().True(ok, "the message expected is not a NetworkFlowUpdate message")
 					s.Assert().Len(msgFromSensor.NetworkFlowUpdate.GetUpdated(), len(expectedMsg.NetworkFlowUpdate.GetUpdated()))
 					s.assertSensorMessageConnectionIDs(expectedMsg.NetworkFlowUpdate.GetUpdated(), msgFromSensor.NetworkFlowUpdate.GetUpdated())

@@ -164,26 +164,26 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			require.NoError(t, err)
 
 			// Verify the scan was created
-			require.NotNil(t, tt.vm.Scan)
+			require.NotNil(t, tt.vm.GetScan())
 			expectedComponentsCount := len(tt.indexReport.GetContents().GetPackages())
-			assert.Equal(t, expectedComponentsCount, len(tt.vm.Scan.Components))
+			assert.Equal(t, expectedComponentsCount, len(tt.vm.GetScan().GetComponents()))
 
 			// Count total vulnerabilities across all components
 			totalVulns := 0
-			for _, component := range tt.vm.Scan.Components {
-				totalVulns += len(component.Vulnerabilities)
+			for _, component := range tt.vm.GetScan().GetComponents() {
+				totalVulns += len(component.GetVulnerabilities())
 			}
 			assert.Equal(t, tt.expectedVulnerabilitiesCount, totalVulns)
 
 			// Verify VM notes are cleared
-			assert.Empty(t, tt.vm.Notes)
+			assert.Empty(t, tt.vm.GetNotes())
 
 			// Verify scan notes count
-			assert.Len(t, tt.vm.Scan.Notes, tt.expectedScanNotesCount)
+			assert.Len(t, tt.vm.GetScan().GetNotes(), tt.expectedScanNotesCount)
 
 			// Verify scan metadata
-			assert.NotNil(t, tt.vm.Scan.ScanTime)
-			assert.Equal(t, "", tt.vm.Scan.OperatingSystem)
+			assert.NotNil(t, tt.vm.GetScan().GetScanTime())
+			assert.Equal(t, "", tt.vm.GetScan().GetOperatingSystem())
 		})
 	}
 }
@@ -261,7 +261,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 			err := enricher.EnrichVirtualMachineWithVulnerabilities(tt.vm, tt.indexReport)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.expectedError)
-			assert.Equal(t, tt.expectedNotes, tt.vm.Notes)
+			assert.Equal(t, tt.expectedNotes, tt.vm.GetNotes())
 		})
 	}
 }
@@ -298,8 +298,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_ClearPreExistingNotes(t *testin
 	require.NoError(t, err)
 
 	// Verify that pre-existing notes are cleared
-	assert.Empty(t, vm.Notes)
-	assert.NotNil(t, vm.Scan)
+	assert.Empty(t, vm.GetNotes())
+	assert.NotNil(t, vm.GetScan())
 }
 
 func TestVMDigestParsing(t *testing.T) {
@@ -336,7 +336,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	}
 
 	vulnReport := &v4.VulnerabilityReport{
-		Contents: indexReport.Contents,
+		Contents: indexReport.GetContents(),
 		PackageVulnerabilities: map[string]*v4.StringList{
 			"pkg-1": {Values: []string{"vuln-1", "vuln-2"}},
 			"pkg-2": {Values: []string{"vuln-1"}}, // Shared vulnerability
@@ -369,12 +369,12 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	require.NoError(t, err)
 
 	// Verify component details
-	expectedPackages := indexReport.Contents.Packages
-	require.Len(t, vm.Scan.Components, len(expectedPackages))
+	expectedPackages := indexReport.GetContents().GetPackages()
+	require.Len(t, vm.GetScan().GetComponents(), len(expectedPackages))
 
 	// Check first component
 	var pkg *storage.EmbeddedVirtualMachineScanComponent
-	for _, component := range vm.Scan.Components {
+	for _, component := range vm.GetScan().GetComponents() {
 		if component.GetName() == "openssl" {
 			pkg = component
 			break
@@ -387,7 +387,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	assert.Len(t, pkg.GetVulnerabilities(), 2) // pkg-1 has vuln-1 and vuln-2
 	// Verify vulnerability details from the vulnerability report
 	criticalVuln := pkg.GetVulnerabilities()[0]
-	expectedVuln := vulnReport.Vulnerabilities["vuln-1"]
+	expectedVuln := vulnReport.GetVulnerabilities()["vuln-1"]
 	assert.Equal(t, expectedVuln.GetName(), criticalVuln.GetCveBaseInfo().GetCve())
 	assert.Equal(t, expectedVuln.GetDescription(), criticalVuln.GetCveBaseInfo().GetSummary())
 	assert.Equal(t, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, criticalVuln.GetSeverity())
@@ -397,7 +397,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	}
 
 	// Check second component
-	for _, component := range vm.Scan.Components {
+	for _, component := range vm.GetScan().GetComponents() {
 		if component.GetName() == "libssl" {
 			pkg = component
 			break
@@ -434,7 +434,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Timeout(t *testing.T) {
 	err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get vulnerability report for VM")
-	assert.Equal(t, []storage.VirtualMachine_Note{storage.VirtualMachine_MISSING_SCAN_DATA}, vm.Notes)
+	assert.Equal(t, []storage.VirtualMachine_Note{storage.VirtualMachine_MISSING_SCAN_DATA}, vm.GetNotes())
 }
 
 // createVulnerabilityReportFromIndexReport creates a vulnerability report for testing.

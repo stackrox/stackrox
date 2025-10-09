@@ -80,7 +80,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	event := msg.GetEvent()
 	rule := event.GetComplianceOperatorRuleV2()
 
-	if val := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; val == "" {
+	if val := rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]; val == "" {
 		return errors.Errorf("Rule %s is missing the annotation %s", rule.GetName(), v1alpha1.RuleIDAnnotationKey)
 	}
 

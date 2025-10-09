@@ -32,7 +32,7 @@ func New(scannerClient client.Scanner) VirtualMachineEnricher {
 
 func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.VirtualMachine, indexReport *v4.IndexReport) error {
 	// Clear any pre-existing notes
-	vm.Notes = vm.Notes[:0]
+	vm.Notes = vm.GetNotes()[:0]
 
 	if e.scannerClient == nil {
 		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)

@@ -115,7 +115,7 @@ func (s *debugServiceTestSuite) TestGetRoles() {
 	s.rolesMock.EXPECT().GetAllRoles(gomock.Any()).Return(allRoles, nil)
 
 	resolvedRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
-	s.rolesMock.EXPECT().GetAndResolveRole(gomock.Any(), allRoles[0].Name).Return(resolvedRole, nil)
+	s.rolesMock.EXPECT().GetAndResolveRole(gomock.Any(), allRoles[0].GetName()).Return(resolvedRole, nil)
 	resolvedRole.EXPECT().GetPermissions().Return(map[string]storage.Access{
 		"TestNone":      0,
 		"TestRead":      1,

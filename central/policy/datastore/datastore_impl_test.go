@@ -62,13 +62,13 @@ func (s *PolicyDatastoreTestSuite) SetupTest() {
 }
 
 func (s *PolicyDatastoreTestSuite) testImportSuccessResponse(expectedPolicy *storage.Policy, resp *v1.ImportPolicyResponse) {
-	s.True(resp.Succeeded)
+	s.True(resp.GetSucceeded())
 	protoassert.Equal(s.T(), expectedPolicy, resp.GetPolicy())
-	s.Empty(resp.Errors)
+	s.Empty(resp.GetErrors())
 }
 
 func (s *PolicyDatastoreTestSuite) testImportFailResponse(expectedPolicy *storage.Policy, expectedErrTypes, expectedErrorStrings, expectedNames []string, resp *v1.ImportPolicyResponse) {
-	s.False(resp.Succeeded)
+	s.False(resp.GetSucceeded())
 	protoassert.Equal(s.T(), expectedPolicy, resp.GetPolicy())
 	s.Require().Len(resp.GetErrors(), len(expectedErrTypes))
 	s.Require().Len(resp.GetErrors(), len(expectedErrorStrings))
@@ -92,7 +92,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil, false, nil)
 	s.store.EXPECT().Walk(s.hasReadWriteWorkflowAdministrationAccess, gomock.Any()).Return(nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, eq(policy)).Return(nil)
-	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.Id, policy.Categories)
+	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId(), policy.GetCategories())
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.CloneVT()}, false)
 	s.NoError(err)
@@ -117,7 +117,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 		func(_ context.Context, fn func(obj *storage.Policy) error) error {
 			return fn(policy)
 		})
-	s.categoriesDatastore.EXPECT().GetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.Id).Return(nil, nil).Times(1)
+	s.categoriesDatastore.EXPECT().GetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil, nil).Times(1)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.CloneVT()}, false)
 	s.NoError(err)
@@ -209,7 +209,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policyFail1).Return(errorFail1)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policyFail2).Return(errorFail2)
 
-	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policySucceed.Id, policySucceed.Categories)
+	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policySucceed.GetId(), policySucceed.GetCategories())
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policySucceed.CloneVT(), policyFail1.CloneVT(), policyFail2.CloneVT()}, false)
 	s.NoError(err)
@@ -283,17 +283,17 @@ func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 			return nil
 		})
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, id1).Return(existingPolicy1, true, nil).Times(2)
-	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy2.Id).Return(existingPolicy1, true, nil).Times(2)
+	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy2.GetId()).Return(existingPolicy1, true, nil).Times(2)
 	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, id1).Return(nil)
-	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, policy2.Id).Return(nil)
-	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, existingPolicy2.Id).Return(nil)
+	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, policy2.GetId()).Return(nil)
+	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, existingPolicy2.GetId()).Return(nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, eq(policy1)).Return(nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, eq(policy2)).Return(nil)
 
-	s.categoriesDatastore.EXPECT().GetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, existingPolicy1.Id).Return(nil, nil).Times(1)
-	s.categoriesDatastore.EXPECT().GetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, existingPolicy2.Id).Return(nil, nil).Times(1)
-	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy2.Id, nil).Return(nil).Times(1)
-	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, existingPolicy1.Id, nil).Return(nil).Times(1)
+	s.categoriesDatastore.EXPECT().GetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, existingPolicy1.GetId()).Return(nil, nil).Times(1)
+	s.categoriesDatastore.EXPECT().GetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, existingPolicy2.GetId()).Return(nil, nil).Times(1)
+	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy2.GetId(), nil).Return(nil).Times(1)
+	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, existingPolicy1.GetId(), nil).Return(nil).Times(1)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy1.CloneVT(), policy2.CloneVT()}, true)
 
@@ -340,7 +340,7 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil, false, nil)
 	s.store.EXPECT().Walk(s.hasReadWriteWorkflowAdministrationAccess, gomock.Any()).Return(nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policy).Return(nil)
-	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.Id, policy.Categories)
+	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId(), policy.GetCategories())
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy}, false)
 	s.NoError(err)
@@ -389,10 +389,10 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWriteWorkflowAdministrationAccess).Return(mockClusters, nil)
 	s.notifierDatastore.EXPECT().GetNotifier(s.hasReadWriteWorkflowAdministrationAccess, notifierName).Return(nil, true, nil)
 	s.store.EXPECT().Walk(s.hasReadWriteWorkflowAdministrationAccess, gomock.Any()).Return(nil)
-	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.Id).Return(nil, false, nil)
+	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil, false, nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, eq(policy)).Return(nil)
 
-	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.Id, policy.Categories)
+	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId(), policy.GetCategories())
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.CloneVT()}, false)
 	s.NoError(err)

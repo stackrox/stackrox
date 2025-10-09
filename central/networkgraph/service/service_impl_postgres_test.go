@@ -97,10 +97,10 @@ func (s *networkGraphServiceSuite) SetupTest() {
 func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity, ingress bool, lastSeenTimestamp *timestamppb.Timestamp) *storage.NetworkFlow {
 	deploymentEntityInfo := &storage.NetworkEntityInfo{
 		Type: storage.NetworkEntityInfo_DEPLOYMENT,
-		Id:   deployment.Id,
+		Id:   deployment.GetId(),
 		Desc: &storage.NetworkEntityInfo_Deployment_{
 			Deployment: &storage.NetworkEntityInfo_Deployment{
-				Namespace: deployment.Namespace,
+				Namespace: deployment.GetNamespace(),
 			},
 		},
 	}
@@ -116,7 +116,7 @@ func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: lastSeenTimestamp,
-			ClusterId:         deployment.ClusterId,
+			ClusterId:         deployment.GetClusterId(),
 		}
 	}
 	return &storage.NetworkFlow{
@@ -127,20 +127,20 @@ func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		LastSeenTimestamp: lastSeenTimestamp,
-		ClusterId:         deployment.ClusterId,
+		ClusterId:         deployment.GetClusterId(),
 	}
 }
 
 func (s *networkGraphServiceSuite) networkGraphsEqual(expected, actual *v1.NetworkGraph) {
-	s.Assert().Equal(len(expected.Nodes), len(actual.Nodes))
+	s.Assert().Equal(len(expected.GetNodes()), len(actual.GetNodes()))
 
-	for i, expectedNode := range expected.Nodes {
-		protoassert.Equal(s.T(), expectedNode.Entity, actual.Nodes[i].Entity)
+	for i, expectedNode := range expected.GetNodes() {
+		protoassert.Equal(s.T(), expectedNode.GetEntity(), actual.GetNodes()[i].GetEntity())
 
-		for k, expectedEdges := range expectedNode.OutEdges {
-			actualEdges := actual.Nodes[i].OutEdges[k]
+		for k, expectedEdges := range expectedNode.GetOutEdges() {
+			actualEdges := actual.GetNodes()[i].GetOutEdges()[k]
 
-			protoassert.ElementsMatch(s.T(), expectedEdges.Properties, actualEdges.Properties)
+			protoassert.ElementsMatch(s.T(), expectedEdges.GetProperties(), actualEdges.GetProperties())
 		}
 	}
 }
@@ -209,10 +209,10 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 			{
 				Entity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					Id:   deployment.Id,
+					Id:   deployment.GetId(),
 					Desc: &storage.NetworkEntityInfo_Deployment_{
 						Deployment: &storage.NetworkEntityInfo_Deployment{
-							Namespace: deployment.Namespace,
+							Namespace: deployment.GetNamespace(),
 						},
 					},
 				},
@@ -334,10 +334,10 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized(
 			{
 				Entity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					Id:   deployment.Id,
+					Id:   deployment.GetId(),
 					Desc: &storage.NetworkEntityInfo_Deployment_{
 						Deployment: &storage.NetworkEntityInfo_Deployment{
-							Namespace: deployment.Namespace,
+							Namespace: deployment.GetNamespace(),
 						},
 					},
 				},
@@ -526,8 +526,8 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 			response, err := s.service.GetExternalNetworkFlows(ctx, tc.request)
 			if tc.expectSuccess {
 				s.NoError(err)
-				protoassert.Equal(s.T(), tc.expected.Entity, response.Entity)
-				assert.True(s.T(), testhelper.MatchElements(tc.expected.Flows, response.Flows))
+				protoassert.Equal(s.T(), tc.expected.GetEntity(), response.GetEntity())
+				assert.True(s.T(), testhelper.MatchElements(tc.expected.GetFlows(), response.GetFlows()))
 			} else {
 				s.Error(err)
 			}
@@ -746,8 +746,8 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 			if tc.expectSuccess {
 				s.NoError(err)
 
-				s.Assert().Len(response.Entities, len(tc.expected.Entities))
-				s.Assert().Equal(response.TotalEntities, tc.expected.TotalEntities)
+				s.Assert().Len(response.GetEntities(), len(tc.expected.GetEntities()))
+				s.Assert().Equal(response.GetTotalEntities(), tc.expected.GetTotalEntities())
 			} else {
 				s.Error(err)
 			}

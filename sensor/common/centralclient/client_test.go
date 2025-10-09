@@ -430,8 +430,8 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 
 				// Verify that internalCAs contains the exact certificates from the TrustInfo
 				expectedCAs := [][]byte{
-					trustInfo.CertChain[1],
-					trustInfo.SecondaryCertChain[1],
+					trustInfo.GetCertChain()[1],
+					trustInfo.GetSecondaryCertChain()[1],
 				}
 				actualCAs := [][]byte{
 					internalCAs[0].Raw,

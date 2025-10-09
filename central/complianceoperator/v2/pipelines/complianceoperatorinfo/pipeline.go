@@ -93,7 +93,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	operatorInfo.StatusErrors = operatorErrors
 	operatorInfo.OperatorStatus = storage.COStatus_UNHEALTHY
-	if len(operatorInfo.StatusErrors) == 0 {
+	if len(operatorInfo.GetStatusErrors()) == 0 {
 		operatorInfo.OperatorStatus = storage.COStatus_HEALTHY
 	}
 	return s.manager.ProcessComplianceOperatorInfo(ctx, operatorInfo)

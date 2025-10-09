@@ -184,7 +184,7 @@ func TestGenerateImageFromStringWithOverride(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			img, err := utils.GenerateImageFromStringWithOverride(c.image, c.override)
 			assert.NoError(t, err)
-			protoassert.Equal(t, c.expectedName, img.Name)
+			protoassert.Equal(t, c.expectedName, img.GetName())
 		})
 	}
 }
@@ -195,7 +195,7 @@ func TestStripCVEDescriptions(t *testing.T) {
 	for _, comp := range newImg.GetScan().GetComponents() {
 		for _, vuln := range comp.GetVulns() {
 			hitOne = true
-			assert.Empty(t, vuln.Summary)
+			assert.Empty(t, vuln.GetSummary())
 		}
 	}
 	// Validate that we at least removed one summary

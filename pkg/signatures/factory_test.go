@@ -98,10 +98,10 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			result := VerifyAgainstSignatureIntegration(context.Background(), c.integration, testImg)
-			assert.Equal(t, c.result.VerifierId, result.VerifierId)
-			assert.Equal(t, c.result.Status, result.Status)
-			assert.Contains(t, result.Description, c.result.Description)
-			assert.ElementsMatch(t, c.result.VerifiedImageReferences, result.VerifiedImageReferences)
+			assert.Equal(t, c.result.GetVerifierId(), result.GetVerifierId())
+			assert.Equal(t, c.result.GetStatus(), result.GetStatus())
+			assert.Contains(t, result.GetDescription(), c.result.GetDescription())
+			assert.ElementsMatch(t, c.result.GetVerifiedImageReferences(), result.GetVerifiedImageReferences())
 		})
 	}
 }
@@ -139,7 +139,7 @@ func benchmarkVerifyAgainstSignatureIntegrations(integrations []*storage.Signatu
 func generateImageWithManySignatures(numberOfSignatures int, imgString string, byteBundle []byte) (*storage.Image, error) {
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, byteBundle)
 	for range numberOfSignatures - 1 {
-		img.GetSignature().Signatures = append(img.GetSignature().Signatures, img.GetSignature().Signatures[0])
+		img.GetSignature().Signatures = append(img.GetSignature().Signatures, img.GetSignature().GetSignatures()[0])
 	}
 	return img, err
 }

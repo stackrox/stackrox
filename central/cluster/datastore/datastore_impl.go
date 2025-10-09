@@ -164,7 +164,7 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 	walkFn := func() error {
 		clusterHealthStatuses = make(map[string]*storage.ClusterHealthStatus)
 		return ds.clusterHealthStorage.Walk(ctx, func(healthInfo *storage.ClusterHealthStatus) error {
-			clusterHealthStatuses[healthInfo.Id] = healthInfo
+			clusterHealthStatuses[healthInfo.GetId()] = healthInfo
 			return nil
 		})
 	}
@@ -391,7 +391,7 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 	if err := checkWriteSac(ctx, cluster.GetId()); err != nil {
 		return "", err
 	}
-	_, found := ds.nameToIDCache.Get(cluster.Name)
+	_, found := ds.nameToIDCache.Get(cluster.GetName())
 	if found {
 		return "", errox.AlreadyExists.Newf("the cluster with name %s exists, cannot re-add it", cluster.GetName())
 	}
@@ -1071,7 +1071,7 @@ func addDefaults(cluster *storage.Cluster) error {
 		cluster.DynamicConfig.DisableAuditLogs = true
 	}
 
-	acConfig := cluster.DynamicConfig.GetAdmissionControllerConfig()
+	acConfig := cluster.GetDynamicConfig().GetAdmissionControllerConfig()
 	if acConfig == nil {
 		acConfig = &storage.AdmissionControllerConfig{
 			Enabled: false,

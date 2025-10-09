@@ -111,8 +111,8 @@ func (ds *dataStoreImpl) validateClusterAndNamespaceAgainstExistingBaseline(
 		existingBaseline.GetNamespace() != baseline.GetNamespace() {
 		return true, errors.Errorf(
 			"cluster ID %s and namespace %s do not match with existing network baseline",
-			baseline.ClusterId,
-			baseline.Namespace)
+			baseline.GetClusterId(),
+			baseline.GetNamespace())
 	}
 	return true, nil
 }

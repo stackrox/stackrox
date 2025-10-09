@@ -42,7 +42,7 @@ func TestConfig(t *testing.T) {
 	creator := func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
 		cfg := integration.GetDocker()
 		mockReg.EXPECT().Config(ctx).Return(&types.Config{
-			Insecure: cfg.Insecure,
+			Insecure: cfg.GetInsecure(),
 		})
 
 		return mockReg, nil

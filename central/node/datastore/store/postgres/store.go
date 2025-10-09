@@ -531,7 +531,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, er
 	// We skip rewriting components and vulnerabilities if the node scan is older.
 	scanUpdated := protocompat.CompareTimestamps(oldNode.GetScan().GetScanTime(), node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
-		node.Scan = oldNode.Scan
+		node.Scan = oldNode.GetScan()
 		node.RiskScore = oldNode.GetRiskScore()
 		node.SetComponents = oldNode.GetSetComponents()
 		node.SetCves = oldNode.GetSetCves()

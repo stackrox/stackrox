@@ -168,8 +168,8 @@ func buildVectors(
 		}
 		vectors = append(vectors, vector)
 
-		sort.SliceStable(vector.Techniques, func(i, j int) bool {
-			return vector.Techniques[i].GetId() < vector.Techniques[j].GetId()
+		sort.SliceStable(vector.GetTechniques(), func(i, j int) bool {
+			return vector.GetTechniques()[i].GetId() < vector.GetTechniques()[j].GetId()
 		})
 	}
 
@@ -222,8 +222,8 @@ func generateBundle(
 		})
 	}
 
-	sort.SliceStable(bundle.Matrices, func(i, j int) bool {
-		return bundle.Matrices[i].GetMatrixInfo().GetPlatform() < bundle.Matrices[j].GetMatrixInfo().GetPlatform()
+	sort.SliceStable(bundle.GetMatrices(), func(i, j int) bool {
+		return bundle.GetMatrices()[i].GetMatrixInfo().GetPlatform() < bundle.GetMatrices()[j].GetMatrixInfo().GetPlatform()
 	})
 	return bundle
 }

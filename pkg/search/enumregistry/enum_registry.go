@@ -22,8 +22,8 @@ func Add(path string, enumDescriptor *descriptorpb.EnumDescriptorProto) {
 	subMap := enumMap[path]
 	subReverseMap := reverseEnumMap[path]
 	for _, v := range enumDescriptor.GetValue() {
-		subMap[strings.ToLower(*v.Name)] = *v.Number
-		subReverseMap[*v.Number] = *v.Name
+		subMap[strings.ToLower(v.GetName())] = v.GetNumber()
+		subReverseMap[v.GetNumber()] = v.GetName()
 	}
 }
 

@@ -448,7 +448,7 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 	if err != nil {
 		return fmt.Errorf("storing external index report: %w", err)
 	}
-	zlog.Debug(ctx).Err(err).Str("status", r.Status).Msg("received response from StoreIndexReport")
+	zlog.Debug(ctx).Err(err).Str("status", r.GetStatus()).Msg("received response from StoreIndexReport")
 
 	return nil
 }

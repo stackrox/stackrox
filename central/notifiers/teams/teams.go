@@ -68,7 +68,7 @@ func (t *teams) getAlertSection(alert *storage.Alert) section {
 		facts = append(facts, fact{Name: "ID", Value: alertID})
 	}
 
-	alertLink := notifiers.AlertLink(t.Notifier.UiEndpoint, alert)
+	alertLink := notifiers.AlertLink(t.Notifier.GetUiEndpoint(), alert)
 	if len(alertLink) > 0 {
 		facts = append(facts, fact{Name: "URL", Value: alertLink})
 	}

@@ -79,8 +79,8 @@ func (suite *ProcessBaselineEvaluatorIntegrationTestSuite) addLockedBaseline(bas
 	suite.NoError(err)
 
 	// If we want it locked, use UserLockProcessBaseline which locks it immediately
-	if baseline.UserLockedTimestamp != nil {
-		_, err = suite.baselinesDatastore.UserLockProcessBaseline(suite.ctx, baseline.Key, true)
+	if baseline.GetUserLockedTimestamp() != nil {
+		_, err = suite.baselinesDatastore.UserLockProcessBaseline(suite.ctx, baseline.GetKey(), true)
 		suite.NoError(err)
 	}
 }

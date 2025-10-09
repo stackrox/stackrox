@@ -232,7 +232,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 			desc:         "ID exists",
 			query:        &apiV2.ResourceByID{Id: uuid.NewDummy().String()},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetConvertedComplianceResult(s.T(), scan1.LastExecutedTime),
+			expectedResp: convertUtils.GetConvertedComplianceResult(s.T(), scan1.GetLastExecutedTime()),
 			found:        true,
 			setMocks: func() {
 				checkResult := convertUtils.GetComplianceStorageResult(s.T())
@@ -277,7 +277,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 			}
 
 			if tc.expectedResp != nil {
-				protoassert.Equal(s.T(), convertUtils.GetConvertedComplianceResult(s.T(), scan1.LastExecutedTime), result)
+				protoassert.Equal(s.T(), convertUtils.GetConvertedComplianceResult(s.T(), scan1.GetLastExecutedTime()), result)
 			}
 		})
 	}
@@ -513,7 +513,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 			},
 			expectedErr: nil,
 			expectedResp: &apiV2.ListComplianceCheckClusterResponse{
-				CheckResults: convertUtils.GetConvertedComplianceResult(s.T(), scan1.LastExecutedTime).Clusters,
+				CheckResults: convertUtils.GetConvertedComplianceResult(s.T(), scan1.GetLastExecutedTime()).GetClusters(),
 				ProfileName:  "ocp4",
 				CheckName:    "check-name",
 				TotalCount:   7,
@@ -555,7 +555,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 			},
 			expectedErr: nil,
 			expectedResp: &apiV2.ListComplianceCheckClusterResponse{
-				CheckResults: convertUtils.GetConvertedComplianceResult(s.T(), scan1.LastExecutedTime).Clusters,
+				CheckResults: convertUtils.GetConvertedComplianceResult(s.T(), scan1.GetLastExecutedTime()).GetClusters(),
 				ProfileName:  "ocp4",
 				CheckName:    "check-name",
 				TotalCount:   3,
@@ -648,7 +648,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				ProfileName:  "ocp4",
 				ClusterId:    testconsts.Cluster1,
 				TotalCount:   7,
-				LastScanTime: scan1.LastExecutedTime,
+				LastScanTime: scan1.GetLastExecutedTime(),
 			},
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
@@ -687,7 +687,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				ProfileName:  "ocp4",
 				ClusterId:    testconsts.Cluster1,
 				TotalCount:   3,
-				LastScanTime: scan1.LastExecutedTime,
+				LastScanTime: scan1.GetLastExecutedTime(),
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ComplianceOperatorCheckName, "check-name").ProtoQuery()
@@ -768,7 +768,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 				CheckName:   "check1",
 			},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetConvertedComplianceResult(s.T(), scan1.LastExecutedTime),
+			expectedResp: convertUtils.GetConvertedComplianceResult(s.T(), scan1.GetLastExecutedTime()),
 			found:        true,
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
@@ -801,7 +801,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + testconsts.Cluster1},
 			},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetConvertedComplianceResult(s.T(), scan1.LastExecutedTime),
+			expectedResp: convertUtils.GetConvertedComplianceResult(s.T(), scan1.GetLastExecutedTime()),
 			found:        true,
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster1).ProtoQuery()

@@ -58,13 +58,13 @@ func (d *dataStoreImpl) AddReportConfiguration(ctx context.Context, reportConfig
 	if err := sac.VerifyAuthzOK(reportConfigSAC.WriteAllowed(ctx)); err != nil {
 		return "", err
 	}
-	if reportConfig.Id == "" {
+	if reportConfig.GetId() == "" {
 		reportConfig.Id = uuid.NewV4().String()
 	}
 	if err := d.reportConfigStore.Upsert(ctx, reportConfig); err != nil {
 		return "", err
 	}
-	return reportConfig.Id, nil
+	return reportConfig.GetId(), nil
 }
 
 func (d *dataStoreImpl) UpdateReportConfiguration(ctx context.Context, reportConfig *storage.ReportConfiguration) error {

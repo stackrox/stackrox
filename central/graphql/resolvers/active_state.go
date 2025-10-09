@@ -62,7 +62,7 @@ func (asr *activeStateResolver) ActiveContexts(ctx context.Context) ([]*activeCo
 	}
 	for _, activeComponent := range activeComponents {
 		for _, ac := range activeComponent.GetActiveContextsSlice() {
-			if asr.imageScope == "" || ac.ImageId == asr.imageScope {
+			if asr.imageScope == "" || ac.GetImageId() == asr.imageScope {
 				acs = append(acs, &activeComponent_ActiveContextResolver{ctx: ctx, data: ac})
 			}
 		}

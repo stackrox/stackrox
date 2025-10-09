@@ -271,7 +271,7 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		return nil, err
 	}
 
-	config.PlatformComponentConfig, err = validateAndUpdatePlatformComponentConfig(config.PlatformComponentConfig, rules)
+	config.PlatformComponentConfig, err = validateAndUpdatePlatformComponentConfig(config.GetPlatformComponentConfig(), rules)
 	if err != nil {
 		return nil, err
 	}
@@ -287,17 +287,17 @@ func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentC
 	layeredProductsRuleExists := false
 	parsedRules := make([]*storage.PlatformComponentConfig_Rule, 0)
 	for _, rule := range rules {
-		if rule.Name == defaultPlatformConfigSystemRule.Name && !strings.EqualFold(rule.NamespaceRule.Regex, defaultPlatformConfigSystemRule.NamespaceRule.Regex) {
+		if rule.GetName() == defaultPlatformConfigSystemRule.GetName() && !strings.EqualFold(rule.GetNamespaceRule().GetRegex(), defaultPlatformConfigSystemRule.GetNamespaceRule().GetRegex()) {
 			// Prevent override of system rule
 			return nil, errors.New("System rule cannot be overwritten")
-		} else if rule.Name == defaultPlatformConfigSystemRule.Name && strings.EqualFold(rule.NamespaceRule.Regex, defaultPlatformConfigSystemRule.NamespaceRule.Regex) {
+		} else if rule.GetName() == defaultPlatformConfigSystemRule.GetName() && strings.EqualFold(rule.GetNamespaceRule().GetRegex(), defaultPlatformConfigSystemRule.GetNamespaceRule().GetRegex()) {
 			// If for some reason they're trying to duplicate the system rule, we prevent that
 			if systemRuleExists {
 				continue
 			}
 			systemRuleExists = true
 		}
-		if rule.Name == defaultPlatformConfigLayeredProductsRule.Name {
+		if rule.GetName() == defaultPlatformConfigLayeredProductsRule.GetName() {
 			// If for some reason somebody makes a rule with an identical name to the layered products rule, we only take the first occurrence of it.
 			if layeredProductsRuleExists {
 				continue
@@ -330,7 +330,7 @@ func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentC
 }
 
 func ruleNameSortFunc(a *storage.PlatformComponentConfig_Rule, b *storage.PlatformComponentConfig_Rule) int {
-	return strings.Compare(a.Name, b.Name)
+	return strings.Compare(a.GetName(), b.GetName())
 }
 
 func (d *datastoreImpl) MarkPCCReevaluated(ctx context.Context) error {

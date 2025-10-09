@@ -556,7 +556,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	imgID := request.GetImageId()
 	var hasErrors bool
-	if request.Error != "" {
+	if request.GetError() != "" {
 		// If errors occurred we continue processing so that the failed image scan may be saved in
 		// the central datastore. Without this users would not have an indication that scans from
 		// secured clusters are failing.
@@ -822,7 +822,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
 		}, nil
 	}
-	if containerImage.Id != "" {
+	if containerImage.GetId() != "" {
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("name %s contains a digest, but watch does not handle images with digests", request.GetName()),
 			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,

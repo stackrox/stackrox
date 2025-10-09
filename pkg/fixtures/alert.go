@@ -10,17 +10,17 @@ import (
 )
 
 func copyScopingInfo(alert *storage.Alert) *storage.Alert {
-	switch entity := alert.Entity.(type) {
+	switch entity := alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
-		alert.ClusterName = entity.Deployment.ClusterName
-		alert.ClusterId = entity.Deployment.ClusterId
-		alert.Namespace = entity.Deployment.Namespace
-		alert.NamespaceId = entity.Deployment.NamespaceId
+		alert.ClusterName = entity.Deployment.GetClusterName()
+		alert.ClusterId = entity.Deployment.GetClusterId()
+		alert.Namespace = entity.Deployment.GetNamespace()
+		alert.NamespaceId = entity.Deployment.GetNamespaceId()
 	case *storage.Alert_Resource_:
-		alert.ClusterName = entity.Resource.ClusterName
-		alert.ClusterId = entity.Resource.ClusterId
-		alert.Namespace = entity.Resource.Namespace
-		alert.NamespaceId = entity.Resource.NamespaceId
+		alert.ClusterName = entity.Resource.GetClusterName()
+		alert.ClusterId = entity.Resource.GetClusterId()
+		alert.Namespace = entity.Resource.GetNamespace()
+		alert.NamespaceId = entity.Resource.GetNamespaceId()
 	}
 	return alert
 }

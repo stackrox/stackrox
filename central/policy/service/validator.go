@@ -116,7 +116,7 @@ func (s *policyValidator) validateVersion(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateName(policy *storage.Policy) error {
-	policy.Name = strings.TrimSpace(policy.Name)
+	policy.Name = strings.TrimSpace(policy.GetName())
 	return nameValidator.Validate(policy.GetName())
 }
 
@@ -208,7 +208,7 @@ func (s *policyValidator) getCaps(policy *storage.Policy, capsTypes string) []*s
 	for _, section := range policy.GetPolicySections() {
 		for _, group := range section.GetPolicyGroups() {
 			if group.GetFieldName() == capsTypes {
-				capsValues = append(capsValues, group.Values...)
+				capsValues = append(capsValues, group.GetValues()...)
 			}
 		}
 	}
@@ -390,7 +390,7 @@ var enforcementToLifecycle = map[storage.EnforcementAction]storage.LifecycleStag
 }
 
 func removeEnforcementForLifecycle(policy *storage.Policy, stage storage.LifecycleStage) {
-	newActions := policy.EnforcementActions[:0]
+	newActions := policy.GetEnforcementActions()[:0]
 	for _, ea := range policy.GetEnforcementActions() {
 		if enforcementToLifecycle[ea] != stage {
 			newActions = append(newActions, ea)

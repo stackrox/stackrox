@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 )
 
-var defaultScopeID = role.AccessScopeIncludeAll.Id
+var defaultScopeID = role.AccessScopeIncludeAll.GetId()
 
 // This function ensures that no APIToken with permissions more than principal's can be created.
 // For each requested tuple (access scope, resource, accessLevel) we check that either:

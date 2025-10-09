@@ -75,7 +75,7 @@ func Test_PureGRPC(t *testing.T) {
 	c := pb.NewPingServiceClient(conn)
 	resp, err := c.Ping(context.Background(), &pb.Empty{})
 	require.NoError(t, err)
-	require.Equal(t, "pong", resp.Status)
+	require.Equal(t, "pong", resp.GetStatus())
 
 	ri := serviceInstance.ri
 	require.NotNil(t, ri)

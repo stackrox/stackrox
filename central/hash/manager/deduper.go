@@ -79,7 +79,7 @@ type deduperImpl struct {
 
 // skipDedupe signifies that a message from Sensor cannot be deduped and won't be stored
 func skipDedupe(msg *central.MsgFromSensor) bool {
-	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
+	eventMsg, ok := msg.GetMsg().(*central.MsgFromSensor_Event)
 	if !ok {
 		return true
 	}

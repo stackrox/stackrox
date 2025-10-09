@@ -291,7 +291,7 @@ func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8
 func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate) []string {
 	serviceTypeNames := make([]string, 0, len(serviceCertificates))
 	for _, c := range serviceCertificates {
-		serviceTypeNames = append(serviceTypeNames, c.ServiceType.String())
+		serviceTypeNames = append(serviceTypeNames, c.GetServiceType().String())
 	}
 	return serviceTypeNames
 }

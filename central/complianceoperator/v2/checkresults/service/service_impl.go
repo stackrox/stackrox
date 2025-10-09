@@ -134,8 +134,8 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 
 	var lastScanTime *types.Timestamp
 	for _, scan := range scans {
-		if types.CompareTimestamps(scan.LastExecutedTime, lastScanTime) > 0 {
-			lastScanTime = scan.LastExecutedTime
+		if types.CompareTimestamps(scan.GetLastExecutedTime(), lastScanTime) > 0 {
+			lastScanTime = scan.GetLastExecutedTime()
 		}
 	}
 
@@ -285,11 +285,11 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 	// This is a single check which has results across clusters.  So there will be one single underlying rule.
 	ruleNames := make([]string, 0, 1)
 	for _, result := range scanResults { // Check the Compliance Scan object to get the scan time.
-		lastExecutedTime, err := utils.GetLastScanTime(ctx, result.ClusterId, request.GetProfileName(), s.scanDS)
+		lastExecutedTime, err := utils.GetLastScanTime(ctx, result.GetClusterId(), request.GetProfileName(), s.scanDS)
 		if err != nil {
 			return nil, err
 		}
-		clusterLastScan[result.ClusterId] = lastExecutedTime
+		clusterLastScan[result.GetClusterId()] = lastExecutedTime
 
 		if len(ruleNames) == 0 {
 			rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
@@ -346,7 +346,7 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 	// Add the scan config name as an exact match
 	parsedQuery = search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).
-			AddExactMatches(search.ClusterID, request.ClusterId).
+			AddExactMatches(search.ClusterID, request.GetClusterId()).
 			ProtoQuery(),
 		parsedQuery,
 	)

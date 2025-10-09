@@ -216,8 +216,8 @@ func epss(epssDetail *v4.VulnerabilityReport_Vulnerability_EPSS) *storage.EPSS {
 		return nil
 	}
 	return &storage.EPSS{
-		EpssProbability: epssDetail.Probability,
-		EpssPercentile:  epssDetail.Percentile,
+		EpssProbability: epssDetail.GetProbability(),
+		EpssPercentile:  epssDetail.GetPercentile(),
 	}
 }
 
@@ -230,7 +230,7 @@ func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics 
 	var scores []*storage.CVSSScore
 	for _, cvss := range CVSSMetrics {
 		score := &storage.CVSSScore{
-			Source: CVSSSource(cvss.Source),
+			Source: CVSSSource(cvss.GetSource()),
 			Url:    cvss.GetUrl(),
 		}
 		if cvss.GetV2() != nil {
@@ -238,7 +238,7 @@ func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics 
 			if v2Err == nil && cvssV2 != nil {
 				score.CvssScore = &storage.CVSSScore_Cvssv2{Cvssv2: cvssV2}
 				// CVSS metrics has maximum two entries, one from NVD, one from updater if available
-				if len(CVSSMetrics) == 1 || (len(CVSSMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
+				if len(CVSSMetrics) == 1 || (len(CVSSMetrics) > 1 && cvss.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
 					vuln.CvssV2 = cvssV2.CloneVT()
 					vuln.ScoreVersion = storage.EmbeddedVulnerability_V2
 					vuln.Cvss = baseScore
@@ -254,7 +254,7 @@ func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics 
 				// overwrite if v3 available
 				score.CvssScore = &storage.CVSSScore_Cvssv3{Cvssv3: cvssV3}
 				// CVSS metrics has maximum two entries, one from NVD, one from Rox updater if available
-				if len(CVSSMetrics) == 1 || (len(CVSSMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
+				if len(CVSSMetrics) == 1 || (len(CVSSMetrics) > 1 && cvss.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
 					vuln.CvssV3 = cvssV3.CloneVT()
 					// overwrite if v3 available
 					vuln.ScoreVersion = storage.EmbeddedVulnerability_V3
@@ -302,12 +302,12 @@ func toCVSSV2Scores(vulnCVSS *v4.VulnerabilityReport_Vulnerability_CVSS, cve str
 			return 0, nil, fmt.Errorf("calculating CVSS v2 scores: %w", err)
 		}
 		// Use the report's score if it exists.
-		if baseScore := v2.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
-			log.Debugf("Calculated CVSSv2 score does not match given base score (%f != %f) for %s. Using given score...", c.Score, baseScore, cve)
+		if baseScore := v2.GetBaseScore(); baseScore != 0.0 && baseScore != c.GetScore() {
+			log.Debugf("Calculated CVSSv2 score does not match given base score (%f != %f) for %s. Using given score...", c.GetScore(), baseScore, cve)
 			c.Score = baseScore
 		}
-		c.Severity = cvssv2.Severity(c.Score)
-		return c.Score, c, nil
+		c.Severity = cvssv2.Severity(c.GetScore())
+		return c.GetScore(), c, nil
 	}
 	return 0, nil, fmt.Errorf("parsing CVSS v2 vector: %w", err)
 }
@@ -320,12 +320,12 @@ func toCVSSV3Scores(vulnCVSS *v4.VulnerabilityReport_Vulnerability_CVSS, cve str
 			return 0, nil, fmt.Errorf("calculating CVSS v3 scores: %w", err)
 		}
 		// Use the report's score if it exists and differs from the calculated score
-		if baseScore := v3.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
-			log.Debugf("Calculated CVSSv3 score does not match given base score (calculated: %f, given: %f) for %s. Using given score...", c.Score, baseScore, cve)
+		if baseScore := v3.GetBaseScore(); baseScore != 0.0 && baseScore != c.GetScore() {
+			log.Debugf("Calculated CVSSv3 score does not match given base score (calculated: %f, given: %f) for %s. Using given score...", c.GetScore(), baseScore, cve)
 			c.Score = baseScore
 		}
-		c.Severity = cvssv3.Severity(c.Score)
-		return c.Score, c, nil
+		c.Severity = cvssv3.Severity(c.GetScore())
+		return c.GetScore(), c, nil
 	}
 	return 0, nil, fmt.Errorf("parsing CVSS v3 vector: %w", err)
 }

@@ -119,7 +119,7 @@ func (u *upgradeController) shouldAutoTriggerUpgrade() bool {
 	if !u.autoTriggerEnabledFlag.Get() {
 		return false // do not auto-trigger upgrade if setting is disabled
 	}
-	if u.upgradeStatus.Upgradability != storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE {
+	if u.upgradeStatus.GetUpgradability() != storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE {
 		return false // only auto-trigger upgrade if upgradability indicates auto upgrade is possible
 	}
 	if u.upgradeStatus.GetMostRecentProcess().GetTargetVersion() == version.GetMainVersion() {

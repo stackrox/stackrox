@@ -279,7 +279,7 @@ func (s *sensorGenerateTestSuite) TestMainImageDefaultAndOverride() {
 
 			// Check that correct main image was posted
 			s.Require().Len(mock.clusterSent, 1)
-			s.Require().Equal(testCase.expectPostedClusterMainImage, mock.clusterSent[0].MainImage)
+			s.Require().Equal(testCase.expectPostedClusterMainImage, mock.clusterSent[0].GetMainImage())
 		})
 	}
 }

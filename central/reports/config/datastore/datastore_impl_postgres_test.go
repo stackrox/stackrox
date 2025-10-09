@@ -56,11 +56,11 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestReportsConfigDataStore()
 	protoassert.Equal(s.T(), reportConfig, foundReportConfig)
 
 	// Test search by name
-	query := search.NewQueryBuilder().AddStrings(search.ReportName, reportConfig.Name).ProtoQuery()
+	query := search.NewQueryBuilder().AddStrings(search.ReportName, reportConfig.GetName()).ProtoQuery()
 	searchResults, err := s.datastore.Search(s.ctx, query)
 	s.NoError(err)
 	s.Len(searchResults, 1)
-	s.Equal(searchResults[0].ID, foundReportConfig.Id)
+	s.Equal(searchResults[0].ID, foundReportConfig.GetId())
 
 	// Test not found
 	_, found, err = s.datastore.GetReportConfiguration(s.ctx, "NONEXISTENT")

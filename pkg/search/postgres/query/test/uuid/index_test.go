@@ -421,7 +421,7 @@ func (s *SingleUUIDIndexSuite) TestMatches() {
 
 			expectedIDs := make([]string, 0, len(testCase.expectedResults))
 			for _, s := range testCase.expectedResults {
-				expectedIDs = append(expectedIDs, s.Key)
+				expectedIDs = append(expectedIDs, s.GetKey())
 			}
 			s.ElementsMatch(actualIDs, expectedIDs)
 		})

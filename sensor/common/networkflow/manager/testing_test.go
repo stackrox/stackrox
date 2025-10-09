@@ -343,7 +343,7 @@ func (s *NetworkFlowManagerTestSuite) assertSensorMessageConnectionIDs(expectedU
 				break
 			}
 		}
-		s.Assert().True(found, "expected flow with srcID %s and dstID %s not found", exp.Props.SrcEntity.Id, exp.Props.DstEntity.Id)
+		s.Assert().True(found, "expected flow with srcID %s and dstID %s not found", exp.GetProps().GetSrcEntity().GetId(), exp.GetProps().GetDstEntity().GetId())
 	}
 }
 

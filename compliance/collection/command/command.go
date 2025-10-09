@@ -173,8 +173,8 @@ func parseArgs(args []string) []*compliance.CommandLine_Args {
 		arg := newArg(key, values...)
 
 		// Try to see if key or value is a file path and if so then try to read it and add it to the arg
-		if flagsWithFiles.Contains(arg.Key) && len(arg.Values) > 0 {
-			f, exists, err := file.EvaluatePath(arg.Values[0], false, true)
+		if flagsWithFiles.Contains(arg.GetKey()) && len(arg.GetValues()) > 0 {
+			f, exists, err := file.EvaluatePath(arg.GetValues()[0], false, true)
 			if exists && err == nil {
 				arg.File = f
 			}

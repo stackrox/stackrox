@@ -136,7 +136,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPatch() {
 		"successful patch": {
 			expectedErr:           nil,
 			fixture:               s.newFixture(certSecretsRepoFixtureConfig{}),
-			persistedCertificates: certificates.ServiceCerts,
+			persistedCertificates: certificates.GetServiceCerts(),
 		},
 		"failed patch due to k8s API error": {
 			expectedErr:           errForced,
@@ -171,7 +171,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestSuccessfulCreate() {
 
 	fixture := s.newFixture(certSecretsRepoFixtureConfig{skipSecretCreation: true})
 	persistedCertificates, err := fixture.repo.EnsureServiceCertificates(ctx, fixture.certificates)
-	protoassert.SlicesEqual(s.T(), certificates.ServiceCerts, persistedCertificates)
+	protoassert.SlicesEqual(s.T(), certificates.GetServiceCerts(), persistedCertificates)
 	s.ErrorIs(err, nil)
 
 	secret, err := fixture.secretsClient.Get(ctx, fixture.secretName, metav1.GetOptions{})

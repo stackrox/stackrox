@@ -76,7 +76,7 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 		ImageComponentId: convertedComponent.GetId(),
 	}
 
-	if ret.IsFixable {
+	if ret.GetIsFixable() {
 		ret.HasFixedBy = &storage.ComponentCVEEdge_FixedBy{
 			FixedBy: embedded.GetFixedBy(),
 		}

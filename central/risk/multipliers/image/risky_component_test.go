@@ -16,7 +16,7 @@ func TestRiskyComponentCountScore(t *testing.T) {
 
 	// Add some risky components to the deployment
 	images := multipliers.GetMockImages()
-	components := images[0].Scan.Components
+	components := images[0].GetScan().GetComponents()
 	components = append(components, &storage.EmbeddedImageScanComponent{
 		Name:    "apk",
 		Version: "1.0",
@@ -65,7 +65,7 @@ func TestRiskyComponentCountScoreV2(t *testing.T) {
 
 	// Add some risky components to the deployment
 	images := multipliers.GetMockImagesV2()
-	components := images[0].Scan.Components
+	components := images[0].GetScan().GetComponents()
 	components = append(components, &storage.EmbeddedImageScanComponent{
 		Name:    "apk",
 		Version: "1.0",

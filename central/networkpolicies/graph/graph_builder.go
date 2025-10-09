@@ -186,7 +186,7 @@ func (b *graphBuilder) getOrCreateExtSrcNode(extSrc *storage.NetworkEntityInfo) 
 		return n
 	}
 	for _, existingExtSrcNode := range b.extSrcs {
-		if existingExtSrcNode.extSrc.Id == extSrc.GetId() {
+		if existingExtSrcNode.extSrc.GetId() == extSrc.GetId() {
 			return existingExtSrcNode
 		}
 	}

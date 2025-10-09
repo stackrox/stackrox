@@ -93,8 +93,8 @@ func (s *migrationTestSuite) TestMigration() {
 
 	now := protocompat.TimestampNow()
 	expiry := &protocompat.Timestamp{
-		Seconds: now.Seconds + int64(7*24*time.Hour.Seconds()),
-		Nanos:   now.Nanos,
+		Seconds: now.GetSeconds() + int64(7*24*time.Hour.Seconds()),
+		Nanos:   now.GetNanos(),
 	}
 	exceptions := []*storage.VulnerabilityRequest{
 		createVulnerabilityRequest("cve-2023-134", now, expiry),
@@ -153,7 +153,7 @@ func (s *migrationTestSuite) TestMigration() {
 	// Verify storage.ImageCVEEdge is updated.
 	var edgeObjs []*storage.ImageCVEEdge
 	err = imageCVEEdgeStore.New(s.db).Walk(s.ctx, func(obj *storage.ImageCVEEdge) error {
-		if obj.State == storage.VulnerabilityState_DEFERRED {
+		if obj.GetState() == storage.VulnerabilityState_DEFERRED {
 			edgeObjs = append(edgeObjs, obj)
 		}
 		return nil

@@ -61,8 +61,8 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 	// 1. User roles are empty.
 	err = verifyNoPrivilegeEscalation(make([]permissions.ResolvedRole, 0), []permissions.ResolvedRole{writeRole})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", role.AccessScopeIncludeAll.GetName(), storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", role.AccessScopeIncludeAll.GetName(), storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
 
 	// 2. Requested roles are empty.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{writeRole}, make([]permissions.ResolvedRole, 0))
@@ -111,12 +111,12 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 	// 9. User has read permissions, requested are write permissions.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{readRole}, []permissions.ResolvedRole{writeRole})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS).Error())
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", role.AccessScopeIncludeAll.GetName(), storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", role.AccessScopeIncludeAll.GetName(), storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS).Error())
 
 	// 10. User has "dev" write permissions, requested are unrestricted write permissions.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{devWriteRole}, []permissions.ResolvedRole{writeRole})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", role.AccessScopeIncludeAll.GetName(), storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", role.AccessScopeIncludeAll.GetName(), storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
 }

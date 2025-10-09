@@ -49,7 +49,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 	err := s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
 		policyIDSet.Add(p.GetId())
 		// Unrelated to adding/checking default policies, this was put here to prevent looping through all policies a second time
-		if p.Source == storage.PolicySource_DECLARATIVE {
+		if p.GetSource() == storage.PolicySource_DECLARATIVE {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
 		return nil

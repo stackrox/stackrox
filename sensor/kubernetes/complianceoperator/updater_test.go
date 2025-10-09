@@ -341,7 +341,7 @@ func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.Co
 		Version:     expected.version,
 		Namespace:   expected.namespace,
 		StatusError: expected.error,
-		IsInstalled: actual.IsInstalled,
+		IsInstalled: actual.GetIsInstalled(),
 	}
 
 	if expected.desired > 0 {

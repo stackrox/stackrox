@@ -326,11 +326,11 @@ func TestGetIDFromScan(t *testing.T) {
 		})
 	id, err := GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%s:%s", scan.ClusterId, scan.Id), id)
+	assert.Equal(t, fmt.Sprintf("%s:%s", scan.GetClusterId(), scan.GetId()), id)
 	timeNow = protocompat.TimestampNow()
 	id, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, timeNow)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%s:%s", scan.ClusterId, scan.Id), id)
+	assert.Equal(t, fmt.Sprintf("%s:%s", scan.GetClusterId(), scan.GetId()), id)
 }
 
 func TestGetIDFromResult(t *testing.T) {

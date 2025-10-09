@@ -74,7 +74,7 @@ func (suite *ImageCVEDataStoreSuite) verifySuppressionStateImage(image *storage.
 	cveMap := make(map[string]bool)
 	for _, comp := range image.GetScan().GetComponents() {
 		for _, vuln := range comp.GetVulns() {
-			cveMap[vuln.Cve] = vuln.GetSuppressed()
+			cveMap[vuln.GetCve()] = vuln.GetSuppressed()
 		}
 	}
 	suite.verifySuppressionState(cveMap, suppressedCVEs, unsuppressedCVEs)

@@ -294,7 +294,7 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 		if container.GetImage().GetId() != "" {
 			continue
 		}
-		oldContainer := oldDeployment.Containers[i]
+		oldContainer := oldDeployment.GetContainers()[i]
 		if oldContainer.GetImage().GetId() == "" {
 			continue
 		}

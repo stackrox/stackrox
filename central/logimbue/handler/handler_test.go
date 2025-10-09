@@ -19,7 +19,7 @@ type logMatcher struct {
 }
 
 func (e logMatcher) Matches(x interface{}) bool {
-	return e.x == string(x.(*storage.LogImbue).Log)
+	return e.x == string(x.(*storage.LogImbue).GetLog())
 }
 
 func (e logMatcher) String() string {

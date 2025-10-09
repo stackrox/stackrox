@@ -204,7 +204,7 @@ func (m *UpgradeConfigMatcher) Matches(x interface{}) bool {
 	if !ok {
 		return false
 	}
-	return cfg.EnableAutoUpgrade == m.autoUpgrade
+	return cfg.GetEnableAutoUpgrade() == m.autoUpgrade
 }
 
 func (m *UpgradeConfigMatcher) String() string {

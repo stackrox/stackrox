@@ -64,7 +64,7 @@ func ConvertScanConfigurationToReportData(ctx context.Context, scanConfig *stora
 		conditions := suite.GetStatus().GetConditions()
 		for _, c := range conditions {
 			if status.GetLastTransitionTime() == nil || protoutils.After(c.GetLastTransitionTime(), status.GetLastTransitionTime()) {
-				status.LastTransitionTime = c.LastTransitionTime
+				status.LastTransitionTime = c.GetLastTransitionTime()
 			}
 		}
 

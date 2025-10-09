@@ -57,7 +57,7 @@ func machineConfigCheckFunc(rule string) func(ctx framework.ComplianceContext) {
 				return
 			}
 			for _, r := range rules {
-				if r.Labels[v1alpha1.ComplianceScanLabel] == machine {
+				if r.GetLabels()[v1alpha1.ComplianceScanLabel] == machine {
 					status, evidence := statusToEvidence(r)
 					framework.RecordEvidence(ctx, status, evidence)
 					return

@@ -524,7 +524,7 @@ func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zipWriter) err
 	}
 
 	err = s.store.Walk(ctx, func(log *storage.LogImbue) error {
-		return jsonWriter.WriteObject(safeRawMessage(log.Log))
+		return jsonWriter.WriteObject(safeRawMessage(log.GetLog()))
 	})
 	if err != nil {
 		return errors.Wrap(err, "writing logs to zip")
@@ -595,7 +595,7 @@ func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 		}
 
 		if resolvedRole, err := s.roleDataStore.GetAndResolveRole(accessRolesCtx,
-			role.Name); err == nil && resolvedRole != nil {
+			role.GetName()); err == nil && resolvedRole != nil {
 			// Get better formatting of permission sets.
 			diagRole.PermissionSet = map[string]string{}
 			for permName, accessRight := range resolvedRole.GetPermissions() {

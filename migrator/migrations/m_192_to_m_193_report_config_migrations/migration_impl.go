@@ -84,7 +84,7 @@ func createReportSnapshot(v1Config *storage.ReportConfiguration, v2Config *stora
 			ReportStatus: &storage.ReportStatus{
 				RunState:          storage.ReportStatus_DELIVERED,
 				ReportRequestType: storage.ReportStatus_SCHEDULED,
-				CompletedAt:       v1Config.LastSuccessfulRunTime,
+				CompletedAt:       v1Config.GetLastSuccessfulRunTime(),
 			},
 			Filter: &storage.ReportSnapshot_VulnReportFilters{
 				VulnReportFilters: v2Config.GetVulnReportFilters().CloneVT(),
@@ -146,11 +146,11 @@ func migrate(database *types.Databases) error {
 			if err != nil {
 				return errors.Wrapf(err, "failed to convert report config from gorm to proto %+v ", reportConfig)
 			}
-			if reportConfigProto.Version == 2 {
+			if reportConfigProto.GetVersion() == 2 {
 				continue
 			}
 			// if version=0 and scope id is not nil it is v2 config created in tech preview. just set version = 2
-			if reportConfigProto.Version == 0 && reportConfigProto.GetResourceScope() != nil {
+			if reportConfigProto.GetVersion() == 0 && reportConfigProto.GetResourceScope() != nil {
 				reportConfigProto.Version = 2
 				// convert report config proto back to gorm model
 				convertedGormConfig, err := updatedSchema.ConvertReportConfigurationFromProto(reportConfigProto)

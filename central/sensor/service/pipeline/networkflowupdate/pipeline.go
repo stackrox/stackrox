@@ -72,8 +72,8 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	var updateTime *time.Time
-	if update.Time != nil {
-		updateRawTime, err := protocompat.ConvertTimestampToTimeOrError(update.Time)
+	if update.GetTime() != nil {
+		updateRawTime, err := protocompat.ConvertTimestampToTimeOrError(update.GetTime())
 		if err != nil {
 			return err
 		}

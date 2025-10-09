@@ -1363,7 +1363,7 @@ func TestEvaluateClusters(t *testing.T) {
 			nodes := graph.GetNodes()
 			require.Len(t, nodes, len(testCase.nodes))
 			for idx, expected := range testCase.nodes {
-				protoassert.Equal(t, expected, nodes[idx], "(pod, id): ", idx, expected.Entity.Id)
+				protoassert.Equal(t, expected, nodes[idx], "(pod, id): ", idx, expected.GetEntity().GetId())
 			}
 		})
 	}
@@ -2143,7 +2143,7 @@ func TestGetApplicable(t *testing.T) {
 func populateOutEdges(nodes []*v1.NetworkNode, edges []testEdge) {
 	indexMap := make(map[string]int)
 	for i, node := range nodes {
-		indexMap[node.Entity.Id] = i
+		indexMap[node.GetEntity().GetId()] = i
 	}
 
 	for _, e := range edges {

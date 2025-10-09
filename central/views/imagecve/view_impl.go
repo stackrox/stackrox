@@ -246,7 +246,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	// list of CVEs ordered appropriately.
 	if common.IsSortBySeverityCounts(cloned) {
 		cloned.Selects = append(cloned.Selects,
-			common.WithCountBySeverityAndFixabilityQuery(q, searchField).Selects...,
+			common.WithCountBySeverityAndFixabilityQuery(q, searchField).GetSelects()...,
 		)
 	}
 
@@ -269,7 +269,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	}
 	if !options.SkipGetImagesBySeverity {
 		cloned.Selects = append(cloned.Selects,
-			common.WithCountBySeverityAndFixabilityQuery(q, searchField).Selects...,
+			common.WithCountBySeverityAndFixabilityQuery(q, searchField).GetSelects()...,
 		)
 	}
 	if !options.SkipGetTopCVSS {

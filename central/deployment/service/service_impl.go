@@ -91,7 +91,7 @@ func (s *serviceImpl) baselineResultsForDeployment(ctx context.Context, deployme
 
 func (s *serviceImpl) fillBaselineResults(ctx context.Context, resp *v1.ListDeploymentsWithProcessInfoResponse) error {
 	if err := deploymentExtensionAuth.Authorized(ctx, ""); err == nil {
-		for _, depWithProc := range resp.Deployments {
+		for _, depWithProc := range resp.GetDeployments() {
 			baselineResults, err := s.baselineResultsForDeployment(ctx, depWithProc.GetDeployment())
 			if err != nil {
 				return err
@@ -109,7 +109,7 @@ func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQue
 	}
 
 	resp := &v1.ListDeploymentsWithProcessInfoResponse{}
-	for _, deployment := range deployments.Deployments {
+	for _, deployment := range deployments.GetDeployments() {
 		resp.Deployments = append(resp.Deployments,
 			&v1.ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{
 				Deployment: deployment,
@@ -268,7 +268,7 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 		keyValuesMap[k] = &v1.DeploymentLabelsResponse_LabelValues{
 			Values: valSet.AsSlice(),
 		}
-		slices.Sort(keyValuesMap[k].Values)
+		slices.Sort(keyValuesMap[k].GetValues())
 	}
 	values = globalValueSet.AsSlice()
 	slices.Sort(values)

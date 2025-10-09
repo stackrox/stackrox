@@ -113,14 +113,14 @@ func (suite *PodDataStoreTestSuite) TestUpsertPodExists() {
 	pod.TerminatedInstances = make([]*storage.Pod_ContainerInstanceList, 0)
 	// Update one instance.
 	pod.LiveInstances[0] = &storage.ContainerInstance{
-		InstanceId:    pod.LiveInstances[0].InstanceId,
-		ContainerName: pod.LiveInstances[0].ContainerName,
+		InstanceId:    pod.GetLiveInstances()[0].GetInstanceId(),
+		ContainerName: pod.GetLiveInstances()[0].GetContainerName(),
 		ImageDigest:   "sha256:3984274924983274198",
 	}
 	// Terminate the other instance.
 	terminatedInst0 := &storage.ContainerInstance{
-		InstanceId:        pod.LiveInstances[1].InstanceId,
-		ContainerName:     pod.LiveInstances[1].ContainerName,
+		InstanceId:        pod.GetLiveInstances()[1].GetInstanceId(),
+		ContainerName:     pod.GetLiveInstances()[1].GetContainerName(),
 		Finished:          protocompat.GetProtoTimestampFromSeconds(10),
 		ExitCode:          0,
 		TerminationReason: "Completed",
@@ -151,7 +151,7 @@ func (suite *PodDataStoreTestSuite) TestUpsertPodExists() {
 	// as well as the new live instances.
 	// This is the pod we expect to actually upsert to the DB.
 	merged := fixtures.GetPod()
-	merged.LiveInstances = []*storage.ContainerInstance{pod.LiveInstances[0], pod.LiveInstances[3]}
+	merged.LiveInstances = []*storage.ContainerInstance{pod.GetLiveInstances()[0], pod.GetLiveInstances()[3]}
 	merged.TerminatedInstances[1].Instances = append(merged.TerminatedInstances[1].Instances, terminatedInst0)
 	merged.TerminatedInstances = append(merged.TerminatedInstances, &storage.Pod_ContainerInstanceList{
 		Instances: []*storage.ContainerInstance{terminatedInst1},

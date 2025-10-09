@@ -14,7 +14,7 @@ var (
 
 // GetMessageType returns a string version of a MsgFromSensor
 func GetMessageType(msg *central.MsgFromSensor) string {
-	switch t := msg.Msg.(type) {
+	switch t := msg.GetMsg().(type) {
 	case *central.MsgFromSensor_NetworkFlowUpdate:
 		return "NetworkFlow"
 	case *central.MsgFromSensor_ScrapeUpdate:

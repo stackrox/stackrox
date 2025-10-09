@@ -382,7 +382,7 @@ func extractVulnReportData(results []common.DeployedImagesResult) *vulnReportDat
 		for _, dep := range res.Deployments {
 			deploymentNames = append(deploymentNames, dep.DeploymentName)
 			for _, img := range dep.Images {
-				imageNames = append(imageNames, img.Name.FullName)
+				imageNames = append(imageNames, img.Name.GetFullName())
 				for _, comp := range img.ImageComponents {
 					componentNames = append(componentNames, comp.Name)
 					for _, cve := range comp.ImageVulnerabilities {

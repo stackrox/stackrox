@@ -334,9 +334,9 @@ func TestGetAggregatedResults(t *testing.T) {
 			results, _ := ag.getAggregatedResults(c.groupBy, c.unit, runResults, c.mask)
 			require.Equal(t, c.numResults, len(results))
 			for _, r := range results {
-				assert.Equal(t, c.passPerResult, r.NumPassing)
-				assert.Equal(t, c.failPerResult, r.NumFailing)
-				assert.Equal(t, c.skipPerResult, r.NumSkipped)
+				assert.Equal(t, c.passPerResult, r.GetNumPassing())
+				assert.Equal(t, c.failPerResult, r.GetNumFailing())
+				assert.Equal(t, c.skipPerResult, r.GetNumSkipped())
 			}
 		})
 	}
@@ -412,7 +412,7 @@ func TestDomainAttribution(t *testing.T) {
 		&mask{},
 	)
 	for i, r := range results {
-		nodeID := r.AggregationKeys[1].GetId()
+		nodeID := r.GetAggregationKeys()[1].GetId()
 		mappedDomain := domainMap[results[i]].GetNodes()
 		_, ok := mappedDomain[nodeID]
 		assert.True(t, ok)

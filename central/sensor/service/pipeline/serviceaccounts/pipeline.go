@@ -113,9 +113,9 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, event *storage.Ser
 }
 
 func (s *pipelineImpl) reprocessRisk(ctx context.Context, sa *storage.ServiceAccount) error {
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.ClusterId).
-		AddExactMatches(search.Namespace, sa.Namespace).
-		AddExactMatches(search.ServiceAccountName, sa.Name).ProtoQuery()
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.GetClusterId()).
+		AddExactMatches(search.Namespace, sa.GetNamespace()).
+		AddExactMatches(search.ServiceAccountName, sa.GetName()).ProtoQuery()
 
 	results, err := s.deployments.Search(ctx, q)
 	if err != nil {

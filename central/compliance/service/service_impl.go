@@ -85,7 +85,7 @@ func (s *serviceImpl) GetStandards(ctx context.Context, _ *v1.Empty) (*v1.GetCom
 		hide, exists, _ := s.complianceDataStore.GetConfig(ctx, standard.GetId())
 		if s.manager.IsStandardActive(standard.GetId()) {
 			if exists {
-				standard.HideScanResults = hide.HideScanResults
+				standard.HideScanResults = hide.GetHideScanResults()
 			}
 			filteredStandards = append(filteredStandards, standard)
 		}
@@ -108,7 +108,7 @@ func (s *serviceImpl) GetStandard(ctx context.Context, req *v1.ResourceByID) (*v
 
 	hide, exists, _ := s.complianceDataStore.GetConfig(ctx, req.GetId())
 	if exists {
-		standard.Metadata.HideScanResults = hide.HideScanResults
+		standard.Metadata.HideScanResults = hide.GetHideScanResults()
 	}
 	return &v1.GetComplianceStandardResponse{
 		Standard: standard,

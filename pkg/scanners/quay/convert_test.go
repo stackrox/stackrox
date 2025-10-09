@@ -42,7 +42,7 @@ func TestConvertScanToImageScan(t *testing.T) {
 	quayScan, protoScan, image := getTestScan()
 	actualScan := convertScanToImageScan(image, quayScan)
 	// Ignore Scan time in the test, as it is defined as the time we retrieve the scan.
-	protoassert.Equal(t, protoScan.DataSource, actualScan.DataSource)
-	assert.Equal(t, "unknown", actualScan.OperatingSystem)
-	protoassert.SlicesEqual(t, protoScan.Components, actualScan.Components)
+	protoassert.Equal(t, protoScan.GetDataSource(), actualScan.GetDataSource())
+	assert.Equal(t, "unknown", actualScan.GetOperatingSystem())
+	protoassert.SlicesEqual(t, protoScan.GetComponents(), actualScan.GetComponents())
 }

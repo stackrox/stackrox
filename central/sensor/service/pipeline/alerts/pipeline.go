@@ -82,14 +82,14 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		if deployment := a.GetDeployment(); deployment != nil {
 			deployment.ClusterId = clusterID
 			deployment.ClusterName = clusterName
-			a.Namespace = deployment.Namespace
-			a.NamespaceId = deployment.NamespaceId
+			a.Namespace = deployment.GetNamespace()
+			a.NamespaceId = deployment.GetNamespaceId()
 		}
 		if resource := a.GetResource(); resource != nil {
 			resource.ClusterId = clusterID
 			resource.ClusterName = clusterName
-			a.Namespace = resource.Namespace
-			a.NamespaceId = resource.NamespaceId
+			a.Namespace = resource.GetNamespace()
+			a.NamespaceId = resource.GetNamespaceId()
 		}
 	}
 

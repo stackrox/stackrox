@@ -130,7 +130,7 @@ func (suite *QuaySuite) TestGetScan() {
 	// convert scans here. It relies on converting the scan but is not the conversion test.
 	// skipping scan time check.
 	expectedImageScan := convertScanToImageScan(image, expectedQuayScan)
-	protoassert.SlicesEqual(suite.T(), expectedImageScan.Components, scan.Components)
-	suite.Equal(expectedImageScan.OperatingSystem, scan.OperatingSystem)
-	protoassert.Equal(suite.T(), expectedImageScan.DataSource, scan.DataSource)
+	protoassert.SlicesEqual(suite.T(), expectedImageScan.GetComponents(), scan.GetComponents())
+	suite.Equal(expectedImageScan.GetOperatingSystem(), scan.GetOperatingSystem())
+	protoassert.Equal(suite.T(), expectedImageScan.GetDataSource(), scan.GetDataSource())
 }

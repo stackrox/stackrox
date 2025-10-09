@@ -251,7 +251,7 @@ func merge(base *storage.ActiveComponent, subtrahend set.StringSet, addend map[s
 
 	contexts := make(map[string]*storage.ActiveComponent_ActiveContext)
 	for _, activeContext := range base.GetActiveContextsSlice() {
-		contexts[activeContext.ContainerName] = activeContext
+		contexts[activeContext.GetContainerName()] = activeContext
 	}
 
 	var changed bool
@@ -263,7 +263,7 @@ func merge(base *storage.ActiveComponent, subtrahend set.StringSet, addend map[s
 	}
 
 	for containerName, activeContext := range addend {
-		if baseContext, ok := contexts[containerName]; !ok || baseContext.ImageId != activeContext.ImageId {
+		if baseContext, ok := contexts[containerName]; !ok || baseContext.GetImageId() != activeContext.GetImageId() {
 			contexts[containerName] = activeContext
 			changed = true
 		}

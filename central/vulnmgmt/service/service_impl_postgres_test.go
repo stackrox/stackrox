@@ -192,14 +192,14 @@ func (s *servicePostgresTestSuite) TestExport() {
 			// and timestamps.
 			s.Require().Len(results, len(c.expectedDeploymentIDs))
 			for i := range results {
-				depID := results[i].Deployment.GetId()
+				depID := results[i].GetDeployment().GetId()
 				s.Assert().Contains(c.expectedDeploymentIDs, depID)
-				protoassert.Equal(s.T(), c.deploymentsByID[depID], results[i].Deployment)
+				protoassert.Equal(s.T(), c.deploymentsByID[depID], results[i].GetDeployment())
 
 				s.Assert().Equal(c.expectedLivePodsByDepID[depID], results[i].GetLivePods())
 
 				var imageIDs []string
-				for _, image := range results[i].Images {
+				for _, image := range results[i].GetImages() {
 					imageIDs = append(imageIDs, image.GetId())
 				}
 				s.Assert().ElementsMatch(expectedImageIDs, imageIDs)

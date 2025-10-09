@@ -63,7 +63,7 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 	if u.ExclusionsToRemove != nil {
 		for _, toRemove := range u.ExclusionsToRemove {
 			if !removeExclusion(policy, toRemove) {
-				log.WriteToStderrf("policy ID %s has already been altered because exclusion was already removed. Will not update.", policy.Id)
+				log.WriteToStderrf("policy ID %s has already been altered because exclusion was already removed. Will not update.", policy.GetId())
 				continue
 			}
 		}
@@ -108,14 +108,14 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 
 	for _, toRemove := range u.CategoriesToRemove {
 		if !removeCategory(policy, toRemove) {
-			log.WriteToStderrf("policy ID %s has already been altered because category was already removed. Will not update.", policy.Id)
+			log.WriteToStderrf("policy ID %s has already been altered because category was already removed. Will not update.", policy.GetId())
 			continue
 		}
 	}
 
 	// Add new categories as needed (unless it already exists)
 	if u.CategoriesToAdd != nil {
-		policy.Categories = append(policy.Categories, sliceutils.Without(u.CategoriesToAdd, policy.Categories)...)
+		policy.Categories = append(policy.Categories, sliceutils.Without(u.CategoriesToAdd, policy.GetCategories())...)
 	}
 
 }
@@ -215,49 +215,49 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 
 	// Policy section
 	if !protoutils.SlicesEqual(beforePolicy.GetPolicySections(), afterPolicy.GetPolicySections()) {
-		updates.PolicySections = afterPolicy.PolicySections
+		updates.PolicySections = afterPolicy.GetPolicySections()
 	}
 	beforePolicy.PolicySections = nil
 	afterPolicy.PolicySections = nil
 
 	// MITRE section
 	if !protoutils.SlicesEqual(beforePolicy.GetMitreAttackVectors(), afterPolicy.GetMitreAttackVectors()) {
-		updates.MitreVectors = afterPolicy.MitreAttackVectors
+		updates.MitreVectors = afterPolicy.GetMitreAttackVectors()
 	}
 	beforePolicy.MitreAttackVectors = nil
 	afterPolicy.MitreAttackVectors = nil
 
 	// Name
 	if beforePolicy.GetName() != afterPolicy.GetName() {
-		updates.Name = strPtr(afterPolicy.Name)
+		updates.Name = strPtr(afterPolicy.GetName())
 	}
 	beforePolicy.Name = ""
 	afterPolicy.Name = ""
 
 	// Description
 	if beforePolicy.GetDescription() != afterPolicy.GetDescription() {
-		updates.Description = strPtr(afterPolicy.Description)
+		updates.Description = strPtr(afterPolicy.GetDescription())
 	}
 	beforePolicy.Description = ""
 	afterPolicy.Description = ""
 
 	// Rationale
 	if beforePolicy.GetRationale() != afterPolicy.GetRationale() {
-		updates.Rationale = strPtr(afterPolicy.Rationale)
+		updates.Rationale = strPtr(afterPolicy.GetRationale())
 	}
 	beforePolicy.Rationale = ""
 	afterPolicy.Rationale = ""
 
 	// Remediation
 	if beforePolicy.GetRemediation() != afterPolicy.GetRemediation() {
-		updates.Remediation = strPtr(afterPolicy.Remediation)
+		updates.Remediation = strPtr(afterPolicy.GetRemediation())
 	}
 	beforePolicy.Remediation = ""
 	afterPolicy.Remediation = ""
 
 	// Severity
 	if beforePolicy.GetSeverity() != afterPolicy.GetSeverity() {
-		updates.Severity = afterPolicy.Severity
+		updates.Severity = afterPolicy.GetSeverity()
 	}
 	beforePolicy.Severity = 0
 	afterPolicy.Severity = 0

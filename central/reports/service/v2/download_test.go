@@ -96,8 +96,8 @@ func (s *handlerTestSuite) TestDownloadReport() {
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
 				snap.Requester = &storage.SlimUser{
-					Id:   reportSnapshot.Requester.Id + "-1",
-					Name: reportSnapshot.Requester.Name + "-1",
+					Id:   reportSnapshot.GetRequester().GetId() + "-1",
+					Name: reportSnapshot.GetRequester().GetName() + "-1",
 				}
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -218,8 +218,8 @@ func (s *handlerTestSuite) downloadAndVerify(ctx context.Context, id string, cod
 
 func (s *handlerTestSuite) getContextForUser(user *storage.SlimUser) context.Context {
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
-	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
 	return authn.ContextWithIdentity(s.ctx, mockID, s.T())
 }

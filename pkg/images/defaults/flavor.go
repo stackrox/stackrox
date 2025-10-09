@@ -307,7 +307,7 @@ func panicImageFlavorEnv(err error) {
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.
 func (f *ImageFlavor) IsImageDefaultMain(img *storage.ImageName) bool {
-	overrideImageNoTag := fmt.Sprintf("%s/%s", img.Registry, img.Remote)
+	overrideImageNoTag := fmt.Sprintf("%s/%s", img.GetRegistry(), img.GetRemote())
 	return f.MainImageNoTag() == overrideImageNoTag
 }
 

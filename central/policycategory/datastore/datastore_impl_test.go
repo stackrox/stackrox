@@ -63,7 +63,7 @@ func (s *PolicyCategoryDatastoreTestSuite) TestDeletePolicyCategory() {
 
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationCtx, "category-id").Return(c, true, nil).Times(1)
 	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationCtx, gomock.Any()).Return(nil).AnyTimes()
-	err := s.datastore.DeletePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.Id)
+	err := s.datastore.DeletePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.GetId())
 	s.NoError(err, "expected no error trying to delete a category with permissions")
 }
 
@@ -73,7 +73,7 @@ func (s *PolicyCategoryDatastoreTestSuite) TestDeleteDefaultPolicyCategory() {
 
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationCtx, "category-id").Return(c, true, nil)
 
-	err := s.datastore.DeletePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.Id)
+	err := s.datastore.DeletePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.GetId())
 	s.Error(err)
 }
 
@@ -82,7 +82,7 @@ func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategory() {
 
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationCtx, gomock.Any()).Return(nil).AnyTimes()
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationCtx, c.GetId()).Return(c, true, nil)
-	c, err := s.datastore.RenamePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.Id, "Boo's Special Category New Name")
+	c, err := s.datastore.RenamePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.GetId(), "Boo's Special Category New Name")
 	s.NoError(err, "expected no error trying to rename a category with permissions")
 	s.Equal("Boo's Special Category New Name", c.GetName(), "expected category to be renamed, but it is not")
 }
@@ -101,6 +101,6 @@ func (s *PolicyCategoryDatastoreTestSuite) TestRenameDefaultPolicyCategory() {
 
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationCtx, "category-id").Return(c, true, nil)
 
-	_, err := s.datastore.RenamePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.Id, "new name")
+	_, err := s.datastore.RenamePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.GetId(), "new name")
 	s.Error(err)
 }

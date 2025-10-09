@@ -336,8 +336,8 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 		},
 	} {
 		actual := convertVulnResponseToNodeScan(testCase.req, testCase.resp)
-		assert.ElementsMatch(t, testCase.expectedNotes, actual.Notes)
-		protoassert.ElementsMatch(t, testCase.expectedComponents, actual.Components)
+		assert.ElementsMatch(t, testCase.expectedNotes, actual.GetNotes())
+		protoassert.ElementsMatch(t, testCase.expectedComponents, actual.GetComponents())
 	}
 }
 

@@ -133,8 +133,8 @@ func populateTypeData(secret *storage.Secret, dataFiles map[string][]byte) {
 		}
 		secret.Files = append(secret.Files, file)
 	}
-	sort.Slice(secret.Files, func(i, j int) bool {
-		return secret.Files[i].Name < secret.Files[j].Name
+	sort.Slice(secret.GetFiles(), func(i, j int) bool {
+		return secret.GetFiles()[i].GetName() < secret.GetFiles()[j].GetName()
 	})
 }
 
@@ -390,7 +390,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	}
 
 	sort.SliceStable(registries, func(i, j int) bool {
-		if registries[i].Name != registries[j].Name {
+		if registries[i].GetName() != registries[j].GetName() {
 			return registries[i].GetName() < registries[j].GetName()
 		}
 		return registries[i].GetUsername() < registries[j].GetUsername()

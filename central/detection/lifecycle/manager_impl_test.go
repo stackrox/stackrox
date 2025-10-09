@@ -181,7 +181,7 @@ func (suite *ManagerTestSuite) TestBaselineNotFoundInObservation() {
 
 func (suite *ManagerTestSuite) TestBaselineShouldPass() {
 	key, indicator := makeIndicator()
-	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath())}
+	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.GetSignal().GetExecFilePath())}
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
 	_, _, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
@@ -190,7 +190,7 @@ func (suite *ManagerTestSuite) TestBaselineShouldPass() {
 
 func (suite *ManagerTestSuite) TestHandleDeploymentAlerts() {
 	alerts := []*storage.Alert{fixtures.GetAlert()}
-	depID := alerts[0].GetDeployment().Id
+	depID := alerts[0].GetDeployment().GetId()
 
 	// unfortunately because the filters are in a different package and have unexported functions it cannot be tested here. Alert Manager tests should cover it
 	suite.alertManager.EXPECT().
@@ -213,7 +213,7 @@ func (suite *ManagerTestSuite) TestHandleResourceAlerts() {
 
 	// reprocessor.ReprocessRiskForDeployments should _not_ be called for resource alerts
 
-	err := suite.manager.HandleResourceAlerts(alerts[0].GetResource().ClusterId, alerts, storage.LifecycleStage_RUNTIME)
+	err := suite.manager.HandleResourceAlerts(alerts[0].GetResource().GetClusterId(), alerts, storage.LifecycleStage_RUNTIME)
 	suite.NoError(err)
 }
 

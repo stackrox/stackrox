@@ -68,7 +68,7 @@ func (s *scrapeImpl) AcceptUpdate(update *central.ScrapeUpdate) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	switch update.Update.(type) {
+	switch update.GetUpdate().(type) {
 	case *central.ScrapeUpdate_ScrapeStarted:
 		s.acceptStart(update.GetScrapeStarted())
 	case *central.ScrapeUpdate_ComplianceReturn:

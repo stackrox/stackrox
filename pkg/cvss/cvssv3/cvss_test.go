@@ -178,9 +178,9 @@ func Test_CalculateScores(t *testing.T) {
 			assert.NoError(t, err)
 			err = CalculateScores(cvssV3)
 			assert.NoError(t, err)
-			assert.InEpsilon(t, bS, cvssV3.Score, 0.09)
-			assert.InEpsilon(t, eS, cvssV3.ExploitabilityScore, 0.09)
-			assert.InEpsilon(t, iS, cvssV3.ImpactScore, 0.09)
+			assert.InEpsilon(t, bS, cvssV3.GetScore(), 0.09)
+			assert.InEpsilon(t, eS, cvssV3.GetExploitabilityScore(), 0.09)
+			assert.InEpsilon(t, iS, cvssV3.GetImpactScore(), 0.09)
 		})
 	}
 	require.NoError(t, s.Err())

@@ -168,7 +168,7 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 				search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, true).ProtoQuery(),
 			).Proto(),
 	}
-	cloned.Selects = append(cloned.Selects, withCountByPlatformTypeSelectQuery(q).Selects...)
+	cloned.Selects = append(cloned.Selects, withCountByPlatformTypeSelectQuery(q).GetSelects()...)
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVEID.String()},
 	}

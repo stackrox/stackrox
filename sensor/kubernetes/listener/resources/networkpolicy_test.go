@@ -391,8 +391,8 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			events := suite.dispatcher.ProcessEvent(c.netpol, c.oldNetpol, c.action)
 			require.NotNil(t, events)
 			for _, e := range events.ForwardMessages {
-				_, ok := c.expectedEvents[e.Id]
-				assert.Truef(t, ok, "Expected SensorEvent with NetworkPolicy Id %s not found", e.Id)
+				_, ok := c.expectedEvents[e.GetId()]
+				assert.Truef(t, ok, "Expected SensorEvent with NetworkPolicy Id %s not found", e.GetId())
 			}
 		})
 	}

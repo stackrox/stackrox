@@ -82,7 +82,7 @@ func (p *EndpointPool) add(val *sensor.NetworkEndpoint) {
 	defer p.lock.Unlock()
 
 	if p.Size < p.Capacity {
-		p.Endpoints[val.ContainerId] = append(p.Endpoints[val.ContainerId], val)
+		p.Endpoints[val.GetContainerId()] = append(p.Endpoints[val.GetContainerId()], val)
 		p.Size++
 	}
 }
@@ -160,9 +160,9 @@ func getRandomOriginator(containerID string, pool *ProcessPool) *storage.Network
 func getNetworkProcessUniqueKeyFromProcess(process *storage.ProcessSignal) *storage.NetworkProcessUniqueKey {
 	if process != nil {
 		return &storage.NetworkProcessUniqueKey{
-			ProcessName:         process.Name,
-			ProcessExecFilePath: process.ExecFilePath,
-			ProcessArgs:         process.Args,
+			ProcessName:         process.GetName(),
+			ProcessExecFilePath: process.GetExecFilePath(),
+			ProcessArgs:         process.GetArgs(),
 		}
 	}
 

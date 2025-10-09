@@ -357,7 +357,7 @@ func (s *cveV2DataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 		if c.expectedCVEFound[cveID] {
 			s.Require().NotNil(imageCVE)
 			s.Equal(cveName, imageCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, imageCVE.Cvss)
+			s.Equal(cvss, imageCVE.GetCvss())
 		} else {
 			s.Nil(imageCVE)
 		}
@@ -429,7 +429,7 @@ func (s *cveV2DataStoreSACTestSuite) TestSACImageCVESearchCVEs() {
 
 		fetchedCVEIDs := make([]string, 0, len(results))
 		for _, result := range results {
-			fetchedCVEIDs = append(fetchedCVEIDs, result.Id)
+			fetchedCVEIDs = append(fetchedCVEIDs, result.GetId())
 		}
 		s.ElementsMatch(expectedCVEIDs, fetchedCVEIDs)
 	})
@@ -450,7 +450,7 @@ func (s *cveV2DataStoreSACTestSuite) TestSACImageCVESearchRawCVEs() {
 
 		fetchedCVEIDs := make([]string, 0, len(results))
 		for _, result := range results {
-			fetchedCVEIDs = append(fetchedCVEIDs, result.Id)
+			fetchedCVEIDs = append(fetchedCVEIDs, result.GetId())
 		}
 		s.ElementsMatch(expectedCVEIDs, fetchedCVEIDs)
 	})

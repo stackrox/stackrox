@@ -72,7 +72,7 @@ func Run(databases *types.Databases) error {
 	ctx := sac.WithAllAccess(context.Background())
 	err = updateVersion(ctx, databases, currentVersion)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update version after migrations %d", currentVersion.SeqNum)
+		return errors.Wrapf(err, "failed to update version after migrations %d", currentVersion.GetSeqNum())
 	}
 
 	return nil

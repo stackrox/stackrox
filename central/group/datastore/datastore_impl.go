@@ -391,7 +391,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 	}
 
 	// Only disallow update of a default group if it does not update the existing default group, if there is any.
-	if defaultGroup != nil && defaultGroup.GetProps().GetId() != group.GetProps().Id {
+	if defaultGroup != nil && defaultGroup.GetProps().GetId() != group.GetProps().GetId() {
 		return errox.AlreadyExists.Newf("cannot update group to default group of auth provider %q as a default group already exists",
 			group.GetProps().GetAuthProviderId())
 	}

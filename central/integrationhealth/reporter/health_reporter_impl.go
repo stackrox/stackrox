@@ -122,24 +122,24 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 	for {
 		select {
 		case health := <-d.healthUpdates:
-			healthLastTime := protocompat.ConvertTimestampToTimeOrNil(health.LastTimestamp)
-			if health.Status == storage.IntegrationHealth_UNINITIALIZED {
-				d.latestDBTimestampMap[health.Id] = healthLastTime
+			healthLastTime := protocompat.ConvertTimestampToTimeOrNil(health.GetLastTimestamp())
+			if health.GetStatus() == storage.IntegrationHealth_UNINITIALIZED {
+				d.latestDBTimestampMap[health.GetId()] = healthLastTime
 				if err := d.integrationDS.UpsertIntegrationHealth(integrationWriteCtx, health); err != nil {
-					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
+					log.Errorf("Error updating health for integration %s (%s): %v", health.GetName(), health.GetId(), err)
 				}
-			} else if protocompat.CompareTimestampToTime(health.LastTimestamp, d.latestDBTimestampMap[health.Id]) > 0 {
-				d.latestDBTimestampMap[health.Id] = healthLastTime
-				_, exists, err := d.integrationDS.GetIntegrationHealth(integrationWriteCtx, health.Id)
+			} else if protocompat.CompareTimestampToTime(health.GetLastTimestamp(), d.latestDBTimestampMap[health.GetId()]) > 0 {
+				d.latestDBTimestampMap[health.GetId()] = healthLastTime
+				_, exists, err := d.integrationDS.GetIntegrationHealth(integrationWriteCtx, health.GetId())
 				if err != nil {
-					log.Errorf("Error reading health for integration %s (%s): %v", health.Name, health.Id, err)
+					log.Errorf("Error reading health for integration %s (%s): %v", health.GetName(), health.GetId(), err)
 					continue
 				} else if !exists {
 					// Ignore health update since integration has possibly been deleted.
 					continue
 				}
 				if err := d.integrationDS.UpsertIntegrationHealth(integrationWriteCtx, health); err != nil {
-					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
+					log.Errorf("Error updating health for integration %s (%s): %v", health.GetName(), health.GetId(), err)
 				}
 			}
 		case id := <-d.healthRemoval:

@@ -124,7 +124,7 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 func (s *notifierServiceTestSuite) TestNotifierTestNoError() {
 	reqNotifier := createNotifier("TestNotifierTestNoError")
 
-	notifiers.Add(reqNotifier.Type, func(_ *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(reqNotifier.GetType(), func(_ *storage.Notifier) (notifiers.Notifier, error) {
 		notifier := notifiersMocks.NewMockNotifier(s.ctrl)
 		notifier.EXPECT().Test(s.ctx).Return(nil)
 		notifier.EXPECT().Close(s.ctx).Return(nil)
@@ -141,7 +141,7 @@ func (s *notifierServiceTestSuite) TestNotifierTestDoesNotExposeInternalErrors()
 	baseErrMsg := "127.0.0.1"
 	reqNotifier := createNotifier("TestNotifierTestDoesNotExposeInternalErrors")
 
-	notifiers.Add(reqNotifier.Type, func(_ *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(reqNotifier.GetType(), func(_ *storage.Notifier) (notifiers.Notifier, error) {
 		notifier := notifiersMocks.NewMockNotifier(s.ctrl)
 		notifier.EXPECT().Test(s.ctx).Return(notifiers.NewNotifierError(errMsg, errors.New(baseErrMsg)))
 		notifier.EXPECT().Close(s.ctx).Return(nil)
@@ -162,7 +162,7 @@ func (s *notifierServiceTestSuite) TestNotifierTestUpdatedNoError() {
 	s.datastore.EXPECT().GetNotifier(gomock.Any(), reqUpdateNotifier.GetNotifier().GetId()).
 		Return(reqUpdateNotifier.GetNotifier(), true, nil).AnyTimes()
 
-	notifiers.Add(reqUpdateNotifier.Notifier.Type, func(_ *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(reqUpdateNotifier.GetNotifier().GetType(), func(_ *storage.Notifier) (notifiers.Notifier, error) {
 		notifier := notifiersMocks.NewMockNotifier(s.ctrl)
 		notifier.EXPECT().Test(s.ctx).Return(nil)
 		notifier.EXPECT().Close(s.ctx).Return(nil)
@@ -184,7 +184,7 @@ func (s *notifierServiceTestSuite) TestNotifierTestUpdatedDoesNotExposeInternalE
 	s.datastore.EXPECT().GetNotifier(gomock.Any(), reqUpdateNotifier.GetNotifier().GetId()).
 		Return(reqUpdateNotifier.GetNotifier(), true, nil).AnyTimes()
 
-	notifiers.Add(reqUpdateNotifier.Notifier.Type, func(_ *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(reqUpdateNotifier.GetNotifier().GetType(), func(_ *storage.Notifier) (notifiers.Notifier, error) {
 		notifier := notifiersMocks.NewMockNotifier(s.ctrl)
 		notifier.EXPECT().Test(s.ctx).Return(notifiers.NewNotifierError(errMsg, errors.New(baseErrMsg)))
 		notifier.EXPECT().Close(s.ctx).Return(nil)

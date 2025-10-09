@@ -15,8 +15,8 @@ const (
 
 // ComplianceOperatorRule converts message from sensor to V2 storage
 func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, clusterID string) *storage.ComplianceOperatorRuleV2 {
-	fixes := make([]*storage.ComplianceOperatorRuleV2_Fix, 0, len(sensorData.Fixes))
-	for _, fix := range sensorData.Fixes {
+	fixes := make([]*storage.ComplianceOperatorRuleV2_Fix, 0, len(sensorData.GetFixes()))
+	for _, fix := range sensorData.GetFixes() {
 		fixes = append(fixes, &storage.ComplianceOperatorRuleV2_Fix{
 			Platform:   fix.GetPlatform(),
 			Disruption: fix.GetDisruption(),

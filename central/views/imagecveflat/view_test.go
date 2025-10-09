@@ -186,8 +186,8 @@ func (s *ImageCVEFlatViewTestSuite) SetupSuite() {
 	}
 
 	s.testImagesToDeployments = make(map[string][]*storage.Deployment)
-	s.testImagesToDeployments[images[1].Id] = []*storage.Deployment{deployments[0], deployments[1]}
-	s.testImagesToDeployments[images[2].Id] = []*storage.Deployment{deployments[2]}
+	s.testImagesToDeployments[images[1].GetId()] = []*storage.Deployment{deployments[0], deployments[1]}
+	s.testImagesToDeployments[images[2].GetId()] = []*storage.Deployment{deployments[2]}
 }
 
 func (s *ImageCVEFlatViewTestSuite) TestGetImageCVEFlat() {
@@ -557,14 +557,14 @@ func (s *ImageCVEFlatViewTestSuite) testCases() []testCase {
 						return true
 					}
 					for _, d := range deps {
-						if !d.PlatformComponent {
+						if !d.GetPlatformComponent() {
 							return true
 						}
 					}
 					return false
 				}).
 				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.State == storage.VulnerabilityState_OBSERVED
+					return vuln.GetState() == storage.VulnerabilityState_OBSERVED
 				}),
 		},
 		{
@@ -582,14 +582,14 @@ func (s *ImageCVEFlatViewTestSuite) testCases() []testCase {
 						return true
 					}
 					for _, d := range deps {
-						if d.PlatformComponent {
+						if d.GetPlatformComponent() {
 							return true
 						}
 					}
 					return false
 				}).
 				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.State == storage.VulnerabilityState_OBSERVED
+					return vuln.GetState() == storage.VulnerabilityState_OBSERVED
 				}),
 		},
 	}
@@ -813,8 +813,8 @@ func (s *ImageCVEFlatViewTestSuite) compileExpected(images []*storage.Image, fil
 						ImpactScore:             pointers.Float32(impactScore),
 						EpssProbability:         pointers.Float32(vuln.GetEpss().GetEpssProbability()),
 					}
-					for _, metric := range vuln.CvssMetrics {
-						if metric.Source == storage.Source_SOURCE_NVD {
+					for _, metric := range vuln.GetCvssMetrics() {
+						if metric.GetSource() == storage.Source_SOURCE_NVD {
 							if metric.GetCvssv2() != nil {
 								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv2().GetScore())
 							} else {

@@ -211,7 +211,7 @@ func readFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, er
 }
 
 func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
-	log.Infof("Sending index report to sensor (vsockCID: %s)", report.VsockCid)
+	log.Infof("Sending index report to sensor (vsockCID: %s)", report.GetVsockCid())
 
 	req := &sensor.UpsertVirtualMachineIndexReportRequest{
 		IndexReport: report,
@@ -225,7 +225,7 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 		defer cancel()
 		resp, err := sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)
 
-		if resp != nil && !resp.Success {
+		if resp != nil && !resp.GetSuccess() {
 			// This can't happen as of this writing (Success is only false when an error is returned) but is
 			// theoretically possible, let's add retries too.
 			if err == nil {

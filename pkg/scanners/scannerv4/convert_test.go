@@ -620,7 +620,7 @@ func TestSetEPSS(t *testing.T) {
 				t.Errorf("expected %+v, got nil", testcase.expected)
 				return
 			}
-			if result.EpssProbability != testcase.expected.EpssProbability || result.EpssPercentile != testcase.expected.EpssPercentile {
+			if result.GetEpssProbability() != testcase.expected.GetEpssProbability() || result.GetEpssPercentile() != testcase.expected.GetEpssPercentile() {
 				t.Errorf("expected %+v, got %+v", testcase.expected, result)
 			}
 		})
@@ -1248,7 +1248,7 @@ func TestMaybeOverwriteSeverity(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			maybeOverwriteSeverity(testcase.vuln)
-			assert.Equal(t, testcase.expected, testcase.vuln.Severity)
+			assert.Equal(t, testcase.expected, testcase.vuln.GetSeverity())
 		})
 	}
 }

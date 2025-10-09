@@ -683,7 +683,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 		ReportNotificationMethod: v2.NotificationMethod_EMAIL,
 	})
 	s.Require().NoError(err)
-	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.RunState, "Failed to submit report")
+	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.GetRunState(), "Failed to submit report")
 
 	s.scanConfigDatastore.EXPECT().GetScanConfiguration(ctx, validScanConfigID).Return(validScanConfig, true, nil)
 	s.reportManager.EXPECT().SubmitReportRequest(ctx, validScanConfig, storage.ComplianceOperatorReportStatus_DOWNLOAD).Return(nil)
@@ -693,7 +693,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 		ReportNotificationMethod: v2.NotificationMethod_DOWNLOAD,
 	})
 	s.Require().NoError(err)
-	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.RunState, "Failed to submit report")
+	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.GetRunState(), "Failed to submit report")
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
@@ -1225,9 +1225,9 @@ func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
 
 func getContextForUser(t *testing.T, ctrl *gomock.Controller, ctx context.Context, user *storage.SlimUser) context.Context {
 	mockID := mockIdentity.NewMockIdentity(ctrl)
-	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
-	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
 	return authn.ContextWithIdentity(ctx, mockID, t)
 }
 

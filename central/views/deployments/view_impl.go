@@ -64,7 +64,7 @@ func withSelectQuery(query *v1.Query) *v1.Query {
 			Fields: []string{search.DeploymentID.String()},
 		}
 		cloned.Selects = append(cloned.Selects,
-			common.WithCountBySeverityAndFixabilityQuery(query, search.CVE).Selects...,
+			common.WithCountBySeverityAndFixabilityQuery(query, search.CVE).GetSelects()...,
 		)
 	}
 

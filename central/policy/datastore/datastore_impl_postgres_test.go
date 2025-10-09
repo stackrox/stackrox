@@ -263,8 +263,8 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 			s.Require().NoError(err) // It's not an error just a failure?
 			s.Require().False(allSucceeded)
 			s.Require().Len(responses, 1)
-			s.Require().Len(responses[0].Errors, 1)
-			s.Require().Equal(responses[0].Errors[0].Type, c.expectedImportError)
+			s.Require().Len(responses[0].GetErrors(), 1)
+			s.Require().Equal(responses[0].GetErrors()[0].GetType(), c.expectedImportError)
 
 			// Now try to import with overwrite true
 			responses, allSucceeded, err = s.datastore.ImportPolicies(ctx, []*storage.Policy{c.newPolicy}, true)
@@ -273,8 +273,8 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 				s.Require().NoError(err) // It's not an error just a failure?
 				s.Require().False(allSucceeded)
 				s.Require().Len(responses, 1)
-				s.Require().Len(responses[0].Errors, 1)
-				s.Require().Equal(responses[0].Errors[0].Type, c.expectedImportError) // ... should the error be different?
+				s.Require().Len(responses[0].GetErrors(), 1)
+				s.Require().Equal(responses[0].GetErrors()[0].GetType(), c.expectedImportError) // ... should the error be different?
 
 				// Find the existing policy and validate the name and id
 				result, _, err := s.datastore.GetPolicy(ctx, c.existingPolicy.GetId())
@@ -287,7 +287,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 				s.NoError(err) // It's not an error just a failure?
 				s.True(allSucceeded)
 				s.Require().Len(responses, 1)
-				s.Empty(responses[0].Errors)
+				s.Empty(responses[0].GetErrors())
 
 				// Find the new policy and validate the name and id
 				result, _, err := s.datastore.GetPolicy(ctx, c.newPolicy.GetId())
@@ -342,7 +342,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestSearchRawPolicies() {
 	policies, err := s.datastore.SearchRawPolicies(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
 	s.Len(policies, 1)
-	s.Len(policies[0].Categories, 3)
+	s.Len(policies[0].GetCategories(), 3)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {

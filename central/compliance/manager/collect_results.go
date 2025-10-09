@@ -184,10 +184,10 @@ func (r *runInstance) metadataProto(fixTimestamps bool) *storage.ComplianceRunMe
 	}
 
 	if fixTimestamps {
-		if runMetadata.StartTimestamp == nil {
+		if runMetadata.GetStartTimestamp() == nil {
 			runMetadata.StartTimestamp = protocompat.TimestampNow()
 		}
-		if runMetadata.FinishTimestamp == nil {
+		if runMetadata.GetFinishTimestamp() == nil {
 			runMetadata.FinishTimestamp = protocompat.TimestampNow()
 		}
 	}
@@ -249,7 +249,7 @@ func (r *runInstance) foldRemoteResults(remoteResults map[string]map[string]*com
 		mergeComplianceResultValue(clusterResults, standardResults.GetClusterCheckResults())
 
 		// Fold in each of the node-level results individually
-		nodeResults[node.ID()] = standardResults.NodeCheckResults
+		nodeResults[node.ID()] = standardResults.GetNodeCheckResults()
 	}
 	// Add notes for any missing cluster-level checks
 	r.noteMissingNodeClusterChecks(clusterResults)

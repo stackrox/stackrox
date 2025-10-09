@@ -85,9 +85,9 @@ func sortSubjects(query *v1.Query, subjects []*storage.Subject) error {
 	if sortOptions := query.GetPagination().GetSortOptions(); len(sortOptions) > 0 {
 		accessors := make([]subjectSortAccessor, 0, len(sortOptions))
 		for _, s := range sortOptions {
-			accessor, ok := subjectSortAccessors[strings.ToLower(s.Field)]
+			accessor, ok := subjectSortAccessors[strings.ToLower(s.GetField())]
 			if !ok {
-				return errors.Errorf("sorting subjects by field %v is not supported", s.Field)
+				return errors.Errorf("sorting subjects by field %v is not supported", s.GetField())
 			}
 			accessors = append(accessors, accessor)
 		}
@@ -95,7 +95,7 @@ func sortSubjects(query *v1.Query, subjects []*storage.Subject) error {
 			for idx, accessor := range accessors {
 				val1, val2 := accessor(subjects[i]), accessor(subjects[j])
 				if val1 != val2 {
-					if sortOptions[idx].Reversed {
+					if sortOptions[idx].GetReversed() {
 						return val1 > val2
 					}
 					return val1 < val2
@@ -224,8 +224,8 @@ func (s *SubjectSearcher) SearchSubjects(ctx context.Context, q *v1.Query) ([]*v
 	for _, subject := range subjects {
 		if pred.Matches(subject) {
 			searchResults = append(searchResults, &v1.SearchResult{
-				Id:       subject.Name,
-				Name:     subject.Name,
+				Id:       subject.GetName(),
+				Name:     subject.GetName(),
 				Category: v1.SearchCategory_SUBJECTS,
 			})
 		}

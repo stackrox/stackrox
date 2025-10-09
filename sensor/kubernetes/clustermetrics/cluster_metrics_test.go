@@ -46,7 +46,7 @@ func (s *ClusterMetricsTestSuite) TestZeroNodes() {
 
 func (s *ClusterMetricsTestSuite) TestSingleNode() {
 	expected := &central.ClusterMetrics{NodeCount: 1, CpuCapacity: 10, ComplianceOperatorVersion: "not installed"}
-	s.addNode("node-1", *resource.NewQuantity(expected.CpuCapacity, resource.DecimalSI))
+	s.addNode("node-1", *resource.NewQuantity(expected.GetCpuCapacity(), resource.DecimalSI))
 
 	metrics := s.getClusterMetrics()
 

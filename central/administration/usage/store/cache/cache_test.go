@@ -27,28 +27,28 @@ func TestCleanupCurrent(t *testing.T) {
 	ids := set.NewStringSet()
 	c.Cleanup(ids)
 	bm := c.GetCurrent()
-	assert.Equal(t, int64(0), bm.NumNodes)
-	assert.Equal(t, int64(0), bm.NumCpuUnits)
+	assert.Equal(t, int64(0), bm.GetNumNodes())
+	assert.Equal(t, int64(0), bm.GetNumCpuUnits())
 
 	inject(c)
 
 	ids.Add("test1")
 	c.Cleanup(ids)
 	bm = c.GetCurrent() // removes test2 values, as not present in ids
-	assert.Equal(t, int64(1), bm.NumNodes)
-	assert.Equal(t, int64(10), bm.NumCpuUnits)
+	assert.Equal(t, int64(1), bm.GetNumNodes())
+	assert.Equal(t, int64(10), bm.GetNumCpuUnits())
 	ids.Add("test2")
 	c.Cleanup(ids)
 	bm = c.GetCurrent()
-	assert.Equal(t, int64(1), bm.NumNodes)
-	assert.Equal(t, int64(10), bm.NumCpuUnits)
+	assert.Equal(t, int64(1), bm.GetNumNodes())
+	assert.Equal(t, int64(10), bm.GetNumCpuUnits())
 
 	inject(c)
 
 	c.Cleanup(ids)
 	bm = c.GetCurrent()
-	assert.Equal(t, int64(3), bm.NumNodes)
-	assert.Equal(t, int64(30), bm.NumCpuUnits)
+	assert.Equal(t, int64(3), bm.GetNumNodes())
+	assert.Equal(t, int64(30), bm.GetNumCpuUnits())
 }
 
 func TestAggregateAndReset(t *testing.T) {
@@ -56,33 +56,33 @@ func TestAggregateAndReset(t *testing.T) {
 
 	inject(c)
 	bm := c.AggregateAndReset()
-	assert.Equal(t, int64(3), bm.NumNodes)
-	assert.Equal(t, int64(30), bm.NumCpuUnits)
+	assert.Equal(t, int64(3), bm.GetNumNodes())
+	assert.Equal(t, int64(30), bm.GetNumCpuUnits())
 
 	ids := set.NewStringSet()
 	c.Cleanup(ids)
 	bm = c.AggregateAndReset()
-	assert.Equal(t, int64(0), bm.NumNodes)
-	assert.Equal(t, int64(0), bm.NumCpuUnits)
+	assert.Equal(t, int64(0), bm.GetNumNodes())
+	assert.Equal(t, int64(0), bm.GetNumCpuUnits())
 
 	inject(c)
 
 	ids.Add("test1")
 	c.Cleanup(ids)
 	bm = c.AggregateAndReset()
-	assert.Equal(t, int64(1), bm.NumNodes)
-	assert.Equal(t, int64(10), bm.NumCpuUnits)
+	assert.Equal(t, int64(1), bm.GetNumNodes())
+	assert.Equal(t, int64(10), bm.GetNumCpuUnits())
 
 	c.Cleanup(ids)
 	bm = c.AggregateAndReset()
-	assert.Equal(t, int64(0), bm.NumNodes)
-	assert.Equal(t, int64(0), bm.NumCpuUnits)
+	assert.Equal(t, int64(0), bm.GetNumNodes())
+	assert.Equal(t, int64(0), bm.GetNumCpuUnits())
 
 	inject(c)
 
 	ids.Add("test2")
 	c.Cleanup(ids)
 	bm = c.AggregateAndReset()
-	assert.Equal(t, int64(3), bm.NumNodes)
-	assert.Equal(t, int64(30), bm.NumCpuUnits)
+	assert.Equal(t, int64(3), bm.GetNumNodes())
+	assert.Equal(t, int64(30), bm.GetNumCpuUnits())
 }

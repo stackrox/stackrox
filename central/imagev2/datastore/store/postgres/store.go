@@ -621,7 +621,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 }
 
 func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *storage.ImageV2) error {
-	components, err := getImageComponents(ctx, tx, image.Id)
+	components, err := getImageComponents(ctx, tx, image.GetId())
 	if err != nil {
 		return err
 	}

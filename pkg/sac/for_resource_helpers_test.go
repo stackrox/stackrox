@@ -107,64 +107,64 @@ var (
 	namespaceSkunkWorks = &storage.NamespaceMetadata{
 		Id:          uuid.NewTestUUID(1).String(),
 		Name:        nsSkunkWorks,
-		ClusterId:   clusterEarth.Id,
-		ClusterName: clusterEarth.Name,
+		ClusterId:   clusterEarth.GetId(),
+		ClusterName: clusterEarth.GetName(),
 	}
 
 	namespaceFraunhofer = &storage.NamespaceMetadata{
 		Id:          uuid.NewTestUUID(2).String(),
 		Name:        nsFraunhofer,
-		ClusterId:   clusterEarth.Id,
-		ClusterName: clusterEarth.Name,
+		ClusterId:   clusterEarth.GetId(),
+		ClusterName: clusterEarth.GetName(),
 	}
 
 	namespaceCERN = &storage.NamespaceMetadata{
 		Id:          uuid.NewTestUUID(3).String(),
 		Name:        nsCERN,
-		ClusterId:   clusterEarth.Id,
-		ClusterName: clusterEarth.Name,
+		ClusterId:   clusterEarth.GetId(),
+		ClusterName: clusterEarth.GetName(),
 	}
 
 	namespaceJPL = &storage.NamespaceMetadata{
 		Id:          uuid.NewTestUUID(4).String(),
 		Name:        nsJPL,
-		ClusterId:   clusterEarth.Id,
-		ClusterName: clusterEarth.Name,
+		ClusterId:   clusterEarth.GetId(),
+		ClusterName: clusterEarth.GetName(),
 	}
 
 	namespaceAtreides = &storage.NamespaceMetadata{
 		Id:          uuid.NewTestUUID(11).String(),
 		Name:        nsAtreides,
-		ClusterId:   clusterArrakis.Id,
-		ClusterName: clusterArrakis.Name,
+		ClusterId:   clusterArrakis.GetId(),
+		ClusterName: clusterArrakis.GetName(),
 	}
 
 	namespaceBeneGesserit = &storage.NamespaceMetadata{
 		Id:          uuid.NewTestUUID(12).String(),
 		Name:        nsBeneGesserit,
-		ClusterId:   clusterArrakis.Id,
-		ClusterName: clusterArrakis.Name,
+		ClusterId:   clusterArrakis.GetId(),
+		ClusterName: clusterArrakis.GetName(),
 	}
 
 	namespaceFremen = &storage.NamespaceMetadata{
 		Id:          uuid.NewTestUUID(13).String(),
 		Name:        nsFremen,
-		ClusterId:   clusterArrakis.Id,
-		ClusterName: clusterArrakis.Name,
+		ClusterId:   clusterArrakis.GetId(),
+		ClusterName: clusterArrakis.GetName(),
 	}
 
 	namespaceHarkonnen = &storage.NamespaceMetadata{
 		Id:          uuid.NewTestUUID(14).String(),
 		Name:        nsHarkonnen,
-		ClusterId:   clusterArrakis.Id,
-		ClusterName: clusterArrakis.Name,
+		ClusterId:   clusterArrakis.GetId(),
+		ClusterName: clusterArrakis.GetName(),
 	}
 
 	namespaceSpacingGuild = &storage.NamespaceMetadata{
 		Id:          uuid.NewTestUUID(15).String(),
 		Name:        nsSpacingGuild,
-		ClusterId:   clusterArrakis.Id,
-		ClusterName: clusterArrakis.Name,
+		ClusterId:   clusterArrakis.GetId(),
+		ClusterName: clusterArrakis.GetName(),
 	}
 
 	allNamespaces = []*storage.NamespaceMetadata{
@@ -334,7 +334,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Administration),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 				),
 			),
 			targetResource:             resources.Administration,
@@ -346,7 +346,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Node),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 				),
 			),
 			targetResource: resources.Node,
@@ -364,7 +364,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Image),
-					ClusterScopeKeys(clusterEarth.Id),
+					ClusterScopeKeys(clusterEarth.GetId()),
 				),
 			),
 			targetResource: resources.Image,
@@ -381,7 +381,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Administration),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),
@@ -394,7 +394,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Node),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),
@@ -413,7 +413,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Image),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),
@@ -430,7 +430,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Image),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),
@@ -489,7 +489,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Administration),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 				),
 			),
 			targetResource:             resources.Administration,
@@ -501,7 +501,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					ResourceScopeKeys(resources.Administration),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 				),
 			),
 			targetResource:             resources.Administration,
@@ -513,7 +513,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Node),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 				),
 			),
 			targetResource:             resources.Node,
@@ -525,7 +525,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					ResourceScopeKeys(resources.Node),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 				),
 			),
 			targetResource: resources.Node,
@@ -543,7 +543,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Image),
-					ClusterScopeKeys(clusterEarth.Id),
+					ClusterScopeKeys(clusterEarth.GetId()),
 				),
 			),
 			targetResource:             resources.Image,
@@ -555,7 +555,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					ResourceScopeKeys(resources.Image),
-					ClusterScopeKeys(clusterEarth.Id),
+					ClusterScopeKeys(clusterEarth.GetId()),
 				),
 			),
 			targetResource: resources.Image,
@@ -572,7 +572,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Administration),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),
@@ -585,7 +585,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					ResourceScopeKeys(resources.Administration),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),
@@ -598,7 +598,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Node),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),
@@ -611,7 +611,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					ResourceScopeKeys(resources.Node),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),
@@ -630,7 +630,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					ResourceScopeKeys(resources.Image),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),
@@ -643,7 +643,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					ResourceScopeKeys(resources.Image),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),
@@ -660,7 +660,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				AllowFixedScopes(
 					AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					ResourceScopeKeys(resources.Image),
-					ClusterScopeKeys(clusterArrakis.Id),
+					ClusterScopeKeys(clusterArrakis.GetId()),
 					NamespaceScopeKeys(nsAtreides, nsBeneGesserit, nsFremen),
 				),
 			),

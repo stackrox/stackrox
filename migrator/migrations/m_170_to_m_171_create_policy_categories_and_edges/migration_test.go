@@ -63,7 +63,7 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 
 	s.NoError(migration.Run(dbs))
 
-	q := search.NewQueryBuilder().AddExactMatches(search.PolicyCategoryName, testPolicy.Categories[0]).ProtoQuery()
+	q := search.NewQueryBuilder().AddExactMatches(search.PolicyCategoryName, testPolicy.GetCategories()[0]).ProtoQuery()
 	categoriesAfterMigration, err := s.categoryStore.GetByQuery(ctx, q)
 	s.NoError(err)
 	s.Len(categoriesAfterMigration, 1)

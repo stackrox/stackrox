@@ -117,7 +117,7 @@ func (s *serviceImpl) setSuspicious(ctx context.Context, groupedIndicators []*v1
 			}
 			baselines[group.GetContainerName()] = elementSet
 		}
-		group.Suspicious = elementSet != nil && !elementSet.Contains(group.Name)
+		group.Suspicious = elementSet != nil && !elementSet.Contains(group.GetName())
 	}
 	return nil
 }
@@ -158,7 +158,7 @@ func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndi
 		if name == "" {
 			continue
 		}
-		containerName := i.ContainerName
+		containerName := i.GetContainerName()
 		groupKey := groupKey{name, containerName}
 		groupMap, ok := processGroups[groupKey]
 		if !ok {
@@ -186,7 +186,7 @@ func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndi
 			Suspicious:    false,
 		})
 	}
-	sort.SliceStable(groups, func(i, j int) bool { return groups[i].Name < groups[j].Name })
+	sort.SliceStable(groups, func(i, j int) bool { return groups[i].GetName() < groups[j].GetName() })
 	return groups
 }
 
@@ -234,7 +234,7 @@ func IndicatorsToGroupedResponses(indicators []*storage.ProcessIndicator) []*v1.
 			TimesExecuted: uint32(processNameToContainers[name].Cardinality()),
 		})
 	}
-	sort.SliceStable(groups, func(i, j int) bool { return groups[i].Name < groups[j].Name })
+	sort.SliceStable(groups, func(i, j int) bool { return groups[i].GetName() < groups[j].GetName() })
 	return groups
 }
 

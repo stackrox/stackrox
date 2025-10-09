@@ -358,7 +358,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 
 func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (*v1.GenerateNetworkPoliciesResponse, error) {
 	// Default to `none` delete existing mode.
-	if req.DeleteExisting == v1.GenerateNetworkPoliciesRequest_UNKNOWN {
+	if req.GetDeleteExisting() == v1.GenerateNetworkPoliciesRequest_UNKNOWN {
 		req.DeleteExisting = v1.GenerateNetworkPoliciesRequest_NONE
 	}
 
@@ -938,7 +938,7 @@ func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree
 		return nil, errors.Wrap(err, "failed to obtain network graph configuration")
 	}
 
-	if cfg.HideDefaultExternalSrcs {
+	if cfg.GetHideDefaultExternalSrcs() {
 		return s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID), nil
 	}
 
@@ -998,8 +998,8 @@ func applyPolicyModification(policies policyModification) (outputPolicies []*v1.
 			return nil, fmt.Errorf("policy %s in namespace %s marked for deletion does not exist", toDeleteRef.GetName(), toDeleteRef.GetNamespace())
 		}
 
-		if simPolicy.OldPolicy == nil {
-			simPolicy.OldPolicy = simPolicy.Policy
+		if simPolicy.GetOldPolicy() == nil {
+			simPolicy.OldPolicy = simPolicy.GetPolicy()
 		}
 		simPolicy.Policy = nil
 		simPolicy.Status = v1.NetworkPolicyInSimulation_DELETED
@@ -1010,8 +1010,8 @@ func applyPolicyModification(policies policyModification) (outputPolicies []*v1.
 		oldPolicySim := policiesByRef[k8sutil.RefOf(newPolicy)]
 		if oldPolicySim != nil {
 			oldPolicySim.Status = v1.NetworkPolicyInSimulation_MODIFIED
-			if oldPolicySim.OldPolicy == nil {
-				oldPolicySim.OldPolicy = oldPolicySim.Policy
+			if oldPolicySim.GetOldPolicy() == nil {
+				oldPolicySim.OldPolicy = oldPolicySim.GetPolicy()
 			}
 			oldPolicySim.Policy = newPolicy
 			continue

@@ -321,10 +321,10 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 			response, err := suite.service.UpdateProcessBaselines(hasWriteCtx, request)
 			assert.NoError(t, err)
 			var successKeys []*storage.ProcessBaselineKey
-			for _, wl := range response.Baselines {
+			for _, wl := range response.GetBaselines() {
 				successKeys = append(successKeys, wl.GetKey())
 				processes := set.NewStringSet()
-				for _, process := range wl.Elements {
+				for _, process := range wl.GetElements() {
 					processes.Add(process.GetElement().GetProcessName())
 				}
 				for _, add := range c.toAdd {
@@ -341,7 +341,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 			}
 			protoassert.ElementsMatch(t, c.expectedSuccessKeys, successKeys)
 			var errorKeys []*storage.ProcessBaselineKey
-			for _, err := range response.Errors {
+			for _, err := range response.GetErrors() {
 				errorKeys = append(errorKeys, err.GetKey())
 			}
 			protoassert.ElementsMatch(t, c.expectedErrorKeys, errorKeys)
@@ -585,9 +585,9 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 		DryRun:     true,
 	}, resp)
 
-	requestByKey := &v1.GetProcessBaselineRequest{Key: baselines[0].Key}
+	requestByKey := &v1.GetProcessBaselineRequest{Key: baselines[0].GetKey()}
 	baseline, _ := suite.service.GetProcessBaseline(hasReadCtx, requestByKey)
-	suite.NotNil(baseline.Elements)
+	suite.NotNil(baseline.GetElements())
 
 	// Delete d1
 	request.Confirm = true
@@ -599,9 +599,9 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 	}, resp)
 
 	// Make sure the baseline exists, but it is empty i.e. no elements
-	requestByKey = &v1.GetProcessBaselineRequest{Key: baselines[0].Key}
+	requestByKey = &v1.GetProcessBaselineRequest{Key: baselines[0].GetKey()}
 	baseline, _ = suite.service.GetProcessBaseline(hasReadCtx, requestByKey)
-	suite.Empty(baseline.Elements)
+	suite.Empty(baseline.GetElements())
 
 	// Delete d2 with a generic wildcard on deployment id
 	request = &v1.DeleteProcessBaselinesRequest{

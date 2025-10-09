@@ -609,11 +609,11 @@ func testClustersWithNodes(includeCVEsToOrphan bool) ([]*storage.Cluster, []*sto
 	}
 
 	nodes := testNodes(includeCVEsToOrphan)
-	nodes[0].ClusterId = clusters[0].Id
-	nodes[0].ClusterName = clusters[0].Name
+	nodes[0].ClusterId = clusters[0].GetId()
+	nodes[0].ClusterName = clusters[0].GetName()
 
-	nodes[1].ClusterId = clusters[1].Id
-	nodes[1].ClusterName = clusters[1].Name
+	nodes[1].ClusterId = clusters[1].GetId()
+	nodes[1].ClusterName = clusters[1].GetName()
 
 	return clusters, nodes
 }

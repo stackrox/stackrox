@@ -42,7 +42,7 @@ type ComplianceResultsBuilderTestSuite struct {
 }
 
 func (s *ComplianceResultsBuilderTestSuite) decompressEvidence(chunk *compliance.GZIPDataChunk) *complianceCompress.ResultWrapper {
-	gr, err := gzip.NewReader(bytes.NewBuffer(chunk.Gzip))
+	gr, err := gzip.NewReader(bytes.NewBuffer(chunk.GetGzip()))
 	s.Require().NoError(err)
 	defer func() {
 		err := gr.Close()

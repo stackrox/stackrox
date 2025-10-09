@@ -104,7 +104,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 	if err := validateConfig(conf); err != nil {
 		return nil, err
 	}
-	endpoint := urlfmt.FormatURL(conf.Endpoint, urlfmt.InsecureHTTP, urlfmt.NoTrailingSlash)
+	endpoint := urlfmt.FormatURL(conf.GetEndpoint(), urlfmt.InsecureHTTP, urlfmt.NoTrailingSlash)
 
 	dialer := net.Dialer{
 		Timeout: 2 * time.Second,
@@ -553,11 +553,11 @@ func (c *clairify) KubernetesScan(version string) (map[string][]*storage.Embedde
 	}
 
 	results := map[string][]*storage.EmbeddedVulnerability{
-		kubernetes.KubeAPIServer:         convertK8sVulns(resp.ApiserverVulnerabilities),
-		kubernetes.KubeAggregator:        convertK8sVulns(resp.AggregatorVulnerabilities),
-		kubernetes.KubeControllerManager: convertK8sVulns(resp.ControllerManagerVulnerabilities),
-		kubernetes.KubeScheduler:         convertK8sVulns(resp.SchedulerVulnerabilities),
-		kubernetes.Generic:               convertK8sVulns(resp.GenericVulnerabilities),
+		kubernetes.KubeAPIServer:         convertK8sVulns(resp.GetApiserverVulnerabilities()),
+		kubernetes.KubeAggregator:        convertK8sVulns(resp.GetAggregatorVulnerabilities()),
+		kubernetes.KubeControllerManager: convertK8sVulns(resp.GetControllerManagerVulnerabilities()),
+		kubernetes.KubeScheduler:         convertK8sVulns(resp.GetSchedulerVulnerabilities()),
+		kubernetes.Generic:               convertK8sVulns(resp.GetGenericVulnerabilities()),
 	}
 
 	return results, nil
@@ -594,7 +594,7 @@ func (c *clairify) OpenShiftScan(version string) ([]*storage.EmbeddedVulnerabili
 		return nil, err
 	}
 
-	results := convertVulnerabilities(resp.Vulnerabilities, storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY)
+	results := convertVulnerabilities(resp.GetVulnerabilities(), storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY)
 
 	return results, nil
 }

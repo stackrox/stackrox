@@ -585,15 +585,15 @@ func excludedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 
 func namespace(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 	return &namespacesScopeSubTree{State: scope, Attributes: treeNodeAttributes{
-		ID:     n.Id,
-		Name:   n.Name,
-		Labels: n.Labels,
+		ID:     n.GetId(),
+		Name:   n.GetName(),
+		Labels: n.GetLabels(),
 	}}
 }
 
 func namespaceStandard(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 	return &namespacesScopeSubTree{State: scope, Attributes: treeNodeAttributes{
-		ID:   n.Id,
-		Name: n.Name,
+		ID:   n.GetId(),
+		Name: n.GetName(),
 	}}
 }

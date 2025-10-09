@@ -230,8 +230,8 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 	}
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
-	imageNoteSet := make(map[storage.ImageV2_Note]struct{}, len(imageV2.Notes))
-	for _, note := range imageV2.Notes {
+	imageNoteSet := make(map[storage.ImageV2_Note]struct{}, len(imageV2.GetNotes()))
+	for _, note := range imageV2.GetNotes() {
 		imageNoteSet[note] = struct{}{}
 	}
 
@@ -303,7 +303,7 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 }
 
 func setImageV2Notes(imageV2 *storage.ImageV2, imageNoteSet map[storage.ImageV2_Note]struct{}) {
-	imageV2.Notes = imageV2.Notes[:0]
+	imageV2.Notes = imageV2.GetNotes()[:0]
 	notes := make([]storage.ImageV2_Note, 0, len(imageNoteSet))
 	for note := range imageNoteSet {
 		notes = append(notes, note)
@@ -621,8 +621,8 @@ func (e *enricherV2Impl) enrichWithScan(ctx context.Context, enrichmentContext E
 			})
 			if currentScannerErrors >= consecutiveErrorThreshold { // update health
 				e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-					Id:            scanner.DataSource().Id,
-					Name:          scanner.DataSource().Name,
+					Id:            scanner.DataSource().GetId(),
+					Name:          scanner.DataSource().GetName(),
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
 					LastTimestamp: protocompat.TimestampNow(),
@@ -653,8 +653,8 @@ func (e *enricherV2Impl) enrichWithScan(ctx context.Context, enrichmentContext E
 				})
 			}
 			e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-				Id:            scanner.DataSource().Id,
-				Name:          scanner.DataSource().Name,
+				Id:            scanner.DataSource().GetId(),
+				Name:          scanner.DataSource().GetName(),
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
 				LastTimestamp: protocompat.TimestampNow(),
@@ -765,7 +765,7 @@ func (e *enricherV2Impl) enrichWithSignature(ctx context.Context, enrichmentCont
 	}
 
 	onlyRedHatSigIntegrationPresent := len(sigIntegrations) == 1 &&
-		sigIntegrations[0].Id == signatures.DefaultRedHatSignatureIntegration.Id
+		sigIntegrations[0].GetId() == signatures.DefaultRedHatSignatureIntegration.GetId()
 
 	// Short-circuit if
 	//	- no integrations are available, or

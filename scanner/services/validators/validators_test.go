@@ -61,7 +61,7 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			if r.Contents.Environments == nil {
 				r.Contents.Environments = make(map[string]*v4.Environment_List)
 			}
-			envs, ok := r.Contents.Environments[pkgId]
+			envs, ok := r.GetContents().GetEnvironments()[pkgId]
 			if !ok {
 				envs = &v4.Environment_List{}
 				r.Contents.Environments[pkgId] = envs
@@ -74,7 +74,7 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			if r.Contents.EnvironmentsDEPRECATED == nil {
 				r.Contents.EnvironmentsDEPRECATED = make(map[string]*v4.Environment_List)
 			}
-			envs, ok := r.Contents.EnvironmentsDEPRECATED[pkgId]
+			envs, ok := r.GetContents().GetEnvironmentsDEPRECATED()[pkgId]
 			if !ok {
 				envs = &v4.Environment_List{}
 				r.Contents.EnvironmentsDEPRECATED[pkgId] = envs

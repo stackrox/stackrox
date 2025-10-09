@@ -222,11 +222,11 @@ func TestNIST412_Success(t *testing.T) {
 
 	categoryPolicies := make(map[string]set.StringSet)
 	policySet := set.NewStringSet()
-	policySet.Add(cvssPolicyEnabledAndEnforced.Name)
+	policySet.Add(cvssPolicyEnabledAndEnforced.GetName())
 	categoryPolicies["Vulnerability Management"] = policySet
 
 	privSet := set.NewStringSet()
-	privSet.Add(cvssPolicyEnabledAndEnforced.Name)
+	privSet.Add(cvssPolicyEnabledAndEnforced.GetName())
 	categoryPolicies["Privileges"] = privSet
 
 	mockCtrl := gomock.NewController(t)
@@ -271,11 +271,11 @@ func TestNIST412_FAIL(t *testing.T) {
 
 	categoryPolicies := make(map[string]set.StringSet)
 	policySet := set.NewStringSet()
-	policySet.Add(cvssPolicyEnabledAndEnforced.Name)
+	policySet.Add(cvssPolicyEnabledAndEnforced.GetName())
 	categoryPolicies["Vulnerability Management"] = policySet
 
 	privSet := set.NewStringSet()
-	privSet.Add(cvssPolicyEnabledAndEnforced.Name)
+	privSet.Add(cvssPolicyEnabledAndEnforced.GetName())
 	categoryPolicies["Privileges"] = privSet
 
 	mockCtrl := gomock.NewController(t)

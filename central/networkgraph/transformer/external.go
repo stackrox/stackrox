@@ -40,8 +40,8 @@ func anonymizeDiscoveredFlow(flow *storage.NetworkFlow) *storage.NetworkFlow {
 
 	props = flow.GetProps()
 
-	props.SrcEntity = anonymizeDiscoveredEntity(props.SrcEntity)
-	props.DstEntity = anonymizeDiscoveredEntity(props.DstEntity)
+	props.SrcEntity = anonymizeDiscoveredEntity(props.GetSrcEntity())
+	props.DstEntity = anonymizeDiscoveredEntity(props.GetDstEntity())
 
 	return flow
 }

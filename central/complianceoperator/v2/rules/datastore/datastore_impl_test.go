@@ -408,7 +408,7 @@ func (s *complianceRuleDataStoreTestSuite) TestSearchRules() {
 		{
 			desc: "Rules exist - Full access",
 			query: search.NewQueryBuilder().
-				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.Name).ProtoQuery(),
+				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.GetName()).ProtoQuery(),
 			testContext:     s.testContexts[testutils.UnrestrictedReadCtx],
 			expectedResults: []*storage.ComplianceOperatorRuleV2{testRule1},
 			expectedCount:   1,
@@ -416,7 +416,7 @@ func (s *complianceRuleDataStoreTestSuite) TestSearchRules() {
 		{
 			desc: "Rules exist - Cluster 1 access",
 			query: search.NewQueryBuilder().
-				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.Name).ProtoQuery(),
+				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.GetName()).ProtoQuery(),
 			testContext:     s.testContexts[testutils.Cluster1ReadWriteCtx],
 			expectedResults: []*storage.ComplianceOperatorRuleV2{testRule1},
 			expectedCount:   1,
@@ -424,7 +424,7 @@ func (s *complianceRuleDataStoreTestSuite) TestSearchRules() {
 		{
 			desc: "Rules exist - Cluster 2 access",
 			query: search.NewQueryBuilder().
-				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.Name).ProtoQuery(),
+				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.GetName()).ProtoQuery(),
 			testContext:     s.testContexts[testutils.Cluster2ReadWriteCtx],
 			expectedResults: nil,
 			expectedCount:   0,
@@ -432,7 +432,7 @@ func (s *complianceRuleDataStoreTestSuite) TestSearchRules() {
 		{
 			desc: "Rules exists - No compliance access",
 			query: search.NewQueryBuilder().
-				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.Name).ProtoQuery(),
+				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.GetName()).ProtoQuery(),
 			testContext:     s.nonComplianceContexts[testutils.UnrestrictedReadCtx],
 			expectedResults: nil,
 			expectedCount:   0,

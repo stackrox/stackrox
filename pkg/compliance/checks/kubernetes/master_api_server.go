@@ -64,7 +64,7 @@ func encryptionProvider() *standards.CheckAndMetadata {
 			if !exists {
 				return common.NoteListf("Process %q not found on host therefore check is not applicable", common.KubeAPIProcessName)
 			}
-			arg := common.GetArgForFlag(process.Args, "encryption-provider-config")
+			arg := common.GetArgForFlag(process.GetArgs(), "encryption-provider-config")
 			if arg == nil {
 				return common.FailListf("encryption-provider-config is not set, which means that aescbc, secretbox or kms is not in use")
 			} else if arg.GetFile() == nil {
@@ -109,7 +109,7 @@ func securityContextDenyChecker() *standards.CheckAndMetadata {
 				return common.NoteListf("Process %q not found on host, therefore check is not applicable", common.KubeAPIProcessName)
 			}
 
-			values := common.GetValuesForCommandFromFlagsAndConfig(process.Args, nil, key)
+			values := common.GetValuesForCommandFromFlagsAndConfig(process.GetArgs(), nil, key)
 			if len(values) == 0 {
 				return common.FailListf("%q is unset", key)
 			}

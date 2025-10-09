@@ -206,7 +206,7 @@ func createECRClient(ctx context.Context, conf *storage.ECRConfig) (*awsECR.Clie
 			return nil, errox.InvalidArgs.CausedBy("AssumeRole ID is required to use AssumeRole")
 		}
 
-		roleToAssumeArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", conf.RegistryId, conf.AssumeRoleId)
+		roleToAssumeArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", conf.GetRegistryId(), conf.GetAssumeRoleId())
 		stsClient := sts.NewFromConfig(awsConfig)
 		awsConfig.Credentials = stscreds.NewAssumeRoleProvider(stsClient, roleToAssumeArn,
 			func(p *stscreds.AssumeRoleOptions) {

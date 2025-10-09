@@ -856,15 +856,15 @@ func getCluster(ctx context.Context, conn *grpc.ClientConn) (*storage.Cluster, e
 		return nil, fmt.Errorf("failed to retrieve clusters from central: %w", err)
 	}
 
-	if len(clusters.Clusters) != 1 {
+	if len(clusters.GetClusters()) != 1 {
 		var clusterNames []string
-		for _, cluster := range clusters.Clusters {
-			clusterNames = append(clusterNames, cluster.Name)
+		for _, cluster := range clusters.GetClusters() {
+			clusterNames = append(clusterNames, cluster.GetName())
 		}
-		return nil, fmt.Errorf("expected one cluster, found %d: %+v", len(clusters.Clusters), clusterNames)
+		return nil, fmt.Errorf("expected one cluster, found %d: %+v", len(clusters.GetClusters()), clusterNames)
 	}
 
-	return clusters.Clusters[0], nil
+	return clusters.GetClusters()[0], nil
 }
 
 type collectT struct {

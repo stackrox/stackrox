@@ -408,8 +408,8 @@ func TestCVESuppression(t *testing.T) {
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	require.NoError(t, err)
 	assert.True(t, results.ImageUpdated)
-	assert.True(t, img.Scan.Components[0].Vulns[0].Suppressed)
-	assert.Equal(t, storage.VulnerabilityState_DEFERRED, img.Scan.Components[0].Vulns[0].State)
+	assert.True(t, img.GetScan().GetComponents()[0].GetVulns()[0].GetSuppressed())
+	assert.Equal(t, storage.VulnerabilityState_DEFERRED, img.GetScan().GetComponents()[0].GetVulns()[0].GetState())
 }
 
 func TestZeroIntegrations(t *testing.T) {

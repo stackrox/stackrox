@@ -613,7 +613,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 		SensorCertExpiry:    oldSensorExpiry,
 		SensorCertNotBefore: oldSensorCertNotBefore,
 	}
-	if oldCluster.Status == nil {
+	if oldCluster.GetStatus() == nil {
 		oldCluster.Status = &storage.ClusterStatus{
 			SensorVersion:         "3.71.x-88-g9798e675e5-dirty",
 			DEPRECATEDLastContact: nil,

@@ -23,10 +23,10 @@ func ReadVersionPostgres(pool postgres.DB) (*migrations.MigrationVersion, error)
 	}
 
 	return &migrations.MigrationVersion{
-		MainVersion:   ver.Version,
-		SeqNum:        int(ver.SeqNum),
+		MainVersion:   ver.GetVersion(),
+		SeqNum:        int(ver.GetSeqNum()),
 		LastPersisted: timestamp.FromProtobuf(ver.GetLastPersisted()).GoTime(),
-		MinimumSeqNum: int(ver.MinSeqNum),
+		MinimumSeqNum: int(ver.GetMinSeqNum()),
 	}, nil
 }
 
@@ -43,8 +43,8 @@ func ReadPreviousVersionPostgres(pool postgres.DB) (*migrations.MigrationVersion
 	}
 
 	return &migrations.MigrationVersion{
-		MainVersion:   ver.Version,
-		SeqNum:        int(ver.SeqNum),
+		MainVersion:   ver.GetVersion(),
+		SeqNum:        int(ver.GetSeqNum()),
 		LastPersisted: timestamp.FromProtobuf(ver.GetLastPersisted()).GoTime(),
 	}, nil
 }

@@ -20,9 +20,9 @@ func Add(name string, creator Creator) {
 // CreateNotifier checks to make sure the integration exists and then tries to generate a new Notifier
 // returns an error if the creation was unsuccessful
 func CreateNotifier(notifier *storage.Notifier) (Notifier, error) {
-	creator, exists := Registry[notifier.Type]
+	creator, exists := Registry[notifier.GetType()]
 	if !exists {
-		return nil, fmt.Errorf("Notifier with type '%v' does not exist", notifier.Type)
+		return nil, fmt.Errorf("Notifier with type '%v' does not exist", notifier.GetType())
 	}
 	return creator(notifier)
 }

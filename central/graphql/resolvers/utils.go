@@ -405,7 +405,7 @@ func getImageIDFromQuery(q *v1.Query) string {
 			searchField = search.ImageSHA
 		}
 		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), searchField.String()) {
-			imageID = matchFieldQuery.MatchFieldQuery.Value
+			imageID = matchFieldQuery.MatchFieldQuery.GetValue()
 			imageID = strings.TrimRight(imageID, `"`)
 			imageID = strings.TrimLeft(imageID, `"`)
 		}

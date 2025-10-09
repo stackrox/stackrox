@@ -16,7 +16,7 @@ func ValidateReportRequest(request *ReportRequest) error {
 
 	if request.ReportSnapshot == nil {
 		errorList.AddError(errors.New("Report request does not have a valid report snapshot with report status"))
-	} else if request.ReportSnapshot.ReportStatus == nil {
+	} else if request.ReportSnapshot.GetReportStatus() == nil {
 		errorList.AddError(errors.New("Report request does not have a valid report snapshot with report status"))
 	}
 	// only check collection is non nil if report snapshot is for config based vuln reports

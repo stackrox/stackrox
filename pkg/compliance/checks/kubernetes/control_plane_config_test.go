@@ -47,7 +47,7 @@ func TestControlPlaneConfigChecks(t *testing.T) {
 
 			checkResults := check.CheckFunc(mockNodeData)
 			require.Len(t, checkResults, 1)
-			assert.Equal(t, c.status, checkResults[0].State)
+			assert.Equal(t, c.status, checkResults[0].GetState())
 		})
 	}
 }

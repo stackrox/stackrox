@@ -85,7 +85,7 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 		}
 
 		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_LISTEN_ENDPOINT {
-			if deployment := srcNode.Entity.GetDeployment(); deployment != nil {
+			if deployment := srcNode.GetEntity().GetDeployment(); deployment != nil {
 				deployment.ListenPorts = append(deployment.ListenPorts, &storage.NetworkEntityInfo_Deployment_ListenPort{
 					Port:       props.GetDstPort(),
 					L4Protocol: props.GetL4Protocol(),
@@ -113,7 +113,7 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 
 		tgtIdx := int32(dstIdx)
 
-		tgtEdgeBundle := srcNode.OutEdges[tgtIdx]
+		tgtEdgeBundle := srcNode.GetOutEdges()[tgtIdx]
 		if tgtEdgeBundle == nil {
 			tgtEdgeBundle = &v1.NetworkEdgePropertiesBundle{}
 			srcNode.OutEdges[tgtIdx] = tgtEdgeBundle
@@ -121,11 +121,11 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 
 		edgeProps := &v1.NetworkEdgeProperties{
 			Port:     props.GetDstPort(),
-			Protocol: props.L4Protocol,
+			Protocol: props.GetL4Protocol(),
 		}
 
 		edgeProps.LastActiveTimestamp = flow.GetLastSeenTimestamp()
-		if edgeProps.LastActiveTimestamp == nil {
+		if edgeProps.GetLastActiveTimestamp() == nil {
 			edgeProps.LastActiveTimestamp = protocompat.TimestampNow()
 		}
 

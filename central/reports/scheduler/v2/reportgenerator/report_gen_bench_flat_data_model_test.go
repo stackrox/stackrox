@@ -127,7 +127,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) upsertManyImages(imag
 
 func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
-		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.Name.FullName)
+		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.GetName().GetFullName())
 		require.NoError(bts.b, err)
 	}
 }

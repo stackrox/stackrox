@@ -432,7 +432,7 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 		return errors.Wrap(err, "building deployment matcher")
 	}
 
-	for _, node := range graph.Nodes {
+	for _, node := range graph.GetNodes() {
 		if node.GetEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
 			deploymentID := node.GetEntity().GetId()
 			if deployment, ok := deploymentMap[deploymentID]; ok {

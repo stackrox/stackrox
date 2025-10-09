@@ -29,6 +29,7 @@ linters:
     - govet
     - ineffassign
     - nolintlint
+    - protogetter
     - revive # replaces golint
     - rowserrcheck
     - staticcheck

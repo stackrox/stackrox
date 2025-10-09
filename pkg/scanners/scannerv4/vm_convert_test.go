@@ -179,9 +179,9 @@ func TestToVirtualMachineScan(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			input.Contents = tc.contents
 			actual := ToVirtualMachineScan(input)
-			protoassert.ElementsMatch(t, expected.Components, actual.Components)
-			assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
-			assert.Equal(t, expected.Notes, actual.Notes)
+			protoassert.ElementsMatch(t, expected.GetComponents(), actual.GetComponents())
+			assert.Equal(t, expected.GetOperatingSystem(), actual.GetOperatingSystem())
+			assert.Equal(t, expected.GetNotes(), actual.GetNotes())
 		})
 	}
 }

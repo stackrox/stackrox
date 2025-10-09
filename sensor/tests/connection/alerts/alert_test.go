@@ -70,8 +70,8 @@ func hasRequiredLabelAlert(alertResults *central.AlertResults) error {
 		return errors.Errorf("expected 1 alert to return but received: %d", len(alerts))
 	}
 
-	if alerts[0].Policy.Name != "Required Label: Owner/Team" {
-		return errors.Errorf("expected alert with name 'Required Label: Owner/Team' but is '%s' instead", alerts[0].Policy.Name)
+	if alerts[0].GetPolicy().GetName() != "Required Label: Owner/Team" {
+		return errors.Errorf("expected alert with name 'Required Label: Owner/Team' but is '%s' instead", alerts[0].GetPolicy().GetName())
 	}
 
 	return nil

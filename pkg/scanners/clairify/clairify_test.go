@@ -48,10 +48,10 @@ func TestConvertLayerToImageScan(t *testing.T) {
 	layer, protoScan, image := getTestScan()
 	actualScan := convertLayerToImageScan(image, layer)
 	// Ignore Scan time in the test, as it is defined as the time we retrieve the scan.
-	protoassert.Equal(t, protoScan.DataSource, actualScan.DataSource)
-	assert.Equal(t, "debian:8", actualScan.OperatingSystem)
-	protoassert.SlicesEqual(t, protoScan.Components, actualScan.Components)
-	assert.Equal(t, protoScan.ScannerVersion, actualScan.ScannerVersion)
-	assert.Len(t, protoScan.Notes, 1)
-	assert.Contains(t, protoScan.Notes, convertNote(clairV1.OSCVEsStale))
+	protoassert.Equal(t, protoScan.GetDataSource(), actualScan.GetDataSource())
+	assert.Equal(t, "debian:8", actualScan.GetOperatingSystem())
+	protoassert.SlicesEqual(t, protoScan.GetComponents(), actualScan.GetComponents())
+	assert.Equal(t, protoScan.GetScannerVersion(), actualScan.GetScannerVersion())
+	assert.Len(t, protoScan.GetNotes(), 1)
+	assert.Contains(t, protoScan.GetNotes(), convertNote(clairV1.OSCVEsStale))
 }

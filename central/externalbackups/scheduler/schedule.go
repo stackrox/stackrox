@@ -81,8 +81,8 @@ func (s *scheduler) RunBackup(backup types.ExternalBackup, plugin *storage.Exter
 
 	if err != nil {
 		s.reporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-			Id:            plugin.Id,
-			Name:          plugin.Name,
+			Id:            plugin.GetId(),
+			Name:          plugin.GetName(),
 			Type:          storage.IntegrationHealth_BACKUP,
 			Status:        storage.IntegrationHealth_UNHEALTHY,
 			LastTimestamp: protocompat.TimestampNow(),
@@ -91,8 +91,8 @@ func (s *scheduler) RunBackup(backup types.ExternalBackup, plugin *storage.Exter
 		return err
 	}
 	s.reporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-		Id:            plugin.Id,
-		Name:          plugin.Name,
+		Id:            plugin.GetId(),
+		Name:          plugin.GetName(),
 		Type:          storage.IntegrationHealth_BACKUP,
 		Status:        storage.IntegrationHealth_HEALTHY,
 		LastTimestamp: protocompat.TimestampNow(),

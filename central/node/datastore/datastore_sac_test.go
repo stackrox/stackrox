@@ -200,7 +200,7 @@ func (s *nodeDatastoreSACSuite) TestGetNode() {
 				s.Require().NotNil(fetchedNode)
 
 				// Priority can have updated value, and we want to ignore it.
-				fetchedNode.Priority = s.testNodes[nodeID].Priority
+				fetchedNode.Priority = s.testNodes[nodeID].GetPriority()
 				protoassert.Equal(s.T(), s.testNodes[nodeID], fetchedNode)
 			} else {
 				s.False(found)

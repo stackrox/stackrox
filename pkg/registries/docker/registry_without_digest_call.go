@@ -51,7 +51,7 @@ func (r *RegistryWithoutManifestCall) Metadata(image *storage.Image) (*storage.I
 
 	// If the image ID is empty, then populate with the digest from the manifest
 	// This only applies in a situation with CI client
-	ref := image.Id
+	ref := image.GetId()
 	if ref == "" {
 		ref = image.GetName().GetTag()
 	}

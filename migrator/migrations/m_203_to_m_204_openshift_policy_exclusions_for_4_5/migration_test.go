@@ -83,7 +83,7 @@ func (s *policyMigrationTestSuite) TestMigration() {
 			s.Require().NoError(result.Error)
 			migratedPolicy, err := schema.ConvertPolicyToProto(&foundPolicies[0])
 			s.Require().NoError(err)
-			protoassert.ElementsMatch(s.T(), migratedPolicy.Exclusions, afterPolicy.Exclusions, "exclusion do not match after migration")
+			protoassert.ElementsMatch(s.T(), migratedPolicy.GetExclusions(), afterPolicy.GetExclusions(), "exclusion do not match after migration")
 		})
 	}
 }

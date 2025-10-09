@@ -129,12 +129,12 @@ func (suite *ServiceAccountServiceTestSuite) TestGetServiceAccount() {
 
 	sa, err := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
 	suite.NoError(err)
-	protoassert.Equal(suite.T(), expectedSA, sa.SaAndRole.ServiceAccount)
-	suite.Equal(1, len(sa.SaAndRole.DeploymentRelationships))
-	suite.Equal(listDeployment.GetName(), sa.SaAndRole.DeploymentRelationships[0].GetName())
-	suite.Equal(1, len(sa.SaAndRole.ScopedRoles))
-	suite.Equal(1, len(sa.SaAndRole.ClusterRoles))
-	suite.Equal("namespace", sa.SaAndRole.ScopedRoles[0].Namespace)
+	protoassert.Equal(suite.T(), expectedSA, sa.GetSaAndRole().GetServiceAccount())
+	suite.Equal(1, len(sa.GetSaAndRole().GetDeploymentRelationships()))
+	suite.Equal(listDeployment.GetName(), sa.GetSaAndRole().GetDeploymentRelationships()[0].GetName())
+	suite.Equal(1, len(sa.GetSaAndRole().GetScopedRoles()))
+	suite.Equal(1, len(sa.GetSaAndRole().GetClusterRoles()))
+	suite.Equal("namespace", sa.GetSaAndRole().GetScopedRoles()[0].GetNamespace())
 }
 
 // Test that when we fail to find a service account, an error is returned.
@@ -164,7 +164,7 @@ func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccount() {
 
 	suite.mockServiceAccountStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return([]*storage.ServiceAccount{expectedSA}, nil)
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, expectedSA.ClusterId).
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, expectedSA.GetClusterId()).
 		AddExactMatches(search.Namespace, expectedSA.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, expectedSA.GetName()).ProtoQuery()
 
@@ -186,7 +186,7 @@ func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccountFailure() {
 
 func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, expectedSA.ClusterId).
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, expectedSA.GetClusterId()).
 		AddExactMatches(search.Namespace, expectedSA.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, expectedSA.GetName()).ProtoQuery()
 
@@ -204,7 +204,7 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 		AddStringsHighlighted(search.RoleID, search.WildcardString).
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "").
-		AddExactMatches(search.SubjectName, expectedSA.Name).
+		AddExactMatches(search.SubjectName, expectedSA.GetName()).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		ProtoQuery()
 	suite.mockBindingStore.EXPECT().Search(gomock.Any(), protomock.GoMockMatcherEqualMessage(clusterScopeQuery)).AnyTimes().
@@ -224,7 +224,7 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 		AddBoolsHighlighted(search.ClusterRole, false).
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
-		AddExactMatches(search.SubjectName, expectedSA.Name).
+		AddExactMatches(search.SubjectName, expectedSA.GetName()).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		ProtoQuery()
 	suite.mockBindingStore.EXPECT().Search(gomock.Any(), protomock.GoMockMatcherEqualMessage(namespaceScopeQuery)).AnyTimes().

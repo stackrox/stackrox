@@ -23,7 +23,7 @@ type countingMessageStream struct {
 }
 
 func (s countingMessageStream) updateMetrics(msg *central.MsgFromSensor) {
-	switch m := msg.Msg.(type) {
+	switch m := msg.GetMsg().(type) {
 	case *central.MsgFromSensor_Event:
 		incrementSensorEvents(m.Event, s.typ)
 	default:

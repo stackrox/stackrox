@@ -244,8 +244,8 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	}
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
-	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
-	for _, note := range image.Notes {
+	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.GetNotes()))
+	for _, note := range image.GetNotes() {
 		imageNoteSet[note] = struct{}{}
 	}
 
@@ -318,7 +318,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 }
 
 func setImageNotes(image *storage.Image, imageNoteSet map[storage.Image_Note]struct{}) {
-	image.Notes = image.Notes[:0]
+	image.Notes = image.GetNotes()[:0]
 	notes := make([]storage.Image_Note, 0, len(imageNoteSet))
 	for note := range imageNoteSet {
 		notes = append(notes, note)
@@ -490,10 +490,10 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *stora
 	cachedMetadata := metadata.CloneVT()
 	e.metadataCache.Add(getRef(image), cachedMetadata)
 	if image.GetId() == "" {
-		if digest := image.Metadata.GetV2().GetDigest(); digest != "" {
+		if digest := image.GetMetadata().GetV2().GetDigest(); digest != "" {
 			e.metadataCache.Add(digest, cachedMetadata)
 		}
-		if digest := image.Metadata.GetV1().GetDigest(); digest != "" {
+		if digest := image.GetMetadata().GetV1().GetDigest(); digest != "" {
 			e.metadataCache.Add(digest, cachedMetadata)
 		}
 	}
@@ -582,7 +582,7 @@ func (e *enricherImpl) useExistingSignatureVerificationData(img *storage.Image, 
 func (e *enricherImpl) useExistingImageName(img *storage.Image, existingImg *storage.Image, option FetchOption) {
 	// We only want to overwrite the top-level image name if we are ignoring cached values.
 	if !option.forceRefetchCachedValues() {
-		img.Name = existingImg.Name
+		img.Name = existingImg.GetName()
 	}
 }
 
@@ -644,8 +644,8 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 			})
 			if currentScannerErrors >= consecutiveErrorThreshold { // update health
 				e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-					Id:            scanner.DataSource().Id,
-					Name:          scanner.DataSource().Name,
+					Id:            scanner.DataSource().GetId(),
+					Name:          scanner.DataSource().GetName(),
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
 					LastTimestamp: protocompat.TimestampNow(),
@@ -676,8 +676,8 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 				})
 			}
 			e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-				Id:            scanner.DataSource().Id,
-				Name:          scanner.DataSource().Name,
+				Id:            scanner.DataSource().GetId(),
+				Name:          scanner.DataSource().GetName(),
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
 				LastTimestamp: protocompat.TimestampNow(),
@@ -788,7 +788,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 	}
 
 	onlyRedHatSigIntegrationPresent := len(sigIntegrations) == 1 &&
-		sigIntegrations[0].Id == signatures.DefaultRedHatSignatureIntegration.Id
+		sigIntegrations[0].GetId() == signatures.DefaultRedHatSignatureIntegration.GetId()
 
 	// Short-circuit if
 	//	- no integrations are available, or

@@ -194,7 +194,7 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheckResultV2, lastTimeMap map[string]*types.Timestamp) []*v2.ClusterCheckStatus {
 	clusterResults := make([]*v2.ClusterCheckStatus, 0, len(incoming))
 	for _, result := range incoming {
-		clusterResults = append(clusterResults, clusterStatus(result, lastTimeMap[result.ClusterId]))
+		clusterResults = append(clusterResults, clusterStatus(result, lastTimeMap[result.GetClusterId()]))
 	}
 
 	return clusterResults
@@ -229,7 +229,7 @@ func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTi
 			ClusterId:   incoming.GetClusterId(),
 			ClusterName: incoming.GetClusterName(),
 		},
-		Status:       convertComplianceCheckStatus(incoming.Status),
+		Status:       convertComplianceCheckStatus(incoming.GetStatus()),
 		CreatedTime:  incoming.GetCreatedTime(),
 		CheckUid:     incoming.GetId(),
 		LastScanTime: lastScanTime,
@@ -247,7 +247,7 @@ func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName str
 		Rationale:    incoming.GetRationale(),
 		ValuesUsed:   incoming.GetValuesUsed(),
 		Warnings:     incoming.GetWarnings(),
-		Status:       convertComplianceCheckStatus(incoming.Status),
+		Status:       convertComplianceCheckStatus(incoming.GetStatus()),
 		RuleName:     ruleName,
 		Labels:       incoming.GetLabels(),
 		Annotations:  incoming.GetAnnotations(),

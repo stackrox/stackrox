@@ -187,7 +187,7 @@ func (n *networkBaselineCidrTestSuite) Test_Migration() {
 	n.Require().NoError(migration.Run(dbs))
 
 	n.NoError(baselineStore.Walk(ctx, func(baseline *storage.NetworkBaseline) error {
-		n.Run(fmt.Sprintf("Baseline: %s", baseline.DeploymentName), func() {
+		n.Run(fmt.Sprintf("Baseline: %s", baseline.GetDeploymentName()), func() {
 			for _, peer := range baseline.GetPeers() {
 				n.peerShouldHaveCidrBlock(peer)
 			}

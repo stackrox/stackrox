@@ -79,7 +79,7 @@ func TestComponentCountScoreV2(t *testing.T) {
 	protoassert.Equal(t, expectedScore, score)
 
 	// Less components than the floor (10) should return nil score
-	image.Scan.Components = image.Scan.Components[:10]
+	image.Scan.Components = image.GetScan().GetComponents()[:10]
 	score = countMultiplier.ScoreV2(context.Background(), image)
 	protoassert.Equal(t, nil, score)
 

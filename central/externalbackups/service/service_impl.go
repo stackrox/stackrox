@@ -79,7 +79,7 @@ func (s *serviceImpl) GetExternalBackups(ctx context.Context, _ *v1.Empty) (*v1.
 func validateBackup(backup *storage.ExternalBackup) error {
 	errorList := errorhelpers.NewErrorList("external backup validation")
 
-	err := endpoints.ValidateEndpoints(backup.Config)
+	err := endpoints.ValidateEndpoints(backup.GetConfig())
 	if err != nil {
 		errorList.AddWrap(err, "invalid endpoint")
 	}
@@ -175,7 +175,7 @@ func (s *serviceImpl) PostExternalBackup(ctx context.Context, request *storage.E
 		return nil, err
 	}
 
-	if err := s.reporter.Register(request.Id, request.Name, storage.IntegrationHealth_BACKUP); err != nil {
+	if err := s.reporter.Register(request.GetId(), request.GetName(), storage.IntegrationHealth_BACKUP); err != nil {
 		return nil, err
 	}
 

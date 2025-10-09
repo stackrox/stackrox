@@ -51,7 +51,7 @@ func getDirectoryFileFromCommandLine(complianceData *standards.ComplianceData, p
 		return nil, common.Notef("Process %q not found on host therefore check is not applicable", processName)
 	}
 	var dir string
-	values := common.GetValuesForCommandFromFlagsAndConfig(process.Args, nil, flag)
+	values := common.GetValuesForCommandFromFlagsAndConfig(process.GetArgs(), nil, flag)
 	if len(values) == 0 {
 		dir = defaultVal
 	} else {

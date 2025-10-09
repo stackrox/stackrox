@@ -40,7 +40,7 @@ func migrate(database *types.Databases) error {
 					accessLevelForPermissionAccess = accessLevel
 				}
 				obj.ResourceToAccess[Access] = accessLevelForPermissionAccess
-				delete(obj.ResourceToAccess, Role)
+				delete(obj.GetResourceToAccess(), Role)
 			}
 		}
 		if !needsRewrite {

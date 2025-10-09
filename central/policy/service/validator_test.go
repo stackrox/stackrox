@@ -95,7 +95,7 @@ func (s *PolicyValidatorTestSuite) TestValidatesName() {
 	}
 	err = s.validator.validateName(policy)
 	s.NoError(err, "leading and trailing spaces should be trimmed")
-	s.Equal("Boo's policy", policy.Name)
+	s.Equal("Boo's policy", policy.GetName())
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateVersion() {
@@ -531,7 +531,7 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombination()
 		s.T().Run(c.description, func(t *testing.T) {
 			c.p.Name = "BLAHBLAH"
 			s.validator.removeEnforcementsForMissingLifecycles(c.p)
-			assert.Equal(t, c.expectedSize, len(c.p.EnforcementActions), "enforcement size does not match")
+			assert.Equal(t, c.expectedSize, len(c.p.GetEnforcementActions()), "enforcement size does not match")
 		})
 	}
 }
