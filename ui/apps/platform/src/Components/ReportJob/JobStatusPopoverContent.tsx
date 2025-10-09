@@ -1,6 +1,6 @@
 import React from 'react';
 import { Flex, FlexItem } from '@patternfly/react-core';
-import { ReportJobStatus } from './types';
+import type { ReportJobStatus } from './types';
 
 export type JobStatusPopoverContentProps = {
     statuses: ReportJobStatus[];

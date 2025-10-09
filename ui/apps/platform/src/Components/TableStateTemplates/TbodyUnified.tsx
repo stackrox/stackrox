@@ -1,12 +1,17 @@
 import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import { TbodyEmpty, TbodyEmptyProps } from './TbodyEmpty';
-import { TbodyError, TbodyErrorProps } from './TbodyError';
-import { TbodyFilteredEmpty, TbodyFilteredEmptyProps } from './TbodyFilteredEmpty';
-import { TbodyLoading, TbodyLoadingProps } from './TbodyLoading';
+import { TbodyEmpty } from './TbodyEmpty';
+import type { TbodyEmptyProps } from './TbodyEmpty';
+import { TbodyError } from './TbodyError';
+import type { TbodyErrorProps } from './TbodyError';
+import { TbodyFilteredEmpty } from './TbodyFilteredEmpty';
+import type { TbodyFilteredEmptyProps } from './TbodyFilteredEmpty';
+import { TbodyLoading } from './TbodyLoading';
+import type { TbodyLoadingProps } from './TbodyLoading';
 
 export type TbodyUnifiedProps<T> = {
     /** The lifecycle state of a table data request */
@@ -15,7 +20,7 @@ export type TbodyUnifiedProps<T> = {
     /**
      *  A function that renders the table body with the data. Can be a render prop or a component.
      */
-    renderer: (props: { data: T[] }) => React.ReactNode;
+    renderer: (props: { data: T[] }) => ReactNode;
     /** Props passed to the table loading state */
     loadingProps?: Omit<TbodyLoadingProps, 'colSpan'>;
     /** Props passed to the table error state */
@@ -38,7 +43,7 @@ function TbodyUnified<T>({
     errorProps,
     emptyProps,
     filteredEmptyProps,
-}: TbodyUnifiedProps<T>) {
+}: TbodyUnifiedProps<T>): ReactElement {
     const { type } = tableState;
     switch (type) {
         /*

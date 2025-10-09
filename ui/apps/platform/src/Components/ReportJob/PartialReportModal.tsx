@@ -12,7 +12,7 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import sortBy from 'lodash/sortBy';
 
-import { FailedCluster } from 'types/reportJob';
+import type { FailedCluster } from 'types/reportJob';
 
 export type PartialReportModalProps = {
     failedClusters?: FailedCluster[];
