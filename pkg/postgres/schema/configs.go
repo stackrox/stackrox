@@ -41,5 +41,5 @@ const (
 
 // Configs holds the Gorm model for Postgres table `configs`.
 type Configs struct {
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }

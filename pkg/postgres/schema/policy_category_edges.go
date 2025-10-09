@@ -59,7 +59,7 @@ type PolicyCategoryEdges struct {
 	ID                  string           `gorm:"column:id;type:varchar;primaryKey"`
 	PolicyID            string           `gorm:"column:policyid;type:varchar"`
 	CategoryID          string           `gorm:"column:categoryid;type:varchar"`
-	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
+	Serialized          []byte           `gorm:"column:serialized;type:jsonb"`
 	PoliciesRef         Policies         `gorm:"foreignKey:policyid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	PolicyCategoriesRef PolicyCategories `gorm:"foreignKey:categoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

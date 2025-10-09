@@ -58,5 +58,5 @@ type NodeComponents struct {
 	RiskScore       float32 `gorm:"column:riskscore;type:numeric"`
 	TopCvss         float32 `gorm:"column:topcvss;type:numeric"`
 	OperatingSystem string  `gorm:"column:operatingsystem;type:varchar"`
-	Serialized      []byte  `gorm:"column:serialized;type:bytea"`
+	Serialized      []byte  `gorm:"column:serialized;type:jsonb"`
 }

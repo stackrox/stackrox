@@ -59,5 +59,5 @@ type DiscoveredClusters struct {
 	Status                    storage.DiscoveredCluster_Status `gorm:"column:status;type:integer"`
 	SourceID                  string                           `gorm:"column:sourceid;type:uuid"`
 	LastUpdatedAt             *time.Time                       `gorm:"column:lastupdatedat;type:timestamp"`
-	Serialized                []byte                           `gorm:"column:serialized;type:bytea"`
+	Serialized                []byte                           `gorm:"column:serialized;type:jsonb"`
 }

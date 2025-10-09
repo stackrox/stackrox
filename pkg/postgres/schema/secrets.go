@@ -64,7 +64,7 @@ type Secrets struct {
 	ClusterName string     `gorm:"column:clustername;type:varchar"`
 	Namespace   string     `gorm:"column:namespace;type:varchar;index:secrets_sac_filter,type:btree"`
 	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
-	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte     `gorm:"column:serialized;type:jsonb"`
 }
 
 // SecretsFiles holds the Gorm model for Postgres table `secrets_files`.

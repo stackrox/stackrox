@@ -2,6 +2,8 @@
 package schema
 
 import (
+	"encoding/json"
+
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -10,7 +12,7 @@ import (
 
 // ConvertTestStructFromProto converts a `*storage.TestStruct` to Gorm model
 func ConvertTestStructFromProto(obj *storage.TestStruct) (*TestStructs, error) {
-	serialized, err := obj.MarshalVT()
+	serialized, err := json.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +54,7 @@ func ConvertTestStruct_NestedFromProto(obj *storage.TestStruct_Nested, idx int, 
 // ConvertTestStructToProto converts Gorm model `TestStructs` to its protobuf type object
 func ConvertTestStructToProto(m *TestStructs) (*storage.TestStruct, error) {
 	var msg storage.TestStruct
-	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
+	if err := json.Unmarshal(m.Serialized, &msg); err != nil {
 		return nil, err
 	}
 	return &msg, nil

@@ -40,5 +40,5 @@ const (
 // Hashes holds the Gorm model for Postgres table `hashes`.
 type Hashes struct {
 	ClusterID  string `gorm:"column:clusterid;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }

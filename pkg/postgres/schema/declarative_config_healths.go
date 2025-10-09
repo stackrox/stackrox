@@ -39,5 +39,5 @@ const (
 // DeclarativeConfigHealths holds the Gorm model for Postgres table `declarative_config_healths`.
 type DeclarativeConfigHealths struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }

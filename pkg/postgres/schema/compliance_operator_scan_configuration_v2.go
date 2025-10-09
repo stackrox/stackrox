@@ -79,7 +79,7 @@ type ComplianceOperatorScanConfigurationV2 struct {
 	ID             string `gorm:"column:id;type:uuid;primaryKey"`
 	ScanConfigName string `gorm:"column:scanconfigname;type:varchar;unique"`
 	ModifiedByName string `gorm:"column:modifiedby_name;type:varchar"`
-	Serialized     []byte `gorm:"column:serialized;type:bytea"`
+	Serialized     []byte `gorm:"column:serialized;type:jsonb"`
 }
 
 // ComplianceOperatorScanConfigurationV2Profiles holds the Gorm model for Postgres table `compliance_operator_scan_configuration_v2_profiles`.

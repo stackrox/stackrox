@@ -67,7 +67,7 @@ type ReportConfigurations struct {
 	ScopeID                   string                                 `gorm:"column:scopeid;type:varchar"`
 	ResourceScopeCollectionID string                                 `gorm:"column:resourcescope_collectionid;type:varchar"`
 	CreatorName               string                                 `gorm:"column:creator_name;type:varchar"`
-	Serialized                []byte                                 `gorm:"column:serialized;type:bytea"`
+	Serialized                []byte                                 `gorm:"column:serialized;type:jsonb"`
 }
 
 // ReportConfigurationsNotifiers holds the Gorm model for Postgres table `report_configurations_notifiers`.

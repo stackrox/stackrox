@@ -64,5 +64,5 @@ type ListeningEndpoints struct {
 	PodUID             string             `gorm:"column:poduid;type:uuid;index:listeningendpoints_poduid,type:hash"`
 	ClusterID          string             `gorm:"column:clusterid;type:uuid;index:listeningendpoints_sac_filter,type:btree"`
 	Namespace          string             `gorm:"column:namespace;type:varchar;index:listeningendpoints_sac_filter,type:btree"`
-	Serialized         []byte             `gorm:"column:serialized;type:bytea"`
+	Serialized         []byte             `gorm:"column:serialized;type:jsonb"`
 }

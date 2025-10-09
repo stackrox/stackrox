@@ -3,6 +3,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/stackrox/rox/central/metrics"
@@ -50,7 +51,7 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoNotifierEncConfigs(ctx context.Context, tx *postgres.Tx, obj *storage.NotifierEncConfig) error {
-	serialized, marshalErr := obj.MarshalVT()
+	serialized, marshalErr := json.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -138,7 +139,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.NotifierEncConfi
 	}
 
 	var msg storage.NotifierEncConfig
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
+	if err := json.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

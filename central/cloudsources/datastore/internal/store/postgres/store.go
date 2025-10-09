@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"slices"
 	"time"
 
@@ -103,7 +104,7 @@ func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
 
 func insertIntoCloudSources(batch *pgx.Batch, obj *storage.CloudSource) error {
 
-	serialized, marshalErr := obj.MarshalVT()
+	serialized, marshalErr := json.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -147,7 +148,7 @@ func copyFromCloudSources(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 				"to simply use the object.  %s", obj)
 
-			serialized, marshalErr := obj.MarshalVT()
+			serialized, marshalErr := json.Marshal(obj)
 			if marshalErr != nil {
 				return marshalErr
 			}

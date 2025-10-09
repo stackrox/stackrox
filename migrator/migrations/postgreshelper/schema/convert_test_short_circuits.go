@@ -2,12 +2,14 @@
 package schema
 
 import (
+	"encoding/json"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // ConvertTestShortCircuitFromProto converts a `*storage.TestShortCircuit` to Gorm model
 func ConvertTestShortCircuitFromProto(obj *storage.TestShortCircuit) (*TestShortCircuits, error) {
-	serialized, err := obj.MarshalVT()
+	serialized, err := json.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +25,7 @@ func ConvertTestShortCircuitFromProto(obj *storage.TestShortCircuit) (*TestShort
 // ConvertTestShortCircuitToProto converts Gorm model `TestShortCircuits` to its protobuf type object
 func ConvertTestShortCircuitToProto(m *TestShortCircuits) (*storage.TestShortCircuit, error) {
 	var msg storage.TestShortCircuit
-	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
+	if err := json.Unmarshal(m.Serialized, &msg); err != nil {
 		return nil, err
 	}
 	return &msg, nil
