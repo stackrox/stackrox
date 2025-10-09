@@ -144,6 +144,7 @@ func (m *VirtualMachineVulnerability) CloneVT() *VirtualMachineVulnerability {
 	r := new(VirtualMachineVulnerability)
 	r.CveBaseInfo = m.CveBaseInfo.CloneVT()
 	r.Severity = m.Severity
+	r.Cvss = m.Cvss
 	if m.SetFixedBy != nil {
 		r.SetFixedBy = m.SetFixedBy.(interface {
 			CloneVT() isVirtualMachineVulnerability_SetFixedBy
@@ -482,6 +483,9 @@ func (this *VirtualMachineVulnerability) EqualVT(that *VirtualMachineVulnerabili
 		return false
 	}
 	if this.Severity != that.Severity {
+		return false
+	}
+	if this.Cvss != that.Cvss {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1030,6 +1034,12 @@ func (m *VirtualMachineVulnerability) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		}
 		i -= size
 	}
+	if m.Cvss != 0 {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.Cvss))))
+		i--
+		dAtA[i] = 0x25
+	}
 	if m.Severity != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Severity))
 		i--
@@ -1485,6 +1495,9 @@ func (m *VirtualMachineVulnerability) SizeVT() (n int) {
 	}
 	if vtmsg, ok := m.SetFixedBy.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
+	}
+	if m.Cvss != 0 {
+		n += 5
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2722,6 +2735,17 @@ func (m *VirtualMachineVulnerability) UnmarshalVT(dAtA []byte) error {
 			}
 			m.SetFixedBy = &VirtualMachineVulnerability_FixedBy{FixedBy: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
+		case 4:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.Cvss = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4600,6 +4624,17 @@ func (m *VirtualMachineVulnerability) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.SetFixedBy = &VirtualMachineVulnerability_FixedBy{FixedBy: stringValue}
 			iNdEx = postIndex
+		case 4:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.Cvss = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
