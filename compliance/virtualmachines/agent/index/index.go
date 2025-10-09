@@ -50,7 +50,7 @@ func RunSingle(ctx context.Context, cfg *common.Config, client *vsock.Client) er
 	if cfg.Verbose {
 		reportJson, err := jsonutil.ProtoToJSON(report)
 		if err != nil {
-			log.Errorf("failed to convert index report %q to json", report.GetHashId())
+			log.Error("failed to convert index report to json")
 		} else {
 			fmt.Println(reportJson)
 		}

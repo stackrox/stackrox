@@ -50,6 +50,7 @@ func (c *Client) writeIndexReport(conn net.Conn, report *v1.IndexReport) error {
 	if _, err := conn.Write(reportBytes); err != nil {
 		return fmt.Errorf("writing index report: %w", err)
 	}
-	log.Infof("Sent index report %q to host", report.GetIndexV4().GetHashId())
+	numPackages := len(report.GetIndexV4().GetContents().GetPackages())
+	log.Infof("Sent index report with %d packages to host", numPackages)
 	return nil
 }
