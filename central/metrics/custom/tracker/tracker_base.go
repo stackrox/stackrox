@@ -272,6 +272,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if gatherer == nil {
 		return
 	}
+	defer tracker.cleanupInactiveGatherers()
 	defer gatherer.running.Store(false)
 
 	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
@@ -313,7 +314,6 @@ func getLabels(metrics MetricDescriptors) []Label {
 // on the gatherer registry.
 // Returns nil on error, or if the gatherer for this userID is still running.
 func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configuration) *gatherer {
-	defer tracker.cleanupInactiveGatherers()
 	var gr *gatherer
 	if g, ok := tracker.gatherers.Load(userID); !ok {
 		r, err := tracker.registryFactory(userID)
