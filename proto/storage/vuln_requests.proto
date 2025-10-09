@@ -9,37 +9,92 @@ import "storage/user.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
+// RequestComment represents a comment on a vulnerability request.
+//
+// **Comment Rules:**
+// - Comments are required for all request actions (create, approve, deny, update)
+// - Each comment is associated with a user and timestamp
+// - Comments provide audit trail for request lifecycle
 message RequestComment {
+  // Unique identifier for the comment.
   string id = 1;
+  
+  // The comment message content.
+  // Required for all request actions.
   string message = 2;
+  
+  // User who created the comment.
   SlimUser user = 3; // @gotags: sql:"ignore_labels(User ID)"
+  
+  // Timestamp when the comment was created.
   google.protobuf.Timestamp created_at = 4;
 }
 
-// Indicates the status of a request. Requests canceled by the user before they are acted upon by the approver
-// are not tracked/persisted (with the exception of audit logs if it is turned on).
+// RequestStatus indicates the status of a vulnerability request.
+//
+// **Status Lifecycle:**
+// - PENDING: Default state for new requests awaiting approval/denial
+// - APPROVED: Request approved and enforced
+// - DENIED: Request denied and permanently closed
+// - APPROVED_PENDING_UPDATE: Approved request with pending update
+//
+// **Status Rules:**
+// - New requests must start in PENDING state
+// - Only PENDING requests can be approved or denied
+// - APPROVED requests can be updated (creates APPROVED_PENDING_UPDATE)
+// - DENIED requests are permanently closed
+// - Cancelled requests are not persisted (except in audit logs)
 enum RequestStatus {
   // Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.
+  // Only requests in this state can be approved, denied, or updated.
   PENDING = 0;
+  
   // Indicates that the request has been approved by the approver.
+  // Approved requests are immediately enforced and suppress vulnerability detection.
+  // Only PENDING requests can transition to this state.
   APPROVED = 1;
+  
   // Indicates that the request has been denied by the approver.
+  // Denied requests are permanently closed and have no impact on vulnerability detection.
+  // Only PENDING requests can transition to this state.
   DENIED = 2;
+  
   // Indicates that the original request was approved, but an update is still pending an approval or denial.
+  // This state occurs when an approved request is updated.
+  // The original approval remains in effect until the update is processed.
   APPROVED_PENDING_UPDATE = 3;
 }
 
+// RequestExpiry defines the expiration configuration for deferral requests.
+//
+// **Expiry Rules:**
+// - Deferral requests must specify expiry (either expires_when_fixed or expires_on)
+// - False-positive requests do not have expiry (permanent)
+// - Cannot specify both expiry options
+// - Expiry type is under development (do not use for non-development purposes)
 message RequestExpiry {
+  // ExpiryType indicates the type of expiry for the request.
+  // This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.
   enum ExpiryType {
+    // Request has a fixed expiry time. If used, expires_on must be set.
     TIME = 0;
+    
+    // Request expires if all CVEs in the request are fixable.
     ALL_CVE_FIXABLE = 1;
+    
+    // Request expires if any CVE in the request is fixable.
     ANY_CVE_FIXABLE = 2;
   }
 
   oneof expiry {
     // Indicates that this request expires when the associated vulnerability is fixed.
+    // Cannot be used with expires_on.
+    // Only applicable to deferral requests.
     bool expires_when_fixed = 1; // @gotags: search:"Request Expires When Fixed"
+    
     // Indicates the timestamp when this request expires.
+    // Cannot be used with expires_when_fixed.
+    // Must be a future timestamp.
     google.protobuf.Timestamp expires_on = 2; // @gotags: search:"Request Expiry Time"
   }
 
@@ -52,88 +107,226 @@ message RequestExpiry {
   ExpiryType expiry_type = 3; // @gotags: search:"Expiry Type"
 }
 
+// DeferralRequest represents a request to temporarily defer vulnerability detection.
+//
+// **Deferral Rules:**
+// - Must specify expiry configuration
+// - Expiry can be time-based or fix-based
+// - Deferrals are temporary and expire automatically
 message DeferralRequest {
+  // Expiry configuration for the deferral request.
+  // Required for all deferral requests.
   RequestExpiry expiry = 1;
 }
 
+// FalsePositiveRequest represents a request to permanently mark vulnerabilities as false-positive.
+//
+// **False-Positive Rules:**
+// - No expiry configuration (permanent)
+// - False-positives are permanently suppressed
+// - Cannot be undone except through request management
 message FalsePositiveRequest {}
 
+// DeferralUpdate represents an update to an existing deferral request.
+//
+// **Update Rules:**
+// - Can add or remove CVEs from the request
+// - Cannot remove all CVEs (at least one CVE must remain)
+// - Can update expiry configuration
+// - Creates a new pending update request
 message DeferralUpdate {
+  // CVEs to be updated in the deferral request.
+  // Cannot be empty (at least one CVE must remain).
   repeated string CVEs = 1; // @gotags: search:"Deferral Update CVEs"
+  
+  // Updated expiry configuration for the deferral request.
   RequestExpiry expiry = 2; // @gotags: search:"-"
 }
 
+// FalsePositiveUpdate represents an update to an existing false-positive request.
+//
+// **Update Rules:**
+// - Can add or remove CVEs from the request
+// - Cannot remove all CVEs (at least one CVE must remain)
+// - False-positive requests remain permanent (no expiry)
 message FalsePositiveUpdate {
+  // CVEs to be updated in the false-positive request.
+  // Cannot be empty (at least one CVE must remain).
   repeated string CVEs = 1; // @gotags: search:"False Positive Update CVEs"
 }
 
+// Requester represents the user who created the vulnerability request.
+//
+// **Requester Rules:**
+// - Must be specified for all new requests
+// - Cannot be changed after request creation
+// - Used for audit trail and permission checks
 message Requester {
+  // Unique identifier for the requester.
   string id = 1; // @gotags: search:"Requester User ID"
+  
+  // Display name of the requester.
   string name = 2; // @gotags: search:"Requester User Name"
 }
 
+// Approver represents a user who can approve or deny vulnerability requests.
+//
+// **Approver Rules:**
+// - Multiple approvers can be assigned to a request
+// - Any approver can approve or deny the request
+// - Used for audit trail and permission checks
 message Approver {
+  // Unique identifier for the approver.
   string id = 1; // @gotags: search:"Approver User ID"
+  
+  // Display name of the approver.
   string name = 2; // @gotags: search:"Approver User Name"
 }
 
-// Next available tag: 30
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
+//
+// **Request Lifecycle:**
+// - Creation: New request in PENDING state
+// - Approval: Request approved and enforced
+// - Denial: Request denied and closed
+// - Update: Approved request with pending update
+// - Expiry: Request expires automatically or manually
+// - Undo: Approved request undone and vulnerabilities re-enabled
+//
+// **Validation Rules:**
+// - New requests must not have ID (auto-generated)
+// - Must have at least one comment
+// - Must have valid CVE format (e.g., "CVE-2021-1234")
+// - Must have valid scope (image scope or global scope)
+// - Cannot create duplicate requests for same CVE-scope combination
+// - Deferral requests must specify expiry
+// - False-positive requests are permanent (no expiry)
+// - New requests cannot start in APPROVED or DENIED state
+//
+// **Performance Considerations:**
+// - Maximum 1000 requests returned per list operation
+// - Requests are processed sequentially to prevent race conditions
+// - Duplicate prevention checks are performed during creation
 message VulnerabilityRequest {
+  // CVEs represents the list of CVE identifiers in the request.
   message CVEs {
     // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
     // For example, CVE-2021-44832.
+    // Must be in valid CVE format and not already covered by approved requests.
     repeated string cves = 1; // @gotags: search:"CVE"
   }
+  
+  // Scope defines the scope where the vulnerability request applies.
   message Scope {
+    // Image scope applies the request to specific container images.
     message Image {
+      // Container registry (e.g., "docker.io", "gcr.io").
+      // Required for image scope.
       string registry = 1; // @gotags: search:"Image Registry Scope"
+      
+      // Image repository name (e.g., "stackrox/main").
+      // Required for image scope.
       string remote = 2; // @gotags: search:"Image Remote Scope"
+      
+      // Image tag (e.g., "latest", "v1.0.0").
+      // Required for image scope.
       string tag = 3; // @gotags: search:"Image Tag Scope"
     }
 
+    // Global scope applies the request system-wide (deprecated).
     message Global {}
 
     oneof info {
       // This field can be used to apply the request to selected images.
+      // Must specify valid registry, remote, and tag.
       Image image_scope = 1;
+      
       // If set, the scope of this request is system-wide.
+      // DEPRECATED: Use image scope instead.
       Global global_scope = 2 [deprecated = true];
     }
   }
+  
+  // Unique identifier for the vulnerability request (auto-generated).
+  // New requests must not specify this field.
   string id = 1; // @gotags: sql:"pk"
+  
+  // Human-readable name for the request (auto-generated).
+  // Must be unique across all requests.
   string name = 26; // @gotags: search:"Request Name" sql:"unique"
+  
   // Indicates the state the vulnerabilities will move to once the request is complete.
+  // Must be DEFERRED or FALSE_POSITIVE for new requests.
   VulnerabilityState target_state = 2; // @gotags: search:"Requested Vulnerability State"
+  
   // Indicates the status of a request.
+  // New requests must start in PENDING state.
   RequestStatus status = 3; // @gotags: search:"Request Status"
+  
   // Indicates if this request is a historical request that is no longer in effect
   // due to deferral expiry, cancellation, or restarting cve observation.
+  // Expired requests are retained for audit purposes.
   bool expired = 4; // @gotags: search:"Expired Request"
+  
+  // DEPRECATED: Use requester_v2 instead.
+  // User who created the request.
   SlimUser requestor = 5 [deprecated = true]; // @gotags: sql:"ignore_labels(User ID)"
+  
+  // DEPRECATED: Use approvers_v2 instead.
+  // Users who can approve or deny the request.
   repeated SlimUser approvers = 6 [deprecated = true]; // @gotags: sql:"ignore_labels(User ID)"
+  
+  // Timestamp when the request was created.
   google.protobuf.Timestamp created_at = 7; // @gotags: search:"Created Time"
+  
+  // Timestamp when the request was last updated.
   google.protobuf.Timestamp last_updated = 8; // @gotags: search:"Last Updated"
+  
+  // Comments on the request providing audit trail.
+  // Must have at least one comment for new requests.
   repeated RequestComment comments = 9;
+  
+  // Scope defining where the request applies.
+  // Must be valid image scope or global scope.
   Scope scope = 10;
+  
+  // User who created the request (v2).
+  // Required for all new requests.
   Requester requester_v2 = 28;
+  
+  // Users who can approve or deny the request (v2).
+  // Multiple approvers can be assigned.
   repeated Approver approvers_v2 = 29;
 
   // 11 to 15 reserved for the request type oneof.
   oneof req {
+    // Deferral request for temporary vulnerability suppression.
+    // Must specify expiry configuration.
     DeferralRequest deferral_req = 11;
+    
+    // False-positive request for permanent vulnerability suppression.
+    // No expiry configuration (permanent).
     FalsePositiveRequest fp_request = 12;
   }
 
   // 16 to 20 reserved for entities oneof.
   oneof entities {
+    // CVE identifiers affected by this request.
+    // Must be in valid CVE format and not already covered by approved requests.
     CVEs cves = 16;
   }
 
   // 21 to 25 reserved for the updated request type oneof.
   oneof updated_req {
+    // DEPRECATED: Use deferral_update instead.
     DeferralRequest updated_deferral_req = 21 [deprecated = true]; // @gotags: search:"-"
+    
+    // Update to an existing deferral request.
+    // Can modify CVEs and expiry configuration.
     DeferralUpdate deferral_update = 22;
+    
+    // Update to an existing false-positive request.
+    // Can modify CVEs only (no expiry for false-positives).
     FalsePositiveUpdate false_positive_update = 23;
   }
 }
