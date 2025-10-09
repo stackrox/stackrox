@@ -37,7 +37,6 @@ type Event struct {
 }
 
 func TestPod(testT *testing.T) {
-	testT.Skip("Flaky: https://issues.redhat.com/browse/ROX-29771")
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
 
