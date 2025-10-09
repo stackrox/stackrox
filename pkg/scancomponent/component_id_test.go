@@ -15,6 +15,8 @@ import (
 
 var update = flag.Bool("update", false, "update golden files")
 
+// This testfile holds the data of an actual image scanned within ACSCS
+//
 //go:embed testdata_ComponentIDV2.json
 var testdata_ComponentIDV2 []byte
 
