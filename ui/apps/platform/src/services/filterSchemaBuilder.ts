@@ -3,7 +3,10 @@
  * Extracts available filters from CompoundSearchFilterConfig and formats them for AI prompts
  */
 
-import type { CompoundSearchFilterConfig, CompoundSearchFilterAttribute } from 'Components/CompoundSearchFilter/types';
+import type {
+    CompoundSearchFilterConfig,
+    CompoundSearchFilterAttribute,
+} from 'Components/CompoundSearchFilter/types';
 
 /**
  * Schema for a single filter attribute
@@ -71,13 +74,43 @@ function buildAttributeSchema(attribute: CompoundSearchFilterAttribute): FilterA
  * Build a filter schema from CompoundSearchFilterConfig
  *
  * @param config The compound search filter configuration
+ * @param includeSpecialFilters Whether to include special filters like SEVERITY and FIXABLE
  * @returns FilterSchema object suitable for AI prompts
  */
-export function buildFilterSchema(config: CompoundSearchFilterConfig): FilterSchema {
+export function buildFilterSchema(
+    config: CompoundSearchFilterConfig,
+    includeSpecialFilters: boolean = true
+): FilterSchema {
     const entities: FilterEntitySchema[] = config.map((entity) => ({
         displayName: entity.displayName,
         attributes: entity.attributes.map(buildAttributeSchema),
     }));
+
+    // Add special CVE filters that aren't part of the regular config
+    if (includeSpecialFilters) {
+        entities.push({
+            displayName: 'CVE Special Filters',
+            attributes: [
+                {
+                    displayName: 'Severity',
+                    searchTerm: 'Severity',
+                    inputType: 'select',
+                    options: [
+                        'CRITICAL_VULNERABILITY_SEVERITY',
+                        'IMPORTANT_VULNERABILITY_SEVERITY',
+                        'MODERATE_VULNERABILITY_SEVERITY',
+                        'LOW_VULNERABILITY_SEVERITY',
+                    ],
+                },
+                {
+                    displayName: 'Fixable',
+                    searchTerm: 'Fixable',
+                    inputType: 'select',
+                    options: ['true', 'false'],
+                },
+            ],
+        });
+    }
 
     // Generate a description
     const entityNames = entities.map((e) => e.displayName).join(', ');

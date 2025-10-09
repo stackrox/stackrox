@@ -25,18 +25,18 @@ export function isFixableStatus(value: unknown): value is FixableStatus {
 // the filter values to a `string[]` for consistency.
 export type QuerySearchFilter = Partial<
     {
-        SEVERITY: VulnerabilitySeverity[];
-        FIXABLE: ('true' | 'false')[];
+        Severity: VulnerabilitySeverity[];
+        Fixable: ('true' | 'false')[];
     } & Record<string, string[]>
 >;
 
 const vulnMgmtLocalStorageSchema = yup.object({
     preferences: yup.object({
         defaultFilters: yup.object({
-            SEVERITY: yup
+            Severity: yup
                 .array(yup.string().required().oneOf(vulnerabilitySeverityLabels))
                 .required(),
-            FIXABLE: yup.array(yup.string().required().oneOf(fixableStatuses)).required(),
+            Fixable: yup.array(yup.string().required().oneOf(fixableStatuses)).required(),
         }),
     }),
 });

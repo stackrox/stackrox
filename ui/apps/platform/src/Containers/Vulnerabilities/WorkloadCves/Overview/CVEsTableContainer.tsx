@@ -171,7 +171,7 @@ function CVEsTableContainer({
                     unfilteredImageCount={imageCountData?.imageCount || 0}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
-                    filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
+                    filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
                     selectedCves={selectedCves}
                     vulnerabilityState={vulnerabilityState}
                     createTableActions={createTableActions}

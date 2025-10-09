@@ -143,11 +143,11 @@ export function applyVirtualMachineCveTableFilters(
     const componentVersionFilters = searchValueAsArray(searchFilter['Component Version']).map(
         (version) => version.toLowerCase()
     );
-    const severityFilters = searchValueAsArray(searchFilter.SEVERITY)
+    const severityFilters = searchValueAsArray(searchFilter.Severity)
         .filter(isVulnerabilitySeverityLabel)
         .map(severityLabelToSeverity);
 
-    const fixableFilters = searchValueAsArray(searchFilter.FIXABLE);
+    const fixableFilters = searchValueAsArray(searchFilter.Fixable);
 
     return cveTableData.filter((cveTableRow) => {
         // "CVE" filter, case insensitive and substring

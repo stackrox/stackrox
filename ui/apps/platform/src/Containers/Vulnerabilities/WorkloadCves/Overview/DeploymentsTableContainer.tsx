@@ -87,7 +87,7 @@ function DeploymentsTableContainer({
                     tableState={tableState}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
-                    filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
+                    filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
                     onClearFilters={() => {
                         onFilterChange({});
                         pagination.setPage(1);

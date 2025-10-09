@@ -102,9 +102,9 @@ type AnalyticsBoolean = 0 | 1;
  */
 export const searchCategoriesWithFilter = [
     'Component Source',
-    'SEVERITY',
-    'FIXABLE',
-    'CLUSTER CVE FIXABLE',
+    'Severity',
+    'Fixable',
+    'Cluster CVE Fixable',
     'CVSS',
     'Node Top CVSS',
     'Category',

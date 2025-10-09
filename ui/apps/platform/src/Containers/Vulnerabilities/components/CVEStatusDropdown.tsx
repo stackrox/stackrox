@@ -11,7 +11,7 @@ type CVEStatusDropdownProps<FilterField> = {
     onSelect: (filterType: FilterField, checked: boolean, selection: string) => void;
 };
 
-function CVEStatusDropdown<FilterField extends 'FIXABLE' | 'CLUSTER CVE FIXABLE'>({
+function CVEStatusDropdown<FilterField extends 'Fixable' | 'Cluster CVE Fixable'>({
     filterField,
     searchFilter,
     onSelect,

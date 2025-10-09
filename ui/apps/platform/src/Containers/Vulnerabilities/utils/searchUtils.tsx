@@ -171,24 +171,24 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
         }
     });
 
-    const fixable = searchValueAsArray(rawSearchFilter.FIXABLE);
+    const fixable = searchValueAsArray(rawSearchFilter.Fixable);
 
     if (fixable.length > 0) {
-        cleanSearchFilter.FIXABLE = fixable.filter(isFixableStatus).map(fixableStatusToFixability);
+        cleanSearchFilter.Fixable = fixable.filter(isFixableStatus).map(fixableStatusToFixability);
     }
 
-    const clusterCveFixable = searchValueAsArray(rawSearchFilter['CLUSTER CVE FIXABLE']);
+    const clusterCveFixable = searchValueAsArray(rawSearchFilter['Cluster CVE Fixable']);
 
     if (clusterCveFixable.length > 0) {
-        cleanSearchFilter['CLUSTER CVE FIXABLE'] = clusterCveFixable
+        cleanSearchFilter['Cluster CVE Fixable'] = clusterCveFixable
             .filter(isFixableStatus)
             .map(fixableStatusToFixability);
     }
 
-    const severity = searchValueAsArray(rawSearchFilter.SEVERITY);
+    const severity = searchValueAsArray(rawSearchFilter.Severity);
 
     if (severity.length > 0) {
-        cleanSearchFilter.SEVERITY = severity
+        cleanSearchFilter.Severity = severity
             .filter(isVulnerabilitySeverityLabel)
             .map(severityLabelToSeverity);
     }
@@ -197,21 +197,21 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
 }
 
 export function getAppliedSeverities(searchFilter: SearchFilter): VulnerabilitySeverityLabel[] {
-    return ensureStringArray(searchFilter.SEVERITY).filter(isVulnerabilitySeverityLabel);
+    return ensureStringArray(searchFilter.Severity).filter(isVulnerabilitySeverityLabel);
 }
 
 // Given a search filter, determine which severities should be hidden from the user
 export function getHiddenSeverities(
     querySearchFilter: QuerySearchFilter
 ): Set<VulnerabilitySeverity> {
-    return querySearchFilter.SEVERITY
-        ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.SEVERITY?.includes(s)))
+    return querySearchFilter.Severity
+        ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.Severity?.includes(s)))
         : new Set([]);
 }
 
 export function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
     const hiddenStatuses = new Set<FixableStatus>([]);
-    const fixableFilters = querySearchFilter?.FIXABLE ?? [];
+    const fixableFilters = querySearchFilter?.Fixable ?? [];
 
     if (fixableFilters.length > 0) {
         if (!fixableFilters.includes('true')) {

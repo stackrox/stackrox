@@ -9,29 +9,31 @@ import React from 'react';
 import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 
 function renderFixableStatus(value: string): React.ReactNode {
-    if (value === 'true') {
+    // Handle backend values (true/false) and display values (Fixable/Not fixable)
+    if (value === 'true' || value === 'Fixable') {
         return 'Fixable';
     }
-    if (value === 'false') {
+    if (value === 'false' || value === 'Not fixable') {
         return 'Not fixable';
     }
+    // For any other values, return as-is
     return value;
 }
 
 export const cveSeverityFilterDescriptor: FilterChipGroupDescriptor = {
     displayName: 'CVE severity',
-    searchFilterName: 'SEVERITY',
+    searchFilterName: 'Severity',
 };
 
 export const cveStatusFixableDescriptor: FilterChipGroupDescriptor = {
     displayName: 'CVE status',
-    searchFilterName: 'FIXABLE',
+    searchFilterName: 'Fixable',
     render: renderFixableStatus,
 };
 
 export const cveStatusClusterFixableDescriptor: FilterChipGroupDescriptor = {
     displayName: 'CVE status',
-    searchFilterName: 'CLUSTER CVE FIXABLE',
+    searchFilterName: 'Cluster CVE Fixable',
     render: renderFixableStatus,
 };
 

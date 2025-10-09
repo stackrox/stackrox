@@ -100,18 +100,18 @@ function mergeDefaultAndLocalFilters(
 ): SearchFilter {
     const filter = cloneDeep(searchFilter);
 
-    let SEVERITY = filter.SEVERITY ?? [];
-    let FIXABLE = filter.FIXABLE ?? [];
+    let Severity = filter.Severity ?? [];
+    let Fixable = filter.Fixable ?? [];
 
     // Remove existing applied filters that are no longer in the default filters, then
     // add the new default filters.
-    SEVERITY = difference(SEVERITY, oldDefaults.SEVERITY, newDefaults.SEVERITY);
-    SEVERITY = SEVERITY.concat(newDefaults.SEVERITY);
+    Severity = difference(Severity, oldDefaults.Severity, newDefaults.Severity);
+    Severity = Severity.concat(newDefaults.Severity);
 
-    FIXABLE = difference(FIXABLE, oldDefaults.FIXABLE, newDefaults.FIXABLE);
-    FIXABLE = FIXABLE.concat(newDefaults.FIXABLE);
+    Fixable = difference(Fixable, oldDefaults.Fixable, newDefaults.Fixable);
+    Fixable = Fixable.concat(newDefaults.Fixable);
 
-    return { ...filter, SEVERITY, FIXABLE };
+    return { ...filter, Severity, Fixable };
 }
 
 const descriptionForVulnerabilityStateMap: Record<VulnerabilityState, string> = {
@@ -125,8 +125,8 @@ const descriptionForVulnerabilityStateMap: Record<VulnerabilityState, string> = 
 const defaultStorage: VulnMgmtLocalStorage = {
     preferences: {
         defaultFilters: {
-            SEVERITY: ['Critical', 'Important'],
-            FIXABLE: ['Fixable'],
+            Severity: ['Critical', 'Important'],
+            Fixable: ['Fixable'],
         },
     },
 } as const;

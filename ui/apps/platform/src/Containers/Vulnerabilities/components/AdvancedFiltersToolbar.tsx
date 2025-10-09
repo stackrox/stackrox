@@ -25,30 +25,39 @@ import './AdvancedFiltersToolbar.css';
 
 function makeDefaultFilterDescriptor(
     defaultFilters: DefaultFilters,
-    { displayName, searchFilterName }: { displayName: string; searchFilterName: string }
+    descriptor: {
+        displayName: string;
+        searchFilterName: string;
+        render?: (filter: string) => React.ReactNode;
+    }
 ) {
     return {
-        displayName,
-        searchFilterName,
-        render: (filter: string) => (
-            <FilterChip
-                isGlobal={defaultFilters[searchFilterName]?.some((value) => value === filter)}
-                name={filter}
-            />
-        ),
+        displayName: descriptor.displayName,
+        searchFilterName: descriptor.searchFilterName,
+        render: (filter: string) => {
+            const displayValue = descriptor.render ? descriptor.render(filter) : filter;
+            return (
+                <FilterChip
+                    isGlobal={defaultFilters[descriptor.searchFilterName]?.some(
+                        (value) => value === filter
+                    )}
+                    name={typeof displayValue === 'string' ? displayValue : filter}
+                />
+            );
+        },
     };
 }
 
 const emptyDefaultFilters = {
-    SEVERITY: [],
-    FIXABLE: [],
+    Severity: [],
+    Fixable: [],
 };
 
 type AdvancedFiltersToolbarProps = {
     searchFilterConfig: CompoundSearchFilterProps['config'];
     searchFilter: SearchFilter;
     onFilterChange: (searchFilter: SearchFilter, payload?: OnSearchPayload) => void;
-    cveStatusFilterField?: 'FIXABLE' | 'CLUSTER CVE FIXABLE';
+    cveStatusFilterField?: 'Fixable' | 'Cluster CVE Fixable';
     className?: string;
     defaultFilters?: DefaultFilters;
     includeCveSeverityFilters?: boolean;
@@ -64,7 +73,7 @@ function AdvancedFiltersToolbar({
     searchFilterConfig,
     searchFilter,
     onFilterChange,
-    cveStatusFilterField = 'FIXABLE',
+    cveStatusFilterField = 'Fixable',
     className = '',
     defaultFilters = emptyDefaultFilters,
     includeCveSeverityFilters = true,
