@@ -2,7 +2,6 @@ package tracker
 
 import (
 	"context"
-	"iter"
 	"maps"
 	"slices"
 	"strings"
@@ -34,16 +33,16 @@ func TestMakeLabelOrderMap(t *testing.T) {
 	}, testLabelOrder)
 }
 
-func nilGatherFunc(context.Context, MetricDescriptors) iter.Seq[testFinding] {
-	return func(yield func(testFinding) bool) {}
+func nilGatherFunc(context.Context, MetricDescriptors) FindingErrorSequence[testFinding] {
+	return func(yield func(testFinding, error) bool) {}
 }
 
 func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testFinding] {
-	return func(context.Context, MetricDescriptors) iter.Seq[testFinding] {
-		var finding testFinding
-		return func(yield func(testFinding) bool) {
+	return func(context.Context, MetricDescriptors) FindingErrorSequence[testFinding] {
+		return func(yield func(testFinding, error) bool) {
+			var finding testFinding
 			for range data {
-				if !yield(finding) {
+				if !yield(finding, nil) {
 					return
 				}
 				finding++
@@ -252,9 +251,9 @@ func TestTrackerBase_error(t *testing.T) {
 
 	tracker := MakeTrackerBase("test", "Test",
 		testLabelGetters,
-		func(context.Context, MetricDescriptors) iter.Seq[testFinding] {
-			return func(yield func(testFinding) bool) {
-				if !yield(0xbadf00d) {
+		func(context.Context, MetricDescriptors) FindingErrorSequence[testFinding] {
+			return func(yield func(testFinding, error) bool) {
+				if !yield(testFinding(0xbadf00d), errox.InvariantViolation.CausedBy("bad finding")) {
 					return
 				}
 			}

@@ -2,7 +2,6 @@ package expiry
 
 import (
 	"context"
-	"iter"
 	"time"
 
 	"github.com/stackrox/rox/central/credentialexpiry/service"
@@ -15,14 +14,14 @@ func New(s service.Service) *tracker.TrackerBase[*finding] {
 		"cert_exp",
 		"certificate expiry",
 		LazyLabels,
-		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
+		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, s)
 		},
 	)
 }
 
-func track(ctx context.Context, s service.Service) iter.Seq[*finding] {
-	return func(yield func(*finding) bool) {
+func track(ctx context.Context, s service.Service) tracker.FindingErrorSequence[*finding] {
+	return func(yield func(*finding, error) bool) {
 		if s == nil {
 			return
 		}
@@ -35,11 +34,10 @@ func track(ctx context.Context, s service.Service) iter.Seq[*finding] {
 				Component: v1.GetCertExpiry_Component(i),
 			})
 			f.component = component
-			f.err = err
 			if result != nil {
 				f.hoursUntilExpiration = int(time.Until(result.GetExpiry().AsTime()).Hours())
 			}
-			if !yield(&f) {
+			if !yield(&f, err) {
 				return
 			}
 		}
