@@ -263,11 +263,6 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	// In case of update conflict we need to retrieve the current resources again,
-	// thus we retry from here.
-	retries := 0
-update:
-	retries++
 	// Retrieve the ScanSetting and ScanSettingBinding objects for update
 	resSS := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 	var ssObj *unstructured.Unstructured
@@ -323,30 +318,52 @@ update:
 		}
 	}
 
-	err = m.callWithRetry(func(ctx context.Context) error {
-		_, err := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Update(ctx, updatedScanSetting, v1.UpdateOptions{})
+	retryCtxForSetting, cancelForSetting := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+	defer cancelForSetting()
+	err = m.callWithRetryWithOnErrorCallback(retryCtxForSetting, func(ctx context.Context) error {
+		_, err := resSS.Update(ctx, updatedScanSetting, v1.UpdateOptions{})
 		return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, updatedScanSetting.GetName())
+	}, func(ctx context.Context, parentErr error) error {
+		if !kubeAPIErr.IsConflict(parentErr) {
+			return nil
+		}
+		ssObj, err = resSS.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", ns, request.GetScanSettings().GetScanName())
+		}
+		updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request)
+		if err != nil {
+			return err
+		}
+		return nil
 	})
-	// This indicates a race updating the resource.
-	// To retry again we need to retrieve the object again first.
-	if kubeAPIErr.IsConflict(err) && retries <= defaultMaxRetries {
-		goto update
-	}
+
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
 	// Process SSB as an update
 	if ssbObj != nil {
-		err = m.callWithRetry(func(ctx context.Context) error {
-			_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Update(ctx, updatedScanSettingBinding, v1.UpdateOptions{})
+		retryCtxForBinding, cancelForBinding := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+		defer cancelForBinding()
+		err = m.callWithRetryWithOnErrorCallback(retryCtxForBinding, func(ctx context.Context) error {
+			_, err = resSSB.Update(ctx, updatedScanSettingBinding, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
+		}, func(ctx context.Context, parentErr error) error {
+			if !kubeAPIErr.IsConflict(parentErr) {
+				return nil
+			}
+			ssbObj, err = resSSB.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "unable to get namespaces/%s/scansettingbindings/%s", ns, request.GetScanSettings().GetScanName())
+			}
+			updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssbObj, request)
+			if err != nil {
+				return err
+			}
+			return nil
 		})
-		// This indicates a race updating the resource.
-		// To retry again we need to retrieve the object again first.
-		if kubeAPIErr.IsConflict(err) && retries <= defaultMaxRetries {
-			goto update
-		}
+
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
@@ -392,42 +409,73 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 
 	// Apply annotation to indicate compliance scan be rerun.
 	for _, scan := range complianceSuite.Spec.Scans {
-		resI := m.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).Namespace(ns)
-		var obj *unstructured.Unstructured
-		err := m.callWithRetry(func(ctx context.Context) error {
-			var err error
-			obj, err = resI.Get(ctx, scan.Name, v1.GetOptions{})
-			return errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, scan.Name)
-		})
-		if err != nil || obj == nil {
-			return m.composeAndSendApplyScanConfigResponse(requestID, err)
-		}
-		var complianceScan v1alpha1.ComplianceScan
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceScan); err != nil {
-			err = errors.Wrap(err, "Could not convert unstructured to compliance scan")
+		if err := func() error {
+			// Get the scan and apply annotation to indicate compliance scan be rerun.
+			complianceScan, scanObj, err := m.getScanForReRun(func() (*unstructured.Unstructured, error) {
+				err := m.callWithRetry(func(ctx context.Context) error {
+					var err error
+					obj, err = resI.Get(ctx, scan.Name, v1.GetOptions{})
+					return errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, scan.Name)
+				})
+				return obj, err
+			}, scan.Name)
+			if err != nil {
+				return err
+			}
+			ctx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+			defer cancel()
+			return m.callWithRetryWithOnErrorCallback(
+				ctx,
+				func(ctx context.Context) error {
+					log.Infof("Rerunning compliance scan %s", complianceScan)
+					_, err = resI.Update(ctx, scanObj, v1.UpdateOptions{})
+					return errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan)
+				},
+				func(ctx context.Context, parentErr error) error {
+					if !kubeAPIErr.IsConflict(parentErr) {
+						return nil
+					}
+					// On conflict, get the scan again
+					complianceScan, scanObj, err = m.getScanForReRun(func() (*unstructured.Unstructured, error) {
+						return resI.Get(ctx, complianceScan, v1.GetOptions{})
+					}, scan.Name)
+					if err != nil {
+						return err
+					}
+					return nil
+				})
+		}(); err != nil {
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
 		}
 
-		if complianceScan.GetAnnotations() == nil {
-			complianceScan.Annotations = make(map[string]string)
-		}
-		complianceScan.Annotations[rescanAnnotation] = ""
-
-		obj, err = runtimeObjToUnstructured(&complianceScan)
-		if err != nil {
-			return m.composeAndSendApplyScanConfigResponse(requestID, err)
-		}
-		log.Infof("Rerunning compliance scan %s", complianceScan.Name)
-		err = m.callWithRetry(func(ctx context.Context) error {
-			_, err = resI.Update(ctx, obj, v1.UpdateOptions{})
-			return errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan.Name)
-		})
-		if err != nil {
-			return m.composeAndSendApplyScanConfigResponse(requestID, err)
-		}
 	}
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
+
+func (m *handlerImpl) getScanForReRun(getFunc func() (*unstructured.Unstructured, error), scanName string) (string, *unstructured.Unstructured, error) {
+	var obj *unstructured.Unstructured
+	obj, err := getFunc()
+	if err != nil || obj == nil {
+		return scanName, nil, err
+	}
+	var complianceScan v1alpha1.ComplianceScan
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceScan); err != nil {
+		err = errors.Wrap(err, "Could not convert unstructured to compliance scan")
+		return scanName, nil, err
+	}
+
+	if complianceScan.GetAnnotations() == nil {
+		complianceScan.Annotations = make(map[string]string)
+	}
+	complianceScan.Annotations[rescanAnnotation] = ""
+
+	obj, err = runtimeObjToUnstructured(&complianceScan)
+	if err != nil {
+		return complianceScan.Name, nil, err
+	}
+	return complianceScan.Name, obj, nil
+}
+
 func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, config scanScheduleConfiguration) bool {
 	if err := config.ValidationFunc(config.Request); err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
@@ -438,21 +486,56 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
-	var obj *unstructured.Unstructured
-	err := m.callWithRetry(func(ctx context.Context) error {
-		var err error
-		obj, err = resI.Get(ctx, config.ScanName, v1.GetOptions{})
-		return errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, config.ScanName)
-	})
-	if err != nil || obj == nil {
+	obj, err := m.getScanSettingForUpdate(func() (*unstructured.Unstructured, error) {
+		resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
+		var obj *unstructured.Unstructured
+		err := m.callWithRetry(func(ctx context.Context) error {
+			var err error
+			obj, err = resI.Get(ctx, config.ScanName, v1.GetOptions{})
+			return errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, config.ScanName)
+		})
+		return obj, err
+	}, config)
+	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+	ctx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+	defer cancel()
+	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
+	err = m.callWithRetryWithOnErrorCallback(
+		ctx,
+		func(ctx context.Context) error {
+			_, err := resI.Update(ctx, obj, v1.UpdateOptions{})
+			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
+		},
+		func(ctx context.Context, parentErr error) error {
+			if !kubeAPIErr.IsConflict(parentErr) {
+				return nil
+			}
+			// On conflict, get the scan again
+			obj, err = m.getScanSettingForUpdate(func() (*unstructured.Unstructured, error) {
+				return resI.Get(ctx, config.ScanName, v1.GetOptions{})
+			}, config)
+			if err != nil {
+				return errors.Wrapf(err, "unable to retrieve ScanSetting %s", config.ScanName)
+			}
+			return nil
+		})
+
+	return m.composeAndSendApplyScanConfigResponse(requestID, err)
+}
+
+func (m *handlerImpl) getScanSettingForUpdate(getFunc func() (*unstructured.Unstructured, error), config scanScheduleConfiguration) (*unstructured.Unstructured, error) {
+	var obj *unstructured.Unstructured
+	obj, err := getFunc()
+	if err != nil || obj == nil {
+		return nil, err
 	}
 
 	var scanSetting v1alpha1.ScanSetting
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSetting); err != nil {
 		err = errors.Wrap(err, "Could not convert unstructured to scan setting")
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		return nil, err
 	}
 
 	// Check if scanSetting has the "Suspend" field
@@ -460,20 +543,14 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 		scanSetting.Suspend = *config.Suspend
 	} else {
 		// Handle the case where the field doesn't exist (older CRD)
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("suspending a scan is not supported on this version of the compliance operator"))
+		return nil, errors.New("suspending a scan is not supported on this version of the compliance operator")
 	}
 
 	obj, err = runtimeObjToUnstructured(&scanSetting)
 	if err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		return nil, err
 	}
-
-	err = m.callWithRetry(func(ctx context.Context) error {
-		_, err := resI.Update(ctx, obj, v1.UpdateOptions{})
-		return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
-	})
-
-	return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	return obj, nil
 }
 
 func validateInterface(i interface{}) error {
@@ -508,6 +585,7 @@ func (m *handlerImpl) processResumeScheduledScanRequest(requestID string, reques
 	}
 	return m.processScanConfigScheduleChangeRequest(requestID, config)
 }
+
 func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplianceScanConfigRequest) bool {
 	select {
 	case <-m.disabled.Done():
@@ -606,10 +684,28 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		if err != nil {
 			return err
 		}
-		err = m.callWithRetry(func(ctx context.Context) error {
-			_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(ctx, updatedResource, v1.UpdateOptions{})
-			return errors.Wrapf(err, "updating namespace %q", namespace)
-		})
+		ctx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+		defer cancel()
+		err = m.callWithRetryWithOnErrorCallback(
+			ctx,
+			func(ctx context.Context) error {
+				_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(ctx, updatedResource, v1.UpdateOptions{})
+				return errors.Wrapf(err, "updating namespace %q", namespace)
+			},
+			func(ctx context.Context, parentErr error) error {
+				if !kubeAPIErr.IsConflict(parentErr) {
+					return nil
+				}
+				resource, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Get(ctx, resource.GetName(), v1.GetOptions{})
+				if err != nil {
+					return errors.Wrapf(err, "unable to get namespaces/%s/scans/%s", namespace, resource.GetName())
+				}
+				updatedResource, err = updateFn(resource, req)
+				if err != nil {
+					return err
+				}
+				return nil
+			})
 		if err != nil {
 			return err
 		}
@@ -808,10 +904,22 @@ func (m *handlerImpl) ctx() context.Context {
 func (m *handlerImpl) callWithRetry(fn func(context.Context) error) error {
 	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
 	defer cancel()
+	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, nil)
+}
+
+func (m *handlerImpl) callWithRetryWithOnErrorCallback(retryCtx context.Context, fn func(context.Context) error, onErrFn func(context.Context, error) error) error {
 	return retry.WithRetry(func() error {
 		callCtx, callCancel := context.WithTimeout(m.ctx(), m.handlerAPICallTimeout)
 		defer callCancel()
-		return fn(callCtx)
+		err := fn(callCtx)
+		if err != nil && onErrFn != nil {
+			errCallCtx, errCallCancel := context.WithTimeout(m.ctx(), m.handlerAPICallTimeout)
+			defer errCallCancel()
+			if onErr := onErrFn(errCallCtx, err); onErr != nil {
+				return errors.Wrapf(err, "callback error: %v", onErr)
+			}
+		}
+		return err
 	},
 		retry.WithContext(retryCtx),
 		retry.Tries(m.handlerMaxRetries),
