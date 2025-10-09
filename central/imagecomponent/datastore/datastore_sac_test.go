@@ -442,7 +442,7 @@ func (s *cveDataStoreSACTestSuite) runImageTest(testName string, testFunc func(c
 		}
 	}
 	if failed {
-		log.Infof("%s failed, dumping DB content.", testName)
+		s.T().Logf("%s failed, dumping DB content.", testName)
 		imageGraphBefore.Log()
 	}
 }
