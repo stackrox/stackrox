@@ -5,10 +5,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	pgStore "github.com/stackrox/rox/central/signatureintegration/store/postgres"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/signatureintegration"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -36,6 +40,11 @@ func Singleton() DataStore {
 		storage := pgStore.New(globaldb.GetPostgres())
 		upsertDefaultRedHatSignatureIntegration(storage)
 		instance = New(storage, policyDataStore.Singleton())
+		getterFunc := func() signatureintegration.Getter { return instance }
+		imageDS.Singleton().SetSignatureIntegrationGetterFunc(getterFunc)
+		if features.FlattenImageData.Enabled() {
+			imageV2DS.Singleton().SetSignatureIntegrationGetterFunc(getterFunc)
+		}
 	})
 	return instance
 }

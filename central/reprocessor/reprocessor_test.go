@@ -23,7 +23,6 @@ import (
 )
 
 func TestImagesWithSignaturesQuery(t *testing.T) {
-
 	testCtx := sac.WithAllAccess(context.Background())
 
 	testingDB := pgtest.ForT(t)

@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
+	signatureintegration "github.com/stackrox/rox/pkg/signatureintegration"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -197,6 +198,18 @@ func (m *MockDataStore) SearchRawImages(ctx context.Context, q *v1.Query) ([]*st
 func (mr *MockDataStoreMockRecorder) SearchRawImages(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImages", reflect.TypeOf((*MockDataStore)(nil).SearchRawImages), ctx, q)
+}
+
+// SetSignatureIntegrationGetterFunc mocks base method.
+func (m *MockDataStore) SetSignatureIntegrationGetterFunc(fn signatureintegration.GetterFunc) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetSignatureIntegrationGetterFunc", fn)
+}
+
+// SetSignatureIntegrationGetterFunc indicates an expected call of SetSignatureIntegrationGetterFunc.
+func (mr *MockDataStoreMockRecorder) SetSignatureIntegrationGetterFunc(fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSignatureIntegrationGetterFunc", reflect.TypeOf((*MockDataStore)(nil).SetSignatureIntegrationGetterFunc), fn)
 }
 
 // UpdateVulnerabilityState mocks base method.

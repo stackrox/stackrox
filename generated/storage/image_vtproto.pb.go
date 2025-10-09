@@ -204,6 +204,7 @@ func (m *ImageSignatureVerificationResult) CloneVT() *ImageSignatureVerification
 	r := new(ImageSignatureVerificationResult)
 	r.VerificationTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.VerificationTime).CloneVT())
 	r.VerifierId = m.VerifierId
+	r.VerifierName = m.VerifierName
 	r.Status = m.Status
 	r.Description = m.Description
 	if rhs := m.VerifiedImageReferences; rhs != nil {
@@ -983,6 +984,9 @@ func (this *ImageSignatureVerificationResult) EqualVT(that *ImageSignatureVerifi
 		if vx != vy {
 			return false
 		}
+	}
+	if this.VerifierName != that.VerifierName {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -2142,6 +2146,13 @@ func (m *ImageSignatureVerificationResult) MarshalToSizedBufferVT(dAtA []byte) (
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.VerifierName) > 0 {
+		i -= len(m.VerifierName)
+		copy(dAtA[i:], m.VerifierName)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.VerifierName)))
+		i--
+		dAtA[i] = 0x32
 	}
 	if len(m.VerifiedImageReferences) > 0 {
 		for iNdEx := len(m.VerifiedImageReferences) - 1; iNdEx >= 0; iNdEx-- {
@@ -3411,6 +3422,10 @@ func (m *ImageSignatureVerificationResult) SizeVT() (n int) {
 			l = len(s)
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	l = len(m.VerifierName)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5115,6 +5130,38 @@ func (m *ImageSignatureVerificationResult) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.VerifiedImageReferences = append(m.VerifiedImageReferences, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VerifierName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.VerifierName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -8993,6 +9040,42 @@ func (m *ImageSignatureVerificationResult) UnmarshalVTUnsafe(dAtA []byte) error 
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.VerifiedImageReferences = append(m.VerifiedImageReferences, stringValue)
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VerifierName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.VerifierName = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
