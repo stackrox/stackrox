@@ -37,6 +37,10 @@ When creating pull requests, you must follow these requirements:
 
 - always create PRs as draft - use the `--draft` flag with `gh pr create`
 - this allows for review and additional changes before marking as ready for review
+- PR title must follow the format enforced by `.github/workflows/check-pr-title.yaml`
+  - read the workflow file to understand exact requirements
+  - generally: conventional commit format (e.g., `fix(ui): description`) OR JIRA format (e.g., `ROX-123: description`)
+  - maximum 70 characters
 - PR description must follow the template (`.github/pull_request_template.md`)
   - IMPORTANT: all sections, checkboxes, and structure must be preserved
   - only remove: HTML comments (`<!-- -->`) and placeholder text (e.g., "change me!")
