@@ -157,8 +157,8 @@ func (s *fullStoreImpl) retryableGetPLOP(
 }
 
 func plopComparison(plop1 *storage.ProcessListeningOnPort, plop2 *storage.ProcessListeningOnPort) bool {
-	if plop1.PodId != plop2.PodId {
-		return plop1.PodId < plop2.PodId
+	if plop1.GetPodId() != plop2.GetPodId() {
+		return plop1.GetPodId() < plop2.GetPodId()
 	}
 
 	filePath1 := plop1.GetSignal().GetExecFilePath()
@@ -287,7 +287,7 @@ func (s *fullStoreImpl) readRows(
 			ImageId:            procMsg.GetImageId(),
 		}
 
-		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(plop.ClusterId), sac.NamespaceScopeKey(plop.Namespace)); err == nil && ok {
+		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(plop.GetClusterId()), sac.NamespaceScopeKey(plop.GetNamespace())); err == nil && ok {
 			plops = append(plops, plop)
 		}
 	}

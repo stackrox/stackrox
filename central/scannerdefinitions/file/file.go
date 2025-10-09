@@ -97,7 +97,7 @@ func (file *File) WriteBlob(ctx context.Context, blobStore blob.Datastore, blobN
 	}
 
 	modTime := time.Time{}
-	if t := protocompat.NilOrTime(blob.ModifiedTime); t != nil {
+	if t := protocompat.NilOrTime(blob.GetModifiedTime()); t != nil {
 		modTime = *t
 	}
 

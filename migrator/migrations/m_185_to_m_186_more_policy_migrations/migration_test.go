@@ -144,5 +144,5 @@ func (s *policyMigrationTestSuite) TestPolicyExclusionMigration() {
 			},
 		},
 	}
-	protoassert.ElementsMatch(s.T(), policy.Exclusions, expectedExclusions, "exclusion do not match after migration")
+	protoassert.ElementsMatch(s.T(), policy.GetExclusions(), expectedExclusions, "exclusion do not match after migration")
 }

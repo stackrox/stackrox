@@ -308,7 +308,7 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		if err != nil {
 			return errors.Wrap(err, "receiving msg from sensor")
 		}
-		switch t := msg.Msg.(type) {
+		switch t := msg.GetMsg().(type) {
 		case *sensor.MsgToCompliance_Trigger:
 			if err := compliance_checks.RunChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
 				return errors.Wrap(err, "running compliance checks")
@@ -434,13 +434,13 @@ func (c *Compliance) initialClientAndConfig(ctx context.Context, cli sensor.Comp
 		return nil, nil, errors.New("initial msg has a nil config")
 	}
 	config := initialMsg.GetConfig()
-	if config.ContainerRuntime == storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME {
+	if config.GetContainerRuntime() == storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME {
 		log.Error("Didn't receive container runtime from sensor. Trying to infer container runtime from cgroups...")
 		config.ContainerRuntime, err = k8sutil.InferContainerRuntime()
 		if err != nil {
 			log.Errorf("Could not infer container runtime from cgroups: %v", err)
 		} else {
-			log.Infof("Inferred container runtime as %s", config.ContainerRuntime.String())
+			log.Infof("Inferred container runtime as %s", config.GetContainerRuntime().String())
 		}
 	}
 	return client, config, nil

@@ -67,8 +67,8 @@ func TestNVDCVEToEmbeddedCVE_Istio(t *testing.T) {
 				assert.Equal(t, float32(cveEntry.Impact.BaseMetricV2.CVSSV2.BaseScore), embeddedCVE.GetCvss())
 				assert.Equal(t, cveEntry.Impact.BaseMetricV2.CVSSV2.VectorString, embeddedCVE.GetCvssV2().GetVector())
 			}
-			assert.Equal(t, storage.EmbeddedVulnerability_ISTIO_VULNERABILITY, embeddedCVE.VulnerabilityType)
-			assert.Equal(t, cveEntry.CVE.Description.DescriptionData[0].Value, embeddedCVE.Summary)
+			assert.Equal(t, storage.EmbeddedVulnerability_ISTIO_VULNERABILITY, embeddedCVE.GetVulnerabilityType())
+			assert.Equal(t, cveEntry.CVE.Description.DescriptionData[0].Value, embeddedCVE.GetSummary())
 		})
 	}
 }

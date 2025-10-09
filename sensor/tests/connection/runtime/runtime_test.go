@@ -115,7 +115,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		expectedNetworkFlows := []helper.ExpectedNetworkConnectionMessageFn{
 			func(msg *sensor.NetworkConnectionInfoMessage) bool {
 				for _, conn := range msg.GetInfo().GetUpdatedConnections() {
-					if conn.Protocol == storage.L4Protocol_L4_PROTOCOL_TCP && conn.ContainerId == talkContainerIds[0] && conn.GetRemoteAddress().GetPort() == 80 {
+					if conn.GetProtocol() == storage.L4Protocol_L4_PROTOCOL_TCP && conn.GetContainerId() == talkContainerIds[0] && conn.GetRemoteAddress().GetPort() == 80 {
 						return true
 					}
 				}

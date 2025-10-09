@@ -164,7 +164,7 @@ func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args PaginatedQue
 	if err != nil {
 		return nil, err
 	}
-	pagination := filterQ.Pagination
+	pagination := filterQ.GetPagination()
 	filterQ.Pagination = nil
 
 	subjectResolvers, err := resolver.root.wrapSubjects(resolver.getSubjects(ctx, filterQ))
@@ -199,7 +199,7 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args Pagin
 		return nil, err
 	}
 
-	pagination := q.Pagination
+	pagination := q.GetPagination()
 	q.Pagination = nil
 
 	serviceAccountResolvers, err := resolver.root.wrapServiceAccounts(resolver.getServiceAccounts(ctx, q))

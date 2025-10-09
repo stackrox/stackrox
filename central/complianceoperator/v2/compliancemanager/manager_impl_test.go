@@ -541,7 +541,7 @@ func (suite *complianceManagerTestSuite) TestDeleteScanConfiguration() {
 		suite.T().Run(tc.desc, func(t *testing.T) {
 			tc.setMocks()
 
-			err := suite.manager.DeleteScan(suite.hasWriteCtx, getTestRec().Id)
+			err := suite.manager.DeleteScan(suite.hasWriteCtx, getTestRec().GetId())
 			if tc.isErrorTest {
 				suite.Require().NotNil(err)
 				suite.Require().ErrorContains(err, tc.expectedErr)

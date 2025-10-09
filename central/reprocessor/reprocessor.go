@@ -253,7 +253,7 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 	}
 
 	for _, r := range results {
-		clusterIDs := r.FieldToMatches[path.FieldPath].GetValues()
+		clusterIDs := r.GetFieldToMatches()[path.GetFieldPath()].GetValues()
 		if len(clusterIDs) == 0 {
 			log.Error("no cluster id found in fields")
 			continue
@@ -264,16 +264,16 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 			continue
 		}
 
-		dedupeKey := uuid.NewV5(riskDedupeNamespace, r.Id).String()
+		dedupeKey := uuid.NewV5(riskDedupeNamespace, r.GetId()).String()
 
 		msg := &central.MsgFromSensor{
-			HashKey:   r.Id,
+			HashKey:   r.GetId(),
 			DedupeKey: dedupeKey,
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{
 					Resource: &central.SensorEvent_ReprocessDeployment{
 						ReprocessDeployment: &central.ReprocessDeploymentRisk{
-							DeploymentId: r.Id,
+							DeploymentId: r.GetId(),
 						},
 					},
 				},

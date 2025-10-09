@@ -124,7 +124,7 @@ func (a *restorePolicy) Execute(ctx context.Context, client networkingV1Client.N
 }
 
 func (a *restorePolicy) Record(mod *storage.NetworkPolicyModification) {
-	if mod.ApplyYaml != "" {
+	if mod.GetApplyYaml() != "" {
 		mod.ApplyYaml += yamlSep
 	}
 	yaml, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: a.oldPolicy}.ToYaml()

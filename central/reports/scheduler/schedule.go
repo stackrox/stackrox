@@ -266,7 +266,7 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	rc := req.ReportConfig
 
-	reportName := rc.Name
+	reportName := rc.GetName()
 	notifier := s.notificationProcessor.GetNotifier(req.Ctx, rc.GetEmailConfig().GetNotifierId())
 	reportNotifier, ok := notifier.(notifiers.ReportNotifier)
 	if !ok {
@@ -314,7 +314,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	); err != nil {
 		return err
 	}
-	log.Infof("Report generation for '%s' completed, email notification sent.", rc.Name)
+	log.Infof("Report generation for '%s' completed, email notification sent.", rc.GetName())
 	return nil
 }
 
@@ -324,9 +324,9 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 		WhichVulns:         "for all vulnerabilities",
 		DateStr:            date.Format("January 02, 2006"),
 	}
-	if rc.GetVulnReportFilters().SinceLastReport && rc.GetLastSuccessfulRunTime() != nil {
+	if rc.GetVulnReportFilters().GetSinceLastReport() && rc.GetLastSuccessfulRunTime() != nil {
 		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
-			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
+			timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime().Format("January 02, 2006"))
 	}
 	tmpl, err := template.New("emailBody").Parse(emailTemplate)
 	if err != nil {

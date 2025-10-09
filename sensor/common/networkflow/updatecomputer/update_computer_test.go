@@ -568,9 +568,9 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 
 		// Verify protobuf conversion
 		for _, update := range updatesEp {
-			assert.NotNil(t, update.Props)
-			assert.Equal(t, uint32(8080), update.Props.Port)
-			assert.Equal(t, storage.L4Protocol_L4_PROTOCOL_TCP, update.Props.L4Protocol)
+			assert.NotNil(t, update.GetProps())
+			assert.Equal(t, uint32(8080), update.GetProps().GetPort())
+			assert.Equal(t, storage.L4Protocol_L4_PROTOCOL_TCP, update.GetProps().GetL4Protocol())
 		}
 	}
 

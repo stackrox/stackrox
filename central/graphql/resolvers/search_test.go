@@ -384,10 +384,10 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 		{
 			desc: "Subject name autocomplete",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Subject:%s", roleBindings[0].Subjects[1].Name),
+				Query:      fmt.Sprintf("Subject:%s", roleBindings[0].GetSubjects()[1].GetName()),
 				Categories: &[]string{"SUBJECTS"},
 			},
-			expected: []string{roleBindings[0].Subjects[1].Name},
+			expected: []string{roleBindings[0].GetSubjects()[1].GetName()},
 		},
 		{
 			desc: "Subject Kind autocomplete",
@@ -400,10 +400,10 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 		{
 			desc: "Cluster name autocomplete",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Cluster:%s", roleBindings[1].ClusterName),
+				Query:      fmt.Sprintf("Cluster:%s", roleBindings[1].GetClusterName()),
 				Categories: &[]string{"SUBJECTS"},
 			},
-			expected: []string{roleBindings[1].ClusterName},
+			expected: []string{roleBindings[1].GetClusterName()},
 		},
 		{
 			desc: "Cluster role autocomplete",
@@ -416,10 +416,10 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 		{
 			desc: "Cluster name + Subject name autocomplete",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Cluster:%s+Subject:", roleBindings[0].ClusterName),
+				Query:      fmt.Sprintf("Cluster:%s+Subject:", roleBindings[0].GetClusterName()),
 				Categories: &[]string{"SUBJECTS"},
 			},
-			expected: []string{roleBindings[0].Subjects[1].Name, roleBindings[0].Subjects[2].Name},
+			expected: []string{roleBindings[0].GetSubjects()[1].GetName(), roleBindings[0].GetSubjects()[2].GetName()},
 		},
 		{
 			desc: "Autocomplete on unsupported option",
@@ -544,18 +544,18 @@ func TestSubjectGlobalSearch(t *testing.T) {
 		{
 			desc: "Subject name autocomplete",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Subject:%s", roleBindings[0].Subjects[1].Name),
+				Query:      fmt.Sprintf("Subject:%s", roleBindings[0].GetSubjects()[1].GetName()),
 				Categories: &[]string{"SUBJECTS"},
 			},
-			expected: []string{roleBindings[0].Subjects[1].Name},
+			expected: []string{roleBindings[0].GetSubjects()[1].GetName()},
 		},
 		{
 			desc: "Cluster name + Subject name autocomplete",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Cluster:%s+Subject:", roleBindings[0].ClusterName),
+				Query:      fmt.Sprintf("Cluster:%s+Subject:", roleBindings[0].GetClusterName()),
 				Categories: &[]string{"SUBJECTS"},
 			},
-			expected: []string{roleBindings[0].Subjects[1].Name, roleBindings[0].Subjects[2].Name},
+			expected: []string{roleBindings[0].GetSubjects()[1].GetName(), roleBindings[0].GetSubjects()[2].GetName()},
 		},
 		{
 			desc: "Autocomplete on unsupported option",
@@ -580,7 +580,7 @@ func TestSubjectGlobalSearch(t *testing.T) {
 func getResultIDs(results []*searchResultResolver) []string {
 	var ids []string
 	for _, r := range results {
-		ids = append(ids, r.data.Id)
+		ids = append(ids, r.data.GetId())
 	}
 	return ids
 }

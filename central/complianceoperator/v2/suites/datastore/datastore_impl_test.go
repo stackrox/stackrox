@@ -77,7 +77,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestGetSuite() {
 		s.getTestSuite(testconsts.Cluster1),
 		s.getTestSuite(testconsts.Cluster2),
 	}
-	suiteIDs = []string{suites[0].Id, suites[1].Id}
+	suiteIDs = []string{suites[0].GetId(), suites[1].GetId()}
 	s.Require().NoError(s.dataStore.UpsertSuites(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], suites))
 
 	// Delayed clean up
@@ -196,7 +196,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestUpsertSuites() {
 		s.getTestSuite(testconsts.Cluster2),
 		s.getTestSuite(testconsts.Cluster3),
 	}
-	allSuiteIDs = []string{suites[0].Id, suites[1].Id, suites[2].Id}
+	allSuiteIDs = []string{suites[0].GetId(), suites[1].GetId(), suites[2].GetId()}
 
 	testCases := []struct {
 		desc        string

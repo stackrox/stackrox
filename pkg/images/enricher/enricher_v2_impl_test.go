@@ -1139,7 +1139,7 @@ func TestUpdateImageFromDatabaseV2_Metadata(t *testing.T) {
 
 	e := &enricherV2Impl{
 		imageGetter: func(_ context.Context, id string) (*storage.ImageV2, bool, error) {
-			assert.Equal(t, img.Id, id)
+			assert.Equal(t, img.GetId(), id)
 			return existingImg, true, nil
 		},
 	}

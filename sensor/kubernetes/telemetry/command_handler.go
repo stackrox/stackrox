@@ -285,7 +285,7 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 		return sendMsgCb(ctx, createKubernetesPayload(file))
 	}
 
-	sinceTs, err := protocompat.ConvertTimestampToTimeOrError(req.Since)
+	sinceTs, err := protocompat.ConvertTimestampToTimeOrError(req.GetSince())
 	if err != nil {
 		return errors.Wrap(err, "error parsing since timestamp")
 	}

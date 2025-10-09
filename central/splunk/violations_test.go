@@ -792,7 +792,7 @@ func (s *violationsTestSuite) TestWithDeploymentImage() {
 	alert := s.processAlert.CloneVT()
 	// Change alert's Entity from Alert_Deployment to Alert_Image. Conveniently the former Alert_Deployment has a ContainerImage we can use for testing.
 	alert.Entity = &storage.Alert_Image{
-		Image: alert.GetDeployment().Containers[0].GetImage(),
+		Image: alert.GetDeployment().GetContainers()[0].GetImage(),
 	}
 
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
@@ -807,7 +807,7 @@ func (s *violationsTestSuite) TestWithDeploymentImage() {
 func (s *violationsTestSuite) TestAlertWithoutPolicy() {
 	alert := s.processAlert.CloneVT()
 	alert.Policy = nil
-	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
+	alert.ProcessViolation.Processes = alert.GetProcessViolation().GetProcesses()[:1]
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	s.Nil(s.extr(vs[0], ".policyInfo"))
 }
@@ -820,7 +820,7 @@ func (s *violationsTestSuite) TestProcessAlertWithoutProcessIndicators() {
 
 func (s *violationsTestSuite) TestProcessAlertWithoutProcessSignal() {
 	alert := s.processAlert.CloneVT()
-	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
+	alert.ProcessViolation.Processes = alert.GetProcessViolation().GetProcesses()[:1]
 	alert.ProcessViolation.Processes[0].Signal = nil
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	s.checkViolationInfo(vs[0], ".podId", ".podUid", ".containerName", ".containerStartTime") // .containerId isn't available
@@ -840,7 +840,7 @@ func (s *violationsTestSuite) TestAlertWithoutViolations() {
 func (s *violationsTestSuite) TestK8sAlertWithoutDeploymentOrResource() {
 	alert := s.k8sAlert.CloneVT()
 	alert.Entity = nil
-	alert.Violations = alert.Violations[:1]
+	alert.Violations = alert.GetViolations()[:1]
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	s.Empty(s.extr(vs[0], ".deploymentInfo"))
 	s.Empty(s.extr(vs[0], ".resourceInfo"))
@@ -849,7 +849,7 @@ func (s *violationsTestSuite) TestK8sAlertWithoutDeploymentOrResource() {
 func (s *violationsTestSuite) TestProcessAlertWithoutDeployment() {
 	alert := s.processAlert.CloneVT()
 	alert.Entity = nil
-	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
+	alert.ProcessViolation.Processes = alert.GetProcessViolation().GetProcesses()[:1]
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	// deploymentInfo still has some attributes because they came from ProcessIndicator-s
 	s.assertPresent(vs[0], ".deploymentInfo", ".deploymentId", ".deploymentNamespace")
@@ -857,7 +857,7 @@ func (s *violationsTestSuite) TestProcessAlertWithoutDeployment() {
 
 func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentId() {
 	alert := s.processAlert.CloneVT()
-	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
+	alert.ProcessViolation.Processes = alert.GetProcessViolation().GetProcesses()[:1]
 	alert.ProcessViolation.Processes[0].DeploymentId = "blah"
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	// DeploymentId value from ProcessIndicator should take priority
@@ -867,7 +867,7 @@ func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentId() {
 
 func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentInfo() {
 	alert := s.processAlert.CloneVT()
-	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
+	alert.ProcessViolation.Processes = alert.GetProcessViolation().GetProcesses()[:1]
 	alert.ProcessViolation.Processes[0].ClusterId = "blah-cluster"
 	alert.ProcessViolation.Processes[0].Namespace = "blah-namespace"
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
@@ -1387,8 +1387,8 @@ func (s *violationsTestSuite) TestGenerateViolationId() {
 }
 
 func BenchmarkGenerateViolationId(b *testing.B) {
-	violations := deployAlert.CloneVT().Violations
-	violations = append(violations, k8sAlert.CloneVT().Violations...)
+	violations := deployAlert.CloneVT().GetViolations()
+	violations = append(violations, k8sAlert.CloneVT().GetViolations()...)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		v := violations[i%len(violations)]

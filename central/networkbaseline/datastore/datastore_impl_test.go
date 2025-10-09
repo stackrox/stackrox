@@ -154,7 +154,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 
 	// Test Update
 	{
-		expectedBaseline.Locked = !expectedBaseline.Locked
+		expectedBaseline.Locked = !expectedBaseline.GetLocked()
 		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithWrongClusterReadAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
 		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithReadAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
 		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithWrongClusterWriteAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
@@ -162,7 +162,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 		// Check updated value
 		result, found := suite.mustGetBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId())
 		suite.True(found)
-		suite.Equal(expectedBaseline.Locked, result.Locked)
+		suite.Equal(expectedBaseline.GetLocked(), result.GetLocked())
 	}
 
 	// Test Get
