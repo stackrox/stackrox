@@ -263,7 +263,7 @@ func (s *slack) Test(ctx context.Context) *notifiers.NotifierError {
 }
 
 func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte) error {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}

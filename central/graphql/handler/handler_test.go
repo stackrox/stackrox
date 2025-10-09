@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"regexp"
@@ -199,7 +200,7 @@ func executeTestQueryWithVariables(t *testing.T, mocks mocks, query string, vari
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest("POST", "/api/graphql", bytes.NewReader(b)).WithContext(
+	req := httptest.NewRequest(http.MethodPost, "/api/graphql", bytes.NewReader(b)).WithContext(
 		loaders.WithLoaderContext(resolvers.SetAuthorizerOverride(context.Background(), allow.Anonymous())))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)

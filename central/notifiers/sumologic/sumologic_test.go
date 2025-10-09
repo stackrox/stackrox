@@ -42,7 +42,7 @@ type fakeSumoLogic struct {
 }
 
 func (s *fakeSumoLogic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
+	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusBadRequest)
 		s.tb.Error("Bad HTTP method", r.Method)
 		return
@@ -64,7 +64,7 @@ func (s *fakeSumoLogic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/text")
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	_, err = w.Write([]byte("ok"))
 	assert.NoError(s.tb, err)
 }
