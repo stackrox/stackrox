@@ -75,7 +75,7 @@ sensor/
 ### Code Style
 - Follow existing patterns in `sensor/common/` for component implementations
 - Implement the `SensorComponent` interface for new components
-- Use buffered channels to prevent pipeline blocking
+- Use unbuffered channels by default; only use buffered channels with performance justification
 - Handle both online and offline modes for resilient operation
 
 ### Component Development Pattern
@@ -123,8 +123,17 @@ go test ./sensor/...
 # Run specific component tests
 go test ./sensor/common/detector/...
 
+# Run a single test function
+go test ./sensor/common/detector -run TestSpecificFunction
+
 # Run integration tests (requires Kind cluster)
 make sensor-integration-test
+
+# Run linter on specific files (faster than full suite)
+golangci-lint run sensor/common/detector/
+
+# Run linter on single file
+golangci-lint run sensor/common/detector/detector.go
 ```
 
 #### Integration Test Setup
@@ -161,7 +170,7 @@ make sensor-integration-test
 
 #### Memory Management
 - All resource stores are in-memory and rebuilt on restart
-- Use buffered channels to prevent blocking pipelines
+- Use unbuffered channels by default; buffered channels require specific performance justification
 - Implement graceful degradation when buffers are full
 
 #### Error Handling
@@ -175,7 +184,7 @@ make sensor-integration-test
 - Deduplication occurs at multiple levels (detector and gRPC wrapper)
 
 ### Security Considerations
-- Sensor runs with elevated cluster permissions for resource monitoring
+- Sensor requires cluster-wide read permissions (get, watch, list) for resource monitoring
 - Certificate management handled by `sensor/kubernetes/certrefresh/`
 - mTLS communication with Central
 - Service account tokens managed in `pkg/satoken/`
@@ -196,7 +205,11 @@ make sensor-integration-test
 
 ### Debugging and Monitoring
 - Enable debug mode with environment variables
-- Use `sensor/debugger/` tools for troubleshooting
+- Use `sensor/debugger/` tools for component-specific debugging:
+  - `sensor/debugger/central/`: Central connection debugging
+  - `sensor/debugger/k8s/`: Kubernetes API debugging
+  - `sensor/debugger/message/`: Message flow debugging
+- Use `tools/local-sensor/` for local development and testing with real Central connection
 - Monitor component health via health checks
 - Metrics exposed for Prometheus collection
 
@@ -207,6 +220,4 @@ make sensor-integration-test
 - Helm for deployment configuration
 
 ## Related Documentation
-- See `sensor_symbols.yaml` for complete API reference
-- Check `meeting.txt` for team discussions and context
 - Review component-specific README files where available
