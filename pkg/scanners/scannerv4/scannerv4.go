@@ -235,13 +235,14 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
+	imageScanScannerVersion := components.IndexerVersion
+	if version.GetVersionKind(components.IndexerVersion) == version.InvalidKind {
+		imageScanScannerVersion = ""
+	}
+
 	if features.SBOMGeneration.Enabled() && features.ScannerV4StoreExternalIndexReports.Enabled() {
 		// Store the index report from external scanners. Note that this will use
 		// some time from the scan timeout.
-		imageScanScannerVersion := components.IndexerVersion
-		if version.GetVersionKind(components.IndexerVersion) == version.InvalidKind {
-			imageScanScannerVersion = ""
-		}
 		err := s.scannerClient.StoreImageIndex(ctx, digest, imageScanScannerVersion, v4Contents)
 		if err != nil {
 			log.Warnf("Failed to store external index report: %v", err)
@@ -252,6 +253,10 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents, client.Version(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("get vulnerability report (reference: %q): %w", digest.Name(), err)
+	}
+
+	if scannerVersion.Indexer == "" {
+		scannerVersion.Indexer = imageScanScannerVersion
 	}
 	scannerVersionStr, err := scannerVersion.Encode()
 	if err != nil {
