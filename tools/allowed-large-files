@@ -37,6 +37,8 @@ pkg/images/enricher/enricher_impl_test.go
 pkg/images/enricher/enricher_v2_impl_test.go
 pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
+pkg/scancomponent/testdata_ComponentIDV2.json
+pkg/scancomponent/testdata_ComponentIDV2Golden.txt
 pkg/scannerv4/mappers/mappers.go
 pkg/scannerv4/mappers/mappers_test.go
 pkg/search/postgres/common_test.go
@@ -67,5 +69,3 @@ ui/apps/platform/package-lock.json
 ui/apps/platform/src/Containers/Integrations/IntegrationForm/Forms/SignatureIntegrationForm.tsx
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg
-pkg/scancomponent/testdata_ComponentIDV2.json
-pkg/scancomponent/testdata_ComponentIDV2Golden.txt
