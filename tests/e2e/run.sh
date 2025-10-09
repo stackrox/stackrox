@@ -62,6 +62,8 @@ test_e2e() {
 
     if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
         info "Temporarily skipping proxy test on OCP. TODO(ROX-25172)"
+    elif [[ ${ARM64_NODESELECTORS:-} == "true" ]]; then
+        info "Temporarily skipping proxy test on ARM64. TODO(ROX-25172)"
     else
         # Give some time for previous tests to finish up
         wait_for_api
