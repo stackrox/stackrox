@@ -67,3 +67,5 @@ ui/apps/platform/package-lock.json
 ui/apps/platform/src/Containers/Integrations/IntegrationForm/Forms/SignatureIntegrationForm.tsx
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg
+pkg/scancomponent/testdata_ComponentIDV2.json
+pkg/scancomponent/testdata_ComponentIDV2Golden.txt

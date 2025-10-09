@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -82,7 +83,7 @@ func writeGoldenFile(ids []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to write golden file at path: %s, err: %w", filePath, err)
 	}
-	defer file.Close()
+	defer utils.IgnoreError(file.Close)
 
 	writer := bufio.NewWriter(file)
 
@@ -107,7 +108,7 @@ func readGoldenFile() ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open golden file at path: %s, err: %w", filePath, err)
 	}
-	defer file.Close()
+	defer utils.IgnoreError(file.Close)
 
 	var ids []string
 	scanner := bufio.NewScanner(file)
