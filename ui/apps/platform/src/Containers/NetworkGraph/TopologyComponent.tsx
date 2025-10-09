@@ -195,8 +195,12 @@ const TopologyComponent = ({
     }
 
     const resetViewCallback = useCallback(() => {
-        controller.getGraph().reset();
-        controller.getGraph().layout();
+        const graph = controller.getGraph();
+        graph.reset();
+        // only layout if there are nodes to layout, otherwise it will throw an error
+        if (graph.getNodes().length > 0) {
+            graph.layout();
+        }
     }, [controller]);
 
     const panNodeIntoView = useCallback(

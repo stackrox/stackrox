@@ -172,14 +172,60 @@ func (VirtualMachineScan_Note) EnumDescriptor() ([]byte, []int) {
 	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{1, 0}
 }
 
+type EmbeddedVirtualMachineScanComponent_Note int32
+
+const (
+	EmbeddedVirtualMachineScanComponent_UNSPECIFIED EmbeddedVirtualMachineScanComponent_Note = 0
+	EmbeddedVirtualMachineScanComponent_UNSCANNED   EmbeddedVirtualMachineScanComponent_Note = 1
+)
+
+// Enum value maps for EmbeddedVirtualMachineScanComponent_Note.
+var (
+	EmbeddedVirtualMachineScanComponent_Note_name = map[int32]string{
+		0: "UNSPECIFIED",
+		1: "UNSCANNED",
+	}
+	EmbeddedVirtualMachineScanComponent_Note_value = map[string]int32{
+		"UNSPECIFIED": 0,
+		"UNSCANNED":   1,
+	}
+)
+
+func (x EmbeddedVirtualMachineScanComponent_Note) Enum() *EmbeddedVirtualMachineScanComponent_Note {
+	p := new(EmbeddedVirtualMachineScanComponent_Note)
+	*p = x
+	return p
+}
+
+func (x EmbeddedVirtualMachineScanComponent_Note) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EmbeddedVirtualMachineScanComponent_Note) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_virtual_machine_proto_enumTypes[3].Descriptor()
+}
+
+func (EmbeddedVirtualMachineScanComponent_Note) Type() protoreflect.EnumType {
+	return &file_storage_virtual_machine_proto_enumTypes[3]
+}
+
+func (x EmbeddedVirtualMachineScanComponent_Note) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use EmbeddedVirtualMachineScanComponent_Note.Descriptor instead.
+func (EmbeddedVirtualMachineScanComponent_Note) EnumDescriptor() ([]byte, []int) {
+	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{2, 0}
+}
+
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 type VirtualMachine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)" search:"Virtual Machine ID,store"`                                // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID,store"
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                  // @gotags: search:"Namespace,store"
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Virtual Machine Name,store"`                            // @gotags: search:"Virtual Machine Name,store"
-	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
-	ClusterName   string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)" search:"Virtual Machine ID,store"`                                      // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID,store"
+	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                        // @gotags: search:"Namespace,store"
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Virtual Machine Name,store"`                                  // @gotags: search:"Virtual Machine Name,store"
+	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
+	ClusterName   string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"` // @gotags: search:"Cluster,store"
 	Facts         map[string]string      `protobuf:"bytes,6,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	Notes         []VirtualMachine_Note  `protobuf:"varint,8,rep,packed,name=notes,proto3,enum=storage.VirtualMachine_Note" json:"notes,omitempty"`
@@ -376,6 +422,7 @@ type EmbeddedVirtualMachineScanComponent struct {
 	RiskScore       float32                                          `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
 	Vulnerabilities []*VirtualMachineVulnerability                   `protobuf:"bytes,5,rep,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty"`
 	Source          SourceType                                       `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty"`
+	Notes           []EmbeddedVirtualMachineScanComponent_Note       `protobuf:"varint,7,rep,packed,name=notes,proto3,enum=storage.EmbeddedVirtualMachineScanComponent_Note" json:"notes,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -459,6 +506,13 @@ func (x *EmbeddedVirtualMachineScanComponent) GetSource() SourceType {
 		return x.Source
 	}
 	return SourceType_OS
+}
+
+func (x *EmbeddedVirtualMachineScanComponent) GetNotes() []EmbeddedVirtualMachineScanComponent_Note {
+	if x != nil {
+		return x.Notes
+	}
+	return nil
 }
 
 type isEmbeddedVirtualMachineScanComponent_SetTopCvss interface {
@@ -875,7 +929,7 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\x05UNSET\x10\x00\x12\x0e\n" +
 	"\n" +
 	"OS_UNKNOWN\x10\x01\x12\x12\n" +
-	"\x0eOS_UNSUPPORTED\x10\x02\"\x9c\x02\n" +
+	"\x0eOS_UNSUPPORTED\x10\x02\"\x8d\x03\n" +
 	"#EmbeddedVirtualMachineScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1b\n" +
@@ -883,7 +937,11 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\n" +
 	"risk_score\x18\x04 \x01(\x02R\triskScore\x12N\n" +
 	"\x0fvulnerabilities\x18\x05 \x03(\v2$.storage.VirtualMachineVulnerabilityR\x0fvulnerabilities\x12+\n" +
-	"\x06source\x18\x06 \x01(\x0e2\x13.storage.SourceTypeR\x06sourceB\x0e\n" +
+	"\x06source\x18\x06 \x01(\x0e2\x13.storage.SourceTypeR\x06source\x12G\n" +
+	"\x05notes\x18\a \x03(\x0e21.storage.EmbeddedVirtualMachineScanComponent.NoteR\x05notes\"&\n" +
+	"\x04Note\x12\x0f\n" +
+	"\vUNSPECIFIED\x10\x00\x12\r\n" +
+	"\tUNSCANNED\x10\x01B\x0e\n" +
 	"\fset_top_cvss\"\xca\x01\n" +
 	"\x1bVirtualMachineVulnerability\x12B\n" +
 	"\rcve_base_info\x18\x01 \x01(\v2\x1e.storage.VirtualMachineCVEInfoR\vcveBaseInfo\x12:\n" +
@@ -927,51 +985,53 @@ func file_storage_virtual_machine_proto_rawDescGZIP() []byte {
 	return file_storage_virtual_machine_proto_rawDescData
 }
 
-var file_storage_virtual_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_storage_virtual_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_storage_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_storage_virtual_machine_proto_goTypes = []any{
-	(VirtualMachine_Note)(0),                    // 0: storage.VirtualMachine.Note
-	(VirtualMachine_State)(0),                   // 1: storage.VirtualMachine.State
-	(VirtualMachineScan_Note)(0),                // 2: storage.VirtualMachineScan.Note
-	(*VirtualMachine)(nil),                      // 3: storage.VirtualMachine
-	(*VirtualMachineScan)(nil),                  // 4: storage.VirtualMachineScan
-	(*EmbeddedVirtualMachineScanComponent)(nil), // 5: storage.EmbeddedVirtualMachineScanComponent
-	(*VirtualMachineVulnerability)(nil),         // 6: storage.VirtualMachineVulnerability
-	(*VirtualMachineCVEInfo)(nil),               // 7: storage.VirtualMachineCVEInfo
-	(*VirtualMachineEPSS)(nil),                  // 8: storage.VirtualMachineEPSS
-	(*VirtualMachineAdvisory)(nil),              // 9: storage.VirtualMachineAdvisory
-	nil,                                         // 10: storage.VirtualMachine.FactsEntry
-	(*VirtualMachineCVEInfo_Reference)(nil),     // 11: storage.VirtualMachineCVEInfo.Reference
-	(*timestamppb.Timestamp)(nil),               // 12: google.protobuf.Timestamp
-	(SourceType)(0),                             // 13: storage.SourceType
-	(VulnerabilitySeverity)(0),                  // 14: storage.VulnerabilitySeverity
-	(*CVSSScore)(nil),                           // 15: storage.CVSSScore
+	(VirtualMachine_Note)(0),                      // 0: storage.VirtualMachine.Note
+	(VirtualMachine_State)(0),                     // 1: storage.VirtualMachine.State
+	(VirtualMachineScan_Note)(0),                  // 2: storage.VirtualMachineScan.Note
+	(EmbeddedVirtualMachineScanComponent_Note)(0), // 3: storage.EmbeddedVirtualMachineScanComponent.Note
+	(*VirtualMachine)(nil),                        // 4: storage.VirtualMachine
+	(*VirtualMachineScan)(nil),                    // 5: storage.VirtualMachineScan
+	(*EmbeddedVirtualMachineScanComponent)(nil),   // 6: storage.EmbeddedVirtualMachineScanComponent
+	(*VirtualMachineVulnerability)(nil),           // 7: storage.VirtualMachineVulnerability
+	(*VirtualMachineCVEInfo)(nil),                 // 8: storage.VirtualMachineCVEInfo
+	(*VirtualMachineEPSS)(nil),                    // 9: storage.VirtualMachineEPSS
+	(*VirtualMachineAdvisory)(nil),                // 10: storage.VirtualMachineAdvisory
+	nil,                                           // 11: storage.VirtualMachine.FactsEntry
+	(*VirtualMachineCVEInfo_Reference)(nil),       // 12: storage.VirtualMachineCVEInfo.Reference
+	(*timestamppb.Timestamp)(nil),                 // 13: google.protobuf.Timestamp
+	(SourceType)(0),                               // 14: storage.SourceType
+	(VulnerabilitySeverity)(0),                    // 15: storage.VulnerabilitySeverity
+	(*CVSSScore)(nil),                             // 16: storage.CVSSScore
 }
 var file_storage_virtual_machine_proto_depIdxs = []int32{
-	10, // 0: storage.VirtualMachine.facts:type_name -> storage.VirtualMachine.FactsEntry
-	12, // 1: storage.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
+	11, // 0: storage.VirtualMachine.facts:type_name -> storage.VirtualMachine.FactsEntry
+	13, // 1: storage.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
 	0,  // 2: storage.VirtualMachine.notes:type_name -> storage.VirtualMachine.Note
 	1,  // 3: storage.VirtualMachine.state:type_name -> storage.VirtualMachine.State
-	4,  // 4: storage.VirtualMachine.scan:type_name -> storage.VirtualMachineScan
-	12, // 5: storage.VirtualMachineScan.scan_time:type_name -> google.protobuf.Timestamp
+	5,  // 4: storage.VirtualMachine.scan:type_name -> storage.VirtualMachineScan
+	13, // 5: storage.VirtualMachineScan.scan_time:type_name -> google.protobuf.Timestamp
 	2,  // 6: storage.VirtualMachineScan.notes:type_name -> storage.VirtualMachineScan.Note
-	5,  // 7: storage.VirtualMachineScan.components:type_name -> storage.EmbeddedVirtualMachineScanComponent
-	6,  // 8: storage.EmbeddedVirtualMachineScanComponent.vulnerabilities:type_name -> storage.VirtualMachineVulnerability
-	13, // 9: storage.EmbeddedVirtualMachineScanComponent.source:type_name -> storage.SourceType
-	7,  // 10: storage.VirtualMachineVulnerability.cve_base_info:type_name -> storage.VirtualMachineCVEInfo
-	14, // 11: storage.VirtualMachineVulnerability.severity:type_name -> storage.VulnerabilitySeverity
-	12, // 12: storage.VirtualMachineCVEInfo.published_on:type_name -> google.protobuf.Timestamp
-	12, // 13: storage.VirtualMachineCVEInfo.created_at:type_name -> google.protobuf.Timestamp
-	12, // 14: storage.VirtualMachineCVEInfo.last_modified:type_name -> google.protobuf.Timestamp
-	11, // 15: storage.VirtualMachineCVEInfo.references:type_name -> storage.VirtualMachineCVEInfo.Reference
-	15, // 16: storage.VirtualMachineCVEInfo.cvss_metrics:type_name -> storage.CVSSScore
-	8,  // 17: storage.VirtualMachineCVEInfo.epss:type_name -> storage.VirtualMachineEPSS
-	9,  // 18: storage.VirtualMachineCVEInfo.advisory:type_name -> storage.VirtualMachineAdvisory
-	19, // [19:19] is the sub-list for method output_type
-	19, // [19:19] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	6,  // 7: storage.VirtualMachineScan.components:type_name -> storage.EmbeddedVirtualMachineScanComponent
+	7,  // 8: storage.EmbeddedVirtualMachineScanComponent.vulnerabilities:type_name -> storage.VirtualMachineVulnerability
+	14, // 9: storage.EmbeddedVirtualMachineScanComponent.source:type_name -> storage.SourceType
+	3,  // 10: storage.EmbeddedVirtualMachineScanComponent.notes:type_name -> storage.EmbeddedVirtualMachineScanComponent.Note
+	8,  // 11: storage.VirtualMachineVulnerability.cve_base_info:type_name -> storage.VirtualMachineCVEInfo
+	15, // 12: storage.VirtualMachineVulnerability.severity:type_name -> storage.VulnerabilitySeverity
+	13, // 13: storage.VirtualMachineCVEInfo.published_on:type_name -> google.protobuf.Timestamp
+	13, // 14: storage.VirtualMachineCVEInfo.created_at:type_name -> google.protobuf.Timestamp
+	13, // 15: storage.VirtualMachineCVEInfo.last_modified:type_name -> google.protobuf.Timestamp
+	12, // 16: storage.VirtualMachineCVEInfo.references:type_name -> storage.VirtualMachineCVEInfo.Reference
+	16, // 17: storage.VirtualMachineCVEInfo.cvss_metrics:type_name -> storage.CVSSScore
+	9,  // 18: storage.VirtualMachineCVEInfo.epss:type_name -> storage.VirtualMachineEPSS
+	10, // 19: storage.VirtualMachineCVEInfo.advisory:type_name -> storage.VirtualMachineAdvisory
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_storage_virtual_machine_proto_init() }
@@ -992,7 +1052,7 @@ func file_storage_virtual_machine_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_virtual_machine_proto_rawDesc), len(file_storage_virtual_machine_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      4,
 			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,

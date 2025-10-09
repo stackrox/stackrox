@@ -3,6 +3,8 @@ package enricher
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -40,13 +42,13 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			},
 			indexReport: &v4.IndexReport{
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
+					Packages: map[string]*v4.Package{
+						"pkg-1": {
 							Id:      "pkg-1",
 							Name:    "libssl",
 							Version: "1.1.1",
 						},
-						{
+						"pkg-2": {
 							Id:      "pkg-2",
 							Name:    "curl",
 							Version: "7.68.0",
@@ -65,8 +67,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			},
 			indexReport: &v4.IndexReport{
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
+					Packages: map[string]*v4.Package{
+						"pkg-safe": {
 							Id:      "pkg-safe",
 							Name:    "safe-package",
 							Version: "1.0.0",
@@ -85,7 +87,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			},
 			indexReport: &v4.IndexReport{
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{},
+					Packages: map[string]*v4.Package{},
 				},
 			},
 			expectedVulnerabilitiesCount: 0,
@@ -99,8 +101,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			},
 			indexReport: &v4.IndexReport{
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
+					Packages: map[string]*v4.Package{
+						"pkg-1": {
 							Id:      "pkg-1",
 							Name:    "test-package",
 							Version: "1.0.0",
@@ -119,8 +121,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			},
 			indexReport: &v4.IndexReport{
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
+					Packages: map[string]*v4.Package{
+						"pkg-1": {
 							Id:      "pkg-1",
 							Name:    "another-package",
 							Version: "2.0.0",
@@ -276,8 +278,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_ClearPreExistingNotes(t *testin
 
 	indexReport := &v4.IndexReport{
 		Contents: &v4.Contents{
-			Packages: []*v4.Package{
-				{
+			Packages: map[string]*v4.Package{
+				"pkg-1": {
 					Id:      "pkg-1",
 					Name:    "test-package",
 					Version: "1.0.0",
@@ -318,13 +320,13 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 
 	indexReport := &v4.IndexReport{
 		Contents: &v4.Contents{
-			Packages: []*v4.Package{
-				{
+			Packages: map[string]*v4.Package{
+				"pkg-1": {
 					Id:      "pkg-1",
 					Name:    "openssl",
 					Version: "1.1.1f",
 				},
-				{
+				"pkg-2": {
 					Id:      "pkg-2",
 					Name:    "libssl",
 					Version: "1.1.1f",
@@ -371,27 +373,42 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	require.Len(t, vm.Scan.Components, len(expectedPackages))
 
 	// Check first component
-	firstComponent := vm.Scan.Components[0]
-	assert.Equal(t, expectedPackages[0].Name, firstComponent.Name)
-	assert.Equal(t, expectedPackages[0].Version, firstComponent.Version)
-	assert.Len(t, firstComponent.Vulnerabilities, 2) // pkg-1 has vuln-1 and vuln-2
+	var pkg *storage.EmbeddedVirtualMachineScanComponent
+	for _, component := range vm.Scan.Components {
+		if component.GetName() == "openssl" {
+			pkg = component
+			break
+		}
+	}
+	assert.NotNil(t, pkg)
+	expectedPkg := expectedPackages["pkg-1"]
+	assert.Equal(t, expectedPkg.GetName(), pkg.GetName())
+	assert.Equal(t, expectedPkg.GetVersion(), pkg.GetVersion())
+	assert.Len(t, pkg.GetVulnerabilities(), 2) // pkg-1 has vuln-1 and vuln-2
+	// Verify vulnerability details from the vulnerability report
+	criticalVuln := pkg.GetVulnerabilities()[0]
+	expectedVuln := vulnReport.Vulnerabilities["vuln-1"]
+	assert.Equal(t, expectedVuln.GetName(), criticalVuln.GetCveBaseInfo().GetCve())
+	assert.Equal(t, expectedVuln.GetDescription(), criticalVuln.GetCveBaseInfo().GetSummary())
+	assert.Equal(t, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, criticalVuln.GetSeverity())
+	assert.NotNil(t, criticalVuln.GetSetFixedBy())
+	if fixedBy, ok := criticalVuln.GetSetFixedBy().(*storage.VirtualMachineVulnerability_FixedBy); ok {
+		assert.Equal(t, expectedVuln.GetFixedInVersion(), fixedBy.FixedBy)
+	}
 
 	// Check second component
-	secondComponent := vm.Scan.Components[1]
-	assert.Equal(t, expectedPackages[1].Name, secondComponent.Name)
-	assert.Equal(t, expectedPackages[1].Version, secondComponent.Version)
-	assert.Len(t, secondComponent.Vulnerabilities, 1) // pkg-2 has only vuln-1
-
-	// Verify vulnerability details from the vulnerability report
-	criticalVuln := firstComponent.Vulnerabilities[0]
-	expectedVuln := vulnReport.Vulnerabilities["vuln-1"]
-	assert.Equal(t, expectedVuln.Name, criticalVuln.GetCveBaseInfo().GetCve())
-	assert.Equal(t, expectedVuln.Description, criticalVuln.GetCveBaseInfo().GetSummary())
-	assert.Equal(t, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, criticalVuln.Severity)
-	assert.NotNil(t, criticalVuln.SetFixedBy)
-	if fixedBy, ok := criticalVuln.SetFixedBy.(*storage.VirtualMachineVulnerability_FixedBy); ok {
-		assert.Equal(t, expectedVuln.FixedInVersion, fixedBy.FixedBy)
+	for _, component := range vm.Scan.Components {
+		if component.GetName() == "libssl" {
+			pkg = component
+			break
+		}
 	}
+	assert.NotNil(t, pkg)
+	expectedPkg = expectedPackages["pkg-2"]
+	assert.Equal(t, expectedPkg.GetName(), pkg.GetName())
+	assert.Equal(t, expectedPkg.GetVersion(), pkg.GetVersion())
+	assert.Len(t, pkg.GetVulnerabilities(), 1) // pkg-2 has only vuln-1
+
 }
 
 func TestEnrichVirtualMachineWithVulnerabilities_Timeout(t *testing.T) {
@@ -430,10 +447,11 @@ func createVulnerabilityReportFromIndexReport(indexReport *v4.IndexReport, vulnC
 
 	packages := indexReport.GetContents().GetPackages()
 	if len(packages) == 0 {
-		packages = []*v4.Package{} // Empty packages for testing
+		packages = map[string]*v4.Package{} // Empty packages for testing
 	}
 
 	// Create vulnerabilities and distribute them across the actual packages
+	keys := slices.Collect(maps.Keys(packages))
 	for i := range vulnCount {
 		vulnID := fmt.Sprintf("vuln-%d", i)
 
@@ -446,7 +464,7 @@ func createVulnerabilityReportFromIndexReport(indexReport *v4.IndexReport, vulnC
 
 		// Distribute vulnerabilities across available packages, or create test packages if none exist
 		if len(packages) > 0 {
-			pkgID := packages[i%len(packages)].GetId()
+			pkgID := packages[keys[i%len(packages)]].GetId()
 			if packageVulns[pkgID] == nil {
 				packageVulns[pkgID] = &v4.StringList{Values: []string{}}
 			}

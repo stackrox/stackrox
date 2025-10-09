@@ -20,6 +20,7 @@ import PublicConfigBannerDetails from './PublicConfigBannerDetails';
 import PublicConfigLoginDetails from './PublicConfigLoginDetails';
 import PublicConfigTelemetryDetails from './PublicConfigTelemetryDetails';
 import PlatformComponentsConfigDetails from './PlatformComponentsConfigDetails';
+import PrivateConfigPrometheusMetricsDetails from './PrivateConfigPrometheusMetricsDetails';
 
 export type SystemConfigDetailsProps = {
     systemConfig: SystemConfig;
@@ -80,6 +81,21 @@ function SystemConfigDetails({
                     isClustersRoutePathRendered={isClustersRoutePathRendered}
                     privateConfig={systemConfig?.privateConfig}
                 />
+            </PageSection>
+            <PageSection data-testid="private-prometheus-config">
+                <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                    Prometheus metrics configuration
+                </Title>
+                <Text>
+                    The following Prometheus metrics are exposed on the API endpoint at the{' '}
+                    <code>/metrics</code> path. Scrape requests require permissions to view
+                    Administration resources and are subject for the scoped access control.
+                </Text>
+                <Grid hasGutter>
+                    <PrivateConfigPrometheusMetricsDetails
+                        privateConfig={systemConfig?.privateConfig}
+                    />
+                </Grid>
             </PageSection>
             <PageSection data-testid="public-config">
                 <Title headingLevel="h2" className="pf-v5-u-mb-md">

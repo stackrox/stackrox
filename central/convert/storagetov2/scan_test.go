@@ -36,6 +36,9 @@ func TestEmbeddedVirtualMachineScanComponents(t *testing.T) {
 					Vulnerabilities: []*storage.VirtualMachineVulnerability{
 						storageVirtualMachineTestVuln,
 					},
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
 				},
 			},
 			expected: []*v2.ScanComponent{
@@ -45,6 +48,9 @@ func TestEmbeddedVirtualMachineScanComponents(t *testing.T) {
 					RiskScore: testComponentRiskScore,
 					Vulns: []*v2.EmbeddedVulnerability{
 						v2VirtualMachineTestVuln,
+					},
+					Notes: []v2.ScanComponent_Note{
+						v2.ScanComponent_UNSCANNED,
 					},
 				},
 			},
@@ -197,6 +203,29 @@ func TestConvertSourceType(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(it *testing.T) {
 			result := convertSourceType(tc.input)
+			assert.Equal(it, tc.expected, result)
+		})
+	}
+}
+
+func TestConvertScanComponentNoteType(t *testing.T) {
+	tests := map[string]struct {
+		input    storage.EmbeddedVirtualMachineScanComponent_Note
+		expected v2.ScanComponent_Note
+	}{
+		"UNSPECIFIED": {
+			input:    storage.EmbeddedVirtualMachineScanComponent_UNSPECIFIED,
+			expected: v2.ScanComponent_UNSPECIFIED,
+		},
+		"UNSCANNED": {
+			input:    storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+			expected: v2.ScanComponent_UNSCANNED,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(it *testing.T) {
+			result := convertScanComponentNoteType(tc.input)
 			assert.Equal(it, tc.expected, result)
 		})
 	}

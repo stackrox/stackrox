@@ -89,8 +89,13 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		log.Warn("Removal of node index is unsupported action")
 		return nil
 	}
-	log.Debugf("Received node index report for node %s with %d packages from %d content sets",
-		event.GetId(), len(report.GetContents().Packages), len(report.GetContents().Repositories))
+	log.Debugf("Received node index report for node %s with %d packages (%d deprecated) from %d (%d deprecated) content sets",
+		event.GetId(),
+		len(report.GetContents().GetPackages()),
+		len(report.GetContents().GetPackagesDEPRECATED()),
+		len(report.GetContents().GetRepositories()),
+		len(report.GetContents().GetRepositoriesDEPRECATED()),
+	)
 	report = report.CloneVT()
 
 	// Query storage for the node this report comes from

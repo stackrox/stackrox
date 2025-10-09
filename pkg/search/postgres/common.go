@@ -1172,6 +1172,11 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 		return nil, err
 	}
 
+	// The query that was passed did not make sense given the context of the query, so we return nothing
+	if preparedQuery == nil {
+		return nil, nil
+	}
+
 	queryStr := preparedQuery.AsSQL()
 
 	tx, err := db.Begin(ctx)
@@ -1213,6 +1218,9 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 	})
 	if err != nil {
 		return errors.Wrap(err, "prepare cursor")
+	}
+	if cursor == nil {
+		return nil
 	}
 	defer cursor.close()
 

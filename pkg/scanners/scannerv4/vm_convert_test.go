@@ -74,10 +74,14 @@ func TestNoVMConversionPanic(t *testing.T) {
 		report.Contents = &v4.Contents{}
 		_ = ToVirtualMachineScan(report)
 
-		report.Contents.Packages = []*v4.Package{}
+		report.Contents.Packages = map[string]*v4.Package{}
+		_ = ToVirtualMachineScan(report)
+		report.Contents.Packages["1"] = &v4.Package{Id: "1"}
 		_ = ToVirtualMachineScan(report)
 
-		report.Contents.Packages = append(report.Contents.Packages, &v4.Package{
+		report.Contents.PackagesDEPRECATED = []*v4.Package{}
+		_ = ToVirtualMachineScan(report)
+		report.Contents.PackagesDEPRECATED = append(report.Contents.PackagesDEPRECATED, &v4.Package{
 			Id: "1",
 		})
 		_ = ToVirtualMachineScan(report)
@@ -97,16 +101,36 @@ func TestNoVMConversionPanic(t *testing.T) {
 }
 
 func TestToVirtualMachineScan(t *testing.T) {
-	input := &v4.VulnerabilityReport{
-		Contents: &v4.Contents{
-			Packages: []*v4.Package{
-				{
-					Id:      "1",
-					Name:    "my-test-package",
-					Version: "1.2.3",
+	testcases := []struct {
+		name     string
+		contents *v4.Contents
+	}{
+		{
+			name: "basic",
+			contents: &v4.Contents{
+				Packages: map[string]*v4.Package{
+					"1": {
+						Id:      "1",
+						Name:    "my-test-package",
+						Version: "1.2.3",
+					},
 				},
 			},
 		},
+		{
+			name: "deprecated",
+			contents: &v4.Contents{
+				PackagesDEPRECATED: []*v4.Package{
+					{
+						Id:      "1",
+						Name:    "my-test-package",
+						Version: "1.2.3",
+					},
+				},
+			},
+		},
+	}
+	input := &v4.VulnerabilityReport{
 		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
 			"CVE1-ID": {
 				Id:                 "CVE1-ID",
@@ -144,14 +168,22 @@ func TestToVirtualMachineScan(t *testing.T) {
 						},
 					},
 				},
+				Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+					storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+				},
 			},
 		},
 	}
 
-	actual := ToVirtualMachineScan(input)
-	protoassert.SlicesEqual(t, expected.Components, actual.Components)
-	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
-	assert.Equal(t, expected.Notes, actual.Notes)
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			input.Contents = tc.contents
+			actual := ToVirtualMachineScan(input)
+			protoassert.ElementsMatch(t, expected.Components, actual.Components)
+			assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
+			assert.Equal(t, expected.Notes, actual.Notes)
+		})
+	}
 }
 
 func TestToVirtualMachineScanNotes(t *testing.T) {
@@ -210,7 +242,30 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 			name: "basic, no vulnerabilities",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
+					Packages: map[string]*v4.Package{
+						"1": {
+							Id:      "1",
+							Name:    "glib2",
+							Version: "2.68.4-14.el9",
+						},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedVirtualMachineScanComponent{
+				{
+					Name:    "glib2",
+					Version: "2.68.4-14.el9",
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
+				},
+			},
+		},
+		{
+			name: "basic, deprecated no vulnerabilities",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					PackagesDEPRECATED: []*v4.Package{
 						{
 							Id:      "1",
 							Name:    "glib2",
@@ -223,6 +278,9 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 				{
 					Name:    "glib2",
 					Version: "2.68.4-14.el9",
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
 				},
 			},
 		},
@@ -230,7 +288,62 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 			name: "basic, with matching vulnerabilities",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
+					Packages: map[string]*v4.Package{
+						"1": {
+							Id:      "1",
+							Name:    "glib2",
+							Version: "2.68.4-14.el9",
+						},
+						"2": {
+							Id:      "2",
+							Name:    "postgres",
+							Version: "15.10",
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"2": {
+						Values: []string{"CVE-2025-8715-ID"},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"CVE-2025-8715-ID": {
+						Id:          "CVE-2025-8715-ID",
+						Name:        "CVE-2025-8715",
+						Description: "some vulnerability description",
+					},
+				},
+			},
+			expected: []*storage.EmbeddedVirtualMachineScanComponent{
+				{
+					Name:    "glib2",
+					Version: "2.68.4-14.el9",
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
+				},
+				{
+					Name:    "postgres",
+					Version: "15.10",
+					Vulnerabilities: []*storage.VirtualMachineVulnerability{
+						{
+							CveBaseInfo: &storage.VirtualMachineCVEInfo{
+								Cve:     "CVE-2025-8715",
+								Summary: "some vulnerability description",
+							},
+						},
+					},
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
+				},
+			},
+		},
+		{
+			name: "basic, deprecated with matching vulnerabilities",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					PackagesDEPRECATED: []*v4.Package{
 						{
 							Id:      "1",
 							Name:    "glib2",
@@ -260,6 +373,9 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 				{
 					Name:    "glib2",
 					Version: "2.68.4-14.el9",
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
 				},
 				{
 					Name:    "postgres",
@@ -272,6 +388,49 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 							},
 						},
 					},
+					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+					},
+				},
+			},
+		},
+		{
+			name: "scan component with valid CPE",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"1": {
+							Id:      "1",
+							Name:    "my-test-package",
+							Version: "1.2.3",
+						},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhel-9-for-x86_64-appstream-rpms": {
+							Id:   "rhel-9-for-x86_64-appstream-rpms",
+							Name: "rhel-9-for-x86_64-appstream-rpms",
+							Cpe:  "cpe:2.3:a:redhat:enterprise_linux:9:*:appstream:*:*:*:*:*",
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb: "sqlite:var/lib/rpm",
+									RepositoryIds: []string{
+										"rhel-9-for-x86_64-appstream-rpms",
+										"rhel-9-for-x86_64-baseos-rpms",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedVirtualMachineScanComponent{
+				{
+					Name:    "my-test-package",
+					Version: "1.2.3",
 				},
 			},
 		},
@@ -280,7 +439,7 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(it *testing.T) {
 			actual := toVirtualMachineComponents(tc.report)
-			protoassert.SlicesEqual(it, tc.expected, actual)
+			protoassert.ElementsMatch(it, tc.expected, actual)
 		})
 	}
 }

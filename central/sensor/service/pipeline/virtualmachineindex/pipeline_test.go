@@ -66,8 +66,8 @@ func createVMIndexMessage(vmID string, action central.ResourceAction) *central.M
 						Index: &v1.IndexReport{
 							IndexV4: &v4.IndexReport{
 								Contents: &v4.Contents{
-									Packages: []*v4.Package{
-										{
+									Packages: map[string]*v4.Package{
+										"pkg-1": {
 											Id:      "pkg-1",
 											Name:    "test-package",
 											Version: "1.0.0",

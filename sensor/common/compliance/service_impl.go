@@ -252,8 +252,11 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_NodeInventory:
 			s.nodeInventories <- t.NodeInventory
 		case *sensor.MsgFromCompliance_IndexReport:
-			log.Infof("Received index report from %q with %d packages",
-				msg.GetNode(), len(msg.GetIndexReport().GetContents().GetPackages()))
+			log.Infof("Received index report from %q with %d packages (%d deprecated)",
+				msg.GetNode(),
+				len(msg.GetIndexReport().GetContents().GetPackages()),
+				len(msg.GetIndexReport().GetContents().GetPackagesDEPRECATED()),
+			)
 			s.indexReportWraps <- &index.IndexReportWrap{
 				NodeName:    msg.GetNode(),
 				IndexReport: t.IndexReport,
