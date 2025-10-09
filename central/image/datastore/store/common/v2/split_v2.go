@@ -86,12 +86,13 @@ func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedI
 		}
 
 		// Create content-based deduplication key (not including index)
-		dedupKey := fmt.Sprintf("%s:%s:%s:%s:%v",
+		dedupKey := fmt.Sprintf("%s:%s:%s:%s:%v:%d",
 			cve.GetCve(),
 			cve.GetFixedBy(),
 			cve.GetSummary(),
 			cve.GetLink(),
-			cve.GetCvss())
+			cve.GetCvss(),
+			index)
 
 		// dedupe CVEs within the component
 		if _, ok := cveMap[dedupKey]; ok {
