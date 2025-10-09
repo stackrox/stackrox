@@ -23,6 +23,14 @@ const (
 	DefaultNamespace = "stackrox"
 )
 
+// CertConfig represents a single certificate source configuration.
+// It specifies the Kubernetes secret name and the mapping of environment
+// variable names to certificate file names within that secret.
+type CertConfig struct {
+	SecretName string
+	CertNames  map[string]string
+}
+
 // OptionFunc provides options for the CertificateFetcher.
 type OptionFunc func(*CertificateFetcher)
 
@@ -40,11 +48,13 @@ func WithNamespace(namespace string) OptionFunc {
 	}
 }
 
-// WithCertNames specifies the secret containing the certificates and a map of certificate names to retrieve and write.
-func WithCertNames(secretName string, certNames map[string]string) OptionFunc {
+// WithCertConfig specifies one or more certificate configurations to use.
+// When provided, it replaces the default fallback behavior with custom configs.
+func WithCertConfig(configs ...CertConfig) OptionFunc {
 	return func(fetcher *CertificateFetcher) {
-		fetcher.secretName = secretName
-		fetcher.certNames = certNames
+		if len(configs) > 0 {
+			fetcher.certConfigs = configs
+		}
 	}
 }
 
@@ -73,17 +83,38 @@ func WithSetEnvFunc(fn func(string, string) error) OptionFunc {
 	}
 }
 
-// NewCertificateFetcher returns a new CertificateFetcher
+// NewCertificateFetcher returns a new CertificateFetcher with default certificate
+// fallback behavior. By default, it attempts to fetch certificates from multiple
+// sources in priority order:
+//  1. tls-cert-sensor (current location)
+//  2. sensor-tls (legacy location for backward compatibility)
+//
+// The fetcher stops at the first successful fetch. Use WithCertConfig() to override
+// default configs and specify custom certificate sources.
 func NewCertificateFetcher(k8s client.Interface, opts ...OptionFunc) *CertificateFetcher {
 	fetcher := &CertificateFetcher{
-		k8s:        k8s,
-		outputDir:  "tmp/",
-		namespace:  DefaultNamespace,
-		secretName: "tls-cert-sensor",
-		certNames: map[string]string{
-			certEnvName:       "ca.pem",
-			sensorCertEnvName: "cert.pem",
-			sensorKeyEnvName:  "key.pem",
+		k8s:       k8s,
+		outputDir: "tmp/",
+		namespace: DefaultNamespace,
+		certConfigs: []CertConfig{
+			// Primary: current location
+			{
+				SecretName: "tls-cert-sensor",
+				CertNames: map[string]string{
+					certEnvName:       "ca.pem",
+					sensorCertEnvName: "cert.pem",
+					sensorKeyEnvName:  "key.pem",
+				},
+			},
+			// Fallback: legacy location for backward compatibility
+			{
+				SecretName: "sensor-tls",
+				CertNames: map[string]string{
+					certEnvName:       "ca.pem",
+					sensorCertEnvName: "sensor-cert.pem",
+					sensorKeyEnvName:  "sensor-key.pem",
+				},
+			},
 		},
 		helmClusterConfigSecretName:     "helm-cluster-config",
 		helmClusterConfigFileName:       "config.yaml",
@@ -105,8 +136,7 @@ type CertificateFetcher struct {
 	setEnvFn                        func(string, string) error
 	outputDir                       string
 	namespace                       string
-	secretName                      string
-	certNames                       map[string]string
+	certConfigs                     []CertConfig
 	helmClusterConfigSecretName     string
 	helmEffectiveClusterSecretName  string
 	helmClusterConfigFileName       string
@@ -116,19 +146,39 @@ type CertificateFetcher struct {
 }
 
 // FetchCertificatesAndSetEnvironment retrieves the certificates/configuration and writes it.
+// It attempts to fetch certificates from configured sources in order, stopping at the first success.
 func (f *CertificateFetcher) FetchCertificatesAndSetEnvironment() error {
 	if err := os.MkdirAll(path.Dir(f.outputDir), os.ModePerm); err != nil {
 		return errors.Errorf("could not create directory %s: %v", f.outputDir, err)
 	}
-	if f.secretName != "" {
-		certSlice := toSlice(f.certNames)
-		if err := f.getSecretAndWrite(f.secretName, f.namespace, certSlice, certSlice); err != nil {
-			return err
+
+	// Try each certificate configuration in order
+	if len(f.certConfigs) > 0 {
+		var fetchErrors []error
+
+		for i, config := range f.certConfigs {
+			certSlice := toSlice(config.CertNames)
+			err := f.getSecretAndWrite(config.SecretName, f.namespace, certSlice, certSlice)
+
+			if err == nil {
+				// Success - set environment and continue with other secrets
+				if err := f.setSensorCertsEnv(config.CertNames); err != nil {
+					return err
+				}
+				break // Stop trying other configs
+			}
+
+			// Store error from this attempt
+			fetchErrors = append(fetchErrors,
+				errors.Wrapf(err, "attempt %d: failed to fetch from secret %s", i+1, config.SecretName))
 		}
-		if err := f.setSensorCertsEnv(); err != nil {
-			return err
+
+		// If all attempts failed, return aggregate error
+		if len(fetchErrors) == len(f.certConfigs) {
+			return errors.Errorf("failed to fetch certificates from any source: %v", fetchErrors)
 		}
 	}
+
 	if f.helmClusterConfigSecretName != "" {
 		if err := f.getSecretAndWrite(f.helmClusterConfigSecretName, f.namespace, []string{f.helmClusterConfigFileName}, []string{f.helmClusterConfigOutputFileName}); err != nil {
 			return err
@@ -148,8 +198,8 @@ func (f *CertificateFetcher) FetchCertificatesAndSetEnvironment() error {
 	return nil
 }
 
-func (f *CertificateFetcher) setSensorCertsEnv() error {
-	for k, v := range f.certNames {
+func (f *CertificateFetcher) setSensorCertsEnv(certNames map[string]string) error {
+	for k, v := range certNames {
 		if err := f.setEnvFn(k, path.Join(f.outputDir, v)); err != nil {
 			return err
 		}
