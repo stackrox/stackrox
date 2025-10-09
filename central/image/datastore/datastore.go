@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/signatureintegration"
 )
 
 // DataStore is an intermediary to AlertStorage.
@@ -35,6 +36,10 @@ type DataStore interface {
 
 	DeleteImages(ctx context.Context, ids ...string) error
 	Exists(ctx context.Context, id string) (bool, error)
+
+	// SetSignatureIntegrationGetterFunc sets the function to get signature integrations.
+	// This is used to break the circular dependency with the signature integration datastore.
+	SetSignatureIntegrationGetterFunc(fn signatureintegration.GetterFunc)
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, and searcher.
