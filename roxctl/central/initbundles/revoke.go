@@ -30,7 +30,7 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 	impactedIDNameMap := map[string]string{}
 
 	var revokeInitBundleIds []string
-	for _, meta := range resp.Items {
+	for _, meta := range resp.GetItems() {
 		if idsOrNames.Remove(meta.GetId()) || idsOrNames.Remove(meta.GetName()) {
 			revokeInitBundleIds = append(revokeInitBundleIds, meta.GetId())
 			for _, impactedCluster := range meta.GetImpactedClusters() {
@@ -106,7 +106,7 @@ func printResponseResult(logger logger.Logger, resp *v1.InitBundleRevokeResponse
 		logger.InfofLn("Revoked %q", id)
 	}
 	for _, revokeErr := range resp.GetInitBundleRevocationErrors() {
-		logger.ErrfLn("Error revoking %q: %s", revokeErr.Id, revokeErr.Error)
+		logger.ErrfLn("Error revoking %q: %s", revokeErr.GetId(), revokeErr.GetError())
 	}
 }
 

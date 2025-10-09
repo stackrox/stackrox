@@ -168,7 +168,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
-	if exists && existingPolicy.IsDefault {
+	if exists && existingPolicy.GetIsDefault() {
 		retErr := errors.New(fmt.Sprintf("Failed to reconcile: existing default policy with the same name '%s' exists", desiredState.GetName()))
 		policyCR.Status.Conditions.UpdateCondition(configstackroxiov1alpha1.SecurityPolicyCondition{
 			Type:    configstackroxiov1alpha1.PolicyValidated,

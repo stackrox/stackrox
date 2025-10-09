@@ -36,7 +36,7 @@ func DefaultLoginURL(fn func(authProviderID string) string) ProviderOption {
 		if pr.storedInfo == nil {
 			return errors.New("no storage information for auth provider")
 		}
-		pr.storedInfo.LoginUrl = fn(pr.storedInfo.Id)
+		pr.storedInfo.LoginUrl = fn(pr.storedInfo.GetId())
 		return nil
 	}
 }

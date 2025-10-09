@@ -263,7 +263,7 @@ func (m *dependenciesMock) GetServiceCertificates(ctx context.Context) (*storage
 
 func (m *dependenciesMock) EnsureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	args := m.Called(ctx, certificates)
-	return certificates.ServiceCerts, args.Error(0)
+	return certificates.GetServiceCerts(), args.Error(0)
 }
 
 func (m *dependenciesMock) getCertsRenewalTime(certificates *storage.TypedServiceCertificateSet) (time.Time, error) {

@@ -23,9 +23,9 @@ func ExtractAccessScopeRules(identity authn.Identity) []*storage.SimpleAccessSco
 		accessScope := role.GetAccessScope()
 		if accessScope == nil {
 			accessScopeRulesList = append(accessScopeRulesList, rolePkg.AccessScopeExcludeAll.GetRules())
-		} else if accessScope.Id == rolePkg.AccessScopeIncludeAll.Id {
+		} else if accessScope.GetId() == rolePkg.AccessScopeIncludeAll.GetId() {
 			return nil
-		} else if accessScope.Id == rolePkg.AccessScopeExcludeAll.Id || accessScope.GetRules() == nil {
+		} else if accessScope.GetId() == rolePkg.AccessScopeExcludeAll.GetId() || accessScope.GetRules() == nil {
 			// nil/empty rules in a non-nil access scope means exclude all clusters/namespaces
 			// if the access scope is not same as rolePkg.AccessScopeIncludeAll
 			accessScopeRulesList = append(accessScopeRulesList, rolePkg.AccessScopeExcludeAll.GetRules())

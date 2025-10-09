@@ -123,7 +123,7 @@ func TestCronJobPopulateSpec(t *testing.T) {
 		},
 	}
 	deploymentWrap.populateFields(cronJob1)
-	assert.Equal(t, deploymentWrap.Containers[0].Name, "container1")
+	assert.Equal(t, deploymentWrap.Containers[0].GetName(), "container1")
 
 	cronJob2 := &batchV1beta1.CronJob{
 		Spec: batchV1beta1.CronJobSpec{
@@ -137,7 +137,7 @@ func TestCronJobPopulateSpec(t *testing.T) {
 		},
 	}
 	deploymentWrap.populateFields(cronJob2)
-	assert.Equal(t, deploymentWrap.Containers[0].Name, "container2")
+	assert.Equal(t, deploymentWrap.Containers[0].GetName(), "container2")
 }
 
 func TestNewDeploymentFromStaticResourcePopulatesPodLabels(t *testing.T) {
@@ -235,7 +235,7 @@ func TestContainerLivenessProbePopulation(t *testing.T) {
 			deploymentWrap.populateProbes(spec)
 
 			livenessProbe := deploymentWrap.GetContainers()[0].GetLivenessProbe()
-			assert.Equal(t, livenessProbe.Defined, testCase.livenessProbeDefined)
+			assert.Equal(t, livenessProbe.GetDefined(), testCase.livenessProbeDefined)
 		})
 	}
 }
@@ -269,7 +269,7 @@ func TestContainerLivenessProbeFromJSON(t *testing.T) {
 
 			assert.NoError(t, err)
 			livenessProbe := deploymentWrap.GetContainers()[0].GetLivenessProbe()
-			assert.Equal(t, livenessProbe.Defined, testCase.livenessProbeDefined)
+			assert.Equal(t, livenessProbe.GetDefined(), testCase.livenessProbeDefined)
 		})
 	}
 }
@@ -305,7 +305,7 @@ func TestContainerReadinessProbePopulation(t *testing.T) {
 			deploymentWrap.populateProbes(spec)
 
 			readinessProbe := deploymentWrap.GetContainers()[0].GetReadinessProbe()
-			assert.Equal(t, readinessProbe.Defined, testCase.readinessProbeDefined)
+			assert.Equal(t, readinessProbe.GetDefined(), testCase.readinessProbeDefined)
 		})
 	}
 }
@@ -339,7 +339,7 @@ func TestContainerReadinessProbeFromJSON(t *testing.T) {
 
 			assert.NoError(t, err)
 			readinessProbe := deploymentWrap.GetContainers()[0].GetReadinessProbe()
-			assert.Equal(t, readinessProbe.Defined, testCase.readinessProbeDefined)
+			assert.Equal(t, readinessProbe.GetDefined(), testCase.readinessProbeDefined)
 		})
 	}
 }

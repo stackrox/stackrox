@@ -20,7 +20,7 @@ func ComplianceOperatorScanObject(sensorData *central.ComplianceOperatorScanV2, 
 		ScanConfigName: sensorData.GetLabels()[v1alpha1.SuiteLabel],
 		ScanName:       sensorData.GetName(),
 		ClusterId:      clusterID,
-		Errors:         sensorData.GetStatus().ErrorMessage,
+		Errors:         sensorData.GetStatus().GetErrorMessage(),
 		Profile: &storage.ProfileShim{
 			ProfileId:    sensorData.GetProfileId(),
 			ProfileRefId: BuildProfileRefID(clusterID, sensorData.GetProfileId(), sensorData.GetScanType()),

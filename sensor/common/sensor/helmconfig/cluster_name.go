@@ -34,7 +34,7 @@ func CheckEffectiveClusterName(helmConfig *central.HelmManagedConfigInit) error 
 		return errors.Wrap(err, "reading effective cluster oldName")
 	}
 
-	if oldName != helmConfig.ClusterName {
+	if oldName != helmConfig.GetClusterName() {
 		return errors.Wrapf(ErrClusterNameDoesNotMatch, errClusterNameDoesNotMatchMsg, oldName,
 			helmConfig.GetClusterName(), helmConfig.GetClusterName(), oldName, helmConfig.GetClusterName())
 	}

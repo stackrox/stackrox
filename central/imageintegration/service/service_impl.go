@@ -141,7 +141,7 @@ func (s *serviceImpl) validateTestAndNormalize(ctx context.Context, request *sto
 		}
 	}
 
-	sortCategories(request.Categories)
+	sortCategories(request.GetCategories())
 	return nil
 }
 
@@ -333,7 +333,7 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 		return errors.New("empty integration")
 	}
 	errorList := errorhelpers.NewErrorList("Validation")
-	if err := endpoints.ValidateEndpoints(request.IntegrationConfig); err != nil {
+	if err := endpoints.ValidateEndpoints(request.GetIntegrationConfig()); err != nil {
 		errorList.AddWrap(err, "invalid endpoint")
 	}
 	if len(request.GetCategories()) == 0 {

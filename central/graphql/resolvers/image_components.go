@@ -328,7 +328,7 @@ func getDeploymentIDFromQuery(q *v1.Query) string {
 			return
 		}
 		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.DeploymentID.String()) {
-			deploymentID = matchFieldQuery.MatchFieldQuery.Value
+			deploymentID = matchFieldQuery.MatchFieldQuery.GetValue()
 			deploymentID = strings.TrimRight(deploymentID, `"`)
 			deploymentID = strings.TrimLeft(deploymentID, `"`)
 		}

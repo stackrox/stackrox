@@ -36,7 +36,7 @@ func RecursiveOwnershipCheckIfDirExists(dir, user, group string) *standards.Chec
 func CheckRecursiveOwnership(f *compliance.File, user, group string) []*storage.ComplianceResultValue_Evidence {
 	var results []*storage.ComplianceResultValue_Evidence
 	results = append(results, ownershipCheck(f, user, group)...)
-	for _, f := range f.Children {
+	for _, f := range f.GetChildren() {
 		results = append(results, CheckRecursiveOwnership(f, user, group)...)
 	}
 	return results
@@ -101,7 +101,7 @@ func CheckRecursivePermissions(f *compliance.File, permissions uint32) ([]*stora
 	if stopNow {
 		return results, stopNow
 	}
-	for _, child := range f.Children {
+	for _, child := range f.GetChildren() {
 		result, stopNow := CheckRecursivePermissions(child, permissions)
 		results = append(results, result...)
 		if stopNow {
@@ -172,7 +172,7 @@ func CheckRecursivePermissionWithFileExt(f *compliance.File, fileExtension strin
 		return []*storage.ComplianceResultValue_Evidence{result}, stopNow
 	}
 	var results []*storage.ComplianceResultValue_Evidence
-	for _, child := range f.Children {
+	for _, child := range f.GetChildren() {
 		childResults, failNow := CheckRecursivePermissionWithFileExt(child, fileExtension, permissions)
 		results = append(results, childResults...)
 		if failNow {

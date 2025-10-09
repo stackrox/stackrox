@@ -76,7 +76,7 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 		sensorEvent := msg.GetEvent()
 		s.Require().NotNil(sensorEvent)
 		s.Assert().Equal("test-vm", sensorEvent.GetId())
-		s.Assert().Equal(central.ResourceAction_SYNC_RESOURCE, sensorEvent.Action)
+		s.Assert().Equal(central.ResourceAction_SYNC_RESOURCE, sensorEvent.GetAction())
 		s.Assert().NotNil(sensorEvent.GetVirtualMachineIndexReport())
 		s.Assert().Equal("test-vm", sensorEvent.GetVirtualMachineIndexReport().GetId())
 	case <-time.After(time.Second):

@@ -237,9 +237,9 @@ func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
 			idsToResolve, err := GetOrphanedAlertIDs(s.ctx, s.testDB.DB, orphanWindow)
 			s.NoError(err)
 			if c.shouldBePruned {
-				s.Contains(idsToResolve, c.alert.Id)
+				s.Contains(idsToResolve, c.alert.GetId())
 			} else {
-				s.NotContains(idsToResolve, c.alert.Id)
+				s.NotContains(idsToResolve, c.alert.GetId())
 			}
 			s.NoError(alertDS.DeleteAlerts(s.ctx, c.alert.GetId()))
 		})
@@ -416,7 +416,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			// Cleanup
 			var cleanupIDs []string
 			for _, process := range c.initialProcesses {
-				cleanupIDs = append(cleanupIDs, process.Id)
+				cleanupIDs = append(cleanupIDs, process.GetId())
 			}
 			s.Require().NoError(processDatastore.RemoveProcessIndicators(s.ctx, cleanupIDs))
 

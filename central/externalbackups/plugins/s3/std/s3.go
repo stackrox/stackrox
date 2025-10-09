@@ -79,7 +79,7 @@ func (c *s3configWrapper) GetBackupsToKeep() int32 {
 }
 
 func (c *s3configWrapper) Validate() error {
-	_, ok := c.integration.Config.(*storage.ExternalBackup_S3)
+	_, ok := c.integration.GetConfig().(*storage.ExternalBackup_S3)
 	if !ok {
 		return errors.New("S3 configuration required")
 	}

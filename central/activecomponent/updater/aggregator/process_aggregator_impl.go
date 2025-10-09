@@ -168,7 +168,7 @@ func (a *aggregatorImpl) RefreshDeployment(deployment *storage.Deployment) {
 
 	containerNames := set.NewStringSet()
 	for _, container := range deployment.GetContainers() {
-		containerNames.Add(container.Name)
+		containerNames.Add(container.GetName())
 		update, ok := containerMap[container.GetName()]
 		if !ok {
 			update = &ProcessUpdate{

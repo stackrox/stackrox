@@ -235,7 +235,7 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 	} else if !ok {
 		return nil, sac.ErrResourceAccessDenied
 	}
-	if category.Id == "" {
+	if category.GetId() == "" {
 		category.Id = uuid.NewV4().String()
 	}
 	// Any category added after startup must be marked custom category.

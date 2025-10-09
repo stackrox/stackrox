@@ -867,10 +867,10 @@ func ccRepository(r *v4.Repository) (string, *claircore.Repository, error) {
 		return "", nil, fmt.Errorf("repository %q: %w", r.GetId(), err)
 	}
 	return r.GetId(), &claircore.Repository{
-		ID:   r.Id,
-		Name: r.Name,
-		Key:  r.Key,
-		URI:  r.Uri,
+		ID:   r.GetId(),
+		Name: r.GetName(),
+		Key:  r.GetKey(),
+		URI:  r.GetUri(),
 		CPE:  ccCPE,
 	}, nil
 }
