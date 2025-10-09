@@ -124,3 +124,10 @@ export const viewBasedReportSearchFilterConfigs = [
     namespaceSearchFilterConfig,
     clusterSearchFilterConfig,
 ];
+
+export const virtualMachinesClusterSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Cluster',
+    searchCategory: 'CLUSTERS',
+    attributes: [clusterIdAttribute, clusterNameAttribute],
+};
+

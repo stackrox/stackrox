@@ -14,12 +14,15 @@ export type ScanComponent = {
     fixedBy: string;
     executables: ScanComponentExecutable[];
     architecture: string;
+    notes: Note[];
 };
 
 type ScanComponentExecutable = {
     path: string;
     dependencies: string[];
 };
+
+type Note = 'UNSPECIFIED' | 'UNSCANNED';
 
 export type SourceType =
     | 'OS'
