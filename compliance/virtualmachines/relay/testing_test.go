@@ -1,4 +1,4 @@
-package virtualmachine
+package relay
 
 import (
 	"context"

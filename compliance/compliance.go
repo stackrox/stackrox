@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/compliance/collection/compliance_checks"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
-	"github.com/stackrox/rox/compliance/virtualmachine"
+	"github.com/stackrox/rox/compliance/virtualmachines/relay"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -127,8 +127,8 @@ func (c *Compliance) Start() {
 		defer wg.Add(-1)
 		if features.VirtualMachines.Enabled() {
 			log.Infof("Virtual machine relay enabled")
-			relay := virtualmachine.NewRelay(conn)
-			if err := relay.Run(ctx); err != nil {
+			vmRelay := relay.NewRelay(conn)
+			if err := vmRelay.Run(ctx); err != nil {
 				log.Errorf("Error running virtual machine relay: %v", err)
 			}
 		}
