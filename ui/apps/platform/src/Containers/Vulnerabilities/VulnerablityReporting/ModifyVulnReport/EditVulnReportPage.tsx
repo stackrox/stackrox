@@ -38,12 +38,15 @@ function EditVulnReportPage() {
     });
 
     // We fetch the report configuration for the edittable report and then populate the form values
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         if (reportConfiguration) {
             const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
             formik.setValues(reportFormValues);
         }
     }, [reportConfiguration, formik.setValues]);
+    // formik
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     function onSave() {
         saveReport(reportId, formik.values);

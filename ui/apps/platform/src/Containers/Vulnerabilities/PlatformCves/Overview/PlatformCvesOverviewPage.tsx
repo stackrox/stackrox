@@ -94,9 +94,13 @@ function PlatformCvesOverviewPage() {
     }
 
     // Track the current entity tab when the page is initially visited.
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         onEntityTabChange(activeEntityTabKey);
     }, []);
+    // activeEntityTabKey
+    // onEntityTabChange
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     const { data } = usePlatformCveEntityCounts(querySearchFilter);
 

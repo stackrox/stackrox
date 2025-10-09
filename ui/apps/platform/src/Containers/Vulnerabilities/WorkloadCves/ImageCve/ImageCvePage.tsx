@@ -342,9 +342,13 @@ function ImageCvePage({
     }
 
     // Track the initial entity tab view
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         onEntityTypeChange(entityTab, 'replace');
     }, []);
+    // entityTabKey
+    // onEntityTabChange
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     // If the `imageCVE` field is null, then the CVE ID passed via URL does not exist
     if (metadataRequest.data && metadataRequest.data.imageCVE === null) {
