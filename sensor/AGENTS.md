@@ -117,17 +117,45 @@ make sensor
 # Build with Docker
 make image
 
-# Run tests
+# Run unit tests
 go test ./sensor/...
 
 # Run specific component tests
 go test ./sensor/common/detector/...
+
+# Run integration tests (requires Kind cluster)
+make sensor-integration-test
 ```
+
+#### Integration Test Setup
+Integration tests require a Kubernetes cluster (Kind is used in CI):
+
+```bash
+# Create Kind cluster for integration tests
+kind create cluster --config kind-config.yaml
+
+# Set KUBECONFIG environment variable
+export KUBECONFIG="$(kind get kubeconfig-path)"
+
+# Run integration tests
+make sensor-integration-test
+```
+
+**Integration Test Configuration:**
+- Timeout: 15 minutes (`-timeout 15m`)
+- Race detection enabled (`-race`)
+- Test parallelism: 1 (`-p 1`)
+- Debug logging enabled (`LOGLEVEL=debug`)
+- CGO enabled with enhanced checking (`GOEXPERIMENT=cgocheck2`)
 
 #### Key Test Locations
 - Unit tests: `*_test.go` files alongside source
 - Integration tests: `sensor/tests/`
-- Pipeline tests: `sensor/tests/pipeline/`
+  - `sensor/tests/connection/`: Central-Sensor connection tests
+  - `sensor/tests/pipeline/`: Event pipeline tests
+  - `sensor/tests/resource/`: Resource processing tests
+  - `sensor/tests/complianceoperator/`: Compliance operator tests
+- Pipeline benchmarks: `sensor/tests/pipeline/bench_test.go`
 
 ### Important Implementation Notes
 
