@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
+	securitycenter "cloud.google.com/go/securitycenter/apiv2"
+	"cloud.google.com/go/securitycenter/apiv2/securitycenterpb"
 	"github.com/googleapis/gax-go/v2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cloudproviders/gcp"
