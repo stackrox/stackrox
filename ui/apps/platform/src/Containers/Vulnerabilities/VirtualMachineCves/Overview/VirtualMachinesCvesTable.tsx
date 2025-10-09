@@ -21,6 +21,7 @@ import {
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 import { listVirtualMachines } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
@@ -36,14 +37,23 @@ const searchFilterConfig = [
     virtualMachinesClusterSearchFilterConfig,
 ];
 
+export const sortFields = ['Virtual Machine Name'];
+
+export const defaultSortOption = { field: 'Virtual Machine Name', direction: 'asc' } as const;
+
 function VirtualMachinesCvesTable() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const isFiltered = getHasSearchApplied(searchFilter);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => setPage(1),
+    });
 
     const fetchVirtualMachines = useCallback(
-        () => listVirtualMachines({ searchFilter, page, perPage }),
-        [searchFilter, page, perPage]
+        () => listVirtualMachines({ searchFilter, page, perPage, sortOption }),
+        [searchFilter, page, perPage, sortOption]
     );
     const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
     const tableState = getTableUIState({
@@ -100,7 +110,7 @@ function VirtualMachinesCvesTable() {
                 >
                     <Thead>
                         <Tr>
-                            <Th>Virtual machine</Th>
+                            <Th sort={getSortParams('Virtual Machine Name')}>Virtual machine</Th>
                             <Th>CVEs by severity</Th>
                             <Th>Cluster</Th>
                             <Th>Namespace</Th>

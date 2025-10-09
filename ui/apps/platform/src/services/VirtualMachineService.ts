@@ -1,7 +1,6 @@
 import axios from 'services/instance';
 import type { ScanComponent } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
-import { getListQueryParams } from 'utils/searchUtils';
 import { buildNestedRawQueryParams } from './ComplianceCommon';
 
 export type VirtualMachine = {
@@ -46,9 +45,16 @@ export type ListVirtualMachinesResponse = {
 /**
  * fetches the list of virtual machines
  */
-export function listVirtualMachines({ sortOption, page, perPage, searchFilter }: SearchQueryOptions): Promise<ListVirtualMachinesResponse> {
-     const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
-    return axios.get<ListVirtualMachinesResponse>(`/v2/virtualmachines?${params}`).then((response) => response.data);
+export function listVirtualMachines({
+    sortOption,
+    page,
+    perPage,
+    searchFilter,
+}: SearchQueryOptions): Promise<ListVirtualMachinesResponse> {
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
+    return axios
+        .get<ListVirtualMachinesResponse>(`/v2/virtualmachines?${params}`)
+        .then((response) => response.data);
 }
 
 /**
