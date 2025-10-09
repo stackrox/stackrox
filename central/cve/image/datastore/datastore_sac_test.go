@@ -11,16 +11,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 func TestImageCVEDataStoreSAC(t *testing.T) {
@@ -535,7 +530,7 @@ func (s *cveDataStoreSACTestSuite) runImageTest(testName string, testFunc func(c
 		}
 	}
 	if failed {
-		log.Infof("%s failed, dumping DB content.", testName)
+		s.T().Logf("%s failed, dumping DB content.", testName)
 		imageGraphBefore.Log()
 	}
 }
