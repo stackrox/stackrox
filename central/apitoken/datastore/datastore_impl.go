@@ -29,12 +29,12 @@ type datastoreImpl struct {
 }
 
 func newPostgres(pool postgres.DB) *datastoreImpl {
-	storage := postgresStore.New(pool)
-	scheduleStorage := scheduleStore.New(pool)
+	tokenDBStore := postgresStore.New(pool)
+	scheduleDBStore := scheduleStore.New(pool)
 
 	return &datastoreImpl{
-		storage:         storage,
-		scheduleStorage: scheduleStorage,
+		storage:         tokenDBStore,
+		scheduleStorage: scheduleDBStore,
 	}
 }
 
