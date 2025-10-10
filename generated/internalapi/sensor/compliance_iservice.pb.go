@@ -220,8 +220,12 @@ func (b0 GetScrapeConfigRequest_builder) Build() *GetScrapeConfigRequest {
 type AuditEvents struct {
 	state             protoimpl.MessageState      `protogen:"opaque.v1"`
 	xxx_hidden_Events *[]*storage.KubernetesEvent `protobuf:"bytes,1,rep,name=events"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AuditEvents) Reset() {
@@ -251,15 +255,27 @@ func (x *AuditEvents) ProtoReflect() protoreflect.Message {
 
 func (x *AuditEvents) GetEvents() []*storage.KubernetesEvent {
 	if x != nil {
-		if x.xxx_hidden_Events != nil {
-			return *x.xxx_hidden_Events
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Events) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.KubernetesEvent
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *AuditEvents) SetEvents(v []*storage.KubernetesEvent) {
-	x.xxx_hidden_Events = &v
+	var sv *[]*storage.KubernetesEvent
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.KubernetesEvent{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type AuditEvents_builder struct {
@@ -273,14 +289,19 @@ func (b0 AuditEvents_builder) Build() *AuditEvents {
 	m0 := &AuditEvents{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Events = &b.Events
+	if b.Events != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Events = &b.Events
+	}
 	return m0
 }
 
 type MsgFromCompliance struct {
-	state                  protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Node        *string                 `protobuf:"bytes,1,opt,name=node"`
-	xxx_hidden_Msg         isMsgFromCompliance_Msg `protobuf_oneof:"msg"`
+	state           protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Node *string                 `protobuf:"bytes,1,opt,name=node"`
+	xxx_hidden_Msg  isMsgFromCompliance_Msg `protobuf_oneof:"msg"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1315,10 +1336,12 @@ type MsgToCompliance_AuditLogCollectionRequest_StartRequest struct {
 	state                        protoimpl.MessageState     `protogen:"opaque.v1"`
 	xxx_hidden_ClusterId         *string                    `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
 	xxx_hidden_CollectStartState *storage.AuditLogFileState `protobuf:"bytes,2,opt,name=collect_start_state,json=collectStartState"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) Reset() {
@@ -1358,7 +1381,14 @@ func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) GetClusterId() 
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) GetCollectStartState() *storage.AuditLogFileState {
 	if x != nil {
-		return x.xxx_hidden_CollectStartState
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CollectStartState) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.AuditLogFileState
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CollectStartState), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1369,7 +1399,12 @@ func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) SetClusterId(v 
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) SetCollectStartState(v *storage.AuditLogFileState) {
-	x.xxx_hidden_CollectStartState = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CollectStartState, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) HasClusterId() bool {
@@ -1383,7 +1418,7 @@ func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) HasCollectStart
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CollectStartState != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) ClearClusterId() {
@@ -1392,7 +1427,8 @@ func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) ClearClusterId(
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) ClearCollectStartState() {
-	x.xxx_hidden_CollectStartState = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CollectStartState, (*storage.AuditLogFileState)(nil))
 }
 
 type MsgToCompliance_AuditLogCollectionRequest_StartRequest_builder struct {
@@ -1410,7 +1446,10 @@ func (b0 MsgToCompliance_AuditLogCollectionRequest_StartRequest_builder) Build()
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_ClusterId = b.ClusterId
 	}
-	x.xxx_hidden_CollectStartState = b.CollectStartState
+	if b.CollectStartState != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_CollectStartState = b.CollectStartState
+	}
 	return m0
 }
 
@@ -1464,16 +1503,16 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	",internalapi/sensor/compliance_iservice.proto\x12\x06sensor\x1a,internalapi/compliance/compliance_data.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a\x15storage/cluster.proto\x1a\x1fstorage/container_runtime.proto\x1a\x18storage/kube_event.proto\x1a\x12storage/node.proto\x1a!google/protobuf/go_features.proto\"R\n" +
 	"\x16GetScrapeConfigRequest\x12\x1b\n" +
 	"\tnode_name\x18\x01 \x01(\tR\bnodeName\x12\x1b\n" +
-	"\tscrape_id\x18\x02 \x01(\tR\bscrapeId\"?\n" +
-	"\vAuditEvents\x120\n" +
-	"\x06events\x18\x01 \x03(\v2\x18.storage.KubernetesEventR\x06events\"\x9f\x02\n" +
+	"\tscrape_id\x18\x02 \x01(\tR\bscrapeId\"C\n" +
+	"\vAuditEvents\x124\n" +
+	"\x06events\x18\x01 \x03(\v2\x18.storage.KubernetesEventB\x02(\x01R\x06events\"\xab\x02\n" +
 	"\x11MsgFromCompliance\x12\x12\n" +
-	"\x04node\x18\x01 \x01(\tR\x04node\x126\n" +
-	"\x06return\x18\x02 \x01(\v2\x1c.compliance.ComplianceReturnH\x00R\x06return\x128\n" +
-	"\faudit_events\x18\x03 \x01(\v2\x13.sensor.AuditEventsH\x00R\vauditEvents\x12?\n" +
-	"\x0enode_inventory\x18\x04 \x01(\v2\x16.storage.NodeInventoryH\x00R\rnodeInventory\x12<\n" +
-	"\findex_report\x18\x05 \x01(\v2\x17.scanner.v4.IndexReportH\x00R\vindexReportB\x05\n" +
-	"\x03msg\"\x88\t\n" +
+	"\x04node\x18\x01 \x01(\tR\x04node\x12:\n" +
+	"\x06return\x18\x02 \x01(\v2\x1c.compliance.ComplianceReturnB\x02(\x01H\x00R\x06return\x128\n" +
+	"\faudit_events\x18\x03 \x01(\v2\x13.sensor.AuditEventsH\x00R\vauditEvents\x12C\n" +
+	"\x0enode_inventory\x18\x04 \x01(\v2\x16.storage.NodeInventoryB\x02(\x01H\x00R\rnodeInventory\x12@\n" +
+	"\findex_report\x18\x05 \x01(\v2\x17.scanner.v4.IndexReportB\x02(\x01H\x00R\vindexReportB\x05\n" +
+	"\x03msg\"\x8c\t\n" +
 	"\x0fMsgToCompliance\x12>\n" +
 	"\x06config\x18\x01 \x01(\v2$.sensor.MsgToCompliance.ScrapeConfigH\x00R\x06config\x12>\n" +
 	"\atrigger\x18\x02 \x01(\v2\".sensor.MsgToCompliance.TriggerRunH\x00R\atrigger\x12t\n" +
@@ -1485,14 +1524,14 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"\n" +
 	"TriggerRun\x12\x1b\n" +
 	"\tscrape_id\x18\x01 \x01(\tR\bscrapeId\x12!\n" +
-	"\fstandard_ids\x18\x02 \x03(\tR\vstandardIds\x1a\xe7\x02\n" +
+	"\fstandard_ids\x18\x02 \x03(\tR\vstandardIds\x1a\xeb\x02\n" +
 	"\x19AuditLogCollectionRequest\x12]\n" +
 	"\tstart_req\x18\x01 \x01(\v2>.sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequestH\x00R\bstartReq\x12Z\n" +
-	"\bstop_req\x18\x02 \x01(\v2=.sensor.MsgToCompliance.AuditLogCollectionRequest.StopRequestH\x00R\astopReq\x1ay\n" +
+	"\bstop_req\x18\x02 \x01(\v2=.sensor.MsgToCompliance.AuditLogCollectionRequest.StopRequestH\x00R\astopReq\x1a}\n" +
 	"\fStartRequest\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12J\n" +
-	"\x13collect_start_state\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x11collectStartState\x1a\r\n" +
+	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12N\n" +
+	"\x13collect_start_state\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateB\x02(\x01R\x11collectStartState\x1a\r\n" +
 	"\vStopRequestB\x05\n" +
 	"\x03req\x1a\x83\x02\n" +
 	"\x10NodeInventoryACK\x12G\n" +

@@ -258,10 +258,12 @@ type ProcessBaseline struct {
 	xxx_hidden_UserLockedTimestamp     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=user_locked_timestamp,json=userLockedTimestamp"`
 	xxx_hidden_StackRoxLockedTimestamp *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=stack_rox_locked_timestamp,json=stackRoxLockedTimestamp"`
 	xxx_hidden_LastUpdate              *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_update,json=lastUpdate"`
-	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
-	XXX_presence                       [1]uint32
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessBaseline) Reset() {
@@ -308,8 +310,13 @@ func (x *ProcessBaseline) GetKey() *ProcessBaselineKey {
 
 func (x *ProcessBaseline) GetElements() []*BaselineElement {
 	if x != nil {
-		if x.xxx_hidden_Elements != nil {
-			return *x.xxx_hidden_Elements
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Elements) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*BaselineElement
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Elements), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -317,8 +324,13 @@ func (x *ProcessBaseline) GetElements() []*BaselineElement {
 
 func (x *ProcessBaseline) GetElementGraveyard() []*BaselineElement {
 	if x != nil {
-		if x.xxx_hidden_ElementGraveyard != nil {
-			return *x.xxx_hidden_ElementGraveyard
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ElementGraveyard) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *[]*BaselineElement
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ElementGraveyard), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -326,28 +338,56 @@ func (x *ProcessBaseline) GetElementGraveyard() []*BaselineElement {
 
 func (x *ProcessBaseline) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Created
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ProcessBaseline) GetUserLockedTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_UserLockedTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UserLockedTimestamp) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UserLockedTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ProcessBaseline) GetStackRoxLockedTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_StackRoxLockedTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_StackRoxLockedTimestamp) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_StackRoxLockedTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ProcessBaseline) GetLastUpdate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdate
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdate) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdate), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -362,27 +402,61 @@ func (x *ProcessBaseline) SetKey(v *ProcessBaselineKey) {
 }
 
 func (x *ProcessBaseline) SetElements(v []*BaselineElement) {
-	x.xxx_hidden_Elements = &v
+	var sv *[]*BaselineElement
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Elements), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*BaselineElement{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Elements), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
 }
 
 func (x *ProcessBaseline) SetElementGraveyard(v []*BaselineElement) {
-	x.xxx_hidden_ElementGraveyard = &v
+	var sv *[]*BaselineElement
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ElementGraveyard), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*BaselineElement{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ElementGraveyard), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
 }
 
 func (x *ProcessBaseline) SetCreated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Created = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
+	}
 }
 
 func (x *ProcessBaseline) SetUserLockedTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_UserLockedTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UserLockedTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	}
 }
 
 func (x *ProcessBaseline) SetStackRoxLockedTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_StackRoxLockedTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StackRoxLockedTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
+	}
 }
 
 func (x *ProcessBaseline) SetLastUpdate(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdate = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdate, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
+	}
 }
 
 func (x *ProcessBaseline) HasId() bool {
@@ -403,28 +477,28 @@ func (x *ProcessBaseline) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Created != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ProcessBaseline) HasUserLockedTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_UserLockedTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *ProcessBaseline) HasStackRoxLockedTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_StackRoxLockedTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ProcessBaseline) HasLastUpdate() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdate != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *ProcessBaseline) ClearId() {
@@ -437,19 +511,23 @@ func (x *ProcessBaseline) ClearKey() {
 }
 
 func (x *ProcessBaseline) ClearCreated() {
-	x.xxx_hidden_Created = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ProcessBaseline) ClearUserLockedTimestamp() {
-	x.xxx_hidden_UserLockedTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UserLockedTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ProcessBaseline) ClearStackRoxLockedTimestamp() {
-	x.xxx_hidden_StackRoxLockedTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StackRoxLockedTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ProcessBaseline) ClearLastUpdate() {
-	x.xxx_hidden_LastUpdate = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdate, (*timestamppb.Timestamp)(nil))
 }
 
 type ProcessBaseline_builder struct {
@@ -474,12 +552,30 @@ func (b0 ProcessBaseline_builder) Build() *ProcessBaseline {
 		x.xxx_hidden_Id = b.Id
 	}
 	x.xxx_hidden_Key = b.Key
-	x.xxx_hidden_Elements = &b.Elements
-	x.xxx_hidden_ElementGraveyard = &b.ElementGraveyard
-	x.xxx_hidden_Created = b.Created
-	x.xxx_hidden_UserLockedTimestamp = b.UserLockedTimestamp
-	x.xxx_hidden_StackRoxLockedTimestamp = b.StackRoxLockedTimestamp
-	x.xxx_hidden_LastUpdate = b.LastUpdate
+	if b.Elements != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
+		x.xxx_hidden_Elements = &b.Elements
+	}
+	if b.ElementGraveyard != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		x.xxx_hidden_ElementGraveyard = &b.ElementGraveyard
+	}
+	if b.Created != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
+		x.xxx_hidden_Created = b.Created
+	}
+	if b.UserLockedTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_UserLockedTimestamp = b.UserLockedTimestamp
+	}
+	if b.StackRoxLockedTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_StackRoxLockedTimestamp = b.StackRoxLockedTimestamp
+	}
+	if b.LastUpdate != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_LastUpdate = b.LastUpdate
+	}
 	return m0
 }
 
@@ -855,10 +951,12 @@ type ProcessBaselineResults struct {
 	xxx_hidden_ClusterId        *string                            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
 	xxx_hidden_Namespace        *string                            `protobuf:"bytes,4,opt,name=namespace"`
 	xxx_hidden_BaselineStatuses *[]*ContainerNameAndBaselineStatus `protobuf:"bytes,2,rep,name=baseline_statuses,json=baselineStatuses"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessBaselineResults) Reset() {
@@ -918,8 +1016,13 @@ func (x *ProcessBaselineResults) GetNamespace() string {
 
 func (x *ProcessBaselineResults) GetBaselineStatuses() []*ContainerNameAndBaselineStatus {
 	if x != nil {
-		if x.xxx_hidden_BaselineStatuses != nil {
-			return *x.xxx_hidden_BaselineStatuses
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_BaselineStatuses) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*ContainerNameAndBaselineStatus
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_BaselineStatuses), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -941,7 +1044,14 @@ func (x *ProcessBaselineResults) SetNamespace(v string) {
 }
 
 func (x *ProcessBaselineResults) SetBaselineStatuses(v []*ContainerNameAndBaselineStatus) {
-	x.xxx_hidden_BaselineStatuses = &v
+	var sv *[]*ContainerNameAndBaselineStatus
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_BaselineStatuses), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ContainerNameAndBaselineStatus{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_BaselineStatuses), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *ProcessBaselineResults) HasDeploymentId() bool {
@@ -1005,7 +1115,10 @@ func (b0 ProcessBaselineResults_builder) Build() *ProcessBaselineResults {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_Namespace = b.Namespace
 	}
-	x.xxx_hidden_BaselineStatuses = &b.BaselineStatuses
+	if b.BaselineStatuses != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_BaselineStatuses = &b.BaselineStatuses
+	}
 	return m0
 }
 
@@ -1019,16 +1132,16 @@ const file_storage_process_baseline_proto_rawDesc = "" +
 	"\x0econtainer_name\x18\x02 \x01(\tR\rcontainerName\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12\x1c\n" +
-	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\xe9\x03\n" +
+	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\x81\x04\n" +
 	"\x0fProcessBaseline\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12-\n" +
-	"\x03key\x18\x02 \x01(\v2\x1b.storage.ProcessBaselineKeyR\x03key\x124\n" +
-	"\belements\x18\x03 \x03(\v2\x18.storage.BaselineElementR\belements\x12E\n" +
-	"\x11element_graveyard\x18\b \x03(\v2\x18.storage.BaselineElementR\x10elementGraveyard\x124\n" +
-	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12N\n" +
-	"\x15user_locked_timestamp\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x13userLockedTimestamp\x12W\n" +
-	"\x1astack_rox_locked_timestamp\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x17stackRoxLockedTimestamp\x12;\n" +
-	"\vlast_update\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"\x03key\x18\x02 \x01(\v2\x1b.storage.ProcessBaselineKeyR\x03key\x128\n" +
+	"\belements\x18\x03 \x03(\v2\x18.storage.BaselineElementB\x02(\x01R\belements\x12I\n" +
+	"\x11element_graveyard\x18\b \x03(\v2\x18.storage.BaselineElementB\x02(\x01R\x10elementGraveyard\x128\n" +
+	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\acreated\x12R\n" +
+	"\x15user_locked_timestamp\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x13userLockedTimestamp\x12[\n" +
+	"\x1astack_rox_locked_timestamp\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x17stackRoxLockedTimestamp\x12?\n" +
+	"\vlast_update\x18\a \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\n" +
 	"lastUpdate\"V\n" +
 	"\x0fBaselineElement\x12/\n" +
 	"\aelement\x18\x01 \x01(\v2\x15.storage.BaselineItemR\aelement\x12\x12\n" +
@@ -1045,13 +1158,13 @@ const file_storage_process_baseline_proto_rawDesc = "" +
 	"\rNOT_GENERATED\x10\x01\x12\f\n" +
 	"\bUNLOCKED\x10\x02\x12\n" +
 	"\n" +
-	"\x06LOCKED\x10\x03\"\xd0\x01\n" +
+	"\x06LOCKED\x10\x03\"\xd4\x01\n" +
 	"\x16ProcessBaselineResults\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12\x1c\n" +
-	"\tnamespace\x18\x04 \x01(\tR\tnamespace\x12T\n" +
-	"\x11baseline_statuses\x18\x02 \x03(\v2'.storage.ContainerNameAndBaselineStatusR\x10baselineStatusesB9\n" +
+	"\tnamespace\x18\x04 \x01(\tR\tnamespace\x12X\n" +
+	"\x11baseline_statuses\x18\x02 \x03(\v2'.storage.ContainerNameAndBaselineStatusB\x02(\x01R\x10baselineStatusesB9\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_process_baseline_proto_enumTypes = make([]protoimpl.EnumInfo, 1)

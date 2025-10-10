@@ -155,9 +155,9 @@ var File_api_v1_signal_proto protoreflect.FileDescriptor
 
 const file_api_v1_signal_proto_rawDesc = "" +
 	"\n" +
-	"\x13api/v1/signal.proto\x12\x02v1\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"S\n" +
-	"\x06Signal\x12?\n" +
-	"\x0eprocess_signal\x18\x01 \x01(\v2\x16.storage.ProcessSignalH\x00R\rprocessSignalB\b\n" +
+	"\x13api/v1/signal.proto\x12\x02v1\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"W\n" +
+	"\x06Signal\x12C\n" +
+	"\x0eprocess_signal\x18\x01 \x01(\v2\x16.storage.ProcessSignalB\x02(\x01H\x00R\rprocessSignalB\b\n" +
 	"\x06signalB2\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 

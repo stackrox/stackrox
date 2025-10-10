@@ -134,10 +134,12 @@ type ScanComponent struct {
 	xxx_hidden_Vulns        *[]*EmbeddedVulnerability  `protobuf:"bytes,6,rep,name=vulns"`
 	xxx_hidden_Source       SourceType                 `protobuf:"varint,7,opt,name=source,enum=v2.SourceType"`
 	xxx_hidden_Notes        []ScanComponent_Note       `protobuf:"varint,8,rep,packed,name=notes,enum=v2.ScanComponent_Note"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ScanComponent) Reset() {
@@ -213,8 +215,13 @@ func (x *ScanComponent) GetArchitecture() string {
 
 func (x *ScanComponent) GetVulns() []*EmbeddedVulnerability {
 	if x != nil {
-		if x.xxx_hidden_Vulns != nil {
-			return *x.xxx_hidden_Vulns
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Vulns) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *[]*EmbeddedVulnerability
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vulns), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -261,7 +268,14 @@ func (x *ScanComponent) SetArchitecture(v string) {
 }
 
 func (x *ScanComponent) SetVulns(v []*EmbeddedVulnerability) {
-	x.xxx_hidden_Vulns = &v
+	var sv *[]*EmbeddedVulnerability
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vulns), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*EmbeddedVulnerability{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Vulns), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
 }
 
 func (x *ScanComponent) SetSource(v SourceType) {
@@ -411,7 +425,10 @@ func (b0 ScanComponent_builder) Build() *ScanComponent {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
 		x.xxx_hidden_Architecture = b.Architecture
 	}
-	x.xxx_hidden_Vulns = &b.Vulns
+	if b.Vulns != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_Vulns = &b.Vulns
+	}
 	if b.Source != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
 		x.xxx_hidden_Source = *b.Source
@@ -444,15 +461,15 @@ var File_api_v2_scan_component_proto protoreflect.FileDescriptor
 
 const file_api_v2_scan_component_proto_rawDesc = "" +
 	"\n" +
-	"\x1bapi/v2/scan_component.proto\x12\x02v2\x1a\x1aapi/v2/vulnerability.proto\x1a!google/protobuf/go_features.proto\"\xdc\x02\n" +
+	"\x1bapi/v2/scan_component.proto\x12\x02v2\x1a\x1aapi/v2/vulnerability.proto\x1a!google/protobuf/go_features.proto\"\xe0\x02\n" +
 	"\rScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1b\n" +
 	"\btop_cvss\x18\x03 \x01(\x02H\x00R\atopCvss\x12\x1d\n" +
 	"\n" +
 	"risk_score\x18\x04 \x01(\x02R\triskScore\x12\"\n" +
-	"\farchitecture\x18\x05 \x01(\tR\farchitecture\x12/\n" +
-	"\x05vulns\x18\x06 \x03(\v2\x19.v2.EmbeddedVulnerabilityR\x05vulns\x12&\n" +
+	"\farchitecture\x18\x05 \x01(\tR\farchitecture\x123\n" +
+	"\x05vulns\x18\x06 \x03(\v2\x19.v2.EmbeddedVulnerabilityB\x02(\x01R\x05vulns\x12&\n" +
 	"\x06source\x18\a \x01(\x0e2\x0e.v2.SourceTypeR\x06source\x12,\n" +
 	"\x05notes\x18\b \x03(\x0e2\x16.v2.ScanComponent.NoteR\x05notes\"&\n" +
 	"\x04Note\x12\x0f\n" +

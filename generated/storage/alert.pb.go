@@ -300,10 +300,12 @@ type Alert struct {
 	xxx_hidden_State             ViolationState          `protobuf:"varint,11,opt,name=state,enum=storage.ViolationState"`
 	xxx_hidden_PlatformComponent bool                    `protobuf:"varint,22,opt,name=platform_component,json=platformComponent"`
 	xxx_hidden_EntityType        Alert_EntityType        `protobuf:"varint,23,opt,name=entity_type,json=entityType,enum=storage.Alert_EntityType"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Alert) Reset() {
@@ -426,8 +428,13 @@ func (x *Alert) GetResource() *Alert_Resource {
 
 func (x *Alert) GetViolations() []*Alert_Violation {
 	if x != nil {
-		if x.xxx_hidden_Violations != nil {
-			return *x.xxx_hidden_Violations
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Violations) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *[]*Alert_Violation
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Violations), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -449,21 +456,42 @@ func (x *Alert) GetEnforcement() *Alert_Enforcement {
 
 func (x *Alert) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Time
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 11) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Time) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Time), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *Alert) GetFirstOccurred() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_FirstOccurred
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 12) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_FirstOccurred) {
+				protoimpl.X.UnmarshalField(x, 10)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_FirstOccurred), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *Alert) GetResolvedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ResolvedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 13) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ResolvedAt) {
+				protoimpl.X.UnmarshalField(x, 17)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResolvedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -552,7 +580,14 @@ func (x *Alert) SetResource(v *Alert_Resource) {
 }
 
 func (x *Alert) SetViolations(v []*Alert_Violation) {
-	x.xxx_hidden_Violations = &v
+	var sv *[]*Alert_Violation
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Violations), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Alert_Violation{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Violations), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 17)
 }
 
 func (x *Alert) SetProcessViolation(v *Alert_ProcessViolation) {
@@ -564,15 +599,30 @@ func (x *Alert) SetEnforcement(v *Alert_Enforcement) {
 }
 
 func (x *Alert) SetTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Time = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 17)
+	}
 }
 
 func (x *Alert) SetFirstOccurred(v *timestamppb.Timestamp) {
-	x.xxx_hidden_FirstOccurred = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FirstOccurred, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 17)
+	}
 }
 
 func (x *Alert) SetResolvedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ResolvedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ResolvedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 17)
+	}
 }
 
 func (x *Alert) SetState(v ViolationState) {
@@ -688,21 +738,21 @@ func (x *Alert) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Time != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
 }
 
 func (x *Alert) HasFirstOccurred() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_FirstOccurred != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
 }
 
 func (x *Alert) HasResolvedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ResolvedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 13)
 }
 
 func (x *Alert) HasState() bool {
@@ -791,15 +841,18 @@ func (x *Alert) ClearEnforcement() {
 }
 
 func (x *Alert) ClearTime() {
-	x.xxx_hidden_Time = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Alert) ClearFirstOccurred() {
-	x.xxx_hidden_FirstOccurred = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FirstOccurred, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Alert) ClearResolvedAt() {
-	x.xxx_hidden_ResolvedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ResolvedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Alert) ClearState() {
@@ -910,12 +963,24 @@ func (b0 Alert_builder) Build() *Alert {
 	if b.Resource != nil {
 		x.xxx_hidden_Entity = &alert_Resource_{b.Resource}
 	}
-	x.xxx_hidden_Violations = &b.Violations
+	if b.Violations != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 17)
+		x.xxx_hidden_Violations = &b.Violations
+	}
 	x.xxx_hidden_ProcessViolation = b.ProcessViolation
 	x.xxx_hidden_Enforcement = b.Enforcement
-	x.xxx_hidden_Time = b.Time
-	x.xxx_hidden_FirstOccurred = b.FirstOccurred
-	x.xxx_hidden_ResolvedAt = b.ResolvedAt
+	if b.Time != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 17)
+		x.xxx_hidden_Time = b.Time
+	}
+	if b.FirstOccurred != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 17)
+		x.xxx_hidden_FirstOccurred = b.FirstOccurred
+	}
+	if b.ResolvedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 17)
+		x.xxx_hidden_ResolvedAt = b.ResolvedAt
+	}
 	if b.State != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 17)
 		x.xxx_hidden_State = *b.State
@@ -980,10 +1045,12 @@ type ListAlert struct {
 	xxx_hidden_EnforcementAction EnforcementAction           `protobuf:"varint,9,opt,name=enforcement_action,json=enforcementAction,enum=storage.EnforcementAction"`
 	xxx_hidden_CommonEntityInfo  *ListAlert_CommonEntityInfo `protobuf:"bytes,10,opt,name=common_entity_info,json=commonEntityInfo"`
 	xxx_hidden_Entity            isListAlert_Entity          `protobuf_oneof:"Entity"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListAlert) Reset() {
@@ -1032,7 +1099,14 @@ func (x *ListAlert) GetLifecycleStage() LifecycleStage {
 
 func (x *ListAlert) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Time
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Time) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Time), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1105,7 +1179,12 @@ func (x *ListAlert) SetLifecycleStage(v LifecycleStage) {
 }
 
 func (x *ListAlert) SetTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Time = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
+	}
 }
 
 func (x *ListAlert) SetPolicy(v *ListAlertPolicy) {
@@ -1165,7 +1244,7 @@ func (x *ListAlert) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Time != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ListAlert) HasPolicy() bool {
@@ -1237,7 +1316,8 @@ func (x *ListAlert) ClearLifecycleStage() {
 }
 
 func (x *ListAlert) ClearTime() {
-	x.xxx_hidden_Time = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ListAlert) ClearPolicy() {
@@ -1332,7 +1412,10 @@ func (b0 ListAlert_builder) Build() *ListAlert {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
 		x.xxx_hidden_LifecycleStage = *b.LifecycleStage
 	}
-	x.xxx_hidden_Time = b.Time
+	if b.Time != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
+		x.xxx_hidden_Time = b.Time
+	}
 	x.xxx_hidden_Policy = b.Policy
 	if b.State != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
@@ -1949,6 +2032,8 @@ type Alert_Deployment struct {
 	xxx_hidden_Containers  *[]*Alert_Deployment_Container `protobuf:"bytes,11,rep,name=containers"`
 	xxx_hidden_Annotations map[string]string              `protobuf:"bytes,14,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Inactive    bool                           `protobuf:"varint,15,opt,name=inactive"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -2059,8 +2144,13 @@ func (x *Alert_Deployment) GetClusterName() string {
 
 func (x *Alert_Deployment) GetContainers() []*Alert_Deployment_Container {
 	if x != nil {
-		if x.xxx_hidden_Containers != nil {
-			return *x.xxx_hidden_Containers
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Containers) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *[]*Alert_Deployment_Container
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Containers), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2120,7 +2210,14 @@ func (x *Alert_Deployment) SetClusterName(v string) {
 }
 
 func (x *Alert_Deployment) SetContainers(v []*Alert_Deployment_Container) {
-	x.xxx_hidden_Containers = &v
+	var sv *[]*Alert_Deployment_Container
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Containers), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Alert_Deployment_Container{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Containers), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
 }
 
 func (x *Alert_Deployment) SetAnnotations(v map[string]string) {
@@ -2277,7 +2374,10 @@ func (b0 Alert_Deployment_builder) Build() *Alert_Deployment {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
 		x.xxx_hidden_ClusterName = b.ClusterName
 	}
-	x.xxx_hidden_Containers = &b.Containers
+	if b.Containers != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
+		x.xxx_hidden_Containers = &b.Containers
+	}
 	x.xxx_hidden_Annotations = b.Annotations
 	if b.Inactive != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
@@ -2535,10 +2635,12 @@ type Alert_Violation struct {
 	xxx_hidden_MessageAttributes isAlert_Violation_MessageAttributes `protobuf_oneof:"MessageAttributes"`
 	xxx_hidden_Type              Alert_Violation_Type                `protobuf:"varint,5,opt,name=type,enum=storage.Alert_Violation_Type"`
 	xxx_hidden_Time              *timestamppb.Timestamp              `protobuf:"bytes,6,opt,name=time"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Alert_Violation) Reset() {
@@ -2605,7 +2707,14 @@ func (x *Alert_Violation) GetType() Alert_Violation_Type {
 
 func (x *Alert_Violation) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Time
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Time) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Time), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -2637,7 +2746,12 @@ func (x *Alert_Violation) SetType(v Alert_Violation_Type) {
 }
 
 func (x *Alert_Violation) SetTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Time = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	}
 }
 
 func (x *Alert_Violation) HasMessage() bool {
@@ -2681,7 +2795,7 @@ func (x *Alert_Violation) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Time != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Alert_Violation) ClearMessage() {
@@ -2711,7 +2825,8 @@ func (x *Alert_Violation) ClearType() {
 }
 
 func (x *Alert_Violation) ClearTime() {
-	x.xxx_hidden_Time = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, (*timestamppb.Timestamp)(nil))
 }
 
 const Alert_Violation_MessageAttributes_not_set_case case_Alert_Violation_MessageAttributes = 0
@@ -2766,7 +2881,10 @@ func (b0 Alert_Violation_builder) Build() *Alert_Violation {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_Type = *b.Type
 	}
-	x.xxx_hidden_Time = b.Time
+	if b.Time != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Time = b.Time
+	}
 	return m0
 }
 
@@ -2797,9 +2915,11 @@ func (*alert_Violation_KeyValueAttrs_) isAlert_Violation_MessageAttributes() {}
 func (*alert_Violation_NetworkFlowInfo_) isAlert_Violation_MessageAttributes() {}
 
 type Alert_ProcessViolation struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Message     *string                `protobuf:"bytes,1,opt,name=message"`
-	xxx_hidden_Processes   *[]*ProcessIndicator   `protobuf:"bytes,2,rep,name=processes"`
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Message   *string                `protobuf:"bytes,1,opt,name=message"`
+	xxx_hidden_Processes *[]*ProcessIndicator   `protobuf:"bytes,2,rep,name=processes"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -2843,8 +2963,13 @@ func (x *Alert_ProcessViolation) GetMessage() string {
 
 func (x *Alert_ProcessViolation) GetProcesses() []*ProcessIndicator {
 	if x != nil {
-		if x.xxx_hidden_Processes != nil {
-			return *x.xxx_hidden_Processes
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Processes) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*ProcessIndicator
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Processes), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2856,7 +2981,14 @@ func (x *Alert_ProcessViolation) SetMessage(v string) {
 }
 
 func (x *Alert_ProcessViolation) SetProcesses(v []*ProcessIndicator) {
-	x.xxx_hidden_Processes = &v
+	var sv *[]*ProcessIndicator
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Processes), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ProcessIndicator{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Processes), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *Alert_ProcessViolation) HasMessage() bool {
@@ -2886,7 +3018,10 @@ func (b0 Alert_ProcessViolation_builder) Build() *Alert_ProcessViolation {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Message = b.Message
 	}
-	x.xxx_hidden_Processes = &b.Processes
+	if b.Processes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Processes = &b.Processes
+	}
 	return m0
 }
 
@@ -3106,8 +3241,12 @@ func (b0 Alert_Deployment_Container_builder) Build() *Alert_Deployment_Container
 type Alert_Violation_KeyValueAttrs struct {
 	state            protoimpl.MessageState                         `protogen:"opaque.v1"`
 	xxx_hidden_Attrs *[]*Alert_Violation_KeyValueAttrs_KeyValueAttr `protobuf:"bytes,1,rep,name=attrs"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Alert_Violation_KeyValueAttrs) Reset() {
@@ -3137,15 +3276,27 @@ func (x *Alert_Violation_KeyValueAttrs) ProtoReflect() protoreflect.Message {
 
 func (x *Alert_Violation_KeyValueAttrs) GetAttrs() []*Alert_Violation_KeyValueAttrs_KeyValueAttr {
 	if x != nil {
-		if x.xxx_hidden_Attrs != nil {
-			return *x.xxx_hidden_Attrs
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Attrs) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*Alert_Violation_KeyValueAttrs_KeyValueAttr
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Attrs), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *Alert_Violation_KeyValueAttrs) SetAttrs(v []*Alert_Violation_KeyValueAttrs_KeyValueAttr) {
-	x.xxx_hidden_Attrs = &v
+	var sv *[]*Alert_Violation_KeyValueAttrs_KeyValueAttr
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Attrs), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Attrs), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type Alert_Violation_KeyValueAttrs_builder struct {
@@ -3158,7 +3309,10 @@ func (b0 Alert_Violation_KeyValueAttrs_builder) Build() *Alert_Violation_KeyValu
 	m0 := &Alert_Violation_KeyValueAttrs{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Attrs = &b.Attrs
+	if b.Attrs != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Attrs = &b.Attrs
+	}
 	return m0
 }
 
@@ -3976,7 +4130,7 @@ var File_storage_alert_proto protoreflect.FileDescriptor
 
 const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"\xfd\x19\n" +
+	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"\xa5\x1a\n" +
 	"\x05Alert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyR\x06policy\x12@\n" +
@@ -3990,37 +4144,37 @@ const file_storage_alert_proto_rawDesc = "" +
 	"deployment\x18\x04 \x01(\v2\x19.storage.Alert.DeploymentH\x00R\n" +
 	"deployment\x12/\n" +
 	"\x05image\x18\x0f \x01(\v2\x17.storage.ContainerImageH\x00R\x05image\x125\n" +
-	"\bresource\x18\x10 \x01(\v2\x17.storage.Alert.ResourceH\x00R\bresource\x128\n" +
+	"\bresource\x18\x10 \x01(\v2\x17.storage.Alert.ResourceH\x00R\bresource\x12<\n" +
 	"\n" +
-	"violations\x18\x05 \x03(\v2\x18.storage.Alert.ViolationR\n" +
+	"violations\x18\x05 \x03(\v2\x18.storage.Alert.ViolationB\x02(\x01R\n" +
 	"violations\x12L\n" +
 	"\x11process_violation\x18\r \x01(\v2\x1f.storage.Alert.ProcessViolationR\x10processViolation\x12<\n" +
-	"\venforcement\x18\x06 \x01(\v2\x1a.storage.Alert.EnforcementR\venforcement\x12.\n" +
-	"\x04time\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12A\n" +
+	"\venforcement\x18\x06 \x01(\v2\x1a.storage.Alert.EnforcementR\venforcement\x122\n" +
+	"\x04time\x18\a \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x04time\x12E\n" +
 	"\x0efirst_occurred\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\rfirstOccurred\x12;\n" +
-	"\vresolved_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\rfirstOccurred\x12?\n" +
+	"\vresolved_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\n" +
 	"resolvedAt\x12-\n" +
 	"\x05state\x18\v \x01(\x0e2\x17.storage.ViolationStateR\x05state\x12-\n" +
 	"\x12platform_component\x18\x16 \x01(\bR\x11platformComponent\x12:\n" +
 	"\ventity_type\x18\x17 \x01(\x0e2\x19.storage.Alert.EntityTypeR\n" +
-	"entityType\x1a\x80\x05\n" +
+	"entityType\x1a\x8c\x05\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12\x1c\n" +
 	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x12!\n" +
-	"\fnamespace_id\x18\x10 \x01(\tR\vnamespaceId\x12=\n" +
-	"\x06labels\x18\a \x03(\v2%.storage.Alert.Deployment.LabelsEntryR\x06labels\x12\x1d\n" +
+	"\fnamespace_id\x18\x10 \x01(\tR\vnamespaceId\x12A\n" +
+	"\x06labels\x18\a \x03(\v2%.storage.Alert.Deployment.LabelsEntryB\x02(\x01R\x06labels\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\t \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\n" +
-	" \x01(\tR\vclusterName\x12C\n" +
+	" \x01(\tR\vclusterName\x12G\n" +
 	"\n" +
-	"containers\x18\v \x03(\v2#.storage.Alert.Deployment.ContainerR\n" +
-	"containers\x12L\n" +
-	"\vannotations\x18\x0e \x03(\v2*.storage.Alert.Deployment.AnnotationsEntryR\vannotations\x12\x1a\n" +
+	"containers\x18\v \x03(\v2#.storage.Alert.Deployment.ContainerB\x02(\x01R\n" +
+	"containers\x12P\n" +
+	"\vannotations\x18\x0e \x03(\v2*.storage.Alert.Deployment.AnnotationsEntryB\x02(\x01R\vannotations\x12\x1a\n" +
 	"\binactive\x18\x0f \x01(\bR\binactive\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -4049,15 +4203,15 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x15CLUSTER_ROLE_BINDINGS\x10\x04\x12\x14\n" +
 	"\x10NETWORK_POLICIES\x10\x05\x12 \n" +
 	"\x1cSECURITY_CONTEXT_CONSTRAINTS\x10\x06\x12\x14\n" +
-	"\x10EGRESS_FIREWALLS\x10\a\x1a\xe4\a\n" +
+	"\x10EGRESS_FIREWALLS\x10\a\x1a\xec\a\n" +
 	"\tViolation\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12P\n" +
 	"\x0fkey_value_attrs\x18\x04 \x01(\v2&.storage.Alert.Violation.KeyValueAttrsH\x00R\rkeyValueAttrs\x12V\n" +
 	"\x11network_flow_info\x18\a \x01(\v2(.storage.Alert.Violation.NetworkFlowInfoH\x00R\x0fnetworkFlowInfo\x121\n" +
-	"\x04type\x18\x05 \x01(\x0e2\x1d.storage.Alert.Violation.TypeR\x04type\x12.\n" +
-	"\x04time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x1a\x92\x01\n" +
-	"\rKeyValueAttrs\x12I\n" +
-	"\x05attrs\x18\x01 \x03(\v23.storage.Alert.Violation.KeyValueAttrs.KeyValueAttrR\x05attrs\x1a6\n" +
+	"\x04type\x18\x05 \x01(\x0e2\x1d.storage.Alert.Violation.TypeR\x04type\x122\n" +
+	"\x04time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x04time\x1a\x96\x01\n" +
+	"\rKeyValueAttrs\x12M\n" +
+	"\x05attrs\x18\x01 \x03(\v23.storage.Alert.Violation.KeyValueAttrs.KeyValueAttrB\x02(\x01R\x05attrs\x1a6\n" +
 	"\fKeyValueAttr\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\x1a\xaf\x03\n" +
@@ -4077,10 +4231,10 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\tK8S_EVENT\x10\x01\x12\x10\n" +
 	"\fNETWORK_FLOW\x10\x02\x12\x12\n" +
 	"\x0eNETWORK_POLICY\x10\x03B\x13\n" +
-	"\x11MessageAttributesJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04\x1ae\n" +
+	"\x11MessageAttributesJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04\x1ai\n" +
 	"\x10ProcessViolation\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\x127\n" +
-	"\tprocesses\x18\x02 \x03(\v2\x19.storage.ProcessIndicatorR\tprocesses\x1a[\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\x12;\n" +
+	"\tprocesses\x18\x02 \x03(\v2\x19.storage.ProcessIndicatorB\x02(\x01R\tprocesses\x1a[\n" +
 	"\vEnforcement\x122\n" +
 	"\x06action\x18\x01 \x01(\x0e2\x1a.storage.EnforcementActionR\x06action\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"J\n" +
@@ -4091,11 +4245,11 @@ const file_storage_alert_proto_rawDesc = "" +
 	"DEPLOYMENT\x10\x01\x12\x13\n" +
 	"\x0fCONTAINER_IMAGE\x10\x02\x12\f\n" +
 	"\bRESOURCE\x10\x03B\b\n" +
-	"\x06EntityJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0fR\vsnooze_till\"\x88\b\n" +
+	"\x06EntityJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0fR\vsnooze_till\"\x8c\b\n" +
 	"\tListAlert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12@\n" +
-	"\x0flifecycle_stage\x18\x02 \x01(\x0e2\x17.storage.LifecycleStageR\x0elifecycleStage\x12.\n" +
-	"\x04time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x120\n" +
+	"\x0flifecycle_stage\x18\x02 \x01(\x0e2\x17.storage.LifecycleStageR\x0elifecycleStage\x122\n" +
+	"\x04time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x04time\x120\n" +
 	"\x06policy\x18\x04 \x01(\v2\x18.storage.ListAlertPolicyR\x06policy\x12-\n" +
 	"\x05state\x18\x06 \x01(\x0e2\x17.storage.ViolationStateR\x05state\x12+\n" +
 	"\x11enforcement_count\x18\a \x01(\x05R\x10enforcementCount\x12I\n" +

@@ -313,8 +313,12 @@ type MitreAttackVector struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Tactic     *MitreTactic           `protobuf:"bytes,1,opt,name=tactic"`
 	xxx_hidden_Techniques *[]*MitreTechnique     `protobuf:"bytes,2,rep,name=techniques"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MitreAttackVector) Reset() {
@@ -351,8 +355,13 @@ func (x *MitreAttackVector) GetTactic() *MitreTactic {
 
 func (x *MitreAttackVector) GetTechniques() []*MitreTechnique {
 	if x != nil {
-		if x.xxx_hidden_Techniques != nil {
-			return *x.xxx_hidden_Techniques
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Techniques) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*MitreTechnique
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Techniques), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -363,7 +372,14 @@ func (x *MitreAttackVector) SetTactic(v *MitreTactic) {
 }
 
 func (x *MitreAttackVector) SetTechniques(v []*MitreTechnique) {
-	x.xxx_hidden_Techniques = &v
+	var sv *[]*MitreTechnique
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Techniques), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*MitreTechnique{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Techniques), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *MitreAttackVector) HasTactic() bool {
@@ -389,7 +405,10 @@ func (b0 MitreAttackVector_builder) Build() *MitreAttackVector {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Tactic = b.Tactic
-	x.xxx_hidden_Techniques = &b.Techniques
+	if b.Techniques != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Techniques = &b.Techniques
+	}
 	return m0
 }
 
@@ -397,8 +416,12 @@ type MitreAttackMatrix struct {
 	state                 protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_MatrixInfo *MitreAttackMatrix_MatrixInfo `protobuf:"bytes,1,opt,name=matrix_info,json=matrixInfo"`
 	xxx_hidden_Vectors    *[]*MitreAttackVector         `protobuf:"bytes,2,rep,name=vectors"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MitreAttackMatrix) Reset() {
@@ -435,8 +458,13 @@ func (x *MitreAttackMatrix) GetMatrixInfo() *MitreAttackMatrix_MatrixInfo {
 
 func (x *MitreAttackMatrix) GetVectors() []*MitreAttackVector {
 	if x != nil {
-		if x.xxx_hidden_Vectors != nil {
-			return *x.xxx_hidden_Vectors
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Vectors) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*MitreAttackVector
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vectors), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -447,7 +475,14 @@ func (x *MitreAttackMatrix) SetMatrixInfo(v *MitreAttackMatrix_MatrixInfo) {
 }
 
 func (x *MitreAttackMatrix) SetVectors(v []*MitreAttackVector) {
-	x.xxx_hidden_Vectors = &v
+	var sv *[]*MitreAttackVector
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vectors), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*MitreAttackVector{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Vectors), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *MitreAttackMatrix) HasMatrixInfo() bool {
@@ -473,14 +508,19 @@ func (b0 MitreAttackMatrix_builder) Build() *MitreAttackMatrix {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_MatrixInfo = b.MatrixInfo
-	x.xxx_hidden_Vectors = &b.Vectors
+	if b.Vectors != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Vectors = &b.Vectors
+	}
 	return m0
 }
 
 type MitreAttackBundle struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Version     *string                `protobuf:"bytes,1,opt,name=version"`
-	xxx_hidden_Matrices    *[]*MitreAttackMatrix  `protobuf:"bytes,2,rep,name=matrices"`
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version  *string                `protobuf:"bytes,1,opt,name=version"`
+	xxx_hidden_Matrices *[]*MitreAttackMatrix  `protobuf:"bytes,2,rep,name=matrices"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -524,8 +564,13 @@ func (x *MitreAttackBundle) GetVersion() string {
 
 func (x *MitreAttackBundle) GetMatrices() []*MitreAttackMatrix {
 	if x != nil {
-		if x.xxx_hidden_Matrices != nil {
-			return *x.xxx_hidden_Matrices
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Matrices) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*MitreAttackMatrix
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Matrices), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -537,7 +582,14 @@ func (x *MitreAttackBundle) SetVersion(v string) {
 }
 
 func (x *MitreAttackBundle) SetMatrices(v []*MitreAttackMatrix) {
-	x.xxx_hidden_Matrices = &v
+	var sv *[]*MitreAttackMatrix
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Matrices), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*MitreAttackMatrix{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Matrices), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *MitreAttackBundle) HasVersion() bool {
@@ -567,7 +619,10 @@ func (b0 MitreAttackBundle_builder) Build() *MitreAttackBundle {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Version = b.Version
 	}
-	x.xxx_hidden_Matrices = &b.Matrices
+	if b.Matrices != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Matrices = &b.Matrices
+	}
 	return m0
 }
 
@@ -694,23 +749,23 @@ const file_storage_mitre_proto_rawDesc = "" +
 	"\x0eMitreTechnique\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\"z\n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\"~\n" +
 	"\x11MitreAttackVector\x12,\n" +
-	"\x06tactic\x18\x01 \x01(\v2\x14.storage.MitreTacticR\x06tactic\x127\n" +
+	"\x06tactic\x18\x01 \x01(\v2\x14.storage.MitreTacticR\x06tactic\x12;\n" +
 	"\n" +
-	"techniques\x18\x02 \x03(\v2\x17.storage.MitreTechniqueR\n" +
-	"techniques\"\xd3\x01\n" +
+	"techniques\x18\x02 \x03(\v2\x17.storage.MitreTechniqueB\x02(\x01R\n" +
+	"techniques\"\xd7\x01\n" +
 	"\x11MitreAttackMatrix\x12F\n" +
 	"\vmatrix_info\x18\x01 \x01(\v2%.storage.MitreAttackMatrix.MatrixInfoR\n" +
-	"matrixInfo\x124\n" +
-	"\avectors\x18\x02 \x03(\v2\x1a.storage.MitreAttackVectorR\avectors\x1a@\n" +
+	"matrixInfo\x128\n" +
+	"\avectors\x18\x02 \x03(\v2\x1a.storage.MitreAttackVectorB\x02(\x01R\avectors\x1a@\n" +
 	"\n" +
 	"MatrixInfo\x12\x16\n" +
 	"\x06domain\x18\x01 \x01(\tR\x06domain\x12\x1a\n" +
-	"\bplatform\x18\x02 \x01(\tR\bplatform\"e\n" +
+	"\bplatform\x18\x02 \x01(\tR\bplatform\"i\n" +
 	"\x11MitreAttackBundle\x12\x18\n" +
-	"\aversion\x18\x01 \x01(\tR\aversion\x126\n" +
-	"\bmatrices\x18\x02 \x03(\v2\x1a.storage.MitreAttackMatrixR\bmatricesB6\n" +
+	"\aversion\x18\x01 \x01(\tR\aversion\x12:\n" +
+	"\bmatrices\x18\x02 \x03(\v2\x1a.storage.MitreAttackMatrixB\x02(\x01R\bmatricesB6\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_mitre_proto_msgTypes = make([]protoimpl.MessageInfo, 6)

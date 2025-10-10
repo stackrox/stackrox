@@ -391,8 +391,12 @@ func (*getGroupsRequest_Id) isGetGroupsRequest_IdOpt() {}
 type GetGroupsResponse struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Groups *[]*storage.Group      `protobuf:"bytes,1,rep,name=groups"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetGroupsResponse) Reset() {
@@ -422,15 +426,27 @@ func (x *GetGroupsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetGroupsResponse) GetGroups() []*storage.Group {
 	if x != nil {
-		if x.xxx_hidden_Groups != nil {
-			return *x.xxx_hidden_Groups
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.Group
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetGroupsResponse) SetGroups(v []*storage.Group) {
-	x.xxx_hidden_Groups = &v
+	var sv *[]*storage.Group
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Group{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetGroupsResponse_builder struct {
@@ -443,7 +459,10 @@ func (b0 GetGroupsResponse_builder) Build() *GetGroupsResponse {
 	m0 := &GetGroupsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Groups = &b.Groups
+	if b.Groups != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Groups = &b.Groups
+	}
 	return m0
 }
 
@@ -454,10 +473,12 @@ type GroupBatchUpdateRequest struct {
 	xxx_hidden_PreviousGroups *[]*storage.Group      `protobuf:"bytes,1,rep,name=previous_groups,json=previousGroups"`
 	xxx_hidden_RequiredGroups *[]*storage.Group      `protobuf:"bytes,2,rep,name=required_groups,json=requiredGroups"`
 	xxx_hidden_Force          bool                   `protobuf:"varint,3,opt,name=force"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GroupBatchUpdateRequest) Reset() {
@@ -487,8 +508,13 @@ func (x *GroupBatchUpdateRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GroupBatchUpdateRequest) GetPreviousGroups() []*storage.Group {
 	if x != nil {
-		if x.xxx_hidden_PreviousGroups != nil {
-			return *x.xxx_hidden_PreviousGroups
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PreviousGroups) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.Group
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PreviousGroups), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -496,8 +522,13 @@ func (x *GroupBatchUpdateRequest) GetPreviousGroups() []*storage.Group {
 
 func (x *GroupBatchUpdateRequest) GetRequiredGroups() []*storage.Group {
 	if x != nil {
-		if x.xxx_hidden_RequiredGroups != nil {
-			return *x.xxx_hidden_RequiredGroups
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequiredGroups) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.Group
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequiredGroups), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -511,11 +542,25 @@ func (x *GroupBatchUpdateRequest) GetForce() bool {
 }
 
 func (x *GroupBatchUpdateRequest) SetPreviousGroups(v []*storage.Group) {
-	x.xxx_hidden_PreviousGroups = &v
+	var sv *[]*storage.Group
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PreviousGroups), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Group{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_PreviousGroups), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *GroupBatchUpdateRequest) SetRequiredGroups(v []*storage.Group) {
-	x.xxx_hidden_RequiredGroups = &v
+	var sv *[]*storage.Group
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequiredGroups), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Group{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_RequiredGroups), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *GroupBatchUpdateRequest) SetForce(v bool) {
@@ -553,8 +598,14 @@ func (b0 GroupBatchUpdateRequest_builder) Build() *GroupBatchUpdateRequest {
 	m0 := &GroupBatchUpdateRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PreviousGroups = &b.PreviousGroups
-	x.xxx_hidden_RequiredGroups = &b.RequiredGroups
+	if b.PreviousGroups != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_PreviousGroups = &b.PreviousGroups
+	}
+	if b.RequiredGroups != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_RequiredGroups = &b.RequiredGroups
+	}
 	if b.Force != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
 		x.xxx_hidden_Force = *b.Force
@@ -771,9 +822,11 @@ func (b0 DeleteGroupRequest_builder) Build() *DeleteGroupRequest {
 }
 
 type UpdateGroupRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Group       *storage.Group         `protobuf:"bytes,1,opt,name=group"`
-	xxx_hidden_Force       bool                   `protobuf:"varint,2,opt,name=force"`
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Group *storage.Group         `protobuf:"bytes,1,opt,name=group"`
+	xxx_hidden_Force bool                   `protobuf:"varint,2,opt,name=force"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -807,7 +860,14 @@ func (x *UpdateGroupRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateGroupRequest) GetGroup() *storage.Group {
 	if x != nil {
-		return x.xxx_hidden_Group
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Group) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Group
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Group), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -820,7 +880,12 @@ func (x *UpdateGroupRequest) GetForce() bool {
 }
 
 func (x *UpdateGroupRequest) SetGroup(v *storage.Group) {
-	x.xxx_hidden_Group = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Group, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *UpdateGroupRequest) SetForce(v bool) {
@@ -832,7 +897,7 @@ func (x *UpdateGroupRequest) HasGroup() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Group != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpdateGroupRequest) HasForce() bool {
@@ -843,7 +908,8 @@ func (x *UpdateGroupRequest) HasForce() bool {
 }
 
 func (x *UpdateGroupRequest) ClearGroup() {
-	x.xxx_hidden_Group = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Group, (*storage.Group)(nil))
 }
 
 func (x *UpdateGroupRequest) ClearForce() {
@@ -862,7 +928,10 @@ func (b0 UpdateGroupRequest_builder) Build() *UpdateGroupRequest {
 	m0 := &UpdateGroupRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Group = b.Group
+	if b.Group != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Group = b.Group
+	}
 	if b.Force != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_Force = *b.Force
@@ -883,21 +952,21 @@ const file_api_v1_group_service_proto_rawDesc = "" +
 	"\x14auth_provider_id_optB\t\n" +
 	"\akey_optB\v\n" +
 	"\tvalue_optB\b\n" +
-	"\x06id_opt\";\n" +
-	"\x11GetGroupsResponse\x12&\n" +
-	"\x06groups\x18\x01 \x03(\v2\x0e.storage.GroupR\x06groups\"\xa1\x01\n" +
-	"\x17GroupBatchUpdateRequest\x127\n" +
-	"\x0fprevious_groups\x18\x01 \x03(\v2\x0e.storage.GroupR\x0epreviousGroups\x127\n" +
-	"\x0frequired_groups\x18\x02 \x03(\v2\x0e.storage.GroupR\x0erequiredGroups\x12\x14\n" +
+	"\x06id_opt\"?\n" +
+	"\x11GetGroupsResponse\x12*\n" +
+	"\x06groups\x18\x01 \x03(\v2\x0e.storage.GroupB\x02(\x01R\x06groups\"\xa9\x01\n" +
+	"\x17GroupBatchUpdateRequest\x12;\n" +
+	"\x0fprevious_groups\x18\x01 \x03(\v2\x0e.storage.GroupB\x02(\x01R\x0epreviousGroups\x12;\n" +
+	"\x0frequired_groups\x18\x02 \x03(\v2\x0e.storage.GroupB\x02(\x01R\x0erequiredGroups\x12\x14\n" +
 	"\x05force\x18\x03 \x01(\bR\x05force\"\x8c\x01\n" +
 	"\x12DeleteGroupRequest\x12(\n" +
 	"\x10auth_provider_id\x18\x01 \x01(\tR\x0eauthProviderId\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x03 \x01(\tR\x05value\x12\x0e\n" +
 	"\x02id\x18\x04 \x01(\tR\x02id\x12\x14\n" +
-	"\x05force\x18\x05 \x01(\bR\x05force\"P\n" +
-	"\x12UpdateGroupRequest\x12$\n" +
-	"\x05group\x18\x01 \x01(\v2\x0e.storage.GroupR\x05group\x12\x14\n" +
+	"\x05force\x18\x05 \x01(\bR\x05force\"T\n" +
+	"\x12UpdateGroupRequest\x12(\n" +
+	"\x05group\x18\x01 \x01(\v2\x0e.storage.GroupB\x02(\x01R\x05group\x12\x14\n" +
 	"\x05force\x18\x02 \x01(\bR\x05force2\xcc\x03\n" +
 	"\fGroupService\x12L\n" +
 	"\tGetGroups\x12\x14.v1.GetGroupsRequest\x1a\x15.v1.GetGroupsResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +

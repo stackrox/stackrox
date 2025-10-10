@@ -25,11 +25,13 @@ const (
 )
 
 type GenerateTokenRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Role        *string                `protobuf:"bytes,2,opt,name=role"`
-	xxx_hidden_Roles       []string               `protobuf:"bytes,3,rep,name=roles"`
-	xxx_hidden_Expiration  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expiration"`
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name       *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Role       *string                `protobuf:"bytes,2,opt,name=role"`
+	xxx_hidden_Roles      []string               `protobuf:"bytes,3,rep,name=roles"`
+	xxx_hidden_Expiration *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expiration"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -91,7 +93,14 @@ func (x *GenerateTokenRequest) GetRoles() []string {
 
 func (x *GenerateTokenRequest) GetExpiration() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Expiration
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Expiration) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Expiration), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -112,7 +121,12 @@ func (x *GenerateTokenRequest) SetRoles(v []string) {
 }
 
 func (x *GenerateTokenRequest) SetExpiration(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Expiration = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiration, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	}
 }
 
 func (x *GenerateTokenRequest) HasName() bool {
@@ -134,7 +148,7 @@ func (x *GenerateTokenRequest) HasExpiration() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Expiration != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *GenerateTokenRequest) ClearName() {
@@ -149,7 +163,8 @@ func (x *GenerateTokenRequest) ClearRole() {
 }
 
 func (x *GenerateTokenRequest) ClearExpiration() {
-	x.xxx_hidden_Expiration = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiration, (*timestamppb.Timestamp)(nil))
 }
 
 type GenerateTokenRequest_builder struct {
@@ -175,14 +190,19 @@ func (b0 GenerateTokenRequest_builder) Build() *GenerateTokenRequest {
 		x.xxx_hidden_Role = b.Role
 	}
 	x.xxx_hidden_Roles = b.Roles
-	x.xxx_hidden_Expiration = b.Expiration
+	if b.Expiration != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Expiration = b.Expiration
+	}
 	return m0
 }
 
 type GenerateTokenResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Token       *string                `protobuf:"bytes,1,opt,name=token"`
-	xxx_hidden_Metadata    *storage.TokenMetadata `protobuf:"bytes,2,opt,name=metadata"`
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Token    *string                `protobuf:"bytes,1,opt,name=token"`
+	xxx_hidden_Metadata *storage.TokenMetadata `protobuf:"bytes,2,opt,name=metadata"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -226,7 +246,14 @@ func (x *GenerateTokenResponse) GetToken() string {
 
 func (x *GenerateTokenResponse) GetMetadata() *storage.TokenMetadata {
 	if x != nil {
-		return x.xxx_hidden_Metadata
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Metadata) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.TokenMetadata
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Metadata), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -237,7 +264,12 @@ func (x *GenerateTokenResponse) SetToken(v string) {
 }
 
 func (x *GenerateTokenResponse) SetMetadata(v *storage.TokenMetadata) {
-	x.xxx_hidden_Metadata = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *GenerateTokenResponse) HasToken() bool {
@@ -251,7 +283,7 @@ func (x *GenerateTokenResponse) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Metadata != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GenerateTokenResponse) ClearToken() {
@@ -260,7 +292,8 @@ func (x *GenerateTokenResponse) ClearToken() {
 }
 
 func (x *GenerateTokenResponse) ClearMetadata() {
-	x.xxx_hidden_Metadata = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, (*storage.TokenMetadata)(nil))
 }
 
 type GenerateTokenResponse_builder struct {
@@ -278,7 +311,10 @@ func (b0 GenerateTokenResponse_builder) Build() *GenerateTokenResponse {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Token = b.Token
 	}
-	x.xxx_hidden_Metadata = b.Metadata
+	if b.Metadata != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Metadata = b.Metadata
+	}
 	return m0
 }
 
@@ -408,8 +444,12 @@ func (*getAPITokensRequest_Revoked) isGetAPITokensRequest_RevokedOneof() {}
 type GetAPITokensResponse struct {
 	state             protoimpl.MessageState    `protogen:"opaque.v1"`
 	xxx_hidden_Tokens *[]*storage.TokenMetadata `protobuf:"bytes,1,rep,name=tokens"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAPITokensResponse) Reset() {
@@ -439,15 +479,27 @@ func (x *GetAPITokensResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAPITokensResponse) GetTokens() []*storage.TokenMetadata {
 	if x != nil {
-		if x.xxx_hidden_Tokens != nil {
-			return *x.xxx_hidden_Tokens
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Tokens) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.TokenMetadata
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Tokens), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetAPITokensResponse) SetTokens(v []*storage.TokenMetadata) {
-	x.xxx_hidden_Tokens = &v
+	var sv *[]*storage.TokenMetadata
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Tokens), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.TokenMetadata{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Tokens), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetAPITokensResponse_builder struct {
@@ -460,7 +512,10 @@ func (b0 GetAPITokensResponse_builder) Build() *GetAPITokensResponse {
 	m0 := &GetAPITokensResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Tokens = &b.Tokens
+	if b.Tokens != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Tokens = &b.Tokens
+	}
 	return m0
 }
 
@@ -525,22 +580,22 @@ var File_api_v1_api_token_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_api_token_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/v1/api_token_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17storage/api_token.proto\x1a!google/protobuf/go_features.proto\"\x94\x01\n" +
+	"\x1eapi/v1/api_token_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17storage/api_token.proto\x1a!google/protobuf/go_features.proto\"\x98\x01\n" +
 	"\x14GenerateTokenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x04role\x18\x02 \x01(\tB\x02\x18\x01R\x04role\x12\x14\n" +
-	"\x05roles\x18\x03 \x03(\tR\x05roles\x12:\n" +
+	"\x05roles\x18\x03 \x03(\tR\x05roles\x12>\n" +
 	"\n" +
-	"expiration\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"expiration\"a\n" +
+	"expiration\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\n" +
+	"expiration\"e\n" +
 	"\x15GenerateTokenResponse\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\x122\n" +
-	"\bmetadata\x18\x02 \x01(\v2\x16.storage.TokenMetadataR\bmetadata\"B\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x126\n" +
+	"\bmetadata\x18\x02 \x01(\v2\x16.storage.TokenMetadataB\x02(\x01R\bmetadata\"B\n" +
 	"\x13GetAPITokensRequest\x12\x1a\n" +
 	"\arevoked\x18\x01 \x01(\bH\x00R\arevokedB\x0f\n" +
-	"\rrevoked_oneof\"F\n" +
-	"\x14GetAPITokensResponse\x12.\n" +
-	"\x06tokens\x18\x01 \x03(\v2\x16.storage.TokenMetadataR\x06tokens\"=\n" +
+	"\rrevoked_oneof\"J\n" +
+	"\x14GetAPITokensResponse\x122\n" +
+	"\x06tokens\x18\x01 \x03(\v2\x16.storage.TokenMetadataB\x02(\x01R\x06tokens\"=\n" +
 	"\x1dListAllowedTokenRolesResponse\x12\x1c\n" +
 	"\troleNames\x18\x01 \x03(\tR\troleNames2\xed\x03\n" +
 	"\x0fAPITokenService\x12S\n" +

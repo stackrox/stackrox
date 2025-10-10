@@ -74,9 +74,11 @@ func (x DelegatedRegistryConfig_EnabledFor) Number() protoreflect.EnumNumber {
 //
 // Any changes made to this message must also be reflected in central/delegatedregistryconfig/convert/convert.go.
 type DelegatedRegistryConfig struct {
-	state                  protoimpl.MessageState                        `protogen:"opaque.v1"`
-	xxx_hidden_EnabledFor  DelegatedRegistryConfig_EnabledFor            `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,enum=central.DelegatedRegistryConfig_EnabledFor"`
-	xxx_hidden_Registries  *[]*DelegatedRegistryConfig_DelegatedRegistry `protobuf:"bytes,2,rep,name=registries"`
+	state                 protoimpl.MessageState                        `protogen:"opaque.v1"`
+	xxx_hidden_EnabledFor DelegatedRegistryConfig_EnabledFor            `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,enum=central.DelegatedRegistryConfig_EnabledFor"`
+	xxx_hidden_Registries *[]*DelegatedRegistryConfig_DelegatedRegistry `protobuf:"bytes,2,rep,name=registries"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -119,8 +121,13 @@ func (x *DelegatedRegistryConfig) GetEnabledFor() DelegatedRegistryConfig_Enable
 
 func (x *DelegatedRegistryConfig) GetRegistries() []*DelegatedRegistryConfig_DelegatedRegistry {
 	if x != nil {
-		if x.xxx_hidden_Registries != nil {
-			return *x.xxx_hidden_Registries
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Registries) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*DelegatedRegistryConfig_DelegatedRegistry
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -132,7 +139,14 @@ func (x *DelegatedRegistryConfig) SetEnabledFor(v DelegatedRegistryConfig_Enable
 }
 
 func (x *DelegatedRegistryConfig) SetRegistries(v []*DelegatedRegistryConfig_DelegatedRegistry) {
-	x.xxx_hidden_Registries = &v
+	var sv *[]*DelegatedRegistryConfig_DelegatedRegistry
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DelegatedRegistryConfig_DelegatedRegistry{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DelegatedRegistryConfig) HasEnabledFor() bool {
@@ -162,7 +176,10 @@ func (b0 DelegatedRegistryConfig_builder) Build() *DelegatedRegistryConfig {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_EnabledFor = *b.EnabledFor
 	}
-	x.xxx_hidden_Registries = &b.Registries
+	if b.Registries != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Registries = &b.Registries
+	}
 	return m0
 }
 
@@ -248,12 +265,12 @@ var File_internalapi_central_delegated_registry_config_proto protoreflect.FileDe
 
 const file_internalapi_central_delegated_registry_config_proto_rawDesc = "" +
 	"\n" +
-	"3internalapi/central/delegated_registry_config.proto\x12\acentral\x1a!google/protobuf/go_features.proto\"\x93\x02\n" +
+	"3internalapi/central/delegated_registry_config.proto\x12\acentral\x1a!google/protobuf/go_features.proto\"\x97\x02\n" +
 	"\x17DelegatedRegistryConfig\x12L\n" +
 	"\venabled_for\x18\x01 \x01(\x0e2+.central.DelegatedRegistryConfig.EnabledForR\n" +
-	"enabledFor\x12R\n" +
+	"enabledFor\x12V\n" +
 	"\n" +
-	"registries\x18\x02 \x03(\v22.central.DelegatedRegistryConfig.DelegatedRegistryR\n" +
+	"registries\x18\x02 \x03(\v22.central.DelegatedRegistryConfig.DelegatedRegistryB\x02(\x01R\n" +
 	"registries\x1a'\n" +
 	"\x11DelegatedRegistry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"-\n" +

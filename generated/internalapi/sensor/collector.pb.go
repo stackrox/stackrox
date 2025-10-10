@@ -314,10 +314,12 @@ type ProcessSignal struct {
 	xxx_hidden_LoginUid      uint32                        `protobuf:"varint,12,opt,name=login_uid,json=loginUid"`
 	xxx_hidden_Username      *string                       `protobuf:"bytes,13,opt,name=username"`
 	xxx_hidden_InRootMountNs bool                          `protobuf:"varint,14,opt,name=in_root_mount_ns,json=inRootMountNs"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessSignal) Reset() {
@@ -367,7 +369,14 @@ func (x *ProcessSignal) GetContainerId() string {
 
 func (x *ProcessSignal) GetCreationTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreationTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreationTime) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreationTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -432,8 +441,13 @@ func (x *ProcessSignal) GetScraped() bool {
 
 func (x *ProcessSignal) GetLineageInfo() []*ProcessSignal_LineageInfo {
 	if x != nil {
-		if x.xxx_hidden_LineageInfo != nil {
-			return *x.xxx_hidden_LineageInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LineageInfo) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *[]*ProcessSignal_LineageInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LineageInfo), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -474,7 +488,12 @@ func (x *ProcessSignal) SetContainerId(v string) {
 }
 
 func (x *ProcessSignal) SetCreationTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreationTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreationTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 14)
+	}
 }
 
 func (x *ProcessSignal) SetName(v string) {
@@ -513,7 +532,14 @@ func (x *ProcessSignal) SetScraped(v bool) {
 }
 
 func (x *ProcessSignal) SetLineageInfo(v []*ProcessSignal_LineageInfo) {
-	x.xxx_hidden_LineageInfo = &v
+	var sv *[]*ProcessSignal_LineageInfo
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LineageInfo), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ProcessSignal_LineageInfo{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_LineageInfo), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 14)
 }
 
 func (x *ProcessSignal) SetLoginUid(v uint32) {
@@ -549,7 +575,7 @@ func (x *ProcessSignal) HasCreationTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreationTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ProcessSignal) HasName() bool {
@@ -633,7 +659,8 @@ func (x *ProcessSignal) ClearContainerId() {
 }
 
 func (x *ProcessSignal) ClearCreationTime() {
-	x.xxx_hidden_CreationTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreationTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ProcessSignal) ClearName() {
@@ -735,7 +762,10 @@ func (b0 ProcessSignal_builder) Build() *ProcessSignal {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 14)
 		x.xxx_hidden_ContainerId = b.ContainerId
 	}
-	x.xxx_hidden_CreationTime = b.CreationTime
+	if b.CreationTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 14)
+		x.xxx_hidden_CreationTime = b.CreationTime
+	}
 	if b.Name != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 14)
 		x.xxx_hidden_Name = b.Name
@@ -764,7 +794,10 @@ func (b0 ProcessSignal_builder) Build() *ProcessSignal {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 14)
 		x.xxx_hidden_Scraped = *b.Scraped
 	}
-	x.xxx_hidden_LineageInfo = &b.LineageInfo
+	if b.LineageInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 14)
+		x.xxx_hidden_LineageInfo = &b.LineageInfo
+	}
 	if b.LoginUid != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 14)
 		x.xxx_hidden_LoginUid = *b.LoginUid
@@ -1116,11 +1149,11 @@ const file_internalapi_sensor_collector_proto_rawDesc = "" +
 	"\n" +
 	"Networking\x12F\n" +
 	"\fexternal_ips\x18\x01 \x01(\v2#.sensor.CollectorConfig.ExternalIPsR\vexternalIps\x12;\n" +
-	"\x1amax_connections_per_minute\x18\x02 \x01(\x03R\x17maxConnectionsPerMinute\"\xaa\x04\n" +
+	"\x1amax_connections_per_minute\x18\x02 \x01(\x03R\x17maxConnectionsPerMinute\"\xb2\x04\n" +
 	"\rProcessSignal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
-	"\fcontainer_id\x18\x02 \x01(\tR\vcontainerId\x12?\n" +
-	"\rcreation_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\fcreationTime\x12\x12\n" +
+	"\fcontainer_id\x18\x02 \x01(\tR\vcontainerId\x12C\n" +
+	"\rcreation_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\fcreationTime\x12\x12\n" +
 	"\x04name\x18\x04 \x01(\tR\x04name\x12\x12\n" +
 	"\x04args\x18\x05 \x01(\tR\x04args\x12$\n" +
 	"\x0eexec_file_path\x18\x06 \x01(\tR\fexecFilePath\x12\x10\n" +
@@ -1128,8 +1161,8 @@ const file_internalapi_sensor_collector_proto_rawDesc = "" +
 	"\x03uid\x18\b \x01(\rR\x03uid\x12\x10\n" +
 	"\x03gid\x18\t \x01(\rR\x03gid\x12\x18\n" +
 	"\ascraped\x18\n" +
-	" \x01(\bR\ascraped\x12D\n" +
-	"\flineage_info\x18\v \x03(\v2!.sensor.ProcessSignal.LineageInfoR\vlineageInfo\x12\x1b\n" +
+	" \x01(\bR\ascraped\x12H\n" +
+	"\flineage_info\x18\v \x03(\v2!.sensor.ProcessSignal.LineageInfoB\x02(\x01R\vlineageInfo\x12\x1b\n" +
 	"\tlogin_uid\x18\f \x01(\rR\bloginUid\x12\x1a\n" +
 	"\busername\x18\r \x01(\tR\busername\x12'\n" +
 	"\x10in_root_mount_ns\x18\x0e \x01(\bR\rinRootMountNs\x1a_\n" +

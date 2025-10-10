@@ -25,8 +25,12 @@ const (
 type ProbeUploadManifest struct {
 	state            protoimpl.MessageState       `protogen:"opaque.v1"`
 	xxx_hidden_Files *[]*ProbeUploadManifest_File `protobuf:"bytes,1,rep,name=files"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProbeUploadManifest) Reset() {
@@ -56,15 +60,27 @@ func (x *ProbeUploadManifest) ProtoReflect() protoreflect.Message {
 
 func (x *ProbeUploadManifest) GetFiles() []*ProbeUploadManifest_File {
 	if x != nil {
-		if x.xxx_hidden_Files != nil {
-			return *x.xxx_hidden_Files
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Files) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ProbeUploadManifest_File
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ProbeUploadManifest) SetFiles(v []*ProbeUploadManifest_File) {
-	x.xxx_hidden_Files = &v
+	var sv *[]*ProbeUploadManifest_File
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ProbeUploadManifest_File{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ProbeUploadManifest_builder struct {
@@ -77,7 +93,10 @@ func (b0 ProbeUploadManifest_builder) Build() *ProbeUploadManifest {
 	m0 := &ProbeUploadManifest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Files = &b.Files
+	if b.Files != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Files = &b.Files
+	}
 	return m0
 }
 
@@ -141,8 +160,12 @@ func (b0 GetExistingProbesRequest_builder) Build() *GetExistingProbesRequest {
 type GetExistingProbesResponse struct {
 	state                    protoimpl.MessageState       `protogen:"opaque.v1"`
 	xxx_hidden_ExistingFiles *[]*ProbeUploadManifest_File `protobuf:"bytes,1,rep,name=existing_files,json=existingFiles"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetExistingProbesResponse) Reset() {
@@ -172,15 +195,27 @@ func (x *GetExistingProbesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetExistingProbesResponse) GetExistingFiles() []*ProbeUploadManifest_File {
 	if x != nil {
-		if x.xxx_hidden_ExistingFiles != nil {
-			return *x.xxx_hidden_ExistingFiles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ExistingFiles) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ProbeUploadManifest_File
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExistingFiles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetExistingProbesResponse) SetExistingFiles(v []*ProbeUploadManifest_File) {
-	x.xxx_hidden_ExistingFiles = &v
+	var sv *[]*ProbeUploadManifest_File
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExistingFiles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ProbeUploadManifest_File{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ExistingFiles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetExistingProbesResponse_builder struct {
@@ -193,7 +228,10 @@ func (b0 GetExistingProbesResponse_builder) Build() *GetExistingProbesResponse {
 	m0 := &GetExistingProbesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ExistingFiles = &b.ExistingFiles
+	if b.ExistingFiles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_ExistingFiles = &b.ExistingFiles
+	}
 	return m0
 }
 
@@ -339,17 +377,17 @@ var File_api_v1_probe_upload_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_probe_upload_service_proto_rawDesc = "" +
 	"\n" +
-	"!api/v1/probe_upload_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"\x8f\x01\n" +
-	"\x13ProbeUploadManifest\x122\n" +
-	"\x05files\x18\x01 \x03(\v2\x1c.v1.ProbeUploadManifest.FileR\x05files\x1aD\n" +
+	"!api/v1/probe_upload_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"\x93\x01\n" +
+	"\x13ProbeUploadManifest\x126\n" +
+	"\x05files\x18\x01 \x03(\v2\x1c.v1.ProbeUploadManifest.FileB\x02(\x01R\x05files\x1aD\n" +
 	"\x04File\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x14\n" +
 	"\x05crc32\x18\x03 \x01(\rR\x05crc32\"@\n" +
 	"\x18GetExistingProbesRequest\x12$\n" +
-	"\x0efiles_to_check\x18\x01 \x03(\tR\ffilesToCheck\"`\n" +
-	"\x19GetExistingProbesResponse\x12C\n" +
-	"\x0eexisting_files\x18\x01 \x03(\v2\x1c.v1.ProbeUploadManifest.FileR\rexistingFiles2\x8b\x01\n" +
+	"\x0efiles_to_check\x18\x01 \x03(\tR\ffilesToCheck\"d\n" +
+	"\x19GetExistingProbesResponse\x12G\n" +
+	"\x0eexisting_files\x18\x01 \x03(\v2\x1c.v1.ProbeUploadManifest.FileB\x02(\x01R\rexistingFiles2\x8b\x01\n" +
 	"\x12ProbeUploadService\x12u\n" +
 	"\x11GetExistingProbes\x12\x1c.v1.GetExistingProbesRequest\x1a\x1d.v1.GetExistingProbesResponse\"#\x82\xd3\xe4\x93\x02\x1d\"\x1b/v1/probeupload/getexistingB/\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x00b\beditionsp\xe8\a"

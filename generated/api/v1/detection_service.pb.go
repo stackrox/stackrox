@@ -32,10 +32,12 @@ type BuildDetectionRequest struct {
 	xxx_hidden_PolicyCategories   []string                         `protobuf:"bytes,5,rep,name=policy_categories,json=policyCategories"`
 	xxx_hidden_Cluster            *string                          `protobuf:"bytes,7,opt,name=cluster"`
 	xxx_hidden_Namespace          *string                          `protobuf:"bytes,8,opt,name=namespace"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *BuildDetectionRequest) Reset() {
@@ -369,8 +371,12 @@ func (*buildDetectionRequest_ImageName) isBuildDetectionRequest_Resource() {}
 type BuildDetectionResponse struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Alerts *[]*storage.Alert      `protobuf:"bytes,1,rep,name=alerts"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *BuildDetectionResponse) Reset() {
@@ -400,15 +406,27 @@ func (x *BuildDetectionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *BuildDetectionResponse) GetAlerts() []*storage.Alert {
 	if x != nil {
-		if x.xxx_hidden_Alerts != nil {
-			return *x.xxx_hidden_Alerts
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Alerts) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.Alert
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *BuildDetectionResponse) SetAlerts(v []*storage.Alert) {
-	x.xxx_hidden_Alerts = &v
+	var sv *[]*storage.Alert
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Alert{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type BuildDetectionResponse_builder struct {
@@ -421,7 +439,10 @@ func (b0 BuildDetectionResponse_builder) Build() *BuildDetectionResponse {
 	m0 := &BuildDetectionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Alerts = &b.Alerts
+	if b.Alerts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Alerts = &b.Alerts
+	}
 	return m0
 }
 
@@ -431,10 +452,12 @@ type DeployDetectionRequest struct {
 	xxx_hidden_NoExternalMetadata bool                              `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata"`
 	xxx_hidden_EnforcementOnly    bool                              `protobuf:"varint,3,opt,name=enforcement_only,json=enforcementOnly"`
 	xxx_hidden_ClusterId          *string                           `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeployDetectionRequest) Reset() {
@@ -901,8 +924,12 @@ type DeployDetectionResponse struct {
 	xxx_hidden_Runs              *[]*DeployDetectionResponse_Run `protobuf:"bytes,1,rep,name=runs"`
 	xxx_hidden_IgnoredObjectRefs []string                        `protobuf:"bytes,2,rep,name=ignored_object_refs,json=ignoredObjectRefs"`
 	xxx_hidden_Remarks           *[]*DeployDetectionRemark       `protobuf:"bytes,3,rep,name=remarks"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeployDetectionResponse) Reset() {
@@ -932,8 +959,13 @@ func (x *DeployDetectionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DeployDetectionResponse) GetRuns() []*DeployDetectionResponse_Run {
 	if x != nil {
-		if x.xxx_hidden_Runs != nil {
-			return *x.xxx_hidden_Runs
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Runs) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*DeployDetectionResponse_Run
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Runs), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -948,15 +980,27 @@ func (x *DeployDetectionResponse) GetIgnoredObjectRefs() []string {
 
 func (x *DeployDetectionResponse) GetRemarks() []*DeployDetectionRemark {
 	if x != nil {
-		if x.xxx_hidden_Remarks != nil {
-			return *x.xxx_hidden_Remarks
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Remarks) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*DeployDetectionRemark
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *DeployDetectionResponse) SetRuns(v []*DeployDetectionResponse_Run) {
-	x.xxx_hidden_Runs = &v
+	var sv *[]*DeployDetectionResponse_Run
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Runs), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DeployDetectionResponse_Run{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Runs), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *DeployDetectionResponse) SetIgnoredObjectRefs(v []string) {
@@ -964,7 +1008,14 @@ func (x *DeployDetectionResponse) SetIgnoredObjectRefs(v []string) {
 }
 
 func (x *DeployDetectionResponse) SetRemarks(v []*DeployDetectionRemark) {
-	x.xxx_hidden_Remarks = &v
+	var sv *[]*DeployDetectionRemark
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DeployDetectionRemark{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 type DeployDetectionResponse_builder struct {
@@ -980,9 +1031,15 @@ func (b0 DeployDetectionResponse_builder) Build() *DeployDetectionResponse {
 	m0 := &DeployDetectionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Runs = &b.Runs
+	if b.Runs != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Runs = &b.Runs
+	}
 	x.xxx_hidden_IgnoredObjectRefs = b.IgnoredObjectRefs
-	x.xxx_hidden_Remarks = &b.Remarks
+	if b.Remarks != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Remarks = &b.Remarks
+	}
 	return m0
 }
 
@@ -1116,8 +1173,12 @@ type ResultAggregation struct {
 	state              protoimpl.MessageState    `protogen:"opaque.v1"`
 	xxx_hidden_Alerts  *[]*storage.Alert         `protobuf:"bytes,1,rep,name=alerts"`
 	xxx_hidden_Remarks *[]*DeployDetectionRemark `protobuf:"bytes,2,rep,name=remarks"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ResultAggregation) Reset() {
@@ -1147,8 +1208,13 @@ func (x *ResultAggregation) ProtoReflect() protoreflect.Message {
 
 func (x *ResultAggregation) GetAlerts() []*storage.Alert {
 	if x != nil {
-		if x.xxx_hidden_Alerts != nil {
-			return *x.xxx_hidden_Alerts
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Alerts) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.Alert
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1156,19 +1222,38 @@ func (x *ResultAggregation) GetAlerts() []*storage.Alert {
 
 func (x *ResultAggregation) GetRemarks() []*DeployDetectionRemark {
 	if x != nil {
-		if x.xxx_hidden_Remarks != nil {
-			return *x.xxx_hidden_Remarks
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Remarks) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*DeployDetectionRemark
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ResultAggregation) SetAlerts(v []*storage.Alert) {
-	x.xxx_hidden_Alerts = &v
+	var sv *[]*storage.Alert
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Alert{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ResultAggregation) SetRemarks(v []*DeployDetectionRemark) {
-	x.xxx_hidden_Remarks = &v
+	var sv *[]*DeployDetectionRemark
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DeployDetectionRemark{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 type ResultAggregation_builder struct {
@@ -1182,16 +1267,24 @@ func (b0 ResultAggregation_builder) Build() *ResultAggregation {
 	m0 := &ResultAggregation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Alerts = &b.Alerts
-	x.xxx_hidden_Remarks = &b.Remarks
+	if b.Alerts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Alerts = &b.Alerts
+	}
+	if b.Remarks != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Remarks = &b.Remarks
+	}
 	return m0
 }
 
 type DeployDetectionResponse_Run struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Type        *string                `protobuf:"bytes,2,opt,name=type"`
-	xxx_hidden_Alerts      *[]*storage.Alert      `protobuf:"bytes,3,rep,name=alerts"`
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name   *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Type   *string                `protobuf:"bytes,2,opt,name=type"`
+	xxx_hidden_Alerts *[]*storage.Alert      `protobuf:"bytes,3,rep,name=alerts"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1245,8 +1338,13 @@ func (x *DeployDetectionResponse_Run) GetType() string {
 
 func (x *DeployDetectionResponse_Run) GetAlerts() []*storage.Alert {
 	if x != nil {
-		if x.xxx_hidden_Alerts != nil {
-			return *x.xxx_hidden_Alerts
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Alerts) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*storage.Alert
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1263,7 +1361,14 @@ func (x *DeployDetectionResponse_Run) SetType(v string) {
 }
 
 func (x *DeployDetectionResponse_Run) SetAlerts(v []*storage.Alert) {
-	x.xxx_hidden_Alerts = &v
+	var sv *[]*storage.Alert
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Alert{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *DeployDetectionResponse_Run) HasName() bool {
@@ -1310,7 +1415,10 @@ func (b0 DeployDetectionResponse_Run_builder) Build() *DeployDetectionResponse_R
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Type = b.Type
 	}
-	x.xxx_hidden_Alerts = &b.Alerts
+	if b.Alerts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Alerts = &b.Alerts
+	}
 	return m0
 }
 
@@ -1318,9 +1426,9 @@ var File_api_v1_detection_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_detection_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/v1/detection_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x13storage/alert.proto\x1a\x18storage/deployment.proto\x1a!google/protobuf/go_features.proto\"\xd1\x02\n" +
-	"\x15BuildDetectionRequest\x12/\n" +
-	"\x05image\x18\x01 \x01(\v2\x17.storage.ContainerImageH\x00R\x05image\x12\x1f\n" +
+	"\x1eapi/v1/detection_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x13storage/alert.proto\x1a\x18storage/deployment.proto\x1a!google/protobuf/go_features.proto\"\xd5\x02\n" +
+	"\x15BuildDetectionRequest\x123\n" +
+	"\x05image\x18\x01 \x01(\v2\x17.storage.ContainerImageB\x02(\x01H\x00R\x05image\x12\x1f\n" +
 	"\n" +
 	"image_name\x18\x03 \x01(\tH\x00R\timageName\x120\n" +
 	"\x14no_external_metadata\x18\x02 \x01(\bR\x12noExternalMetadata\x12-\n" +
@@ -1330,12 +1438,12 @@ const file_api_v1_detection_service_proto_rawDesc = "" +
 	"\acluster\x18\a \x01(\tR\acluster\x12\x1c\n" +
 	"\tnamespace\x18\b \x01(\tR\tnamespaceB\n" +
 	"\n" +
-	"\bResource\"@\n" +
-	"\x16BuildDetectionResponse\x12&\n" +
-	"\x06alerts\x18\x01 \x03(\v2\x0e.storage.AlertR\x06alerts\"\xd7\x01\n" +
-	"\x16DeployDetectionRequest\x125\n" +
+	"\bResource\"D\n" +
+	"\x16BuildDetectionResponse\x12*\n" +
+	"\x06alerts\x18\x01 \x03(\v2\x0e.storage.AlertB\x02(\x01R\x06alerts\"\xdb\x01\n" +
+	"\x16DeployDetectionRequest\x129\n" +
 	"\n" +
-	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentH\x00R\n" +
+	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentB\x02(\x01H\x00R\n" +
 	"deployment\x120\n" +
 	"\x14no_external_metadata\x18\x02 \x01(\bR\x12noExternalMetadata\x12)\n" +
 	"\x10enforcement_only\x18\x03 \x01(\bR\x0fenforcementOnly\x12\x1d\n" +
@@ -1350,22 +1458,22 @@ const file_api_v1_detection_service_proto_rawDesc = "" +
 	"\x05force\x18\x05 \x01(\bR\x05force\x12+\n" +
 	"\x11policy_categories\x18\x04 \x03(\tR\x10policyCategories\x12\x18\n" +
 	"\acluster\x18\x06 \x01(\tR\acluster\x12\x1c\n" +
-	"\tnamespace\x18\a \x01(\tR\tnamespace\"\x8a\x02\n" +
-	"\x17DeployDetectionResponse\x123\n" +
-	"\x04runs\x18\x01 \x03(\v2\x1f.v1.DeployDetectionResponse.RunR\x04runs\x12.\n" +
-	"\x13ignored_object_refs\x18\x02 \x03(\tR\x11ignoredObjectRefs\x123\n" +
-	"\aremarks\x18\x03 \x03(\v2\x19.v1.DeployDetectionRemarkR\aremarks\x1aU\n" +
+	"\tnamespace\x18\a \x01(\tR\tnamespace\"\x96\x02\n" +
+	"\x17DeployDetectionResponse\x127\n" +
+	"\x04runs\x18\x01 \x03(\v2\x1f.v1.DeployDetectionResponse.RunB\x02(\x01R\x04runs\x12.\n" +
+	"\x13ignored_object_refs\x18\x02 \x03(\tR\x11ignoredObjectRefs\x127\n" +
+	"\aremarks\x18\x03 \x03(\v2\x19.v1.DeployDetectionRemarkB\x02(\x01R\aremarks\x1aY\n" +
 	"\x03Run\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
-	"\x04type\x18\x02 \x01(\tR\x04type\x12&\n" +
-	"\x06alerts\x18\x03 \x03(\v2\x0e.storage.AlertR\x06alerts\"\x90\x01\n" +
+	"\x04type\x18\x02 \x01(\tR\x04type\x12*\n" +
+	"\x06alerts\x18\x03 \x03(\v2\x0e.storage.AlertB\x02(\x01R\x06alerts\"\x90\x01\n" +
 	"\x15DeployDetectionRemark\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12)\n" +
 	"\x10permission_level\x18\x02 \x01(\tR\x0fpermissionLevel\x128\n" +
-	"\x18applied_network_policies\x18\x03 \x03(\tR\x16appliedNetworkPolicies\"p\n" +
-	"\x11ResultAggregation\x12&\n" +
-	"\x06alerts\x18\x01 \x03(\v2\x0e.storage.AlertR\x06alerts\x123\n" +
-	"\aremarks\x18\x02 \x03(\v2\x19.v1.DeployDetectionRemarkR\aremarks2\xe0\x02\n" +
+	"\x18applied_network_policies\x18\x03 \x03(\tR\x16appliedNetworkPolicies\"x\n" +
+	"\x11ResultAggregation\x12*\n" +
+	"\x06alerts\x18\x01 \x03(\v2\x0e.storage.AlertB\x02(\x01R\x06alerts\x127\n" +
+	"\aremarks\x18\x02 \x03(\v2\x19.v1.DeployDetectionRemarkB\x02(\x01R\aremarks2\xe0\x02\n" +
 	"\x10DetectionService\x12e\n" +
 	"\x0fDetectBuildTime\x12\x19.v1.BuildDetectionRequest\x1a\x1a.v1.BuildDetectionResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/v1/detect/build\x12i\n" +
 	"\x10DetectDeployTime\x12\x1a.v1.DeployDetectionRequest\x1a\x1b.v1.DeployDetectionResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/detect/deploy\x12z\n" +

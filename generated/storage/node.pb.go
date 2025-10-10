@@ -226,10 +226,12 @@ type Node struct {
 	xxx_hidden_RiskScore               float32                `protobuf:"fixed32,23,opt,name=risk_score,json=riskScore"`
 	xxx_hidden_SetTopCvss              isNode_SetTopCvss      `protobuf_oneof:"set_top_cvss"`
 	xxx_hidden_Notes                   []Node_Note            `protobuf:"varint,27,rep,packed,name=notes,enum=storage.Node_Note"`
-	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
-	XXX_presence                       [1]uint32
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Node) Reset() {
@@ -279,8 +281,13 @@ func (x *Node) GetName() string {
 
 func (x *Node) GetTaints() []*Taint {
 	if x != nil {
-		if x.xxx_hidden_Taints != nil {
-			return *x.xxx_hidden_Taints
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Taints) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*Taint
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Taints), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -322,7 +329,14 @@ func (x *Node) GetAnnotations() map[string]string {
 
 func (x *Node) GetJoinedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_JoinedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_JoinedAt) {
+				protoimpl.X.UnmarshalField(x, 13)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_JoinedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -411,14 +425,28 @@ func (x *Node) GetKubeProxyVersion() string {
 
 func (x *Node) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 17) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 25)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *Node) GetK8SUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_K8SUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 18) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_K8SUpdated) {
+				protoimpl.X.UnmarshalField(x, 26)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_K8SUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -498,7 +526,14 @@ func (x *Node) SetName(v string) {
 }
 
 func (x *Node) SetTaints(v []*Taint) {
-	x.xxx_hidden_Taints = &v
+	var sv *[]*Taint
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Taints), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Taint{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Taints), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 27)
 }
 
 func (x *Node) SetClusterId(v string) {
@@ -520,7 +555,12 @@ func (x *Node) SetAnnotations(v map[string]string) {
 }
 
 func (x *Node) SetJoinedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_JoinedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_JoinedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 27)
+	}
 }
 
 func (x *Node) SetInternalIpAddresses(v []string) {
@@ -567,11 +607,21 @@ func (x *Node) SetKubeProxyVersion(v string) {
 }
 
 func (x *Node) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 17)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 17, 27)
+	}
 }
 
 func (x *Node) SetK8SUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_K8SUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_K8SUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 18)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 18, 27)
+	}
 }
 
 func (x *Node) SetScan(v *NodeScan) {
@@ -640,7 +690,7 @@ func (x *Node) HasJoinedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_JoinedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 // Deprecated: Marked as deprecated in storage/node.proto.
@@ -697,14 +747,14 @@ func (x *Node) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 17)
 }
 
 func (x *Node) HasK8SUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_K8SUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 18)
 }
 
 func (x *Node) HasScan() bool {
@@ -809,7 +859,8 @@ func (x *Node) ClearClusterName() {
 }
 
 func (x *Node) ClearJoinedAt() {
-	x.xxx_hidden_JoinedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_JoinedAt, (*timestamppb.Timestamp)(nil))
 }
 
 // Deprecated: Marked as deprecated in storage/node.proto.
@@ -848,11 +899,13 @@ func (x *Node) ClearKubeProxyVersion() {
 }
 
 func (x *Node) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 17)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Node) ClearK8SUpdated() {
-	x.xxx_hidden_K8SUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 18)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_K8SUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Node) ClearScan() {
@@ -1033,7 +1086,10 @@ func (b0 Node_builder) Build() *Node {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 27)
 		x.xxx_hidden_Name = b.Name
 	}
-	x.xxx_hidden_Taints = &b.Taints
+	if b.Taints != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 27)
+		x.xxx_hidden_Taints = &b.Taints
+	}
 	if b.ClusterId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 27)
 		x.xxx_hidden_ClusterId = b.ClusterId
@@ -1044,7 +1100,10 @@ func (b0 Node_builder) Build() *Node {
 	}
 	x.xxx_hidden_Labels = b.Labels
 	x.xxx_hidden_Annotations = b.Annotations
-	x.xxx_hidden_JoinedAt = b.JoinedAt
+	if b.JoinedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 27)
+		x.xxx_hidden_JoinedAt = b.JoinedAt
+	}
 	x.xxx_hidden_InternalIpAddresses = b.InternalIpAddresses
 	x.xxx_hidden_ExternalIpAddresses = b.ExternalIpAddresses
 	if b.ContainerRuntimeVersion != nil {
@@ -1072,8 +1131,14 @@ func (b0 Node_builder) Build() *Node {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 16, 27)
 		x.xxx_hidden_KubeProxyVersion = b.KubeProxyVersion
 	}
-	x.xxx_hidden_LastUpdated = b.LastUpdated
-	x.xxx_hidden_K8SUpdated = b.K8SUpdated
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 17, 27)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
+	if b.K8SUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 18, 27)
+		x.xxx_hidden_K8SUpdated = b.K8SUpdated
+	}
 	x.xxx_hidden_Scan = b.Scan
 	if b.Components != nil {
 		x.xxx_hidden_SetComponents = &node_Components{*b.Components}
@@ -1187,10 +1252,12 @@ type NodeScan struct {
 	xxx_hidden_Components      *[]*EmbeddedNodeScanComponent `protobuf:"bytes,2,rep,name=components"`
 	xxx_hidden_Notes           []NodeScan_Note               `protobuf:"varint,4,rep,packed,name=notes,enum=storage.NodeScan_Note"`
 	xxx_hidden_ScannerVersion  NodeScan_Scanner              `protobuf:"varint,5,opt,name=scanner_version,json=scannerVersion,enum=storage.NodeScan_Scanner"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NodeScan) Reset() {
@@ -1220,7 +1287,14 @@ func (x *NodeScan) ProtoReflect() protoreflect.Message {
 
 func (x *NodeScan) GetScanTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ScanTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScanTime) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1237,8 +1311,13 @@ func (x *NodeScan) GetOperatingSystem() string {
 
 func (x *NodeScan) GetComponents() []*EmbeddedNodeScanComponent {
 	if x != nil {
-		if x.xxx_hidden_Components != nil {
-			return *x.xxx_hidden_Components
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Components) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*EmbeddedNodeScanComponent
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1261,7 +1340,12 @@ func (x *NodeScan) GetScannerVersion() NodeScan_Scanner {
 }
 
 func (x *NodeScan) SetScanTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ScanTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ScanTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	}
 }
 
 func (x *NodeScan) SetOperatingSystem(v string) {
@@ -1270,7 +1354,14 @@ func (x *NodeScan) SetOperatingSystem(v string) {
 }
 
 func (x *NodeScan) SetComponents(v []*EmbeddedNodeScanComponent) {
-	x.xxx_hidden_Components = &v
+	var sv *[]*EmbeddedNodeScanComponent
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*EmbeddedNodeScanComponent{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *NodeScan) SetNotes(v []NodeScan_Note) {
@@ -1286,7 +1377,7 @@ func (x *NodeScan) HasScanTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScanTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NodeScan) HasOperatingSystem() bool {
@@ -1304,7 +1395,8 @@ func (x *NodeScan) HasScannerVersion() bool {
 }
 
 func (x *NodeScan) ClearScanTime() {
-	x.xxx_hidden_ScanTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ScanTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *NodeScan) ClearOperatingSystem() {
@@ -1331,12 +1423,18 @@ func (b0 NodeScan_builder) Build() *NodeScan {
 	m0 := &NodeScan{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ScanTime = b.ScanTime
+	if b.ScanTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_ScanTime = b.ScanTime
+	}
 	if b.OperatingSystem != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_OperatingSystem = b.OperatingSystem
 	}
-	x.xxx_hidden_Components = &b.Components
+	if b.Components != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Components = &b.Components
+	}
 	x.xxx_hidden_Notes = b.Notes
 	if b.ScannerVersion != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
@@ -1346,12 +1444,14 @@ func (b0 NodeScan_builder) Build() *NodeScan {
 }
 
 type NodeInventory struct {
-	state                  protoimpl.MessageState    `protogen:"opaque.v1"`
-	xxx_hidden_NodeId      *string                   `protobuf:"bytes,1,opt,name=node_id,json=nodeId"`
-	xxx_hidden_NodeName    *string                   `protobuf:"bytes,2,opt,name=node_name,json=nodeName"`
-	xxx_hidden_ScanTime    *timestamppb.Timestamp    `protobuf:"bytes,3,opt,name=scan_time,json=scanTime"`
-	xxx_hidden_Components  *NodeInventory_Components `protobuf:"bytes,4,opt,name=components"`
-	xxx_hidden_Notes       []NodeInventory_Note      `protobuf:"varint,5,rep,packed,name=notes,enum=storage.NodeInventory_Note"`
+	state                 protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_NodeId     *string                   `protobuf:"bytes,1,opt,name=node_id,json=nodeId"`
+	xxx_hidden_NodeName   *string                   `protobuf:"bytes,2,opt,name=node_name,json=nodeName"`
+	xxx_hidden_ScanTime   *timestamppb.Timestamp    `protobuf:"bytes,3,opt,name=scan_time,json=scanTime"`
+	xxx_hidden_Components *NodeInventory_Components `protobuf:"bytes,4,opt,name=components"`
+	xxx_hidden_Notes      []NodeInventory_Note      `protobuf:"varint,5,rep,packed,name=notes,enum=storage.NodeInventory_Note"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1405,7 +1505,14 @@ func (x *NodeInventory) GetNodeName() string {
 
 func (x *NodeInventory) GetScanTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ScanTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScanTime) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1435,7 +1542,12 @@ func (x *NodeInventory) SetNodeName(v string) {
 }
 
 func (x *NodeInventory) SetScanTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ScanTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ScanTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	}
 }
 
 func (x *NodeInventory) SetComponents(v *NodeInventory_Components) {
@@ -1464,7 +1576,7 @@ func (x *NodeInventory) HasScanTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScanTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *NodeInventory) HasComponents() bool {
@@ -1485,7 +1597,8 @@ func (x *NodeInventory) ClearNodeName() {
 }
 
 func (x *NodeInventory) ClearScanTime() {
-	x.xxx_hidden_ScanTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ScanTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *NodeInventory) ClearComponents() {
@@ -1521,7 +1634,10 @@ func (b0 NodeInventory_builder) Build() *NodeInventory {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_NodeName = b.NodeName
 	}
-	x.xxx_hidden_ScanTime = b.ScanTime
+	if b.ScanTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_ScanTime = b.ScanTime
+	}
 	x.xxx_hidden_Components = b.Components
 	x.xxx_hidden_Notes = b.Notes
 	return m0
@@ -1536,10 +1652,12 @@ type EmbeddedNodeScanComponent struct {
 	xxx_hidden_Priority        int64                                  `protobuf:"varint,4,opt,name=priority"`
 	xxx_hidden_SetTopCvss      isEmbeddedNodeScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
 	xxx_hidden_RiskScore       float32                                `protobuf:"fixed32,6,opt,name=risk_score,json=riskScore"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *EmbeddedNodeScanComponent) Reset() {
@@ -1589,8 +1707,13 @@ func (x *EmbeddedNodeScanComponent) GetVersion() string {
 
 func (x *EmbeddedNodeScanComponent) GetVulns() []*EmbeddedVulnerability {
 	if x != nil {
-		if x.xxx_hidden_Vulns != nil {
-			return *x.xxx_hidden_Vulns
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Vulns) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*EmbeddedVulnerability
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vulns), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1598,8 +1721,13 @@ func (x *EmbeddedNodeScanComponent) GetVulns() []*EmbeddedVulnerability {
 
 func (x *EmbeddedNodeScanComponent) GetVulnerabilities() []*NodeVulnerability {
 	if x != nil {
-		if x.xxx_hidden_Vulnerabilities != nil {
-			return *x.xxx_hidden_Vulnerabilities
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Vulnerabilities) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *[]*NodeVulnerability
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vulnerabilities), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1639,11 +1767,25 @@ func (x *EmbeddedNodeScanComponent) SetVersion(v string) {
 }
 
 func (x *EmbeddedNodeScanComponent) SetVulns(v []*EmbeddedVulnerability) {
-	x.xxx_hidden_Vulns = &v
+	var sv *[]*EmbeddedVulnerability
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vulns), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*EmbeddedVulnerability{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Vulns), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *EmbeddedNodeScanComponent) SetVulnerabilities(v []*NodeVulnerability) {
-	x.xxx_hidden_Vulnerabilities = &v
+	var sv *[]*NodeVulnerability
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vulnerabilities), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NodeVulnerability{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Vulnerabilities), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *EmbeddedNodeScanComponent) SetPriority(v int64) {
@@ -1774,8 +1916,14 @@ func (b0 EmbeddedNodeScanComponent_builder) Build() *EmbeddedNodeScanComponent {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
 		x.xxx_hidden_Version = b.Version
 	}
-	x.xxx_hidden_Vulns = &b.Vulns
-	x.xxx_hidden_Vulnerabilities = &b.Vulnerabilities
+	if b.Vulns != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_Vulns = &b.Vulns
+	}
+	if b.Vulnerabilities != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_Vulnerabilities = &b.Vulnerabilities
+	}
 	if b.Priority != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
 		x.xxx_hidden_Priority = *b.Priority
@@ -1815,10 +1963,12 @@ type NodeInventory_Components struct {
 	xxx_hidden_Namespace       *string                                    `protobuf:"bytes,1,opt,name=namespace"`
 	xxx_hidden_RhelComponents  *[]*NodeInventory_Components_RHELComponent `protobuf:"bytes,2,rep,name=rhel_components,json=rhelComponents"`
 	xxx_hidden_RhelContentSets []string                                   `protobuf:"bytes,3,rep,name=rhel_content_sets,json=rhelContentSets"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NodeInventory_Components) Reset() {
@@ -1858,8 +2008,13 @@ func (x *NodeInventory_Components) GetNamespace() string {
 
 func (x *NodeInventory_Components) GetRhelComponents() []*NodeInventory_Components_RHELComponent {
 	if x != nil {
-		if x.xxx_hidden_RhelComponents != nil {
-			return *x.xxx_hidden_RhelComponents
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RhelComponents) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*NodeInventory_Components_RHELComponent
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RhelComponents), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1878,7 +2033,14 @@ func (x *NodeInventory_Components) SetNamespace(v string) {
 }
 
 func (x *NodeInventory_Components) SetRhelComponents(v []*NodeInventory_Components_RHELComponent) {
-	x.xxx_hidden_RhelComponents = &v
+	var sv *[]*NodeInventory_Components_RHELComponent
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RhelComponents), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NodeInventory_Components_RHELComponent{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_RhelComponents), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *NodeInventory_Components) SetRhelContentSets(v []string) {
@@ -1913,7 +2075,10 @@ func (b0 NodeInventory_Components_builder) Build() *NodeInventory_Components {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
 		x.xxx_hidden_Namespace = b.Namespace
 	}
-	x.xxx_hidden_RhelComponents = &b.RhelComponents
+	if b.RhelComponents != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_RhelComponents = &b.RhelComponents
+	}
 	x.xxx_hidden_RhelContentSets = b.RhelContentSets
 	return m0
 }
@@ -1928,6 +2093,8 @@ type NodeInventory_Components_RHELComponent struct {
 	xxx_hidden_Module      *string                                               `protobuf:"bytes,6,opt,name=module"`
 	xxx_hidden_AddedBy     *string                                               `protobuf:"bytes,7,opt,name=added_by,json=addedBy"`
 	xxx_hidden_Executables *[]*NodeInventory_Components_RHELComponent_Executable `protobuf:"bytes,8,rep,name=executables"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -2028,8 +2195,13 @@ func (x *NodeInventory_Components_RHELComponent) GetAddedBy() string {
 
 func (x *NodeInventory_Components_RHELComponent) GetExecutables() []*NodeInventory_Components_RHELComponent_Executable {
 	if x != nil {
-		if x.xxx_hidden_Executables != nil {
-			return *x.xxx_hidden_Executables
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Executables) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *[]*NodeInventory_Components_RHELComponent_Executable
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Executables), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2071,7 +2243,14 @@ func (x *NodeInventory_Components_RHELComponent) SetAddedBy(v string) {
 }
 
 func (x *NodeInventory_Components_RHELComponent) SetExecutables(v []*NodeInventory_Components_RHELComponent_Executable) {
-	x.xxx_hidden_Executables = &v
+	var sv *[]*NodeInventory_Components_RHELComponent_Executable
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Executables), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NodeInventory_Components_RHELComponent_Executable{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Executables), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
 }
 
 func (x *NodeInventory_Components_RHELComponent) HasId() bool {
@@ -2203,7 +2382,10 @@ func (b0 NodeInventory_Components_RHELComponent_builder) Build() *NodeInventory_
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
 		x.xxx_hidden_AddedBy = b.AddedBy
 	}
-	x.xxx_hidden_Executables = &b.Executables
+	if b.Executables != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_Executables = &b.Executables
+	}
 	return m0
 }
 
@@ -2211,10 +2393,12 @@ type NodeInventory_Components_RHELComponent_Executable struct {
 	state                       protoimpl.MessageState                                                   `protogen:"opaque.v1"`
 	xxx_hidden_Path             *string                                                                  `protobuf:"bytes,1,opt,name=path"`
 	xxx_hidden_RequiredFeatures *[]*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion `protobuf:"bytes,2,rep,name=required_features,json=requiredFeatures"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NodeInventory_Components_RHELComponent_Executable) Reset() {
@@ -2254,8 +2438,13 @@ func (x *NodeInventory_Components_RHELComponent_Executable) GetPath() string {
 
 func (x *NodeInventory_Components_RHELComponent_Executable) GetRequiredFeatures() []*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion {
 	if x != nil {
-		if x.xxx_hidden_RequiredFeatures != nil {
-			return *x.xxx_hidden_RequiredFeatures
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequiredFeatures) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequiredFeatures), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2267,7 +2456,14 @@ func (x *NodeInventory_Components_RHELComponent_Executable) SetPath(v string) {
 }
 
 func (x *NodeInventory_Components_RHELComponent_Executable) SetRequiredFeatures(v []*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) {
-	x.xxx_hidden_RequiredFeatures = &v
+	var sv *[]*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequiredFeatures), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_RequiredFeatures), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *NodeInventory_Components_RHELComponent_Executable) HasPath() bool {
@@ -2297,7 +2493,10 @@ func (b0 NodeInventory_Components_RHELComponent_Executable_builder) Build() *Nod
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Path = b.Path
 	}
-	x.xxx_hidden_RequiredFeatures = &b.RequiredFeatures
+	if b.RequiredFeatures != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_RequiredFeatures = &b.RequiredFeatures
+	}
 	return m0
 }
 
@@ -2416,18 +2615,18 @@ var File_storage_node_proto protoreflect.FileDescriptor
 
 const file_storage_node_proto_rawDesc = "" +
 	"\n" +
-	"\x12storage/node.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x14storage/taints.proto\x1a\x1bstorage/vulnerability.proto\x1a!google/protobuf/go_features.proto\"\xd3\n" +
+	"\x12storage/node.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x14storage/taints.proto\x1a\x1bstorage/vulnerability.proto\x1a!google/protobuf/go_features.proto\"\xeb\n" +
 	"\n" +
 	"\x04Node\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
-	"\x06taints\x18\x03 \x03(\v2\x0e.storage.TaintR\x06taints\x12\x1d\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12*\n" +
+	"\x06taints\x18\x03 \x03(\v2\x0e.storage.TaintB\x02(\x01R\x06taints\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12!\n" +
-	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x121\n" +
-	"\x06labels\x18\x06 \x03(\v2\x19.storage.Node.LabelsEntryR\x06labels\x12@\n" +
-	"\vannotations\x18\a \x03(\v2\x1e.storage.Node.AnnotationsEntryR\vannotations\x127\n" +
-	"\tjoined_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\bjoinedAt\x122\n" +
+	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x125\n" +
+	"\x06labels\x18\x06 \x03(\v2\x19.storage.Node.LabelsEntryB\x02(\x01R\x06labels\x12D\n" +
+	"\vannotations\x18\a \x03(\v2\x1e.storage.Node.AnnotationsEntryB\x02(\x01R\vannotations\x12;\n" +
+	"\tjoined_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\bjoinedAt\x122\n" +
 	"\x15internal_ip_addresses\x18\b \x03(\tR\x13internalIpAddresses\x122\n" +
 	"\x15external_ip_addresses\x18\t \x03(\tR\x13externalIpAddresses\x12>\n" +
 	"\x19container_runtime_version\x18\n" +
@@ -2437,9 +2636,9 @@ const file_storage_node_proto_rawDesc = "" +
 	"\x10operating_system\x18\x11 \x01(\tR\x0foperatingSystem\x12\x19\n" +
 	"\bos_image\x18\f \x01(\tR\aosImage\x12'\n" +
 	"\x0fkubelet_version\x18\x0f \x01(\tR\x0ekubeletVersion\x12,\n" +
-	"\x12kube_proxy_version\x18\x10 \x01(\tR\x10kubeProxyVersion\x12=\n" +
-	"\flast_updated\x18\x19 \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12;\n" +
-	"\vk8s_updated\x18\x1a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"\x12kube_proxy_version\x18\x10 \x01(\tR\x10kubeProxyVersion\x12A\n" +
+	"\flast_updated\x18\x19 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x12?\n" +
+	"\vk8s_updated\x18\x1a \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\n" +
 	"k8sUpdated\x12%\n" +
 	"\x04scan\x18\x12 \x01(\v2\x11.storage.NodeScanR\x04scan\x12 \n" +
 	"\n" +
@@ -2464,12 +2663,12 @@ const file_storage_node_proto_rawDesc = "" +
 	"\n" +
 	"\bset_cvesB\r\n" +
 	"\vset_fixableB\x0e\n" +
-	"\fset_top_cvss\"\xad\x03\n" +
-	"\bNodeScan\x127\n" +
-	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12)\n" +
-	"\x10operating_system\x18\x03 \x01(\tR\x0foperatingSystem\x12B\n" +
+	"\fset_top_cvss\"\xb5\x03\n" +
+	"\bNodeScan\x12;\n" +
+	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\bscanTime\x12)\n" +
+	"\x10operating_system\x18\x03 \x01(\tR\x0foperatingSystem\x12F\n" +
 	"\n" +
-	"components\x18\x02 \x03(\v2\".storage.EmbeddedNodeScanComponentR\n" +
+	"components\x18\x02 \x03(\v2\".storage.EmbeddedNodeScanComponentB\x02(\x01R\n" +
 	"components\x12,\n" +
 	"\x05notes\x18\x04 \x03(\x0e2\x16.storage.NodeScan.NoteR\x05notes\x12B\n" +
 	"\x0fscanner_version\x18\x05 \x01(\x0e2\x19.storage.NodeScan.ScannerR\x0escannerVersion\"_\n" +
@@ -2481,20 +2680,20 @@ const file_storage_node_proto_rawDesc = "" +
 	"\aScanner\x12\v\n" +
 	"\aSCANNER\x10\x00\x12\x0e\n" +
 	"\n" +
-	"SCANNER_V4\x10\x01\"\x95\b\n" +
+	"SCANNER_V4\x10\x01\"\xa5\b\n" +
 	"\rNodeInventory\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x1b\n" +
-	"\tnode_name\x18\x02 \x01(\tR\bnodeName\x127\n" +
-	"\tscan_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12A\n" +
+	"\tnode_name\x18\x02 \x01(\tR\bnodeName\x12;\n" +
+	"\tscan_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\bscanTime\x12A\n" +
 	"\n" +
 	"components\x18\x04 \x01(\v2!.storage.NodeInventory.ComponentsR\n" +
 	"components\x121\n" +
-	"\x05notes\x18\x05 \x03(\x0e2\x1b.storage.NodeInventory.NoteR\x05notes\x1a\xa6\x05\n" +
+	"\x05notes\x18\x05 \x03(\x0e2\x1b.storage.NodeInventory.NoteR\x05notes\x1a\xb2\x05\n" +
 	"\n" +
 	"Components\x12\x1c\n" +
-	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x12X\n" +
-	"\x0frhel_components\x18\x02 \x03(\v2/.storage.NodeInventory.Components.RHELComponentR\x0erhelComponents\x12*\n" +
-	"\x11rhel_content_sets\x18\x03 \x03(\tR\x0frhelContentSets\x1a\xf3\x03\n" +
+	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x12\\\n" +
+	"\x0frhel_components\x18\x02 \x03(\v2/.storage.NodeInventory.Components.RHELComponentB\x02(\x01R\x0erhelComponents\x12*\n" +
+	"\x11rhel_content_sets\x18\x03 \x03(\tR\x0frhelContentSets\x1a\xfb\x03\n" +
 	"\rRHELComponent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
@@ -2502,12 +2701,12 @@ const file_storage_node_proto_rawDesc = "" +
 	"\aversion\x18\x04 \x01(\tR\aversion\x12\x12\n" +
 	"\x04arch\x18\x05 \x01(\tR\x04arch\x12\x16\n" +
 	"\x06module\x18\x06 \x01(\tR\x06module\x12\x19\n" +
-	"\badded_by\x18\a \x01(\tR\aaddedBy\x12\\\n" +
-	"\vexecutables\x18\b \x03(\v2:.storage.NodeInventory.Components.RHELComponent.ExecutableR\vexecutables\x1a\xe0\x01\n" +
+	"\badded_by\x18\a \x01(\tR\aaddedBy\x12`\n" +
+	"\vexecutables\x18\b \x03(\v2:.storage.NodeInventory.Components.RHELComponent.ExecutableB\x02(\x01R\vexecutables\x1a\xe4\x01\n" +
 	"\n" +
 	"Executable\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12z\n" +
-	"\x11required_features\x18\x02 \x03(\v2M.storage.NodeInventory.Components.RHELComponent.Executable.FeatureNameVersionR\x10requiredFeatures\x1aB\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12~\n" +
+	"\x11required_features\x18\x02 \x03(\v2M.storage.NodeInventory.Components.RHELComponent.Executable.FeatureNameVersionB\x02(\x01R\x10requiredFeatures\x1aB\n" +
 	"\x12FeatureNameVersion\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\"v\n" +
@@ -2515,12 +2714,12 @@ const file_storage_node_proto_rawDesc = "" +
 	"\x13OS_CVES_UNAVAILABLE\x10\x00\x12\x11\n" +
 	"\rOS_CVES_STALE\x10\x01\x12\x1d\n" +
 	"\x19LANGUAGE_CVES_UNAVAILABLE\x10\x02\x12#\n" +
-	"\x1fCERTIFIED_RHEL_SCAN_UNAVAILABLE\x10\x03\"\xad\x02\n" +
+	"\x1fCERTIFIED_RHEL_SCAN_UNAVAILABLE\x10\x03\"\xb5\x02\n" +
 	"\x19EmbeddedNodeScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\aversion\x18\x02 \x01(\tR\aversion\x124\n" +
-	"\x05vulns\x18\x03 \x03(\v2\x1e.storage.EmbeddedVulnerabilityR\x05vulns\x12D\n" +
-	"\x0fvulnerabilities\x18\a \x03(\v2\x1a.storage.NodeVulnerabilityR\x0fvulnerabilities\x12\x1a\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x128\n" +
+	"\x05vulns\x18\x03 \x03(\v2\x1e.storage.EmbeddedVulnerabilityB\x02(\x01R\x05vulns\x12H\n" +
+	"\x0fvulnerabilities\x18\a \x03(\v2\x1a.storage.NodeVulnerabilityB\x02(\x01R\x0fvulnerabilities\x12\x1a\n" +
 	"\bpriority\x18\x04 \x01(\x03R\bpriority\x12\x1b\n" +
 	"\btop_cvss\x18\x05 \x01(\x02H\x00R\atopCvss\x12\x1d\n" +
 	"\n" +

@@ -180,8 +180,12 @@ func (b0 Permission_builder) Build() *Permission {
 type GetRolesResponse struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Roles *[]*storage.Role       `protobuf:"bytes,1,rep,name=roles"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetRolesResponse) Reset() {
@@ -211,15 +215,27 @@ func (x *GetRolesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRolesResponse) GetRoles() []*storage.Role {
 	if x != nil {
-		if x.xxx_hidden_Roles != nil {
-			return *x.xxx_hidden_Roles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Roles) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.Role
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetRolesResponse) SetRoles(v []*storage.Role) {
-	x.xxx_hidden_Roles = &v
+	var sv *[]*storage.Role
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Role{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetRolesResponse_builder struct {
@@ -232,7 +248,10 @@ func (b0 GetRolesResponse_builder) Build() *GetRolesResponse {
 	m0 := &GetRolesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Roles = &b.Roles
+	if b.Roles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Roles = &b.Roles
+	}
 	return m0
 }
 
@@ -355,8 +374,12 @@ func (b0 GetResourcesResponse_builder) Build() *GetResourcesResponse {
 type ListPermissionSetsResponse struct {
 	state                     protoimpl.MessageState    `protogen:"opaque.v1"`
 	xxx_hidden_PermissionSets *[]*storage.PermissionSet `protobuf:"bytes,1,rep,name=permission_sets,json=permissionSets"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListPermissionSetsResponse) Reset() {
@@ -386,15 +409,27 @@ func (x *ListPermissionSetsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListPermissionSetsResponse) GetPermissionSets() []*storage.PermissionSet {
 	if x != nil {
-		if x.xxx_hidden_PermissionSets != nil {
-			return *x.xxx_hidden_PermissionSets
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PermissionSets) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.PermissionSet
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PermissionSets), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListPermissionSetsResponse) SetPermissionSets(v []*storage.PermissionSet) {
-	x.xxx_hidden_PermissionSets = &v
+	var sv *[]*storage.PermissionSet
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PermissionSets), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.PermissionSet{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_PermissionSets), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListPermissionSetsResponse_builder struct {
@@ -407,15 +442,22 @@ func (b0 ListPermissionSetsResponse_builder) Build() *ListPermissionSetsResponse
 	m0 := &ListPermissionSetsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PermissionSets = &b.PermissionSets
+	if b.PermissionSets != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_PermissionSets = &b.PermissionSets
+	}
 	return m0
 }
 
 type ListSimpleAccessScopesResponse struct {
 	state                   protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_AccessScopes *[]*storage.SimpleAccessScope `protobuf:"bytes,1,rep,name=access_scopes,json=accessScopes"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListSimpleAccessScopesResponse) Reset() {
@@ -445,15 +487,27 @@ func (x *ListSimpleAccessScopesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListSimpleAccessScopesResponse) GetAccessScopes() []*storage.SimpleAccessScope {
 	if x != nil {
-		if x.xxx_hidden_AccessScopes != nil {
-			return *x.xxx_hidden_AccessScopes
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AccessScopes) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.SimpleAccessScope
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AccessScopes), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListSimpleAccessScopesResponse) SetAccessScopes(v []*storage.SimpleAccessScope) {
-	x.xxx_hidden_AccessScopes = &v
+	var sv *[]*storage.SimpleAccessScope
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AccessScopes), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.SimpleAccessScope{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AccessScopes), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListSimpleAccessScopesResponse_builder struct {
@@ -466,7 +520,10 @@ func (b0 ListSimpleAccessScopesResponse_builder) Build() *ListSimpleAccessScopes
 	m0 := &ListSimpleAccessScopesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_AccessScopes = &b.AccessScopes
+	if b.AccessScopes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_AccessScopes = &b.AccessScopes
+	}
 	return m0
 }
 
@@ -586,8 +643,12 @@ func (b0 ScopeObject_builder) Build() *ScopeObject {
 type GetClustersForPermissionsResponse struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Clusters *[]*ScopeObject        `protobuf:"bytes,1,rep,name=clusters"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetClustersForPermissionsResponse) Reset() {
@@ -617,15 +678,27 @@ func (x *GetClustersForPermissionsResponse) ProtoReflect() protoreflect.Message 
 
 func (x *GetClustersForPermissionsResponse) GetClusters() []*ScopeObject {
 	if x != nil {
-		if x.xxx_hidden_Clusters != nil {
-			return *x.xxx_hidden_Clusters
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Clusters) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ScopeObject
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetClustersForPermissionsResponse) SetClusters(v []*ScopeObject) {
-	x.xxx_hidden_Clusters = &v
+	var sv *[]*ScopeObject
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ScopeObject{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetClustersForPermissionsResponse_builder struct {
@@ -638,15 +711,22 @@ func (b0 GetClustersForPermissionsResponse_builder) Build() *GetClustersForPermi
 	m0 := &GetClustersForPermissionsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Clusters = &b.Clusters
+	if b.Clusters != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Clusters = &b.Clusters
+	}
 	return m0
 }
 
 type GetNamespacesForClusterAndPermissionsResponse struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Namespaces *[]*ScopeObject        `protobuf:"bytes,1,rep,name=namespaces"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetNamespacesForClusterAndPermissionsResponse) Reset() {
@@ -676,15 +756,27 @@ func (x *GetNamespacesForClusterAndPermissionsResponse) ProtoReflect() protorefl
 
 func (x *GetNamespacesForClusterAndPermissionsResponse) GetNamespaces() []*ScopeObject {
 	if x != nil {
-		if x.xxx_hidden_Namespaces != nil {
-			return *x.xxx_hidden_Namespaces
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Namespaces) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ScopeObject
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetNamespacesForClusterAndPermissionsResponse) SetNamespaces(v []*ScopeObject) {
-	x.xxx_hidden_Namespaces = &v
+	var sv *[]*ScopeObject
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ScopeObject{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetNamespacesForClusterAndPermissionsResponse_builder struct {
@@ -697,7 +789,10 @@ func (b0 GetNamespacesForClusterAndPermissionsResponse_builder) Build() *GetName
 	m0 := &GetNamespacesForClusterAndPermissionsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Namespaces = &b.Namespaces
+	if b.Namespaces != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Namespaces = &b.Namespaces
+	}
 	return m0
 }
 
@@ -705,6 +800,8 @@ type ComputeEffectiveAccessScopeRequest struct {
 	state                  protoimpl.MessageState                      `protogen:"opaque.v1"`
 	xxx_hidden_Detail      ComputeEffectiveAccessScopeRequest_Detail   `protobuf:"varint,1,opt,name=detail,enum=v1.ComputeEffectiveAccessScopeRequest_Detail"`
 	xxx_hidden_AccessScope *ComputeEffectiveAccessScopeRequest_Payload `protobuf:"bytes,2,opt,name=access_scope,json=accessScope"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -747,7 +844,14 @@ func (x *ComputeEffectiveAccessScopeRequest) GetDetail() ComputeEffectiveAccessS
 
 func (x *ComputeEffectiveAccessScopeRequest) GetAccessScope() *ComputeEffectiveAccessScopeRequest_Payload {
 	if x != nil {
-		return x.xxx_hidden_AccessScope
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AccessScope) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *ComputeEffectiveAccessScopeRequest_Payload
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AccessScope), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -758,7 +862,12 @@ func (x *ComputeEffectiveAccessScopeRequest) SetDetail(v ComputeEffectiveAccessS
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) SetAccessScope(v *ComputeEffectiveAccessScopeRequest_Payload) {
-	x.xxx_hidden_AccessScope = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AccessScope, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) HasDetail() bool {
@@ -772,7 +881,7 @@ func (x *ComputeEffectiveAccessScopeRequest) HasAccessScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_AccessScope != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) ClearDetail() {
@@ -781,7 +890,8 @@ func (x *ComputeEffectiveAccessScopeRequest) ClearDetail() {
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) ClearAccessScope() {
-	x.xxx_hidden_AccessScope = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AccessScope, (*ComputeEffectiveAccessScopeRequest_Payload)(nil))
 }
 
 type ComputeEffectiveAccessScopeRequest_builder struct {
@@ -799,16 +909,21 @@ func (b0 ComputeEffectiveAccessScopeRequest_builder) Build() *ComputeEffectiveAc
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Detail = *b.Detail
 	}
-	x.xxx_hidden_AccessScope = b.AccessScope
+	if b.AccessScope != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_AccessScope = b.AccessScope
+	}
 	return m0
 }
 
 // CreateRoleRequest unites name we take from the URL path and role body in the same structure.
 // This way we can verify that name in the path and name in the body are identical.
 type CreateRoleRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Role        *storage.Role          `protobuf:"bytes,2,opt,name=role"`
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Role *storage.Role          `protobuf:"bytes,2,opt,name=role"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -852,7 +967,14 @@ func (x *CreateRoleRequest) GetName() string {
 
 func (x *CreateRoleRequest) GetRole() *storage.Role {
 	if x != nil {
-		return x.xxx_hidden_Role
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Role) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.Role
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Role), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -863,7 +985,12 @@ func (x *CreateRoleRequest) SetName(v string) {
 }
 
 func (x *CreateRoleRequest) SetRole(v *storage.Role) {
-	x.xxx_hidden_Role = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Role, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *CreateRoleRequest) HasName() bool {
@@ -877,7 +1004,7 @@ func (x *CreateRoleRequest) HasRole() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Role != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CreateRoleRequest) ClearName() {
@@ -886,7 +1013,8 @@ func (x *CreateRoleRequest) ClearName() {
 }
 
 func (x *CreateRoleRequest) ClearRole() {
-	x.xxx_hidden_Role = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Role, (*storage.Role)(nil))
 }
 
 type CreateRoleRequest_builder struct {
@@ -904,7 +1032,10 @@ func (b0 CreateRoleRequest_builder) Build() *CreateRoleRequest {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Name = b.Name
 	}
-	x.xxx_hidden_Role = b.Role
+	if b.Role != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Role = b.Role
+	}
 	return m0
 }
 
@@ -912,6 +1043,10 @@ type GetClustersForPermissionsRequest struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Pagination  *Pagination            `protobuf:"bytes,1,opt,name=pagination"`
 	xxx_hidden_Permissions []string               `protobuf:"bytes,2,rep,name=permissions"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -943,7 +1078,14 @@ func (x *GetClustersForPermissionsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetClustersForPermissionsRequest) GetPagination() *Pagination {
 	if x != nil {
-		return x.xxx_hidden_Pagination
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Pagination) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *Pagination
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Pagination), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -956,7 +1098,12 @@ func (x *GetClustersForPermissionsRequest) GetPermissions() []string {
 }
 
 func (x *GetClustersForPermissionsRequest) SetPagination(v *Pagination) {
-	x.xxx_hidden_Pagination = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *GetClustersForPermissionsRequest) SetPermissions(v []string) {
@@ -967,11 +1114,12 @@ func (x *GetClustersForPermissionsRequest) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Pagination != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetClustersForPermissionsRequest) ClearPagination() {
-	x.xxx_hidden_Pagination = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, (*Pagination)(nil))
 }
 
 type GetClustersForPermissionsRequest_builder struct {
@@ -985,7 +1133,10 @@ func (b0 GetClustersForPermissionsRequest_builder) Build() *GetClustersForPermis
 	m0 := &GetClustersForPermissionsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Pagination = b.Pagination
+	if b.Pagination != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Pagination = b.Pagination
+	}
 	x.xxx_hidden_Permissions = b.Permissions
 	return m0
 }
@@ -1221,45 +1372,45 @@ const file_api_v1_role_service_proto_rawDesc = "" +
 	"\n" +
 	"Permission\x12\x1a\n" +
 	"\bresource\x18\x01 \x01(\tR\bresource\x12'\n" +
-	"\x06access\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x06access\"7\n" +
-	"\x10GetRolesResponse\x12#\n" +
-	"\x05roles\x18\x01 \x03(\v2\r.storage.RoleR\x05roles\"\xda\x01\n" +
-	"\x16GetPermissionsResponse\x12^\n" +
-	"\x12resource_to_access\x18\x03 \x03(\v20.v1.GetPermissionsResponse.ResourceToAccessEntryR\x10resourceToAccess\x1aT\n" +
+	"\x06access\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x06access\";\n" +
+	"\x10GetRolesResponse\x12'\n" +
+	"\x05roles\x18\x01 \x03(\v2\r.storage.RoleB\x02(\x01R\x05roles\"\xde\x01\n" +
+	"\x16GetPermissionsResponse\x12b\n" +
+	"\x12resource_to_access\x18\x03 \x03(\v20.v1.GetPermissionsResponse.ResourceToAccessEntryB\x02(\x01R\x10resourceToAccess\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
 	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x01\x10\x02J\x04\b\x02\x10\x03\"4\n" +
 	"\x14GetResourcesResponse\x12\x1c\n" +
-	"\tresources\x18\x01 \x03(\tR\tresources\"]\n" +
-	"\x1aListPermissionSetsResponse\x12?\n" +
-	"\x0fpermission_sets\x18\x01 \x03(\v2\x16.storage.PermissionSetR\x0epermissionSets\"a\n" +
-	"\x1eListSimpleAccessScopesResponse\x12?\n" +
-	"\raccess_scopes\x18\x01 \x03(\v2\x1a.storage.SimpleAccessScopeR\faccessScopes\"1\n" +
+	"\tresources\x18\x01 \x03(\tR\tresources\"a\n" +
+	"\x1aListPermissionSetsResponse\x12C\n" +
+	"\x0fpermission_sets\x18\x01 \x03(\v2\x16.storage.PermissionSetB\x02(\x01R\x0epermissionSets\"e\n" +
+	"\x1eListSimpleAccessScopesResponse\x12C\n" +
+	"\raccess_scopes\x18\x01 \x03(\v2\x1a.storage.SimpleAccessScopeB\x02(\x01R\faccessScopes\"1\n" +
 	"\vScopeObject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"P\n" +
-	"!GetClustersForPermissionsResponse\x12+\n" +
-	"\bclusters\x18\x01 \x03(\v2\x0f.v1.ScopeObjectR\bclusters\"`\n" +
-	"-GetNamespacesForClusterAndPermissionsResponse\x12/\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"T\n" +
+	"!GetClustersForPermissionsResponse\x12/\n" +
+	"\bclusters\x18\x01 \x03(\v2\x0f.v1.ScopeObjectB\x02(\x01R\bclusters\"d\n" +
+	"-GetNamespacesForClusterAndPermissionsResponse\x123\n" +
 	"\n" +
-	"namespaces\x18\x01 \x03(\v2\x0f.v1.ScopeObjectR\n" +
-	"namespaces\"\xcc\x02\n" +
+	"namespaces\x18\x01 \x03(\v2\x0f.v1.ScopeObjectB\x02(\x01R\n" +
+	"namespaces\"\xd4\x02\n" +
 	"\"ComputeEffectiveAccessScopeRequest\x12E\n" +
-	"\x06detail\x18\x01 \x01(\x0e2-.v1.ComputeEffectiveAccessScopeRequest.DetailR\x06detail\x12Q\n" +
-	"\faccess_scope\x18\x02 \x01(\v2..v1.ComputeEffectiveAccessScopeRequest.PayloadR\vaccessScope\x1a]\n" +
-	"\aPayload\x12E\n" +
-	"\fsimple_rules\x18\x01 \x01(\v2 .storage.SimpleAccessScope.RulesH\x00R\vsimpleRulesB\v\n" +
+	"\x06detail\x18\x01 \x01(\x0e2-.v1.ComputeEffectiveAccessScopeRequest.DetailR\x06detail\x12U\n" +
+	"\faccess_scope\x18\x02 \x01(\v2..v1.ComputeEffectiveAccessScopeRequest.PayloadB\x02(\x01R\vaccessScope\x1aa\n" +
+	"\aPayload\x12I\n" +
+	"\fsimple_rules\x18\x01 \x01(\v2 .storage.SimpleAccessScope.RulesB\x02(\x01H\x00R\vsimpleRulesB\v\n" +
 	"\trules_opt\"-\n" +
 	"\x06Detail\x12\f\n" +
 	"\bSTANDARD\x10\x00\x12\v\n" +
 	"\aMINIMAL\x10\x01\x12\b\n" +
-	"\x04HIGH\x10\x02\"J\n" +
+	"\x04HIGH\x10\x02\"N\n" +
 	"\x11CreateRoleRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
-	"\x04role\x18\x02 \x01(\v2\r.storage.RoleR\x04role\"t\n" +
-	" GetClustersForPermissionsRequest\x12.\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
+	"\x04role\x18\x02 \x01(\v2\r.storage.RoleB\x02(\x01R\x04role\"x\n" +
+	" GetClustersForPermissionsRequest\x122\n" +
 	"\n" +
-	"pagination\x18\x01 \x01(\v2\x0e.v1.PaginationR\n" +
+	"pagination\x18\x01 \x01(\v2\x0e.v1.PaginationB\x02(\x01R\n" +
 	"pagination\x12 \n" +
 	"\vpermissions\x18\x02 \x03(\tR\vpermissions\"t\n" +
 	"+GetNamespaceForClusterAndPermissionsRequest\x12\x1d\n" +

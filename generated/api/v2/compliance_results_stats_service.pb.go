@@ -30,10 +30,12 @@ type ComplianceScanStatsShim struct {
 	xxx_hidden_CheckStats   *[]*ComplianceCheckStatusCount `protobuf:"bytes,2,rep,name=check_stats,json=checkStats"`
 	xxx_hidden_LastScan     *timestamppb.Timestamp         `protobuf:"bytes,3,opt,name=last_scan,json=lastScan"`
 	xxx_hidden_ScanConfigId *string                        `protobuf:"bytes,4,opt,name=scan_config_id,json=scanConfigId"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceScanStatsShim) Reset() {
@@ -73,8 +75,13 @@ func (x *ComplianceScanStatsShim) GetScanName() string {
 
 func (x *ComplianceScanStatsShim) GetCheckStats() []*ComplianceCheckStatusCount {
 	if x != nil {
-		if x.xxx_hidden_CheckStats != nil {
-			return *x.xxx_hidden_CheckStats
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CheckStats) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*ComplianceCheckStatusCount
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CheckStats), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -82,7 +89,14 @@ func (x *ComplianceScanStatsShim) GetCheckStats() []*ComplianceCheckStatusCount 
 
 func (x *ComplianceScanStatsShim) GetLastScan() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastScan
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastScan) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastScan), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -103,11 +117,23 @@ func (x *ComplianceScanStatsShim) SetScanName(v string) {
 }
 
 func (x *ComplianceScanStatsShim) SetCheckStats(v []*ComplianceCheckStatusCount) {
-	x.xxx_hidden_CheckStats = &v
+	var sv *[]*ComplianceCheckStatusCount
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CheckStats), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceCheckStatusCount{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_CheckStats), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *ComplianceScanStatsShim) SetLastScan(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastScan = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastScan, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	}
 }
 
 func (x *ComplianceScanStatsShim) SetScanConfigId(v string) {
@@ -126,7 +152,7 @@ func (x *ComplianceScanStatsShim) HasLastScan() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastScan != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ComplianceScanStatsShim) HasScanConfigId() bool {
@@ -142,7 +168,8 @@ func (x *ComplianceScanStatsShim) ClearScanName() {
 }
 
 func (x *ComplianceScanStatsShim) ClearLastScan() {
-	x.xxx_hidden_LastScan = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastScan, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ComplianceScanStatsShim) ClearScanConfigId() {
@@ -167,8 +194,14 @@ func (b0 ComplianceScanStatsShim_builder) Build() *ComplianceScanStatsShim {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
 		x.xxx_hidden_ScanName = b.ScanName
 	}
-	x.xxx_hidden_CheckStats = &b.CheckStats
-	x.xxx_hidden_LastScan = b.LastScan
+	if b.CheckStats != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_CheckStats = &b.CheckStats
+	}
+	if b.LastScan != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_LastScan = b.LastScan
+	}
 	if b.ScanConfigId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
 		x.xxx_hidden_ScanConfigId = b.ScanConfigId
@@ -184,6 +217,8 @@ type ComplianceProfileScanStats struct {
 	xxx_hidden_Title       *string                        `protobuf:"bytes,3,opt,name=title"`
 	xxx_hidden_Version     *string                        `protobuf:"bytes,4,opt,name=version"`
 	xxx_hidden_Benchmarks  *[]*ComplianceBenchmark        `protobuf:"bytes,5,rep,name=benchmarks"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -217,8 +252,13 @@ func (x *ComplianceProfileScanStats) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceProfileScanStats) GetCheckStats() []*ComplianceCheckStatusCount {
 	if x != nil {
-		if x.xxx_hidden_CheckStats != nil {
-			return *x.xxx_hidden_CheckStats
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CheckStats) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ComplianceCheckStatusCount
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CheckStats), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -256,15 +296,27 @@ func (x *ComplianceProfileScanStats) GetVersion() string {
 
 func (x *ComplianceProfileScanStats) GetBenchmarks() []*ComplianceBenchmark {
 	if x != nil {
-		if x.xxx_hidden_Benchmarks != nil {
-			return *x.xxx_hidden_Benchmarks
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Benchmarks) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *[]*ComplianceBenchmark
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Benchmarks), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ComplianceProfileScanStats) SetCheckStats(v []*ComplianceCheckStatusCount) {
-	x.xxx_hidden_CheckStats = &v
+	var sv *[]*ComplianceCheckStatusCount
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CheckStats), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceCheckStatusCount{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_CheckStats), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *ComplianceProfileScanStats) SetProfileName(v string) {
@@ -283,7 +335,14 @@ func (x *ComplianceProfileScanStats) SetVersion(v string) {
 }
 
 func (x *ComplianceProfileScanStats) SetBenchmarks(v []*ComplianceBenchmark) {
-	x.xxx_hidden_Benchmarks = &v
+	var sv *[]*ComplianceBenchmark
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Benchmarks), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceBenchmark{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Benchmarks), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *ComplianceProfileScanStats) HasProfileName() bool {
@@ -336,7 +395,10 @@ func (b0 ComplianceProfileScanStats_builder) Build() *ComplianceProfileScanStats
 	m0 := &ComplianceProfileScanStats{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CheckStats = &b.CheckStats
+	if b.CheckStats != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_CheckStats = &b.CheckStats
+	}
 	if b.ProfileName != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_ProfileName = b.ProfileName
@@ -349,7 +411,10 @@ func (b0 ComplianceProfileScanStats_builder) Build() *ComplianceProfileScanStats
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
 		x.xxx_hidden_Version = b.Version
 	}
-	x.xxx_hidden_Benchmarks = &b.Benchmarks
+	if b.Benchmarks != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_Benchmarks = &b.Benchmarks
+	}
 	return m0
 }
 
@@ -552,9 +617,11 @@ func (b0 ComplianceScanClusterRequest_builder) Build() *ComplianceScanClusterReq
 
 // ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans
 type ListComplianceProfileScanStatsResponse struct {
-	state                  protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_ScanStats   *[]*ComplianceProfileScanStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats"`
-	xxx_hidden_TotalCount  int32                          `protobuf:"varint,2,opt,name=total_count,json=totalCount"`
+	state                 protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_ScanStats  *[]*ComplianceProfileScanStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats"`
+	xxx_hidden_TotalCount int32                          `protobuf:"varint,2,opt,name=total_count,json=totalCount"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -588,8 +655,13 @@ func (x *ListComplianceProfileScanStatsResponse) ProtoReflect() protoreflect.Mes
 
 func (x *ListComplianceProfileScanStatsResponse) GetScanStats() []*ComplianceProfileScanStats {
 	if x != nil {
-		if x.xxx_hidden_ScanStats != nil {
-			return *x.xxx_hidden_ScanStats
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScanStats) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ComplianceProfileScanStats
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanStats), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -603,7 +675,14 @@ func (x *ListComplianceProfileScanStatsResponse) GetTotalCount() int32 {
 }
 
 func (x *ListComplianceProfileScanStatsResponse) SetScanStats(v []*ComplianceProfileScanStats) {
-	x.xxx_hidden_ScanStats = &v
+	var sv *[]*ComplianceProfileScanStats
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanStats), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceProfileScanStats{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ScanStats), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ListComplianceProfileScanStatsResponse) SetTotalCount(v int32) {
@@ -634,7 +713,10 @@ func (b0 ListComplianceProfileScanStatsResponse_builder) Build() *ListCompliance
 	m0 := &ListComplianceProfileScanStatsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ScanStats = &b.ScanStats
+	if b.ScanStats != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ScanStats = &b.ScanStats
+	}
 	if b.TotalCount != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_TotalCount = *b.TotalCount
@@ -649,6 +731,8 @@ type ListComplianceClusterProfileStatsResponse struct {
 	xxx_hidden_ClusterId   *string                        `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId"`
 	xxx_hidden_ClusterName *string                        `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName"`
 	xxx_hidden_TotalCount  int32                          `protobuf:"varint,4,opt,name=total_count,json=totalCount"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -682,8 +766,13 @@ func (x *ListComplianceClusterProfileStatsResponse) ProtoReflect() protoreflect.
 
 func (x *ListComplianceClusterProfileStatsResponse) GetScanStats() []*ComplianceProfileScanStats {
 	if x != nil {
-		if x.xxx_hidden_ScanStats != nil {
-			return *x.xxx_hidden_ScanStats
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScanStats) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ComplianceProfileScanStats
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanStats), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -717,7 +806,14 @@ func (x *ListComplianceClusterProfileStatsResponse) GetTotalCount() int32 {
 }
 
 func (x *ListComplianceClusterProfileStatsResponse) SetScanStats(v []*ComplianceProfileScanStats) {
-	x.xxx_hidden_ScanStats = &v
+	var sv *[]*ComplianceProfileScanStats
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanStats), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceProfileScanStats{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ScanStats), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *ListComplianceClusterProfileStatsResponse) SetClusterId(v string) {
@@ -784,7 +880,10 @@ func (b0 ListComplianceClusterProfileStatsResponse_builder) Build() *ListComplia
 	m0 := &ListComplianceClusterProfileStatsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ScanStats = &b.ScanStats
+	if b.ScanStats != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_ScanStats = &b.ScanStats
+	}
 	if b.ClusterId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
 		x.xxx_hidden_ClusterId = b.ClusterId
@@ -802,9 +901,11 @@ func (b0 ListComplianceClusterProfileStatsResponse_builder) Build() *ListComplia
 
 // ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans
 type ListComplianceClusterScanStatsResponse struct {
-	state                  protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_ScanStats   *[]*ComplianceClusterScanStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats"`
-	xxx_hidden_TotalCount  int32                          `protobuf:"varint,2,opt,name=total_count,json=totalCount"`
+	state                 protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_ScanStats  *[]*ComplianceClusterScanStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats"`
+	xxx_hidden_TotalCount int32                          `protobuf:"varint,2,opt,name=total_count,json=totalCount"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -838,8 +939,13 @@ func (x *ListComplianceClusterScanStatsResponse) ProtoReflect() protoreflect.Mes
 
 func (x *ListComplianceClusterScanStatsResponse) GetScanStats() []*ComplianceClusterScanStats {
 	if x != nil {
-		if x.xxx_hidden_ScanStats != nil {
-			return *x.xxx_hidden_ScanStats
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScanStats) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ComplianceClusterScanStats
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanStats), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -853,7 +959,14 @@ func (x *ListComplianceClusterScanStatsResponse) GetTotalCount() int32 {
 }
 
 func (x *ListComplianceClusterScanStatsResponse) SetScanStats(v []*ComplianceClusterScanStats) {
-	x.xxx_hidden_ScanStats = &v
+	var sv *[]*ComplianceClusterScanStats
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanStats), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceClusterScanStats{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ScanStats), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ListComplianceClusterScanStatsResponse) SetTotalCount(v int32) {
@@ -884,7 +997,10 @@ func (b0 ListComplianceClusterScanStatsResponse_builder) Build() *ListCompliance
 	m0 := &ListComplianceClusterScanStatsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ScanStats = &b.ScanStats
+	if b.ScanStats != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ScanStats = &b.ScanStats
+	}
 	if b.TotalCount != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_TotalCount = *b.TotalCount
@@ -896,21 +1012,21 @@ var File_api_v2_compliance_results_stats_service_proto protoreflect.FileDescript
 
 const file_api_v2_compliance_results_stats_service_proto_rawDesc = "" +
 	"\n" +
-	"-api/v2/compliance_results_stats_service.proto\x12\x02v2\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xd6\x01\n" +
+	"-api/v2/compliance_results_stats_service.proto\x12\x02v2\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xde\x01\n" +
 	"\x17ComplianceScanStatsShim\x12\x1b\n" +
-	"\tscan_name\x18\x01 \x01(\tR\bscanName\x12?\n" +
-	"\vcheck_stats\x18\x02 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
-	"checkStats\x127\n" +
-	"\tlast_scan\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\blastScan\x12$\n" +
-	"\x0escan_config_id\x18\x04 \x01(\tR\fscanConfigId\"\xe9\x01\n" +
-	"\x1aComplianceProfileScanStats\x12?\n" +
-	"\vcheck_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
+	"\tscan_name\x18\x01 \x01(\tR\bscanName\x12C\n" +
+	"\vcheck_stats\x18\x02 \x03(\v2\x1e.v2.ComplianceCheckStatusCountB\x02(\x01R\n" +
+	"checkStats\x12;\n" +
+	"\tlast_scan\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\blastScan\x12$\n" +
+	"\x0escan_config_id\x18\x04 \x01(\tR\fscanConfigId\"\xf1\x01\n" +
+	"\x1aComplianceProfileScanStats\x12C\n" +
+	"\vcheck_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceCheckStatusCountB\x02(\x01R\n" +
 	"checkStats\x12!\n" +
 	"\fprofile_name\x18\x02 \x01(\tR\vprofileName\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x18\n" +
-	"\aversion\x18\x04 \x01(\tR\aversion\x127\n" +
+	"\aversion\x18\x04 \x01(\tR\aversion\x12;\n" +
 	"\n" +
-	"benchmarks\x18\x05 \x03(\v2\x17.v2.ComplianceBenchmarkR\n" +
+	"benchmarks\x18\x05 \x03(\v2\x17.v2.ComplianceBenchmarkB\x02(\x01R\n" +
 	"benchmarks\"\x8d\x01\n" +
 	"\x1aComplianceClusterScanStats\x12:\n" +
 	"\n" +
@@ -919,23 +1035,23 @@ const file_api_v2_compliance_results_stats_service_proto_rawDesc = "" +
 	"\x1cComplianceScanClusterRequest\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12\"\n" +
-	"\x05query\x18\x02 \x01(\v2\f.v2.RawQueryR\x05query\"\x88\x01\n" +
-	"&ListComplianceProfileScanStatsResponse\x12=\n" +
+	"\x05query\x18\x02 \x01(\v2\f.v2.RawQueryR\x05query\"\x8c\x01\n" +
+	"&ListComplianceProfileScanStatsResponse\x12A\n" +
 	"\n" +
-	"scan_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceProfileScanStatsR\tscanStats\x12\x1f\n" +
+	"scan_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceProfileScanStatsB\x02(\x01R\tscanStats\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount\"\xcd\x01\n" +
-	")ListComplianceClusterProfileStatsResponse\x12=\n" +
+	"totalCount\"\xd1\x01\n" +
+	")ListComplianceClusterProfileStatsResponse\x12A\n" +
 	"\n" +
-	"scan_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceProfileScanStatsR\tscanStats\x12\x1d\n" +
+	"scan_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceProfileScanStatsB\x02(\x01R\tscanStats\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x02 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x03 \x01(\tR\vclusterName\x12\x1f\n" +
 	"\vtotal_count\x18\x04 \x01(\x05R\n" +
-	"totalCount\"\x88\x01\n" +
-	"&ListComplianceClusterScanStatsResponse\x12=\n" +
+	"totalCount\"\x8c\x01\n" +
+	"&ListComplianceClusterScanStatsResponse\x12A\n" +
 	"\n" +
-	"scan_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceClusterScanStatsR\tscanStats\x12\x1f\n" +
+	"scan_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceClusterScanStatsB\x02(\x01R\tscanStats\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
 	"totalCount2\xbc\t\n" +
 	"\x1dComplianceResultsStatsService\x12\xa7\x01\n" +

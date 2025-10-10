@@ -604,10 +604,12 @@ type ListComplianceIntegrationsResponse struct {
 	state                   protoimpl.MessageState    `protogen:"opaque.v1"`
 	xxx_hidden_Integrations *[]*ComplianceIntegration `protobuf:"bytes,1,rep,name=integrations"`
 	xxx_hidden_TotalCount   int32                     `protobuf:"varint,2,opt,name=total_count,json=totalCount"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListComplianceIntegrationsResponse) Reset() {
@@ -637,8 +639,13 @@ func (x *ListComplianceIntegrationsResponse) ProtoReflect() protoreflect.Message
 
 func (x *ListComplianceIntegrationsResponse) GetIntegrations() []*ComplianceIntegration {
 	if x != nil {
-		if x.xxx_hidden_Integrations != nil {
-			return *x.xxx_hidden_Integrations
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Integrations) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ComplianceIntegration
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -652,7 +659,14 @@ func (x *ListComplianceIntegrationsResponse) GetTotalCount() int32 {
 }
 
 func (x *ListComplianceIntegrationsResponse) SetIntegrations(v []*ComplianceIntegration) {
-	x.xxx_hidden_Integrations = &v
+	var sv *[]*ComplianceIntegration
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceIntegration{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ListComplianceIntegrationsResponse) SetTotalCount(v int32) {
@@ -683,7 +697,10 @@ func (b0 ListComplianceIntegrationsResponse_builder) Build() *ListComplianceInte
 	m0 := &ListComplianceIntegrationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Integrations = &b.Integrations
+	if b.Integrations != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Integrations = &b.Integrations
+	}
 	if b.TotalCount != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_TotalCount = *b.TotalCount
@@ -711,9 +728,9 @@ const file_api_v2_compliance_integration_service_proto_rawDesc = "" +
 	" \x01(\x0e2\x17.v2.ClusterProviderTypeR\x13clusterProviderType\"C\n" +
 	"\"ComplianceIntegrationStatusRequest\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x01 \x01(\tR\tclusterId\"\x84\x01\n" +
-	"\"ListComplianceIntegrationsResponse\x12=\n" +
-	"\fintegrations\x18\x01 \x03(\v2\x19.v2.ComplianceIntegrationR\fintegrations\x12\x1f\n" +
+	"cluster_id\x18\x01 \x01(\tR\tclusterId\"\x88\x01\n" +
+	"\"ListComplianceIntegrationsResponse\x12A\n" +
+	"\fintegrations\x18\x01 \x03(\v2\x19.v2.ComplianceIntegrationB\x02(\x01R\fintegrations\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
 	"totalCount*&\n" +
 	"\bCOStatus\x12\v\n" +

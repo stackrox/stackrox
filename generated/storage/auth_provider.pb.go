@@ -39,10 +39,12 @@ type AuthProvider struct {
 	xxx_hidden_Traits             *Traits                            `protobuf:"bytes,12,opt,name=traits"`
 	xxx_hidden_ClaimMappings      map[string]string                  `protobuf:"bytes,13,rep,name=claim_mappings,json=claimMappings" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_LastUpdated        *timestamppb.Timestamp             `protobuf:"bytes,14,opt,name=last_updated,json=lastUpdated"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AuthProvider) Reset() {
@@ -158,8 +160,13 @@ func (x *AuthProvider) GetActive() bool {
 
 func (x *AuthProvider) GetRequiredAttributes() []*AuthProvider_RequiredAttribute {
 	if x != nil {
-		if x.xxx_hidden_RequiredAttributes != nil {
-			return *x.xxx_hidden_RequiredAttributes
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequiredAttributes) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *[]*AuthProvider_RequiredAttribute
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequiredAttributes), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -181,7 +188,14 @@ func (x *AuthProvider) GetClaimMappings() map[string]string {
 
 func (x *AuthProvider) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 13) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 14)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -236,7 +250,14 @@ func (x *AuthProvider) SetActive(v bool) {
 }
 
 func (x *AuthProvider) SetRequiredAttributes(v []*AuthProvider_RequiredAttribute) {
-	x.xxx_hidden_RequiredAttributes = &v
+	var sv *[]*AuthProvider_RequiredAttribute
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequiredAttributes), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*AuthProvider_RequiredAttribute{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_RequiredAttributes), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 14)
 }
 
 func (x *AuthProvider) SetTraits(v *Traits) {
@@ -248,7 +269,12 @@ func (x *AuthProvider) SetClaimMappings(v map[string]string) {
 }
 
 func (x *AuthProvider) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 14)
+	}
 }
 
 func (x *AuthProvider) HasId() bool {
@@ -319,7 +345,7 @@ func (x *AuthProvider) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 13)
 }
 
 func (x *AuthProvider) ClearId() {
@@ -368,7 +394,8 @@ func (x *AuthProvider) ClearTraits() {
 }
 
 func (x *AuthProvider) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 type AuthProvider_builder struct {
@@ -508,10 +535,16 @@ func (b0 AuthProvider_builder) Build() *AuthProvider {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 14)
 		x.xxx_hidden_Active = *b.Active
 	}
-	x.xxx_hidden_RequiredAttributes = &b.RequiredAttributes
+	if b.RequiredAttributes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 14)
+		x.xxx_hidden_RequiredAttributes = &b.RequiredAttributes
+	}
 	x.xxx_hidden_Traits = b.Traits
 	x.xxx_hidden_ClaimMappings = b.ClaimMappings
-	x.xxx_hidden_LastUpdated = b.LastUpdated
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 14)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
 	return m0
 }
 
@@ -634,24 +667,24 @@ var File_storage_auth_provider_proto protoreflect.FileDescriptor
 
 const file_storage_auth_provider_proto_rawDesc = "" +
 	"\n" +
-	"\x1bstorage/auth_provider.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14storage/traits.proto\x1a!google/protobuf/go_features.proto\"\xb4\x06\n" +
+	"\x1bstorage/auth_provider.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14storage/traits.proto\x1a!google/protobuf/go_features.proto\"\xc4\x06\n" +
 	"\fAuthProvider\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1f\n" +
 	"\vui_endpoint\x18\x04 \x01(\tR\n" +
 	"uiEndpoint\x12\x18\n" +
-	"\aenabled\x18\x05 \x01(\bR\aenabled\x129\n" +
-	"\x06config\x18\x06 \x03(\v2!.storage.AuthProvider.ConfigEntryR\x06config\x12\x1b\n" +
+	"\aenabled\x18\x05 \x01(\bR\aenabled\x12=\n" +
+	"\x06config\x18\x06 \x03(\v2!.storage.AuthProvider.ConfigEntryB\x02(\x01R\x06config\x12\x1b\n" +
 	"\tlogin_url\x18\a \x01(\tR\bloginUrl\x12 \n" +
 	"\tvalidated\x18\b \x01(\bB\x02\x18\x01R\tvalidated\x12,\n" +
 	"\x12extra_ui_endpoints\x18\t \x03(\tR\x10extraUiEndpoints\x12\x16\n" +
 	"\x06active\x18\n" +
-	" \x01(\bR\x06active\x12X\n" +
-	"\x13required_attributes\x18\v \x03(\v2'.storage.AuthProvider.RequiredAttributeR\x12requiredAttributes\x12'\n" +
-	"\x06traits\x18\f \x01(\v2\x0f.storage.TraitsR\x06traits\x12O\n" +
-	"\x0eclaim_mappings\x18\r \x03(\v2(.storage.AuthProvider.ClaimMappingsEntryR\rclaimMappings\x12=\n" +
-	"\flast_updated\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x1a9\n" +
+	" \x01(\bR\x06active\x12\\\n" +
+	"\x13required_attributes\x18\v \x03(\v2'.storage.AuthProvider.RequiredAttributeB\x02(\x01R\x12requiredAttributes\x12'\n" +
+	"\x06traits\x18\f \x01(\v2\x0f.storage.TraitsR\x06traits\x12S\n" +
+	"\x0eclaim_mappings\x18\r \x03(\v2(.storage.AuthProvider.ClaimMappingsEntryB\x02(\x01R\rclaimMappings\x12A\n" +
+	"\flast_updated\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x1a9\n" +
 	"\vConfigEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aa\n" +

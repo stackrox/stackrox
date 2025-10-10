@@ -510,8 +510,12 @@ func (b0 ResolveAlertsRequest_builder) Build() *ResolveAlertsRequest {
 type ListAlertsResponse struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Alerts *[]*storage.ListAlert  `protobuf:"bytes,1,rep,name=alerts"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListAlertsResponse) Reset() {
@@ -541,15 +545,27 @@ func (x *ListAlertsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListAlertsResponse) GetAlerts() []*storage.ListAlert {
 	if x != nil {
-		if x.xxx_hidden_Alerts != nil {
-			return *x.xxx_hidden_Alerts
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Alerts) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ListAlert
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListAlertsResponse) SetAlerts(v []*storage.ListAlert) {
-	x.xxx_hidden_Alerts = &v
+	var sv *[]*storage.ListAlert
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ListAlert{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListAlertsResponse_builder struct {
@@ -562,7 +578,10 @@ func (b0 ListAlertsResponse_builder) Build() *ListAlertsResponse {
 	m0 := &ListAlertsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Alerts = &b.Alerts
+	if b.Alerts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Alerts = &b.Alerts
+	}
 	return m0
 }
 
@@ -774,8 +793,12 @@ func (b0 DeleteAlertsResponse_builder) Build() *DeleteAlertsResponse {
 type GetAlertsGroupResponse struct {
 	state                       protoimpl.MessageState                 `protogen:"opaque.v1"`
 	xxx_hidden_AlertsByPolicies *[]*GetAlertsGroupResponse_PolicyGroup `protobuf:"bytes,1,rep,name=alerts_by_policies,json=alertsByPolicies"`
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAlertsGroupResponse) Reset() {
@@ -805,15 +828,27 @@ func (x *GetAlertsGroupResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAlertsGroupResponse) GetAlertsByPolicies() []*GetAlertsGroupResponse_PolicyGroup {
 	if x != nil {
-		if x.xxx_hidden_AlertsByPolicies != nil {
-			return *x.xxx_hidden_AlertsByPolicies
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AlertsByPolicies) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*GetAlertsGroupResponse_PolicyGroup
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AlertsByPolicies), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetAlertsGroupResponse) SetAlertsByPolicies(v []*GetAlertsGroupResponse_PolicyGroup) {
-	x.xxx_hidden_AlertsByPolicies = &v
+	var sv *[]*GetAlertsGroupResponse_PolicyGroup
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AlertsByPolicies), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*GetAlertsGroupResponse_PolicyGroup{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AlertsByPolicies), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetAlertsGroupResponse_builder struct {
@@ -826,7 +861,10 @@ func (b0 GetAlertsGroupResponse_builder) Build() *GetAlertsGroupResponse {
 	m0 := &GetAlertsGroupResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_AlertsByPolicies = &b.AlertsByPolicies
+	if b.AlertsByPolicies != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_AlertsByPolicies = &b.AlertsByPolicies
+	}
 	return m0
 }
 
@@ -935,8 +973,12 @@ func (b0 GetAlertsCountsRequest_builder) Build() *GetAlertsCountsRequest {
 type GetAlertsCountsResponse struct {
 	state             protoimpl.MessageState                 `protogen:"opaque.v1"`
 	xxx_hidden_Groups *[]*GetAlertsCountsResponse_AlertGroup `protobuf:"bytes,1,rep,name=groups"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAlertsCountsResponse) Reset() {
@@ -966,15 +1008,27 @@ func (x *GetAlertsCountsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAlertsCountsResponse) GetGroups() []*GetAlertsCountsResponse_AlertGroup {
 	if x != nil {
-		if x.xxx_hidden_Groups != nil {
-			return *x.xxx_hidden_Groups
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*GetAlertsCountsResponse_AlertGroup
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetAlertsCountsResponse) SetGroups(v []*GetAlertsCountsResponse_AlertGroup) {
-	x.xxx_hidden_Groups = &v
+	var sv *[]*GetAlertsCountsResponse_AlertGroup
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*GetAlertsCountsResponse_AlertGroup{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetAlertsCountsResponse_builder struct {
@@ -987,7 +1041,10 @@ func (b0 GetAlertsCountsResponse_builder) Build() *GetAlertsCountsResponse {
 	m0 := &GetAlertsCountsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Groups = &b.Groups
+	if b.Groups != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Groups = &b.Groups
+	}
 	return m0
 }
 
@@ -1134,8 +1191,12 @@ func (b0 AlertEvent_builder) Build() *AlertEvent {
 type GetAlertTimeseriesResponse struct {
 	state               protoimpl.MessageState                       `protogen:"opaque.v1"`
 	xxx_hidden_Clusters *[]*GetAlertTimeseriesResponse_ClusterAlerts `protobuf:"bytes,1,rep,name=clusters"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAlertTimeseriesResponse) Reset() {
@@ -1165,15 +1226,27 @@ func (x *GetAlertTimeseriesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAlertTimeseriesResponse) GetClusters() []*GetAlertTimeseriesResponse_ClusterAlerts {
 	if x != nil {
-		if x.xxx_hidden_Clusters != nil {
-			return *x.xxx_hidden_Clusters
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Clusters) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*GetAlertTimeseriesResponse_ClusterAlerts
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetAlertTimeseriesResponse) SetClusters(v []*GetAlertTimeseriesResponse_ClusterAlerts) {
-	x.xxx_hidden_Clusters = &v
+	var sv *[]*GetAlertTimeseriesResponse_ClusterAlerts
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*GetAlertTimeseriesResponse_ClusterAlerts{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetAlertTimeseriesResponse_builder struct {
@@ -1186,14 +1259,19 @@ func (b0 GetAlertTimeseriesResponse_builder) Build() *GetAlertTimeseriesResponse
 	m0 := &GetAlertTimeseriesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Clusters = &b.Clusters
+	if b.Clusters != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Clusters = &b.Clusters
+	}
 	return m0
 }
 
 type GetAlertsGroupResponse_PolicyGroup struct {
-	state                  protoimpl.MessageState   `protogen:"opaque.v1"`
-	xxx_hidden_Policy      *storage.ListAlertPolicy `protobuf:"bytes,1,opt,name=policy"`
-	xxx_hidden_NumAlerts   int64                    `protobuf:"varint,2,opt,name=num_alerts,json=numAlerts"`
+	state                protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_Policy    *storage.ListAlertPolicy `protobuf:"bytes,1,opt,name=policy"`
+	xxx_hidden_NumAlerts int64                    `protobuf:"varint,2,opt,name=num_alerts,json=numAlerts"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1227,7 +1305,14 @@ func (x *GetAlertsGroupResponse_PolicyGroup) ProtoReflect() protoreflect.Message
 
 func (x *GetAlertsGroupResponse_PolicyGroup) GetPolicy() *storage.ListAlertPolicy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policy) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.ListAlertPolicy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policy), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1240,7 +1325,12 @@ func (x *GetAlertsGroupResponse_PolicyGroup) GetNumAlerts() int64 {
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) SetPolicy(v *storage.ListAlertPolicy) {
-	x.xxx_hidden_Policy = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Policy, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) SetNumAlerts(v int64) {
@@ -1252,7 +1342,7 @@ func (x *GetAlertsGroupResponse_PolicyGroup) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) HasNumAlerts() bool {
@@ -1263,7 +1353,8 @@ func (x *GetAlertsGroupResponse_PolicyGroup) HasNumAlerts() bool {
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Policy, (*storage.ListAlertPolicy)(nil))
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) ClearNumAlerts() {
@@ -1282,7 +1373,10 @@ func (b0 GetAlertsGroupResponse_PolicyGroup_builder) Build() *GetAlertsGroupResp
 	m0 := &GetAlertsGroupResponse_PolicyGroup{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policy = b.Policy
+	if b.Policy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Policy = b.Policy
+	}
 	if b.NumAlerts != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_NumAlerts = *b.NumAlerts
@@ -1291,9 +1385,11 @@ func (b0 GetAlertsGroupResponse_PolicyGroup_builder) Build() *GetAlertsGroupResp
 }
 
 type GetAlertsCountsResponse_AlertGroup struct {
-	state                  protoimpl.MessageState                             `protogen:"opaque.v1"`
-	xxx_hidden_Group       *string                                            `protobuf:"bytes,1,opt,name=group"`
-	xxx_hidden_Counts      *[]*GetAlertsCountsResponse_AlertGroup_AlertCounts `protobuf:"bytes,2,rep,name=counts"`
+	state             protoimpl.MessageState                             `protogen:"opaque.v1"`
+	xxx_hidden_Group  *string                                            `protobuf:"bytes,1,opt,name=group"`
+	xxx_hidden_Counts *[]*GetAlertsCountsResponse_AlertGroup_AlertCounts `protobuf:"bytes,2,rep,name=counts"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1337,8 +1433,13 @@ func (x *GetAlertsCountsResponse_AlertGroup) GetGroup() string {
 
 func (x *GetAlertsCountsResponse_AlertGroup) GetCounts() []*GetAlertsCountsResponse_AlertGroup_AlertCounts {
 	if x != nil {
-		if x.xxx_hidden_Counts != nil {
-			return *x.xxx_hidden_Counts
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Counts) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*GetAlertsCountsResponse_AlertGroup_AlertCounts
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Counts), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1350,7 +1451,14 @@ func (x *GetAlertsCountsResponse_AlertGroup) SetGroup(v string) {
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup) SetCounts(v []*GetAlertsCountsResponse_AlertGroup_AlertCounts) {
-	x.xxx_hidden_Counts = &v
+	var sv *[]*GetAlertsCountsResponse_AlertGroup_AlertCounts
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Counts), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*GetAlertsCountsResponse_AlertGroup_AlertCounts{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Counts), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup) HasGroup() bool {
@@ -1380,7 +1488,10 @@ func (b0 GetAlertsCountsResponse_AlertGroup_builder) Build() *GetAlertsCountsRes
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Group = b.Group
 	}
-	x.xxx_hidden_Counts = &b.Counts
+	if b.Counts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Counts = &b.Counts
+	}
 	return m0
 }
 
@@ -1492,9 +1603,11 @@ func (b0 GetAlertsCountsResponse_AlertGroup_AlertCounts_builder) Build() *GetAle
 }
 
 type GetAlertTimeseriesResponse_ClusterAlerts struct {
-	state                  protoimpl.MessageState                                   `protogen:"opaque.v1"`
-	xxx_hidden_Cluster     *string                                                  `protobuf:"bytes,1,opt,name=cluster"`
-	xxx_hidden_Severities  *[]*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents `protobuf:"bytes,2,rep,name=severities"`
+	state                 protoimpl.MessageState                                   `protogen:"opaque.v1"`
+	xxx_hidden_Cluster    *string                                                  `protobuf:"bytes,1,opt,name=cluster"`
+	xxx_hidden_Severities *[]*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents `protobuf:"bytes,2,rep,name=severities"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1538,8 +1651,13 @@ func (x *GetAlertTimeseriesResponse_ClusterAlerts) GetCluster() string {
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) GetSeverities() []*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents {
 	if x != nil {
-		if x.xxx_hidden_Severities != nil {
-			return *x.xxx_hidden_Severities
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Severities) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Severities), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1551,7 +1669,14 @@ func (x *GetAlertTimeseriesResponse_ClusterAlerts) SetCluster(v string) {
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) SetSeverities(v []*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) {
-	x.xxx_hidden_Severities = &v
+	var sv *[]*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Severities), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Severities), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) HasCluster() bool {
@@ -1581,14 +1706,19 @@ func (b0 GetAlertTimeseriesResponse_ClusterAlerts_builder) Build() *GetAlertTime
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Cluster = b.Cluster
 	}
-	x.xxx_hidden_Severities = &b.Severities
+	if b.Severities != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Severities = &b.Severities
+	}
 	return m0
 }
 
 type GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Severity    storage.Severity       `protobuf:"varint,1,opt,name=severity,enum=storage.Severity"`
-	xxx_hidden_Events      *[]*AlertEvent         `protobuf:"bytes,2,rep,name=events"`
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Severity storage.Severity       `protobuf:"varint,1,opt,name=severity,enum=storage.Severity"`
+	xxx_hidden_Events   *[]*AlertEvent         `protobuf:"bytes,2,rep,name=events"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1631,8 +1761,13 @@ func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) GetSeverity() sto
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) GetEvents() []*AlertEvent {
 	if x != nil {
-		if x.xxx_hidden_Events != nil {
-			return *x.xxx_hidden_Events
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Events) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*AlertEvent
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1644,7 +1779,14 @@ func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) SetSeverity(v sto
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) SetEvents(v []*AlertEvent) {
-	x.xxx_hidden_Events = &v
+	var sv *[]*AlertEvent
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*AlertEvent{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) HasSeverity() bool {
@@ -1674,7 +1816,10 @@ func (b0 GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents_builder) Build() *
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Severity = *b.Severity
 	}
-	x.xxx_hidden_Events = &b.Events
+	if b.Events != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Events = &b.Events
+	}
 	return m0
 }
 
@@ -1697,20 +1842,20 @@ const file_api_v1_alert_service_proto_rawDesc = "" +
 	"\twhitelist\x18\x02 \x01(\bB\x02\x18\x01R\twhitelist\x12&\n" +
 	"\x0fadd_to_baseline\x18\x03 \x01(\bR\raddToBaseline\",\n" +
 	"\x14ResolveAlertsRequest\x12\x14\n" +
-	"\x05query\x18\x01 \x01(\tR\x05query\"@\n" +
-	"\x12ListAlertsResponse\x12*\n" +
-	"\x06alerts\x18\x01 \x03(\v2\x12.storage.ListAlertR\x06alerts\"S\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\"D\n" +
+	"\x12ListAlertsResponse\x12.\n" +
+	"\x06alerts\x18\x01 \x03(\v2\x12.storage.ListAlertB\x02(\x01R\x06alerts\"S\n" +
 	"\x13DeleteAlertsRequest\x12\"\n" +
 	"\x05query\x18\x01 \x01(\v2\f.v1.RawQueryR\x05query\x12\x18\n" +
 	"\aconfirm\x18\x02 \x01(\bR\aconfirm\"P\n" +
 	"\x14DeleteAlertsResponse\x12\x1f\n" +
 	"\vnum_deleted\x18\x01 \x01(\rR\n" +
 	"numDeleted\x12\x17\n" +
-	"\adry_run\x18\x02 \x01(\bR\x06dryRun\"\xce\x01\n" +
-	"\x16GetAlertsGroupResponse\x12T\n" +
-	"\x12alerts_by_policies\x18\x01 \x03(\v2&.v1.GetAlertsGroupResponse.PolicyGroupR\x10alertsByPolicies\x1a^\n" +
-	"\vPolicyGroup\x120\n" +
-	"\x06policy\x18\x01 \x01(\v2\x18.storage.ListAlertPolicyR\x06policy\x12\x1d\n" +
+	"\adry_run\x18\x02 \x01(\bR\x06dryRun\"\xd6\x01\n" +
+	"\x16GetAlertsGroupResponse\x12X\n" +
+	"\x12alerts_by_policies\x18\x01 \x03(\v2&.v1.GetAlertsGroupResponse.PolicyGroupB\x02(\x01R\x10alertsByPolicies\x1ab\n" +
+	"\vPolicyGroup\x124\n" +
+	"\x06policy\x18\x01 \x01(\v2\x18.storage.ListAlertPolicyB\x02(\x01R\x06policy\x12\x1d\n" +
 	"\n" +
 	"num_alerts\x18\x02 \x01(\x03R\tnumAlerts\"\xc3\x01\n" +
 	"\x16GetAlertsCountsRequest\x12/\n" +
@@ -1719,13 +1864,13 @@ const file_api_v1_alert_service_proto_rawDesc = "" +
 	"\fRequestGroup\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\f\n" +
 	"\bCATEGORY\x10\x01\x12\v\n" +
-	"\aCLUSTER\x10\x02\"\x9e\x02\n" +
-	"\x17GetAlertsCountsResponse\x12>\n" +
-	"\x06groups\x18\x01 \x03(\v2&.v1.GetAlertsCountsResponse.AlertGroupR\x06groups\x1a\xc2\x01\n" +
+	"\aCLUSTER\x10\x02\"\xa6\x02\n" +
+	"\x17GetAlertsCountsResponse\x12B\n" +
+	"\x06groups\x18\x01 \x03(\v2&.v1.GetAlertsCountsResponse.AlertGroupB\x02(\x01R\x06groups\x1a\xc6\x01\n" +
 	"\n" +
 	"AlertGroup\x12\x14\n" +
-	"\x05group\x18\x01 \x01(\tR\x05group\x12J\n" +
-	"\x06counts\x18\x02 \x03(\v22.v1.GetAlertsCountsResponse.AlertGroup.AlertCountsR\x06counts\x1aR\n" +
+	"\x05group\x18\x01 \x01(\tR\x05group\x12N\n" +
+	"\x06counts\x18\x02 \x03(\v22.v1.GetAlertsCountsResponse.AlertGroup.AlertCountsB\x02(\x01R\x06counts\x1aR\n" +
 	"\vAlertCounts\x12-\n" +
 	"\bseverity\x18\x01 \x01(\x0e2\x11.storage.SeverityR\bseverity\x12\x14\n" +
 	"\x05count\x18\x02 \x01(\x03R\x05count\"N\n" +
@@ -1733,17 +1878,17 @@ const file_api_v1_alert_service_proto_rawDesc = "" +
 	"AlertEvent\x12\x12\n" +
 	"\x04time\x18\x01 \x01(\x03R\x04time\x12\x1c\n" +
 	"\x04type\x18\x02 \x01(\x0e2\b.v1.TypeR\x04type\x12\x0e\n" +
-	"\x02id\x18\x03 \x01(\tR\x02id\"\xd2\x02\n" +
-	"\x1aGetAlertTimeseriesResponse\x12H\n" +
-	"\bclusters\x18\x01 \x03(\v2,.v1.GetAlertTimeseriesResponse.ClusterAlertsR\bclusters\x1a\xe9\x01\n" +
+	"\x02id\x18\x03 \x01(\tR\x02id\"\xde\x02\n" +
+	"\x1aGetAlertTimeseriesResponse\x12L\n" +
+	"\bclusters\x18\x01 \x03(\v2,.v1.GetAlertTimeseriesResponse.ClusterAlertsB\x02(\x01R\bclusters\x1a\xf1\x01\n" +
 	"\rClusterAlerts\x12\x18\n" +
-	"\acluster\x18\x01 \x01(\tR\acluster\x12X\n" +
+	"\acluster\x18\x01 \x01(\tR\acluster\x12\\\n" +
 	"\n" +
-	"severities\x18\x02 \x03(\v28.v1.GetAlertTimeseriesResponse.ClusterAlerts.AlertEventsR\n" +
-	"severities\x1ad\n" +
+	"severities\x18\x02 \x03(\v28.v1.GetAlertTimeseriesResponse.ClusterAlerts.AlertEventsB\x02(\x01R\n" +
+	"severities\x1ah\n" +
 	"\vAlertEvents\x12-\n" +
-	"\bseverity\x18\x01 \x01(\x0e2\x11.storage.SeverityR\bseverity\x12&\n" +
-	"\x06events\x18\x02 \x03(\v2\x0e.v1.AlertEventR\x06events* \n" +
+	"\bseverity\x18\x01 \x01(\x0e2\x11.storage.SeverityR\bseverity\x12*\n" +
+	"\x06events\x18\x02 \x03(\v2\x0e.v1.AlertEventB\x02(\x01R\x06events* \n" +
 	"\x04Type\x12\v\n" +
 	"\aCREATED\x10\x00\x12\v\n" +
 	"\aREMOVED\x10\x012\xc4\x06\n" +

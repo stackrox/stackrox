@@ -130,8 +130,12 @@ type LabelSelector struct {
 	state                   protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_MatchLabels  map[string]string             `protobuf:"bytes,1,rep,name=match_labels,json=matchLabels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Requirements *[]*LabelSelector_Requirement `protobuf:"bytes,2,rep,name=requirements"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *LabelSelector) Reset() {
@@ -168,8 +172,13 @@ func (x *LabelSelector) GetMatchLabels() map[string]string {
 
 func (x *LabelSelector) GetRequirements() []*LabelSelector_Requirement {
 	if x != nil {
-		if x.xxx_hidden_Requirements != nil {
-			return *x.xxx_hidden_Requirements
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Requirements) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*LabelSelector_Requirement
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -180,7 +189,14 @@ func (x *LabelSelector) SetMatchLabels(v map[string]string) {
 }
 
 func (x *LabelSelector) SetRequirements(v []*LabelSelector_Requirement) {
-	x.xxx_hidden_Requirements = &v
+	var sv *[]*LabelSelector_Requirement
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*LabelSelector_Requirement{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 type LabelSelector_builder struct {
@@ -197,7 +213,10 @@ func (b0 LabelSelector_builder) Build() *LabelSelector {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_MatchLabels = b.MatchLabels
-	x.xxx_hidden_Requirements = &b.Requirements
+	if b.Requirements != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Requirements = &b.Requirements
+	}
 	return m0
 }
 
@@ -207,8 +226,12 @@ func (b0 LabelSelector_builder) Build() *LabelSelector {
 type SetBasedLabelSelector struct {
 	state                   protoimpl.MessageState                `protogen:"opaque.v1"`
 	xxx_hidden_Requirements *[]*SetBasedLabelSelector_Requirement `protobuf:"bytes,2,rep,name=requirements"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SetBasedLabelSelector) Reset() {
@@ -238,15 +261,27 @@ func (x *SetBasedLabelSelector) ProtoReflect() protoreflect.Message {
 
 func (x *SetBasedLabelSelector) GetRequirements() []*SetBasedLabelSelector_Requirement {
 	if x != nil {
-		if x.xxx_hidden_Requirements != nil {
-			return *x.xxx_hidden_Requirements
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Requirements) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*SetBasedLabelSelector_Requirement
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *SetBasedLabelSelector) SetRequirements(v []*SetBasedLabelSelector_Requirement) {
-	x.xxx_hidden_Requirements = &v
+	var sv *[]*SetBasedLabelSelector_Requirement
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SetBasedLabelSelector_Requirement{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type SetBasedLabelSelector_builder struct {
@@ -259,7 +294,10 @@ func (b0 SetBasedLabelSelector_builder) Build() *SetBasedLabelSelector {
 	m0 := &SetBasedLabelSelector{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Requirements = &b.Requirements
+	if b.Requirements != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Requirements = &b.Requirements
+	}
 	return m0
 }
 
@@ -517,10 +555,10 @@ var File_storage_labels_proto protoreflect.FileDescriptor
 
 const file_storage_labels_proto_rawDesc = "" +
 	"\n" +
-	"\x14storage/labels.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"\x96\x03\n" +
-	"\rLabelSelector\x12J\n" +
-	"\fmatch_labels\x18\x01 \x03(\v2'.storage.LabelSelector.MatchLabelsEntryR\vmatchLabels\x12F\n" +
-	"\frequirements\x18\x02 \x03(\v2\".storage.LabelSelector.RequirementR\frequirements\x1ah\n" +
+	"\x14storage/labels.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"\x9e\x03\n" +
+	"\rLabelSelector\x12N\n" +
+	"\fmatch_labels\x18\x01 \x03(\v2'.storage.LabelSelector.MatchLabelsEntryB\x02(\x01R\vmatchLabels\x12J\n" +
+	"\frequirements\x18\x02 \x03(\v2\".storage.LabelSelector.RequirementB\x02(\x01R\frequirements\x1ah\n" +
 	"\vRequirement\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12/\n" +
 	"\x02op\x18\x02 \x01(\x0e2\x1f.storage.LabelSelector.OperatorR\x02op\x12\x16\n" +
@@ -536,9 +574,9 @@ const file_storage_labels_proto_rawDesc = "" +
 	"\n" +
 	"\x06EXISTS\x10\x03\x12\x0e\n" +
 	"\n" +
-	"NOT_EXISTS\x10\x04\"\xa8\x02\n" +
-	"\x15SetBasedLabelSelector\x12N\n" +
-	"\frequirements\x18\x02 \x03(\v2*.storage.SetBasedLabelSelector.RequirementR\frequirements\x1ap\n" +
+	"NOT_EXISTS\x10\x04\"\xac\x02\n" +
+	"\x15SetBasedLabelSelector\x12R\n" +
+	"\frequirements\x18\x02 \x03(\v2*.storage.SetBasedLabelSelector.RequirementB\x02(\x01R\frequirements\x1ap\n" +
 	"\vRequirement\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x127\n" +
 	"\x02op\x18\x02 \x01(\x0e2'.storage.SetBasedLabelSelector.OperatorR\x02op\x12\x16\n" +

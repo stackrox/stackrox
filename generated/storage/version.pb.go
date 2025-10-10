@@ -28,10 +28,12 @@ type Version struct {
 	xxx_hidden_Version       *string                `protobuf:"bytes,2,opt,name=version"`
 	xxx_hidden_LastPersisted *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_persisted,json=lastPersisted"`
 	xxx_hidden_MinSeqNum     int32                  `protobuf:"varint,4,opt,name=min_seq_num,json=minSeqNum"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Version) Reset() {
@@ -78,7 +80,14 @@ func (x *Version) GetVersion() string {
 
 func (x *Version) GetLastPersisted() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastPersisted
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastPersisted) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastPersisted), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -101,7 +110,12 @@ func (x *Version) SetVersion(v string) {
 }
 
 func (x *Version) SetLastPersisted(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastPersisted = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastPersisted, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	}
 }
 
 func (x *Version) SetMinSeqNum(v int32) {
@@ -127,7 +141,7 @@ func (x *Version) HasLastPersisted() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastPersisted != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Version) HasMinSeqNum() bool {
@@ -148,7 +162,8 @@ func (x *Version) ClearVersion() {
 }
 
 func (x *Version) ClearLastPersisted() {
-	x.xxx_hidden_LastPersisted = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastPersisted, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Version) ClearMinSeqNum() {
@@ -182,7 +197,10 @@ func (b0 Version_builder) Build() *Version {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
 		x.xxx_hidden_Version = b.Version
 	}
-	x.xxx_hidden_LastPersisted = b.LastPersisted
+	if b.LastPersisted != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_LastPersisted = b.LastPersisted
+	}
 	if b.MinSeqNum != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
 		x.xxx_hidden_MinSeqNum = *b.MinSeqNum
@@ -194,11 +212,11 @@ var File_storage_version_proto protoreflect.FileDescriptor
 
 const file_storage_version_proto_rawDesc = "" +
 	"\n" +
-	"\x15storage/version.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x9f\x01\n" +
+	"\x15storage/version.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xa3\x01\n" +
 	"\aVersion\x12\x17\n" +
 	"\aseq_num\x18\x01 \x01(\x05R\x06seqNum\x12\x18\n" +
-	"\aversion\x18\x02 \x01(\tR\aversion\x12A\n" +
-	"\x0elast_persisted\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\rlastPersisted\x12\x1e\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x12E\n" +
+	"\x0elast_persisted\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\rlastPersisted\x12\x1e\n" +
 	"\vmin_seq_num\x18\x04 \x01(\x05R\tminSeqNumB6\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 

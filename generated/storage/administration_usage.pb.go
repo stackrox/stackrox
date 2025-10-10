@@ -30,6 +30,8 @@ type SecuredUnits struct {
 	xxx_hidden_Timestamp   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp"`
 	xxx_hidden_NumNodes    int64                  `protobuf:"varint,3,opt,name=num_nodes,json=numNodes"`
 	xxx_hidden_NumCpuUnits int64                  `protobuf:"varint,4,opt,name=num_cpu_units,json=numCpuUnits"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -73,7 +75,14 @@ func (x *SecuredUnits) GetId() string {
 
 func (x *SecuredUnits) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Timestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -98,7 +107,12 @@ func (x *SecuredUnits) SetId(v string) {
 }
 
 func (x *SecuredUnits) SetTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Timestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	}
 }
 
 func (x *SecuredUnits) SetNumNodes(v int64) {
@@ -122,7 +136,7 @@ func (x *SecuredUnits) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Timestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SecuredUnits) HasNumNodes() bool {
@@ -145,7 +159,8 @@ func (x *SecuredUnits) ClearId() {
 }
 
 func (x *SecuredUnits) ClearTimestamp() {
-	x.xxx_hidden_Timestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *SecuredUnits) ClearNumNodes() {
@@ -184,7 +199,10 @@ func (b0 SecuredUnits_builder) Build() *SecuredUnits {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
 		x.xxx_hidden_Id = b.Id
 	}
-	x.xxx_hidden_Timestamp = b.Timestamp
+	if b.Timestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Timestamp = b.Timestamp
+	}
 	if b.NumNodes != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_NumNodes = *b.NumNodes
@@ -200,10 +218,10 @@ var File_storage_administration_usage_proto protoreflect.FileDescriptor
 
 const file_storage_administration_usage_proto_rawDesc = "" +
 	"\n" +
-	"\"storage/administration_usage.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x99\x01\n" +
+	"\"storage/administration_usage.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x9d\x01\n" +
 	"\fSecuredUnits\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x128\n" +
-	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x1b\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12<\n" +
+	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\ttimestamp\x12\x1b\n" +
 	"\tnum_nodes\x18\x03 \x01(\x03R\bnumNodes\x12\"\n" +
 	"\rnum_cpu_units\x18\x04 \x01(\x03R\vnumCpuUnitsB6\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"

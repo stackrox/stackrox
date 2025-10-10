@@ -104,8 +104,12 @@ func (b0 GetProcessesByDeploymentRequest_builder) Build() *GetProcessesByDeploym
 type GetProcessesResponse struct {
 	state                protoimpl.MessageState       `protogen:"opaque.v1"`
 	xxx_hidden_Processes *[]*storage.ProcessIndicator `protobuf:"bytes,1,rep,name=processes"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetProcessesResponse) Reset() {
@@ -135,15 +139,27 @@ func (x *GetProcessesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetProcessesResponse) GetProcesses() []*storage.ProcessIndicator {
 	if x != nil {
-		if x.xxx_hidden_Processes != nil {
-			return *x.xxx_hidden_Processes
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Processes) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ProcessIndicator
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Processes), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetProcessesResponse) SetProcesses(v []*storage.ProcessIndicator) {
-	x.xxx_hidden_Processes = &v
+	var sv *[]*storage.ProcessIndicator
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Processes), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ProcessIndicator{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Processes), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetProcessesResponse_builder struct {
@@ -156,14 +172,19 @@ func (b0 GetProcessesResponse_builder) Build() *GetProcessesResponse {
 	m0 := &GetProcessesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Processes = &b.Processes
+	if b.Processes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Processes = &b.Processes
+	}
 	return m0
 }
 
 type ProcessGroup struct {
-	state                  protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Args        *string                      `protobuf:"bytes,1,opt,name=args"`
-	xxx_hidden_Signals     *[]*storage.ProcessIndicator `protobuf:"bytes,2,rep,name=signals"`
+	state              protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_Args    *string                      `protobuf:"bytes,1,opt,name=args"`
+	xxx_hidden_Signals *[]*storage.ProcessIndicator `protobuf:"bytes,2,rep,name=signals"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -207,8 +228,13 @@ func (x *ProcessGroup) GetArgs() string {
 
 func (x *ProcessGroup) GetSignals() []*storage.ProcessIndicator {
 	if x != nil {
-		if x.xxx_hidden_Signals != nil {
-			return *x.xxx_hidden_Signals
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Signals) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.ProcessIndicator
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Signals), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -220,7 +246,14 @@ func (x *ProcessGroup) SetArgs(v string) {
 }
 
 func (x *ProcessGroup) SetSignals(v []*storage.ProcessIndicator) {
-	x.xxx_hidden_Signals = &v
+	var sv *[]*storage.ProcessIndicator
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Signals), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ProcessIndicator{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Signals), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ProcessGroup) HasArgs() bool {
@@ -250,7 +283,10 @@ func (b0 ProcessGroup_builder) Build() *ProcessGroup {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Args = b.Args
 	}
-	x.xxx_hidden_Signals = &b.Signals
+	if b.Signals != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Signals = &b.Signals
+	}
 	return m0
 }
 
@@ -259,10 +295,12 @@ type ProcessNameGroup struct {
 	xxx_hidden_Name          *string                `protobuf:"bytes,1,opt,name=name"`
 	xxx_hidden_TimesExecuted uint32                 `protobuf:"varint,2,opt,name=times_executed,json=timesExecuted"`
 	xxx_hidden_Groups        *[]*ProcessGroup       `protobuf:"bytes,3,rep,name=groups"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessNameGroup) Reset() {
@@ -309,8 +347,13 @@ func (x *ProcessNameGroup) GetTimesExecuted() uint32 {
 
 func (x *ProcessNameGroup) GetGroups() []*ProcessGroup {
 	if x != nil {
-		if x.xxx_hidden_Groups != nil {
-			return *x.xxx_hidden_Groups
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*ProcessGroup
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -327,7 +370,14 @@ func (x *ProcessNameGroup) SetTimesExecuted(v uint32) {
 }
 
 func (x *ProcessNameGroup) SetGroups(v []*ProcessGroup) {
-	x.xxx_hidden_Groups = &v
+	var sv *[]*ProcessGroup
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ProcessGroup{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ProcessNameGroup) HasName() bool {
@@ -374,15 +424,22 @@ func (b0 ProcessNameGroup_builder) Build() *ProcessNameGroup {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_TimesExecuted = *b.TimesExecuted
 	}
-	x.xxx_hidden_Groups = &b.Groups
+	if b.Groups != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Groups = &b.Groups
+	}
 	return m0
 }
 
 type GetGroupedProcessesResponse struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Groups *[]*ProcessNameGroup   `protobuf:"bytes,3,rep,name=groups"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetGroupedProcessesResponse) Reset() {
@@ -412,15 +469,27 @@ func (x *GetGroupedProcessesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetGroupedProcessesResponse) GetGroups() []*ProcessNameGroup {
 	if x != nil {
-		if x.xxx_hidden_Groups != nil {
-			return *x.xxx_hidden_Groups
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*ProcessNameGroup
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetGroupedProcessesResponse) SetGroups(v []*ProcessNameGroup) {
-	x.xxx_hidden_Groups = &v
+	var sv *[]*ProcessNameGroup
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ProcessNameGroup{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetGroupedProcessesResponse_builder struct {
@@ -433,7 +502,10 @@ func (b0 GetGroupedProcessesResponse_builder) Build() *GetGroupedProcessesRespon
 	m0 := &GetGroupedProcessesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Groups = &b.Groups
+	if b.Groups != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Groups = &b.Groups
+	}
 	return m0
 }
 
@@ -444,10 +516,12 @@ type ProcessNameAndContainerNameGroup struct {
 	xxx_hidden_TimesExecuted uint32                 `protobuf:"varint,3,opt,name=times_executed,json=timesExecuted"`
 	xxx_hidden_Groups        *[]*ProcessGroup       `protobuf:"bytes,4,rep,name=groups"`
 	xxx_hidden_Suspicious    bool                   `protobuf:"varint,5,opt,name=suspicious"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessNameAndContainerNameGroup) Reset() {
@@ -504,8 +578,13 @@ func (x *ProcessNameAndContainerNameGroup) GetTimesExecuted() uint32 {
 
 func (x *ProcessNameAndContainerNameGroup) GetGroups() []*ProcessGroup {
 	if x != nil {
-		if x.xxx_hidden_Groups != nil {
-			return *x.xxx_hidden_Groups
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*ProcessGroup
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -534,7 +613,14 @@ func (x *ProcessNameAndContainerNameGroup) SetTimesExecuted(v uint32) {
 }
 
 func (x *ProcessNameAndContainerNameGroup) SetGroups(v []*ProcessGroup) {
-	x.xxx_hidden_Groups = &v
+	var sv *[]*ProcessGroup
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ProcessGroup{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *ProcessNameAndContainerNameGroup) SetSuspicious(v bool) {
@@ -616,7 +702,10 @@ func (b0 ProcessNameAndContainerNameGroup_builder) Build() *ProcessNameAndContai
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
 		x.xxx_hidden_TimesExecuted = *b.TimesExecuted
 	}
-	x.xxx_hidden_Groups = &b.Groups
+	if b.Groups != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_Groups = &b.Groups
+	}
 	if b.Suspicious != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
 		x.xxx_hidden_Suspicious = *b.Suspicious
@@ -627,8 +716,12 @@ func (b0 ProcessNameAndContainerNameGroup_builder) Build() *ProcessNameAndContai
 type GetGroupedProcessesWithContainerResponse struct {
 	state             protoimpl.MessageState               `protogen:"opaque.v1"`
 	xxx_hidden_Groups *[]*ProcessNameAndContainerNameGroup `protobuf:"bytes,3,rep,name=groups"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetGroupedProcessesWithContainerResponse) Reset() {
@@ -658,15 +751,27 @@ func (x *GetGroupedProcessesWithContainerResponse) ProtoReflect() protoreflect.M
 
 func (x *GetGroupedProcessesWithContainerResponse) GetGroups() []*ProcessNameAndContainerNameGroup {
 	if x != nil {
-		if x.xxx_hidden_Groups != nil {
-			return *x.xxx_hidden_Groups
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*ProcessNameAndContainerNameGroup
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetGroupedProcessesWithContainerResponse) SetGroups(v []*ProcessNameAndContainerNameGroup) {
-	x.xxx_hidden_Groups = &v
+	var sv *[]*ProcessNameAndContainerNameGroup
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ProcessNameAndContainerNameGroup{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetGroupedProcessesWithContainerResponse_builder struct {
@@ -679,7 +784,10 @@ func (b0 GetGroupedProcessesWithContainerResponse_builder) Build() *GetGroupedPr
 	m0 := &GetGroupedProcessesWithContainerResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Groups = &b.Groups
+	if b.Groups != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Groups = &b.Groups
+	}
 	return m0
 }
 
@@ -764,28 +872,28 @@ const file_api_v1_process_service_proto_rawDesc = "" +
 	"\n" +
 	"\x1capi/v1/process_service.proto\x12\x02v1\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"F\n" +
 	"\x1fGetProcessesByDeploymentRequest\x12#\n" +
-	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"O\n" +
-	"\x14GetProcessesResponse\x127\n" +
-	"\tprocesses\x18\x01 \x03(\v2\x19.storage.ProcessIndicatorR\tprocesses\"W\n" +
+	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"S\n" +
+	"\x14GetProcessesResponse\x12;\n" +
+	"\tprocesses\x18\x01 \x03(\v2\x19.storage.ProcessIndicatorB\x02(\x01R\tprocesses\"[\n" +
 	"\fProcessGroup\x12\x12\n" +
-	"\x04args\x18\x01 \x01(\tR\x04args\x123\n" +
-	"\asignals\x18\x02 \x03(\v2\x19.storage.ProcessIndicatorR\asignals\"w\n" +
+	"\x04args\x18\x01 \x01(\tR\x04args\x127\n" +
+	"\asignals\x18\x02 \x03(\v2\x19.storage.ProcessIndicatorB\x02(\x01R\asignals\"{\n" +
 	"\x10ProcessNameGroup\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
-	"\x0etimes_executed\x18\x02 \x01(\rR\rtimesExecuted\x12(\n" +
-	"\x06groups\x18\x03 \x03(\v2\x10.v1.ProcessGroupR\x06groups\"K\n" +
-	"\x1bGetGroupedProcessesResponse\x12,\n" +
-	"\x06groups\x18\x03 \x03(\v2\x14.v1.ProcessNameGroupR\x06groups\"\xce\x01\n" +
+	"\x0etimes_executed\x18\x02 \x01(\rR\rtimesExecuted\x12,\n" +
+	"\x06groups\x18\x03 \x03(\v2\x10.v1.ProcessGroupB\x02(\x01R\x06groups\"O\n" +
+	"\x1bGetGroupedProcessesResponse\x120\n" +
+	"\x06groups\x18\x03 \x03(\v2\x14.v1.ProcessNameGroupB\x02(\x01R\x06groups\"\xd2\x01\n" +
 	" ProcessNameAndContainerNameGroup\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
 	"\x0econtainer_name\x18\x02 \x01(\tR\rcontainerName\x12%\n" +
-	"\x0etimes_executed\x18\x03 \x01(\rR\rtimesExecuted\x12(\n" +
-	"\x06groups\x18\x04 \x03(\v2\x10.v1.ProcessGroupR\x06groups\x12\x1e\n" +
+	"\x0etimes_executed\x18\x03 \x01(\rR\rtimesExecuted\x12,\n" +
+	"\x06groups\x18\x04 \x03(\v2\x10.v1.ProcessGroupB\x02(\x01R\x06groups\x12\x1e\n" +
 	"\n" +
 	"suspicious\x18\x05 \x01(\bR\n" +
-	"suspicious\"h\n" +
-	"(GetGroupedProcessesWithContainerResponse\x12<\n" +
-	"\x06groups\x18\x03 \x03(\v2$.v1.ProcessNameAndContainerNameGroupR\x06groups\".\n" +
+	"suspicious\"l\n" +
+	"(GetGroupedProcessesWithContainerResponse\x12@\n" +
+	"\x06groups\x18\x03 \x03(\v2$.v1.ProcessNameAndContainerNameGroupB\x02(\x01R\x06groups\".\n" +
 	"\x16CountProcessesResponse\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count2\xdb\x04\n" +
 	"\x0eProcessService\x12T\n" +

@@ -35,10 +35,12 @@ type ProcessListeningOnPort struct {
 	xxx_hidden_Namespace          *string                          `protobuf:"bytes,8,opt,name=namespace"`
 	xxx_hidden_ContainerStartTime *timestamppb.Timestamp           `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime"`
 	xxx_hidden_ImageId            *string                          `protobuf:"bytes,10,opt,name=image_id,json=imageId"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessListeningOnPort) Reset() {
@@ -142,7 +144,14 @@ func (x *ProcessListeningOnPort) GetNamespace() string {
 
 func (x *ProcessListeningOnPort) GetContainerStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ContainerStartTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ContainerStartTime) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ContainerStartTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -196,7 +205,12 @@ func (x *ProcessListeningOnPort) SetNamespace(v string) {
 }
 
 func (x *ProcessListeningOnPort) SetContainerStartTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ContainerStartTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ContainerStartTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
+	}
 }
 
 func (x *ProcessListeningOnPort) SetImageId(v string) {
@@ -264,7 +278,7 @@ func (x *ProcessListeningOnPort) HasContainerStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ContainerStartTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *ProcessListeningOnPort) HasImageId() bool {
@@ -313,7 +327,8 @@ func (x *ProcessListeningOnPort) ClearNamespace() {
 }
 
 func (x *ProcessListeningOnPort) ClearContainerStartTime() {
-	x.xxx_hidden_ContainerStartTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ContainerStartTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ProcessListeningOnPort) ClearImageId() {
@@ -366,7 +381,10 @@ func (b0 ProcessListeningOnPort_builder) Build() *ProcessListeningOnPort {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
 		x.xxx_hidden_Namespace = b.Namespace
 	}
-	x.xxx_hidden_ContainerStartTime = b.ContainerStartTime
+	if b.ContainerStartTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
+		x.xxx_hidden_ContainerStartTime = b.ContainerStartTime
+	}
 	if b.ImageId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
 		x.xxx_hidden_ImageId = b.ImageId
@@ -385,10 +403,12 @@ type ProcessListeningOnPortFromSensor struct {
 	xxx_hidden_DeploymentId   *string                    `protobuf:"bytes,7,opt,name=deployment_id,json=deploymentId"`
 	xxx_hidden_PodUid         *string                    `protobuf:"bytes,8,opt,name=pod_uid,json=podUid"`
 	xxx_hidden_Namespace      *string                    `protobuf:"bytes,9,opt,name=namespace"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessListeningOnPortFromSensor) Reset() {
@@ -441,7 +461,14 @@ func (x *ProcessListeningOnPortFromSensor) GetProcess() *ProcessIndicatorUniqueK
 
 func (x *ProcessListeningOnPortFromSensor) GetCloseTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CloseTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloseTimestamp) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloseTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -501,7 +528,12 @@ func (x *ProcessListeningOnPortFromSensor) SetProcess(v *ProcessIndicatorUniqueK
 }
 
 func (x *ProcessListeningOnPortFromSensor) SetCloseTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CloseTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
+	}
 }
 
 func (x *ProcessListeningOnPortFromSensor) SetClusterId(v string) {
@@ -549,7 +581,7 @@ func (x *ProcessListeningOnPortFromSensor) HasCloseTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CloseTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ProcessListeningOnPortFromSensor) HasClusterId() bool {
@@ -595,7 +627,8 @@ func (x *ProcessListeningOnPortFromSensor) ClearProcess() {
 }
 
 func (x *ProcessListeningOnPortFromSensor) ClearCloseTimestamp() {
-	x.xxx_hidden_CloseTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ProcessListeningOnPortFromSensor) ClearClusterId() {
@@ -644,7 +677,10 @@ func (b0 ProcessListeningOnPortFromSensor_builder) Build() *ProcessListeningOnPo
 		x.xxx_hidden_Protocol = *b.Protocol
 	}
 	x.xxx_hidden_Process = b.Process
-	x.xxx_hidden_CloseTimestamp = b.CloseTimestamp
+	if b.CloseTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		x.xxx_hidden_CloseTimestamp = b.CloseTimestamp
+	}
 	if b.ClusterId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
 		x.xxx_hidden_ClusterId = b.ClusterId
@@ -678,10 +714,12 @@ type ProcessListeningOnPortStorage struct {
 	xxx_hidden_PodUid             *string                    `protobuf:"bytes,9,opt,name=pod_uid,json=podUid"`
 	xxx_hidden_ClusterId          *string                    `protobuf:"bytes,10,opt,name=cluster_id,json=clusterId"`
 	xxx_hidden_Namespace          *string                    `protobuf:"bytes,11,opt,name=namespace"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessListeningOnPortStorage) Reset() {
@@ -737,7 +775,14 @@ func (x *ProcessListeningOnPortStorage) GetProtocol() L4Protocol {
 
 func (x *ProcessListeningOnPortStorage) GetCloseTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CloseTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloseTimestamp) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloseTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -822,7 +867,12 @@ func (x *ProcessListeningOnPortStorage) SetProtocol(v L4Protocol) {
 }
 
 func (x *ProcessListeningOnPortStorage) SetCloseTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CloseTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
+	}
 }
 
 func (x *ProcessListeningOnPortStorage) SetProcessIndicatorId(v string) {
@@ -884,7 +934,7 @@ func (x *ProcessListeningOnPortStorage) HasCloseTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CloseTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ProcessListeningOnPortStorage) HasProcessIndicatorId() bool {
@@ -952,7 +1002,8 @@ func (x *ProcessListeningOnPortStorage) ClearProtocol() {
 }
 
 func (x *ProcessListeningOnPortStorage) ClearCloseTimestamp() {
-	x.xxx_hidden_CloseTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ProcessListeningOnPortStorage) ClearProcessIndicatorId() {
@@ -1027,7 +1078,10 @@ func (b0 ProcessListeningOnPortStorage_builder) Build() *ProcessListeningOnPortS
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
 		x.xxx_hidden_Protocol = *b.Protocol
 	}
-	x.xxx_hidden_CloseTimestamp = b.CloseTimestamp
+	if b.CloseTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
+		x.xxx_hidden_CloseTimestamp = b.CloseTimestamp
+	}
 	if b.ProcessIndicatorId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
 		x.xxx_hidden_ProcessIndicatorId = b.ProcessIndicatorId
@@ -1167,7 +1221,7 @@ var File_storage_process_listening_on_port_proto protoreflect.FileDescriptor
 
 const file_storage_process_listening_on_port_proto_rawDesc = "" +
 	"\n" +
-	"'storage/process_listening_on_port.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1astorage/network_flow.proto\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"\x81\x04\n" +
+	"'storage/process_listening_on_port.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1astorage/network_flow.proto\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"\x85\x04\n" +
 	"\x16ProcessListeningOnPort\x12D\n" +
 	"\bendpoint\x18\x01 \x01(\v2(.storage.ProcessListeningOnPort.EndpointR\bendpoint\x12#\n" +
 	"\rdeployment_id\x18\x02 \x01(\tR\fdeploymentId\x12%\n" +
@@ -1177,28 +1231,28 @@ const file_storage_process_listening_on_port_proto_rawDesc = "" +
 	"\x06signal\x18\x06 \x01(\v2\x16.storage.ProcessSignalR\x06signal\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\a \x01(\tR\tclusterId\x12\x1c\n" +
-	"\tnamespace\x18\b \x01(\tR\tnamespace\x12L\n" +
-	"\x14container_start_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x12containerStartTime\x12\x19\n" +
+	"\tnamespace\x18\b \x01(\tR\tnamespace\x12P\n" +
+	"\x14container_start_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x12containerStartTime\x12\x19\n" +
 	"\bimage_id\x18\n" +
 	" \x01(\tR\aimageId\x1aO\n" +
 	"\bEndpoint\x12\x12\n" +
 	"\x04port\x18\x01 \x01(\rR\x04port\x12/\n" +
-	"\bprotocol\x18\x02 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\"\xe5\x02\n" +
+	"\bprotocol\x18\x02 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\"\xe9\x02\n" +
 	" ProcessListeningOnPortFromSensor\x12\x12\n" +
 	"\x04port\x18\x01 \x01(\rR\x04port\x12/\n" +
 	"\bprotocol\x18\x02 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\x12<\n" +
-	"\aprocess\x18\x03 \x01(\v2\".storage.ProcessIndicatorUniqueKeyR\aprocess\x12C\n" +
-	"\x0fclose_timestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x0ecloseTimestamp\x12\x1d\n" +
+	"\aprocess\x18\x03 \x01(\v2\".storage.ProcessIndicatorUniqueKeyR\aprocess\x12G\n" +
+	"\x0fclose_timestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x0ecloseTimestamp\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x06 \x01(\tR\tclusterId\x12#\n" +
 	"\rdeployment_id\x18\a \x01(\tR\fdeploymentId\x12\x17\n" +
 	"\apod_uid\x18\b \x01(\tR\x06podUid\x12\x1c\n" +
-	"\tnamespace\x18\t \x01(\tR\tnamespace\"\xbc\x03\n" +
+	"\tnamespace\x18\t \x01(\tR\tnamespace\"\xc0\x03\n" +
 	"\x1dProcessListeningOnPortStorage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\rR\x04port\x12/\n" +
-	"\bprotocol\x18\x03 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\x12C\n" +
-	"\x0fclose_timestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x0ecloseTimestamp\x120\n" +
+	"\bprotocol\x18\x03 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\x12G\n" +
+	"\x0fclose_timestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x0ecloseTimestamp\x120\n" +
 	"\x14process_indicator_id\x18\x05 \x01(\tR\x12processIndicatorId\x12\x16\n" +
 	"\x06closed\x18\x06 \x01(\bR\x06closed\x12<\n" +
 	"\aprocess\x18\a \x01(\v2\".storage.ProcessIndicatorUniqueKeyR\aprocess\x12#\n" +

@@ -25,8 +25,12 @@ const (
 type LocalSensorPolicies struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Policies *[]*storage.Policy     `protobuf:"bytes,1,rep,name=policies"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *LocalSensorPolicies) Reset() {
@@ -56,15 +60,27 @@ func (x *LocalSensorPolicies) ProtoReflect() protoreflect.Message {
 
 func (x *LocalSensorPolicies) GetPolicies() []*storage.Policy {
 	if x != nil {
-		if x.xxx_hidden_Policies != nil {
-			return *x.xxx_hidden_Policies
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policies) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.Policy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *LocalSensorPolicies) SetPolicies(v []*storage.Policy) {
-	x.xxx_hidden_Policies = &v
+	var sv *[]*storage.Policy
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Policy{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type LocalSensorPolicies_builder struct {
@@ -77,7 +93,10 @@ func (b0 LocalSensorPolicies_builder) Build() *LocalSensorPolicies {
 	m0 := &LocalSensorPolicies{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policies = &b.Policies
+	if b.Policies != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Policies = &b.Policies
+	}
 	return m0
 }
 
@@ -85,9 +104,9 @@ var File_tools_local_sensor_message_proto protoreflect.FileDescriptor
 
 const file_tools_local_sensor_message_proto_rawDesc = "" +
 	"\n" +
-	" tools/local-sensor/message.proto\x12\vlocalSensor\x1a\x14storage/policy.proto\x1a!google/protobuf/go_features.proto\"B\n" +
-	"\x13LocalSensorPolicies\x12+\n" +
-	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpoliciesB\b\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	" tools/local-sensor/message.proto\x12\vlocalSensor\x1a\x14storage/policy.proto\x1a!google/protobuf/go_features.proto\"F\n" +
+	"\x13LocalSensorPolicies\x12/\n" +
+	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyB\x02(\x01R\bpoliciesB\b\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_tools_local_sensor_message_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_tools_local_sensor_message_proto_goTypes = []any{

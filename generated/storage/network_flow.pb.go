@@ -138,10 +138,12 @@ type NetworkFlow struct {
 	xxx_hidden_LastSeenTimestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_seen_timestamp,json=lastSeenTimestamp"`
 	xxx_hidden_ClusterId         *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
 	xxx_hidden_UpdatedAt         *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkFlow) Reset() {
@@ -178,7 +180,14 @@ func (x *NetworkFlow) GetProps() *NetworkFlowProperties {
 
 func (x *NetworkFlow) GetLastSeenTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastSeenTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastSeenTimestamp) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastSeenTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -195,7 +204,14 @@ func (x *NetworkFlow) GetClusterId() string {
 
 func (x *NetworkFlow) GetUpdatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_UpdatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UpdatedAt) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -205,7 +221,12 @@ func (x *NetworkFlow) SetProps(v *NetworkFlowProperties) {
 }
 
 func (x *NetworkFlow) SetLastSeenTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastSeenTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastSeenTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	}
 }
 
 func (x *NetworkFlow) SetClusterId(v string) {
@@ -214,7 +235,12 @@ func (x *NetworkFlow) SetClusterId(v string) {
 }
 
 func (x *NetworkFlow) SetUpdatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_UpdatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UpdatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	}
 }
 
 func (x *NetworkFlow) HasProps() bool {
@@ -228,7 +254,7 @@ func (x *NetworkFlow) HasLastSeenTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastSeenTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkFlow) HasClusterId() bool {
@@ -242,7 +268,7 @@ func (x *NetworkFlow) HasUpdatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_UpdatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *NetworkFlow) ClearProps() {
@@ -250,7 +276,8 @@ func (x *NetworkFlow) ClearProps() {
 }
 
 func (x *NetworkFlow) ClearLastSeenTimestamp() {
-	x.xxx_hidden_LastSeenTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastSeenTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *NetworkFlow) ClearClusterId() {
@@ -259,7 +286,8 @@ func (x *NetworkFlow) ClearClusterId() {
 }
 
 func (x *NetworkFlow) ClearUpdatedAt() {
-	x.xxx_hidden_UpdatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UpdatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 type NetworkFlow_builder struct {
@@ -280,12 +308,18 @@ func (b0 NetworkFlow_builder) Build() *NetworkFlow {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Props = b.Props
-	x.xxx_hidden_LastSeenTimestamp = b.LastSeenTimestamp
+	if b.LastSeenTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_LastSeenTimestamp = b.LastSeenTimestamp
+	}
 	if b.ClusterId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_ClusterId = b.ClusterId
 	}
-	x.xxx_hidden_UpdatedAt = b.UpdatedAt
+	if b.UpdatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_UpdatedAt = b.UpdatedAt
+	}
 	return m0
 }
 
@@ -453,8 +487,12 @@ type NetworkEndpoint struct {
 	state                          protoimpl.MessageState     `protogen:"opaque.v1"`
 	xxx_hidden_Props               *NetworkEndpointProperties `protobuf:"bytes,1,opt,name=props"`
 	xxx_hidden_LastActiveTimestamp *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=last_active_timestamp,json=lastActiveTimestamp"`
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkEndpoint) Reset() {
@@ -491,7 +529,14 @@ func (x *NetworkEndpoint) GetProps() *NetworkEndpointProperties {
 
 func (x *NetworkEndpoint) GetLastActiveTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastActiveTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastActiveTimestamp) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastActiveTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -501,7 +546,12 @@ func (x *NetworkEndpoint) SetProps(v *NetworkEndpointProperties) {
 }
 
 func (x *NetworkEndpoint) SetLastActiveTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastActiveTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastActiveTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *NetworkEndpoint) HasProps() bool {
@@ -515,7 +565,7 @@ func (x *NetworkEndpoint) HasLastActiveTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastActiveTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkEndpoint) ClearProps() {
@@ -523,7 +573,8 @@ func (x *NetworkEndpoint) ClearProps() {
 }
 
 func (x *NetworkEndpoint) ClearLastActiveTimestamp() {
-	x.xxx_hidden_LastActiveTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastActiveTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 type NetworkEndpoint_builder struct {
@@ -538,7 +589,10 @@ func (b0 NetworkEndpoint_builder) Build() *NetworkEndpoint {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Props = b.Props
-	x.xxx_hidden_LastActiveTimestamp = b.LastActiveTimestamp
+	if b.LastActiveTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_LastActiveTimestamp = b.LastActiveTimestamp
+	}
 	return m0
 }
 
@@ -1092,6 +1146,8 @@ type NetworkEntityInfo_Deployment struct {
 	xxx_hidden_Namespace   *string                                     `protobuf:"bytes,2,opt,name=namespace"`
 	xxx_hidden_Cluster     *string                                     `protobuf:"bytes,3,opt,name=cluster"`
 	xxx_hidden_ListenPorts *[]*NetworkEntityInfo_Deployment_ListenPort `protobuf:"bytes,4,rep,name=listen_ports,json=listenPorts"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1156,8 +1212,13 @@ func (x *NetworkEntityInfo_Deployment) GetCluster() string {
 
 func (x *NetworkEntityInfo_Deployment) GetListenPorts() []*NetworkEntityInfo_Deployment_ListenPort {
 	if x != nil {
-		if x.xxx_hidden_ListenPorts != nil {
-			return *x.xxx_hidden_ListenPorts
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ListenPorts) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*NetworkEntityInfo_Deployment_ListenPort
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ListenPorts), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1180,7 +1241,14 @@ func (x *NetworkEntityInfo_Deployment) SetCluster(v string) {
 }
 
 func (x *NetworkEntityInfo_Deployment) SetListenPorts(v []*NetworkEntityInfo_Deployment_ListenPort) {
-	x.xxx_hidden_ListenPorts = &v
+	var sv *[]*NetworkEntityInfo_Deployment_ListenPort
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ListenPorts), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkEntityInfo_Deployment_ListenPort{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ListenPorts), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *NetworkEntityInfo_Deployment) HasName() bool {
@@ -1247,7 +1315,10 @@ func (b0 NetworkEntityInfo_Deployment_builder) Build() *NetworkEntityInfo_Deploy
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_Cluster = b.Cluster
 	}
-	x.xxx_hidden_ListenPorts = &b.ListenPorts
+	if b.ListenPorts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_ListenPorts = &b.ListenPorts
+	}
 	return m0
 }
 
@@ -1583,14 +1654,14 @@ var File_storage_network_flow_proto protoreflect.FileDescriptor
 
 const file_storage_network_flow_proto_rawDesc = "" +
 	"\n" +
-	"\x1astorage/network_flow.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xe9\x01\n" +
+	"\x1astorage/network_flow.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xf1\x01\n" +
 	"\vNetworkFlow\x124\n" +
-	"\x05props\x18\x01 \x01(\v2\x1e.storage.NetworkFlowPropertiesR\x05props\x12J\n" +
-	"\x13last_seen_timestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x11lastSeenTimestamp\x12\x1d\n" +
+	"\x05props\x18\x01 \x01(\v2\x1e.storage.NetworkFlowPropertiesR\x05props\x12N\n" +
+	"\x13last_seen_timestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x11lastSeenTimestamp\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x03 \x01(\tR\tclusterId\x129\n" +
+	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12=\n" +
 	"\n" +
-	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xdd\x01\n" +
+	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tupdatedAt\"\xdd\x01\n" +
 	"\x15NetworkFlowProperties\x129\n" +
 	"\n" +
 	"src_entity\x18\x01 \x01(\v2\x1a.storage.NetworkEntityInfoR\tsrcEntity\x129\n" +
@@ -1599,10 +1670,10 @@ const file_storage_network_flow_proto_rawDesc = "" +
 	"\bdst_port\x18\x03 \x01(\rR\adstPort\x123\n" +
 	"\n" +
 	"l4protocol\x18\x04 \x01(\x0e2\x13.storage.L4ProtocolR\n" +
-	"l4protocol\"\x9b\x01\n" +
+	"l4protocol\"\x9f\x01\n" +
 	"\x0fNetworkEndpoint\x128\n" +
-	"\x05props\x18\x01 \x01(\v2\".storage.NetworkEndpointPropertiesR\x05props\x12N\n" +
-	"\x15last_active_timestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x13lastActiveTimestamp\"\x98\x01\n" +
+	"\x05props\x18\x01 \x01(\v2\".storage.NetworkEndpointPropertiesR\x05props\x12R\n" +
+	"\x15last_active_timestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x13lastActiveTimestamp\"\x98\x01\n" +
 	"\x19NetworkEndpointProperties\x122\n" +
 	"\x06entity\x18\x01 \x01(\v2\x1a.storage.NetworkEntityInfoR\x06entity\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\rR\x04port\x123\n" +
@@ -1614,20 +1685,20 @@ const file_storage_network_flow_proto_rawDesc = "" +
 	"\x05scope\x18\x02 \x01(\v2\x1c.storage.NetworkEntity.ScopeR\x05scope\x1a&\n" +
 	"\x05Scope\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x01 \x01(\tR\tclusterId\"\x83\x06\n" +
+	"cluster_id\x18\x01 \x01(\tR\tclusterId\"\x87\x06\n" +
 	"\x11NetworkEntityInfo\x123\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x1f.storage.NetworkEntityInfo.TypeR\x04type\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12G\n" +
 	"\n" +
 	"deployment\x18\x03 \x01(\v2%.storage.NetworkEntityInfo.DeploymentH\x00R\n" +
 	"deployment\x12T\n" +
-	"\x0fexternal_source\x18\x04 \x01(\v2).storage.NetworkEntityInfo.ExternalSourceH\x00R\x0eexternalSource\x1a\x88\x02\n" +
+	"\x0fexternal_source\x18\x04 \x01(\v2).storage.NetworkEntityInfo.ExternalSourceH\x00R\x0eexternalSource\x1a\x8c\x02\n" +
 	"\n" +
 	"Deployment\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x1c\n" +
-	"\acluster\x18\x03 \x01(\tB\x02\x18\x01R\acluster\x12S\n" +
-	"\flisten_ports\x18\x04 \x03(\v20.storage.NetworkEntityInfo.Deployment.ListenPortR\vlistenPorts\x1aU\n" +
+	"\acluster\x18\x03 \x01(\tB\x02\x18\x01R\acluster\x12W\n" +
+	"\flisten_ports\x18\x04 \x03(\v20.storage.NetworkEntityInfo.Deployment.ListenPortB\x02(\x01R\vlistenPorts\x1aU\n" +
 	"\n" +
 	"ListenPort\x12\x12\n" +
 	"\x04port\x18\x01 \x01(\rR\x04port\x123\n" +

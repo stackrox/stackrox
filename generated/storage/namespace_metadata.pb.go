@@ -32,10 +32,12 @@ type NamespaceMetadata struct {
 	xxx_hidden_CreationTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=creation_time,json=creationTime"`
 	xxx_hidden_Priority     int64                  `protobuf:"varint,7,opt,name=priority"`
 	xxx_hidden_Annotations  map[string]string      `protobuf:"bytes,8,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NamespaceMetadata) Reset() {
@@ -112,7 +114,14 @@ func (x *NamespaceMetadata) GetLabels() map[string]string {
 
 func (x *NamespaceMetadata) GetCreationTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreationTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreationTime) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreationTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -156,7 +165,12 @@ func (x *NamespaceMetadata) SetLabels(v map[string]string) {
 }
 
 func (x *NamespaceMetadata) SetCreationTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreationTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreationTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	}
 }
 
 func (x *NamespaceMetadata) SetPriority(v int64) {
@@ -200,7 +214,7 @@ func (x *NamespaceMetadata) HasCreationTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreationTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *NamespaceMetadata) HasPriority() bool {
@@ -231,7 +245,8 @@ func (x *NamespaceMetadata) ClearClusterName() {
 }
 
 func (x *NamespaceMetadata) ClearCreationTime() {
-	x.xxx_hidden_CreationTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreationTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *NamespaceMetadata) ClearPriority() {
@@ -273,7 +288,10 @@ func (b0 NamespaceMetadata_builder) Build() *NamespaceMetadata {
 		x.xxx_hidden_ClusterName = b.ClusterName
 	}
 	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_CreationTime = b.CreationTime
+	if b.CreationTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_CreationTime = b.CreationTime
+	}
 	if b.Priority != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
 		x.xxx_hidden_Priority = *b.Priority
@@ -286,17 +304,17 @@ var File_storage_namespace_metadata_proto protoreflect.FileDescriptor
 
 const file_storage_namespace_metadata_proto_rawDesc = "" +
 	"\n" +
-	" storage/namespace_metadata.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xe0\x03\n" +
+	" storage/namespace_metadata.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xec\x03\n" +
 	"\x11NamespaceMetadata\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12!\n" +
-	"\fcluster_name\x18\x04 \x01(\tR\vclusterName\x12>\n" +
-	"\x06labels\x18\x05 \x03(\v2&.storage.NamespaceMetadata.LabelsEntryR\x06labels\x12?\n" +
-	"\rcreation_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\fcreationTime\x12\x1a\n" +
-	"\bpriority\x18\a \x01(\x03R\bpriority\x12M\n" +
-	"\vannotations\x18\b \x03(\v2+.storage.NamespaceMetadata.AnnotationsEntryR\vannotations\x1a9\n" +
+	"\fcluster_name\x18\x04 \x01(\tR\vclusterName\x12B\n" +
+	"\x06labels\x18\x05 \x03(\v2&.storage.NamespaceMetadata.LabelsEntryB\x02(\x01R\x06labels\x12C\n" +
+	"\rcreation_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\fcreationTime\x12\x1a\n" +
+	"\bpriority\x18\a \x01(\x03R\bpriority\x12Q\n" +
+	"\vannotations\x18\b \x03(\v2+.storage.NamespaceMetadata.AnnotationsEntryB\x02(\x01R\vannotations\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +

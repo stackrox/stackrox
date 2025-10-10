@@ -28,8 +28,12 @@ const (
 type SecretList struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Secrets *[]*storage.Secret     `protobuf:"bytes,1,rep,name=secrets"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SecretList) Reset() {
@@ -59,15 +63,27 @@ func (x *SecretList) ProtoReflect() protoreflect.Message {
 
 func (x *SecretList) GetSecrets() []*storage.Secret {
 	if x != nil {
-		if x.xxx_hidden_Secrets != nil {
-			return *x.xxx_hidden_Secrets
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Secrets) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.Secret
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *SecretList) SetSecrets(v []*storage.Secret) {
-	x.xxx_hidden_Secrets = &v
+	var sv *[]*storage.Secret
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Secret{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type SecretList_builder struct {
@@ -80,7 +96,10 @@ func (b0 SecretList_builder) Build() *SecretList {
 	m0 := &SecretList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Secrets = &b.Secrets
+	if b.Secrets != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Secrets = &b.Secrets
+	}
 	return m0
 }
 
@@ -89,8 +108,12 @@ func (b0 SecretList_builder) Build() *SecretList {
 type ListSecretsResponse struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Secrets *[]*storage.ListSecret `protobuf:"bytes,1,rep,name=secrets"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListSecretsResponse) Reset() {
@@ -120,15 +143,27 @@ func (x *ListSecretsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListSecretsResponse) GetSecrets() []*storage.ListSecret {
 	if x != nil {
-		if x.xxx_hidden_Secrets != nil {
-			return *x.xxx_hidden_Secrets
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Secrets) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ListSecret
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListSecretsResponse) SetSecrets(v []*storage.ListSecret) {
-	x.xxx_hidden_Secrets = &v
+	var sv *[]*storage.ListSecret
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ListSecret{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListSecretsResponse_builder struct {
@@ -141,7 +176,10 @@ func (b0 ListSecretsResponse_builder) Build() *ListSecretsResponse {
 	m0 := &ListSecretsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Secrets = &b.Secrets
+	if b.Secrets != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Secrets = &b.Secrets
+	}
 	return m0
 }
 
@@ -224,12 +262,12 @@ var File_api_v1_secret_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_secret_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1bapi/v1/secret_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x14storage/secret.proto\x1a!google/protobuf/go_features.proto\"7\n" +
+	"\x1bapi/v1/secret_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x14storage/secret.proto\x1a!google/protobuf/go_features.proto\";\n" +
 	"\n" +
-	"SecretList\x12)\n" +
-	"\asecrets\x18\x01 \x03(\v2\x0f.storage.SecretR\asecrets\"D\n" +
-	"\x13ListSecretsResponse\x12-\n" +
-	"\asecrets\x18\x01 \x03(\v2\x13.storage.ListSecretR\asecrets\",\n" +
+	"SecretList\x12-\n" +
+	"\asecrets\x18\x01 \x03(\v2\x0f.storage.SecretB\x02(\x01R\asecrets\"H\n" +
+	"\x13ListSecretsResponse\x121\n" +
+	"\asecrets\x18\x01 \x03(\v2\x13.storage.ListSecretB\x02(\x01R\asecrets\",\n" +
 	"\x14CountSecretsResponse\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count2\xf6\x01\n" +
 	"\rSecretService\x12H\n" +

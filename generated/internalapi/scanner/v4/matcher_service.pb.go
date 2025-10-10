@@ -383,8 +383,12 @@ func (b0 GetSBOMResponse_builder) Build() *GetSBOMResponse {
 type Metadata struct {
 	state                              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_LastVulnerabilityUpdate *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=LastVulnerabilityUpdate"`
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
@@ -414,24 +418,37 @@ func (x *Metadata) ProtoReflect() protoreflect.Message {
 
 func (x *Metadata) GetLastVulnerabilityUpdate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastVulnerabilityUpdate
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastVulnerabilityUpdate) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastVulnerabilityUpdate), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *Metadata) SetLastVulnerabilityUpdate(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastVulnerabilityUpdate = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastVulnerabilityUpdate, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *Metadata) HasLastVulnerabilityUpdate() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastVulnerabilityUpdate != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Metadata) ClearLastVulnerabilityUpdate() {
-	x.xxx_hidden_LastVulnerabilityUpdate = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastVulnerabilityUpdate, (*timestamppb.Timestamp)(nil))
 }
 
 type Metadata_builder struct {
@@ -444,7 +461,10 @@ func (b0 Metadata_builder) Build() *Metadata {
 	m0 := &Metadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_LastVulnerabilityUpdate = b.LastVulnerabilityUpdate
+	if b.LastVulnerabilityUpdate != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_LastVulnerabilityUpdate = b.LastVulnerabilityUpdate
+	}
 	return m0
 }
 
@@ -463,9 +483,9 @@ const file_internalapi_scanner_v4_matcher_service_proto_rawDesc = "" +
 	"\x03uri\x18\x03 \x01(\tR\x03uri\x120\n" +
 	"\bcontents\x18\x04 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\"%\n" +
 	"\x0fGetSBOMResponse\x12\x12\n" +
-	"\x04sbom\x18\x01 \x01(\fR\x04sbom\"`\n" +
-	"\bMetadata\x12T\n" +
-	"\x17LastVulnerabilityUpdate\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x17LastVulnerabilityUpdate2\xe8\x01\n" +
+	"\x04sbom\x18\x01 \x01(\fR\x04sbom\"d\n" +
+	"\bMetadata\x12X\n" +
+	"\x17LastVulnerabilityUpdate\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x17LastVulnerabilityUpdate2\xe8\x01\n" +
 	"\aMatcher\x12\\\n" +
 	"\x12GetVulnerabilities\x12%.scanner.v4.GetVulnerabilitiesRequest\x1a\x1f.scanner.v4.VulnerabilityReport\x12;\n" +
 	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x14.scanner.v4.Metadata\x12B\n" +

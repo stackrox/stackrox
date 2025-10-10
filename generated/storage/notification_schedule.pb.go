@@ -25,8 +25,12 @@ const (
 type NotificationSchedule struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_LastRun *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_run,json=lastRun"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NotificationSchedule) Reset() {
@@ -56,24 +60,37 @@ func (x *NotificationSchedule) ProtoReflect() protoreflect.Message {
 
 func (x *NotificationSchedule) GetLastRun() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastRun
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastRun) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastRun), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *NotificationSchedule) SetLastRun(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastRun = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastRun, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *NotificationSchedule) HasLastRun() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastRun != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NotificationSchedule) ClearLastRun() {
-	x.xxx_hidden_LastRun = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastRun, (*timestamppb.Timestamp)(nil))
 }
 
 type NotificationSchedule_builder struct {
@@ -86,7 +103,10 @@ func (b0 NotificationSchedule_builder) Build() *NotificationSchedule {
 	m0 := &NotificationSchedule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_LastRun = b.LastRun
+	if b.LastRun != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_LastRun = b.LastRun
+	}
 	return m0
 }
 
@@ -94,9 +114,9 @@ var File_storage_notification_schedule_proto protoreflect.FileDescriptor
 
 const file_storage_notification_schedule_proto_rawDesc = "" +
 	"\n" +
-	"#storage/notification_schedule.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"S\n" +
-	"\x14NotificationSchedule\x125\n" +
-	"\blast_run\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\alastRunJ\x04\b\x01\x10\x02B6\n" +
+	"#storage/notification_schedule.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"W\n" +
+	"\x14NotificationSchedule\x129\n" +
+	"\blast_run\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\alastRunJ\x04\b\x01\x10\x02B6\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_notification_schedule_proto_msgTypes = make([]protoimpl.MessageInfo, 1)

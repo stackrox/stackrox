@@ -166,8 +166,12 @@ func (b0 PolicyCategory_builder) Build() *PolicyCategory {
 type PostPolicyCategoryRequest struct {
 	state                     protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_PolicyCategory *PolicyCategory        `protobuf:"bytes,1,opt,name=policyCategory"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PostPolicyCategoryRequest) Reset() {
@@ -197,24 +201,37 @@ func (x *PostPolicyCategoryRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PostPolicyCategoryRequest) GetPolicyCategory() *PolicyCategory {
 	if x != nil {
-		return x.xxx_hidden_PolicyCategory
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PolicyCategory) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *PolicyCategory
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PolicyCategory), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *PostPolicyCategoryRequest) SetPolicyCategory(v *PolicyCategory) {
-	x.xxx_hidden_PolicyCategory = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_PolicyCategory, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *PostPolicyCategoryRequest) HasPolicyCategory() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_PolicyCategory != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PostPolicyCategoryRequest) ClearPolicyCategory() {
-	x.xxx_hidden_PolicyCategory = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_PolicyCategory, (*PolicyCategory)(nil))
 }
 
 type PostPolicyCategoryRequest_builder struct {
@@ -227,15 +244,22 @@ func (b0 PostPolicyCategoryRequest_builder) Build() *PostPolicyCategoryRequest {
 	m0 := &PostPolicyCategoryRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PolicyCategory = b.PolicyCategory
+	if b.PolicyCategory != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_PolicyCategory = b.PolicyCategory
+	}
 	return m0
 }
 
 type GetPolicyCategoriesResponse struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Categories *[]*PolicyCategory     `protobuf:"bytes,1,rep,name=categories"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetPolicyCategoriesResponse) Reset() {
@@ -265,15 +289,27 @@ func (x *GetPolicyCategoriesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetPolicyCategoriesResponse) GetCategories() []*PolicyCategory {
 	if x != nil {
-		if x.xxx_hidden_Categories != nil {
-			return *x.xxx_hidden_Categories
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Categories) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*PolicyCategory
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Categories), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetPolicyCategoriesResponse) SetCategories(v []*PolicyCategory) {
-	x.xxx_hidden_Categories = &v
+	var sv *[]*PolicyCategory
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Categories), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*PolicyCategory{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Categories), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetPolicyCategoriesResponse_builder struct {
@@ -286,7 +322,10 @@ func (b0 GetPolicyCategoriesResponse_builder) Build() *GetPolicyCategoriesRespon
 	m0 := &GetPolicyCategoriesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Categories = &b.Categories
+	if b.Categories != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Categories = &b.Categories
+	}
 	return m0
 }
 
@@ -487,12 +526,12 @@ const file_api_v1_policy_category_service_proto_rawDesc = "" +
 	"\x0ePolicyCategory\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
-	"\tisDefault\x18\x03 \x01(\bR\tisDefault\"W\n" +
-	"\x19PostPolicyCategoryRequest\x12:\n" +
-	"\x0epolicyCategory\x18\x01 \x01(\v2\x12.v1.PolicyCategoryR\x0epolicyCategory\"Q\n" +
-	"\x1bGetPolicyCategoriesResponse\x122\n" +
+	"\tisDefault\x18\x03 \x01(\bR\tisDefault\"[\n" +
+	"\x19PostPolicyCategoryRequest\x12>\n" +
+	"\x0epolicyCategory\x18\x01 \x01(\v2\x12.v1.PolicyCategoryB\x02(\x01R\x0epolicyCategory\"U\n" +
+	"\x1bGetPolicyCategoriesResponse\x126\n" +
 	"\n" +
-	"categories\x18\x01 \x03(\v2\x12.v1.PolicyCategoryR\n" +
+	"categories\x18\x01 \x03(\v2\x12.v1.PolicyCategoryB\x02(\x01R\n" +
 	"categories\"Y\n" +
 	"\x1bRenamePolicyCategoryRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12*\n" +

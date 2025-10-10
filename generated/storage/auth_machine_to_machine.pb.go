@@ -77,10 +77,12 @@ type AuthMachineToMachineConfig struct {
 	xxx_hidden_Mappings                *[]*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings"`
 	xxx_hidden_Issuer                  *string                                `protobuf:"bytes,5,opt,name=issuer"`
 	xxx_hidden_Traits                  *Traits                                `protobuf:"bytes,6,opt,name=traits"`
-	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
-	XXX_presence                       [1]uint32
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AuthMachineToMachineConfig) Reset() {
@@ -139,8 +141,13 @@ func (x *AuthMachineToMachineConfig) GetTokenExpirationDuration() string {
 
 func (x *AuthMachineToMachineConfig) GetMappings() []*AuthMachineToMachineConfig_Mapping {
 	if x != nil {
-		if x.xxx_hidden_Mappings != nil {
-			return *x.xxx_hidden_Mappings
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Mappings) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*AuthMachineToMachineConfig_Mapping
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Mappings), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -179,7 +186,14 @@ func (x *AuthMachineToMachineConfig) SetTokenExpirationDuration(v string) {
 }
 
 func (x *AuthMachineToMachineConfig) SetMappings(v []*AuthMachineToMachineConfig_Mapping) {
-	x.xxx_hidden_Mappings = &v
+	var sv *[]*AuthMachineToMachineConfig_Mapping
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Mappings), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*AuthMachineToMachineConfig_Mapping{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Mappings), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *AuthMachineToMachineConfig) SetIssuer(v string) {
@@ -279,7 +293,10 @@ func (b0 AuthMachineToMachineConfig_builder) Build() *AuthMachineToMachineConfig
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
 		x.xxx_hidden_TokenExpirationDuration = b.TokenExpirationDuration
 	}
-	x.xxx_hidden_Mappings = &b.Mappings
+	if b.Mappings != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_Mappings = &b.Mappings
+	}
 	if b.Issuer != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
 		x.xxx_hidden_Issuer = b.Issuer
@@ -436,12 +453,12 @@ var File_storage_auth_machine_to_machine_proto protoreflect.FileDescriptor
 
 const file_storage_auth_machine_to_machine_proto_rawDesc = "" +
 	"\n" +
-	"%storage/auth_machine_to_machine.proto\x12\astorage\x1a\x14storage/traits.proto\x1a!google/protobuf/go_features.proto\"\xcf\x03\n" +
+	"%storage/auth_machine_to_machine.proto\x12\astorage\x1a\x14storage/traits.proto\x1a!google/protobuf/go_features.proto\"\xd3\x03\n" +
 	"\x1aAuthMachineToMachineConfig\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12<\n" +
 	"\x04type\x18\x02 \x01(\x0e2(.storage.AuthMachineToMachineConfig.TypeR\x04type\x12:\n" +
-	"\x19token_expiration_duration\x18\x03 \x01(\tR\x17tokenExpirationDuration\x12G\n" +
-	"\bmappings\x18\x04 \x03(\v2+.storage.AuthMachineToMachineConfig.MappingR\bmappings\x12\x16\n" +
+	"\x19token_expiration_duration\x18\x03 \x01(\tR\x17tokenExpirationDuration\x12K\n" +
+	"\bmappings\x18\x04 \x03(\v2+.storage.AuthMachineToMachineConfig.MappingB\x02(\x01R\bmappings\x12\x16\n" +
 	"\x06issuer\x18\x05 \x01(\tR\x06issuer\x12'\n" +
 	"\x06traits\x18\x06 \x01(\v2\x0f.storage.TraitsR\x06traits\x1aZ\n" +
 	"\aMapping\x12\x10\n" +

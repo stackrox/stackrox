@@ -254,10 +254,12 @@ type Deployment struct {
 	xxx_hidden_StateTimestamp                int64                  `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp"`
 	xxx_hidden_RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore"`
 	xxx_hidden_PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent"`
-	XXX_raceDetectHookData                   protoimpl.RaceDetectHookData
-	XXX_presence                             [1]uint32
-	unknownFields                            protoimpl.UnknownFields
-	sizeCache                                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Deployment) Reset() {
@@ -379,7 +381,14 @@ func (x *Deployment) GetLabelSelector() *LabelSelector {
 
 func (x *Deployment) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Created
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 11) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -406,8 +415,13 @@ func (x *Deployment) GetClusterName() string {
 
 func (x *Deployment) GetContainers() []*Container {
 	if x != nil {
-		if x.xxx_hidden_Containers != nil {
-			return *x.xxx_hidden_Containers
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 14) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Containers) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *[]*Container
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Containers), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -500,8 +514,13 @@ func (x *Deployment) GetRuntimeClass() string {
 
 func (x *Deployment) GetTolerations() []*Toleration {
 	if x != nil {
-		if x.xxx_hidden_Tolerations != nil {
-			return *x.xxx_hidden_Tolerations
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 26) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Tolerations) {
+				protoimpl.X.UnmarshalField(x, 22)
+			}
+			var rv *[]*Toleration
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Tolerations), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -509,8 +528,13 @@ func (x *Deployment) GetTolerations() []*Toleration {
 
 func (x *Deployment) GetPorts() []*PortConfig {
 	if x != nil {
-		if x.xxx_hidden_Ports != nil {
-			return *x.xxx_hidden_Ports
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 27) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ports) {
+				protoimpl.X.UnmarshalField(x, 24)
+			}
+			var rv *[]*PortConfig
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -590,7 +614,12 @@ func (x *Deployment) SetLabelSelector(v *LabelSelector) {
 }
 
 func (x *Deployment) SetCreated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Created = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 31)
+	}
 }
 
 func (x *Deployment) SetClusterId(v string) {
@@ -604,7 +633,14 @@ func (x *Deployment) SetClusterName(v string) {
 }
 
 func (x *Deployment) SetContainers(v []*Container) {
-	x.xxx_hidden_Containers = &v
+	var sv *[]*Container
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Containers), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Container{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Containers), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 31)
 }
 
 func (x *Deployment) SetAnnotations(v map[string]string) {
@@ -661,11 +697,25 @@ func (x *Deployment) SetRuntimeClass(v string) {
 }
 
 func (x *Deployment) SetTolerations(v []*Toleration) {
-	x.xxx_hidden_Tolerations = &v
+	var sv *[]*Toleration
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Tolerations), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Toleration{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Tolerations), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 26, 31)
 }
 
 func (x *Deployment) SetPorts(v []*PortConfig) {
-	x.xxx_hidden_Ports = &v
+	var sv *[]*PortConfig
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*PortConfig{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 27, 31)
 }
 
 func (x *Deployment) SetStateTimestamp(v int64) {
@@ -750,7 +800,7 @@ func (x *Deployment) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Created != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
 }
 
 func (x *Deployment) HasClusterId() bool {
@@ -896,7 +946,8 @@ func (x *Deployment) ClearLabelSelector() {
 }
 
 func (x *Deployment) ClearCreated() {
-	x.xxx_hidden_Created = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Deployment) ClearClusterId() {
@@ -1044,7 +1095,10 @@ func (b0 Deployment_builder) Build() *Deployment {
 	x.xxx_hidden_Labels = b.Labels
 	x.xxx_hidden_PodLabels = b.PodLabels
 	x.xxx_hidden_LabelSelector = b.LabelSelector
-	x.xxx_hidden_Created = b.Created
+	if b.Created != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 31)
+		x.xxx_hidden_Created = b.Created
+	}
 	if b.ClusterId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 31)
 		x.xxx_hidden_ClusterId = b.ClusterId
@@ -1053,7 +1107,10 @@ func (b0 Deployment_builder) Build() *Deployment {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 31)
 		x.xxx_hidden_ClusterName = b.ClusterName
 	}
-	x.xxx_hidden_Containers = &b.Containers
+	if b.Containers != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 31)
+		x.xxx_hidden_Containers = &b.Containers
+	}
 	x.xxx_hidden_Annotations = b.Annotations
 	if b.Priority != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 16, 31)
@@ -1092,8 +1149,14 @@ func (b0 Deployment_builder) Build() *Deployment {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 25, 31)
 		x.xxx_hidden_RuntimeClass = b.RuntimeClass
 	}
-	x.xxx_hidden_Tolerations = &b.Tolerations
-	x.xxx_hidden_Ports = &b.Ports
+	if b.Tolerations != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 26, 31)
+		x.xxx_hidden_Tolerations = &b.Tolerations
+	}
+	if b.Ports != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 27, 31)
+		x.xxx_hidden_Ports = &b.Ports
+	}
 	if b.StateTimestamp != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 28, 31)
 		x.xxx_hidden_StateTimestamp = *b.StateTimestamp
@@ -1324,10 +1387,12 @@ type Container struct {
 	xxx_hidden_Name            *string                `protobuf:"bytes,10,opt,name=name"`
 	xxx_hidden_LivenessProbe   *LivenessProbe         `protobuf:"bytes,11,opt,name=liveness_probe,json=livenessProbe"`
 	xxx_hidden_ReadinessProbe  *ReadinessProbe        `protobuf:"bytes,12,opt,name=readiness_probe,json=readinessProbe"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Container) Reset() {
@@ -1388,8 +1453,13 @@ func (x *Container) GetSecurityContext() *SecurityContext {
 
 func (x *Container) GetVolumes() []*Volume {
 	if x != nil {
-		if x.xxx_hidden_Volumes != nil {
-			return *x.xxx_hidden_Volumes
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Volumes) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *[]*Volume
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Volumes), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1397,8 +1467,13 @@ func (x *Container) GetVolumes() []*Volume {
 
 func (x *Container) GetPorts() []*PortConfig {
 	if x != nil {
-		if x.xxx_hidden_Ports != nil {
-			return *x.xxx_hidden_Ports
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ports) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *[]*PortConfig
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1406,8 +1481,13 @@ func (x *Container) GetPorts() []*PortConfig {
 
 func (x *Container) GetSecrets() []*EmbeddedSecret {
 	if x != nil {
-		if x.xxx_hidden_Secrets != nil {
-			return *x.xxx_hidden_Secrets
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Secrets) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *[]*EmbeddedSecret
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1462,15 +1542,36 @@ func (x *Container) SetSecurityContext(v *SecurityContext) {
 }
 
 func (x *Container) SetVolumes(v []*Volume) {
-	x.xxx_hidden_Volumes = &v
+	var sv *[]*Volume
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Volumes), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Volume{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Volumes), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
 }
 
 func (x *Container) SetPorts(v []*PortConfig) {
-	x.xxx_hidden_Ports = &v
+	var sv *[]*PortConfig
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*PortConfig{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
 }
 
 func (x *Container) SetSecrets(v []*EmbeddedSecret) {
-	x.xxx_hidden_Secrets = &v
+	var sv *[]*EmbeddedSecret
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*EmbeddedSecret{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
 }
 
 func (x *Container) SetResources(v *Resources) {
@@ -1607,9 +1708,18 @@ func (b0 Container_builder) Build() *Container {
 	x.xxx_hidden_Config = b.Config
 	x.xxx_hidden_Image = b.Image
 	x.xxx_hidden_SecurityContext = b.SecurityContext
-	x.xxx_hidden_Volumes = &b.Volumes
-	x.xxx_hidden_Ports = &b.Ports
-	x.xxx_hidden_Secrets = &b.Secrets
+	if b.Volumes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
+		x.xxx_hidden_Volumes = &b.Volumes
+	}
+	if b.Ports != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
+		x.xxx_hidden_Ports = &b.Ports
+	}
+	if b.Secrets != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
+		x.xxx_hidden_Secrets = &b.Secrets
+	}
 	x.xxx_hidden_Resources = b.Resources
 	if b.Name != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
@@ -2185,10 +2295,12 @@ type Pod struct {
 	xxx_hidden_LiveInstances       *[]*ContainerInstance         `protobuf:"bytes,6,rep,name=live_instances,json=liveInstances"`
 	xxx_hidden_TerminatedInstances *[]*Pod_ContainerInstanceList `protobuf:"bytes,7,rep,name=terminated_instances,json=terminatedInstances"`
 	xxx_hidden_Started             *timestamppb.Timestamp        `protobuf:"bytes,8,opt,name=started"`
-	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
-	XXX_presence                   [1]uint32
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Pod) Reset() {
@@ -2268,8 +2380,13 @@ func (x *Pod) GetClusterId() string {
 
 func (x *Pod) GetLiveInstances() []*ContainerInstance {
 	if x != nil {
-		if x.xxx_hidden_LiveInstances != nil {
-			return *x.xxx_hidden_LiveInstances
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LiveInstances) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *[]*ContainerInstance
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LiveInstances), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2277,8 +2394,13 @@ func (x *Pod) GetLiveInstances() []*ContainerInstance {
 
 func (x *Pod) GetTerminatedInstances() []*Pod_ContainerInstanceList {
 	if x != nil {
-		if x.xxx_hidden_TerminatedInstances != nil {
-			return *x.xxx_hidden_TerminatedInstances
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_TerminatedInstances) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *[]*Pod_ContainerInstanceList
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_TerminatedInstances), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2286,7 +2408,14 @@ func (x *Pod) GetTerminatedInstances() []*Pod_ContainerInstanceList {
 
 func (x *Pod) GetStarted() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Started
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Started) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Started), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -2317,15 +2446,34 @@ func (x *Pod) SetClusterId(v string) {
 }
 
 func (x *Pod) SetLiveInstances(v []*ContainerInstance) {
-	x.xxx_hidden_LiveInstances = &v
+	var sv *[]*ContainerInstance
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LiveInstances), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ContainerInstance{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_LiveInstances), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
 }
 
 func (x *Pod) SetTerminatedInstances(v []*Pod_ContainerInstanceList) {
-	x.xxx_hidden_TerminatedInstances = &v
+	var sv *[]*Pod_ContainerInstanceList
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_TerminatedInstances), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Pod_ContainerInstanceList{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_TerminatedInstances), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
 }
 
 func (x *Pod) SetStarted(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Started = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Started, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
+	}
 }
 
 func (x *Pod) HasId() bool {
@@ -2367,7 +2515,7 @@ func (x *Pod) HasStarted() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Started != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *Pod) ClearId() {
@@ -2396,7 +2544,8 @@ func (x *Pod) ClearClusterId() {
 }
 
 func (x *Pod) ClearStarted() {
-	x.xxx_hidden_Started = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Started, (*timestamppb.Timestamp)(nil))
 }
 
 type Pod_builder struct {
@@ -2440,9 +2589,18 @@ func (b0 Pod_builder) Build() *Pod {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
 		x.xxx_hidden_ClusterId = b.ClusterId
 	}
-	x.xxx_hidden_LiveInstances = &b.LiveInstances
-	x.xxx_hidden_TerminatedInstances = &b.TerminatedInstances
-	x.xxx_hidden_Started = b.Started
+	if b.LiveInstances != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_LiveInstances = &b.LiveInstances
+	}
+	if b.TerminatedInstances != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_TerminatedInstances = &b.TerminatedInstances
+	}
+	if b.Started != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_Started = b.Started
+	}
 	return m0
 }
 
@@ -2458,10 +2616,12 @@ type ContainerInstance struct {
 	xxx_hidden_Finished          *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=finished"`
 	xxx_hidden_ExitCode          int32                  `protobuf:"varint,8,opt,name=exit_code,json=exitCode"`
 	xxx_hidden_TerminationReason *string                `protobuf:"bytes,9,opt,name=termination_reason,json=terminationReason"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ContainerInstance) Reset() {
@@ -2525,7 +2685,14 @@ func (x *ContainerInstance) GetContainerIps() []string {
 
 func (x *ContainerInstance) GetStarted() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Started
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Started) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Started), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -2542,7 +2709,14 @@ func (x *ContainerInstance) GetImageDigest() string {
 
 func (x *ContainerInstance) GetFinished() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Finished
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Finished) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Finished), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -2583,7 +2757,12 @@ func (x *ContainerInstance) SetContainerIps(v []string) {
 }
 
 func (x *ContainerInstance) SetStarted(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Started = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Started, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
+	}
 }
 
 func (x *ContainerInstance) SetImageDigest(v string) {
@@ -2592,7 +2771,12 @@ func (x *ContainerInstance) SetImageDigest(v string) {
 }
 
 func (x *ContainerInstance) SetFinished(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Finished = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Finished, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
+	}
 }
 
 func (x *ContainerInstance) SetExitCode(v int32) {
@@ -2630,7 +2814,7 @@ func (x *ContainerInstance) HasStarted() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Started != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ContainerInstance) HasImageDigest() bool {
@@ -2644,7 +2828,7 @@ func (x *ContainerInstance) HasFinished() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Finished != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ContainerInstance) HasExitCode() bool {
@@ -2676,7 +2860,8 @@ func (x *ContainerInstance) ClearContainerName() {
 }
 
 func (x *ContainerInstance) ClearStarted() {
-	x.xxx_hidden_Started = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Started, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ContainerInstance) ClearImageDigest() {
@@ -2685,7 +2870,8 @@ func (x *ContainerInstance) ClearImageDigest() {
 }
 
 func (x *ContainerInstance) ClearFinished() {
-	x.xxx_hidden_Finished = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Finished, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ContainerInstance) ClearExitCode() {
@@ -2735,12 +2921,18 @@ func (b0 ContainerInstance_builder) Build() *ContainerInstance {
 		x.xxx_hidden_ContainerName = b.ContainerName
 	}
 	x.xxx_hidden_ContainerIps = b.ContainerIps
-	x.xxx_hidden_Started = b.Started
+	if b.Started != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
+		x.xxx_hidden_Started = b.Started
+	}
 	if b.ImageDigest != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
 		x.xxx_hidden_ImageDigest = b.ImageDigest
 	}
-	x.xxx_hidden_Finished = b.Finished
+	if b.Finished != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
+		x.xxx_hidden_Finished = b.Finished
+	}
 	if b.ExitCode != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
 		x.xxx_hidden_ExitCode = *b.ExitCode
@@ -3018,10 +3210,12 @@ type PortConfig struct {
 	xxx_hidden_Exposure      PortConfig_ExposureLevel    `protobuf:"varint,4,opt,name=exposure,enum=storage.PortConfig_ExposureLevel"`
 	xxx_hidden_ExposedPort   int32                       `protobuf:"varint,5,opt,name=exposed_port,json=exposedPort"`
 	xxx_hidden_ExposureInfos *[]*PortConfig_ExposureInfo `protobuf:"bytes,6,rep,name=exposure_infos,json=exposureInfos"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PortConfig) Reset() {
@@ -3095,8 +3289,13 @@ func (x *PortConfig) GetExposedPort() int32 {
 
 func (x *PortConfig) GetExposureInfos() []*PortConfig_ExposureInfo {
 	if x != nil {
-		if x.xxx_hidden_ExposureInfos != nil {
-			return *x.xxx_hidden_ExposureInfos
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ExposureInfos) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *[]*PortConfig_ExposureInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExposureInfos), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -3129,7 +3328,14 @@ func (x *PortConfig) SetExposedPort(v int32) {
 }
 
 func (x *PortConfig) SetExposureInfos(v []*PortConfig_ExposureInfo) {
-	x.xxx_hidden_ExposureInfos = &v
+	var sv *[]*PortConfig_ExposureInfo
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExposureInfos), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*PortConfig_ExposureInfo{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ExposureInfos), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
 }
 
 func (x *PortConfig) HasName() bool {
@@ -3230,7 +3436,10 @@ func (b0 PortConfig_builder) Build() *PortConfig {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
 		x.xxx_hidden_ExposedPort = *b.ExposedPort
 	}
-	x.xxx_hidden_ExposureInfos = &b.ExposureInfos
+	if b.ExposureInfos != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_ExposureInfos = &b.ExposureInfos
+	}
 	return m0
 }
 
@@ -3243,10 +3452,12 @@ type ContainerConfig struct {
 	xxx_hidden_User            *string                               `protobuf:"bytes,5,opt,name=user"`
 	xxx_hidden_Uid             int64                                 `protobuf:"varint,6,opt,name=uid"`
 	xxx_hidden_AppArmorProfile *string                               `protobuf:"bytes,7,opt,name=app_armor_profile,json=appArmorProfile"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ContainerConfig) Reset() {
@@ -3276,8 +3487,13 @@ func (x *ContainerConfig) ProtoReflect() protoreflect.Message {
 
 func (x *ContainerConfig) GetEnv() []*ContainerConfig_EnvironmentConfig {
 	if x != nil {
-		if x.xxx_hidden_Env != nil {
-			return *x.xxx_hidden_Env
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Env) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ContainerConfig_EnvironmentConfig
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Env), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -3335,7 +3551,14 @@ func (x *ContainerConfig) GetAppArmorProfile() string {
 }
 
 func (x *ContainerConfig) SetEnv(v []*ContainerConfig_EnvironmentConfig) {
-	x.xxx_hidden_Env = &v
+	var sv *[]*ContainerConfig_EnvironmentConfig
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Env), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ContainerConfig_EnvironmentConfig{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Env), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *ContainerConfig) SetCommand(v []string) {
@@ -3430,7 +3653,10 @@ func (b0 ContainerConfig_builder) Build() *ContainerConfig {
 	m0 := &ContainerConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Env = &b.Env
+	if b.Env != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Env = &b.Env
+	}
 	x.xxx_hidden_Command = b.Command
 	x.xxx_hidden_Args = b.Args
 	if b.Directory != nil {
@@ -3667,15 +3893,17 @@ func (b0 SecurityContext_builder) Build() *SecurityContext {
 
 // Next available tag: 9
 type ListDeployment struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Hash        uint64                 `protobuf:"varint,8,opt,name=hash"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Cluster     *string                `protobuf:"bytes,3,opt,name=cluster"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_Namespace   *string                `protobuf:"bytes,5,opt,name=namespace"`
-	xxx_hidden_Created     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created"`
-	xxx_hidden_Priority    int64                  `protobuf:"varint,7,opt,name=priority"`
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id        *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Hash      uint64                 `protobuf:"varint,8,opt,name=hash"`
+	xxx_hidden_Name      *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Cluster   *string                `protobuf:"bytes,3,opt,name=cluster"`
+	xxx_hidden_ClusterId *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Namespace *string                `protobuf:"bytes,5,opt,name=namespace"`
+	xxx_hidden_Created   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created"`
+	xxx_hidden_Priority  int64                  `protobuf:"varint,7,opt,name=priority"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -3766,7 +3994,14 @@ func (x *ListDeployment) GetNamespace() string {
 
 func (x *ListDeployment) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Created
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -3809,7 +4044,12 @@ func (x *ListDeployment) SetNamespace(v string) {
 }
 
 func (x *ListDeployment) SetCreated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Created = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
+	}
 }
 
 func (x *ListDeployment) SetPriority(v int64) {
@@ -3863,7 +4103,7 @@ func (x *ListDeployment) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Created != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ListDeployment) HasPriority() bool {
@@ -3904,7 +4144,8 @@ func (x *ListDeployment) ClearNamespace() {
 }
 
 func (x *ListDeployment) ClearCreated() {
-	x.xxx_hidden_Created = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ListDeployment) ClearPriority() {
@@ -3953,7 +4194,10 @@ func (b0 ListDeployment_builder) Build() *ListDeployment {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
 		x.xxx_hidden_Namespace = b.Namespace
 	}
-	x.xxx_hidden_Created = b.Created
+	if b.Created != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_Created = b.Created
+	}
 	if b.Priority != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
 		x.xxx_hidden_Priority = *b.Priority
@@ -3964,8 +4208,12 @@ func (b0 ListDeployment_builder) Build() *ListDeployment {
 type Pod_ContainerInstanceList struct {
 	state                protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Instances *[]*ContainerInstance  `protobuf:"bytes,1,rep,name=instances"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Pod_ContainerInstanceList) Reset() {
@@ -3995,15 +4243,27 @@ func (x *Pod_ContainerInstanceList) ProtoReflect() protoreflect.Message {
 
 func (x *Pod_ContainerInstanceList) GetInstances() []*ContainerInstance {
 	if x != nil {
-		if x.xxx_hidden_Instances != nil {
-			return *x.xxx_hidden_Instances
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Instances) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ContainerInstance
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Instances), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *Pod_ContainerInstanceList) SetInstances(v []*ContainerInstance) {
-	x.xxx_hidden_Instances = &v
+	var sv *[]*ContainerInstance
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Instances), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ContainerInstance{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Instances), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type Pod_ContainerInstanceList_builder struct {
@@ -4016,7 +4276,10 @@ func (b0 Pod_ContainerInstanceList_builder) Build() *Pod_ContainerInstanceList {
 	m0 := &Pod_ContainerInstanceList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Instances = &b.Instances
+	if b.Instances != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Instances = &b.Instances
+	}
 	return m0
 }
 
@@ -4722,7 +4985,7 @@ var File_storage_deployment_proto protoreflect.FileDescriptor
 
 const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\x1a!google/protobuf/go_features.proto\"\xf6\v\n" +
+	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\x1a!google/protobuf/go_features.proto\"\x92\f\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -4732,20 +4995,20 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x12!\n" +
 	"\fnamespace_id\x18\x17 \x01(\tR\vnamespaceId\x125\n" +
 	"\x16orchestrator_component\x18! \x01(\bR\x15orchestratorComponent\x12\x1a\n" +
-	"\breplicas\x18\x06 \x01(\x03R\breplicas\x127\n" +
-	"\x06labels\x18\a \x03(\v2\x1f.storage.Deployment.LabelsEntryR\x06labels\x12A\n" +
+	"\breplicas\x18\x06 \x01(\x03R\breplicas\x12;\n" +
+	"\x06labels\x18\a \x03(\v2\x1f.storage.Deployment.LabelsEntryB\x02(\x01R\x06labels\x12E\n" +
 	"\n" +
-	"pod_labels\x18\x13 \x03(\v2\".storage.Deployment.PodLabelsEntryR\tpodLabels\x12=\n" +
-	"\x0elabel_selector\x18\x14 \x01(\v2\x16.storage.LabelSelectorR\rlabelSelector\x124\n" +
-	"\acreated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12\x1d\n" +
+	"pod_labels\x18\x13 \x03(\v2\".storage.Deployment.PodLabelsEntryB\x02(\x01R\tpodLabels\x12=\n" +
+	"\x0elabel_selector\x18\x14 \x01(\v2\x16.storage.LabelSelectorR\rlabelSelector\x128\n" +
+	"\acreated\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\acreated\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\t \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\n" +
-	" \x01(\tR\vclusterName\x122\n" +
+	" \x01(\tR\vclusterName\x126\n" +
 	"\n" +
-	"containers\x18\v \x03(\v2\x12.storage.ContainerR\n" +
-	"containers\x12F\n" +
-	"\vannotations\x18\x0e \x03(\v2$.storage.Deployment.AnnotationsEntryR\vannotations\x12\x1a\n" +
+	"containers\x18\v \x03(\v2\x12.storage.ContainerB\x02(\x01R\n" +
+	"containers\x12J\n" +
+	"\vannotations\x18\x0e \x03(\v2$.storage.Deployment.AnnotationsEntryB\x02(\x01R\vannotations\x12\x1a\n" +
 	"\bpriority\x18\x0f \x01(\x03R\bpriority\x12\x1a\n" +
 	"\binactive\x18\x10 \x01(\bR\binactive\x12,\n" +
 	"\x12image_pull_secrets\x18\x11 \x03(\tR\x10imagePullSecrets\x12'\n" +
@@ -4755,9 +5018,9 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\fhost_network\x18\x15 \x01(\bR\vhostNetwork\x12\x19\n" +
 	"\bhost_pid\x18\x1f \x01(\bR\ahostPid\x12\x19\n" +
 	"\bhost_ipc\x18  \x01(\bR\ahostIpc\x12#\n" +
-	"\rruntime_class\x18\" \x01(\tR\fruntimeClass\x125\n" +
-	"\vtolerations\x18\x16 \x03(\v2\x13.storage.TolerationR\vtolerations\x12)\n" +
-	"\x05ports\x18\x18 \x03(\v2\x13.storage.PortConfigR\x05ports\x12'\n" +
+	"\rruntime_class\x18\" \x01(\tR\fruntimeClass\x129\n" +
+	"\vtolerations\x18\x16 \x03(\v2\x13.storage.TolerationB\x02(\x01R\vtolerations\x12-\n" +
+	"\x05ports\x18\x18 \x03(\v2\x13.storage.PortConfigB\x02(\x01R\x05ports\x12'\n" +
 	"\x0fstate_timestamp\x18\x1b \x01(\x03R\x0estateTimestamp\x12\x1d\n" +
 	"\n" +
 	"risk_score\x18\x1d \x01(\x02R\triskScore\x12-\n" +
@@ -4778,15 +5041,15 @@ const file_storage_deployment_proto_rawDesc = "" +
 	" \x01(\bR\vnotPullable\x12(\n" +
 	"\x10is_cluster_local\x18\v \x01(\bR\x0eisClusterLocal\x12\x13\n" +
 	"\x05id_v2\x18\f \x01(\tR\x04idV2J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x05\x10\x06J\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tJ\x04\b\t\x10\n" +
-	"\"\x97\x04\n" +
+	"\"\xa3\x04\n" +
 	"\tContainer\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x120\n" +
 	"\x06config\x18\x02 \x01(\v2\x18.storage.ContainerConfigR\x06config\x12-\n" +
 	"\x05image\x18\x03 \x01(\v2\x17.storage.ContainerImageR\x05image\x12C\n" +
-	"\x10security_context\x18\x04 \x01(\v2\x18.storage.SecurityContextR\x0fsecurityContext\x12)\n" +
-	"\avolumes\x18\x05 \x03(\v2\x0f.storage.VolumeR\avolumes\x12)\n" +
-	"\x05ports\x18\x06 \x03(\v2\x13.storage.PortConfigR\x05ports\x121\n" +
-	"\asecrets\x18\a \x03(\v2\x17.storage.EmbeddedSecretR\asecrets\x120\n" +
+	"\x10security_context\x18\x04 \x01(\v2\x18.storage.SecurityContextR\x0fsecurityContext\x12-\n" +
+	"\avolumes\x18\x05 \x03(\v2\x0f.storage.VolumeB\x02(\x01R\avolumes\x12-\n" +
+	"\x05ports\x18\x06 \x03(\v2\x13.storage.PortConfigB\x02(\x01R\x05ports\x125\n" +
+	"\asecrets\x18\a \x03(\v2\x17.storage.EmbeddedSecretB\x02(\x01R\asecrets\x120\n" +
 	"\tresources\x18\b \x01(\v2\x12.storage.ResourcesR\tresources\x12\x12\n" +
 	"\x04name\x18\n" +
 	" \x01(\tR\x04name\x12=\n" +
@@ -4812,28 +5075,28 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\rLivenessProbe\x12\x18\n" +
 	"\adefined\x18\x01 \x01(\bR\adefined\"*\n" +
 	"\x0eReadinessProbe\x12\x18\n" +
-	"\adefined\x18\x01 \x01(\bR\adefined\"\xae\x03\n" +
+	"\adefined\x18\x01 \x01(\bR\adefined\"\xbe\x03\n" +
 	"\x03Pod\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12#\n" +
 	"\rdeployment_id\x18\x03 \x01(\tR\fdeploymentId\x12\x1c\n" +
 	"\tnamespace\x18\x04 \x01(\tR\tnamespace\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x05 \x01(\tR\tclusterId\x12A\n" +
-	"\x0elive_instances\x18\x06 \x03(\v2\x1a.storage.ContainerInstanceR\rliveInstances\x12U\n" +
-	"\x14terminated_instances\x18\a \x03(\v2\".storage.Pod.ContainerInstanceListR\x13terminatedInstances\x124\n" +
-	"\astarted\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\astarted\x1aQ\n" +
-	"\x15ContainerInstanceList\x128\n" +
-	"\tinstances\x18\x01 \x03(\v2\x1a.storage.ContainerInstanceR\tinstances\"\xa7\x03\n" +
+	"cluster_id\x18\x05 \x01(\tR\tclusterId\x12E\n" +
+	"\x0elive_instances\x18\x06 \x03(\v2\x1a.storage.ContainerInstanceB\x02(\x01R\rliveInstances\x12Y\n" +
+	"\x14terminated_instances\x18\a \x03(\v2\".storage.Pod.ContainerInstanceListB\x02(\x01R\x13terminatedInstances\x128\n" +
+	"\astarted\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\astarted\x1aU\n" +
+	"\x15ContainerInstanceList\x12<\n" +
+	"\tinstances\x18\x01 \x03(\v2\x1a.storage.ContainerInstanceB\x02(\x01R\tinstances\"\xaf\x03\n" +
 	"\x11ContainerInstance\x12=\n" +
 	"\vinstance_id\x18\x01 \x01(\v2\x1c.storage.ContainerInstanceIDR\n" +
 	"instanceId\x12*\n" +
 	"\x11containing_pod_id\x18\x02 \x01(\tR\x0fcontainingPodId\x12%\n" +
 	"\x0econtainer_name\x18\x06 \x01(\tR\rcontainerName\x12#\n" +
-	"\rcontainer_ips\x18\x03 \x03(\tR\fcontainerIps\x124\n" +
-	"\astarted\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\astarted\x12!\n" +
-	"\fimage_digest\x18\x05 \x01(\tR\vimageDigest\x126\n" +
-	"\bfinished\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\bfinished\x12\x1b\n" +
+	"\rcontainer_ips\x18\x03 \x03(\tR\fcontainerIps\x128\n" +
+	"\astarted\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\astarted\x12!\n" +
+	"\fimage_digest\x18\x05 \x01(\tR\vimageDigest\x12:\n" +
+	"\bfinished\x18\a \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\bfinished\x12\x1b\n" +
 	"\texit_code\x18\b \x01(\x05R\bexitCode\x12-\n" +
 	"\x12termination_reason\x18\t \x01(\tR\x11terminationReason\"\x81\x01\n" +
 	"\x13ContainerInstanceID\x12F\n" +
@@ -4842,15 +5105,15 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\x04node\x18\x03 \x01(\tR\x04node\"8\n" +
 	"\x0eEmbeddedSecret\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"\xb5\x05\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"\xb9\x05\n" +
 	"\n" +
 	"PortConfig\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
 	"\x0econtainer_port\x18\x02 \x01(\x05R\rcontainerPort\x12\x1a\n" +
 	"\bprotocol\x18\x03 \x01(\tR\bprotocol\x12=\n" +
 	"\bexposure\x18\x04 \x01(\x0e2!.storage.PortConfig.ExposureLevelR\bexposure\x12%\n" +
-	"\fexposed_port\x18\x05 \x01(\x05B\x02\x18\x01R\vexposedPort\x12G\n" +
-	"\x0eexposure_infos\x18\x06 \x03(\v2 .storage.PortConfig.ExposureInfoR\rexposureInfos\x1a\xc9\x02\n" +
+	"\fexposed_port\x18\x05 \x01(\x05B\x02\x18\x01R\vexposedPort\x12K\n" +
+	"\x0eexposure_infos\x18\x06 \x03(\v2 .storage.PortConfig.ExposureInfoB\x02(\x01R\rexposureInfos\x1a\xc9\x02\n" +
 	"\fExposureInfo\x127\n" +
 	"\x05level\x18\x01 \x01(\x0e2!.storage.PortConfig.ExposureLevelR\x05level\x12!\n" +
 	"\fservice_name\x18\x02 \x01(\tR\vserviceName\x12\x1d\n" +
@@ -4867,9 +5130,9 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\x04NODE\x10\x02\x12\f\n" +
 	"\bINTERNAL\x10\x03\x12\b\n" +
 	"\x04HOST\x10\x04\x12\t\n" +
-	"\x05ROUTE\x10\x05\"\xfe\x03\n" +
-	"\x0fContainerConfig\x12<\n" +
-	"\x03env\x18\x01 \x03(\v2*.storage.ContainerConfig.EnvironmentConfigR\x03env\x12\x18\n" +
+	"\x05ROUTE\x10\x05\"\x82\x04\n" +
+	"\x0fContainerConfig\x12@\n" +
+	"\x03env\x18\x01 \x03(\v2*.storage.ContainerConfig.EnvironmentConfigB\x02(\x01R\x03env\x12\x18\n" +
 	"\acommand\x18\x02 \x03(\tR\acommand\x12\x12\n" +
 	"\x04args\x18\x03 \x03(\tR\x04args\x12\x1c\n" +
 	"\tdirectory\x18\x04 \x01(\tR\tdirectory\x12\x12\n" +
@@ -4911,7 +5174,7 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
 	"UNCONFINED\x10\x00\x12\x13\n" +
 	"\x0fRUNTIME_DEFAULT\x10\x01\x12\r\n" +
-	"\tLOCALHOST\x10\x02\"\xf1\x01\n" +
+	"\tLOCALHOST\x10\x02\"\xf5\x01\n" +
 	"\x0eListDeployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04hash\x18\b \x01(\x04R\x04hash\x12\x12\n" +
@@ -4919,8 +5182,8 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\acluster\x18\x03 \x01(\tR\acluster\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12\x1c\n" +
-	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x124\n" +
-	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12\x1a\n" +
+	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x128\n" +
+	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\acreated\x12\x1a\n" +
 	"\bpriority\x18\a \x01(\x03R\bpriorityB6\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 

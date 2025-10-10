@@ -69,8 +69,12 @@ func (b0 GetNotifiersRequest_builder) Build() *GetNotifiersRequest {
 type GetNotifiersResponse struct {
 	state                protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Notifiers *[]*storage.Notifier   `protobuf:"bytes,1,rep,name=notifiers"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetNotifiersResponse) Reset() {
@@ -100,15 +104,27 @@ func (x *GetNotifiersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetNotifiersResponse) GetNotifiers() []*storage.Notifier {
 	if x != nil {
-		if x.xxx_hidden_Notifiers != nil {
-			return *x.xxx_hidden_Notifiers
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Notifiers) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.Notifier
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetNotifiersResponse) SetNotifiers(v []*storage.Notifier) {
-	x.xxx_hidden_Notifiers = &v
+	var sv *[]*storage.Notifier
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Notifier{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetNotifiersResponse_builder struct {
@@ -121,7 +137,10 @@ func (b0 GetNotifiersResponse_builder) Build() *GetNotifiersResponse {
 	m0 := &GetNotifiersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Notifiers = &b.Notifiers
+	if b.Notifiers != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Notifiers = &b.Notifiers
+	}
 	return m0
 }
 
@@ -237,10 +256,12 @@ type UpdateNotifierRequest struct {
 	state                     protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Notifier       *storage.Notifier      `protobuf:"bytes,1,opt,name=notifier"`
 	xxx_hidden_UpdatePassword bool                   `protobuf:"varint,2,opt,name=update_password,json=updatePassword"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpdateNotifierRequest) Reset() {
@@ -270,7 +291,14 @@ func (x *UpdateNotifierRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateNotifierRequest) GetNotifier() *storage.Notifier {
 	if x != nil {
-		return x.xxx_hidden_Notifier
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Notifier) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Notifier
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Notifier), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -283,7 +311,12 @@ func (x *UpdateNotifierRequest) GetUpdatePassword() bool {
 }
 
 func (x *UpdateNotifierRequest) SetNotifier(v *storage.Notifier) {
-	x.xxx_hidden_Notifier = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Notifier, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *UpdateNotifierRequest) SetUpdatePassword(v bool) {
@@ -295,7 +328,7 @@ func (x *UpdateNotifierRequest) HasNotifier() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Notifier != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpdateNotifierRequest) HasUpdatePassword() bool {
@@ -306,7 +339,8 @@ func (x *UpdateNotifierRequest) HasUpdatePassword() bool {
 }
 
 func (x *UpdateNotifierRequest) ClearNotifier() {
-	x.xxx_hidden_Notifier = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Notifier, (*storage.Notifier)(nil))
 }
 
 func (x *UpdateNotifierRequest) ClearUpdatePassword() {
@@ -326,7 +360,10 @@ func (b0 UpdateNotifierRequest_builder) Build() *UpdateNotifierRequest {
 	m0 := &UpdateNotifierRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Notifier = b.Notifier
+	if b.Notifier != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Notifier = b.Notifier
+	}
 	if b.UpdatePassword != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_UpdatePassword = *b.UpdatePassword
@@ -339,14 +376,14 @@ var File_api_v1_notifier_service_proto protoreflect.FileDescriptor
 const file_api_v1_notifier_service_proto_rawDesc = "" +
 	"\n" +
 	"\x1dapi/v1/notifier_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x16storage/notifier.proto\x1a!google/protobuf/go_features.proto\"\x1b\n" +
-	"\x13GetNotifiersRequestJ\x04\b\x01\x10\x03\"G\n" +
-	"\x14GetNotifiersResponse\x12/\n" +
-	"\tnotifiers\x18\x01 \x03(\v2\x11.storage.NotifierR\tnotifiers\"=\n" +
+	"\x13GetNotifiersRequestJ\x04\b\x01\x10\x03\"K\n" +
+	"\x14GetNotifiersResponse\x123\n" +
+	"\tnotifiers\x18\x01 \x03(\v2\x11.storage.NotifierB\x02(\x01R\tnotifiers\"=\n" +
 	"\x15DeleteNotifierRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05force\x18\x02 \x01(\bR\x05force\"o\n" +
-	"\x15UpdateNotifierRequest\x12-\n" +
-	"\bnotifier\x18\x01 \x01(\v2\x11.storage.NotifierR\bnotifier\x12'\n" +
+	"\x05force\x18\x02 \x01(\bR\x05force\"s\n" +
+	"\x15UpdateNotifierRequest\x121\n" +
+	"\bnotifier\x18\x01 \x01(\v2\x11.storage.NotifierB\x02(\x01R\bnotifier\x12'\n" +
 	"\x0fupdate_password\x18\x02 \x01(\bR\x0eupdatePassword2\xbc\x05\n" +
 	"\x0fNotifierService\x12N\n" +
 	"\vGetNotifier\x12\x10.v1.ResourceByID\x1a\x11.storage.Notifier\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/notifiers/{id}\x12X\n" +

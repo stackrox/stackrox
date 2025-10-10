@@ -28,8 +28,12 @@ const (
 type ListServiceAccountResponse struct {
 	state                 protoimpl.MessageState     `protogen:"opaque.v1"`
 	xxx_hidden_SaAndRoles *[]*ServiceAccountAndRoles `protobuf:"bytes,1,rep,name=sa_and_roles,json=saAndRoles"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListServiceAccountResponse) Reset() {
@@ -59,15 +63,27 @@ func (x *ListServiceAccountResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListServiceAccountResponse) GetSaAndRoles() []*ServiceAccountAndRoles {
 	if x != nil {
-		if x.xxx_hidden_SaAndRoles != nil {
-			return *x.xxx_hidden_SaAndRoles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SaAndRoles) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ServiceAccountAndRoles
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SaAndRoles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListServiceAccountResponse) SetSaAndRoles(v []*ServiceAccountAndRoles) {
-	x.xxx_hidden_SaAndRoles = &v
+	var sv *[]*ServiceAccountAndRoles
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SaAndRoles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ServiceAccountAndRoles{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_SaAndRoles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListServiceAccountResponse_builder struct {
@@ -80,7 +96,10 @@ func (b0 ListServiceAccountResponse_builder) Build() *ListServiceAccountResponse
 	m0 := &ListServiceAccountResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_SaAndRoles = &b.SaAndRoles
+	if b.SaAndRoles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_SaAndRoles = &b.SaAndRoles
+	}
 	return m0
 }
 
@@ -92,8 +111,12 @@ type ServiceAccountAndRoles struct {
 	xxx_hidden_ClusterRoles            *[]*storage.K8SRole          `protobuf:"bytes,2,rep,name=cluster_roles,json=clusterRoles"`
 	xxx_hidden_ScopedRoles             *[]*ScopedRoles              `protobuf:"bytes,3,rep,name=scoped_roles,json=scopedRoles"`
 	xxx_hidden_DeploymentRelationships *[]*SADeploymentRelationship `protobuf:"bytes,4,rep,name=deployment_relationships,json=deploymentRelationships"`
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ServiceAccountAndRoles) Reset() {
@@ -123,15 +146,27 @@ func (x *ServiceAccountAndRoles) ProtoReflect() protoreflect.Message {
 
 func (x *ServiceAccountAndRoles) GetServiceAccount() *storage.ServiceAccount {
 	if x != nil {
-		return x.xxx_hidden_ServiceAccount
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ServiceAccount) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.ServiceAccount
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ServiceAccount), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ServiceAccountAndRoles) GetClusterRoles() []*storage.K8SRole {
 	if x != nil {
-		if x.xxx_hidden_ClusterRoles != nil {
-			return *x.xxx_hidden_ClusterRoles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ClusterRoles) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.K8SRole
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ClusterRoles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -139,8 +174,13 @@ func (x *ServiceAccountAndRoles) GetClusterRoles() []*storage.K8SRole {
 
 func (x *ServiceAccountAndRoles) GetScopedRoles() []*ScopedRoles {
 	if x != nil {
-		if x.xxx_hidden_ScopedRoles != nil {
-			return *x.xxx_hidden_ScopedRoles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScopedRoles) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*ScopedRoles
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScopedRoles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -148,38 +188,70 @@ func (x *ServiceAccountAndRoles) GetScopedRoles() []*ScopedRoles {
 
 func (x *ServiceAccountAndRoles) GetDeploymentRelationships() []*SADeploymentRelationship {
 	if x != nil {
-		if x.xxx_hidden_DeploymentRelationships != nil {
-			return *x.xxx_hidden_DeploymentRelationships
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_DeploymentRelationships) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*SADeploymentRelationship
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_DeploymentRelationships), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ServiceAccountAndRoles) SetServiceAccount(v *storage.ServiceAccount) {
-	x.xxx_hidden_ServiceAccount = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ServiceAccount, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	}
 }
 
 func (x *ServiceAccountAndRoles) SetClusterRoles(v []*storage.K8SRole) {
-	x.xxx_hidden_ClusterRoles = &v
+	var sv *[]*storage.K8SRole
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ClusterRoles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.K8SRole{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ClusterRoles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *ServiceAccountAndRoles) SetScopedRoles(v []*ScopedRoles) {
-	x.xxx_hidden_ScopedRoles = &v
+	var sv *[]*ScopedRoles
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScopedRoles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ScopedRoles{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ScopedRoles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *ServiceAccountAndRoles) SetDeploymentRelationships(v []*SADeploymentRelationship) {
-	x.xxx_hidden_DeploymentRelationships = &v
+	var sv *[]*SADeploymentRelationship
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_DeploymentRelationships), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SADeploymentRelationship{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_DeploymentRelationships), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *ServiceAccountAndRoles) HasServiceAccount() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ServiceAccount != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ServiceAccountAndRoles) ClearServiceAccount() {
-	x.xxx_hidden_ServiceAccount = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ServiceAccount, (*storage.ServiceAccount)(nil))
 }
 
 type ServiceAccountAndRoles_builder struct {
@@ -195,10 +267,22 @@ func (b0 ServiceAccountAndRoles_builder) Build() *ServiceAccountAndRoles {
 	m0 := &ServiceAccountAndRoles{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ServiceAccount = b.ServiceAccount
-	x.xxx_hidden_ClusterRoles = &b.ClusterRoles
-	x.xxx_hidden_ScopedRoles = &b.ScopedRoles
-	x.xxx_hidden_DeploymentRelationships = &b.DeploymentRelationships
+	if b.ServiceAccount != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_ServiceAccount = b.ServiceAccount
+	}
+	if b.ClusterRoles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_ClusterRoles = &b.ClusterRoles
+	}
+	if b.ScopedRoles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_ScopedRoles = &b.ScopedRoles
+	}
+	if b.DeploymentRelationships != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_DeploymentRelationships = &b.DeploymentRelationships
+	}
 	return m0
 }
 
@@ -207,8 +291,12 @@ func (b0 ServiceAccountAndRoles_builder) Build() *ServiceAccountAndRoles {
 type GetServiceAccountResponse struct {
 	state                protoimpl.MessageState  `protogen:"opaque.v1"`
 	xxx_hidden_SaAndRole *ServiceAccountAndRoles `protobuf:"bytes,1,opt,name=sa_and_role,json=saAndRole"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetServiceAccountResponse) Reset() {
@@ -238,24 +326,37 @@ func (x *GetServiceAccountResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetServiceAccountResponse) GetSaAndRole() *ServiceAccountAndRoles {
 	if x != nil {
-		return x.xxx_hidden_SaAndRole
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SaAndRole) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *ServiceAccountAndRoles
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SaAndRole), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetServiceAccountResponse) SetSaAndRole(v *ServiceAccountAndRoles) {
-	x.xxx_hidden_SaAndRole = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_SaAndRole, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetServiceAccountResponse) HasSaAndRole() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SaAndRole != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetServiceAccountResponse) ClearSaAndRole() {
-	x.xxx_hidden_SaAndRole = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_SaAndRole, (*ServiceAccountAndRoles)(nil))
 }
 
 type GetServiceAccountResponse_builder struct {
@@ -268,7 +369,10 @@ func (b0 GetServiceAccountResponse_builder) Build() *GetServiceAccountResponse {
 	m0 := &GetServiceAccountResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_SaAndRole = b.SaAndRole
+	if b.SaAndRole != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_SaAndRole = b.SaAndRole
+	}
 	return m0
 }
 
@@ -391,17 +495,17 @@ var File_api_v1_service_account_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_service_account_service_proto_rawDesc = "" +
 	"\n" +
-	"$api/v1/service_account_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x19api/v1/rbac_service.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x12storage/rbac.proto\x1a\x1dstorage/service_account.proto\x1a!google/protobuf/go_features.proto\"Z\n" +
-	"\x1aListServiceAccountResponse\x12<\n" +
-	"\fsa_and_roles\x18\x01 \x03(\v2\x1a.v1.ServiceAccountAndRolesR\n" +
-	"saAndRoles\"\x9e\x02\n" +
-	"\x16ServiceAccountAndRoles\x12@\n" +
-	"\x0fservice_account\x18\x01 \x01(\v2\x17.storage.ServiceAccountR\x0eserviceAccount\x125\n" +
-	"\rcluster_roles\x18\x02 \x03(\v2\x10.storage.K8sRoleR\fclusterRoles\x122\n" +
-	"\fscoped_roles\x18\x03 \x03(\v2\x0f.v1.ScopedRolesR\vscopedRoles\x12W\n" +
-	"\x18deployment_relationships\x18\x04 \x03(\v2\x1c.v1.SADeploymentRelationshipR\x17deploymentRelationships\"W\n" +
-	"\x19GetServiceAccountResponse\x12:\n" +
-	"\vsa_and_role\x18\x01 \x01(\v2\x1a.v1.ServiceAccountAndRolesR\tsaAndRole\">\n" +
+	"$api/v1/service_account_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x19api/v1/rbac_service.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x12storage/rbac.proto\x1a\x1dstorage/service_account.proto\x1a!google/protobuf/go_features.proto\"^\n" +
+	"\x1aListServiceAccountResponse\x12@\n" +
+	"\fsa_and_roles\x18\x01 \x03(\v2\x1a.v1.ServiceAccountAndRolesB\x02(\x01R\n" +
+	"saAndRoles\"\xae\x02\n" +
+	"\x16ServiceAccountAndRoles\x12D\n" +
+	"\x0fservice_account\x18\x01 \x01(\v2\x17.storage.ServiceAccountB\x02(\x01R\x0eserviceAccount\x129\n" +
+	"\rcluster_roles\x18\x02 \x03(\v2\x10.storage.K8sRoleB\x02(\x01R\fclusterRoles\x126\n" +
+	"\fscoped_roles\x18\x03 \x03(\v2\x0f.v1.ScopedRolesB\x02(\x01R\vscopedRoles\x12[\n" +
+	"\x18deployment_relationships\x18\x04 \x03(\v2\x1c.v1.SADeploymentRelationshipB\x02(\x01R\x17deploymentRelationships\"[\n" +
+	"\x19GetServiceAccountResponse\x12>\n" +
+	"\vsa_and_role\x18\x01 \x01(\v2\x1a.v1.ServiceAccountAndRolesB\x02(\x01R\tsaAndRole\">\n" +
 	"\x18SADeploymentRelationship\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name2\xe1\x01\n" +

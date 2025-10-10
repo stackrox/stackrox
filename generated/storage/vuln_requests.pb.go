@@ -120,11 +120,13 @@ func (x RequestExpiry_ExpiryType) Number() protoreflect.EnumNumber {
 }
 
 type RequestComment struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Message     *string                `protobuf:"bytes,2,opt,name=message"`
-	xxx_hidden_User        *SlimUser              `protobuf:"bytes,3,opt,name=user"`
-	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt"`
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id        *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Message   *string                `protobuf:"bytes,2,opt,name=message"`
+	xxx_hidden_User      *SlimUser              `protobuf:"bytes,3,opt,name=user"`
+	xxx_hidden_CreatedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -185,7 +187,14 @@ func (x *RequestComment) GetUser() *SlimUser {
 
 func (x *RequestComment) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -205,7 +214,12 @@ func (x *RequestComment) SetUser(v *SlimUser) {
 }
 
 func (x *RequestComment) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	}
 }
 
 func (x *RequestComment) HasId() bool {
@@ -233,7 +247,7 @@ func (x *RequestComment) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *RequestComment) ClearId() {
@@ -251,7 +265,8 @@ func (x *RequestComment) ClearUser() {
 }
 
 func (x *RequestComment) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 type RequestComment_builder struct {
@@ -276,14 +291,19 @@ func (b0 RequestComment_builder) Build() *RequestComment {
 		x.xxx_hidden_Message = b.Message
 	}
 	x.xxx_hidden_User = b.User
-	x.xxx_hidden_CreatedAt = b.CreatedAt
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
 	return m0
 }
 
 type RequestExpiry struct {
-	state                  protoimpl.MessageState   `protogen:"opaque.v1"`
-	xxx_hidden_Expiry      isRequestExpiry_Expiry   `protobuf_oneof:"expiry"`
-	xxx_hidden_ExpiryType  RequestExpiry_ExpiryType `protobuf:"varint,3,opt,name=expiry_type,json=expiryType,enum=storage.RequestExpiry_ExpiryType"`
+	state                 protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_Expiry     isRequestExpiry_Expiry   `protobuf_oneof:"expiry"`
+	xxx_hidden_ExpiryType RequestExpiry_ExpiryType `protobuf:"varint,3,opt,name=expiry_type,json=expiryType,enum=storage.RequestExpiry_ExpiryType"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -983,6 +1003,8 @@ type VulnerabilityRequest struct {
 	xxx_hidden_Req         isVulnerabilityRequest_Req        `protobuf_oneof:"req"`
 	xxx_hidden_Entities    isVulnerabilityRequest_Entities   `protobuf_oneof:"entities"`
 	xxx_hidden_UpdatedReq  isVulnerabilityRequest_UpdatedReq `protobuf_oneof:"updated_req"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1079,22 +1101,41 @@ func (x *VulnerabilityRequest) GetApprovers() []*SlimUser {
 
 func (x *VulnerabilityRequest) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *VulnerabilityRequest) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *VulnerabilityRequest) GetComments() []*RequestComment {
 	if x != nil {
-		if x.xxx_hidden_Comments != nil {
-			return *x.xxx_hidden_Comments
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Comments) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *[]*RequestComment
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Comments), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1116,8 +1157,13 @@ func (x *VulnerabilityRequest) GetRequesterV2() *Requester {
 
 func (x *VulnerabilityRequest) GetApproversV2() []*Approver {
 	if x != nil {
-		if x.xxx_hidden_ApproversV2 != nil {
-			return *x.xxx_hidden_ApproversV2
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 12) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ApproversV2) {
+				protoimpl.X.UnmarshalField(x, 29)
+			}
+			var rv *[]*Approver
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ApproversV2), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1214,15 +1260,32 @@ func (x *VulnerabilityRequest) SetApprovers(v []*SlimUser) {
 }
 
 func (x *VulnerabilityRequest) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 16)
+	}
 }
 
 func (x *VulnerabilityRequest) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 16)
+	}
 }
 
 func (x *VulnerabilityRequest) SetComments(v []*RequestComment) {
-	x.xxx_hidden_Comments = &v
+	var sv *[]*RequestComment
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Comments), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*RequestComment{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Comments), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 16)
 }
 
 func (x *VulnerabilityRequest) SetScope(v *VulnerabilityRequest_Scope) {
@@ -1234,7 +1297,14 @@ func (x *VulnerabilityRequest) SetRequesterV2(v *Requester) {
 }
 
 func (x *VulnerabilityRequest) SetApproversV2(v []*Approver) {
-	x.xxx_hidden_ApproversV2 = &v
+	var sv *[]*Approver
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ApproversV2), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Approver{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ApproversV2), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 16)
 }
 
 func (x *VulnerabilityRequest) SetDeferralReq(v *DeferralRequest) {
@@ -1333,14 +1403,14 @@ func (x *VulnerabilityRequest) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *VulnerabilityRequest) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *VulnerabilityRequest) HasScope() bool {
@@ -1458,11 +1528,13 @@ func (x *VulnerabilityRequest) ClearRequestor() {
 }
 
 func (x *VulnerabilityRequest) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *VulnerabilityRequest) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *VulnerabilityRequest) ClearScope() {
@@ -1645,12 +1717,24 @@ func (b0 VulnerabilityRequest_builder) Build() *VulnerabilityRequest {
 	}
 	x.xxx_hidden_Requestor = b.Requestor
 	x.xxx_hidden_Approvers = &b.Approvers
-	x.xxx_hidden_CreatedAt = b.CreatedAt
-	x.xxx_hidden_LastUpdated = b.LastUpdated
-	x.xxx_hidden_Comments = &b.Comments
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 16)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 16)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
+	if b.Comments != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 16)
+		x.xxx_hidden_Comments = &b.Comments
+	}
 	x.xxx_hidden_Scope = b.Scope
 	x.xxx_hidden_RequesterV2 = b.RequesterV2
-	x.xxx_hidden_ApproversV2 = &b.ApproversV2
+	if b.ApproversV2 != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 16)
+		x.xxx_hidden_ApproversV2 = &b.ApproversV2
+	}
 	if b.DeferralReq != nil {
 		x.xxx_hidden_Req = &vulnerabilityRequest_DeferralReq{b.DeferralReq}
 	}
@@ -2184,17 +2268,17 @@ var File_storage_vuln_requests_proto protoreflect.FileDescriptor
 
 const file_storage_vuln_requests_proto_rawDesc = "" +
 	"\n" +
-	"\x1bstorage/vuln_requests.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\x9c\x01\n" +
+	"\x1bstorage/vuln_requests.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\xa0\x01\n" +
 	"\x0eRequestComment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12%\n" +
-	"\x04user\x18\x03 \x01(\v2\x11.storage.SlimUserR\x04user\x129\n" +
+	"\x04user\x18\x03 \x01(\v2\x11.storage.SlimUserR\x04user\x12=\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x8c\x02\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\"\x90\x02\n" +
 	"\rRequestExpiry\x12.\n" +
-	"\x12expires_when_fixed\x18\x01 \x01(\bH\x00R\x10expiresWhenFixed\x12;\n" +
+	"\x12expires_when_fixed\x18\x01 \x01(\bH\x00R\x10expiresWhenFixed\x12?\n" +
 	"\n" +
-	"expires_on\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\texpiresOn\x12B\n" +
+	"expires_on\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01H\x00R\texpiresOn\x12B\n" +
 	"\vexpiry_type\x18\x03 \x01(\x0e2!.storage.RequestExpiry.ExpiryTypeR\n" +
 	"expiryType\"@\n" +
 	"\n" +
@@ -2216,8 +2300,7 @@ const file_storage_vuln_requests_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\".\n" +
 	"\bApprover\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\xf4\n" +
-	"\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x84\v\n" +
 	"\x14VulnerabilityRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x1a \x01(\tR\x04name\x12>\n" +
@@ -2225,15 +2308,15 @@ const file_storage_vuln_requests_proto_rawDesc = "" +
 	"\x06status\x18\x03 \x01(\x0e2\x16.storage.RequestStatusR\x06status\x12\x18\n" +
 	"\aexpired\x18\x04 \x01(\bR\aexpired\x123\n" +
 	"\trequestor\x18\x05 \x01(\v2\x11.storage.SlimUserB\x02\x18\x01R\trequestor\x123\n" +
-	"\tapprovers\x18\x06 \x03(\v2\x11.storage.SlimUserB\x02\x18\x01R\tapprovers\x129\n" +
+	"\tapprovers\x18\x06 \x03(\v2\x11.storage.SlimUserB\x02\x18\x01R\tapprovers\x12=\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12=\n" +
-	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x123\n" +
-	"\bcomments\x18\t \x03(\v2\x17.storage.RequestCommentR\bcomments\x129\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\x12A\n" +
+	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x127\n" +
+	"\bcomments\x18\t \x03(\v2\x17.storage.RequestCommentB\x02(\x01R\bcomments\x129\n" +
 	"\x05scope\x18\n" +
 	" \x01(\v2#.storage.VulnerabilityRequest.ScopeR\x05scope\x125\n" +
-	"\frequester_v2\x18\x1c \x01(\v2\x12.storage.RequesterR\vrequesterV2\x124\n" +
-	"\fapprovers_v2\x18\x1d \x03(\v2\x11.storage.ApproverR\vapproversV2\x12=\n" +
+	"\frequester_v2\x18\x1c \x01(\v2\x12.storage.RequesterR\vrequesterV2\x128\n" +
+	"\fapprovers_v2\x18\x1d \x03(\v2\x11.storage.ApproverB\x02(\x01R\vapproversV2\x12=\n" +
 	"\fdeferral_req\x18\v \x01(\v2\x18.storage.DeferralRequestH\x00R\vdeferralReq\x12>\n" +
 	"\n" +
 	"fp_request\x18\f \x01(\v2\x1d.storage.FalsePositiveRequestH\x00R\tfpRequest\x128\n" +

@@ -73,8 +73,12 @@ func (x DelegatedRegistryConfig_EnabledFor) Number() protoreflect.EnumNumber {
 type DelegatedRegistryClustersResponse struct {
 	state               protoimpl.MessageState       `protogen:"opaque.v1"`
 	xxx_hidden_Clusters *[]*DelegatedRegistryCluster `protobuf:"bytes,1,rep,name=clusters"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DelegatedRegistryClustersResponse) Reset() {
@@ -104,15 +108,27 @@ func (x *DelegatedRegistryClustersResponse) ProtoReflect() protoreflect.Message 
 
 func (x *DelegatedRegistryClustersResponse) GetClusters() []*DelegatedRegistryCluster {
 	if x != nil {
-		if x.xxx_hidden_Clusters != nil {
-			return *x.xxx_hidden_Clusters
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Clusters) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*DelegatedRegistryCluster
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *DelegatedRegistryClustersResponse) SetClusters(v []*DelegatedRegistryCluster) {
-	x.xxx_hidden_Clusters = &v
+	var sv *[]*DelegatedRegistryCluster
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DelegatedRegistryCluster{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type DelegatedRegistryClustersResponse_builder struct {
@@ -125,7 +141,10 @@ func (b0 DelegatedRegistryClustersResponse_builder) Build() *DelegatedRegistryCl
 	m0 := &DelegatedRegistryClustersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Clusters = &b.Clusters
+	if b.Clusters != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Clusters = &b.Clusters
+	}
 	return m0
 }
 
@@ -277,10 +296,12 @@ type DelegatedRegistryConfig struct {
 	xxx_hidden_EnabledFor       DelegatedRegistryConfig_EnabledFor            `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,enum=v1.DelegatedRegistryConfig_EnabledFor"`
 	xxx_hidden_DefaultClusterId *string                                       `protobuf:"bytes,2,opt,name=default_cluster_id,json=defaultClusterId"`
 	xxx_hidden_Registries       *[]*DelegatedRegistryConfig_DelegatedRegistry `protobuf:"bytes,3,rep,name=registries"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DelegatedRegistryConfig) Reset() {
@@ -329,8 +350,13 @@ func (x *DelegatedRegistryConfig) GetDefaultClusterId() string {
 
 func (x *DelegatedRegistryConfig) GetRegistries() []*DelegatedRegistryConfig_DelegatedRegistry {
 	if x != nil {
-		if x.xxx_hidden_Registries != nil {
-			return *x.xxx_hidden_Registries
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Registries) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*DelegatedRegistryConfig_DelegatedRegistry
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -347,7 +373,14 @@ func (x *DelegatedRegistryConfig) SetDefaultClusterId(v string) {
 }
 
 func (x *DelegatedRegistryConfig) SetRegistries(v []*DelegatedRegistryConfig_DelegatedRegistry) {
-	x.xxx_hidden_Registries = &v
+	var sv *[]*DelegatedRegistryConfig_DelegatedRegistry
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DelegatedRegistryConfig_DelegatedRegistry{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *DelegatedRegistryConfig) HasEnabledFor() bool {
@@ -405,7 +438,10 @@ func (b0 DelegatedRegistryConfig_builder) Build() *DelegatedRegistryConfig {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_DefaultClusterId = b.DefaultClusterId
 	}
-	x.xxx_hidden_Registries = &b.Registries
+	if b.Registries != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Registries = &b.Registries
+	}
 	return m0
 }
 
@@ -526,19 +562,19 @@ var File_api_v1_delegated_registry_config_service_proto protoreflect.FileDescrip
 
 const file_api_v1_delegated_registry_config_service_proto_rawDesc = "" +
 	"\n" +
-	".api/v1/delegated_registry_config_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"]\n" +
-	"!DelegatedRegistryClustersResponse\x128\n" +
-	"\bclusters\x18\x01 \x03(\v2\x1c.v1.DelegatedRegistryClusterR\bclusters\"Y\n" +
+	".api/v1/delegated_registry_config_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"a\n" +
+	"!DelegatedRegistryClustersResponse\x12<\n" +
+	"\bclusters\x18\x01 \x03(\v2\x1c.v1.DelegatedRegistryClusterB\x02(\x01R\bclusters\"Y\n" +
 	"\x18DelegatedRegistryCluster\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
-	"\bis_valid\x18\x03 \x01(\bR\aisValid\"\xd6\x02\n" +
+	"\bis_valid\x18\x03 \x01(\bR\aisValid\"\xda\x02\n" +
 	"\x17DelegatedRegistryConfig\x12G\n" +
 	"\venabled_for\x18\x01 \x01(\x0e2&.v1.DelegatedRegistryConfig.EnabledForR\n" +
 	"enabledFor\x12,\n" +
-	"\x12default_cluster_id\x18\x02 \x01(\tR\x10defaultClusterId\x12M\n" +
+	"\x12default_cluster_id\x18\x02 \x01(\tR\x10defaultClusterId\x12Q\n" +
 	"\n" +
-	"registries\x18\x03 \x03(\v2-.v1.DelegatedRegistryConfig.DelegatedRegistryR\n" +
+	"registries\x18\x03 \x03(\v2-.v1.DelegatedRegistryConfig.DelegatedRegistryB\x02(\x01R\n" +
 	"registries\x1aF\n" +
 	"\x11DelegatedRegistry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +

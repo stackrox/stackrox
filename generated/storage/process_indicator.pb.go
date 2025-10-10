@@ -35,10 +35,12 @@ type ProcessIndicator struct {
 	xxx_hidden_Namespace          *string                `protobuf:"bytes,8,opt,name=namespace"`
 	xxx_hidden_ContainerStartTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime"`
 	xxx_hidden_ImageId            *string                `protobuf:"bytes,12,opt,name=image_id,json=imageId"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessIndicator) Reset() {
@@ -145,7 +147,14 @@ func (x *ProcessIndicator) GetNamespace() string {
 
 func (x *ProcessIndicator) GetContainerStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ContainerStartTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ContainerStartTime) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ContainerStartTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -200,7 +209,12 @@ func (x *ProcessIndicator) SetNamespace(v string) {
 }
 
 func (x *ProcessIndicator) SetContainerStartTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ContainerStartTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ContainerStartTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
+	}
 }
 
 func (x *ProcessIndicator) SetImageId(v string) {
@@ -268,7 +282,7 @@ func (x *ProcessIndicator) HasContainerStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ContainerStartTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *ProcessIndicator) HasImageId() bool {
@@ -318,7 +332,8 @@ func (x *ProcessIndicator) ClearNamespace() {
 }
 
 func (x *ProcessIndicator) ClearContainerStartTime() {
-	x.xxx_hidden_ContainerStartTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ContainerStartTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ProcessIndicator) ClearImageId() {
@@ -377,7 +392,10 @@ func (b0 ProcessIndicator_builder) Build() *ProcessIndicator {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
 		x.xxx_hidden_Namespace = b.Namespace
 	}
-	x.xxx_hidden_ContainerStartTime = b.ContainerStartTime
+	if b.ContainerStartTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
+		x.xxx_hidden_ContainerStartTime = b.ContainerStartTime
+	}
 	if b.ImageId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
 		x.xxx_hidden_ImageId = b.ImageId
@@ -757,10 +775,12 @@ type ProcessSignal struct {
 	xxx_hidden_Lineage      []string                      `protobuf:"bytes,10,rep,name=lineage"`
 	xxx_hidden_Scraped      bool                          `protobuf:"varint,11,opt,name=scraped"`
 	xxx_hidden_LineageInfo  *[]*ProcessSignal_LineageInfo `protobuf:"bytes,12,rep,name=lineage_info,json=lineageInfo"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessSignal) Reset() {
@@ -810,7 +830,14 @@ func (x *ProcessSignal) GetContainerId() string {
 
 func (x *ProcessSignal) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Time
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Time) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Time), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -883,8 +910,13 @@ func (x *ProcessSignal) GetScraped() bool {
 
 func (x *ProcessSignal) GetLineageInfo() []*ProcessSignal_LineageInfo {
 	if x != nil {
-		if x.xxx_hidden_LineageInfo != nil {
-			return *x.xxx_hidden_LineageInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 11) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LineageInfo) {
+				protoimpl.X.UnmarshalField(x, 12)
+			}
+			var rv *[]*ProcessSignal_LineageInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LineageInfo), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -901,7 +933,12 @@ func (x *ProcessSignal) SetContainerId(v string) {
 }
 
 func (x *ProcessSignal) SetTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Time = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 12)
+	}
 }
 
 func (x *ProcessSignal) SetName(v string) {
@@ -945,7 +982,14 @@ func (x *ProcessSignal) SetScraped(v bool) {
 }
 
 func (x *ProcessSignal) SetLineageInfo(v []*ProcessSignal_LineageInfo) {
-	x.xxx_hidden_LineageInfo = &v
+	var sv *[]*ProcessSignal_LineageInfo
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LineageInfo), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ProcessSignal_LineageInfo{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_LineageInfo), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 12)
 }
 
 func (x *ProcessSignal) HasId() bool {
@@ -966,7 +1010,7 @@ func (x *ProcessSignal) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Time != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ProcessSignal) HasName() bool {
@@ -1029,7 +1073,8 @@ func (x *ProcessSignal) ClearContainerId() {
 }
 
 func (x *ProcessSignal) ClearTime() {
-	x.xxx_hidden_Time = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ProcessSignal) ClearName() {
@@ -1113,7 +1158,10 @@ func (b0 ProcessSignal_builder) Build() *ProcessSignal {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 12)
 		x.xxx_hidden_ContainerId = b.ContainerId
 	}
-	x.xxx_hidden_Time = b.Time
+	if b.Time != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 12)
+		x.xxx_hidden_Time = b.Time
+	}
 	if b.Name != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 12)
 		x.xxx_hidden_Name = b.Name
@@ -1143,7 +1191,10 @@ func (b0 ProcessSignal_builder) Build() *ProcessSignal {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 12)
 		x.xxx_hidden_Scraped = *b.Scraped
 	}
-	x.xxx_hidden_LineageInfo = &b.LineageInfo
+	if b.LineageInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 12)
+		x.xxx_hidden_LineageInfo = &b.LineageInfo
+	}
 	return m0
 }
 
@@ -1259,7 +1310,7 @@ var File_storage_process_indicator_proto protoreflect.FileDescriptor
 
 const file_storage_process_indicator_proto_rawDesc = "" +
 	"\n" +
-	"\x1fstorage/process_indicator.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x80\x03\n" +
+	"\x1fstorage/process_indicator.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x84\x03\n" +
 	"\x10ProcessIndicator\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
 	"\rdeployment_id\x18\x02 \x01(\tR\fdeploymentId\x12%\n" +
@@ -1269,8 +1320,8 @@ const file_storage_process_indicator_proto_rawDesc = "" +
 	"\x06signal\x18\x06 \x01(\v2\x16.storage.ProcessSignalR\x06signal\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\a \x01(\tR\tclusterId\x12\x1c\n" +
-	"\tnamespace\x18\b \x01(\tR\tnamespace\x12L\n" +
-	"\x14container_start_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x12containerStartTime\x12\x19\n" +
+	"\tnamespace\x18\b \x01(\tR\tnamespace\x12P\n" +
+	"\x14container_start_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x12containerStartTime\x12\x19\n" +
 	"\bimage_id\x18\f \x01(\tR\aimageIdJ\x04\b\n" +
 	"\x10\vJ\x04\b\x05\x10\x06\"\xd4\x01\n" +
 	"\x19ProcessIndicatorUniqueKey\x12\x15\n" +
@@ -1282,11 +1333,11 @@ const file_storage_process_indicator_proto_rawDesc = "" +
 	"\x17NetworkProcessUniqueKey\x12!\n" +
 	"\fprocess_name\x18\x01 \x01(\tR\vprocessName\x123\n" +
 	"\x16process_exec_file_path\x18\x02 \x01(\tR\x13processExecFilePath\x12!\n" +
-	"\fprocess_args\x18\x03 \x01(\tR\vprocessArgs\"\xd6\x03\n" +
+	"\fprocess_args\x18\x03 \x01(\tR\vprocessArgs\"\xde\x03\n" +
 	"\rProcessSignal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
-	"\fcontainer_id\x18\x02 \x01(\tR\vcontainerId\x12.\n" +
-	"\x04time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12\x12\n" +
+	"\fcontainer_id\x18\x02 \x01(\tR\vcontainerId\x122\n" +
+	"\x04time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x04time\x12\x12\n" +
 	"\x04name\x18\x04 \x01(\tR\x04name\x12\x12\n" +
 	"\x04args\x18\x05 \x01(\tR\x04args\x12$\n" +
 	"\x0eexec_file_path\x18\x06 \x01(\tR\fexecFilePath\x12\x10\n" +
@@ -1295,8 +1346,8 @@ const file_storage_process_indicator_proto_rawDesc = "" +
 	"\x03gid\x18\t \x01(\rR\x03gid\x12\x1c\n" +
 	"\alineage\x18\n" +
 	" \x03(\tB\x02\x18\x01R\alineage\x12\x18\n" +
-	"\ascraped\x18\v \x01(\bR\ascraped\x12E\n" +
-	"\flineage_info\x18\f \x03(\v2\".storage.ProcessSignal.LineageInfoR\vlineageInfo\x1a_\n" +
+	"\ascraped\x18\v \x01(\bR\ascraped\x12I\n" +
+	"\flineage_info\x18\f \x03(\v2\".storage.ProcessSignal.LineageInfoB\x02(\x01R\vlineageInfo\x1a_\n" +
 	"\vLineageInfo\x12\x1d\n" +
 	"\n" +
 	"parent_uid\x18\x01 \x01(\rR\tparentUid\x121\n" +

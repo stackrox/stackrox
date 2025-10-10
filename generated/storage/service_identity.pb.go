@@ -592,10 +592,12 @@ type TypedServiceCertificateSet struct {
 	xxx_hidden_CaPem        []byte                      `protobuf:"bytes,1,opt,name=ca_pem,json=caPem"`
 	xxx_hidden_ServiceCerts *[]*TypedServiceCertificate `protobuf:"bytes,2,rep,name=service_certs,json=serviceCerts"`
 	xxx_hidden_CaBundlePem  []byte                      `protobuf:"bytes,3,opt,name=ca_bundle_pem,json=caBundlePem"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TypedServiceCertificateSet) Reset() {
@@ -632,8 +634,13 @@ func (x *TypedServiceCertificateSet) GetCaPem() []byte {
 
 func (x *TypedServiceCertificateSet) GetServiceCerts() []*TypedServiceCertificate {
 	if x != nil {
-		if x.xxx_hidden_ServiceCerts != nil {
-			return *x.xxx_hidden_ServiceCerts
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ServiceCerts) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*TypedServiceCertificate
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ServiceCerts), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -655,7 +662,14 @@ func (x *TypedServiceCertificateSet) SetCaPem(v []byte) {
 }
 
 func (x *TypedServiceCertificateSet) SetServiceCerts(v []*TypedServiceCertificate) {
-	x.xxx_hidden_ServiceCerts = &v
+	var sv *[]*TypedServiceCertificate
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ServiceCerts), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*TypedServiceCertificate{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ServiceCerts), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *TypedServiceCertificateSet) SetCaBundlePem(v []byte) {
@@ -707,7 +721,10 @@ func (b0 TypedServiceCertificateSet_builder) Build() *TypedServiceCertificateSet
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
 		x.xxx_hidden_CaPem = b.CaPem
 	}
-	x.xxx_hidden_ServiceCerts = &b.ServiceCerts
+	if b.ServiceCerts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_ServiceCerts = &b.ServiceCerts
+	}
 	if b.CaBundlePem != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
 		x.xxx_hidden_CaBundlePem = b.CaBundlePem
@@ -733,10 +750,10 @@ const file_storage_service_identity_proto_rawDesc = "" +
 	"\akey_pem\x18\x02 \x01(\fR\x06keyPem\"\x83\x01\n" +
 	"\x17TypedServiceCertificate\x127\n" +
 	"\fservice_type\x18\x01 \x01(\x0e2\x14.storage.ServiceTypeR\vserviceType\x12/\n" +
-	"\x04cert\x18\x02 \x01(\v2\x1b.storage.ServiceCertificateR\x04cert\"\x9e\x01\n" +
+	"\x04cert\x18\x02 \x01(\v2\x1b.storage.ServiceCertificateR\x04cert\"\xa2\x01\n" +
 	"\x1aTypedServiceCertificateSet\x12\x15\n" +
-	"\x06ca_pem\x18\x01 \x01(\fR\x05caPem\x12E\n" +
-	"\rservice_certs\x18\x02 \x03(\v2 .storage.TypedServiceCertificateR\fserviceCerts\x12\"\n" +
+	"\x06ca_pem\x18\x01 \x01(\fR\x05caPem\x12I\n" +
+	"\rservice_certs\x18\x02 \x03(\v2 .storage.TypedServiceCertificateB\x02(\x01R\fserviceCerts\x12\"\n" +
 	"\rca_bundle_pem\x18\x03 \x01(\fR\vcaBundlePem*\xd1\x03\n" +
 	"\vServiceType\x12\x13\n" +
 	"\x0fUNKNOWN_SERVICE\x10\x00\x12\x12\n" +

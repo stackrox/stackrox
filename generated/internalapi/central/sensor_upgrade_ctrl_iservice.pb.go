@@ -877,8 +877,12 @@ func (b0 UpgradeCheckInFromSensorRequest_UpgraderPodState_builder) Build() *Upgr
 type UpgradeCheckInFromSensorRequest_UpgraderPodStates struct {
 	state             protoimpl.MessageState                               `protogen:"opaque.v1"`
 	xxx_hidden_States *[]*UpgradeCheckInFromSensorRequest_UpgraderPodState `protobuf:"bytes,1,rep,name=states"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodStates) Reset() {
@@ -908,15 +912,27 @@ func (x *UpgradeCheckInFromSensorRequest_UpgraderPodStates) ProtoReflect() proto
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodStates) GetStates() []*UpgradeCheckInFromSensorRequest_UpgraderPodState {
 	if x != nil {
-		if x.xxx_hidden_States != nil {
-			return *x.xxx_hidden_States
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_States) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*UpgradeCheckInFromSensorRequest_UpgraderPodState
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_States), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodStates) SetStates(v []*UpgradeCheckInFromSensorRequest_UpgraderPodState) {
-	x.xxx_hidden_States = &v
+	var sv *[]*UpgradeCheckInFromSensorRequest_UpgraderPodState
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_States), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*UpgradeCheckInFromSensorRequest_UpgraderPodState{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_States), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type UpgradeCheckInFromSensorRequest_UpgraderPodStates_builder struct {
@@ -929,7 +945,10 @@ func (b0 UpgradeCheckInFromSensorRequest_UpgraderPodStates_builder) Build() *Upg
 	m0 := &UpgradeCheckInFromSensorRequest_UpgraderPodStates{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_States = &b.States
+	if b.States != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_States = &b.States
+	}
 	return m0
 }
 
@@ -989,7 +1008,7 @@ const file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_rawDesc = "" +
 	"\x13last_executed_stage\x18\x03 \x01(\tR\x11lastExecutedStage\x129\n" +
 	"\x19last_executed_stage_error\x18\x04 \x01(\tR\x16lastExecutedStageError\"T\n" +
 	"\"UpgradeCheckInFromUpgraderResponse\x12.\n" +
-	"\x13workflow_to_execute\x18\x01 \x01(\tR\x11workflowToExecute\"\xfc\x04\n" +
+	"\x13workflow_to_execute\x18\x01 \x01(\tR\x11workflowToExecute\"\x80\x05\n" +
 	"\x1fUpgradeCheckInFromSensorRequest\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x05 \x01(\tR\tclusterId\x12,\n" +
@@ -1004,9 +1023,9 @@ const file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_rawDesc = "" +
 	"\x10UpgraderPodState\x12\x19\n" +
 	"\bpod_name\x18\x01 \x01(\tR\apodName\x12\x18\n" +
 	"\astarted\x18\x02 \x01(\bR\astarted\x12P\n" +
-	"\x05error\x18\x03 \x01(\v2:.central.UpgradeCheckInFromSensorRequest.PodErrorConditionR\x05error\x1af\n" +
-	"\x11UpgraderPodStates\x12Q\n" +
-	"\x06states\x18\x01 \x03(\v29.central.UpgradeCheckInFromSensorRequest.UpgraderPodStateR\x06statesB\a\n" +
+	"\x05error\x18\x03 \x01(\v2:.central.UpgradeCheckInFromSensorRequest.PodErrorConditionR\x05error\x1aj\n" +
+	"\x11UpgraderPodStates\x12U\n" +
+	"\x06states\x18\x01 \x03(\v29.central.UpgradeCheckInFromSensorRequest.UpgraderPodStateB\x02(\x01R\x06statesB\a\n" +
 	"\x05state\"6\n" +
 	"\x1dUpgradeCheckInResponseDetails\x1a\x15\n" +
 	"\x13NoUpgradeInProgress2\xf2\x01\n" +

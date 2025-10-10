@@ -119,10 +119,12 @@ func (x DBExportManifest_EncodingType) Number() protoreflect.EnumNumber {
 }
 
 type DBRestoreRequestHeader struct {
-	state                  protoimpl.MessageState                `protogen:"opaque.v1"`
-	xxx_hidden_FormatName  *string                               `protobuf:"bytes,1,opt,name=format_name,json=formatName"`
-	xxx_hidden_Manifest    *DBExportManifest                     `protobuf:"bytes,2,opt,name=manifest"`
-	xxx_hidden_LocalFile   *DBRestoreRequestHeader_LocalFileInfo `protobuf:"bytes,3,opt,name=local_file,json=localFile"`
+	state                 protoimpl.MessageState                `protogen:"opaque.v1"`
+	xxx_hidden_FormatName *string                               `protobuf:"bytes,1,opt,name=format_name,json=formatName"`
+	xxx_hidden_Manifest   *DBExportManifest                     `protobuf:"bytes,2,opt,name=manifest"`
+	xxx_hidden_LocalFile  *DBRestoreRequestHeader_LocalFileInfo `protobuf:"bytes,3,opt,name=local_file,json=localFile"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -166,14 +168,28 @@ func (x *DBRestoreRequestHeader) GetFormatName() string {
 
 func (x *DBRestoreRequestHeader) GetManifest() *DBExportManifest {
 	if x != nil {
-		return x.xxx_hidden_Manifest
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Manifest) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *DBExportManifest
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Manifest), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *DBRestoreRequestHeader) GetLocalFile() *DBRestoreRequestHeader_LocalFileInfo {
 	if x != nil {
-		return x.xxx_hidden_LocalFile
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LocalFile) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *DBRestoreRequestHeader_LocalFileInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LocalFile), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -184,11 +200,21 @@ func (x *DBRestoreRequestHeader) SetFormatName(v string) {
 }
 
 func (x *DBRestoreRequestHeader) SetManifest(v *DBExportManifest) {
-	x.xxx_hidden_Manifest = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Manifest, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	}
 }
 
 func (x *DBRestoreRequestHeader) SetLocalFile(v *DBRestoreRequestHeader_LocalFileInfo) {
-	x.xxx_hidden_LocalFile = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LocalFile, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	}
 }
 
 func (x *DBRestoreRequestHeader) HasFormatName() bool {
@@ -202,14 +228,14 @@ func (x *DBRestoreRequestHeader) HasManifest() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Manifest != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DBRestoreRequestHeader) HasLocalFile() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LocalFile != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DBRestoreRequestHeader) ClearFormatName() {
@@ -218,11 +244,13 @@ func (x *DBRestoreRequestHeader) ClearFormatName() {
 }
 
 func (x *DBRestoreRequestHeader) ClearManifest() {
-	x.xxx_hidden_Manifest = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Manifest, (*DBExportManifest)(nil))
 }
 
 func (x *DBRestoreRequestHeader) ClearLocalFile() {
-	x.xxx_hidden_LocalFile = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LocalFile, (*DBRestoreRequestHeader_LocalFileInfo)(nil))
 }
 
 type DBRestoreRequestHeader_builder struct {
@@ -246,8 +274,14 @@ func (b0 DBRestoreRequestHeader_builder) Build() *DBRestoreRequestHeader {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
 		x.xxx_hidden_FormatName = b.FormatName
 	}
-	x.xxx_hidden_Manifest = b.Manifest
-	x.xxx_hidden_LocalFile = b.LocalFile
+	if b.Manifest != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Manifest = b.Manifest
+	}
+	if b.LocalFile != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_LocalFile = b.LocalFile
+	}
 	return m0
 }
 
@@ -259,10 +293,12 @@ type DBRestoreProcessMetadata struct {
 	xxx_hidden_Header             *DBRestoreRequestHeader `protobuf:"bytes,2,opt,name=header"`
 	xxx_hidden_StartTime          *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=start_time,json=startTime"`
 	xxx_hidden_InitiatingUserName *string                 `protobuf:"bytes,4,opt,name=initiating_user_name,json=initiatingUserName"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DBRestoreProcessMetadata) Reset() {
@@ -302,14 +338,28 @@ func (x *DBRestoreProcessMetadata) GetId() string {
 
 func (x *DBRestoreProcessMetadata) GetHeader() *DBRestoreRequestHeader {
 	if x != nil {
-		return x.xxx_hidden_Header
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Header) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *DBRestoreRequestHeader
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Header), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *DBRestoreProcessMetadata) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_StartTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_StartTime) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_StartTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -330,11 +380,21 @@ func (x *DBRestoreProcessMetadata) SetId(v string) {
 }
 
 func (x *DBRestoreProcessMetadata) SetHeader(v *DBRestoreRequestHeader) {
-	x.xxx_hidden_Header = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Header, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	}
 }
 
 func (x *DBRestoreProcessMetadata) SetStartTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_StartTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	}
 }
 
 func (x *DBRestoreProcessMetadata) SetInitiatingUserName(v string) {
@@ -353,14 +413,14 @@ func (x *DBRestoreProcessMetadata) HasHeader() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Header != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DBRestoreProcessMetadata) HasStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_StartTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DBRestoreProcessMetadata) HasInitiatingUserName() bool {
@@ -376,11 +436,13 @@ func (x *DBRestoreProcessMetadata) ClearId() {
 }
 
 func (x *DBRestoreProcessMetadata) ClearHeader() {
-	x.xxx_hidden_Header = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Header, (*DBRestoreRequestHeader)(nil))
 }
 
 func (x *DBRestoreProcessMetadata) ClearStartTime() {
-	x.xxx_hidden_StartTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *DBRestoreProcessMetadata) ClearInitiatingUserName() {
@@ -409,8 +471,14 @@ func (b0 DBRestoreProcessMetadata_builder) Build() *DBRestoreProcessMetadata {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
 		x.xxx_hidden_Id = b.Id
 	}
-	x.xxx_hidden_Header = b.Header
-	x.xxx_hidden_StartTime = b.StartTime
+	if b.Header != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Header = b.Header
+	}
+	if b.StartTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_StartTime = b.StartTime
+	}
 	if b.InitiatingUserName != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
 		x.xxx_hidden_InitiatingUserName = b.InitiatingUserName
@@ -427,10 +495,12 @@ type DBRestoreProcessStatus struct {
 	xxx_hidden_Error          *string                            `protobuf:"bytes,5,opt,name=error"`
 	xxx_hidden_BytesRead      int64                              `protobuf:"varint,6,opt,name=bytes_read,json=bytesRead"`
 	xxx_hidden_FilesProcessed int64                              `protobuf:"varint,7,opt,name=files_processed,json=filesProcessed"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DBRestoreProcessStatus) Reset() {
@@ -460,7 +530,14 @@ func (x *DBRestoreProcessStatus) ProtoReflect() protoreflect.Message {
 
 func (x *DBRestoreProcessStatus) GetMetadata() *DBRestoreProcessMetadata {
 	if x != nil {
-		return x.xxx_hidden_Metadata
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Metadata) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *DBRestoreProcessMetadata
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Metadata), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -486,7 +563,14 @@ func (x *DBRestoreProcessStatus) GetState() DBRestoreProcessStatus_State {
 
 func (x *DBRestoreProcessStatus) GetResumeInfo() *DBRestoreProcessStatus_ResumeInfo {
 	if x != nil {
-		return x.xxx_hidden_ResumeInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ResumeInfo) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *DBRestoreProcessStatus_ResumeInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResumeInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -516,7 +600,12 @@ func (x *DBRestoreProcessStatus) GetFilesProcessed() int64 {
 }
 
 func (x *DBRestoreProcessStatus) SetMetadata(v *DBRestoreProcessMetadata) {
-	x.xxx_hidden_Metadata = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	}
 }
 
 func (x *DBRestoreProcessStatus) SetAttemptId(v string) {
@@ -530,7 +619,12 @@ func (x *DBRestoreProcessStatus) SetState(v DBRestoreProcessStatus_State) {
 }
 
 func (x *DBRestoreProcessStatus) SetResumeInfo(v *DBRestoreProcessStatus_ResumeInfo) {
-	x.xxx_hidden_ResumeInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ResumeInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	}
 }
 
 func (x *DBRestoreProcessStatus) SetError(v string) {
@@ -552,7 +646,7 @@ func (x *DBRestoreProcessStatus) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Metadata != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DBRestoreProcessStatus) HasAttemptId() bool {
@@ -573,7 +667,7 @@ func (x *DBRestoreProcessStatus) HasResumeInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ResumeInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *DBRestoreProcessStatus) HasError() bool {
@@ -598,7 +692,8 @@ func (x *DBRestoreProcessStatus) HasFilesProcessed() bool {
 }
 
 func (x *DBRestoreProcessStatus) ClearMetadata() {
-	x.xxx_hidden_Metadata = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, (*DBRestoreProcessMetadata)(nil))
 }
 
 func (x *DBRestoreProcessStatus) ClearAttemptId() {
@@ -612,7 +707,8 @@ func (x *DBRestoreProcessStatus) ClearState() {
 }
 
 func (x *DBRestoreProcessStatus) ClearResumeInfo() {
-	x.xxx_hidden_ResumeInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ResumeInfo, (*DBRestoreProcessStatus_ResumeInfo)(nil))
 }
 
 func (x *DBRestoreProcessStatus) ClearError() {
@@ -646,7 +742,10 @@ func (b0 DBRestoreProcessStatus_builder) Build() *DBRestoreProcessStatus {
 	m0 := &DBRestoreProcessStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Metadata = b.Metadata
+	if b.Metadata != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Metadata = b.Metadata
+	}
 	if b.AttemptId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
 		x.xxx_hidden_AttemptId = b.AttemptId
@@ -655,7 +754,10 @@ func (b0 DBRestoreProcessStatus_builder) Build() *DBRestoreProcessStatus {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
 		x.xxx_hidden_State = *b.State
 	}
-	x.xxx_hidden_ResumeInfo = b.ResumeInfo
+	if b.ResumeInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_ResumeInfo = b.ResumeInfo
+	}
 	if b.Error != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
 		x.xxx_hidden_Error = b.Error
@@ -677,8 +779,12 @@ func (b0 DBRestoreProcessStatus_builder) Build() *DBRestoreProcessStatus {
 type DBExportManifest struct {
 	state            protoimpl.MessageState    `protogen:"opaque.v1"`
 	xxx_hidden_Files *[]*DBExportManifest_File `protobuf:"bytes,1,rep,name=files"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DBExportManifest) Reset() {
@@ -708,15 +814,27 @@ func (x *DBExportManifest) ProtoReflect() protoreflect.Message {
 
 func (x *DBExportManifest) GetFiles() []*DBExportManifest_File {
 	if x != nil {
-		if x.xxx_hidden_Files != nil {
-			return *x.xxx_hidden_Files
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Files) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*DBExportManifest_File
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *DBExportManifest) SetFiles(v []*DBExportManifest_File) {
-	x.xxx_hidden_Files = &v
+	var sv *[]*DBExportManifest_File
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DBExportManifest_File{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type DBExportManifest_builder struct {
@@ -729,15 +847,20 @@ func (b0 DBExportManifest_builder) Build() *DBExportManifest {
 	m0 := &DBExportManifest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Files = &b.Files
+	if b.Files != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Files = &b.Files
+	}
 	return m0
 }
 
 // DBExportFormat describes a format (= a collection of files) for the database export.
 type DBExportFormat struct {
-	state                  protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_FormatName  *string                 `protobuf:"bytes,1,opt,name=format_name,json=formatName"`
-	xxx_hidden_Files       *[]*DBExportFormat_File `protobuf:"bytes,2,rep,name=files"`
+	state                 protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_FormatName *string                 `protobuf:"bytes,1,opt,name=format_name,json=formatName"`
+	xxx_hidden_Files      *[]*DBExportFormat_File `protobuf:"bytes,2,rep,name=files"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -781,8 +904,13 @@ func (x *DBExportFormat) GetFormatName() string {
 
 func (x *DBExportFormat) GetFiles() []*DBExportFormat_File {
 	if x != nil {
-		if x.xxx_hidden_Files != nil {
-			return *x.xxx_hidden_Files
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Files) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*DBExportFormat_File
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -794,7 +922,14 @@ func (x *DBExportFormat) SetFormatName(v string) {
 }
 
 func (x *DBExportFormat) SetFiles(v []*DBExportFormat_File) {
-	x.xxx_hidden_Files = &v
+	var sv *[]*DBExportFormat_File
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DBExportFormat_File{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DBExportFormat) HasFormatName() bool {
@@ -824,7 +959,10 @@ func (b0 DBExportFormat_builder) Build() *DBExportFormat {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_FormatName = b.FormatName
 	}
-	x.xxx_hidden_Files = &b.Files
+	if b.Files != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Files = &b.Files
+	}
 	return m0
 }
 
@@ -832,8 +970,12 @@ type GetDBExportCapabilitiesResponse struct {
 	state                         protoimpl.MessageState          `protogen:"opaque.v1"`
 	xxx_hidden_Formats            *[]*DBExportFormat              `protobuf:"bytes,1,rep,name=formats"`
 	xxx_hidden_SupportedEncodings []DBExportManifest_EncodingType `protobuf:"varint,2,rep,packed,name=supported_encodings,json=supportedEncodings,enum=v1.DBExportManifest_EncodingType"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetDBExportCapabilitiesResponse) Reset() {
@@ -863,8 +1005,13 @@ func (x *GetDBExportCapabilitiesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetDBExportCapabilitiesResponse) GetFormats() []*DBExportFormat {
 	if x != nil {
-		if x.xxx_hidden_Formats != nil {
-			return *x.xxx_hidden_Formats
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Formats) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*DBExportFormat
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Formats), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -878,7 +1025,14 @@ func (x *GetDBExportCapabilitiesResponse) GetSupportedEncodings() []DBExportMani
 }
 
 func (x *GetDBExportCapabilitiesResponse) SetFormats(v []*DBExportFormat) {
-	x.xxx_hidden_Formats = &v
+	var sv *[]*DBExportFormat
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Formats), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DBExportFormat{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Formats), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetDBExportCapabilitiesResponse) SetSupportedEncodings(v []DBExportManifest_EncodingType) {
@@ -896,7 +1050,10 @@ func (b0 GetDBExportCapabilitiesResponse_builder) Build() *GetDBExportCapabiliti
 	m0 := &GetDBExportCapabilitiesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Formats = &b.Formats
+	if b.Formats != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Formats = &b.Formats
+	}
 	x.xxx_hidden_SupportedEncodings = b.SupportedEncodings
 	return m0
 }
@@ -904,8 +1061,12 @@ func (b0 GetDBExportCapabilitiesResponse_builder) Build() *GetDBExportCapabiliti
 type GetActiveDBRestoreProcessResponse struct {
 	state                   protoimpl.MessageState  `protogen:"opaque.v1"`
 	xxx_hidden_ActiveStatus *DBRestoreProcessStatus `protobuf:"bytes,1,opt,name=active_status,json=activeStatus"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetActiveDBRestoreProcessResponse) Reset() {
@@ -935,24 +1096,37 @@ func (x *GetActiveDBRestoreProcessResponse) ProtoReflect() protoreflect.Message 
 
 func (x *GetActiveDBRestoreProcessResponse) GetActiveStatus() *DBRestoreProcessStatus {
 	if x != nil {
-		return x.xxx_hidden_ActiveStatus
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ActiveStatus) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *DBRestoreProcessStatus
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ActiveStatus), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetActiveDBRestoreProcessResponse) SetActiveStatus(v *DBRestoreProcessStatus) {
-	x.xxx_hidden_ActiveStatus = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ActiveStatus, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetActiveDBRestoreProcessResponse) HasActiveStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ActiveStatus != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetActiveDBRestoreProcessResponse) ClearActiveStatus() {
-	x.xxx_hidden_ActiveStatus = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ActiveStatus, (*DBRestoreProcessStatus)(nil))
 }
 
 type GetActiveDBRestoreProcessResponse_builder struct {
@@ -965,7 +1139,10 @@ func (b0 GetActiveDBRestoreProcessResponse_builder) Build() *GetActiveDBRestoreP
 	m0 := &GetActiveDBRestoreProcessResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ActiveStatus = b.ActiveStatus
+	if b.ActiveStatus != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_ActiveStatus = b.ActiveStatus
+	}
 	return m0
 }
 
@@ -1083,8 +1260,12 @@ func (b0 InterruptDBRestoreProcessRequest_builder) Build() *InterruptDBRestorePr
 type InterruptDBRestoreProcessResponse struct {
 	state                 protoimpl.MessageState             `protogen:"opaque.v1"`
 	xxx_hidden_ResumeInfo *DBRestoreProcessStatus_ResumeInfo `protobuf:"bytes,1,opt,name=resume_info,json=resumeInfo"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *InterruptDBRestoreProcessResponse) Reset() {
@@ -1114,24 +1295,37 @@ func (x *InterruptDBRestoreProcessResponse) ProtoReflect() protoreflect.Message 
 
 func (x *InterruptDBRestoreProcessResponse) GetResumeInfo() *DBRestoreProcessStatus_ResumeInfo {
 	if x != nil {
-		return x.xxx_hidden_ResumeInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ResumeInfo) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *DBRestoreProcessStatus_ResumeInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResumeInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *InterruptDBRestoreProcessResponse) SetResumeInfo(v *DBRestoreProcessStatus_ResumeInfo) {
-	x.xxx_hidden_ResumeInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ResumeInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *InterruptDBRestoreProcessResponse) HasResumeInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ResumeInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *InterruptDBRestoreProcessResponse) ClearResumeInfo() {
-	x.xxx_hidden_ResumeInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ResumeInfo, (*DBRestoreProcessStatus_ResumeInfo)(nil))
 }
 
 type InterruptDBRestoreProcessResponse_builder struct {
@@ -1144,7 +1338,10 @@ func (b0 InterruptDBRestoreProcessResponse_builder) Build() *InterruptDBRestoreP
 	m0 := &InterruptDBRestoreProcessResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ResumeInfo = b.ResumeInfo
+	if b.ResumeInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_ResumeInfo = b.ResumeInfo
+	}
 	return m0
 }
 
@@ -1651,29 +1848,29 @@ var File_api_v1_db_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_db_service_proto_rawDesc = "" +
 	"\n" +
-	"\x17api/v1/db_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xf8\x01\n" +
+	"\x17api/v1/db_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x80\x02\n" +
 	"\x16DBRestoreRequestHeader\x12\x1f\n" +
 	"\vformat_name\x18\x01 \x01(\tR\n" +
-	"formatName\x120\n" +
-	"\bmanifest\x18\x02 \x01(\v2\x14.v1.DBExportManifestR\bmanifest\x12G\n" +
+	"formatName\x124\n" +
+	"\bmanifest\x18\x02 \x01(\v2\x14.v1.DBExportManifestB\x02(\x01R\bmanifest\x12K\n" +
 	"\n" +
-	"local_file\x18\x03 \x01(\v2(.v1.DBRestoreRequestHeader.LocalFileInfoR\tlocalFile\x1aB\n" +
+	"local_file\x18\x03 \x01(\v2(.v1.DBRestoreRequestHeader.LocalFileInfoB\x02(\x01R\tlocalFile\x1aB\n" +
 	"\rLocalFileInfo\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
-	"bytes_size\x18\x02 \x01(\x03R\tbytesSize\"\xcb\x01\n" +
+	"bytes_size\x18\x02 \x01(\x03R\tbytesSize\"\xd3\x01\n" +
 	"\x18DBRestoreProcessMetadata\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x122\n" +
-	"\x06header\x18\x02 \x01(\v2\x1a.v1.DBRestoreRequestHeaderR\x06header\x129\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x126\n" +
+	"\x06header\x18\x02 \x01(\v2\x1a.v1.DBRestoreRequestHeaderB\x02(\x01R\x06header\x12=\n" +
 	"\n" +
-	"start_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x120\n" +
-	"\x14initiating_user_name\x18\x04 \x01(\tR\x12initiatingUserName\"\xc2\x03\n" +
-	"\x16DBRestoreProcessStatus\x128\n" +
-	"\bmetadata\x18\x01 \x01(\v2\x1c.v1.DBRestoreProcessMetadataR\bmetadata\x12\x1d\n" +
+	"start_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tstartTime\x120\n" +
+	"\x14initiating_user_name\x18\x04 \x01(\tR\x12initiatingUserName\"\xca\x03\n" +
+	"\x16DBRestoreProcessStatus\x12<\n" +
+	"\bmetadata\x18\x01 \x01(\v2\x1c.v1.DBRestoreProcessMetadataB\x02(\x01R\bmetadata\x12\x1d\n" +
 	"\n" +
 	"attempt_id\x18\x02 \x01(\tR\tattemptId\x126\n" +
-	"\x05state\x18\x03 \x01(\x0e2 .v1.DBRestoreProcessStatus.StateR\x05state\x12F\n" +
-	"\vresume_info\x18\x04 \x01(\v2%.v1.DBRestoreProcessStatus.ResumeInfoR\n" +
+	"\x05state\x18\x03 \x01(\x0e2 .v1.DBRestoreProcessStatus.StateR\x05state\x12J\n" +
+	"\vresume_info\x18\x04 \x01(\v2%.v1.DBRestoreProcessStatus.ResumeInfoB\x02(\x01R\n" +
 	"resumeInfo\x12\x14\n" +
 	"\x05error\x18\x05 \x01(\tR\x05error\x12\x1d\n" +
 	"\n" +
@@ -1688,9 +1885,9 @@ const file_api_v1_db_service_proto_rawDesc = "" +
 	"\vIN_PROGRESS\x10\x02\x12\n" +
 	"\n" +
 	"\x06PAUSED\x10\x03\x12\r\n" +
-	"\tCOMPLETED\x10\x04\"\xc8\x02\n" +
-	"\x10DBExportManifest\x12/\n" +
-	"\x05files\x18\x01 \x03(\v2\x19.v1.DBExportManifest.FileR\x05files\x1a\xc4\x01\n" +
+	"\tCOMPLETED\x10\x04\"\xcc\x02\n" +
+	"\x10DBExportManifest\x123\n" +
+	"\x05files\x18\x01 \x03(\v2\x19.v1.DBExportManifest.FileB\x02(\x01R\x05files\x1a\xc4\x01\n" +
 	"\x04File\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12=\n" +
 	"\bencoding\x18\x02 \x01(\x0e2!.v1.DBExportManifest.EncodingTypeR\bencoding\x12!\n" +
@@ -1700,26 +1897,26 @@ const file_api_v1_db_service_proto_rawDesc = "" +
 	"\fEncodingType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x11\n" +
 	"\rUNCOMPREESSED\x10\x01\x12\f\n" +
-	"\bDEFLATED\x10\x02\"\x98\x01\n" +
+	"\bDEFLATED\x10\x02\"\x9c\x01\n" +
 	"\x0eDBExportFormat\x12\x1f\n" +
 	"\vformat_name\x18\x01 \x01(\tR\n" +
-	"formatName\x12-\n" +
-	"\x05files\x18\x02 \x03(\v2\x17.v1.DBExportFormat.FileR\x05files\x1a6\n" +
+	"formatName\x121\n" +
+	"\x05files\x18\x02 \x03(\v2\x17.v1.DBExportFormat.FileB\x02(\x01R\x05files\x1a6\n" +
 	"\x04File\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
-	"\boptional\x18\x02 \x01(\bR\boptional\"\xa3\x01\n" +
-	"\x1fGetDBExportCapabilitiesResponse\x12,\n" +
-	"\aformats\x18\x01 \x03(\v2\x12.v1.DBExportFormatR\aformats\x12R\n" +
-	"\x13supported_encodings\x18\x02 \x03(\x0e2!.v1.DBExportManifest.EncodingTypeR\x12supportedEncodings\"d\n" +
-	"!GetActiveDBRestoreProcessResponse\x12?\n" +
-	"\ractive_status\x18\x01 \x01(\v2\x1a.v1.DBRestoreProcessStatusR\factiveStatus\"`\n" +
+	"\boptional\x18\x02 \x01(\bR\boptional\"\xa7\x01\n" +
+	"\x1fGetDBExportCapabilitiesResponse\x120\n" +
+	"\aformats\x18\x01 \x03(\v2\x12.v1.DBExportFormatB\x02(\x01R\aformats\x12R\n" +
+	"\x13supported_encodings\x18\x02 \x03(\x0e2!.v1.DBExportManifest.EncodingTypeR\x12supportedEncodings\"h\n" +
+	"!GetActiveDBRestoreProcessResponse\x12C\n" +
+	"\ractive_status\x18\x01 \x01(\v2\x1a.v1.DBRestoreProcessStatusB\x02(\x01R\factiveStatus\"`\n" +
 	" InterruptDBRestoreProcessRequest\x12\x1d\n" +
 	"\n" +
 	"process_id\x18\x01 \x01(\tR\tprocessId\x12\x1d\n" +
 	"\n" +
-	"attempt_id\x18\x02 \x01(\tR\tattemptId\"k\n" +
-	"!InterruptDBRestoreProcessResponse\x12F\n" +
-	"\vresume_info\x18\x01 \x01(\v2%.v1.DBRestoreProcessStatus.ResumeInfoR\n" +
+	"attempt_id\x18\x02 \x01(\tR\tattemptId\"o\n" +
+	"!InterruptDBRestoreProcessResponse\x12J\n" +
+	"\vresume_info\x18\x01 \x01(\v2%.v1.DBRestoreProcessStatus.ResumeInfoB\x02(\x01R\n" +
 	"resumeInfo2\xca\x03\n" +
 	"\tDBService\x12b\n" +
 	"\x15GetExportCapabilities\x12\t.v1.Empty\x1a#.v1.GetDBExportCapabilitiesResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/db/exportcaps\x12c\n" +

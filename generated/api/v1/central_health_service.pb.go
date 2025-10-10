@@ -25,8 +25,12 @@ const (
 type GetUpgradeStatusResponse struct {
 	state                    protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_UpgradeStatus *CentralUpgradeStatus  `protobuf:"bytes,1,opt,name=upgradeStatus"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetUpgradeStatusResponse) Reset() {
@@ -56,24 +60,37 @@ func (x *GetUpgradeStatusResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUpgradeStatusResponse) GetUpgradeStatus() *CentralUpgradeStatus {
 	if x != nil {
-		return x.xxx_hidden_UpgradeStatus
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UpgradeStatus) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *CentralUpgradeStatus
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpgradeStatus), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetUpgradeStatusResponse) SetUpgradeStatus(v *CentralUpgradeStatus) {
-	x.xxx_hidden_UpgradeStatus = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UpgradeStatus, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetUpgradeStatusResponse) HasUpgradeStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_UpgradeStatus != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetUpgradeStatusResponse) ClearUpgradeStatus() {
-	x.xxx_hidden_UpgradeStatus = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UpgradeStatus, (*CentralUpgradeStatus)(nil))
 }
 
 type GetUpgradeStatusResponse_builder struct {
@@ -86,7 +103,10 @@ func (b0 GetUpgradeStatusResponse_builder) Build() *GetUpgradeStatusResponse {
 	m0 := &GetUpgradeStatusResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UpgradeStatus = b.UpgradeStatus
+	if b.UpgradeStatus != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_UpgradeStatus = b.UpgradeStatus
+	}
 	return m0
 }
 
@@ -310,9 +330,9 @@ var File_api_v1_central_health_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_central_health_service_proto_rawDesc = "" +
 	"\n" +
-	"#api/v1/central_health_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"Z\n" +
-	"\x18GetUpgradeStatusResponse\x12>\n" +
-	"\rupgradeStatus\x18\x01 \x01(\v2\x18.v1.CentralUpgradeStatusR\rupgradeStatus\"\xd5\x02\n" +
+	"#api/v1/central_health_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"^\n" +
+	"\x18GetUpgradeStatusResponse\x12B\n" +
+	"\rupgradeStatus\x18\x01 \x01(\v2\x18.v1.CentralUpgradeStatusB\x02(\x01R\rupgradeStatus\"\xd5\x02\n" +
 	"\x14CentralUpgradeStatus\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12*\n" +
 	"\x11force_rollback_to\x18\x02 \x01(\tR\x0fforceRollbackTo\x12;\n" +

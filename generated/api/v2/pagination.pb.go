@@ -315,6 +315,8 @@ type Pagination struct {
 	xxx_hidden_Offset      int32                  `protobuf:"varint,2,opt,name=offset"`
 	xxx_hidden_SortOption  *SortOption            `protobuf:"bytes,3,opt,name=sort_option,json=sortOption"`
 	xxx_hidden_SortOptions *[]*SortOption         `protobuf:"bytes,4,rep,name=sort_options,json=sortOptions"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -369,8 +371,13 @@ func (x *Pagination) GetSortOption() *SortOption {
 
 func (x *Pagination) GetSortOptions() []*SortOption {
 	if x != nil {
-		if x.xxx_hidden_SortOptions != nil {
-			return *x.xxx_hidden_SortOptions
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SortOptions) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*SortOption
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -391,7 +398,14 @@ func (x *Pagination) SetSortOption(v *SortOption) {
 }
 
 func (x *Pagination) SetSortOptions(v []*SortOption) {
-	x.xxx_hidden_SortOptions = &v
+	var sv *[]*SortOption
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SortOption{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *Pagination) HasLimit() bool {
@@ -452,7 +466,10 @@ func (b0 Pagination_builder) Build() *Pagination {
 		x.xxx_hidden_Offset = *b.Offset
 	}
 	x.xxx_hidden_SortOption = b.SortOption
-	x.xxx_hidden_SortOptions = &b.SortOptions
+	if b.SortOptions != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_SortOptions = &b.SortOptions
+	}
 	return m0
 }
 
@@ -468,14 +485,14 @@ const file_api_v2_pagination_proto_rawDesc = "" +
 	"SortOption\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x1a\n" +
 	"\breversed\x18\x02 \x01(\bR\breversed\x122\n" +
-	"\faggregate_by\x18\x03 \x01(\v2\x0f.v2.AggregateByR\vaggregateBy\"\x9e\x01\n" +
+	"\faggregate_by\x18\x03 \x01(\v2\x0f.v2.AggregateByR\vaggregateBy\"\xa2\x01\n" +
 	"\n" +
 	"Pagination\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\x12/\n" +
 	"\vsort_option\x18\x03 \x01(\v2\x0e.v2.SortOptionR\n" +
-	"sortOption\x121\n" +
-	"\fsort_options\x18\x04 \x03(\v2\x0e.v2.SortOptionR\vsortOptions*5\n" +
+	"sortOption\x125\n" +
+	"\fsort_options\x18\x04 \x03(\v2\x0e.v2.SortOptionB\x02(\x01R\vsortOptions*5\n" +
 	"\vAggregation\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\t\n" +
 	"\x05COUNT\x10\x01\x12\a\n" +

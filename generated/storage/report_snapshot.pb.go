@@ -211,10 +211,12 @@ type ReportSnapshot struct {
 	xxx_hidden_Notifiers             *[]*NotifierSnapshot      `protobuf:"bytes,10,rep,name=notifiers"`
 	xxx_hidden_Requester             *SlimUser                 `protobuf:"bytes,11,opt,name=requester"`
 	xxx_hidden_AreaOfConcern         *string                   `protobuf:"bytes,13,opt,name=area_of_concern,json=areaOfConcern"`
-	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
-	XXX_presence                     [1]uint32
-	unknownFields                    protoimpl.UnknownFields
-	sizeCache                        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ReportSnapshot) Reset() {
@@ -318,7 +320,14 @@ func (x *ReportSnapshot) GetCollection() *CollectionSnapshot {
 
 func (x *ReportSnapshot) GetSchedule() *Schedule {
 	if x != nil {
-		return x.xxx_hidden_Schedule
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Schedule) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *Schedule
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Schedule), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -332,8 +341,13 @@ func (x *ReportSnapshot) GetReportStatus() *ReportStatus {
 
 func (x *ReportSnapshot) GetNotifiers() []*NotifierSnapshot {
 	if x != nil {
-		if x.xxx_hidden_Notifiers != nil {
-			return *x.xxx_hidden_Notifiers
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Notifiers) {
+				protoimpl.X.UnmarshalField(x, 10)
+			}
+			var rv *[]*NotifierSnapshot
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -402,7 +416,12 @@ func (x *ReportSnapshot) SetCollection(v *CollectionSnapshot) {
 }
 
 func (x *ReportSnapshot) SetSchedule(v *Schedule) {
-	x.xxx_hidden_Schedule = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Schedule, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 12)
+	}
 }
 
 func (x *ReportSnapshot) SetReportStatus(v *ReportStatus) {
@@ -410,7 +429,14 @@ func (x *ReportSnapshot) SetReportStatus(v *ReportStatus) {
 }
 
 func (x *ReportSnapshot) SetNotifiers(v []*NotifierSnapshot) {
-	x.xxx_hidden_Notifiers = &v
+	var sv *[]*NotifierSnapshot
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NotifierSnapshot{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 12)
 }
 
 func (x *ReportSnapshot) SetRequester(v *SlimUser) {
@@ -491,7 +517,7 @@ func (x *ReportSnapshot) HasSchedule() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Schedule != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *ReportSnapshot) HasReportStatus() bool {
@@ -561,7 +587,8 @@ func (x *ReportSnapshot) ClearCollection() {
 }
 
 func (x *ReportSnapshot) ClearSchedule() {
-	x.xxx_hidden_Schedule = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Schedule, (*Schedule)(nil))
 }
 
 func (x *ReportSnapshot) ClearReportStatus() {
@@ -648,9 +675,15 @@ func (b0 ReportSnapshot_builder) Build() *ReportSnapshot {
 		x.xxx_hidden_Filter = &reportSnapshot_ViewBasedVulnReportFilters{b.ViewBasedVulnReportFilters}
 	}
 	x.xxx_hidden_Collection = b.Collection
-	x.xxx_hidden_Schedule = b.Schedule
+	if b.Schedule != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 12)
+		x.xxx_hidden_Schedule = b.Schedule
+	}
 	x.xxx_hidden_ReportStatus = b.ReportStatus
-	x.xxx_hidden_Notifiers = &b.Notifiers
+	if b.Notifiers != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 12)
+		x.xxx_hidden_Notifiers = &b.Notifiers
+	}
 	x.xxx_hidden_Requester = b.Requester
 	if b.AreaOfConcern != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 12)
@@ -966,10 +999,12 @@ type ReportStatus struct {
 	xxx_hidden_ErrorMsg                 *string                         `protobuf:"bytes,4,opt,name=error_msg,json=errorMsg"`
 	xxx_hidden_ReportRequestType        ReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,enum=storage.ReportStatus_RunMethod"`
 	xxx_hidden_ReportNotificationMethod ReportStatus_NotificationMethod `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,enum=storage.ReportStatus_NotificationMethod"`
-	XXX_raceDetectHookData              protoimpl.RaceDetectHookData
-	XXX_presence                        [1]uint32
-	unknownFields                       protoimpl.UnknownFields
-	sizeCache                           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ReportStatus) Reset() {
@@ -1008,14 +1043,28 @@ func (x *ReportStatus) GetRunState() ReportStatus_RunState {
 
 func (x *ReportStatus) GetQueuedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_QueuedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_QueuedAt) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_QueuedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ReportStatus) GetCompletedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CompletedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CompletedAt) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CompletedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1054,11 +1103,21 @@ func (x *ReportStatus) SetRunState(v ReportStatus_RunState) {
 }
 
 func (x *ReportStatus) SetQueuedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_QueuedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_QueuedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	}
 }
 
 func (x *ReportStatus) SetCompletedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CompletedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CompletedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	}
 }
 
 func (x *ReportStatus) SetErrorMsg(v string) {
@@ -1087,14 +1146,14 @@ func (x *ReportStatus) HasQueuedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_QueuedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ReportStatus) HasCompletedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CompletedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ReportStatus) HasErrorMsg() bool {
@@ -1124,11 +1183,13 @@ func (x *ReportStatus) ClearRunState() {
 }
 
 func (x *ReportStatus) ClearQueuedAt() {
-	x.xxx_hidden_QueuedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_QueuedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ReportStatus) ClearCompletedAt() {
-	x.xxx_hidden_CompletedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CompletedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ReportStatus) ClearErrorMsg() {
@@ -1165,8 +1226,14 @@ func (b0 ReportStatus_builder) Build() *ReportStatus {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
 		x.xxx_hidden_RunState = *b.RunState
 	}
-	x.xxx_hidden_QueuedAt = b.QueuedAt
-	x.xxx_hidden_CompletedAt = b.CompletedAt
+	if b.QueuedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_QueuedAt = b.QueuedAt
+	}
+	if b.CompletedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_CompletedAt = b.CompletedAt
+	}
 	if b.ErrorMsg != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
 		x.xxx_hidden_ErrorMsg = b.ErrorMsg
@@ -1186,7 +1253,7 @@ var File_storage_report_snapshot_proto protoreflect.FileDescriptor
 
 const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\x83\x06\n" +
+	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\x8b\x06\n" +
 	"\x0eReportSnapshot\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x126\n" +
 	"\x17report_configuration_id\x18\x02 \x01(\tR\x15reportConfigurationId\x12\x12\n" +
@@ -1197,11 +1264,11 @@ const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\x1eview_based_vuln_report_filters\x18\f \x01(\v2,.storage.ViewBasedVulnerabilityReportFiltersH\x00R\x1aviewBasedVulnReportFilters\x12;\n" +
 	"\n" +
 	"collection\x18\a \x01(\v2\x1b.storage.CollectionSnapshotR\n" +
-	"collection\x12-\n" +
-	"\bschedule\x18\b \x01(\v2\x11.storage.ScheduleR\bschedule\x12:\n" +
-	"\rreport_status\x18\t \x01(\v2\x15.storage.ReportStatusR\freportStatus\x127\n" +
+	"collection\x121\n" +
+	"\bschedule\x18\b \x01(\v2\x11.storage.ScheduleB\x02(\x01R\bschedule\x12:\n" +
+	"\rreport_status\x18\t \x01(\v2\x15.storage.ReportStatusR\freportStatus\x12;\n" +
 	"\tnotifiers\x18\n" +
-	" \x03(\v2\x19.storage.NotifierSnapshotR\tnotifiers\x12/\n" +
+	" \x03(\v2\x19.storage.NotifierSnapshotB\x02(\x01R\tnotifiers\x12/\n" +
 	"\trequester\x18\v \x01(\v2\x11.storage.SlimUserR\trequester\x12&\n" +
 	"\x0farea_of_concern\x18\r \x01(\tR\rareaOfConcern\"\x1f\n" +
 	"\n" +
@@ -1214,11 +1281,11 @@ const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\x10NotifierSnapshot\x12H\n" +
 	"\femail_config\x18\x01 \x01(\v2#.storage.EmailNotifierConfigurationH\x00R\vemailConfig\x12#\n" +
 	"\rnotifier_name\x18\x02 \x01(\tR\fnotifierNameB\x11\n" +
-	"\x0fnotifier_config\"\xd6\x04\n" +
+	"\x0fnotifier_config\"\xde\x04\n" +
 	"\fReportStatus\x12;\n" +
-	"\trun_state\x18\x01 \x01(\x0e2\x1e.storage.ReportStatus.RunStateR\brunState\x127\n" +
-	"\tqueued_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bqueuedAt\x12=\n" +
-	"\fcompleted_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\x12\x1b\n" +
+	"\trun_state\x18\x01 \x01(\x0e2\x1e.storage.ReportStatus.RunStateR\brunState\x12;\n" +
+	"\tqueued_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\bqueuedAt\x12A\n" +
+	"\fcompleted_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vcompletedAt\x12\x1b\n" +
 	"\terror_msg\x18\x04 \x01(\tR\berrorMsg\x12O\n" +
 	"\x13report_request_type\x18\x05 \x01(\x0e2\x1f.storage.ReportStatus.RunMethodR\x11reportRequestType\x12f\n" +
 	"\x1areport_notification_method\x18\x06 \x01(\x0e2(.storage.ReportStatus.NotificationMethodR\x18reportNotificationMethod\"Q\n" +

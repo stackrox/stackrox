@@ -27,8 +27,12 @@ type SuppressCVERequest struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Cves     []string               `protobuf:"bytes,1,rep,name=cves"`
 	xxx_hidden_Duration *durationpb.Duration   `protobuf:"bytes,3,opt,name=duration"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SuppressCVERequest) Reset() {
@@ -65,7 +69,14 @@ func (x *SuppressCVERequest) GetCves() []string {
 
 func (x *SuppressCVERequest) GetDuration() *durationpb.Duration {
 	if x != nil {
-		return x.xxx_hidden_Duration
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Duration) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *durationpb.Duration
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Duration), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -75,18 +86,24 @@ func (x *SuppressCVERequest) SetCves(v []string) {
 }
 
 func (x *SuppressCVERequest) SetDuration(v *durationpb.Duration) {
-	x.xxx_hidden_Duration = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Duration, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *SuppressCVERequest) HasDuration() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Duration != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SuppressCVERequest) ClearDuration() {
-	x.xxx_hidden_Duration = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Duration, (*durationpb.Duration)(nil))
 }
 
 type SuppressCVERequest_builder struct {
@@ -109,7 +126,10 @@ func (b0 SuppressCVERequest_builder) Build() *SuppressCVERequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Cves = b.Cves
-	x.xxx_hidden_Duration = b.Duration
+	if b.Duration != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Duration = b.Duration
+	}
 	return m0
 }
 
@@ -176,10 +196,10 @@ var File_api_v1_cve_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_cve_service_proto_rawDesc = "" +
 	"\n" +
-	"\x18api/v1/cve_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a!google/protobuf/go_features.proto\"e\n" +
+	"\x18api/v1/cve_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a!google/protobuf/go_features.proto\"i\n" +
 	"\x12SuppressCVERequest\x12\x12\n" +
-	"\x04cves\x18\x01 \x03(\tR\x04cves\x125\n" +
-	"\bduration\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bdurationJ\x04\b\x02\x10\x03\"*\n" +
+	"\x04cves\x18\x01 \x03(\tR\x04cves\x129\n" +
+	"\bduration\x18\x03 \x01(\v2\x19.google.protobuf.DurationB\x02(\x01R\bdurationJ\x04\b\x02\x10\x03\"*\n" +
 	"\x14UnsuppressCVERequest\x12\x12\n" +
 	"\x04cves\x18\x01 \x03(\tR\x04cves2\xc3\x01\n" +
 	"\x0fImageCVEService\x12T\n" +

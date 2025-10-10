@@ -87,10 +87,12 @@ type ImageV2 struct {
 	xxx_hidden_RiskScore                 float32                         `protobuf:"fixed32,13,opt,name=risk_score,json=riskScore"`
 	xxx_hidden_TopCvss                   float32                         `protobuf:"fixed32,14,opt,name=top_cvss,json=topCvss"`
 	xxx_hidden_Notes                     []ImageV2_Note                  `protobuf:"varint,15,rep,packed,name=notes,enum=storage.ImageV2_Note"`
-	XXX_raceDetectHookData               protoimpl.RaceDetectHookData
-	XXX_presence                         [1]uint32
-	unknownFields                        protoimpl.UnknownFields
-	sizeCache                            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImageV2) Reset() {
@@ -182,7 +184,14 @@ func (x *ImageV2) GetScanStats() *ImageV2_ScanStats {
 
 func (x *ImageV2) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -264,7 +273,12 @@ func (x *ImageV2) SetScanStats(v *ImageV2_ScanStats) {
 }
 
 func (x *ImageV2) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 15)
+	}
 }
 
 func (x *ImageV2) SetNotPullable(v bool) {
@@ -356,7 +370,7 @@ func (x *ImageV2) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *ImageV2) HasNotPullable() bool {
@@ -429,7 +443,8 @@ func (x *ImageV2) ClearScanStats() {
 }
 
 func (x *ImageV2) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ImageV2) ClearNotPullable() {
@@ -496,7 +511,10 @@ func (b0 ImageV2_builder) Build() *ImageV2 {
 	x.xxx_hidden_SignatureVerificationData = b.SignatureVerificationData
 	x.xxx_hidden_Signature = b.Signature
 	x.xxx_hidden_ScanStats = b.ScanStats
-	x.xxx_hidden_LastUpdated = b.LastUpdated
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 15)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
 	if b.NotPullable != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 15)
 		x.xxx_hidden_NotPullable = *b.NotPullable
@@ -531,10 +549,12 @@ type ListImageV2 struct {
 	xxx_hidden_Created         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created"`
 	xxx_hidden_LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated"`
 	xxx_hidden_Priority        int64                  `protobuf:"varint,10,opt,name=priority"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListImageV2) Reset() {
@@ -605,14 +625,28 @@ func (x *ListImageV2) GetFixableCveCount() int32 {
 
 func (x *ListImageV2) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Created
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ListImageV2) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -650,11 +684,21 @@ func (x *ListImageV2) SetFixableCveCount(v int32) {
 }
 
 func (x *ListImageV2) SetCreated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Created = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	}
 }
 
 func (x *ListImageV2) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
+	}
 }
 
 func (x *ListImageV2) SetPriority(v int64) {
@@ -701,14 +745,14 @@ func (x *ListImageV2) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Created != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *ListImageV2) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ListImageV2) HasPriority() bool {
@@ -744,11 +788,13 @@ func (x *ListImageV2) ClearFixableCveCount() {
 }
 
 func (x *ListImageV2) ClearCreated() {
-	x.xxx_hidden_Created = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ListImageV2) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ListImageV2) ClearPriority() {
@@ -793,8 +839,14 @@ func (b0 ListImageV2_builder) Build() *ListImageV2 {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
 		x.xxx_hidden_FixableCveCount = *b.FixableCveCount
 	}
-	x.xxx_hidden_Created = b.Created
-	x.xxx_hidden_LastUpdated = b.LastUpdated
+	if b.Created != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_Created = b.Created
+	}
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
 	if b.Priority != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
 		x.xxx_hidden_Priority = *b.Priority
@@ -1254,7 +1306,7 @@ var File_storage_image_v2_proto protoreflect.FileDescriptor
 
 const file_storage_image_v2_proto_rawDesc = "" +
 	"\n" +
-	"\x16storage/image_v2.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\x1a!google/protobuf/go_features.proto\"\x97\v\n" +
+	"\x16storage/image_v2.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\x1a!google/protobuf/go_features.proto\"\x9b\v\n" +
 	"\aImageV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06digest\x18\x02 \x01(\tR\x06digest\x12&\n" +
@@ -1264,8 +1316,8 @@ const file_storage_image_v2_proto_rawDesc = "" +
 	"\x1bsignature_verification_data\x18\x06 \x01(\v2'.storage.ImageSignatureVerificationDataR\x19signatureVerificationData\x125\n" +
 	"\tsignature\x18\a \x01(\v2\x17.storage.ImageSignatureR\tsignature\x129\n" +
 	"\n" +
-	"scan_stats\x18\b \x01(\v2\x1a.storage.ImageV2.ScanStatsR\tscanStats\x12=\n" +
-	"\flast_updated\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12!\n" +
+	"scan_stats\x18\b \x01(\v2\x1a.storage.ImageV2.ScanStatsR\tscanStats\x12A\n" +
+	"\flast_updated\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x12!\n" +
 	"\fnot_pullable\x18\n" +
 	" \x01(\bR\vnotPullable\x12(\n" +
 	"\x10is_cluster_local\x18\v \x01(\bR\x0eisClusterLocal\x12\x1a\n" +
@@ -1293,15 +1345,15 @@ const file_storage_image_v2_proto_rawDesc = "" +
 	"\x10MISSING_METADATA\x10\x00\x12\x15\n" +
 	"\x11MISSING_SCAN_DATA\x10\x01\x12\x15\n" +
 	"\x11MISSING_SIGNATURE\x10\x02\x12'\n" +
-	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03\"\xba\x02\n" +
+	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03\"\xc2\x02\n" +
 	"\vListImageV2\x12\x0e\n" +
 	"\x02id\x18\a \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12'\n" +
 	"\x0fcomponent_count\x18\x03 \x01(\x05R\x0ecomponentCount\x12\x1b\n" +
 	"\tcve_count\x18\x04 \x01(\x05R\bcveCount\x12*\n" +
-	"\x11fixable_cve_count\x18\x05 \x01(\x05R\x0ffixableCveCount\x124\n" +
-	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12=\n" +
-	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12\x1a\n" +
+	"\x11fixable_cve_count\x18\x05 \x01(\x05R\x0ffixableCveCount\x128\n" +
+	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\acreated\x12A\n" +
+	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x12\x1a\n" +
 	"\bpriority\x18\n" +
 	" \x01(\x03R\bpriorityJ\x04\b\t\x10\n" +
 	"B6\n" +

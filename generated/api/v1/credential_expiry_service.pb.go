@@ -196,8 +196,12 @@ func (b0 GetCertExpiry_Request_builder) Build() *GetCertExpiry_Request {
 type GetCertExpiry_Response struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Expiry *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=expiry"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetCertExpiry_Response) Reset() {
@@ -227,24 +231,37 @@ func (x *GetCertExpiry_Response) ProtoReflect() protoreflect.Message {
 
 func (x *GetCertExpiry_Response) GetExpiry() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Expiry
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Expiry) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Expiry), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetCertExpiry_Response) SetExpiry(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Expiry = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiry, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetCertExpiry_Response) HasExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Expiry != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetCertExpiry_Response) ClearExpiry() {
-	x.xxx_hidden_Expiry = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiry, (*timestamppb.Timestamp)(nil))
 }
 
 type GetCertExpiry_Response_builder struct {
@@ -257,7 +274,10 @@ func (b0 GetCertExpiry_Response_builder) Build() *GetCertExpiry_Response {
 	m0 := &GetCertExpiry_Response{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Expiry = b.Expiry
+	if b.Expiry != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Expiry = b.Expiry
+	}
 	return m0
 }
 
@@ -265,12 +285,12 @@ var File_api_v1_credential_expiry_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_credential_expiry_service_proto_rawDesc = "" +
 	"\n" +
-	"&api/v1/credential_expiry_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xe9\x01\n" +
+	"&api/v1/credential_expiry_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xed\x01\n" +
 	"\rGetCertExpiry\x1aD\n" +
 	"\aRequest\x129\n" +
-	"\tcomponent\x18\x01 \x01(\x0e2\x1b.v1.GetCertExpiry.ComponentR\tcomponent\x1a>\n" +
-	"\bResponse\x122\n" +
-	"\x06expiry\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x06expiry\"R\n" +
+	"\tcomponent\x18\x01 \x01(\x0e2\x1b.v1.GetCertExpiry.ComponentR\tcomponent\x1aB\n" +
+	"\bResponse\x126\n" +
+	"\x06expiry\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x06expiry\"R\n" +
 	"\tComponent\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aCENTRAL\x10\x01\x12\v\n" +

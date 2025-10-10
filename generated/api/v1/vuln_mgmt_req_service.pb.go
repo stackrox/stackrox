@@ -27,6 +27,10 @@ const (
 type GetVulnerabilityRequestResponse struct {
 	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -58,24 +62,37 @@ func (x *GetVulnerabilityRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetVulnerabilityRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.xxx_hidden_RequestInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequestInfo) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.VulnerabilityRequest
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequestInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetVulnerabilityRequestResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.xxx_hidden_RequestInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetVulnerabilityRequestResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_RequestInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetVulnerabilityRequestResponse) ClearRequestInfo() {
-	x.xxx_hidden_RequestInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, (*storage.VulnerabilityRequest)(nil))
 }
 
 type GetVulnerabilityRequestResponse_builder struct {
@@ -88,15 +105,22 @@ func (b0 GetVulnerabilityRequestResponse_builder) Build() *GetVulnerabilityReque
 	m0 := &GetVulnerabilityRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RequestInfo = b.RequestInfo
+	if b.RequestInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_RequestInfo = b.RequestInfo
+	}
 	return m0
 }
 
 type ListVulnerabilityRequestsResponse struct {
 	state                   protoimpl.MessageState           `protogen:"opaque.v1"`
 	xxx_hidden_RequestInfos *[]*storage.VulnerabilityRequest `protobuf:"bytes,1,rep,name=request_infos,json=requestInfos"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListVulnerabilityRequestsResponse) Reset() {
@@ -126,15 +150,27 @@ func (x *ListVulnerabilityRequestsResponse) ProtoReflect() protoreflect.Message 
 
 func (x *ListVulnerabilityRequestsResponse) GetRequestInfos() []*storage.VulnerabilityRequest {
 	if x != nil {
-		if x.xxx_hidden_RequestInfos != nil {
-			return *x.xxx_hidden_RequestInfos
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequestInfos) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.VulnerabilityRequest
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequestInfos), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListVulnerabilityRequestsResponse) SetRequestInfos(v []*storage.VulnerabilityRequest) {
-	x.xxx_hidden_RequestInfos = &v
+	var sv *[]*storage.VulnerabilityRequest
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequestInfos), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.VulnerabilityRequest{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_RequestInfos), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListVulnerabilityRequestsResponse_builder struct {
@@ -147,17 +183,22 @@ func (b0 ListVulnerabilityRequestsResponse_builder) Build() *ListVulnerabilityRe
 	m0 := &ListVulnerabilityRequestsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RequestInfos = &b.RequestInfos
+	if b.RequestInfos != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_RequestInfos = &b.RequestInfos
+	}
 	return m0
 }
 
 // next available tag: 6
 type DeferVulnRequest struct {
-	state                  protoimpl.MessageState              `protogen:"opaque.v1"`
-	xxx_hidden_Cve         *string                             `protobuf:"bytes,1,opt,name=cve"`
-	xxx_hidden_Comment     *string                             `protobuf:"bytes,2,opt,name=comment"`
-	xxx_hidden_Scope       *storage.VulnerabilityRequest_Scope `protobuf:"bytes,3,opt,name=scope"`
-	xxx_hidden_Expiry      isDeferVulnRequest_Expiry           `protobuf_oneof:"expiry"`
+	state              protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_Cve     *string                             `protobuf:"bytes,1,opt,name=cve"`
+	xxx_hidden_Comment *string                             `protobuf:"bytes,2,opt,name=comment"`
+	xxx_hidden_Scope   *storage.VulnerabilityRequest_Scope `protobuf:"bytes,3,opt,name=scope"`
+	xxx_hidden_Expiry  isDeferVulnRequest_Expiry           `protobuf_oneof:"expiry"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -211,7 +252,14 @@ func (x *DeferVulnRequest) GetComment() string {
 
 func (x *DeferVulnRequest) GetScope() *storage.VulnerabilityRequest_Scope {
 	if x != nil {
-		return x.xxx_hidden_Scope
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Scope) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *storage.VulnerabilityRequest_Scope
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Scope), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -245,7 +293,12 @@ func (x *DeferVulnRequest) SetComment(v string) {
 }
 
 func (x *DeferVulnRequest) SetScope(v *storage.VulnerabilityRequest_Scope) {
-	x.xxx_hidden_Scope = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Scope, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	}
 }
 
 func (x *DeferVulnRequest) SetExpiresWhenFixed(v bool) {
@@ -278,7 +331,7 @@ func (x *DeferVulnRequest) HasScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Scope != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DeferVulnRequest) HasExpiry() bool {
@@ -315,7 +368,8 @@ func (x *DeferVulnRequest) ClearComment() {
 }
 
 func (x *DeferVulnRequest) ClearScope() {
-	x.xxx_hidden_Scope = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Scope, (*storage.VulnerabilityRequest_Scope)(nil))
 }
 
 func (x *DeferVulnRequest) ClearExpiry() {
@@ -377,7 +431,10 @@ func (b0 DeferVulnRequest_builder) Build() *DeferVulnRequest {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
 		x.xxx_hidden_Comment = b.Comment
 	}
-	x.xxx_hidden_Scope = b.Scope
+	if b.Scope != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Scope = b.Scope
+	}
 	if b.ExpiresWhenFixed != nil {
 		x.xxx_hidden_Expiry = &deferVulnRequest_ExpiresWhenFixed{*b.ExpiresWhenFixed}
 	}
@@ -416,6 +473,10 @@ func (*deferVulnRequest_ExpiresOn) isDeferVulnRequest_Expiry() {}
 type DeferVulnResponse struct {
 	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -447,24 +508,37 @@ func (x *DeferVulnResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DeferVulnResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.xxx_hidden_RequestInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequestInfo) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.VulnerabilityRequest
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequestInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *DeferVulnResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.xxx_hidden_RequestInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *DeferVulnResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_RequestInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DeferVulnResponse) ClearRequestInfo() {
-	x.xxx_hidden_RequestInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, (*storage.VulnerabilityRequest)(nil))
 }
 
 type DeferVulnResponse_builder struct {
@@ -477,15 +551,20 @@ func (b0 DeferVulnResponse_builder) Build() *DeferVulnResponse {
 	m0 := &DeferVulnResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RequestInfo = b.RequestInfo
+	if b.RequestInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_RequestInfo = b.RequestInfo
+	}
 	return m0
 }
 
 type FalsePositiveVulnRequest struct {
-	state                  protoimpl.MessageState              `protogen:"opaque.v1"`
-	xxx_hidden_Cve         *string                             `protobuf:"bytes,1,opt,name=cve"`
-	xxx_hidden_Scope       *storage.VulnerabilityRequest_Scope `protobuf:"bytes,2,opt,name=scope"`
-	xxx_hidden_Comment     *string                             `protobuf:"bytes,3,opt,name=comment"`
+	state              protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_Cve     *string                             `protobuf:"bytes,1,opt,name=cve"`
+	xxx_hidden_Scope   *storage.VulnerabilityRequest_Scope `protobuf:"bytes,2,opt,name=scope"`
+	xxx_hidden_Comment *string                             `protobuf:"bytes,3,opt,name=comment"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -529,7 +608,14 @@ func (x *FalsePositiveVulnRequest) GetCve() string {
 
 func (x *FalsePositiveVulnRequest) GetScope() *storage.VulnerabilityRequest_Scope {
 	if x != nil {
-		return x.xxx_hidden_Scope
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Scope) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.VulnerabilityRequest_Scope
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Scope), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -550,7 +636,12 @@ func (x *FalsePositiveVulnRequest) SetCve(v string) {
 }
 
 func (x *FalsePositiveVulnRequest) SetScope(v *storage.VulnerabilityRequest_Scope) {
-	x.xxx_hidden_Scope = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Scope, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	}
 }
 
 func (x *FalsePositiveVulnRequest) SetComment(v string) {
@@ -569,7 +660,7 @@ func (x *FalsePositiveVulnRequest) HasScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Scope != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *FalsePositiveVulnRequest) HasComment() bool {
@@ -585,7 +676,8 @@ func (x *FalsePositiveVulnRequest) ClearCve() {
 }
 
 func (x *FalsePositiveVulnRequest) ClearScope() {
-	x.xxx_hidden_Scope = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Scope, (*storage.VulnerabilityRequest_Scope)(nil))
 }
 
 func (x *FalsePositiveVulnRequest) ClearComment() {
@@ -610,7 +702,10 @@ func (b0 FalsePositiveVulnRequest_builder) Build() *FalsePositiveVulnRequest {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
 		x.xxx_hidden_Cve = b.Cve
 	}
-	x.xxx_hidden_Scope = b.Scope
+	if b.Scope != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Scope = b.Scope
+	}
 	if b.Comment != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
 		x.xxx_hidden_Comment = b.Comment
@@ -621,6 +716,10 @@ func (b0 FalsePositiveVulnRequest_builder) Build() *FalsePositiveVulnRequest {
 type FalsePositiveVulnResponse struct {
 	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -652,24 +751,37 @@ func (x *FalsePositiveVulnResponse) ProtoReflect() protoreflect.Message {
 
 func (x *FalsePositiveVulnResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.xxx_hidden_RequestInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequestInfo) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.VulnerabilityRequest
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequestInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *FalsePositiveVulnResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.xxx_hidden_RequestInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *FalsePositiveVulnResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_RequestInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *FalsePositiveVulnResponse) ClearRequestInfo() {
-	x.xxx_hidden_RequestInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, (*storage.VulnerabilityRequest)(nil))
 }
 
 type FalsePositiveVulnResponse_builder struct {
@@ -682,7 +794,10 @@ func (b0 FalsePositiveVulnResponse_builder) Build() *FalsePositiveVulnResponse {
 	m0 := &FalsePositiveVulnResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RequestInfo = b.RequestInfo
+	if b.RequestInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_RequestInfo = b.RequestInfo
+	}
 	return m0
 }
 
@@ -800,6 +915,10 @@ func (b0 ApproveVulnRequest_builder) Build() *ApproveVulnRequest {
 type ApproveVulnRequestResponse struct {
 	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -831,24 +950,37 @@ func (x *ApproveVulnRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ApproveVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.xxx_hidden_RequestInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequestInfo) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.VulnerabilityRequest
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequestInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ApproveVulnRequestResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.xxx_hidden_RequestInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *ApproveVulnRequestResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_RequestInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ApproveVulnRequestResponse) ClearRequestInfo() {
-	x.xxx_hidden_RequestInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, (*storage.VulnerabilityRequest)(nil))
 }
 
 type ApproveVulnRequestResponse_builder struct {
@@ -861,7 +993,10 @@ func (b0 ApproveVulnRequestResponse_builder) Build() *ApproveVulnRequestResponse
 	m0 := &ApproveVulnRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RequestInfo = b.RequestInfo
+	if b.RequestInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_RequestInfo = b.RequestInfo
+	}
 	return m0
 }
 
@@ -979,6 +1114,10 @@ func (b0 DenyVulnRequest_builder) Build() *DenyVulnRequest {
 type DenyVulnRequestResponse struct {
 	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -1010,24 +1149,37 @@ func (x *DenyVulnRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DenyVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.xxx_hidden_RequestInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequestInfo) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.VulnerabilityRequest
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequestInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *DenyVulnRequestResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.xxx_hidden_RequestInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *DenyVulnRequestResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_RequestInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DenyVulnRequestResponse) ClearRequestInfo() {
-	x.xxx_hidden_RequestInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, (*storage.VulnerabilityRequest)(nil))
 }
 
 type DenyVulnRequestResponse_builder struct {
@@ -1040,15 +1192,20 @@ func (b0 DenyVulnRequestResponse_builder) Build() *DenyVulnRequestResponse {
 	m0 := &DenyVulnRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RequestInfo = b.RequestInfo
+	if b.RequestInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_RequestInfo = b.RequestInfo
+	}
 	return m0
 }
 
 type UpdateVulnRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Comment     *string                `protobuf:"bytes,2,opt,name=comment"`
-	xxx_hidden_Expiry      *storage.RequestExpiry `protobuf:"bytes,3,opt,name=expiry"`
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id      *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Comment *string                `protobuf:"bytes,2,opt,name=comment"`
+	xxx_hidden_Expiry  *storage.RequestExpiry `protobuf:"bytes,3,opt,name=expiry"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1102,7 +1259,14 @@ func (x *UpdateVulnRequest) GetComment() string {
 
 func (x *UpdateVulnRequest) GetExpiry() *storage.RequestExpiry {
 	if x != nil {
-		return x.xxx_hidden_Expiry
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Expiry) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *storage.RequestExpiry
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Expiry), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1118,7 +1282,12 @@ func (x *UpdateVulnRequest) SetComment(v string) {
 }
 
 func (x *UpdateVulnRequest) SetExpiry(v *storage.RequestExpiry) {
-	x.xxx_hidden_Expiry = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiry, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	}
 }
 
 func (x *UpdateVulnRequest) HasId() bool {
@@ -1139,7 +1308,7 @@ func (x *UpdateVulnRequest) HasExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Expiry != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *UpdateVulnRequest) ClearId() {
@@ -1153,7 +1322,8 @@ func (x *UpdateVulnRequest) ClearComment() {
 }
 
 func (x *UpdateVulnRequest) ClearExpiry() {
-	x.xxx_hidden_Expiry = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiry, (*storage.RequestExpiry)(nil))
 }
 
 type UpdateVulnRequest_builder struct {
@@ -1176,13 +1346,20 @@ func (b0 UpdateVulnRequest_builder) Build() *UpdateVulnRequest {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Comment = b.Comment
 	}
-	x.xxx_hidden_Expiry = b.Expiry
+	if b.Expiry != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Expiry = b.Expiry
+	}
 	return m0
 }
 
 type UpdateVulnRequestResponse struct {
 	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -1214,24 +1391,37 @@ func (x *UpdateVulnRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.xxx_hidden_RequestInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequestInfo) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.VulnerabilityRequest
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequestInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *UpdateVulnRequestResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.xxx_hidden_RequestInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *UpdateVulnRequestResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_RequestInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpdateVulnRequestResponse) ClearRequestInfo() {
-	x.xxx_hidden_RequestInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, (*storage.VulnerabilityRequest)(nil))
 }
 
 type UpdateVulnRequestResponse_builder struct {
@@ -1244,13 +1434,20 @@ func (b0 UpdateVulnRequestResponse_builder) Build() *UpdateVulnRequestResponse {
 	m0 := &UpdateVulnRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RequestInfo = b.RequestInfo
+	if b.RequestInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_RequestInfo = b.RequestInfo
+	}
 	return m0
 }
 
 type UndoVulnRequestResponse struct {
 	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -1282,24 +1479,37 @@ func (x *UndoVulnRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UndoVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.xxx_hidden_RequestInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequestInfo) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.VulnerabilityRequest
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequestInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *UndoVulnRequestResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.xxx_hidden_RequestInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *UndoVulnRequestResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_RequestInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UndoVulnRequestResponse) ClearRequestInfo() {
-	x.xxx_hidden_RequestInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_RequestInfo, (*storage.VulnerabilityRequest)(nil))
 }
 
 type UndoVulnRequestResponse_builder struct {
@@ -1312,7 +1522,10 @@ func (b0 UndoVulnRequestResponse_builder) Build() *UndoVulnRequestResponse {
 	m0 := &UndoVulnRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RequestInfo = b.RequestInfo
+	if b.RequestInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_RequestInfo = b.RequestInfo
+	}
 	return m0
 }
 
@@ -1320,45 +1533,45 @@ var File_api_v1_vuln_mgmt_req_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_vuln_mgmt_req_service_proto_rawDesc = "" +
 	"\n" +
-	"\"api/v1/vuln_mgmt_req_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bstorage/vuln_requests.proto\x1a!google/protobuf/go_features.proto\"c\n" +
-	"\x1fGetVulnerabilityRequestResponse\x12@\n" +
-	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestR\vrequestInfo\"g\n" +
-	"!ListVulnerabilityRequestsResponse\x12B\n" +
-	"\rrequest_infos\x18\x01 \x03(\v2\x1d.storage.VulnerabilityRequestR\frequestInfos\"\xf0\x01\n" +
+	"\"api/v1/vuln_mgmt_req_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bstorage/vuln_requests.proto\x1a!google/protobuf/go_features.proto\"g\n" +
+	"\x1fGetVulnerabilityRequestResponse\x12D\n" +
+	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestB\x02(\x01R\vrequestInfo\"k\n" +
+	"!ListVulnerabilityRequestsResponse\x12F\n" +
+	"\rrequest_infos\x18\x01 \x03(\v2\x1d.storage.VulnerabilityRequestB\x02(\x01R\frequestInfos\"\xf8\x01\n" +
 	"\x10DeferVulnRequest\x12\x10\n" +
 	"\x03cve\x18\x01 \x01(\tR\x03cve\x12\x18\n" +
-	"\acomment\x18\x02 \x01(\tR\acomment\x129\n" +
-	"\x05scope\x18\x03 \x01(\v2#.storage.VulnerabilityRequest.ScopeR\x05scope\x12.\n" +
-	"\x12expires_when_fixed\x18\x04 \x01(\bH\x00R\x10expiresWhenFixed\x12;\n" +
+	"\acomment\x18\x02 \x01(\tR\acomment\x12=\n" +
+	"\x05scope\x18\x03 \x01(\v2#.storage.VulnerabilityRequest.ScopeB\x02(\x01R\x05scope\x12.\n" +
+	"\x12expires_when_fixed\x18\x04 \x01(\bH\x00R\x10expiresWhenFixed\x12?\n" +
 	"\n" +
-	"expires_on\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\texpiresOnB\b\n" +
-	"\x06expiry\"U\n" +
-	"\x11DeferVulnResponse\x12@\n" +
-	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestR\vrequestInfo\"\x81\x01\n" +
+	"expires_on\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01H\x00R\texpiresOnB\b\n" +
+	"\x06expiry\"Y\n" +
+	"\x11DeferVulnResponse\x12D\n" +
+	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestB\x02(\x01R\vrequestInfo\"\x85\x01\n" +
 	"\x18FalsePositiveVulnRequest\x12\x10\n" +
-	"\x03cve\x18\x01 \x01(\tR\x03cve\x129\n" +
-	"\x05scope\x18\x02 \x01(\v2#.storage.VulnerabilityRequest.ScopeR\x05scope\x12\x18\n" +
-	"\acomment\x18\x03 \x01(\tR\acomment\"]\n" +
-	"\x19FalsePositiveVulnResponse\x12@\n" +
-	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestR\vrequestInfo\">\n" +
+	"\x03cve\x18\x01 \x01(\tR\x03cve\x12=\n" +
+	"\x05scope\x18\x02 \x01(\v2#.storage.VulnerabilityRequest.ScopeB\x02(\x01R\x05scope\x12\x18\n" +
+	"\acomment\x18\x03 \x01(\tR\acomment\"a\n" +
+	"\x19FalsePositiveVulnResponse\x12D\n" +
+	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestB\x02(\x01R\vrequestInfo\">\n" +
 	"\x12ApproveVulnRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
-	"\acomment\x18\x02 \x01(\tR\acomment\"^\n" +
-	"\x1aApproveVulnRequestResponse\x12@\n" +
-	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestR\vrequestInfo\";\n" +
+	"\acomment\x18\x02 \x01(\tR\acomment\"b\n" +
+	"\x1aApproveVulnRequestResponse\x12D\n" +
+	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestB\x02(\x01R\vrequestInfo\";\n" +
 	"\x0fDenyVulnRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
-	"\acomment\x18\x02 \x01(\tR\acomment\"[\n" +
-	"\x17DenyVulnRequestResponse\x12@\n" +
-	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestR\vrequestInfo\"m\n" +
+	"\acomment\x18\x02 \x01(\tR\acomment\"_\n" +
+	"\x17DenyVulnRequestResponse\x12D\n" +
+	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestB\x02(\x01R\vrequestInfo\"q\n" +
 	"\x11UpdateVulnRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
-	"\acomment\x18\x02 \x01(\tR\acomment\x12.\n" +
-	"\x06expiry\x18\x03 \x01(\v2\x16.storage.RequestExpiryR\x06expiry\"]\n" +
-	"\x19UpdateVulnRequestResponse\x12@\n" +
-	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestR\vrequestInfo\"[\n" +
-	"\x17UndoVulnRequestResponse\x12@\n" +
-	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestR\vrequestInfo2\xa4\b\n" +
+	"\acomment\x18\x02 \x01(\tR\acomment\x122\n" +
+	"\x06expiry\x18\x03 \x01(\v2\x16.storage.RequestExpiryB\x02(\x01R\x06expiry\"a\n" +
+	"\x19UpdateVulnRequestResponse\x12D\n" +
+	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestB\x02(\x01R\vrequestInfo\"_\n" +
+	"\x17UndoVulnRequestResponse\x12D\n" +
+	"\frequest_info\x18\x01 \x01(\v2\x1d.storage.VulnerabilityRequestB\x02(\x01R\vrequestInfo2\xa4\b\n" +
 	"\x1bVulnerabilityRequestService\x12o\n" +
 	"\x17GetVulnerabilityRequest\x12\x10.v1.ResourceByID\x1a#.v1.GetVulnerabilityRequestResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/cve/requests/{id}\x12j\n" +
 	"\x19ListVulnerabilityRequests\x12\f.v1.RawQuery\x1a%.v1.ListVulnerabilityRequestsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/cve/requests\x12d\n" +

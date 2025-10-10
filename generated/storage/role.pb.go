@@ -389,10 +389,12 @@ type PermissionSet struct {
 	xxx_hidden_Description      *string                `protobuf:"bytes,3,opt,name=description"`
 	xxx_hidden_ResourceToAccess map[string]Access      `protobuf:"bytes,4,rep,name=resource_to_access,json=resourceToAccess" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
 	xxx_hidden_Traits           *Traits                `protobuf:"bytes,5,opt,name=traits"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PermissionSet) Reset() {
@@ -774,8 +776,12 @@ func (b0 SimpleAccessScope_builder) Build() *SimpleAccessScope {
 type EffectiveAccessScope struct {
 	state               protoimpl.MessageState           `protogen:"opaque.v1"`
 	xxx_hidden_Clusters *[]*EffectiveAccessScope_Cluster `protobuf:"bytes,1,rep,name=clusters"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *EffectiveAccessScope) Reset() {
@@ -805,15 +811,27 @@ func (x *EffectiveAccessScope) ProtoReflect() protoreflect.Message {
 
 func (x *EffectiveAccessScope) GetClusters() []*EffectiveAccessScope_Cluster {
 	if x != nil {
-		if x.xxx_hidden_Clusters != nil {
-			return *x.xxx_hidden_Clusters
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Clusters) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*EffectiveAccessScope_Cluster
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *EffectiveAccessScope) SetClusters(v []*EffectiveAccessScope_Cluster) {
-	x.xxx_hidden_Clusters = &v
+	var sv *[]*EffectiveAccessScope_Cluster
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*EffectiveAccessScope_Cluster{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type EffectiveAccessScope_builder struct {
@@ -826,7 +844,10 @@ func (b0 EffectiveAccessScope_builder) Build() *EffectiveAccessScope {
 	m0 := &EffectiveAccessScope{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Clusters = &b.Clusters
+	if b.Clusters != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Clusters = &b.Clusters
+	}
 	return m0
 }
 
@@ -839,8 +860,12 @@ type SimpleAccessScope_Rules struct {
 	xxx_hidden_IncludedNamespaces      *[]*SimpleAccessScope_Rules_Namespace `protobuf:"bytes,2,rep,name=included_namespaces,json=includedNamespaces"`
 	xxx_hidden_ClusterLabelSelectors   *[]*SetBasedLabelSelector             `protobuf:"bytes,3,rep,name=cluster_label_selectors,json=clusterLabelSelectors"`
 	xxx_hidden_NamespaceLabelSelectors *[]*SetBasedLabelSelector             `protobuf:"bytes,4,rep,name=namespace_label_selectors,json=namespaceLabelSelectors"`
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SimpleAccessScope_Rules) Reset() {
@@ -877,8 +902,13 @@ func (x *SimpleAccessScope_Rules) GetIncludedClusters() []string {
 
 func (x *SimpleAccessScope_Rules) GetIncludedNamespaces() []*SimpleAccessScope_Rules_Namespace {
 	if x != nil {
-		if x.xxx_hidden_IncludedNamespaces != nil {
-			return *x.xxx_hidden_IncludedNamespaces
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_IncludedNamespaces) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*SimpleAccessScope_Rules_Namespace
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_IncludedNamespaces), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -886,8 +916,13 @@ func (x *SimpleAccessScope_Rules) GetIncludedNamespaces() []*SimpleAccessScope_R
 
 func (x *SimpleAccessScope_Rules) GetClusterLabelSelectors() []*SetBasedLabelSelector {
 	if x != nil {
-		if x.xxx_hidden_ClusterLabelSelectors != nil {
-			return *x.xxx_hidden_ClusterLabelSelectors
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ClusterLabelSelectors) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*SetBasedLabelSelector
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ClusterLabelSelectors), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -895,8 +930,13 @@ func (x *SimpleAccessScope_Rules) GetClusterLabelSelectors() []*SetBasedLabelSel
 
 func (x *SimpleAccessScope_Rules) GetNamespaceLabelSelectors() []*SetBasedLabelSelector {
 	if x != nil {
-		if x.xxx_hidden_NamespaceLabelSelectors != nil {
-			return *x.xxx_hidden_NamespaceLabelSelectors
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_NamespaceLabelSelectors) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*SetBasedLabelSelector
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_NamespaceLabelSelectors), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -907,15 +947,36 @@ func (x *SimpleAccessScope_Rules) SetIncludedClusters(v []string) {
 }
 
 func (x *SimpleAccessScope_Rules) SetIncludedNamespaces(v []*SimpleAccessScope_Rules_Namespace) {
-	x.xxx_hidden_IncludedNamespaces = &v
+	var sv *[]*SimpleAccessScope_Rules_Namespace
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_IncludedNamespaces), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SimpleAccessScope_Rules_Namespace{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_IncludedNamespaces), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *SimpleAccessScope_Rules) SetClusterLabelSelectors(v []*SetBasedLabelSelector) {
-	x.xxx_hidden_ClusterLabelSelectors = &v
+	var sv *[]*SetBasedLabelSelector
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ClusterLabelSelectors), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SetBasedLabelSelector{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ClusterLabelSelectors), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *SimpleAccessScope_Rules) SetNamespaceLabelSelectors(v []*SetBasedLabelSelector) {
-	x.xxx_hidden_NamespaceLabelSelectors = &v
+	var sv *[]*SetBasedLabelSelector
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_NamespaceLabelSelectors), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SetBasedLabelSelector{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_NamespaceLabelSelectors), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 type SimpleAccessScope_Rules_builder struct {
@@ -932,9 +993,18 @@ func (b0 SimpleAccessScope_Rules_builder) Build() *SimpleAccessScope_Rules {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_IncludedClusters = b.IncludedClusters
-	x.xxx_hidden_IncludedNamespaces = &b.IncludedNamespaces
-	x.xxx_hidden_ClusterLabelSelectors = &b.ClusterLabelSelectors
-	x.xxx_hidden_NamespaceLabelSelectors = &b.NamespaceLabelSelectors
+	if b.IncludedNamespaces != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_IncludedNamespaces = &b.IncludedNamespaces
+	}
+	if b.ClusterLabelSelectors != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_ClusterLabelSelectors = &b.ClusterLabelSelectors
+	}
+	if b.NamespaceLabelSelectors != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_NamespaceLabelSelectors = &b.NamespaceLabelSelectors
+	}
 	return m0
 }
 
@@ -1051,11 +1121,13 @@ func (b0 SimpleAccessScope_Rules_Namespace_builder) Build() *SimpleAccessScope_R
 }
 
 type EffectiveAccessScope_Namespace struct {
-	state                  protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                    `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                    `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_State       EffectiveAccessScope_State `protobuf:"varint,3,opt,name=state,enum=storage.EffectiveAccessScope_State"`
-	xxx_hidden_Labels      map[string]string          `protobuf:"bytes,4,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state             protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Id     *string                    `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name   *string                    `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_State  EffectiveAccessScope_State `protobuf:"varint,3,opt,name=state,enum=storage.EffectiveAccessScope_State"`
+	xxx_hidden_Labels map[string]string          `protobuf:"bytes,4,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1208,12 +1280,14 @@ func (b0 EffectiveAccessScope_Namespace_builder) Build() *EffectiveAccessScope_N
 }
 
 type EffectiveAccessScope_Cluster struct {
-	state                  protoimpl.MessageState             `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                            `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                            `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_State       EffectiveAccessScope_State         `protobuf:"varint,3,opt,name=state,enum=storage.EffectiveAccessScope_State"`
-	xxx_hidden_Labels      map[string]string                  `protobuf:"bytes,5,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Namespaces  *[]*EffectiveAccessScope_Namespace `protobuf:"bytes,4,rep,name=namespaces"`
+	state                 protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Id         *string                            `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name       *string                            `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_State      EffectiveAccessScope_State         `protobuf:"varint,3,opt,name=state,enum=storage.EffectiveAccessScope_State"`
+	xxx_hidden_Labels     map[string]string                  `protobuf:"bytes,5,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_Namespaces *[]*EffectiveAccessScope_Namespace `protobuf:"bytes,4,rep,name=namespaces"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1283,8 +1357,13 @@ func (x *EffectiveAccessScope_Cluster) GetLabels() map[string]string {
 
 func (x *EffectiveAccessScope_Cluster) GetNamespaces() []*EffectiveAccessScope_Namespace {
 	if x != nil {
-		if x.xxx_hidden_Namespaces != nil {
-			return *x.xxx_hidden_Namespaces
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Namespaces) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*EffectiveAccessScope_Namespace
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1310,7 +1389,14 @@ func (x *EffectiveAccessScope_Cluster) SetLabels(v map[string]string) {
 }
 
 func (x *EffectiveAccessScope_Cluster) SetNamespaces(v []*EffectiveAccessScope_Namespace) {
-	x.xxx_hidden_Namespaces = &v
+	var sv *[]*EffectiveAccessScope_Namespace
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*EffectiveAccessScope_Namespace{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *EffectiveAccessScope_Cluster) HasId() bool {
@@ -1376,7 +1462,10 @@ func (b0 EffectiveAccessScope_Cluster_builder) Build() *EffectiveAccessScope_Clu
 		x.xxx_hidden_State = *b.State
 	}
 	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Namespaces = &b.Namespaces
+	if b.Namespaces != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_Namespaces = &b.Namespaces
+	}
 	return m0
 }
 
@@ -1395,47 +1484,47 @@ const file_storage_role_proto_rawDesc = "" +
 	"\x06traits\x18\b \x01(\v2\x0f.storage.TraitsR\x06traits\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x04\x10\x05\"\xb0\x02\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x04\x10\x05\"\xb4\x02\n" +
 	"\rPermissionSet\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\x12Z\n" +
-	"\x12resource_to_access\x18\x04 \x03(\v2,.storage.PermissionSet.ResourceToAccessEntryR\x10resourceToAccess\x12'\n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12^\n" +
+	"\x12resource_to_access\x18\x04 \x03(\v2,.storage.PermissionSet.ResourceToAccessEntryB\x02(\x01R\x10resourceToAccess\x12'\n" +
 	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01\"\xd9\x04\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01\"\xe5\x04\n" +
 	"\x11SimpleAccessScope\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x126\n" +
 	"\x05rules\x18\x04 \x01(\v2 .storage.SimpleAccessScope.RulesR\x05rules\x12'\n" +
-	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x1a\x9c\x03\n" +
+	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x1a\xa8\x03\n" +
 	"\x05Rules\x12+\n" +
-	"\x11included_clusters\x18\x01 \x03(\tR\x10includedClusters\x12[\n" +
-	"\x13included_namespaces\x18\x02 \x03(\v2*.storage.SimpleAccessScope.Rules.NamespaceR\x12includedNamespaces\x12V\n" +
-	"\x17cluster_label_selectors\x18\x03 \x03(\v2\x1e.storage.SetBasedLabelSelectorR\x15clusterLabelSelectors\x12Z\n" +
-	"\x19namespace_label_selectors\x18\x04 \x03(\v2\x1e.storage.SetBasedLabelSelectorR\x17namespaceLabelSelectors\x1aU\n" +
+	"\x11included_clusters\x18\x01 \x03(\tR\x10includedClusters\x12_\n" +
+	"\x13included_namespaces\x18\x02 \x03(\v2*.storage.SimpleAccessScope.Rules.NamespaceB\x02(\x01R\x12includedNamespaces\x12Z\n" +
+	"\x17cluster_label_selectors\x18\x03 \x03(\v2\x1e.storage.SetBasedLabelSelectorB\x02(\x01R\x15clusterLabelSelectors\x12^\n" +
+	"\x19namespace_label_selectors\x18\x04 \x03(\v2\x1e.storage.SetBasedLabelSelectorB\x02(\x01R\x17namespaceLabelSelectors\x1aU\n" +
 	"\tNamespace\x12!\n" +
 	"\fcluster_name\x18\x01 \x01(\tR\vclusterName\x12%\n" +
-	"\x0enamespace_name\x18\x02 \x01(\tR\rnamespaceName\"\xc7\x05\n" +
-	"\x14EffectiveAccessScope\x12A\n" +
-	"\bclusters\x18\x01 \x03(\v2%.storage.EffectiveAccessScope.ClusterR\bclusters\x1a\xf2\x01\n" +
+	"\x0enamespace_name\x18\x02 \x01(\tR\rnamespaceName\"\xd7\x05\n" +
+	"\x14EffectiveAccessScope\x12E\n" +
+	"\bclusters\x18\x01 \x03(\v2%.storage.EffectiveAccessScope.ClusterB\x02(\x01R\bclusters\x1a\xf6\x01\n" +
 	"\tNamespace\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
-	"\x05state\x18\x03 \x01(\x0e2#.storage.EffectiveAccessScope.StateR\x05state\x12K\n" +
-	"\x06labels\x18\x04 \x03(\v23.storage.EffectiveAccessScope.Namespace.LabelsEntryR\x06labels\x1a9\n" +
+	"\x05state\x18\x03 \x01(\x0e2#.storage.EffectiveAccessScope.StateR\x05state\x12O\n" +
+	"\x06labels\x18\x04 \x03(\v23.storage.EffectiveAccessScope.Namespace.LabelsEntryB\x02(\x01R\x06labels\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a\xb7\x02\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a\xbf\x02\n" +
 	"\aCluster\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
-	"\x05state\x18\x03 \x01(\x0e2#.storage.EffectiveAccessScope.StateR\x05state\x12I\n" +
-	"\x06labels\x18\x05 \x03(\v21.storage.EffectiveAccessScope.Cluster.LabelsEntryR\x06labels\x12G\n" +
+	"\x05state\x18\x03 \x01(\x0e2#.storage.EffectiveAccessScope.StateR\x05state\x12M\n" +
+	"\x06labels\x18\x05 \x03(\v21.storage.EffectiveAccessScope.Cluster.LabelsEntryB\x02(\x01R\x06labels\x12K\n" +
 	"\n" +
-	"namespaces\x18\x04 \x03(\v2'.storage.EffectiveAccessScope.NamespaceR\n" +
+	"namespaces\x18\x04 \x03(\v2'.storage.EffectiveAccessScope.NamespaceB\x02(\x01R\n" +
 	"namespaces\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

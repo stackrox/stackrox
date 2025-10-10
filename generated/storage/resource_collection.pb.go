@@ -74,10 +74,12 @@ type ResourceCollection struct {
 	xxx_hidden_UpdatedBy           *SlimUser                                         `protobuf:"bytes,7,opt,name=updated_by,json=updatedBy"`
 	xxx_hidden_ResourceSelectors   *[]*ResourceSelector                              `protobuf:"bytes,8,rep,name=resource_selectors,json=resourceSelectors"`
 	xxx_hidden_EmbeddedCollections *[]*ResourceCollection_EmbeddedResourceCollection `protobuf:"bytes,9,rep,name=embedded_collections,json=embeddedCollections"`
-	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
-	XXX_presence                   [1]uint32
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ResourceCollection) Reset() {
@@ -137,14 +139,28 @@ func (x *ResourceCollection) GetDescription() string {
 
 func (x *ResourceCollection) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ResourceCollection) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -165,8 +181,13 @@ func (x *ResourceCollection) GetUpdatedBy() *SlimUser {
 
 func (x *ResourceCollection) GetResourceSelectors() []*ResourceSelector {
 	if x != nil {
-		if x.xxx_hidden_ResourceSelectors != nil {
-			return *x.xxx_hidden_ResourceSelectors
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ResourceSelectors) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *[]*ResourceSelector
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -174,8 +195,13 @@ func (x *ResourceCollection) GetResourceSelectors() []*ResourceSelector {
 
 func (x *ResourceCollection) GetEmbeddedCollections() []*ResourceCollection_EmbeddedResourceCollection {
 	if x != nil {
-		if x.xxx_hidden_EmbeddedCollections != nil {
-			return *x.xxx_hidden_EmbeddedCollections
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_EmbeddedCollections) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *[]*ResourceCollection_EmbeddedResourceCollection
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_EmbeddedCollections), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -197,11 +223,21 @@ func (x *ResourceCollection) SetDescription(v string) {
 }
 
 func (x *ResourceCollection) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
+	}
 }
 
 func (x *ResourceCollection) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
+	}
 }
 
 func (x *ResourceCollection) SetCreatedBy(v *SlimUser) {
@@ -213,11 +249,25 @@ func (x *ResourceCollection) SetUpdatedBy(v *SlimUser) {
 }
 
 func (x *ResourceCollection) SetResourceSelectors(v []*ResourceSelector) {
-	x.xxx_hidden_ResourceSelectors = &v
+	var sv *[]*ResourceSelector
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ResourceSelector{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
 }
 
 func (x *ResourceCollection) SetEmbeddedCollections(v []*ResourceCollection_EmbeddedResourceCollection) {
-	x.xxx_hidden_EmbeddedCollections = &v
+	var sv *[]*ResourceCollection_EmbeddedResourceCollection
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_EmbeddedCollections), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ResourceCollection_EmbeddedResourceCollection{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_EmbeddedCollections), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
 }
 
 func (x *ResourceCollection) HasId() bool {
@@ -245,14 +295,14 @@ func (x *ResourceCollection) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ResourceCollection) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ResourceCollection) HasCreatedBy() bool {
@@ -285,11 +335,13 @@ func (x *ResourceCollection) ClearDescription() {
 }
 
 func (x *ResourceCollection) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ResourceCollection) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ResourceCollection) ClearCreatedBy() {
@@ -331,20 +383,36 @@ func (b0 ResourceCollection_builder) Build() *ResourceCollection {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
 		x.xxx_hidden_Description = b.Description
 	}
-	x.xxx_hidden_CreatedAt = b.CreatedAt
-	x.xxx_hidden_LastUpdated = b.LastUpdated
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
 	x.xxx_hidden_CreatedBy = b.CreatedBy
 	x.xxx_hidden_UpdatedBy = b.UpdatedBy
-	x.xxx_hidden_ResourceSelectors = &b.ResourceSelectors
-	x.xxx_hidden_EmbeddedCollections = &b.EmbeddedCollections
+	if b.ResourceSelectors != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
+		x.xxx_hidden_ResourceSelectors = &b.ResourceSelectors
+	}
+	if b.EmbeddedCollections != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
+		x.xxx_hidden_EmbeddedCollections = &b.EmbeddedCollections
+	}
 	return m0
 }
 
 type ResourceSelector struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Rules *[]*SelectorRule       `protobuf:"bytes,1,rep,name=rules"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ResourceSelector) Reset() {
@@ -374,15 +442,27 @@ func (x *ResourceSelector) ProtoReflect() protoreflect.Message {
 
 func (x *ResourceSelector) GetRules() []*SelectorRule {
 	if x != nil {
-		if x.xxx_hidden_Rules != nil {
-			return *x.xxx_hidden_Rules
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Rules) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*SelectorRule
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ResourceSelector) SetRules(v []*SelectorRule) {
-	x.xxx_hidden_Rules = &v
+	var sv *[]*SelectorRule
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SelectorRule{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ResourceSelector_builder struct {
@@ -396,15 +476,20 @@ func (b0 ResourceSelector_builder) Build() *ResourceSelector {
 	m0 := &ResourceSelector{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Rules = &b.Rules
+	if b.Rules != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Rules = &b.Rules
+	}
 	return m0
 }
 
 type SelectorRule struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FieldName   *string                `protobuf:"bytes,1,opt,name=field_name,json=fieldName"`
-	xxx_hidden_Operator    BooleanOperator        `protobuf:"varint,2,opt,name=operator,enum=storage.BooleanOperator"`
-	xxx_hidden_Values      *[]*RuleValue          `protobuf:"bytes,3,rep,name=values"`
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_FieldName *string                `protobuf:"bytes,1,opt,name=field_name,json=fieldName"`
+	xxx_hidden_Operator  BooleanOperator        `protobuf:"varint,2,opt,name=operator,enum=storage.BooleanOperator"`
+	xxx_hidden_Values    *[]*RuleValue          `protobuf:"bytes,3,rep,name=values"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -457,8 +542,13 @@ func (x *SelectorRule) GetOperator() BooleanOperator {
 
 func (x *SelectorRule) GetValues() []*RuleValue {
 	if x != nil {
-		if x.xxx_hidden_Values != nil {
-			return *x.xxx_hidden_Values
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Values) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*RuleValue
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -475,7 +565,14 @@ func (x *SelectorRule) SetOperator(v BooleanOperator) {
 }
 
 func (x *SelectorRule) SetValues(v []*RuleValue) {
-	x.xxx_hidden_Values = &v
+	var sv *[]*RuleValue
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*RuleValue{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *SelectorRule) HasFieldName() bool {
@@ -533,7 +630,10 @@ func (b0 SelectorRule_builder) Build() *SelectorRule {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Operator = *b.Operator
 	}
-	x.xxx_hidden_Values = &b.Values
+	if b.Values != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Values = &b.Values
+	}
 	return m0
 }
 
@@ -730,29 +830,29 @@ var File_storage_resource_collection_proto protoreflect.FileDescriptor
 
 const file_storage_resource_collection_proto_rawDesc = "" +
 	"\n" +
-	"!storage/resource_collection.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14storage/policy.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\x9b\x04\n" +
+	"!storage/resource_collection.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14storage/policy.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\xab\x04\n" +
 	"\x12ResourceCollection\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\x129\n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12=\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12=\n" +
-	"\flast_updated\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x120\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\x12A\n" +
+	"\flast_updated\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x120\n" +
 	"\n" +
 	"created_by\x18\x06 \x01(\v2\x11.storage.SlimUserR\tcreatedBy\x120\n" +
 	"\n" +
-	"updated_by\x18\a \x01(\v2\x11.storage.SlimUserR\tupdatedBy\x12H\n" +
-	"\x12resource_selectors\x18\b \x03(\v2\x19.storage.ResourceSelectorR\x11resourceSelectors\x12i\n" +
-	"\x14embedded_collections\x18\t \x03(\v26.storage.ResourceCollection.EmbeddedResourceCollectionR\x13embeddedCollections\x1a,\n" +
+	"updated_by\x18\a \x01(\v2\x11.storage.SlimUserR\tupdatedBy\x12L\n" +
+	"\x12resource_selectors\x18\b \x03(\v2\x19.storage.ResourceSelectorB\x02(\x01R\x11resourceSelectors\x12m\n" +
+	"\x14embedded_collections\x18\t \x03(\v26.storage.ResourceCollection.EmbeddedResourceCollectionB\x02(\x01R\x13embeddedCollections\x1a,\n" +
 	"\x1aEmbeddedResourceCollection\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"?\n" +
-	"\x10ResourceSelector\x12+\n" +
-	"\x05rules\x18\x01 \x03(\v2\x15.storage.SelectorRuleR\x05rules\"\x8f\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"C\n" +
+	"\x10ResourceSelector\x12/\n" +
+	"\x05rules\x18\x01 \x03(\v2\x15.storage.SelectorRuleB\x02(\x01R\x05rules\"\x93\x01\n" +
 	"\fSelectorRule\x12\x1d\n" +
 	"\n" +
 	"field_name\x18\x01 \x01(\tR\tfieldName\x124\n" +
-	"\boperator\x18\x02 \x01(\x0e2\x18.storage.BooleanOperatorR\boperator\x12*\n" +
-	"\x06values\x18\x03 \x03(\v2\x12.storage.RuleValueR\x06values\"T\n" +
+	"\boperator\x18\x02 \x01(\x0e2\x18.storage.BooleanOperatorR\boperator\x12.\n" +
+	"\x06values\x18\x03 \x03(\v2\x12.storage.RuleValueB\x02(\x01R\x06values\"T\n" +
 	"\tRuleValue\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x121\n" +
 	"\n" +

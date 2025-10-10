@@ -171,6 +171,8 @@ type TestSingleKeyStruct struct {
 	xxx_hidden_Nested      *[]*TestSingleKeyStruct_Nested `protobuf:"bytes,13,rep,name=nested"`
 	xxx_hidden_Oneof       isTestSingleKeyStruct_Oneof    `protobuf_oneof:"oneof"`
 	xxx_hidden_Bytess      []byte                         `protobuf:"bytes,16,opt,name=bytess"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -266,7 +268,14 @@ func (x *TestSingleKeyStruct) GetLabels() map[string]string {
 
 func (x *TestSingleKeyStruct) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Timestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -296,8 +305,13 @@ func (x *TestSingleKeyStruct) GetEmbedded() *TestSingleKeyStruct_Embedded {
 
 func (x *TestSingleKeyStruct) GetNested() []*TestSingleKeyStruct_Nested {
 	if x != nil {
-		if x.xxx_hidden_Nested != nil {
-			return *x.xxx_hidden_Nested
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 12) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Nested) {
+				protoimpl.X.UnmarshalField(x, 13)
+			}
+			var rv *[]*TestSingleKeyStruct_Nested
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -367,7 +381,12 @@ func (x *TestSingleKeyStruct) SetLabels(v map[string]string) {
 }
 
 func (x *TestSingleKeyStruct) SetTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Timestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 15)
+	}
 }
 
 func (x *TestSingleKeyStruct) SetEnum(v TestSingleKeyStruct_Enum) {
@@ -384,7 +403,14 @@ func (x *TestSingleKeyStruct) SetEmbedded(v *TestSingleKeyStruct_Embedded) {
 }
 
 func (x *TestSingleKeyStruct) SetNested(v []*TestSingleKeyStruct_Nested) {
-	x.xxx_hidden_Nested = &v
+	var sv *[]*TestSingleKeyStruct_Nested
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*TestSingleKeyStruct_Nested{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 15)
 }
 
 func (x *TestSingleKeyStruct) SetOneofstring(v string) {
@@ -453,7 +479,7 @@ func (x *TestSingleKeyStruct) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Timestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *TestSingleKeyStruct) HasEnum() bool {
@@ -531,7 +557,8 @@ func (x *TestSingleKeyStruct) ClearFloat() {
 }
 
 func (x *TestSingleKeyStruct) ClearTimestamp() {
-	x.xxx_hidden_Timestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *TestSingleKeyStruct) ClearEnum() {
@@ -638,14 +665,20 @@ func (b0 TestSingleKeyStruct_builder) Build() *TestSingleKeyStruct {
 		x.xxx_hidden_Float = *b.Float
 	}
 	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Timestamp = b.Timestamp
+	if b.Timestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 15)
+		x.xxx_hidden_Timestamp = b.Timestamp
+	}
 	if b.Enum != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 15)
 		x.xxx_hidden_Enum = *b.Enum
 	}
 	x.xxx_hidden_Enums = b.Enums
 	x.xxx_hidden_Embedded = b.Embedded
-	x.xxx_hidden_Nested = &b.Nested
+	if b.Nested != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 15)
+		x.xxx_hidden_Nested = &b.Nested
+	}
 	if b.Oneofstring != nil {
 		x.xxx_hidden_Oneof = &testSingleKeyStruct_Oneofstring{*b.Oneofstring}
 	}
@@ -703,6 +736,8 @@ type TestSingleUUIDKeyStruct struct {
 	xxx_hidden_Oneof       isTestSingleUUIDKeyStruct_Oneof    `protobuf_oneof:"oneof"`
 	xxx_hidden_Bytess      []byte                             `protobuf:"bytes,16,opt,name=bytess"`
 	xxx_hidden_OneofTwo    isTestSingleUUIDKeyStruct_OneofTwo `protobuf_oneof:"oneof_two"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -798,7 +833,14 @@ func (x *TestSingleUUIDKeyStruct) GetLabels() map[string]string {
 
 func (x *TestSingleUUIDKeyStruct) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Timestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -828,8 +870,13 @@ func (x *TestSingleUUIDKeyStruct) GetEmbedded() *TestSingleUUIDKeyStruct_Embedde
 
 func (x *TestSingleUUIDKeyStruct) GetNested() []*TestSingleUUIDKeyStruct_Nested {
 	if x != nil {
-		if x.xxx_hidden_Nested != nil {
-			return *x.xxx_hidden_Nested
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 12) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Nested) {
+				protoimpl.X.UnmarshalField(x, 13)
+			}
+			var rv *[]*TestSingleUUIDKeyStruct_Nested
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -917,7 +964,12 @@ func (x *TestSingleUUIDKeyStruct) SetLabels(v map[string]string) {
 }
 
 func (x *TestSingleUUIDKeyStruct) SetTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Timestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 16)
+	}
 }
 
 func (x *TestSingleUUIDKeyStruct) SetEnum(v TestSingleUUIDKeyStruct_Enum) {
@@ -934,7 +986,14 @@ func (x *TestSingleUUIDKeyStruct) SetEmbedded(v *TestSingleUUIDKeyStruct_Embedde
 }
 
 func (x *TestSingleUUIDKeyStruct) SetNested(v []*TestSingleUUIDKeyStruct_Nested) {
-	x.xxx_hidden_Nested = &v
+	var sv *[]*TestSingleUUIDKeyStruct_Nested
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*TestSingleUUIDKeyStruct_Nested{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 16)
 }
 
 func (x *TestSingleUUIDKeyStruct) SetOneofstring(v string) {
@@ -1011,7 +1070,7 @@ func (x *TestSingleUUIDKeyStruct) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Timestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *TestSingleUUIDKeyStruct) HasEnum() bool {
@@ -1112,7 +1171,8 @@ func (x *TestSingleUUIDKeyStruct) ClearFloat() {
 }
 
 func (x *TestSingleUUIDKeyStruct) ClearTimestamp() {
-	x.xxx_hidden_Timestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *TestSingleUUIDKeyStruct) ClearEnum() {
@@ -1257,14 +1317,20 @@ func (b0 TestSingleUUIDKeyStruct_builder) Build() *TestSingleUUIDKeyStruct {
 		x.xxx_hidden_Float = *b.Float
 	}
 	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Timestamp = b.Timestamp
+	if b.Timestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 16)
+		x.xxx_hidden_Timestamp = b.Timestamp
+	}
 	if b.Enum != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 16)
 		x.xxx_hidden_Enum = *b.Enum
 	}
 	x.xxx_hidden_Enums = b.Enums
 	x.xxx_hidden_Embedded = b.Embedded
-	x.xxx_hidden_Nested = &b.Nested
+	if b.Nested != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 16)
+		x.xxx_hidden_Nested = &b.Nested
+	}
 	if b.Oneofstring != nil {
 		x.xxx_hidden_Oneof = &testSingleUUIDKeyStruct_Oneofstring{*b.Oneofstring}
 	}
@@ -1355,10 +1421,12 @@ type TestStruct struct {
 	xxx_hidden_Embedded           *TestStruct_Embedded   `protobuf:"bytes,12,opt,name=embedded"`
 	xxx_hidden_Nested             *[]*TestStruct_Nested  `protobuf:"bytes,13,rep,name=nested"`
 	xxx_hidden_Oneof              isTestStruct_Oneof     `protobuf_oneof:"oneof"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TestStruct) Reset() {
@@ -1450,7 +1518,14 @@ func (x *TestStruct) GetLabels() map[string]string {
 
 func (x *TestStruct) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Timestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1505,8 +1580,13 @@ func (x *TestStruct) GetEmbedded() *TestStruct_Embedded {
 
 func (x *TestStruct) GetNested() []*TestStruct_Nested {
 	if x != nil {
-		if x.xxx_hidden_Nested != nil {
-			return *x.xxx_hidden_Nested
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 15) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Nested) {
+				protoimpl.X.UnmarshalField(x, 13)
+			}
+			var rv *[]*TestStruct_Nested
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1569,7 +1649,12 @@ func (x *TestStruct) SetLabels(v map[string]string) {
 }
 
 func (x *TestStruct) SetTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Timestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 17)
+	}
 }
 
 func (x *TestStruct) SetEnum(v TestStruct_Enum) {
@@ -1600,7 +1685,14 @@ func (x *TestStruct) SetEmbedded(v *TestStruct_Embedded) {
 }
 
 func (x *TestStruct) SetNested(v []*TestStruct_Nested) {
-	x.xxx_hidden_Nested = &v
+	var sv *[]*TestStruct_Nested
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*TestStruct_Nested{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 15, 17)
 }
 
 func (x *TestStruct) SetOneofstring(v string) {
@@ -1661,7 +1753,7 @@ func (x *TestStruct) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Timestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *TestStruct) HasEnum() bool {
@@ -1739,7 +1831,8 @@ func (x *TestStruct) ClearFloat() {
 }
 
 func (x *TestStruct) ClearTimestamp() {
-	x.xxx_hidden_Timestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *TestStruct) ClearEnum() {
@@ -1848,7 +1941,10 @@ func (b0 TestStruct_builder) Build() *TestStruct {
 		x.xxx_hidden_Float = *b.Float
 	}
 	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Timestamp = b.Timestamp
+	if b.Timestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 17)
+		x.xxx_hidden_Timestamp = b.Timestamp
+	}
 	if b.Enum != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 17)
 		x.xxx_hidden_Enum = *b.Enum
@@ -1861,7 +1957,10 @@ func (b0 TestStruct_builder) Build() *TestStruct {
 	x.xxx_hidden_IntSliceDeprecated = b.IntSliceDeprecated
 	x.xxx_hidden_Int32Slice = b.Int32Slice
 	x.xxx_hidden_Embedded = b.Embedded
-	x.xxx_hidden_Nested = &b.Nested
+	if b.Nested != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 15, 17)
+		x.xxx_hidden_Nested = &b.Nested
+	}
 	if b.Oneofstring != nil {
 		x.xxx_hidden_Oneof = &testStruct_Oneofstring{*b.Oneofstring}
 	}
@@ -1915,12 +2014,14 @@ func (*testStruct_Oneofnested) isTestStruct_Oneof() {}
 //	 (n-1)   |
 //	 TestG3GrandChild1
 type TestGrandparent struct {
-	state                  protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                      `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Val         *string                      `protobuf:"bytes,2,opt,name=val"`
-	xxx_hidden_Embedded    *[]*TestGrandparent_Embedded `protobuf:"bytes,3,rep,name=embedded"`
-	xxx_hidden_Priority    int64                        `protobuf:"varint,4,opt,name=priority"`
-	xxx_hidden_RiskScore   float32                      `protobuf:"fixed32,5,opt,name=risk_score,json=riskScore"`
+	state                protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_Id        *string                      `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Val       *string                      `protobuf:"bytes,2,opt,name=val"`
+	xxx_hidden_Embedded  *[]*TestGrandparent_Embedded `protobuf:"bytes,3,rep,name=embedded"`
+	xxx_hidden_Priority  int64                        `protobuf:"varint,4,opt,name=priority"`
+	xxx_hidden_RiskScore float32                      `protobuf:"fixed32,5,opt,name=risk_score,json=riskScore"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1974,8 +2075,13 @@ func (x *TestGrandparent) GetVal() string {
 
 func (x *TestGrandparent) GetEmbedded() []*TestGrandparent_Embedded {
 	if x != nil {
-		if x.xxx_hidden_Embedded != nil {
-			return *x.xxx_hidden_Embedded
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Embedded) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*TestGrandparent_Embedded
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Embedded), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2006,7 +2112,14 @@ func (x *TestGrandparent) SetVal(v string) {
 }
 
 func (x *TestGrandparent) SetEmbedded(v []*TestGrandparent_Embedded) {
-	x.xxx_hidden_Embedded = &v
+	var sv *[]*TestGrandparent_Embedded
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Embedded), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*TestGrandparent_Embedded{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Embedded), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *TestGrandparent) SetPriority(v int64) {
@@ -2089,7 +2202,10 @@ func (b0 TestGrandparent_builder) Build() *TestGrandparent {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_Val = b.Val
 	}
-	x.xxx_hidden_Embedded = &b.Embedded
+	if b.Embedded != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Embedded = &b.Embedded
+	}
 	if b.Priority != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
 		x.xxx_hidden_Priority = *b.Priority
@@ -2108,6 +2224,8 @@ type TestParent1 struct {
 	xxx_hidden_Children    *[]*TestParent1_Child1Ref `protobuf:"bytes,3,rep,name=children"`
 	xxx_hidden_Val         *string                   `protobuf:"bytes,4,opt,name=val"`
 	xxx_hidden_StringSlice []string                  `protobuf:"bytes,5,rep,name=string_slice,json=stringSlice"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -2161,8 +2279,13 @@ func (x *TestParent1) GetParentId() string {
 
 func (x *TestParent1) GetChildren() []*TestParent1_Child1Ref {
 	if x != nil {
-		if x.xxx_hidden_Children != nil {
-			return *x.xxx_hidden_Children
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Children) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*TestParent1_Child1Ref
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Children), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2196,7 +2319,14 @@ func (x *TestParent1) SetParentId(v string) {
 }
 
 func (x *TestParent1) SetChildren(v []*TestParent1_Child1Ref) {
-	x.xxx_hidden_Children = &v
+	var sv *[]*TestParent1_Child1Ref
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Children), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*TestParent1_Child1Ref{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Children), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *TestParent1) SetVal(v string) {
@@ -2266,7 +2396,10 @@ func (b0 TestParent1_builder) Build() *TestParent1 {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_ParentId = b.ParentId
 	}
-	x.xxx_hidden_Children = &b.Children
+	if b.Children != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Children = &b.Children
+	}
 	if b.Val != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
 		x.xxx_hidden_Val = b.Val
@@ -5510,9 +5643,11 @@ func (b0 TestStruct_OneOfNested_Nested2_builder) Build() *TestStruct_OneOfNested
 }
 
 type TestGrandparent_Embedded struct {
-	state                  protoimpl.MessageState                 `protogen:"opaque.v1"`
-	xxx_hidden_Val         *string                                `protobuf:"bytes,1,opt,name=val"`
-	xxx_hidden_Embedded2   *[]*TestGrandparent_Embedded_Embedded2 `protobuf:"bytes,2,rep,name=embedded2"`
+	state                protoimpl.MessageState                 `protogen:"opaque.v1"`
+	xxx_hidden_Val       *string                                `protobuf:"bytes,1,opt,name=val"`
+	xxx_hidden_Embedded2 *[]*TestGrandparent_Embedded_Embedded2 `protobuf:"bytes,2,rep,name=embedded2"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -5556,8 +5691,13 @@ func (x *TestGrandparent_Embedded) GetVal() string {
 
 func (x *TestGrandparent_Embedded) GetEmbedded2() []*TestGrandparent_Embedded_Embedded2 {
 	if x != nil {
-		if x.xxx_hidden_Embedded2 != nil {
-			return *x.xxx_hidden_Embedded2
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Embedded2) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*TestGrandparent_Embedded_Embedded2
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Embedded2), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -5569,7 +5709,14 @@ func (x *TestGrandparent_Embedded) SetVal(v string) {
 }
 
 func (x *TestGrandparent_Embedded) SetEmbedded2(v []*TestGrandparent_Embedded_Embedded2) {
-	x.xxx_hidden_Embedded2 = &v
+	var sv *[]*TestGrandparent_Embedded_Embedded2
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Embedded2), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*TestGrandparent_Embedded_Embedded2{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Embedded2), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *TestGrandparent_Embedded) HasVal() bool {
@@ -5599,7 +5746,10 @@ func (b0 TestGrandparent_Embedded_builder) Build() *TestGrandparent_Embedded {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Val = b.Val
 	}
-	x.xxx_hidden_Embedded2 = &b.Embedded2
+	if b.Embedded2 != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Embedded2 = &b.Embedded2
+	}
 	return m0
 }
 
@@ -5763,7 +5913,7 @@ var File_storage_test_proto protoreflect.FileDescriptor
 
 const file_storage_test_proto_rawDesc = "" +
 	"\n" +
-	"\x12storage/test.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x92\t\n" +
+	"\x12storage/test.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x9e\t\n" +
 	"\x13TestSingleKeyStruct\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12!\n" +
@@ -5771,14 +5921,14 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x04bool\x18\x04 \x01(\bR\x04bool\x12\x16\n" +
 	"\x06uint64\x18\x05 \x01(\x04R\x06uint64\x12\x14\n" +
 	"\x05int64\x18\x06 \x01(\x03R\x05int64\x12\x14\n" +
-	"\x05float\x18\a \x01(\x02R\x05float\x12@\n" +
-	"\x06labels\x18\b \x03(\v2(.storage.TestSingleKeyStruct.LabelsEntryR\x06labels\x128\n" +
-	"\ttimestamp\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x125\n" +
+	"\x05float\x18\a \x01(\x02R\x05float\x12D\n" +
+	"\x06labels\x18\b \x03(\v2(.storage.TestSingleKeyStruct.LabelsEntryB\x02(\x01R\x06labels\x12<\n" +
+	"\ttimestamp\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\ttimestamp\x125\n" +
 	"\x04enum\x18\n" +
 	" \x01(\x0e2!.storage.TestSingleKeyStruct.EnumR\x04enum\x127\n" +
 	"\x05enums\x18\v \x03(\x0e2!.storage.TestSingleKeyStruct.EnumR\x05enums\x12A\n" +
-	"\bembedded\x18\f \x01(\v2%.storage.TestSingleKeyStruct.EmbeddedR\bembedded\x12;\n" +
-	"\x06nested\x18\r \x03(\v2#.storage.TestSingleKeyStruct.NestedR\x06nested\x12\"\n" +
+	"\bembedded\x18\f \x01(\v2%.storage.TestSingleKeyStruct.EmbeddedR\bembedded\x12?\n" +
+	"\x06nested\x18\r \x03(\v2#.storage.TestSingleKeyStruct.NestedB\x02(\x01R\x06nested\x12\"\n" +
 	"\voneofstring\x18\x0e \x01(\tH\x00R\voneofstring\x12L\n" +
 	"\voneofnested\x18\x0f \x01(\v2(.storage.TestSingleKeyStruct.OneOfNestedH\x00R\voneofnested\x12\x16\n" +
 	"\x06bytess\x18\x10 \x01(\fR\x06bytess\x1a9\n" +
@@ -5803,7 +5953,7 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x05ENUM0\x10\x00\x12\t\n" +
 	"\x05ENUM1\x10\x01\x12\t\n" +
 	"\x05ENUM2\x10\x02B\a\n" +
-	"\x05oneof\"\x95\n" +
+	"\x05oneof\"\xa1\n" +
 	"\n" +
 	"\x17TestSingleUUIDKeyStruct\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
@@ -5812,14 +5962,14 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x04bool\x18\x04 \x01(\bR\x04bool\x12\x16\n" +
 	"\x06uint64\x18\x05 \x01(\x04R\x06uint64\x12\x14\n" +
 	"\x05int64\x18\x06 \x01(\x03R\x05int64\x12\x14\n" +
-	"\x05float\x18\a \x01(\x02R\x05float\x12D\n" +
-	"\x06labels\x18\b \x03(\v2,.storage.TestSingleUUIDKeyStruct.LabelsEntryR\x06labels\x128\n" +
-	"\ttimestamp\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x129\n" +
+	"\x05float\x18\a \x01(\x02R\x05float\x12H\n" +
+	"\x06labels\x18\b \x03(\v2,.storage.TestSingleUUIDKeyStruct.LabelsEntryB\x02(\x01R\x06labels\x12<\n" +
+	"\ttimestamp\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\ttimestamp\x129\n" +
 	"\x04enum\x18\n" +
 	" \x01(\x0e2%.storage.TestSingleUUIDKeyStruct.EnumR\x04enum\x12;\n" +
 	"\x05enums\x18\v \x03(\x0e2%.storage.TestSingleUUIDKeyStruct.EnumR\x05enums\x12E\n" +
-	"\bembedded\x18\f \x01(\v2).storage.TestSingleUUIDKeyStruct.EmbeddedR\bembedded\x12?\n" +
-	"\x06nested\x18\r \x03(\v2'.storage.TestSingleUUIDKeyStruct.NestedR\x06nested\x12\"\n" +
+	"\bembedded\x18\f \x01(\v2).storage.TestSingleUUIDKeyStruct.EmbeddedR\bembedded\x12C\n" +
+	"\x06nested\x18\r \x03(\v2'.storage.TestSingleUUIDKeyStruct.NestedB\x02(\x01R\x06nested\x12\"\n" +
 	"\voneofstring\x18\x0e \x01(\tH\x00R\voneofstring\x12P\n" +
 	"\voneofnested\x18\x0f \x01(\v2,.storage.TestSingleUUIDKeyStruct.OneOfNestedH\x00R\voneofnested\x12\x16\n" +
 	"\x06bytess\x18\x10 \x01(\fR\x06bytess\x12*\n" +
@@ -5847,7 +5997,7 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x05ENUM1\x10\x01\x12\t\n" +
 	"\x05ENUM2\x10\x02B\a\n" +
 	"\x05oneofB\v\n" +
-	"\toneof_two\"\xbc\t\n" +
+	"\toneof_two\"\xc8\t\n" +
 	"\n" +
 	"TestStruct\x12\x12\n" +
 	"\x04key1\x18\x01 \x01(\tR\x04key1\x12\x12\n" +
@@ -5856,9 +6006,9 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x04bool\x18\x04 \x01(\bR\x04bool\x12\x16\n" +
 	"\x06uint64\x18\x05 \x01(\x04R\x06uint64\x12\x14\n" +
 	"\x05int64\x18\x06 \x01(\x03R\x05int64\x12\x14\n" +
-	"\x05float\x18\a \x01(\x02R\x05float\x127\n" +
-	"\x06labels\x18\b \x03(\v2\x1f.storage.TestStruct.LabelsEntryR\x06labels\x128\n" +
-	"\ttimestamp\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12,\n" +
+	"\x05float\x18\a \x01(\x02R\x05float\x12;\n" +
+	"\x06labels\x18\b \x03(\v2\x1f.storage.TestStruct.LabelsEntryB\x02(\x01R\x06labels\x12<\n" +
+	"\ttimestamp\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\ttimestamp\x12,\n" +
 	"\x04enum\x18\n" +
 	" \x01(\x0e2\x18.storage.TestStruct.EnumR\x04enum\x12.\n" +
 	"\x05enums\x18\v \x03(\x0e2\x18.storage.TestStruct.EnumR\x05enums\x12\x16\n" +
@@ -5866,8 +6016,8 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x14int_slice_deprecated\x18\x11 \x03(\x03B\x02\x18\x01R\x12intSliceDeprecated\x12\x1f\n" +
 	"\vint32_slice\x18\x12 \x03(\x05R\n" +
 	"int32Slice\x128\n" +
-	"\bembedded\x18\f \x01(\v2\x1c.storage.TestStruct.EmbeddedR\bembedded\x122\n" +
-	"\x06nested\x18\r \x03(\v2\x1a.storage.TestStruct.NestedR\x06nested\x12\"\n" +
+	"\bembedded\x18\f \x01(\v2\x1c.storage.TestStruct.EmbeddedR\bembedded\x126\n" +
+	"\x06nested\x18\r \x03(\v2\x1a.storage.TestStruct.NestedB\x02(\x01R\x06nested\x12\"\n" +
 	"\voneofstring\x18\x0e \x01(\tH\x00R\voneofstring\x12C\n" +
 	"\voneofnested\x18\x0f \x01(\v2\x1f.storage.TestStruct.OneOfNestedH\x00R\voneofnested\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
@@ -5894,23 +6044,23 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x05ENUM0\x10\x00\x12\t\n" +
 	"\x05ENUM1\x10\x01\x12\t\n" +
 	"\x05ENUM2\x10\x02B\a\n" +
-	"\x05oneof\"\xb6\x02\n" +
+	"\x05oneof\"\xbe\x02\n" +
 	"\x0fTestGrandparent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
-	"\x03val\x18\x02 \x01(\tR\x03val\x12=\n" +
-	"\bembedded\x18\x03 \x03(\v2!.storage.TestGrandparent.EmbeddedR\bembedded\x12\x1a\n" +
+	"\x03val\x18\x02 \x01(\tR\x03val\x12A\n" +
+	"\bembedded\x18\x03 \x03(\v2!.storage.TestGrandparent.EmbeddedB\x02(\x01R\bembedded\x12\x1a\n" +
 	"\bpriority\x18\x04 \x01(\x03R\bpriority\x12\x1d\n" +
 	"\n" +
-	"risk_score\x18\x05 \x01(\x02R\triskScore\x1a\x86\x01\n" +
+	"risk_score\x18\x05 \x01(\x02R\triskScore\x1a\x8a\x01\n" +
 	"\bEmbedded\x12\x10\n" +
-	"\x03val\x18\x01 \x01(\tR\x03val\x12I\n" +
-	"\tembedded2\x18\x02 \x03(\v2+.storage.TestGrandparent.Embedded.Embedded2R\tembedded2\x1a\x1d\n" +
+	"\x03val\x18\x01 \x01(\tR\x03val\x12M\n" +
+	"\tembedded2\x18\x02 \x03(\v2+.storage.TestGrandparent.Embedded.Embedded2B\x02(\x01R\tembedded2\x1a\x1d\n" +
 	"\tEmbedded2\x12\x10\n" +
-	"\x03val\x18\x01 \x01(\tR\x03val\"\xd3\x01\n" +
+	"\x03val\x18\x01 \x01(\tR\x03val\"\xd7\x01\n" +
 	"\vTestParent1\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
-	"\tparent_id\x18\x02 \x01(\tR\bparentId\x12:\n" +
-	"\bchildren\x18\x03 \x03(\v2\x1e.storage.TestParent1.Child1RefR\bchildren\x12\x10\n" +
+	"\tparent_id\x18\x02 \x01(\tR\bparentId\x12>\n" +
+	"\bchildren\x18\x03 \x03(\v2\x1e.storage.TestParent1.Child1RefB\x02(\x01R\bchildren\x12\x10\n" +
 	"\x03val\x18\x04 \x01(\tR\x03val\x12!\n" +
 	"\fstring_slice\x18\x05 \x03(\tR\vstringSlice\x1a&\n" +
 	"\tChild1Ref\x12\x19\n" +

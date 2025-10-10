@@ -75,10 +75,12 @@ func (x ComplianceStandardMetadata_Scope) Number() protoreflect.EnumNumber {
 
 // Next available tag: 4
 type ComplianceAggregationRequest struct {
-	state                  protoimpl.MessageState                `protogen:"opaque.v1"`
-	xxx_hidden_GroupBy     []storage.ComplianceAggregation_Scope `protobuf:"varint,1,rep,packed,name=group_by,json=groupBy,enum=storage.ComplianceAggregation_Scope"`
-	xxx_hidden_Unit        storage.ComplianceAggregation_Scope   `protobuf:"varint,2,opt,name=unit,enum=storage.ComplianceAggregation_Scope"`
-	xxx_hidden_Where       *RawQuery                             `protobuf:"bytes,3,opt,name=where"`
+	state              protoimpl.MessageState                `protogen:"opaque.v1"`
+	xxx_hidden_GroupBy []storage.ComplianceAggregation_Scope `protobuf:"varint,1,rep,packed,name=group_by,json=groupBy,enum=storage.ComplianceAggregation_Scope"`
+	xxx_hidden_Unit    storage.ComplianceAggregation_Scope   `protobuf:"varint,2,opt,name=unit,enum=storage.ComplianceAggregation_Scope"`
+	xxx_hidden_Where   *RawQuery                             `protobuf:"bytes,3,opt,name=where"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -128,7 +130,14 @@ func (x *ComplianceAggregationRequest) GetUnit() storage.ComplianceAggregation_S
 
 func (x *ComplianceAggregationRequest) GetWhere() *RawQuery {
 	if x != nil {
-		return x.xxx_hidden_Where
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Where) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *RawQuery
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Where), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -143,7 +152,12 @@ func (x *ComplianceAggregationRequest) SetUnit(v storage.ComplianceAggregation_S
 }
 
 func (x *ComplianceAggregationRequest) SetWhere(v *RawQuery) {
-	x.xxx_hidden_Where = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Where, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	}
 }
 
 func (x *ComplianceAggregationRequest) HasUnit() bool {
@@ -157,7 +171,7 @@ func (x *ComplianceAggregationRequest) HasWhere() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Where != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ComplianceAggregationRequest) ClearUnit() {
@@ -166,7 +180,8 @@ func (x *ComplianceAggregationRequest) ClearUnit() {
 }
 
 func (x *ComplianceAggregationRequest) ClearWhere() {
-	x.xxx_hidden_Where = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Where, (*RawQuery)(nil))
 }
 
 type ComplianceAggregationRequest_builder struct {
@@ -186,7 +201,10 @@ func (b0 ComplianceAggregationRequest_builder) Build() *ComplianceAggregationReq
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Unit = *b.Unit
 	}
-	x.xxx_hidden_Where = b.Where
+	if b.Where != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Where = b.Where
+	}
 	return m0
 }
 
@@ -923,8 +941,12 @@ type ComplianceStandard struct {
 	xxx_hidden_Metadata *ComplianceStandardMetadata `protobuf:"bytes,1,opt,name=metadata"`
 	xxx_hidden_Groups   *[]*ComplianceControlGroup  `protobuf:"bytes,2,rep,name=groups"`
 	xxx_hidden_Controls *[]*ComplianceControl       `protobuf:"bytes,3,rep,name=controls"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceStandard) Reset() {
@@ -954,15 +976,27 @@ func (x *ComplianceStandard) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceStandard) GetMetadata() *ComplianceStandardMetadata {
 	if x != nil {
-		return x.xxx_hidden_Metadata
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Metadata) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *ComplianceStandardMetadata
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Metadata), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ComplianceStandard) GetGroups() []*ComplianceControlGroup {
 	if x != nil {
-		if x.xxx_hidden_Groups != nil {
-			return *x.xxx_hidden_Groups
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*ComplianceControlGroup
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -970,34 +1004,59 @@ func (x *ComplianceStandard) GetGroups() []*ComplianceControlGroup {
 
 func (x *ComplianceStandard) GetControls() []*ComplianceControl {
 	if x != nil {
-		if x.xxx_hidden_Controls != nil {
-			return *x.xxx_hidden_Controls
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Controls) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*ComplianceControl
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Controls), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ComplianceStandard) SetMetadata(v *ComplianceStandardMetadata) {
-	x.xxx_hidden_Metadata = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	}
 }
 
 func (x *ComplianceStandard) SetGroups(v []*ComplianceControlGroup) {
-	x.xxx_hidden_Groups = &v
+	var sv *[]*ComplianceControlGroup
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceControlGroup{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ComplianceStandard) SetControls(v []*ComplianceControl) {
-	x.xxx_hidden_Controls = &v
+	var sv *[]*ComplianceControl
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Controls), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceControl{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Controls), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ComplianceStandard) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Metadata != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ComplianceStandard) ClearMetadata() {
-	x.xxx_hidden_Metadata = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, (*ComplianceStandardMetadata)(nil))
 }
 
 type ComplianceStandard_builder struct {
@@ -1012,17 +1071,30 @@ func (b0 ComplianceStandard_builder) Build() *ComplianceStandard {
 	m0 := &ComplianceStandard{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Metadata = b.Metadata
-	x.xxx_hidden_Groups = &b.Groups
-	x.xxx_hidden_Controls = &b.Controls
+	if b.Metadata != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Metadata = b.Metadata
+	}
+	if b.Groups != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Groups = &b.Groups
+	}
+	if b.Controls != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Controls = &b.Controls
+	}
 	return m0
 }
 
 type GetComplianceStandardResponse struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Standard *ComplianceStandard    `protobuf:"bytes,1,opt,name=standard"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetComplianceStandardResponse) Reset() {
@@ -1052,24 +1124,37 @@ func (x *GetComplianceStandardResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetComplianceStandardResponse) GetStandard() *ComplianceStandard {
 	if x != nil {
-		return x.xxx_hidden_Standard
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Standard) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *ComplianceStandard
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Standard), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetComplianceStandardResponse) SetStandard(v *ComplianceStandard) {
-	x.xxx_hidden_Standard = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Standard, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetComplianceStandardResponse) HasStandard() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Standard != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetComplianceStandardResponse) ClearStandard() {
-	x.xxx_hidden_Standard = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Standard, (*ComplianceStandard)(nil))
 }
 
 type GetComplianceStandardResponse_builder struct {
@@ -1082,15 +1167,22 @@ func (b0 GetComplianceStandardResponse_builder) Build() *GetComplianceStandardRe
 	m0 := &GetComplianceStandardResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Standard = b.Standard
+	if b.Standard != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Standard = b.Standard
+	}
 	return m0
 }
 
 type GetComplianceStandardsResponse struct {
 	state                protoimpl.MessageState         `protogen:"opaque.v1"`
 	xxx_hidden_Standards *[]*ComplianceStandardMetadata `protobuf:"bytes,1,rep,name=standards"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetComplianceStandardsResponse) Reset() {
@@ -1120,15 +1212,27 @@ func (x *GetComplianceStandardsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetComplianceStandardsResponse) GetStandards() []*ComplianceStandardMetadata {
 	if x != nil {
-		if x.xxx_hidden_Standards != nil {
-			return *x.xxx_hidden_Standards
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Standards) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ComplianceStandardMetadata
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Standards), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetComplianceStandardsResponse) SetStandards(v []*ComplianceStandardMetadata) {
-	x.xxx_hidden_Standards = &v
+	var sv *[]*ComplianceStandardMetadata
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Standards), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceStandardMetadata{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Standards), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetComplianceStandardsResponse_builder struct {
@@ -1141,7 +1245,10 @@ func (b0 GetComplianceStandardsResponse_builder) Build() *GetComplianceStandards
 	m0 := &GetComplianceStandardsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Standards = &b.Standards
+	if b.Standards != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Standards = &b.Standards
+	}
 	return m0
 }
 
@@ -1405,8 +1512,12 @@ type GetComplianceRunResultsResponse struct {
 	state                 protoimpl.MessageState            `protogen:"opaque.v1"`
 	xxx_hidden_Results    *storage.ComplianceRunResults     `protobuf:"bytes,1,opt,name=results"`
 	xxx_hidden_FailedRuns *[]*storage.ComplianceRunMetadata `protobuf:"bytes,2,rep,name=failed_runs,json=failedRuns"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetComplianceRunResultsResponse) Reset() {
@@ -1436,37 +1547,62 @@ func (x *GetComplianceRunResultsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetComplianceRunResultsResponse) GetResults() *storage.ComplianceRunResults {
 	if x != nil {
-		return x.xxx_hidden_Results
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Results) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.ComplianceRunResults
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetComplianceRunResultsResponse) GetFailedRuns() []*storage.ComplianceRunMetadata {
 	if x != nil {
-		if x.xxx_hidden_FailedRuns != nil {
-			return *x.xxx_hidden_FailedRuns
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_FailedRuns) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.ComplianceRunMetadata
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_FailedRuns), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetComplianceRunResultsResponse) SetResults(v *storage.ComplianceRunResults) {
-	x.xxx_hidden_Results = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Results, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *GetComplianceRunResultsResponse) SetFailedRuns(v []*storage.ComplianceRunMetadata) {
-	x.xxx_hidden_FailedRuns = &v
+	var sv *[]*storage.ComplianceRunMetadata
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_FailedRuns), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ComplianceRunMetadata{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_FailedRuns), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetComplianceRunResultsResponse) HasResults() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Results != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetComplianceRunResultsResponse) ClearResults() {
-	x.xxx_hidden_Results = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Results, (*storage.ComplianceRunResults)(nil))
 }
 
 type GetComplianceRunResultsResponse_builder struct {
@@ -1480,8 +1616,14 @@ func (b0 GetComplianceRunResultsResponse_builder) Build() *GetComplianceRunResul
 	m0 := &GetComplianceRunResultsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Results = b.Results
-	x.xxx_hidden_FailedRuns = &b.FailedRuns
+	if b.Results != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Results = b.Results
+	}
+	if b.FailedRuns != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_FailedRuns = &b.FailedRuns
+	}
 	return m0
 }
 
@@ -1489,11 +1631,11 @@ var File_api_v1_compliance_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_compliance_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1fapi/v1/compliance_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/compliance.proto\x1a!google/protobuf/go_features.proto\"\xbd\x01\n" +
+	"\x1fapi/v1/compliance_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/compliance.proto\x1a!google/protobuf/go_features.proto\"\xc1\x01\n" +
 	"\x1cComplianceAggregationRequest\x12?\n" +
 	"\bgroup_by\x18\x01 \x03(\x0e2$.storage.ComplianceAggregation.ScopeR\agroupBy\x128\n" +
-	"\x04unit\x18\x02 \x01(\x0e2$.storage.ComplianceAggregation.ScopeR\x04unit\x12\"\n" +
-	"\x05where\x18\x03 \x01(\v2\f.v1.RawQueryR\x05where\"\xe4\x02\n" +
+	"\x04unit\x18\x02 \x01(\x0e2$.storage.ComplianceAggregation.ScopeR\x04unit\x12&\n" +
+	"\x05where\x18\x03 \x01(\v2\f.v1.RawQueryB\x02(\x01R\x05where\"\xe4\x02\n" +
 	"\x1aComplianceStandardMetadata\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -1524,15 +1666,15 @@ const file_api_v1_compliance_service_proto_rawDesc = "" +
 	"\x04name\x18\x04 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x12 \n" +
 	"\vimplemented\x18\x06 \x01(\bR\vimplemented\x12/\n" +
-	"\x13interpretation_text\x18\a \x01(\tR\x12interpretationText\"\xb7\x01\n" +
-	"\x12ComplianceStandard\x12:\n" +
-	"\bmetadata\x18\x01 \x01(\v2\x1e.v1.ComplianceStandardMetadataR\bmetadata\x122\n" +
-	"\x06groups\x18\x02 \x03(\v2\x1a.v1.ComplianceControlGroupR\x06groups\x121\n" +
-	"\bcontrols\x18\x03 \x03(\v2\x15.v1.ComplianceControlR\bcontrols\"S\n" +
-	"\x1dGetComplianceStandardResponse\x122\n" +
-	"\bstandard\x18\x01 \x01(\v2\x16.v1.ComplianceStandardR\bstandard\"^\n" +
-	"\x1eGetComplianceStandardsResponse\x12<\n" +
-	"\tstandards\x18\x01 \x03(\v2\x1e.v1.ComplianceStandardMetadataR\tstandards\"S\n" +
+	"\x13interpretation_text\x18\a \x01(\tR\x12interpretationText\"\xc3\x01\n" +
+	"\x12ComplianceStandard\x12>\n" +
+	"\bmetadata\x18\x01 \x01(\v2\x1e.v1.ComplianceStandardMetadataB\x02(\x01R\bmetadata\x126\n" +
+	"\x06groups\x18\x02 \x03(\v2\x1a.v1.ComplianceControlGroupB\x02(\x01R\x06groups\x125\n" +
+	"\bcontrols\x18\x03 \x03(\v2\x15.v1.ComplianceControlB\x02(\x01R\bcontrols\"W\n" +
+	"\x1dGetComplianceStandardResponse\x126\n" +
+	"\bstandard\x18\x01 \x01(\v2\x16.v1.ComplianceStandardB\x02(\x01R\bstandard\"b\n" +
+	"\x1eGetComplianceStandardsResponse\x12@\n" +
+	"\tstandards\x18\x01 \x03(\v2\x1e.v1.ComplianceStandardMetadataB\x02(\x01R\tstandards\"S\n" +
 	"\x17UpdateComplianceRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12(\n" +
 	"\x0fhideScanResults\x18\x02 \x01(\bR\x0fhideScanResults\"w\n" +
@@ -1541,10 +1683,10 @@ const file_api_v1_compliance_service_proto_rawDesc = "" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12\x1f\n" +
 	"\vstandard_id\x18\x02 \x01(\tR\n" +
 	"standardId\x12\x15\n" +
-	"\x06run_id\x18\x03 \x01(\tR\x05runId\"\x9b\x01\n" +
-	"\x1fGetComplianceRunResultsResponse\x127\n" +
-	"\aresults\x18\x01 \x01(\v2\x1d.storage.ComplianceRunResultsR\aresults\x12?\n" +
-	"\vfailed_runs\x18\x02 \x03(\v2\x1e.storage.ComplianceRunMetadataR\n" +
+	"\x06run_id\x18\x03 \x01(\tR\x05runId\"\xa3\x01\n" +
+	"\x1fGetComplianceRunResultsResponse\x12;\n" +
+	"\aresults\x18\x01 \x01(\v2\x1d.storage.ComplianceRunResultsB\x02(\x01R\aresults\x12C\n" +
+	"\vfailed_runs\x18\x02 \x03(\v2\x1e.storage.ComplianceRunMetadataB\x02(\x01R\n" +
 	"failedRuns2\xde\x04\n" +
 	"\x11ComplianceService\x12_\n" +
 	"\fGetStandards\x12\t.v1.Empty\x1a\".v1.GetComplianceStandardsResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/compliance/standards\x12i\n" +

@@ -131,10 +131,12 @@ type DeclarativeConfigHealth struct {
 	xxx_hidden_ResourceName  *string                              `protobuf:"bytes,6,opt,name=resource_name,json=resourceName"`
 	xxx_hidden_ResourceType  DeclarativeConfigHealth_ResourceType `protobuf:"varint,7,opt,name=resource_type,json=resourceType,enum=storage.DeclarativeConfigHealth_ResourceType"`
 	xxx_hidden_LastTimestamp *timestamppb.Timestamp               `protobuf:"bytes,8,opt,name=last_timestamp,json=lastTimestamp"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeclarativeConfigHealth) Reset() {
@@ -222,7 +224,14 @@ func (x *DeclarativeConfigHealth) GetResourceType() DeclarativeConfigHealth_Reso
 
 func (x *DeclarativeConfigHealth) GetLastTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastTimestamp) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -258,7 +267,12 @@ func (x *DeclarativeConfigHealth) SetResourceType(v DeclarativeConfigHealth_Reso
 }
 
 func (x *DeclarativeConfigHealth) SetLastTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
+	}
 }
 
 func (x *DeclarativeConfigHealth) HasId() bool {
@@ -307,7 +321,7 @@ func (x *DeclarativeConfigHealth) HasLastTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *DeclarativeConfigHealth) ClearId() {
@@ -341,7 +355,8 @@ func (x *DeclarativeConfigHealth) ClearResourceType() {
 }
 
 func (x *DeclarativeConfigHealth) ClearLastTimestamp() {
-	x.xxx_hidden_LastTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 type DeclarativeConfigHealth_builder struct {
@@ -385,7 +400,10 @@ func (b0 DeclarativeConfigHealth_builder) Build() *DeclarativeConfigHealth {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
 		x.xxx_hidden_ResourceType = *b.ResourceType
 	}
-	x.xxx_hidden_LastTimestamp = b.LastTimestamp
+	if b.LastTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_LastTimestamp = b.LastTimestamp
+	}
 	return m0
 }
 
@@ -393,15 +411,15 @@ var File_storage_declarative_config_health_proto protoreflect.FileDescriptor
 
 const file_storage_declarative_config_health_proto_rawDesc = "" +
 	"\n" +
-	"'storage/declarative_config_health.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xa6\x04\n" +
+	"'storage/declarative_config_health.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xaa\x04\n" +
 	"\x17DeclarativeConfigHealth\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12?\n" +
 	"\x06status\x18\x04 \x01(\x0e2'.storage.DeclarativeConfigHealth.StatusR\x06status\x12#\n" +
 	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\x12#\n" +
 	"\rresource_name\x18\x06 \x01(\tR\fresourceName\x12R\n" +
-	"\rresource_type\x18\a \x01(\x0e2-.storage.DeclarativeConfigHealth.ResourceTypeR\fresourceType\x12A\n" +
-	"\x0elast_timestamp\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\rlastTimestamp\"$\n" +
+	"\rresource_type\x18\a \x01(\x0e2-.storage.DeclarativeConfigHealth.ResourceTypeR\fresourceType\x12E\n" +
+	"\x0elast_timestamp\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\rlastTimestamp\"$\n" +
 	"\x06Status\x12\r\n" +
 	"\tUNHEALTHY\x10\x00\x12\v\n" +
 	"\aHEALTHY\x10\x01\"\x9e\x01\n" +

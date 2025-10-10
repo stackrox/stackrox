@@ -2761,10 +2761,12 @@ func (b0 QuayConfig_RobotAccount_builder) Build() *QuayConfig_RobotAccount {
 // can be used to access any Amazon ECR registry that the IAM principal has
 // access to.
 type ECRConfig_AuthorizationData struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Username    *string                `protobuf:"bytes,1,opt,name=username"`
-	xxx_hidden_Password    *string                `protobuf:"bytes,2,opt,name=password"`
-	xxx_hidden_ExpiresAt   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt"`
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Username  *string                `protobuf:"bytes,1,opt,name=username"`
+	xxx_hidden_Password  *string                `protobuf:"bytes,2,opt,name=password"`
+	xxx_hidden_ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -2818,7 +2820,14 @@ func (x *ECRConfig_AuthorizationData) GetPassword() string {
 
 func (x *ECRConfig_AuthorizationData) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ExpiresAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ExpiresAt) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExpiresAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -2834,7 +2843,12 @@ func (x *ECRConfig_AuthorizationData) SetPassword(v string) {
 }
 
 func (x *ECRConfig_AuthorizationData) SetExpiresAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ExpiresAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ExpiresAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	}
 }
 
 func (x *ECRConfig_AuthorizationData) HasUsername() bool {
@@ -2855,7 +2869,7 @@ func (x *ECRConfig_AuthorizationData) HasExpiresAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ExpiresAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ECRConfig_AuthorizationData) ClearUsername() {
@@ -2869,7 +2883,8 @@ func (x *ECRConfig_AuthorizationData) ClearPassword() {
 }
 
 func (x *ECRConfig_AuthorizationData) ClearExpiresAt() {
-	x.xxx_hidden_ExpiresAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ExpiresAt, (*timestamppb.Timestamp)(nil))
 }
 
 type ECRConfig_AuthorizationData_builder struct {
@@ -2892,7 +2907,10 @@ func (b0 ECRConfig_AuthorizationData_builder) Build() *ECRConfig_AuthorizationDa
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Password = b.Password
 	}
-	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	if b.ExpiresAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	}
 	return m0
 }
 
@@ -2959,7 +2977,7 @@ const file_storage_image_integration_proto_rawDesc = "" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1a\n" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\x12\x1a\n" +
-	"\binsecure\x18\x04 \x01(\bR\binsecure\"\xac\x04\n" +
+	"\binsecure\x18\x04 \x01(\bR\binsecure\"\xb0\x04\n" +
 	"\tECRConfig\x12\x1f\n" +
 	"\vregistry_id\x18\x01 \x01(\tR\n" +
 	"registryId\x12\"\n" +
@@ -2972,12 +2990,12 @@ const file_storage_image_integration_proto_rawDesc = "" +
 	"\x0eassume_role_id\x18\b \x01(\tR\fassumeRoleId\x125\n" +
 	"\x17assume_role_external_id\x18\t \x01(\tR\x14assumeRoleExternalId\x12S\n" +
 	"\x12authorization_data\x18\n" +
-	" \x01(\v2$.storage.ECRConfig.AuthorizationDataR\x11authorizationData\x1a\x86\x01\n" +
+	" \x01(\v2$.storage.ECRConfig.AuthorizationDataR\x11authorizationData\x1a\x8a\x01\n" +
 	"\x11AuthorizationData\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\x129\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12=\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x8e\x01\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\texpiresAt\"\x8e\x01\n" +
 	"\fGoogleConfig\x12\x1a\n" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12'\n" +
 	"\x0fservice_account\x18\x02 \x01(\tR\x0eserviceAccount\x12\x18\n" +

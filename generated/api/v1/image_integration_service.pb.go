@@ -137,8 +137,12 @@ func (b0 GetImageIntegrationsRequest_builder) Build() *GetImageIntegrationsReque
 type GetImageIntegrationsResponse struct {
 	state                   protoimpl.MessageState       `protogen:"opaque.v1"`
 	xxx_hidden_Integrations *[]*storage.ImageIntegration `protobuf:"bytes,1,rep,name=integrations"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetImageIntegrationsResponse) Reset() {
@@ -168,15 +172,27 @@ func (x *GetImageIntegrationsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetImageIntegrationsResponse) GetIntegrations() []*storage.ImageIntegration {
 	if x != nil {
-		if x.xxx_hidden_Integrations != nil {
-			return *x.xxx_hidden_Integrations
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Integrations) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ImageIntegration
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetImageIntegrationsResponse) SetIntegrations(v []*storage.ImageIntegration) {
-	x.xxx_hidden_Integrations = &v
+	var sv *[]*storage.ImageIntegration
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ImageIntegration{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetImageIntegrationsResponse_builder struct {
@@ -189,7 +205,10 @@ func (b0 GetImageIntegrationsResponse_builder) Build() *GetImageIntegrationsResp
 	m0 := &GetImageIntegrationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Integrations = &b.Integrations
+	if b.Integrations != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Integrations = &b.Integrations
+	}
 	return m0
 }
 
@@ -197,10 +216,12 @@ type UpdateImageIntegrationRequest struct {
 	state                     protoimpl.MessageState    `protogen:"opaque.v1"`
 	xxx_hidden_Config         *storage.ImageIntegration `protobuf:"bytes,1,opt,name=config"`
 	xxx_hidden_UpdatePassword bool                      `protobuf:"varint,2,opt,name=updatePassword"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpdateImageIntegrationRequest) Reset() {
@@ -230,7 +251,14 @@ func (x *UpdateImageIntegrationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateImageIntegrationRequest) GetConfig() *storage.ImageIntegration {
 	if x != nil {
-		return x.xxx_hidden_Config
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Config) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.ImageIntegration
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Config), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -243,7 +271,12 @@ func (x *UpdateImageIntegrationRequest) GetUpdatePassword() bool {
 }
 
 func (x *UpdateImageIntegrationRequest) SetConfig(v *storage.ImageIntegration) {
-	x.xxx_hidden_Config = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *UpdateImageIntegrationRequest) SetUpdatePassword(v bool) {
@@ -255,7 +288,7 @@ func (x *UpdateImageIntegrationRequest) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Config != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpdateImageIntegrationRequest) HasUpdatePassword() bool {
@@ -266,7 +299,8 @@ func (x *UpdateImageIntegrationRequest) HasUpdatePassword() bool {
 }
 
 func (x *UpdateImageIntegrationRequest) ClearConfig() {
-	x.xxx_hidden_Config = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, (*storage.ImageIntegration)(nil))
 }
 
 func (x *UpdateImageIntegrationRequest) ClearUpdatePassword() {
@@ -286,7 +320,10 @@ func (b0 UpdateImageIntegrationRequest_builder) Build() *UpdateImageIntegrationR
 	m0 := &UpdateImageIntegrationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Config = b.Config
+	if b.Config != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Config = b.Config
+	}
 	if b.UpdatePassword != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_UpdatePassword = *b.UpdatePassword
@@ -301,11 +338,11 @@ const file_api_v1_image_integration_service_proto_rawDesc = "" +
 	"&api/v1/image_integration_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fstorage/image_integration.proto\x1a!google/protobuf/go_features.proto\"K\n" +
 	"\x1bGetImageIntegrationsRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\acluster\x18\x02 \x01(\tR\acluster\"]\n" +
-	"\x1cGetImageIntegrationsResponse\x12=\n" +
-	"\fintegrations\x18\x01 \x03(\v2\x19.storage.ImageIntegrationR\fintegrations\"z\n" +
-	"\x1dUpdateImageIntegrationRequest\x121\n" +
-	"\x06config\x18\x01 \x01(\v2\x19.storage.ImageIntegrationR\x06config\x12&\n" +
+	"\acluster\x18\x02 \x01(\tR\acluster\"a\n" +
+	"\x1cGetImageIntegrationsResponse\x12A\n" +
+	"\fintegrations\x18\x01 \x03(\v2\x19.storage.ImageIntegrationB\x02(\x01R\fintegrations\"~\n" +
+	"\x1dUpdateImageIntegrationRequest\x125\n" +
+	"\x06config\x18\x01 \x01(\v2\x19.storage.ImageIntegrationB\x02(\x01R\x06config\x12&\n" +
 	"\x0eupdatePassword\x18\x02 \x01(\bR\x0eupdatePassword2\x81\a\n" +
 	"\x17ImageIntegrationService\x12f\n" +
 	"\x13GetImageIntegration\x12\x10.v1.ResourceByID\x1a\x19.storage.ImageIntegration\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/v1/imageintegrations/{id}\x12x\n" +

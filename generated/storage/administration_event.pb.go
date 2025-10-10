@@ -137,10 +137,12 @@ type AdministrationEvent struct {
 	xxx_hidden_NumOccurrences int64                         `protobuf:"varint,8,opt,name=num_occurrences,json=numOccurrences"`
 	xxx_hidden_LastOccurredAt *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt"`
 	xxx_hidden_CreatedAt      *timestamppb.Timestamp        `protobuf:"bytes,10,opt,name=created_at,json=createdAt"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AdministrationEvent) Reset() {
@@ -242,14 +244,28 @@ func (x *AdministrationEvent) GetNumOccurrences() int64 {
 
 func (x *AdministrationEvent) GetLastOccurredAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastOccurredAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastOccurredAt) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastOccurredAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *AdministrationEvent) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 10)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -294,11 +310,21 @@ func (x *AdministrationEvent) SetNumOccurrences(v int64) {
 }
 
 func (x *AdministrationEvent) SetLastOccurredAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastOccurredAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastOccurredAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
+	}
 }
 
 func (x *AdministrationEvent) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
+	}
 }
 
 func (x *AdministrationEvent) HasId() bool {
@@ -361,14 +387,14 @@ func (x *AdministrationEvent) HasLastOccurredAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastOccurredAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *AdministrationEvent) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *AdministrationEvent) ClearId() {
@@ -411,11 +437,13 @@ func (x *AdministrationEvent) ClearNumOccurrences() {
 }
 
 func (x *AdministrationEvent) ClearLastOccurredAt() {
-	x.xxx_hidden_LastOccurredAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastOccurredAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *AdministrationEvent) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 type AdministrationEvent_builder struct {
@@ -468,8 +496,14 @@ func (b0 AdministrationEvent_builder) Build() *AdministrationEvent {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
 		x.xxx_hidden_NumOccurrences = *b.NumOccurrences
 	}
-	x.xxx_hidden_LastOccurredAt = b.LastOccurredAt
-	x.xxx_hidden_CreatedAt = b.CreatedAt
+	if b.LastOccurredAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
+		x.xxx_hidden_LastOccurredAt = b.LastOccurredAt
+	}
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
 	return m0
 }
 
@@ -621,7 +655,7 @@ var File_storage_administration_event_proto protoreflect.FileDescriptor
 
 const file_storage_administration_event_proto_rawDesc = "" +
 	"\n" +
-	"\"storage/administration_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x8b\x04\n" +
+	"\"storage/administration_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x93\x04\n" +
 	"\x13AdministrationEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
 	"\x04type\x18\x02 \x01(\x0e2 .storage.AdministrationEventTypeR\x04type\x127\n" +
@@ -630,11 +664,11 @@ const file_storage_administration_event_proto_rawDesc = "" +
 	"\x04hint\x18\x05 \x01(\tR\x04hint\x12\x16\n" +
 	"\x06domain\x18\x06 \x01(\tR\x06domain\x12A\n" +
 	"\bresource\x18\a \x01(\v2%.storage.AdministrationEvent.ResourceR\bresource\x12'\n" +
-	"\x0fnum_occurrences\x18\b \x01(\x03R\x0enumOccurrences\x12D\n" +
-	"\x10last_occurred_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x0elastOccurredAt\x129\n" +
+	"\x0fnum_occurrences\x18\b \x01(\x03R\x0enumOccurrences\x12H\n" +
+	"\x10last_occurred_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x0elastOccurredAt\x12=\n" +
 	"\n" +
 	"created_at\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x1aB\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\x1aB\n" +
 	"\bResource\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x12\n" +

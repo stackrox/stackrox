@@ -110,10 +110,12 @@ type Secret struct {
 	xxx_hidden_CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt"`
 	xxx_hidden_Files        *[]*SecretDataFile     `protobuf:"bytes,10,rep,name=files"`
 	xxx_hidden_Relationship *SecretRelationship    `protobuf:"bytes,11,opt,name=relationship"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Secret) Reset() {
@@ -217,15 +219,27 @@ func (x *Secret) GetAnnotations() map[string]string {
 
 func (x *Secret) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *Secret) GetFiles() []*SecretDataFile {
 	if x != nil {
-		if x.xxx_hidden_Files != nil {
-			return *x.xxx_hidden_Files
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Files) {
+				protoimpl.X.UnmarshalField(x, 10)
+			}
+			var rv *[]*SecretDataFile
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -277,11 +291,23 @@ func (x *Secret) SetAnnotations(v map[string]string) {
 }
 
 func (x *Secret) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
+	}
 }
 
 func (x *Secret) SetFiles(v []*SecretDataFile) {
-	x.xxx_hidden_Files = &v
+	var sv *[]*SecretDataFile
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SecretDataFile{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
 }
 
 func (x *Secret) SetRelationship(v *SecretRelationship) {
@@ -334,7 +360,7 @@ func (x *Secret) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *Secret) HasRelationship() bool {
@@ -375,7 +401,8 @@ func (x *Secret) ClearType() {
 }
 
 func (x *Secret) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Secret) ClearRelationship() {
@@ -430,8 +457,14 @@ func (b0 Secret_builder) Build() *Secret {
 	}
 	x.xxx_hidden_Labels = b.Labels
 	x.xxx_hidden_Annotations = b.Annotations
-	x.xxx_hidden_CreatedAt = b.CreatedAt
-	x.xxx_hidden_Files = &b.Files
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
+	if b.Files != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
+		x.xxx_hidden_Files = &b.Files
+	}
 	x.xxx_hidden_Relationship = b.Relationship
 	return m0
 }
@@ -445,6 +478,8 @@ type ListSecret struct {
 	xxx_hidden_Namespace   *string                `protobuf:"bytes,4,opt,name=namespace"`
 	xxx_hidden_Types       []SecretType           `protobuf:"varint,5,rep,packed,name=types,enum=storage.SecretType"`
 	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -535,7 +570,14 @@ func (x *ListSecret) GetTypes() []SecretType {
 
 func (x *ListSecret) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -570,7 +612,12 @@ func (x *ListSecret) SetTypes(v []SecretType) {
 }
 
 func (x *ListSecret) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
+	}
 }
 
 func (x *ListSecret) HasId() bool {
@@ -612,7 +659,7 @@ func (x *ListSecret) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ListSecret) ClearId() {
@@ -641,7 +688,8 @@ func (x *ListSecret) ClearNamespace() {
 }
 
 func (x *ListSecret) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 type ListSecret_builder struct {
@@ -681,7 +729,10 @@ func (b0 ListSecret_builder) Build() *ListSecret {
 		x.xxx_hidden_Namespace = b.Namespace
 	}
 	x.xxx_hidden_Types = b.Types
-	x.xxx_hidden_CreatedAt = b.CreatedAt
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
 	return m0
 }
 
@@ -692,10 +743,12 @@ type SecretRelationship struct {
 	xxx_hidden_Id                      *string                          `protobuf:"bytes,1,opt,name=id"`
 	xxx_hidden_ContainerRelationships  *[]*SecretContainerRelationship  `protobuf:"bytes,4,rep,name=container_relationships,json=containerRelationships"`
 	xxx_hidden_DeploymentRelationships *[]*SecretDeploymentRelationship `protobuf:"bytes,5,rep,name=deployment_relationships,json=deploymentRelationships"`
-	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
-	XXX_presence                       [1]uint32
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SecretRelationship) Reset() {
@@ -735,8 +788,13 @@ func (x *SecretRelationship) GetId() string {
 
 func (x *SecretRelationship) GetContainerRelationships() []*SecretContainerRelationship {
 	if x != nil {
-		if x.xxx_hidden_ContainerRelationships != nil {
-			return *x.xxx_hidden_ContainerRelationships
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ContainerRelationships) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*SecretContainerRelationship
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ContainerRelationships), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -744,8 +802,13 @@ func (x *SecretRelationship) GetContainerRelationships() []*SecretContainerRelat
 
 func (x *SecretRelationship) GetDeploymentRelationships() []*SecretDeploymentRelationship {
 	if x != nil {
-		if x.xxx_hidden_DeploymentRelationships != nil {
-			return *x.xxx_hidden_DeploymentRelationships
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_DeploymentRelationships) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *[]*SecretDeploymentRelationship
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_DeploymentRelationships), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -757,11 +820,25 @@ func (x *SecretRelationship) SetId(v string) {
 }
 
 func (x *SecretRelationship) SetContainerRelationships(v []*SecretContainerRelationship) {
-	x.xxx_hidden_ContainerRelationships = &v
+	var sv *[]*SecretContainerRelationship
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ContainerRelationships), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SecretContainerRelationship{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ContainerRelationships), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *SecretRelationship) SetDeploymentRelationships(v []*SecretDeploymentRelationship) {
-	x.xxx_hidden_DeploymentRelationships = &v
+	var sv *[]*SecretDeploymentRelationship
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_DeploymentRelationships), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SecretDeploymentRelationship{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_DeploymentRelationships), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *SecretRelationship) HasId() bool {
@@ -795,8 +872,14 @@ func (b0 SecretRelationship_builder) Build() *SecretRelationship {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
 		x.xxx_hidden_Id = b.Id
 	}
-	x.xxx_hidden_ContainerRelationships = &b.ContainerRelationships
-	x.xxx_hidden_DeploymentRelationships = &b.DeploymentRelationships
+	if b.ContainerRelationships != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_ContainerRelationships = &b.ContainerRelationships
+	}
+	if b.DeploymentRelationships != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_DeploymentRelationships = &b.DeploymentRelationships
+	}
 	return m0
 }
 
@@ -1033,8 +1116,12 @@ func (b0 SecretContainerRelationship_builder) Build() *SecretContainerRelationsh
 type ImagePullSecret struct {
 	state                 protoimpl.MessageState       `protogen:"opaque.v1"`
 	xxx_hidden_Registries *[]*ImagePullSecret_Registry `protobuf:"bytes,1,rep,name=registries"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImagePullSecret) Reset() {
@@ -1064,15 +1151,27 @@ func (x *ImagePullSecret) ProtoReflect() protoreflect.Message {
 
 func (x *ImagePullSecret) GetRegistries() []*ImagePullSecret_Registry {
 	if x != nil {
-		if x.xxx_hidden_Registries != nil {
-			return *x.xxx_hidden_Registries
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Registries) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ImagePullSecret_Registry
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ImagePullSecret) SetRegistries(v []*ImagePullSecret_Registry) {
-	x.xxx_hidden_Registries = &v
+	var sv *[]*ImagePullSecret_Registry
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ImagePullSecret_Registry{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ImagePullSecret_builder struct {
@@ -1085,7 +1184,10 @@ func (b0 ImagePullSecret_builder) Build() *ImagePullSecret {
 	m0 := &ImagePullSecret{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Registries = &b.Registries
+	if b.Registries != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Registries = &b.Registries
+	}
 	return m0
 }
 
@@ -1330,13 +1432,15 @@ func (*secretDataFile_Cert) isSecretDataFile_Metadata() {}
 func (*secretDataFile_ImagePullSecret) isSecretDataFile_Metadata() {}
 
 type Cert struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Subject     *CertName              `protobuf:"bytes,1,opt,name=subject"`
-	xxx_hidden_Issuer      *CertName              `protobuf:"bytes,2,opt,name=issuer"`
-	xxx_hidden_Sans        []string               `protobuf:"bytes,3,rep,name=sans"`
-	xxx_hidden_StartDate   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate"`
-	xxx_hidden_EndDate     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate"`
-	xxx_hidden_Algorithm   *string                `protobuf:"bytes,6,opt,name=algorithm"`
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Subject   *CertName              `protobuf:"bytes,1,opt,name=subject"`
+	xxx_hidden_Issuer    *CertName              `protobuf:"bytes,2,opt,name=issuer"`
+	xxx_hidden_Sans      []string               `protobuf:"bytes,3,rep,name=sans"`
+	xxx_hidden_StartDate *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate"`
+	xxx_hidden_EndDate   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate"`
+	xxx_hidden_Algorithm *string                `protobuf:"bytes,6,opt,name=algorithm"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1391,14 +1495,28 @@ func (x *Cert) GetSans() []string {
 
 func (x *Cert) GetStartDate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_StartDate
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_StartDate) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_StartDate), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *Cert) GetEndDate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_EndDate
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_EndDate) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_EndDate), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1426,11 +1544,21 @@ func (x *Cert) SetSans(v []string) {
 }
 
 func (x *Cert) SetStartDate(v *timestamppb.Timestamp) {
-	x.xxx_hidden_StartDate = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartDate, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	}
 }
 
 func (x *Cert) SetEndDate(v *timestamppb.Timestamp) {
-	x.xxx_hidden_EndDate = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_EndDate, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	}
 }
 
 func (x *Cert) SetAlgorithm(v string) {
@@ -1456,14 +1584,14 @@ func (x *Cert) HasStartDate() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_StartDate != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Cert) HasEndDate() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_EndDate != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Cert) HasAlgorithm() bool {
@@ -1482,11 +1610,13 @@ func (x *Cert) ClearIssuer() {
 }
 
 func (x *Cert) ClearStartDate() {
-	x.xxx_hidden_StartDate = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartDate, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Cert) ClearEndDate() {
-	x.xxx_hidden_EndDate = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_EndDate, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Cert) ClearAlgorithm() {
@@ -1512,8 +1642,14 @@ func (b0 Cert_builder) Build() *Cert {
 	x.xxx_hidden_Subject = b.Subject
 	x.xxx_hidden_Issuer = b.Issuer
 	x.xxx_hidden_Sans = b.Sans
-	x.xxx_hidden_StartDate = b.StartDate
-	x.xxx_hidden_EndDate = b.EndDate
+	if b.StartDate != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_StartDate = b.StartDate
+	}
+	if b.EndDate != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_EndDate = b.EndDate
+	}
 	if b.Algorithm != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
 		x.xxx_hidden_Algorithm = b.Algorithm
@@ -1959,7 +2095,7 @@ var File_storage_secret_proto protoreflect.FileDescriptor
 
 const file_storage_secret_proto_rawDesc = "" +
 	"\n" +
-	"\x14storage/secret.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xbf\x04\n" +
+	"\x14storage/secret.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xcf\x04\n" +
 	"\x06Secret\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
@@ -1967,20 +2103,20 @@ const file_storage_secret_proto_rawDesc = "" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x04 \x01(\tR\vclusterName\x12\x1c\n" +
 	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x12\x12\n" +
-	"\x04type\x18\x06 \x01(\tR\x04type\x123\n" +
-	"\x06labels\x18\a \x03(\v2\x1b.storage.Secret.LabelsEntryR\x06labels\x12B\n" +
-	"\vannotations\x18\b \x03(\v2 .storage.Secret.AnnotationsEntryR\vannotations\x129\n" +
+	"\x04type\x18\x06 \x01(\tR\x04type\x127\n" +
+	"\x06labels\x18\a \x03(\v2\x1b.storage.Secret.LabelsEntryB\x02(\x01R\x06labels\x12F\n" +
+	"\vannotations\x18\b \x03(\v2 .storage.Secret.AnnotationsEntryB\x02(\x01R\vannotations\x12=\n" +
 	"\n" +
-	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12-\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\x121\n" +
 	"\x05files\x18\n" +
-	" \x03(\v2\x17.storage.SecretDataFileR\x05files\x12?\n" +
+	" \x03(\v2\x17.storage.SecretDataFileB\x02(\x01R\x05files\x12?\n" +
 	"\frelationship\x18\v \x01(\v2\x1b.storage.SecretRelationshipR\frelationship\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf6\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xfa\x01\n" +
 	"\n" +
 	"ListSecret\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1989,22 +2125,22 @@ const file_storage_secret_proto_rawDesc = "" +
 	"cluster_id\x18\a \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x03 \x01(\tR\vclusterName\x12\x1c\n" +
 	"\tnamespace\x18\x04 \x01(\tR\tnamespace\x12)\n" +
-	"\x05types\x18\x05 \x03(\x0e2\x13.storage.SecretTypeR\x05types\x129\n" +
+	"\x05types\x18\x05 \x03(\x0e2\x13.storage.SecretTypeR\x05types\x12=\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xe5\x01\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\"\xed\x01\n" +
 	"\x12SecretRelationship\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12]\n" +
-	"\x17container_relationships\x18\x04 \x03(\v2$.storage.SecretContainerRelationshipR\x16containerRelationships\x12`\n" +
-	"\x18deployment_relationships\x18\x05 \x03(\v2%.storage.SecretDeploymentRelationshipR\x17deploymentRelationships\"B\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12a\n" +
+	"\x17container_relationships\x18\x04 \x03(\v2$.storage.SecretContainerRelationshipB\x02(\x01R\x16containerRelationships\x12d\n" +
+	"\x18deployment_relationships\x18\x05 \x03(\v2%.storage.SecretDeploymentRelationshipB\x02(\x01R\x17deploymentRelationships\"B\n" +
 	"\x1cSecretDeploymentRelationship\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"A\n" +
 	"\x1bSecretContainerRelationship\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"\x90\x01\n" +
-	"\x0fImagePullSecret\x12A\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"\x94\x01\n" +
+	"\x0fImagePullSecret\x12E\n" +
 	"\n" +
-	"registries\x18\x01 \x03(\v2!.storage.ImagePullSecret.RegistryR\n" +
+	"registries\x18\x01 \x03(\v2!.storage.ImagePullSecret.RegistryB\x02(\x01R\n" +
 	"registries\x1a:\n" +
 	"\bRegistry\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
@@ -2015,14 +2151,14 @@ const file_storage_secret_proto_rawDesc = "" +
 	"\x04cert\x18\x03 \x01(\v2\r.storage.CertH\x00R\x04cert\x12F\n" +
 	"\x11image_pull_secret\x18\x04 \x01(\v2\x18.storage.ImagePullSecretH\x00R\x0fimagePullSecretB\n" +
 	"\n" +
-	"\bmetadata\"\x82\x02\n" +
+	"\bmetadata\"\x8a\x02\n" +
 	"\x04Cert\x12+\n" +
 	"\asubject\x18\x01 \x01(\v2\x11.storage.CertNameR\asubject\x12)\n" +
 	"\x06issuer\x18\x02 \x01(\v2\x11.storage.CertNameR\x06issuer\x12\x12\n" +
-	"\x04sans\x18\x03 \x03(\tR\x04sans\x129\n" +
+	"\x04sans\x18\x03 \x03(\tR\x04sans\x12=\n" +
 	"\n" +
-	"start_date\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tstartDate\x125\n" +
-	"\bend_date\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\aendDate\x12\x1c\n" +
+	"start_date\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tstartDate\x129\n" +
+	"\bend_date\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\aendDate\x12\x1c\n" +
 	"\talgorithm\x18\x06 \x01(\tR\talgorithm\"\xac\x02\n" +
 	"\bCertName\x12\x1f\n" +
 	"\vcommon_name\x18\x01 \x01(\tR\n" +

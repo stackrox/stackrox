@@ -343,9 +343,11 @@ func (x SearchDataType) Number() protoreflect.EnumNumber {
 // "Deployment:central,sensor+Namespace:stackrox"
 // RawQuery is used in ListAPIs to search for a particular object.
 type RawQuery struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query       *string                `protobuf:"bytes,1,opt,name=query"`
-	xxx_hidden_Pagination  *Pagination            `protobuf:"bytes,2,opt,name=pagination"`
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query      *string                `protobuf:"bytes,1,opt,name=query"`
+	xxx_hidden_Pagination *Pagination            `protobuf:"bytes,2,opt,name=pagination"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -389,7 +391,14 @@ func (x *RawQuery) GetQuery() string {
 
 func (x *RawQuery) GetPagination() *Pagination {
 	if x != nil {
-		return x.xxx_hidden_Pagination
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Pagination) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *Pagination
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Pagination), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -400,7 +409,12 @@ func (x *RawQuery) SetQuery(v string) {
 }
 
 func (x *RawQuery) SetPagination(v *Pagination) {
-	x.xxx_hidden_Pagination = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *RawQuery) HasQuery() bool {
@@ -414,7 +428,7 @@ func (x *RawQuery) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Pagination != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *RawQuery) ClearQuery() {
@@ -423,7 +437,8 @@ func (x *RawQuery) ClearQuery() {
 }
 
 func (x *RawQuery) ClearPagination() {
-	x.xxx_hidden_Pagination = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, (*Pagination)(nil))
 }
 
 type RawQuery_builder struct {
@@ -441,7 +456,10 @@ func (b0 RawQuery_builder) Build() *RawQuery {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Query = b.Query
 	}
-	x.xxx_hidden_Pagination = b.Pagination
+	if b.Pagination != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Pagination = b.Pagination
+	}
 	return m0
 }
 
@@ -545,10 +563,12 @@ type QuerySortOption struct {
 	xxx_hidden_Reversed       bool                             `protobuf:"varint,2,opt,name=reversed"`
 	xxx_hidden_SearchAfterOpt isQuerySortOption_SearchAfterOpt `protobuf_oneof:"search_after_opt"`
 	xxx_hidden_AggregateBy    *AggregateBy                     `protobuf:"bytes,4,opt,name=aggregate_by,json=aggregateBy"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *QuerySortOption) Reset() {
@@ -604,7 +624,14 @@ func (x *QuerySortOption) GetSearchAfter() string {
 
 func (x *QuerySortOption) GetAggregateBy() *AggregateBy {
 	if x != nil {
-		return x.xxx_hidden_AggregateBy
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AggregateBy) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *AggregateBy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AggregateBy), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -624,7 +651,12 @@ func (x *QuerySortOption) SetSearchAfter(v string) {
 }
 
 func (x *QuerySortOption) SetAggregateBy(v *AggregateBy) {
-	x.xxx_hidden_AggregateBy = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AggregateBy, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	}
 }
 
 func (x *QuerySortOption) HasField() bool {
@@ -660,7 +692,7 @@ func (x *QuerySortOption) HasAggregateBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_AggregateBy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *QuerySortOption) ClearField() {
@@ -684,7 +716,8 @@ func (x *QuerySortOption) ClearSearchAfter() {
 }
 
 func (x *QuerySortOption) ClearAggregateBy() {
-	x.xxx_hidden_AggregateBy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AggregateBy, (*AggregateBy)(nil))
 }
 
 const QuerySortOption_SearchAfterOpt_not_set_case case_QuerySortOption_SearchAfterOpt = 0
@@ -731,7 +764,10 @@ func (b0 QuerySortOption_builder) Build() *QuerySortOption {
 	if b.SearchAfter != nil {
 		x.xxx_hidden_SearchAfterOpt = &querySortOption_SearchAfter{*b.SearchAfter}
 	}
-	x.xxx_hidden_AggregateBy = b.AggregateBy
+	if b.AggregateBy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_AggregateBy = b.AggregateBy
+	}
 	return m0
 }
 
@@ -900,9 +936,11 @@ func (b0 QueryField_builder) Build() *QueryField {
 }
 
 type QuerySelectFilter struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Query       *Query                 `protobuf:"bytes,2,opt,name=query"`
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name  *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Query *Query                 `protobuf:"bytes,2,opt,name=query"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -946,7 +984,14 @@ func (x *QuerySelectFilter) GetName() string {
 
 func (x *QuerySelectFilter) GetQuery() *Query {
 	if x != nil {
-		return x.xxx_hidden_Query
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Query) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *Query
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -957,7 +1002,12 @@ func (x *QuerySelectFilter) SetName(v string) {
 }
 
 func (x *QuerySelectFilter) SetQuery(v *Query) {
-	x.xxx_hidden_Query = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *QuerySelectFilter) HasName() bool {
@@ -971,7 +1021,7 @@ func (x *QuerySelectFilter) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *QuerySelectFilter) ClearName() {
@@ -980,7 +1030,8 @@ func (x *QuerySelectFilter) ClearName() {
 }
 
 func (x *QuerySelectFilter) ClearQuery() {
-	x.xxx_hidden_Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, (*Query)(nil))
 }
 
 type QuerySelectFilter_builder struct {
@@ -998,7 +1049,10 @@ func (b0 QuerySelectFilter_builder) Build() *QuerySelectFilter {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Name = b.Name
 	}
-	x.xxx_hidden_Query = b.Query
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Query = b.Query
+	}
 	return m0
 }
 
@@ -1006,8 +1060,12 @@ type QuerySelect struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Field  *QueryField            `protobuf:"bytes,1,opt,name=field"`
 	xxx_hidden_Filter *QuerySelectFilter     `protobuf:"bytes,2,opt,name=filter"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *QuerySelect) Reset() {
@@ -1037,46 +1095,72 @@ func (x *QuerySelect) ProtoReflect() protoreflect.Message {
 
 func (x *QuerySelect) GetField() *QueryField {
 	if x != nil {
-		return x.xxx_hidden_Field
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Field) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *QueryField
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Field), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *QuerySelect) GetFilter() *QuerySelectFilter {
 	if x != nil {
-		return x.xxx_hidden_Filter
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Filter) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *QuerySelectFilter
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Filter), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *QuerySelect) SetField(v *QueryField) {
-	x.xxx_hidden_Field = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Field, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *QuerySelect) SetFilter(v *QuerySelectFilter) {
-	x.xxx_hidden_Filter = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *QuerySelect) HasField() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Field != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *QuerySelect) HasFilter() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Filter != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *QuerySelect) ClearField() {
-	x.xxx_hidden_Field = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Field, (*QueryField)(nil))
 }
 
 func (x *QuerySelect) ClearFilter() {
-	x.xxx_hidden_Filter = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, (*QuerySelectFilter)(nil))
 }
 
 type QuerySelect_builder struct {
@@ -1090,8 +1174,14 @@ func (b0 QuerySelect_builder) Build() *QuerySelect {
 	m0 := &QuerySelect{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Field = b.Field
-	x.xxx_hidden_Filter = b.Filter
+	if b.Field != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Field = b.Field
+	}
+	if b.Filter != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Filter = b.Filter
+	}
 	return m0
 }
 
@@ -1157,6 +1247,8 @@ type QueryPagination struct {
 	xxx_hidden_Limit       int32                  `protobuf:"varint,1,opt,name=limit"`
 	xxx_hidden_Offset      int32                  `protobuf:"varint,2,opt,name=offset"`
 	xxx_hidden_SortOptions *[]*QuerySortOption    `protobuf:"bytes,3,rep,name=sort_options,json=sortOptions"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1204,8 +1296,13 @@ func (x *QueryPagination) GetOffset() int32 {
 
 func (x *QueryPagination) GetSortOptions() []*QuerySortOption {
 	if x != nil {
-		if x.xxx_hidden_SortOptions != nil {
-			return *x.xxx_hidden_SortOptions
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SortOptions) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*QuerySortOption
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1222,7 +1319,14 @@ func (x *QueryPagination) SetOffset(v int32) {
 }
 
 func (x *QueryPagination) SetSortOptions(v []*QuerySortOption) {
-	x.xxx_hidden_SortOptions = &v
+	var sv *[]*QuerySortOption
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*QuerySortOption{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *QueryPagination) HasLimit() bool {
@@ -1269,7 +1373,10 @@ func (b0 QueryPagination_builder) Build() *QueryPagination {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Offset = *b.Offset
 	}
-	x.xxx_hidden_SortOptions = &b.SortOptions
+	if b.SortOptions != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_SortOptions = &b.SortOptions
+	}
 	return m0
 }
 
@@ -1277,8 +1384,12 @@ type BooleanQuery struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Must    *ConjunctionQuery      `protobuf:"bytes,1,opt,name=must"`
 	xxx_hidden_MustNot *DisjunctionQuery      `protobuf:"bytes,2,opt,name=must_not,json=mustNot"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *BooleanQuery) Reset() {
@@ -1308,46 +1419,72 @@ func (x *BooleanQuery) ProtoReflect() protoreflect.Message {
 
 func (x *BooleanQuery) GetMust() *ConjunctionQuery {
 	if x != nil {
-		return x.xxx_hidden_Must
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Must) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *ConjunctionQuery
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Must), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *BooleanQuery) GetMustNot() *DisjunctionQuery {
 	if x != nil {
-		return x.xxx_hidden_MustNot
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_MustNot) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *DisjunctionQuery
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MustNot), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *BooleanQuery) SetMust(v *ConjunctionQuery) {
-	x.xxx_hidden_Must = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Must, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *BooleanQuery) SetMustNot(v *DisjunctionQuery) {
-	x.xxx_hidden_MustNot = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_MustNot, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *BooleanQuery) HasMust() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Must != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *BooleanQuery) HasMustNot() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_MustNot != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *BooleanQuery) ClearMust() {
-	x.xxx_hidden_Must = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Must, (*ConjunctionQuery)(nil))
 }
 
 func (x *BooleanQuery) ClearMustNot() {
-	x.xxx_hidden_MustNot = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_MustNot, (*DisjunctionQuery)(nil))
 }
 
 type BooleanQuery_builder struct {
@@ -1361,8 +1498,14 @@ func (b0 BooleanQuery_builder) Build() *BooleanQuery {
 	m0 := &BooleanQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Must = b.Must
-	x.xxx_hidden_MustNot = b.MustNot
+	if b.Must != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Must = b.Must
+	}
+	if b.MustNot != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_MustNot = b.MustNot
+	}
 	return m0
 }
 
@@ -1373,8 +1516,12 @@ type Query struct {
 	xxx_hidden_Selects    *[]*QuerySelect        `protobuf:"bytes,8,rep,name=selects"`
 	xxx_hidden_GroupBy    *QueryGroupBy          `protobuf:"bytes,7,opt,name=group_by,json=groupBy"`
 	xxx_hidden_Pagination *QueryPagination       `protobuf:"bytes,4,opt,name=pagination"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Query) Reset() {
@@ -1440,8 +1587,13 @@ func (x *Query) GetBooleanQuery() *BooleanQuery {
 
 func (x *Query) GetSelects() []*QuerySelect {
 	if x != nil {
-		if x.xxx_hidden_Selects != nil {
-			return *x.xxx_hidden_Selects
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Selects) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *[]*QuerySelect
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Selects), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1449,14 +1601,28 @@ func (x *Query) GetSelects() []*QuerySelect {
 
 func (x *Query) GetGroupBy() *QueryGroupBy {
 	if x != nil {
-		return x.xxx_hidden_GroupBy
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_GroupBy) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *QueryGroupBy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_GroupBy), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *Query) GetPagination() *QueryPagination {
 	if x != nil {
-		return x.xxx_hidden_Pagination
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Pagination) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *QueryPagination
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Pagination), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1494,15 +1660,32 @@ func (x *Query) SetBooleanQuery(v *BooleanQuery) {
 }
 
 func (x *Query) SetSelects(v []*QuerySelect) {
-	x.xxx_hidden_Selects = &v
+	var sv *[]*QuerySelect
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Selects), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*QuerySelect{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Selects), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *Query) SetGroupBy(v *QueryGroupBy) {
-	x.xxx_hidden_GroupBy = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_GroupBy, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	}
 }
 
 func (x *Query) SetPagination(v *QueryPagination) {
-	x.xxx_hidden_Pagination = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	}
 }
 
 func (x *Query) HasQuery() bool {
@@ -1548,14 +1731,14 @@ func (x *Query) HasGroupBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_GroupBy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Query) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Pagination != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Query) ClearQuery() {
@@ -1587,11 +1770,13 @@ func (x *Query) ClearBooleanQuery() {
 }
 
 func (x *Query) ClearGroupBy() {
-	x.xxx_hidden_GroupBy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_GroupBy, (*QueryGroupBy)(nil))
 }
 
 func (x *Query) ClearPagination() {
-	x.xxx_hidden_Pagination = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, (*QueryPagination)(nil))
 }
 
 const Query_Query_not_set_case case_Query_Query = 0
@@ -1648,9 +1833,18 @@ func (b0 Query_builder) Build() *Query {
 	if b.BooleanQuery != nil {
 		x.xxx_hidden_Query = &query_BooleanQuery{b.BooleanQuery}
 	}
-	x.xxx_hidden_Selects = &b.Selects
-	x.xxx_hidden_GroupBy = b.GroupBy
-	x.xxx_hidden_Pagination = b.Pagination
+	if b.Selects != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Selects = &b.Selects
+	}
+	if b.GroupBy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_GroupBy = b.GroupBy
+	}
+	if b.Pagination != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Pagination = b.Pagination
+	}
 	return m0
 }
 
@@ -1920,8 +2114,12 @@ func (b0 MatchFieldQuery_builder) Build() *MatchFieldQuery {
 type MatchLinkedFieldsQuery struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Query *[]*MatchFieldQuery    `protobuf:"bytes,1,rep,name=query"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MatchLinkedFieldsQuery) Reset() {
@@ -1951,15 +2149,27 @@ func (x *MatchLinkedFieldsQuery) ProtoReflect() protoreflect.Message {
 
 func (x *MatchLinkedFieldsQuery) GetQuery() []*MatchFieldQuery {
 	if x != nil {
-		if x.xxx_hidden_Query != nil {
-			return *x.xxx_hidden_Query
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Query) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*MatchFieldQuery
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *MatchLinkedFieldsQuery) SetQuery(v []*MatchFieldQuery) {
-	x.xxx_hidden_Query = &v
+	var sv *[]*MatchFieldQuery
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*MatchFieldQuery{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type MatchLinkedFieldsQuery_builder struct {
@@ -1972,7 +2182,10 @@ func (b0 MatchLinkedFieldsQuery_builder) Build() *MatchLinkedFieldsQuery {
 	m0 := &MatchLinkedFieldsQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Query = &b.Query
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Query = &b.Query
+	}
 	return m0
 }
 
@@ -2296,8 +2509,12 @@ func (*baseQuery_MatchNoneQuery) isBaseQuery_Query() {}
 type ConjunctionQuery struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Queries *[]*Query              `protobuf:"bytes,1,rep,name=queries"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ConjunctionQuery) Reset() {
@@ -2327,15 +2544,27 @@ func (x *ConjunctionQuery) ProtoReflect() protoreflect.Message {
 
 func (x *ConjunctionQuery) GetQueries() []*Query {
 	if x != nil {
-		if x.xxx_hidden_Queries != nil {
-			return *x.xxx_hidden_Queries
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Queries) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*Query
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ConjunctionQuery) SetQueries(v []*Query) {
-	x.xxx_hidden_Queries = &v
+	var sv *[]*Query
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Query{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ConjunctionQuery_builder struct {
@@ -2348,15 +2577,22 @@ func (b0 ConjunctionQuery_builder) Build() *ConjunctionQuery {
 	m0 := &ConjunctionQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Queries = &b.Queries
+	if b.Queries != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Queries = &b.Queries
+	}
 	return m0
 }
 
 type DisjunctionQuery struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Queries *[]*Query              `protobuf:"bytes,1,rep,name=queries"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DisjunctionQuery) Reset() {
@@ -2386,15 +2622,27 @@ func (x *DisjunctionQuery) ProtoReflect() protoreflect.Message {
 
 func (x *DisjunctionQuery) GetQueries() []*Query {
 	if x != nil {
-		if x.xxx_hidden_Queries != nil {
-			return *x.xxx_hidden_Queries
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Queries) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*Query
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *DisjunctionQuery) SetQueries(v []*Query) {
-	x.xxx_hidden_Queries = &v
+	var sv *[]*Query
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Query{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type DisjunctionQuery_builder struct {
@@ -2407,7 +2655,10 @@ func (b0 DisjunctionQuery_builder) Build() *DisjunctionQuery {
 	m0 := &DisjunctionQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Queries = &b.Queries
+	if b.Queries != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Queries = &b.Queries
+	}
 	return m0
 }
 
@@ -2462,10 +2713,12 @@ type SearchResult struct {
 	xxx_hidden_FieldToMatches map[string]*SearchResult_Matches `protobuf:"bytes,4,rep,name=field_to_matches,json=fieldToMatches" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Score          float64                          `protobuf:"fixed64,5,opt,name=score"`
 	xxx_hidden_Location       *string                          `protobuf:"bytes,6,opt,name=location"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SearchResult) Reset() {
@@ -2683,8 +2936,12 @@ type SearchResponse struct {
 	state              protoimpl.MessageState   `protogen:"opaque.v1"`
 	xxx_hidden_Results *[]*SearchResult         `protobuf:"bytes,1,rep,name=results"`
 	xxx_hidden_Counts  *[]*SearchResponse_Count `protobuf:"bytes,2,rep,name=counts"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SearchResponse) Reset() {
@@ -2714,8 +2971,13 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 
 func (x *SearchResponse) GetResults() []*SearchResult {
 	if x != nil {
-		if x.xxx_hidden_Results != nil {
-			return *x.xxx_hidden_Results
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Results) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*SearchResult
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2723,19 +2985,38 @@ func (x *SearchResponse) GetResults() []*SearchResult {
 
 func (x *SearchResponse) GetCounts() []*SearchResponse_Count {
 	if x != nil {
-		if x.xxx_hidden_Counts != nil {
-			return *x.xxx_hidden_Counts
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Counts) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*SearchResponse_Count
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Counts), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *SearchResponse) SetResults(v []*SearchResult) {
-	x.xxx_hidden_Results = &v
+	var sv *[]*SearchResult
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SearchResult{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *SearchResponse) SetCounts(v []*SearchResponse_Count) {
-	x.xxx_hidden_Counts = &v
+	var sv *[]*SearchResponse_Count
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Counts), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SearchResponse_Count{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Counts), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 type SearchResponse_builder struct {
@@ -2749,8 +3030,14 @@ func (b0 SearchResponse_builder) Build() *SearchResponse {
 	m0 := &SearchResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Results = &b.Results
-	x.xxx_hidden_Counts = &b.Counts
+	if b.Results != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Results = &b.Results
+	}
+	if b.Counts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Counts = &b.Counts
+	}
 	return m0
 }
 
@@ -3093,53 +3380,53 @@ var File_api_v1_search_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_search_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1bapi/v1/search_service.proto\x12\x02v1\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"P\n" +
+	"\x1bapi/v1/search_service.proto\x12\x02v1\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"T\n" +
 	"\bRawQuery\x12\x14\n" +
-	"\x05query\x18\x01 \x01(\tR\x05query\x12.\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\x122\n" +
 	"\n" +
-	"pagination\x18\x02 \x01(\v2\x0e.v1.PaginationR\n" +
+	"pagination\x18\x02 \x01(\v2\x0e.v1.PaginationB\x02(\x01R\n" +
 	"pagination\"\\\n" +
 	"\x10RawSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x122\n" +
 	"\n" +
 	"categories\x18\x02 \x03(\x0e2\x12.v1.SearchCategoryR\n" +
-	"categories\"\xb0\x01\n" +
+	"categories\"\xb4\x01\n" +
 	"\x0fQuerySortOption\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x1a\n" +
 	"\breversed\x18\x02 \x01(\bR\breversed\x12#\n" +
-	"\fsearch_after\x18\x03 \x01(\tH\x00R\vsearchAfter\x122\n" +
-	"\faggregate_by\x18\x04 \x01(\v2\x0f.v1.AggregateByR\vaggregateByB\x12\n" +
+	"\fsearch_after\x18\x03 \x01(\tH\x00R\vsearchAfter\x126\n" +
+	"\faggregate_by\x18\x04 \x01(\v2\x0f.v1.AggregateByB\x02(\x01R\vaggregateByB\x12\n" +
 	"\x10search_after_opt\"c\n" +
 	"\n" +
 	"QueryField\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
 	"\x0eaggregate_func\x18\x02 \x01(\tR\raggregateFunc\x12\x1a\n" +
-	"\bdistinct\x18\x03 \x01(\bR\bdistinct\"H\n" +
+	"\bdistinct\x18\x03 \x01(\bR\bdistinct\"L\n" +
 	"\x11QuerySelectFilter\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +
-	"\x05query\x18\x02 \x01(\v2\t.v1.QueryR\x05query\"b\n" +
-	"\vQuerySelect\x12$\n" +
-	"\x05field\x18\x01 \x01(\v2\x0e.v1.QueryFieldR\x05field\x12-\n" +
-	"\x06filter\x18\x02 \x01(\v2\x15.v1.QuerySelectFilterR\x06filter\"&\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12#\n" +
+	"\x05query\x18\x02 \x01(\v2\t.v1.QueryB\x02(\x01R\x05query\"j\n" +
+	"\vQuerySelect\x12(\n" +
+	"\x05field\x18\x01 \x01(\v2\x0e.v1.QueryFieldB\x02(\x01R\x05field\x121\n" +
+	"\x06filter\x18\x02 \x01(\v2\x15.v1.QuerySelectFilterB\x02(\x01R\x06filter\"&\n" +
 	"\fQueryGroupBy\x12\x16\n" +
-	"\x06fields\x18\x01 \x03(\tR\x06fields\"w\n" +
+	"\x06fields\x18\x01 \x03(\tR\x06fields\"{\n" +
 	"\x0fQueryPagination\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x02 \x01(\x05R\x06offset\x126\n" +
-	"\fsort_options\x18\x03 \x03(\v2\x13.v1.QuerySortOptionR\vsortOptions\"i\n" +
-	"\fBooleanQuery\x12(\n" +
-	"\x04must\x18\x01 \x01(\v2\x14.v1.ConjunctionQueryR\x04must\x12/\n" +
-	"\bmust_not\x18\x02 \x01(\v2\x14.v1.DisjunctionQueryR\amustNot\"\x80\x03\n" +
-	"\x05Query\x128\n" +
-	"\vconjunction\x18\x01 \x01(\v2\x14.v1.ConjunctionQueryH\x00R\vconjunction\x128\n" +
-	"\vdisjunction\x18\x02 \x01(\v2\x14.v1.DisjunctionQueryH\x00R\vdisjunction\x12.\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\x12:\n" +
+	"\fsort_options\x18\x03 \x03(\v2\x13.v1.QuerySortOptionB\x02(\x01R\vsortOptions\"q\n" +
+	"\fBooleanQuery\x12,\n" +
+	"\x04must\x18\x01 \x01(\v2\x14.v1.ConjunctionQueryB\x02(\x01R\x04must\x123\n" +
+	"\bmust_not\x18\x02 \x01(\v2\x14.v1.DisjunctionQueryB\x02(\x01R\amustNot\"\x9c\x03\n" +
+	"\x05Query\x12<\n" +
+	"\vconjunction\x18\x01 \x01(\v2\x14.v1.ConjunctionQueryB\x02(\x01H\x00R\vconjunction\x12<\n" +
+	"\vdisjunction\x18\x02 \x01(\v2\x14.v1.DisjunctionQueryB\x02(\x01H\x00R\vdisjunction\x122\n" +
 	"\n" +
-	"base_query\x18\x03 \x01(\v2\r.v1.BaseQueryH\x00R\tbaseQuery\x127\n" +
-	"\rboolean_query\x18\x06 \x01(\v2\x10.v1.BooleanQueryH\x00R\fbooleanQuery\x12)\n" +
-	"\aselects\x18\b \x03(\v2\x0f.v1.QuerySelectR\aselects\x12+\n" +
-	"\bgroup_by\x18\a \x01(\v2\x10.v1.QueryGroupByR\agroupBy\x123\n" +
+	"base_query\x18\x03 \x01(\v2\r.v1.BaseQueryB\x02(\x01H\x00R\tbaseQuery\x12;\n" +
+	"\rboolean_query\x18\x06 \x01(\v2\x10.v1.BooleanQueryB\x02(\x01H\x00R\fbooleanQuery\x12-\n" +
+	"\aselects\x18\b \x03(\v2\x0f.v1.QuerySelectB\x02(\x01R\aselects\x12/\n" +
+	"\bgroup_by\x18\a \x01(\v2\x10.v1.QueryGroupByB\x02(\x01R\agroupBy\x127\n" +
 	"\n" +
-	"pagination\x18\x04 \x01(\v2\x13.v1.QueryPaginationR\n" +
+	"pagination\x18\x04 \x01(\v2\x13.v1.QueryPaginationB\x02(\x01R\n" +
 	"paginationB\a\n" +
 	"\x05queryJ\x04\b\x05\x10\x06\"#\n" +
 	"\vStringQuery\x12\x14\n" +
@@ -3147,39 +3434,39 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x0fMatchFieldQuery\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\x12\x1c\n" +
-	"\thighlight\x18\x03 \x01(\bR\thighlight\"C\n" +
-	"\x16MatchLinkedFieldsQuery\x12)\n" +
-	"\x05query\x18\x01 \x03(\v2\x13.v1.MatchFieldQueryR\x05query\"\x1e\n" +
+	"\thighlight\x18\x03 \x01(\bR\thighlight\"G\n" +
+	"\x16MatchLinkedFieldsQuery\x12-\n" +
+	"\x05query\x18\x01 \x03(\v2\x13.v1.MatchFieldQueryB\x02(\x01R\x05query\"\x1e\n" +
 	"\n" +
 	"DocIDQuery\x12\x10\n" +
-	"\x03ids\x18\x01 \x03(\tR\x03ids\"\xa4\x02\n" +
-	"\tBaseQuery\x12A\n" +
-	"\x11match_field_query\x18\x02 \x01(\v2\x13.v1.MatchFieldQueryH\x00R\x0fmatchFieldQuery\x12W\n" +
-	"\x19match_linked_fields_query\x18\x03 \x01(\v2\x1a.v1.MatchLinkedFieldsQueryH\x00R\x16matchLinkedFieldsQuery\x122\n" +
-	"\fdoc_id_query\x18\x04 \x01(\v2\x0e.v1.DocIDQueryH\x00R\n" +
-	"docIdQuery\x12>\n" +
-	"\x10match_none_query\x18\x05 \x01(\v2\x12.v1.MatchNoneQueryH\x00R\x0ematchNoneQueryB\a\n" +
-	"\x05query\"7\n" +
-	"\x10ConjunctionQuery\x12#\n" +
-	"\aqueries\x18\x01 \x03(\v2\t.v1.QueryR\aqueries\"7\n" +
-	"\x10DisjunctionQuery\x12#\n" +
-	"\aqueries\x18\x01 \x03(\v2\t.v1.QueryR\aqueries\"\x10\n" +
-	"\x0eMatchNoneQuery\"\xe4\x02\n" +
+	"\x03ids\x18\x01 \x03(\tR\x03ids\"\xb4\x02\n" +
+	"\tBaseQuery\x12E\n" +
+	"\x11match_field_query\x18\x02 \x01(\v2\x13.v1.MatchFieldQueryB\x02(\x01H\x00R\x0fmatchFieldQuery\x12[\n" +
+	"\x19match_linked_fields_query\x18\x03 \x01(\v2\x1a.v1.MatchLinkedFieldsQueryB\x02(\x01H\x00R\x16matchLinkedFieldsQuery\x126\n" +
+	"\fdoc_id_query\x18\x04 \x01(\v2\x0e.v1.DocIDQueryB\x02(\x01H\x00R\n" +
+	"docIdQuery\x12B\n" +
+	"\x10match_none_query\x18\x05 \x01(\v2\x12.v1.MatchNoneQueryB\x02(\x01H\x00R\x0ematchNoneQueryB\a\n" +
+	"\x05query\";\n" +
+	"\x10ConjunctionQuery\x12'\n" +
+	"\aqueries\x18\x01 \x03(\v2\t.v1.QueryB\x02(\x01R\aqueries\";\n" +
+	"\x10DisjunctionQuery\x12'\n" +
+	"\aqueries\x18\x01 \x03(\v2\t.v1.QueryB\x02(\x01R\aqueries\"\x10\n" +
+	"\x0eMatchNoneQuery\"\xe8\x02\n" +
 	"\fSearchResult\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12.\n" +
-	"\bcategory\x18\x03 \x01(\x0e2\x12.v1.SearchCategoryR\bcategory\x12N\n" +
-	"\x10field_to_matches\x18\x04 \x03(\v2$.v1.SearchResult.FieldToMatchesEntryR\x0efieldToMatches\x12\x14\n" +
+	"\bcategory\x18\x03 \x01(\x0e2\x12.v1.SearchCategoryR\bcategory\x12R\n" +
+	"\x10field_to_matches\x18\x04 \x03(\v2$.v1.SearchResult.FieldToMatchesEntryB\x02(\x01R\x0efieldToMatches\x12\x14\n" +
 	"\x05score\x18\x05 \x01(\x01R\x05score\x12\x1a\n" +
 	"\blocation\x18\x06 \x01(\tR\blocation\x1a!\n" +
 	"\aMatches\x12\x16\n" +
 	"\x06values\x18\x01 \x03(\tR\x06values\x1a[\n" +
 	"\x13FieldToMatchesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12.\n" +
-	"\x05value\x18\x02 \x01(\v2\x18.v1.SearchResult.MatchesR\x05value:\x028\x01\"\xbd\x01\n" +
-	"\x0eSearchResponse\x12*\n" +
-	"\aresults\x18\x01 \x03(\v2\x10.v1.SearchResultR\aresults\x120\n" +
-	"\x06counts\x18\x02 \x03(\v2\x18.v1.SearchResponse.CountR\x06counts\x1aM\n" +
+	"\x05value\x18\x02 \x01(\v2\x18.v1.SearchResult.MatchesR\x05value:\x028\x01\"\xc5\x01\n" +
+	"\x0eSearchResponse\x12.\n" +
+	"\aresults\x18\x01 \x03(\v2\x10.v1.SearchResultB\x02(\x01R\aresults\x124\n" +
+	"\x06counts\x18\x02 \x03(\v2\x18.v1.SearchResponse.CountB\x02(\x01R\x06counts\x1aM\n" +
 	"\x05Count\x12.\n" +
 	"\bcategory\x18\x01 \x01(\x0e2\x12.v1.SearchCategoryR\bcategory\x12\x14\n" +
 	"\x05count\x18\x02 \x01(\x03R\x05count\"J\n" +

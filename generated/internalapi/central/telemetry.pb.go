@@ -155,10 +155,12 @@ type PullTelemetryDataRequest struct {
 	xxx_hidden_TimeoutMs              int64                                      `protobuf:"varint,3,opt,name=timeout_ms,json=timeoutMs"`
 	xxx_hidden_Since                  *timestamppb.Timestamp                     `protobuf:"bytes,4,opt,name=since"`
 	xxx_hidden_WithComplianceOperator bool                                       `protobuf:"varint,5,opt,name=with_compliance_operator,json=withComplianceOperator"`
-	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
-	XXX_presence                      [1]uint32
-	unknownFields                     protoimpl.UnknownFields
-	sizeCache                         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PullTelemetryDataRequest) Reset() {
@@ -214,7 +216,14 @@ func (x *PullTelemetryDataRequest) GetTimeoutMs() int64 {
 
 func (x *PullTelemetryDataRequest) GetSince() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Since
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Since) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Since), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -242,7 +251,12 @@ func (x *PullTelemetryDataRequest) SetTimeoutMs(v int64) {
 }
 
 func (x *PullTelemetryDataRequest) SetSince(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Since = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Since, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	}
 }
 
 func (x *PullTelemetryDataRequest) SetWithComplianceOperator(v bool) {
@@ -275,7 +289,7 @@ func (x *PullTelemetryDataRequest) HasSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Since != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *PullTelemetryDataRequest) HasWithComplianceOperator() bool {
@@ -301,7 +315,8 @@ func (x *PullTelemetryDataRequest) ClearTimeoutMs() {
 }
 
 func (x *PullTelemetryDataRequest) ClearSince() {
-	x.xxx_hidden_Since = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Since, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *PullTelemetryDataRequest) ClearWithComplianceOperator() {
@@ -335,7 +350,10 @@ func (b0 PullTelemetryDataRequest_builder) Build() *PullTelemetryDataRequest {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
 		x.xxx_hidden_TimeoutMs = *b.TimeoutMs
 	}
-	x.xxx_hidden_Since = b.Since
+	if b.Since != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_Since = b.Since
+	}
 	if b.WithComplianceOperator != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
 		x.xxx_hidden_WithComplianceOperator = *b.WithComplianceOperator
@@ -933,8 +951,12 @@ func (b0 TelemetryResponsePayload_EndOfStream_builder) Build() *TelemetryRespons
 type TelemetryResponsePayload_KubernetesInfo struct {
 	state            protoimpl.MessageState                           `protogen:"opaque.v1"`
 	xxx_hidden_Files *[]*TelemetryResponsePayload_KubernetesInfo_File `protobuf:"bytes,1,rep,name=files"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo) Reset() {
@@ -964,15 +986,27 @@ func (x *TelemetryResponsePayload_KubernetesInfo) ProtoReflect() protoreflect.Me
 
 func (x *TelemetryResponsePayload_KubernetesInfo) GetFiles() []*TelemetryResponsePayload_KubernetesInfo_File {
 	if x != nil {
-		if x.xxx_hidden_Files != nil {
-			return *x.xxx_hidden_Files
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Files) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*TelemetryResponsePayload_KubernetesInfo_File
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo) SetFiles(v []*TelemetryResponsePayload_KubernetesInfo_File) {
-	x.xxx_hidden_Files = &v
+	var sv *[]*TelemetryResponsePayload_KubernetesInfo_File
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*TelemetryResponsePayload_KubernetesInfo_File{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Files), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type TelemetryResponsePayload_KubernetesInfo_builder struct {
@@ -985,7 +1019,10 @@ func (b0 TelemetryResponsePayload_KubernetesInfo_builder) Build() *TelemetryResp
 	m0 := &TelemetryResponsePayload_KubernetesInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Files = &b.Files
+	if b.Files != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Files = &b.Files
+	}
 	return m0
 }
 
@@ -1185,29 +1222,29 @@ const file_internalapi_central_telemetry_proto_rawDesc = "" +
 	"#internalapi/central/telemetry.proto\x12\acentral\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"?\n" +
 	"\x1eCancelPullTelemetryDataRequest\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x01 \x01(\tR\trequestId\"\xec\x02\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\"\xf0\x02\n" +
 	"\x18PullTelemetryDataRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12P\n" +
 	"\tdata_type\x18\x02 \x01(\x0e23.central.PullTelemetryDataRequest.TelemetryDataTypeR\bdataType\x12\x1d\n" +
 	"\n" +
-	"timeout_ms\x18\x03 \x01(\x03R\ttimeoutMs\x120\n" +
-	"\x05since\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x05since\x128\n" +
+	"timeout_ms\x18\x03 \x01(\x03R\ttimeoutMs\x124\n" +
+	"\x05since\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x05since\x128\n" +
 	"\x18with_compliance_operator\x18\x05 \x01(\bR\x16withComplianceOperator\"T\n" +
 	"\x11TelemetryDataType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0fKUBERNETES_INFO\x10\x01\x12\x10\n" +
 	"\fCLUSTER_INFO\x10\x02\x12\v\n" +
-	"\aMETRICS\x10\x03\"\xf3\x04\n" +
+	"\aMETRICS\x10\x03\"\xf7\x04\n" +
 	"\x18TelemetryResponsePayload\x12S\n" +
 	"\rend_of_stream\x18\x01 \x01(\v2-.central.TelemetryResponsePayload.EndOfStreamH\x00R\vendOfStream\x12[\n" +
 	"\x0fkubernetes_info\x18\x02 \x01(\v20.central.TelemetryResponsePayload.KubernetesInfoH\x00R\x0ekubernetesInfo\x12R\n" +
 	"\fcluster_info\x18\x03 \x01(\v2-.central.TelemetryResponsePayload.ClusterInfoH\x00R\vclusterInfo\x12U\n" +
 	"\fmetrics_info\x18\x04 \x01(\v20.central.TelemetryResponsePayload.KubernetesInfoH\x00R\vmetricsInfo\x1a2\n" +
 	"\vEndOfStream\x12#\n" +
-	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\x1a\x95\x01\n" +
-	"\x0eKubernetesInfo\x12K\n" +
-	"\x05files\x18\x01 \x03(\v25.central.TelemetryResponsePayload.KubernetesInfo.FileR\x05files\x1a6\n" +
+	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\x1a\x99\x01\n" +
+	"\x0eKubernetesInfo\x12O\n" +
+	"\x05files\x18\x01 \x03(\v25.central.TelemetryResponsePayload.KubernetesInfo.FileB\x02(\x01R\x05files\x1a6\n" +
 	"\x04File\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1a\n" +
 	"\bcontents\x18\x02 \x01(\fR\bcontents\x1a#\n" +

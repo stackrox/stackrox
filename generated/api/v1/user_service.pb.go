@@ -27,8 +27,12 @@ const (
 type GetUsersResponse struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Users *[]*storage.User       `protobuf:"bytes,1,rep,name=users"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetUsersResponse) Reset() {
@@ -58,15 +62,27 @@ func (x *GetUsersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUsersResponse) GetUsers() []*storage.User {
 	if x != nil {
-		if x.xxx_hidden_Users != nil {
-			return *x.xxx_hidden_Users
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Users) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.User
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Users), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetUsersResponse) SetUsers(v []*storage.User) {
-	x.xxx_hidden_Users = &v
+	var sv *[]*storage.User
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Users), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.User{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Users), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetUsersResponse_builder struct {
@@ -79,7 +95,10 @@ func (b0 GetUsersResponse_builder) Build() *GetUsersResponse {
 	m0 := &GetUsersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Users = &b.Users
+	if b.Users != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Users = &b.Users
+	}
 	return m0
 }
 
@@ -233,8 +252,12 @@ func (b0 UserAttributeTuple_builder) Build() *UserAttributeTuple {
 type GetUsersAttributesResponse struct {
 	state                      protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_UsersAttributes *[]*UserAttributeTuple `protobuf:"bytes,1,rep,name=users_attributes,json=usersAttributes"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetUsersAttributesResponse) Reset() {
@@ -264,15 +287,27 @@ func (x *GetUsersAttributesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUsersAttributesResponse) GetUsersAttributes() []*UserAttributeTuple {
 	if x != nil {
-		if x.xxx_hidden_UsersAttributes != nil {
-			return *x.xxx_hidden_UsersAttributes
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UsersAttributes) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*UserAttributeTuple
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UsersAttributes), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetUsersAttributesResponse) SetUsersAttributes(v []*UserAttributeTuple) {
-	x.xxx_hidden_UsersAttributes = &v
+	var sv *[]*UserAttributeTuple
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UsersAttributes), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*UserAttributeTuple{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_UsersAttributes), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetUsersAttributesResponse_builder struct {
@@ -285,7 +320,10 @@ func (b0 GetUsersAttributesResponse_builder) Build() *GetUsersAttributesResponse
 	m0 := &GetUsersAttributesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UsersAttributes = &b.UsersAttributes
+	if b.UsersAttributes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_UsersAttributes = &b.UsersAttributes
+	}
 	return m0
 }
 
@@ -293,15 +331,15 @@ var File_api_v1_user_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_user_service_proto_rawDesc = "" +
 	"\n" +
-	"\x19api/v1/user_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"7\n" +
-	"\x10GetUsersResponse\x12#\n" +
-	"\x05users\x18\x01 \x03(\v2\r.storage.UserR\x05users\"f\n" +
+	"\x19api/v1/user_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\";\n" +
+	"\x10GetUsersResponse\x12'\n" +
+	"\x05users\x18\x01 \x03(\v2\r.storage.UserB\x02(\x01R\x05users\"f\n" +
 	"\x12UserAttributeTuple\x12(\n" +
 	"\x10auth_provider_id\x18\x01 \x01(\tR\x0eauthProviderId\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\tR\x05value\"_\n" +
-	"\x1aGetUsersAttributesResponse\x12A\n" +
-	"\x10users_attributes\x18\x01 \x03(\v2\x16.v1.UserAttributeTupleR\x0fusersAttributes2\xef\x01\n" +
+	"\x05value\x18\x03 \x01(\tR\x05value\"c\n" +
+	"\x1aGetUsersAttributesResponse\x12E\n" +
+	"\x10users_attributes\x18\x01 \x03(\v2\x16.v1.UserAttributeTupleB\x02(\x01R\x0fusersAttributes2\xef\x01\n" +
 	"\vUserService\x12>\n" +
 	"\bGetUsers\x12\t.v1.Empty\x1a\x14.v1.GetUsersResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/users\x12B\n" +
 	"\aGetUser\x12\x10.v1.ResourceByID\x1a\r.storage.User\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/users/{id}\x12\\\n" +

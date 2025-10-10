@@ -123,10 +123,12 @@ type DiscoveredCluster struct {
 	xxx_hidden_Status        DiscoveredCluster_Status    `protobuf:"varint,3,opt,name=status,enum=storage.DiscoveredCluster_Status"`
 	xxx_hidden_SourceId      *string                     `protobuf:"bytes,4,opt,name=source_id,json=sourceId"`
 	xxx_hidden_LastUpdatedAt *timestamppb.Timestamp      `protobuf:"bytes,5,opt,name=last_updated_at,json=lastUpdatedAt"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DiscoveredCluster) Reset() {
@@ -192,7 +194,14 @@ func (x *DiscoveredCluster) GetSourceId() string {
 
 func (x *DiscoveredCluster) GetLastUpdatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdatedAt) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -217,7 +226,12 @@ func (x *DiscoveredCluster) SetSourceId(v string) {
 }
 
 func (x *DiscoveredCluster) SetLastUpdatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
+	}
 }
 
 func (x *DiscoveredCluster) HasId() bool {
@@ -252,7 +266,7 @@ func (x *DiscoveredCluster) HasLastUpdatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *DiscoveredCluster) ClearId() {
@@ -275,7 +289,8 @@ func (x *DiscoveredCluster) ClearSourceId() {
 }
 
 func (x *DiscoveredCluster) ClearLastUpdatedAt() {
-	x.xxx_hidden_LastUpdatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 type DiscoveredCluster_builder struct {
@@ -305,7 +320,10 @@ func (b0 DiscoveredCluster_builder) Build() *DiscoveredCluster {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
 		x.xxx_hidden_SourceId = b.SourceId
 	}
-	x.xxx_hidden_LastUpdatedAt = b.LastUpdatedAt
+	if b.LastUpdatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_LastUpdatedAt = b.LastUpdatedAt
+	}
 	return m0
 }
 
@@ -317,10 +335,12 @@ type DiscoveredCluster_Metadata struct {
 	xxx_hidden_ProviderType      DiscoveredCluster_Metadata_ProviderType `protobuf:"varint,4,opt,name=provider_type,json=providerType,enum=storage.DiscoveredCluster_Metadata_ProviderType"`
 	xxx_hidden_Region            *string                                 `protobuf:"bytes,5,opt,name=region"`
 	xxx_hidden_FirstDiscoveredAt *timestamppb.Timestamp                  `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DiscoveredCluster_Metadata) Reset() {
@@ -398,7 +418,14 @@ func (x *DiscoveredCluster_Metadata) GetRegion() string {
 
 func (x *DiscoveredCluster_Metadata) GetFirstDiscoveredAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_FirstDiscoveredAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_FirstDiscoveredAt) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_FirstDiscoveredAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -429,7 +456,12 @@ func (x *DiscoveredCluster_Metadata) SetRegion(v string) {
 }
 
 func (x *DiscoveredCluster_Metadata) SetFirstDiscoveredAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_FirstDiscoveredAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FirstDiscoveredAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
+	}
 }
 
 func (x *DiscoveredCluster_Metadata) HasId() bool {
@@ -471,7 +503,7 @@ func (x *DiscoveredCluster_Metadata) HasFirstDiscoveredAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_FirstDiscoveredAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *DiscoveredCluster_Metadata) ClearId() {
@@ -500,7 +532,8 @@ func (x *DiscoveredCluster_Metadata) ClearRegion() {
 }
 
 func (x *DiscoveredCluster_Metadata) ClearFirstDiscoveredAt() {
-	x.xxx_hidden_FirstDiscoveredAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FirstDiscoveredAt, (*timestamppb.Timestamp)(nil))
 }
 
 type DiscoveredCluster_Metadata_builder struct {
@@ -538,7 +571,10 @@ func (b0 DiscoveredCluster_Metadata_builder) Build() *DiscoveredCluster_Metadata
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
 		x.xxx_hidden_Region = b.Region
 	}
-	x.xxx_hidden_FirstDiscoveredAt = b.FirstDiscoveredAt
+	if b.FirstDiscoveredAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_FirstDiscoveredAt = b.FirstDiscoveredAt
+	}
 	return m0
 }
 
@@ -546,20 +582,20 @@ var File_storage_discovered_cluster_proto protoreflect.FileDescriptor
 
 const file_storage_discovered_cluster_proto_rawDesc = "" +
 	"\n" +
-	" storage/discovered_cluster.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x15storage/cluster.proto\x1a!google/protobuf/go_features.proto\"\xe1\x05\n" +
+	" storage/discovered_cluster.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x15storage/cluster.proto\x1a!google/protobuf/go_features.proto\"\xe9\x05\n" +
 	"\x11DiscoveredCluster\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12?\n" +
 	"\bmetadata\x18\x02 \x01(\v2#.storage.DiscoveredCluster.MetadataR\bmetadata\x129\n" +
 	"\x06status\x18\x03 \x01(\x0e2!.storage.DiscoveredCluster.StatusR\x06status\x12\x1b\n" +
-	"\tsource_id\x18\x04 \x01(\tR\bsourceId\x12B\n" +
-	"\x0flast_updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\rlastUpdatedAt\x1a\x92\x03\n" +
+	"\tsource_id\x18\x04 \x01(\tR\bsourceId\x12F\n" +
+	"\x0flast_updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\rlastUpdatedAt\x1a\x96\x03\n" +
 	"\bMetadata\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x121\n" +
 	"\x04type\x18\x03 \x01(\x0e2\x1d.storage.ClusterMetadata.TypeR\x04type\x12U\n" +
 	"\rprovider_type\x18\x04 \x01(\x0e20.storage.DiscoveredCluster.Metadata.ProviderTypeR\fproviderType\x12\x16\n" +
-	"\x06region\x18\x05 \x01(\tR\x06region\x12J\n" +
-	"\x13first_discovered_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x11firstDiscoveredAt\"t\n" +
+	"\x06region\x18\x05 \x01(\tR\x06region\x12N\n" +
+	"\x13first_discovered_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x11firstDiscoveredAt\"t\n" +
 	"\fProviderType\x12\x1d\n" +
 	"\x19PROVIDER_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11PROVIDER_TYPE_AWS\x10\x01\x12\x15\n" +

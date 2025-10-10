@@ -267,10 +267,12 @@ type Image struct {
 	xxx_hidden_RiskScore                 float32                         `protobuf:"fixed32,12,opt,name=risk_score,json=riskScore"`
 	xxx_hidden_SetTopCvss                isImage_SetTopCvss              `protobuf_oneof:"set_top_cvss"`
 	xxx_hidden_Notes                     []Image_Note                    `protobuf:"varint,14,rep,packed,name=notes,enum=storage.Image_Note"`
-	XXX_raceDetectHookData               protoimpl.RaceDetectHookData
-	XXX_presence                         [1]uint32
-	unknownFields                        protoimpl.UnknownFields
-	sizeCache                            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Image) Reset() {
@@ -317,8 +319,13 @@ func (x *Image) GetName() *ImageName {
 
 func (x *Image) GetNames() []*ImageName {
 	if x != nil {
-		if x.xxx_hidden_Names != nil {
-			return *x.xxx_hidden_Names
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Names) {
+				protoimpl.X.UnmarshalField(x, 18)
+			}
+			var rv *[]*ImageName
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Names), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -381,7 +388,14 @@ func (x *Image) GetFixableCves() int32 {
 
 func (x *Image) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -440,7 +454,14 @@ func (x *Image) SetName(v *ImageName) {
 }
 
 func (x *Image) SetNames(v []*ImageName) {
-	x.xxx_hidden_Names = &v
+	var sv *[]*ImageName
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Names), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ImageName{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Names), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 17)
 }
 
 func (x *Image) SetMetadata(v *ImageMetadata) {
@@ -472,7 +493,12 @@ func (x *Image) SetFixableCves(v int32) {
 }
 
 func (x *Image) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 17)
+	}
 }
 
 func (x *Image) SetNotPullable(v bool) {
@@ -594,7 +620,7 @@ func (x *Image) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
 }
 
 func (x *Image) HasNotPullable() bool {
@@ -696,7 +722,8 @@ func (x *Image) ClearFixableCves() {
 }
 
 func (x *Image) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Image) ClearNotPullable() {
@@ -832,7 +859,10 @@ func (b0 Image_builder) Build() *Image {
 		x.xxx_hidden_Id = b.Id
 	}
 	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Names = &b.Names
+	if b.Names != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 17)
+		x.xxx_hidden_Names = &b.Names
+	}
 	x.xxx_hidden_Metadata = b.Metadata
 	x.xxx_hidden_Scan = b.Scan
 	x.xxx_hidden_SignatureVerificationData = b.SignatureVerificationData
@@ -846,7 +876,10 @@ func (b0 Image_builder) Build() *Image {
 	if b.FixableCves != nil {
 		x.xxx_hidden_SetFixable = &image_FixableCves{*b.FixableCves}
 	}
-	x.xxx_hidden_LastUpdated = b.LastUpdated
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 17)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
 	if b.NotPullable != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 17)
 		x.xxx_hidden_NotPullable = *b.NotPullable
@@ -1104,10 +1137,12 @@ type ImageScan struct {
 	xxx_hidden_DataSource      *DataSource                    `protobuf:"bytes,3,opt,name=data_source,json=dataSource"`
 	xxx_hidden_Notes           []ImageScan_Note               `protobuf:"varint,5,rep,packed,name=notes,enum=storage.ImageScan_Note"`
 	xxx_hidden_Hashoneof       isImageScan_Hashoneof          `protobuf_oneof:"hashoneof"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImageScan) Reset() {
@@ -1147,15 +1182,27 @@ func (x *ImageScan) GetScannerVersion() string {
 
 func (x *ImageScan) GetScanTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ScanTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScanTime) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ImageScan) GetComponents() []*EmbeddedImageScanComponent {
 	if x != nil {
-		if x.xxx_hidden_Components != nil {
-			return *x.xxx_hidden_Components
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Components) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*EmbeddedImageScanComponent
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1200,11 +1247,23 @@ func (x *ImageScan) SetScannerVersion(v string) {
 }
 
 func (x *ImageScan) SetScanTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ScanTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ScanTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
+	}
 }
 
 func (x *ImageScan) SetComponents(v []*EmbeddedImageScanComponent) {
-	x.xxx_hidden_Components = &v
+	var sv *[]*EmbeddedImageScanComponent
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*EmbeddedImageScanComponent{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *ImageScan) SetOperatingSystem(v string) {
@@ -1235,7 +1294,7 @@ func (x *ImageScan) HasScanTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScanTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ImageScan) HasOperatingSystem() bool {
@@ -1273,7 +1332,8 @@ func (x *ImageScan) ClearScannerVersion() {
 }
 
 func (x *ImageScan) ClearScanTime() {
-	x.xxx_hidden_ScanTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ScanTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ImageScan) ClearOperatingSystem() {
@@ -1333,8 +1393,14 @@ func (b0 ImageScan_builder) Build() *ImageScan {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
 		x.xxx_hidden_ScannerVersion = b.ScannerVersion
 	}
-	x.xxx_hidden_ScanTime = b.ScanTime
-	x.xxx_hidden_Components = &b.Components
+	if b.ScanTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_ScanTime = b.ScanTime
+	}
+	if b.Components != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_Components = &b.Components
+	}
 	if b.OperatingSystem != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
 		x.xxx_hidden_OperatingSystem = b.OperatingSystem
@@ -1370,8 +1436,12 @@ func (*imageScan_Hash) isImageScan_Hashoneof() {}
 type ImageSignatureVerificationData struct {
 	state              protoimpl.MessageState               `protogen:"opaque.v1"`
 	xxx_hidden_Results *[]*ImageSignatureVerificationResult `protobuf:"bytes,1,rep,name=results"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImageSignatureVerificationData) Reset() {
@@ -1401,15 +1471,27 @@ func (x *ImageSignatureVerificationData) ProtoReflect() protoreflect.Message {
 
 func (x *ImageSignatureVerificationData) GetResults() []*ImageSignatureVerificationResult {
 	if x != nil {
-		if x.xxx_hidden_Results != nil {
-			return *x.xxx_hidden_Results
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Results) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ImageSignatureVerificationResult
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ImageSignatureVerificationData) SetResults(v []*ImageSignatureVerificationResult) {
-	x.xxx_hidden_Results = &v
+	var sv *[]*ImageSignatureVerificationResult
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ImageSignatureVerificationResult{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ImageSignatureVerificationData_builder struct {
@@ -1422,7 +1504,10 @@ func (b0 ImageSignatureVerificationData_builder) Build() *ImageSignatureVerifica
 	m0 := &ImageSignatureVerificationData{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Results = &b.Results
+	if b.Results != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Results = &b.Results
+	}
 	return m0
 }
 
@@ -1434,10 +1519,12 @@ type ImageSignatureVerificationResult struct {
 	xxx_hidden_Status                  ImageSignatureVerificationResult_Status `protobuf:"varint,3,opt,name=status,enum=storage.ImageSignatureVerificationResult_Status"`
 	xxx_hidden_Description             *string                                 `protobuf:"bytes,4,opt,name=description"`
 	xxx_hidden_VerifiedImageReferences []string                                `protobuf:"bytes,5,rep,name=verified_image_references,json=verifiedImageReferences"`
-	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
-	XXX_presence                       [1]uint32
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImageSignatureVerificationResult) Reset() {
@@ -1467,7 +1554,14 @@ func (x *ImageSignatureVerificationResult) ProtoReflect() protoreflect.Message {
 
 func (x *ImageSignatureVerificationResult) GetVerificationTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_VerificationTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_VerificationTime) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_VerificationTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1509,7 +1603,12 @@ func (x *ImageSignatureVerificationResult) GetVerifiedImageReferences() []string
 }
 
 func (x *ImageSignatureVerificationResult) SetVerificationTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_VerificationTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_VerificationTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	}
 }
 
 func (x *ImageSignatureVerificationResult) SetVerifierId(v string) {
@@ -1535,7 +1634,7 @@ func (x *ImageSignatureVerificationResult) HasVerificationTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_VerificationTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ImageSignatureVerificationResult) HasVerifierId() bool {
@@ -1560,7 +1659,8 @@ func (x *ImageSignatureVerificationResult) HasDescription() bool {
 }
 
 func (x *ImageSignatureVerificationResult) ClearVerificationTime() {
-	x.xxx_hidden_VerificationTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_VerificationTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ImageSignatureVerificationResult) ClearVerifierId() {
@@ -1595,7 +1695,10 @@ func (b0 ImageSignatureVerificationResult_builder) Build() *ImageSignatureVerifi
 	m0 := &ImageSignatureVerificationResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_VerificationTime = b.VerificationTime
+	if b.VerificationTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_VerificationTime = b.VerificationTime
+	}
 	if b.VerifierId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_VerifierId = b.VerifierId
@@ -1628,10 +1731,12 @@ type EmbeddedImageScanComponent struct {
 	xxx_hidden_FixedBy       *string                                    `protobuf:"bytes,11,opt,name=fixed_by,json=fixedBy"`
 	xxx_hidden_Executables   *[]*EmbeddedImageScanComponent_Executable  `protobuf:"bytes,12,rep,name=executables"`
 	xxx_hidden_Architecture  *string                                    `protobuf:"bytes,13,opt,name=architecture"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *EmbeddedImageScanComponent) Reset() {
@@ -1688,8 +1793,13 @@ func (x *EmbeddedImageScanComponent) GetLicense() *License {
 
 func (x *EmbeddedImageScanComponent) GetVulns() []*EmbeddedVulnerability {
 	if x != nil {
-		if x.xxx_hidden_Vulns != nil {
-			return *x.xxx_hidden_Vulns
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Vulns) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*EmbeddedVulnerability
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vulns), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1758,8 +1868,13 @@ func (x *EmbeddedImageScanComponent) GetFixedBy() string {
 
 func (x *EmbeddedImageScanComponent) GetExecutables() []*EmbeddedImageScanComponent_Executable {
 	if x != nil {
-		if x.xxx_hidden_Executables != nil {
-			return *x.xxx_hidden_Executables
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 11) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Executables) {
+				protoimpl.X.UnmarshalField(x, 12)
+			}
+			var rv *[]*EmbeddedImageScanComponent_Executable
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Executables), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1790,7 +1905,14 @@ func (x *EmbeddedImageScanComponent) SetLicense(v *License) {
 }
 
 func (x *EmbeddedImageScanComponent) SetVulns(v []*EmbeddedVulnerability) {
-	x.xxx_hidden_Vulns = &v
+	var sv *[]*EmbeddedVulnerability
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vulns), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*EmbeddedVulnerability{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Vulns), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 13)
 }
 
 func (x *EmbeddedImageScanComponent) SetLayerIndex(v int32) {
@@ -1827,7 +1949,14 @@ func (x *EmbeddedImageScanComponent) SetFixedBy(v string) {
 }
 
 func (x *EmbeddedImageScanComponent) SetExecutables(v []*EmbeddedImageScanComponent_Executable) {
-	x.xxx_hidden_Executables = &v
+	var sv *[]*EmbeddedImageScanComponent_Executable
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Executables), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*EmbeddedImageScanComponent_Executable{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Executables), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 13)
 }
 
 func (x *EmbeddedImageScanComponent) SetArchitecture(v string) {
@@ -2059,7 +2188,10 @@ func (b0 EmbeddedImageScanComponent_builder) Build() *EmbeddedImageScanComponent
 		x.xxx_hidden_Version = b.Version
 	}
 	x.xxx_hidden_License = b.License
-	x.xxx_hidden_Vulns = &b.Vulns
+	if b.Vulns != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 13)
+		x.xxx_hidden_Vulns = &b.Vulns
+	}
 	if b.LayerIndex != nil {
 		x.xxx_hidden_HasLayerIndex = &embeddedImageScanComponent_LayerIndex{*b.LayerIndex}
 	}
@@ -2086,7 +2218,10 @@ func (b0 EmbeddedImageScanComponent_builder) Build() *EmbeddedImageScanComponent
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 13)
 		x.xxx_hidden_FixedBy = b.FixedBy
 	}
-	x.xxx_hidden_Executables = &b.Executables
+	if b.Executables != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 13)
+		x.xxx_hidden_Executables = &b.Executables
+	}
 	if b.Architecture != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 13)
 		x.xxx_hidden_Architecture = b.Architecture
@@ -2457,8 +2592,12 @@ type ImageSignature struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Signatures *[]*Signature          `protobuf:"bytes,1,rep,name=signatures"`
 	xxx_hidden_Fetched    *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=fetched"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImageSignature) Reset() {
@@ -2488,8 +2627,13 @@ func (x *ImageSignature) ProtoReflect() protoreflect.Message {
 
 func (x *ImageSignature) GetSignatures() []*Signature {
 	if x != nil {
-		if x.xxx_hidden_Signatures != nil {
-			return *x.xxx_hidden_Signatures
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Signatures) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*Signature
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Signatures), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2497,28 +2641,48 @@ func (x *ImageSignature) GetSignatures() []*Signature {
 
 func (x *ImageSignature) GetFetched() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Fetched
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Fetched) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Fetched), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ImageSignature) SetSignatures(v []*Signature) {
-	x.xxx_hidden_Signatures = &v
+	var sv *[]*Signature
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Signatures), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Signature{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Signatures), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ImageSignature) SetFetched(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Fetched = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Fetched, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *ImageSignature) HasFetched() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Fetched != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ImageSignature) ClearFetched() {
-	x.xxx_hidden_Fetched = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Fetched, (*timestamppb.Timestamp)(nil))
 }
 
 type ImageSignature_builder struct {
@@ -2532,8 +2696,14 @@ func (b0 ImageSignature_builder) Build() *ImageSignature {
 	m0 := &ImageSignature{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Signatures = &b.Signatures
-	x.xxx_hidden_Fetched = b.Fetched
+	if b.Signatures != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Signatures = &b.Signatures
+	}
+	if b.Fetched != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Fetched = b.Fetched
+	}
 	return m0
 }
 
@@ -2953,16 +3123,18 @@ func (b0 V2Metadata_builder) Build() *V2Metadata {
 }
 
 type V1Metadata struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Digest      *string                `protobuf:"bytes,1,opt,name=digest"`
-	xxx_hidden_Created     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created"`
-	xxx_hidden_Author      *string                `protobuf:"bytes,3,opt,name=author"`
-	xxx_hidden_Layers      *[]*ImageLayer         `protobuf:"bytes,4,rep,name=layers"`
-	xxx_hidden_User        *string                `protobuf:"bytes,5,opt,name=user"`
-	xxx_hidden_Command     []string               `protobuf:"bytes,6,rep,name=command"`
-	xxx_hidden_Entrypoint  []string               `protobuf:"bytes,7,rep,name=entrypoint"`
-	xxx_hidden_Volumes     []string               `protobuf:"bytes,8,rep,name=volumes"`
-	xxx_hidden_Labels      map[string]string      `protobuf:"bytes,9,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Digest     *string                `protobuf:"bytes,1,opt,name=digest"`
+	xxx_hidden_Created    *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created"`
+	xxx_hidden_Author     *string                `protobuf:"bytes,3,opt,name=author"`
+	xxx_hidden_Layers     *[]*ImageLayer         `protobuf:"bytes,4,rep,name=layers"`
+	xxx_hidden_User       *string                `protobuf:"bytes,5,opt,name=user"`
+	xxx_hidden_Command    []string               `protobuf:"bytes,6,rep,name=command"`
+	xxx_hidden_Entrypoint []string               `protobuf:"bytes,7,rep,name=entrypoint"`
+	xxx_hidden_Volumes    []string               `protobuf:"bytes,8,rep,name=volumes"`
+	xxx_hidden_Labels     map[string]string      `protobuf:"bytes,9,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -3006,7 +3178,14 @@ func (x *V1Metadata) GetDigest() string {
 
 func (x *V1Metadata) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Created
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -3023,8 +3202,13 @@ func (x *V1Metadata) GetAuthor() string {
 
 func (x *V1Metadata) GetLayers() []*ImageLayer {
 	if x != nil {
-		if x.xxx_hidden_Layers != nil {
-			return *x.xxx_hidden_Layers
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Layers) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*ImageLayer
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Layers), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -3074,7 +3258,12 @@ func (x *V1Metadata) SetDigest(v string) {
 }
 
 func (x *V1Metadata) SetCreated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Created = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
+	}
 }
 
 func (x *V1Metadata) SetAuthor(v string) {
@@ -3083,7 +3272,14 @@ func (x *V1Metadata) SetAuthor(v string) {
 }
 
 func (x *V1Metadata) SetLayers(v []*ImageLayer) {
-	x.xxx_hidden_Layers = &v
+	var sv *[]*ImageLayer
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Layers), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ImageLayer{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Layers), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
 }
 
 func (x *V1Metadata) SetUser(v string) {
@@ -3118,7 +3314,7 @@ func (x *V1Metadata) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Created != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *V1Metadata) HasAuthor() bool {
@@ -3141,7 +3337,8 @@ func (x *V1Metadata) ClearDigest() {
 }
 
 func (x *V1Metadata) ClearCreated() {
-	x.xxx_hidden_Created = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *V1Metadata) ClearAuthor() {
@@ -3176,12 +3373,18 @@ func (b0 V1Metadata_builder) Build() *V1Metadata {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
 		x.xxx_hidden_Digest = b.Digest
 	}
-	x.xxx_hidden_Created = b.Created
+	if b.Created != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
+		x.xxx_hidden_Created = b.Created
+	}
 	if b.Author != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
 		x.xxx_hidden_Author = b.Author
 	}
-	x.xxx_hidden_Layers = &b.Layers
+	if b.Layers != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
+		x.xxx_hidden_Layers = &b.Layers
+	}
 	if b.User != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
 		x.xxx_hidden_User = b.User
@@ -3200,6 +3403,8 @@ type ImageLayer struct {
 	xxx_hidden_Created     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created"`
 	xxx_hidden_Author      *string                `protobuf:"bytes,4,opt,name=author"`
 	xxx_hidden_Empty       bool                   `protobuf:"varint,6,opt,name=empty"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -3253,7 +3458,14 @@ func (x *ImageLayer) GetValue() string {
 
 func (x *ImageLayer) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Created
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -3286,7 +3498,12 @@ func (x *ImageLayer) SetValue(v string) {
 }
 
 func (x *ImageLayer) SetCreated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Created = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	}
 }
 
 func (x *ImageLayer) SetAuthor(v string) {
@@ -3317,7 +3534,7 @@ func (x *ImageLayer) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Created != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ImageLayer) HasAuthor() bool {
@@ -3345,7 +3562,8 @@ func (x *ImageLayer) ClearValue() {
 }
 
 func (x *ImageLayer) ClearCreated() {
-	x.xxx_hidden_Created = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ImageLayer) ClearAuthor() {
@@ -3380,7 +3598,10 @@ func (b0 ImageLayer_builder) Build() *ImageLayer {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_Value = b.Value
 	}
-	x.xxx_hidden_Created = b.Created
+	if b.Created != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Created = b.Created
+	}
 	if b.Author != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
 		x.xxx_hidden_Author = b.Author
@@ -3579,10 +3800,12 @@ type ListImage struct {
 	xxx_hidden_Created       *timestamppb.Timestamp    `protobuf:"bytes,6,opt,name=created"`
 	xxx_hidden_LastUpdated   *timestamppb.Timestamp    `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated"`
 	xxx_hidden_Priority      int64                     `protobuf:"varint,10,opt,name=priority"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListImage) Reset() {
@@ -3659,14 +3882,28 @@ func (x *ListImage) GetFixableCves() int32 {
 
 func (x *ListImage) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Created
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ListImage) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -3701,11 +3938,21 @@ func (x *ListImage) SetFixableCves(v int32) {
 }
 
 func (x *ListImage) SetCreated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Created = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	}
 }
 
 func (x *ListImage) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
+	}
 }
 
 func (x *ListImage) SetPriority(v int64) {
@@ -3776,14 +4023,14 @@ func (x *ListImage) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Created != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *ListImage) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ListImage) HasPriority() bool {
@@ -3834,11 +4081,13 @@ func (x *ListImage) ClearFixableCves() {
 }
 
 func (x *ListImage) ClearCreated() {
-	x.xxx_hidden_Created = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ListImage) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ListImage) ClearPriority() {
@@ -3931,8 +4180,14 @@ func (b0 ListImage_builder) Build() *ListImage {
 	if b.FixableCves != nil {
 		x.xxx_hidden_SetFixable = &listImage_FixableCves{*b.FixableCves}
 	}
-	x.xxx_hidden_Created = b.Created
-	x.xxx_hidden_LastUpdated = b.LastUpdated
+	if b.Created != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_Created = b.Created
+	}
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
 	if b.Priority != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
 		x.xxx_hidden_Priority = *b.Priority
@@ -4174,11 +4429,11 @@ var File_storage_image_proto protoreflect.FileDescriptor
 
 const file_storage_image_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/image.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bstorage/vulnerability.proto\x1a!google/protobuf/go_features.proto\"\x8d\a\n" +
+	"\x13storage/image.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bstorage/vulnerability.proto\x1a!google/protobuf/go_features.proto\"\x95\a\n" +
 	"\x05Image\x12\x0e\n" +
 	"\x02id\x18\x04 \x01(\tR\x02id\x12&\n" +
-	"\x04name\x18\x01 \x01(\v2\x12.storage.ImageNameR\x04name\x12(\n" +
-	"\x05names\x18\x12 \x03(\v2\x12.storage.ImageNameR\x05names\x122\n" +
+	"\x04name\x18\x01 \x01(\v2\x12.storage.ImageNameR\x04name\x12,\n" +
+	"\x05names\x18\x12 \x03(\v2\x12.storage.ImageNameB\x02(\x01R\x05names\x122\n" +
 	"\bmetadata\x18\x02 \x01(\v2\x16.storage.ImageMetadataR\bmetadata\x12&\n" +
 	"\x04scan\x18\x03 \x01(\v2\x12.storage.ImageScanR\x04scan\x12g\n" +
 	"\x1bsignature_verification_data\x18\x0f \x01(\v2'.storage.ImageSignatureVerificationDataR\x19signatureVerificationData\x125\n" +
@@ -4187,8 +4442,8 @@ const file_storage_image_proto_rawDesc = "" +
 	"components\x18\a \x01(\x05H\x00R\n" +
 	"components\x12\x14\n" +
 	"\x04cves\x18\b \x01(\x05H\x01R\x04cves\x12#\n" +
-	"\ffixable_cves\x18\t \x01(\x05H\x02R\vfixableCves\x12=\n" +
-	"\flast_updated\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12!\n" +
+	"\ffixable_cves\x18\t \x01(\x05H\x02R\vfixableCves\x12A\n" +
+	"\flast_updated\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x12!\n" +
 	"\fnot_pullable\x18\n" +
 	" \x01(\bR\vnotPullable\x12(\n" +
 	"\x10is_cluster_local\x18\x11 \x01(\bR\x0eisClusterLocal\x12\x1a\n" +
@@ -4211,12 +4466,12 @@ const file_storage_image_proto_rawDesc = "" +
 	"DataSource\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
-	"\x06mirror\x18\x03 \x01(\tR\x06mirror\"\x94\x04\n" +
+	"\x06mirror\x18\x03 \x01(\tR\x06mirror\"\x9c\x04\n" +
 	"\tImageScan\x12'\n" +
-	"\x0fscanner_version\x18\x06 \x01(\tR\x0escannerVersion\x127\n" +
-	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12C\n" +
+	"\x0fscanner_version\x18\x06 \x01(\tR\x0escannerVersion\x12;\n" +
+	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\bscanTime\x12G\n" +
 	"\n" +
-	"components\x18\x02 \x03(\v2#.storage.EmbeddedImageScanComponentR\n" +
+	"components\x18\x02 \x03(\v2#.storage.EmbeddedImageScanComponentB\x02(\x01R\n" +
 	"components\x12)\n" +
 	"\x10operating_system\x18\x04 \x01(\tR\x0foperatingSystem\x124\n" +
 	"\vdata_source\x18\x03 \x01(\v2\x13.storage.DataSourceR\n" +
@@ -4231,11 +4486,11 @@ const file_storage_image_proto_rawDesc = "" +
 	"\rOS_CVES_STALE\x10\x04\x12\x1d\n" +
 	"\x19LANGUAGE_CVES_UNAVAILABLE\x10\x05\x12#\n" +
 	"\x1fCERTIFIED_RHEL_SCAN_UNAVAILABLE\x10\x06B\v\n" +
-	"\thashoneof\"e\n" +
-	"\x1eImageSignatureVerificationData\x12C\n" +
-	"\aresults\x18\x01 \x03(\v2).storage.ImageSignatureVerificationResultR\aresults\"\xb9\x03\n" +
-	" ImageSignatureVerificationResult\x12G\n" +
-	"\x11verification_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x10verificationTime\x12\x1f\n" +
+	"\thashoneof\"i\n" +
+	"\x1eImageSignatureVerificationData\x12G\n" +
+	"\aresults\x18\x01 \x03(\v2).storage.ImageSignatureVerificationResultB\x02(\x01R\aresults\"\xbd\x03\n" +
+	" ImageSignatureVerificationResult\x12K\n" +
+	"\x11verification_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x10verificationTime\x12\x1f\n" +
 	"\vverifier_id\x18\x02 \x01(\tR\n" +
 	"verifierId\x12H\n" +
 	"\x06status\x18\x03 \x01(\x0e20.storage.ImageSignatureVerificationResult.StatusR\x06status\x12 \n" +
@@ -4247,12 +4502,12 @@ const file_storage_image_proto_rawDesc = "" +
 	"\x13FAILED_VERIFICATION\x10\x02\x12\x1a\n" +
 	"\x16INVALID_SIGNATURE_ALGO\x10\x03\x12\x17\n" +
 	"\x13CORRUPTED_SIGNATURE\x10\x04\x12\x11\n" +
-	"\rGENERIC_ERROR\x10\x05\"\xea\x04\n" +
+	"\rGENERIC_ERROR\x10\x05\"\xf2\x04\n" +
 	"\x1aEmbeddedImageScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12*\n" +
-	"\alicense\x18\x03 \x01(\v2\x10.storage.LicenseR\alicense\x124\n" +
-	"\x05vulns\x18\x04 \x03(\v2\x1e.storage.EmbeddedVulnerabilityR\x05vulns\x12!\n" +
+	"\alicense\x18\x03 \x01(\v2\x10.storage.LicenseR\alicense\x128\n" +
+	"\x05vulns\x18\x04 \x03(\v2\x1e.storage.EmbeddedVulnerabilityB\x02(\x01R\x05vulns\x12!\n" +
 	"\vlayer_index\x18\x05 \x01(\x05H\x00R\n" +
 	"layerIndex\x12\x1a\n" +
 	"\bpriority\x18\x06 \x01(\x03R\bpriority\x12+\n" +
@@ -4262,8 +4517,8 @@ const file_storage_image_proto_rawDesc = "" +
 	"\n" +
 	"risk_score\x18\n" +
 	" \x01(\x02R\triskScore\x12\x19\n" +
-	"\bfixed_by\x18\v \x01(\tR\afixedBy\x12P\n" +
-	"\vexecutables\x18\f \x03(\v2..storage.EmbeddedImageScanComponent.ExecutableR\vexecutables\x12\"\n" +
+	"\bfixed_by\x18\v \x01(\tR\afixedBy\x12T\n" +
+	"\vexecutables\x18\f \x03(\v2..storage.EmbeddedImageScanComponent.ExecutableB\x02(\x01R\vexecutables\x12\"\n" +
 	"\farchitecture\x18\r \x01(\tR\farchitecture\x1aD\n" +
 	"\n" +
 	"Executable\x12\x12\n" +
@@ -4282,12 +4537,12 @@ const file_storage_image_proto_rawDesc = "" +
 	"layer_shas\x18\x03 \x03(\tR\tlayerShas\x124\n" +
 	"\vdata_source\x18\x04 \x01(\v2\x13.storage.DataSourceR\n" +
 	"dataSource\x12\x18\n" +
-	"\aversion\x18\x05 \x01(\x04R\aversion\"z\n" +
-	"\x0eImageSignature\x122\n" +
+	"\aversion\x18\x05 \x01(\x04R\aversion\"\x82\x01\n" +
+	"\x0eImageSignature\x126\n" +
 	"\n" +
-	"signatures\x18\x01 \x03(\v2\x12.storage.SignatureR\n" +
-	"signatures\x124\n" +
-	"\afetched\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\afetched\"L\n" +
+	"signatures\x18\x01 \x03(\v2\x12.storage.SignatureB\x02(\x01R\n" +
+	"signatures\x128\n" +
+	"\afetched\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\afetched\"L\n" +
 	"\tSignature\x122\n" +
 	"\x06cosign\x18\x01 \x01(\v2\x18.storage.CosignSignatureH\x00R\x06cosignB\v\n" +
 	"\tSignature\"\xc7\x01\n" +
@@ -4299,35 +4554,35 @@ const file_storage_image_proto_rawDesc = "" +
 	"\frekor_bundle\x18\x05 \x01(\fR\vrekorBundle\"$\n" +
 	"\n" +
 	"V2Metadata\x12\x16\n" +
-	"\x06digest\x18\x01 \x01(\tR\x06digest\"\xfb\x02\n" +
+	"\x06digest\x18\x01 \x01(\tR\x06digest\"\x87\x03\n" +
 	"\n" +
 	"V1Metadata\x12\x16\n" +
-	"\x06digest\x18\x01 \x01(\tR\x06digest\x124\n" +
-	"\acreated\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12\x16\n" +
-	"\x06author\x18\x03 \x01(\tR\x06author\x12+\n" +
-	"\x06layers\x18\x04 \x03(\v2\x13.storage.ImageLayerR\x06layers\x12\x12\n" +
+	"\x06digest\x18\x01 \x01(\tR\x06digest\x128\n" +
+	"\acreated\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\acreated\x12\x16\n" +
+	"\x06author\x18\x03 \x01(\tR\x06author\x12/\n" +
+	"\x06layers\x18\x04 \x03(\v2\x13.storage.ImageLayerB\x02(\x01R\x06layers\x12\x12\n" +
 	"\x04user\x18\x05 \x01(\tR\x04user\x12\x18\n" +
 	"\acommand\x18\x06 \x03(\tR\acommand\x12\x1e\n" +
 	"\n" +
 	"entrypoint\x18\a \x03(\tR\n" +
 	"entrypoint\x12\x18\n" +
-	"\avolumes\x18\b \x03(\tR\avolumes\x127\n" +
-	"\x06labels\x18\t \x03(\v2\x1f.storage.V1Metadata.LabelsEntryR\x06labels\x1a9\n" +
+	"\avolumes\x18\b \x03(\tR\avolumes\x12;\n" +
+	"\x06labels\x18\t \x03(\v2\x1f.storage.V1Metadata.LabelsEntryB\x02(\x01R\x06labels\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xae\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb2\x01\n" +
 	"\n" +
 	"ImageLayer\x12 \n" +
 	"\vinstruction\x18\x01 \x01(\tR\vinstruction\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\x124\n" +
-	"\acreated\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12\x16\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x128\n" +
+	"\acreated\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\acreated\x12\x16\n" +
 	"\x06author\x18\x04 \x01(\tR\x06author\x12\x14\n" +
 	"\x05empty\x18\x06 \x01(\bR\x05emptyJ\x04\b\x05\x10\x06\"n\n" +
 	"\tImageName\x12\x1a\n" +
 	"\bregistry\x18\x01 \x01(\tR\bregistry\x12\x16\n" +
 	"\x06remote\x18\x02 \x01(\tR\x06remote\x12\x10\n" +
 	"\x03tag\x18\x03 \x01(\tR\x03tag\x12\x1b\n" +
-	"\tfull_name\x18\x04 \x01(\tR\bfullName\"\xd0\x02\n" +
+	"\tfull_name\x18\x04 \x01(\tR\bfullName\"\xd8\x02\n" +
 	"\tListImage\x12\x0e\n" +
 	"\x02id\x18\a \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -4335,9 +4590,9 @@ const file_storage_image_proto_rawDesc = "" +
 	"components\x18\x03 \x01(\x05H\x00R\n" +
 	"components\x12\x14\n" +
 	"\x04cves\x18\x04 \x01(\x05H\x01R\x04cves\x12#\n" +
-	"\ffixable_cves\x18\x05 \x01(\x05H\x02R\vfixableCves\x124\n" +
-	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12=\n" +
-	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12\x1a\n" +
+	"\ffixable_cves\x18\x05 \x01(\x05H\x02R\vfixableCves\x128\n" +
+	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\acreated\x12A\n" +
+	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x12\x1a\n" +
 	"\bpriority\x18\n" +
 	" \x01(\x03R\bpriorityB\x10\n" +
 	"\x0eset_componentsB\n" +

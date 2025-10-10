@@ -25,9 +25,11 @@ const (
 // The index report is collected from the virtual machine agent and contains
 // the package information.
 type IndexReport struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_VsockCid    *string                `protobuf:"bytes,1,opt,name=vsock_cid,json=vsockCid"`
-	xxx_hidden_IndexV4     *v4.IndexReport        `protobuf:"bytes,2,opt,name=index_v4,json=indexV4"`
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_VsockCid *string                `protobuf:"bytes,1,opt,name=vsock_cid,json=vsockCid"`
+	xxx_hidden_IndexV4  *v4.IndexReport        `protobuf:"bytes,2,opt,name=index_v4,json=indexV4"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -71,7 +73,14 @@ func (x *IndexReport) GetVsockCid() string {
 
 func (x *IndexReport) GetIndexV4() *v4.IndexReport {
 	if x != nil {
-		return x.xxx_hidden_IndexV4
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_IndexV4) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *v4.IndexReport
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_IndexV4), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -82,7 +91,12 @@ func (x *IndexReport) SetVsockCid(v string) {
 }
 
 func (x *IndexReport) SetIndexV4(v *v4.IndexReport) {
-	x.xxx_hidden_IndexV4 = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_IndexV4, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *IndexReport) HasVsockCid() bool {
@@ -96,7 +110,7 @@ func (x *IndexReport) HasIndexV4() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_IndexV4 != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *IndexReport) ClearVsockCid() {
@@ -105,7 +119,8 @@ func (x *IndexReport) ClearVsockCid() {
 }
 
 func (x *IndexReport) ClearIndexV4() {
-	x.xxx_hidden_IndexV4 = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_IndexV4, (*v4.IndexReport)(nil))
 }
 
 type IndexReport_builder struct {
@@ -123,7 +138,10 @@ func (b0 IndexReport_builder) Build() *IndexReport {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_VsockCid = b.VsockCid
 	}
-	x.xxx_hidden_IndexV4 = b.IndexV4
+	if b.IndexV4 != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_IndexV4 = b.IndexV4
+	}
 	return m0
 }
 
@@ -238,10 +256,10 @@ var File_internalapi_virtualmachine_v1_index_report_proto protoreflect.FileDescr
 
 const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"\n" +
-	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\x1a!google/protobuf/go_features.proto\"^\n" +
+	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\x1a!google/protobuf/go_features.proto\"b\n" +
 	"\vIndexReport\x12\x1b\n" +
-	"\tvsock_cid\x18\x01 \x01(\tR\bvsockCid\x122\n" +
-	"\bindex_v4\x18\x02 \x01(\v2\x17.scanner.v4.IndexReportR\aindexV4\"X\n" +
+	"\tvsock_cid\x18\x01 \x01(\tR\bvsockCid\x126\n" +
+	"\bindex_v4\x18\x02 \x01(\v2\x17.scanner.v4.IndexReportB\x02(\x01R\aindexV4\"X\n" +
 	"\x10IndexReportEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
 	"\x05index\x18\x02 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\x05indexB,Z\"./internalapi/virtualmachine/v1;v1\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"

@@ -123,6 +123,8 @@ type VirtualMachine struct {
 	xxx_hidden_VsockCid    int32                  `protobuf:"varint,8,opt,name=vsock_cid,json=vsockCid"`
 	xxx_hidden_State       VirtualMachine_State   `protobuf:"varint,9,opt,name=state,enum=v2.VirtualMachine_State"`
 	xxx_hidden_Scan        *VirtualMachineScan    `protobuf:"bytes,10,opt,name=scan"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -213,7 +215,14 @@ func (x *VirtualMachine) GetFacts() map[string]string {
 
 func (x *VirtualMachine) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -271,7 +280,12 @@ func (x *VirtualMachine) SetFacts(v map[string]string) {
 }
 
 func (x *VirtualMachine) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 10)
+	}
 }
 
 func (x *VirtualMachine) SetVsockCid(v int32) {
@@ -327,7 +341,7 @@ func (x *VirtualMachine) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *VirtualMachine) HasVsockCid() bool {
@@ -377,7 +391,8 @@ func (x *VirtualMachine) ClearClusterName() {
 }
 
 func (x *VirtualMachine) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *VirtualMachine) ClearVsockCid() {
@@ -434,7 +449,10 @@ func (b0 VirtualMachine_builder) Build() *VirtualMachine {
 		x.xxx_hidden_ClusterName = b.ClusterName
 	}
 	x.xxx_hidden_Facts = b.Facts
-	x.xxx_hidden_LastUpdated = b.LastUpdated
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 10)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
 	if b.VsockCid != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
 		x.xxx_hidden_VsockCid = *b.VsockCid
@@ -453,10 +471,12 @@ type VirtualMachineScan struct {
 	xxx_hidden_OperatingSystem *string                   `protobuf:"bytes,2,opt,name=operating_system,json=operatingSystem"`
 	xxx_hidden_Notes           []VirtualMachineScan_Note `protobuf:"varint,3,rep,packed,name=notes,enum=v2.VirtualMachineScan_Note"`
 	xxx_hidden_Components      *[]*ScanComponent         `protobuf:"bytes,4,rep,name=components"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VirtualMachineScan) Reset() {
@@ -486,7 +506,14 @@ func (x *VirtualMachineScan) ProtoReflect() protoreflect.Message {
 
 func (x *VirtualMachineScan) GetScanTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ScanTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScanTime) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -510,15 +537,25 @@ func (x *VirtualMachineScan) GetNotes() []VirtualMachineScan_Note {
 
 func (x *VirtualMachineScan) GetComponents() []*ScanComponent {
 	if x != nil {
-		if x.xxx_hidden_Components != nil {
-			return *x.xxx_hidden_Components
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Components) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*ScanComponent
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *VirtualMachineScan) SetScanTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ScanTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ScanTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	}
 }
 
 func (x *VirtualMachineScan) SetOperatingSystem(v string) {
@@ -531,14 +568,21 @@ func (x *VirtualMachineScan) SetNotes(v []VirtualMachineScan_Note) {
 }
 
 func (x *VirtualMachineScan) SetComponents(v []*ScanComponent) {
-	x.xxx_hidden_Components = &v
+	var sv *[]*ScanComponent
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ScanComponent{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *VirtualMachineScan) HasScanTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScanTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VirtualMachineScan) HasOperatingSystem() bool {
@@ -549,7 +593,8 @@ func (x *VirtualMachineScan) HasOperatingSystem() bool {
 }
 
 func (x *VirtualMachineScan) ClearScanTime() {
-	x.xxx_hidden_ScanTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ScanTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *VirtualMachineScan) ClearOperatingSystem() {
@@ -570,13 +615,19 @@ func (b0 VirtualMachineScan_builder) Build() *VirtualMachineScan {
 	m0 := &VirtualMachineScan{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ScanTime = b.ScanTime
+	if b.ScanTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_ScanTime = b.ScanTime
+	}
 	if b.OperatingSystem != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
 		x.xxx_hidden_OperatingSystem = b.OperatingSystem
 	}
 	x.xxx_hidden_Notes = b.Notes
-	x.xxx_hidden_Components = &b.Components
+	if b.Components != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Components = &b.Components
+	}
 	return m0
 }
 
@@ -692,10 +743,12 @@ type ListVirtualMachinesResponse struct {
 	state                      protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_VirtualMachines *[]*VirtualMachine     `protobuf:"bytes,1,rep,name=virtual_machines,json=virtualMachines"`
 	xxx_hidden_TotalCount      int32                  `protobuf:"varint,2,opt,name=total_count,json=totalCount"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListVirtualMachinesResponse) Reset() {
@@ -725,8 +778,13 @@ func (x *ListVirtualMachinesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListVirtualMachinesResponse) GetVirtualMachines() []*VirtualMachine {
 	if x != nil {
-		if x.xxx_hidden_VirtualMachines != nil {
-			return *x.xxx_hidden_VirtualMachines
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_VirtualMachines) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*VirtualMachine
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_VirtualMachines), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -740,7 +798,14 @@ func (x *ListVirtualMachinesResponse) GetTotalCount() int32 {
 }
 
 func (x *ListVirtualMachinesResponse) SetVirtualMachines(v []*VirtualMachine) {
-	x.xxx_hidden_VirtualMachines = &v
+	var sv *[]*VirtualMachine
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_VirtualMachines), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*VirtualMachine{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_VirtualMachines), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ListVirtualMachinesResponse) SetTotalCount(v int32) {
@@ -771,7 +836,10 @@ func (b0 ListVirtualMachinesResponse_builder) Build() *ListVirtualMachinesRespon
 	m0 := &ListVirtualMachinesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_VirtualMachines = &b.VirtualMachines
+	if b.VirtualMachines != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_VirtualMachines = &b.VirtualMachines
+	}
 	if b.TotalCount != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_TotalCount = *b.TotalCount
@@ -851,16 +919,16 @@ var File_api_v2_virtual_machine_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\n" +
-	"$api/v2/virtual_machine_service.proto\x12\x02v2\x1a\x1bapi/v2/scan_component.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xeb\x03\n" +
+	"$api/v2/virtual_machine_service.proto\x12\x02v2\x1a\x1bapi/v2/scan_component.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xf3\x03\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12!\n" +
-	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x123\n" +
-	"\x05facts\x18\x06 \x03(\v2\x1d.v2.VirtualMachine.FactsEntryR\x05facts\x12=\n" +
-	"\flast_updated\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12\x1b\n" +
+	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x127\n" +
+	"\x05facts\x18\x06 \x03(\v2\x1d.v2.VirtualMachine.FactsEntryB\x02(\x01R\x05facts\x12A\n" +
+	"\flast_updated\x18\a \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x12\x1b\n" +
 	"\tvsock_cid\x18\b \x01(\x05R\bvsockCid\x12.\n" +
 	"\x05state\x18\t \x01(\x0e2\x18.v2.VirtualMachine.StateR\x05state\x12*\n" +
 	"\x04scan\x18\n" +
@@ -872,13 +940,13 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTOPPED\x10\x01\x12\v\n" +
-	"\aRUNNING\x10\x02\"\x95\x02\n" +
-	"\x12VirtualMachineScan\x127\n" +
-	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12)\n" +
+	"\aRUNNING\x10\x02\"\x9d\x02\n" +
+	"\x12VirtualMachineScan\x12;\n" +
+	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\bscanTime\x12)\n" +
 	"\x10operating_system\x18\x02 \x01(\tR\x0foperatingSystem\x121\n" +
-	"\x05notes\x18\x03 \x03(\x0e2\x1b.v2.VirtualMachineScan.NoteR\x05notes\x121\n" +
+	"\x05notes\x18\x03 \x03(\x0e2\x1b.v2.VirtualMachineScan.NoteR\x05notes\x125\n" +
 	"\n" +
-	"components\x18\x04 \x03(\v2\x11.v2.ScanComponentR\n" +
+	"components\x18\x04 \x03(\v2\x11.v2.ScanComponentB\x02(\x01R\n" +
 	"components\"5\n" +
 	"\x04Note\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\x0e\n" +
@@ -887,9 +955,9 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\x0eOS_UNSUPPORTED\x10\x02\"W\n" +
 	"\x18GetVirtualMachineRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
-	"\x11strip_description\x18\x02 \x01(\bR\x10stripDescription\"}\n" +
-	"\x1bListVirtualMachinesResponse\x12=\n" +
-	"\x10virtual_machines\x18\x01 \x03(\v2\x12.v2.VirtualMachineR\x0fvirtualMachines\x12\x1f\n" +
+	"\x11strip_description\x18\x02 \x01(\bR\x10stripDescription\"\x81\x01\n" +
+	"\x1bListVirtualMachinesResponse\x12A\n" +
+	"\x10virtual_machines\x18\x01 \x03(\v2\x12.v2.VirtualMachineB\x02(\x01R\x0fvirtualMachines\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
 	"totalCount\"@\n" +
 	"\x1aListVirtualMachinesRequest\x12\"\n" +

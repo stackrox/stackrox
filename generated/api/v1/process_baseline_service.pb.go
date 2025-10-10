@@ -26,8 +26,12 @@ const (
 type GetProcessBaselineRequest struct {
 	state          protoimpl.MessageState      `protogen:"opaque.v1"`
 	xxx_hidden_Key *storage.ProcessBaselineKey `protobuf:"bytes,1,opt,name=key"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetProcessBaselineRequest) Reset() {
@@ -57,24 +61,37 @@ func (x *GetProcessBaselineRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetProcessBaselineRequest) GetKey() *storage.ProcessBaselineKey {
 	if x != nil {
-		return x.xxx_hidden_Key
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Key) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.ProcessBaselineKey
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Key), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetProcessBaselineRequest) SetKey(v *storage.ProcessBaselineKey) {
-	x.xxx_hidden_Key = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Key, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetProcessBaselineRequest) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Key != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetProcessBaselineRequest) ClearKey() {
-	x.xxx_hidden_Key = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Key, (*storage.ProcessBaselineKey)(nil))
 }
 
 type GetProcessBaselineRequest_builder struct {
@@ -87,7 +104,10 @@ func (b0 GetProcessBaselineRequest_builder) Build() *GetProcessBaselineRequest {
 	m0 := &GetProcessBaselineRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Key = b.Key
+	if b.Key != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Key = b.Key
+	}
 	return m0
 }
 
@@ -96,8 +116,12 @@ type UpdateProcessBaselinesRequest struct {
 	xxx_hidden_Keys           *[]*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys"`
 	xxx_hidden_AddElements    *[]*storage.BaselineItem       `protobuf:"bytes,2,rep,name=add_elements,json=addElements"`
 	xxx_hidden_RemoveElements *[]*storage.BaselineItem       `protobuf:"bytes,3,rep,name=remove_elements,json=removeElements"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpdateProcessBaselinesRequest) Reset() {
@@ -127,8 +151,13 @@ func (x *UpdateProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateProcessBaselinesRequest) GetKeys() []*storage.ProcessBaselineKey {
 	if x != nil {
-		if x.xxx_hidden_Keys != nil {
-			return *x.xxx_hidden_Keys
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Keys) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ProcessBaselineKey
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Keys), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -136,8 +165,13 @@ func (x *UpdateProcessBaselinesRequest) GetKeys() []*storage.ProcessBaselineKey 
 
 func (x *UpdateProcessBaselinesRequest) GetAddElements() []*storage.BaselineItem {
 	if x != nil {
-		if x.xxx_hidden_AddElements != nil {
-			return *x.xxx_hidden_AddElements
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AddElements) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.BaselineItem
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AddElements), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -145,23 +179,49 @@ func (x *UpdateProcessBaselinesRequest) GetAddElements() []*storage.BaselineItem
 
 func (x *UpdateProcessBaselinesRequest) GetRemoveElements() []*storage.BaselineItem {
 	if x != nil {
-		if x.xxx_hidden_RemoveElements != nil {
-			return *x.xxx_hidden_RemoveElements
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RemoveElements) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*storage.BaselineItem
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RemoveElements), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *UpdateProcessBaselinesRequest) SetKeys(v []*storage.ProcessBaselineKey) {
-	x.xxx_hidden_Keys = &v
+	var sv *[]*storage.ProcessBaselineKey
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Keys), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ProcessBaselineKey{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Keys), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *UpdateProcessBaselinesRequest) SetAddElements(v []*storage.BaselineItem) {
-	x.xxx_hidden_AddElements = &v
+	var sv *[]*storage.BaselineItem
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AddElements), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.BaselineItem{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AddElements), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *UpdateProcessBaselinesRequest) SetRemoveElements(v []*storage.BaselineItem) {
-	x.xxx_hidden_RemoveElements = &v
+	var sv *[]*storage.BaselineItem
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RemoveElements), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.BaselineItem{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_RemoveElements), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 type UpdateProcessBaselinesRequest_builder struct {
@@ -176,17 +236,30 @@ func (b0 UpdateProcessBaselinesRequest_builder) Build() *UpdateProcessBaselinesR
 	m0 := &UpdateProcessBaselinesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Keys = &b.Keys
-	x.xxx_hidden_AddElements = &b.AddElements
-	x.xxx_hidden_RemoveElements = &b.RemoveElements
+	if b.Keys != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Keys = &b.Keys
+	}
+	if b.AddElements != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_AddElements = &b.AddElements
+	}
+	if b.RemoveElements != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_RemoveElements = &b.RemoveElements
+	}
 	return m0
 }
 
 type ProcessBaselinesResponse struct {
 	state                protoimpl.MessageState      `protogen:"opaque.v1"`
 	xxx_hidden_Baselines *[]*storage.ProcessBaseline `protobuf:"bytes,1,rep,name=baselines"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessBaselinesResponse) Reset() {
@@ -216,15 +289,27 @@ func (x *ProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessBaselinesResponse) GetBaselines() []*storage.ProcessBaseline {
 	if x != nil {
-		if x.xxx_hidden_Baselines != nil {
-			return *x.xxx_hidden_Baselines
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Baselines) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ProcessBaseline
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Baselines), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ProcessBaselinesResponse) SetBaselines(v []*storage.ProcessBaseline) {
-	x.xxx_hidden_Baselines = &v
+	var sv *[]*storage.ProcessBaseline
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Baselines), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ProcessBaseline{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Baselines), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ProcessBaselinesResponse_builder struct {
@@ -237,14 +322,19 @@ func (b0 ProcessBaselinesResponse_builder) Build() *ProcessBaselinesResponse {
 	m0 := &ProcessBaselinesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Baselines = &b.Baselines
+	if b.Baselines != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Baselines = &b.Baselines
+	}
 	return m0
 }
 
 type ProcessBaselineUpdateError struct {
-	state                  protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Error       *string                     `protobuf:"bytes,1,opt,name=error"`
-	xxx_hidden_Key         *storage.ProcessBaselineKey `protobuf:"bytes,2,opt,name=key"`
+	state            protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Error *string                     `protobuf:"bytes,1,opt,name=error"`
+	xxx_hidden_Key   *storage.ProcessBaselineKey `protobuf:"bytes,2,opt,name=key"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -288,7 +378,14 @@ func (x *ProcessBaselineUpdateError) GetError() string {
 
 func (x *ProcessBaselineUpdateError) GetKey() *storage.ProcessBaselineKey {
 	if x != nil {
-		return x.xxx_hidden_Key
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Key) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.ProcessBaselineKey
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Key), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -299,7 +396,12 @@ func (x *ProcessBaselineUpdateError) SetError(v string) {
 }
 
 func (x *ProcessBaselineUpdateError) SetKey(v *storage.ProcessBaselineKey) {
-	x.xxx_hidden_Key = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Key, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *ProcessBaselineUpdateError) HasError() bool {
@@ -313,7 +415,7 @@ func (x *ProcessBaselineUpdateError) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Key != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ProcessBaselineUpdateError) ClearError() {
@@ -322,7 +424,8 @@ func (x *ProcessBaselineUpdateError) ClearError() {
 }
 
 func (x *ProcessBaselineUpdateError) ClearKey() {
-	x.xxx_hidden_Key = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Key, (*storage.ProcessBaselineKey)(nil))
 }
 
 type ProcessBaselineUpdateError_builder struct {
@@ -340,7 +443,10 @@ func (b0 ProcessBaselineUpdateError_builder) Build() *ProcessBaselineUpdateError
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Error = b.Error
 	}
-	x.xxx_hidden_Key = b.Key
+	if b.Key != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Key = b.Key
+	}
 	return m0
 }
 
@@ -423,8 +529,12 @@ type UpdateProcessBaselinesResponse struct {
 	state                protoimpl.MessageState         `protogen:"opaque.v1"`
 	xxx_hidden_Baselines *[]*storage.ProcessBaseline    `protobuf:"bytes,1,rep,name=baselines"`
 	xxx_hidden_Errors    *[]*ProcessBaselineUpdateError `protobuf:"bytes,2,rep,name=errors"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpdateProcessBaselinesResponse) Reset() {
@@ -454,8 +564,13 @@ func (x *UpdateProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateProcessBaselinesResponse) GetBaselines() []*storage.ProcessBaseline {
 	if x != nil {
-		if x.xxx_hidden_Baselines != nil {
-			return *x.xxx_hidden_Baselines
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Baselines) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ProcessBaseline
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Baselines), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -463,19 +578,38 @@ func (x *UpdateProcessBaselinesResponse) GetBaselines() []*storage.ProcessBaseli
 
 func (x *UpdateProcessBaselinesResponse) GetErrors() []*ProcessBaselineUpdateError {
 	if x != nil {
-		if x.xxx_hidden_Errors != nil {
-			return *x.xxx_hidden_Errors
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Errors) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*ProcessBaselineUpdateError
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Errors), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *UpdateProcessBaselinesResponse) SetBaselines(v []*storage.ProcessBaseline) {
-	x.xxx_hidden_Baselines = &v
+	var sv *[]*storage.ProcessBaseline
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Baselines), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ProcessBaseline{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Baselines), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *UpdateProcessBaselinesResponse) SetErrors(v []*ProcessBaselineUpdateError) {
-	x.xxx_hidden_Errors = &v
+	var sv *[]*ProcessBaselineUpdateError
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Errors), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ProcessBaselineUpdateError{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Errors), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 type UpdateProcessBaselinesResponse_builder struct {
@@ -489,15 +623,23 @@ func (b0 UpdateProcessBaselinesResponse_builder) Build() *UpdateProcessBaselines
 	m0 := &UpdateProcessBaselinesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Baselines = &b.Baselines
-	x.xxx_hidden_Errors = &b.Errors
+	if b.Baselines != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Baselines = &b.Baselines
+	}
+	if b.Errors != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Errors = &b.Errors
+	}
 	return m0
 }
 
 type LockProcessBaselinesRequest struct {
-	state                  protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_Keys        *[]*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys"`
-	xxx_hidden_Locked      bool                           `protobuf:"varint,2,opt,name=locked"`
+	state             protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_Keys   *[]*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys"`
+	xxx_hidden_Locked bool                           `protobuf:"varint,2,opt,name=locked"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -531,8 +673,13 @@ func (x *LockProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *LockProcessBaselinesRequest) GetKeys() []*storage.ProcessBaselineKey {
 	if x != nil {
-		if x.xxx_hidden_Keys != nil {
-			return *x.xxx_hidden_Keys
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Keys) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ProcessBaselineKey
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Keys), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -546,7 +693,14 @@ func (x *LockProcessBaselinesRequest) GetLocked() bool {
 }
 
 func (x *LockProcessBaselinesRequest) SetKeys(v []*storage.ProcessBaselineKey) {
-	x.xxx_hidden_Keys = &v
+	var sv *[]*storage.ProcessBaselineKey
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Keys), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ProcessBaselineKey{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Keys), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *LockProcessBaselinesRequest) SetLocked(v bool) {
@@ -577,7 +731,10 @@ func (b0 LockProcessBaselinesRequest_builder) Build() *LockProcessBaselinesReque
 	m0 := &LockProcessBaselinesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Keys = &b.Keys
+	if b.Keys != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Keys = &b.Keys
+	}
 	if b.Locked != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_Locked = *b.Locked
@@ -894,25 +1051,25 @@ var File_api_v1_process_baseline_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_process_baseline_service_proto_rawDesc = "" +
 	"\n" +
-	"%api/v1/process_baseline_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1estorage/process_baseline.proto\x1a!google/protobuf/go_features.proto\"J\n" +
-	"\x19GetProcessBaselineRequest\x12-\n" +
-	"\x03key\x18\x01 \x01(\v2\x1b.storage.ProcessBaselineKeyR\x03key\"\xca\x01\n" +
-	"\x1dUpdateProcessBaselinesRequest\x12/\n" +
-	"\x04keys\x18\x01 \x03(\v2\x1b.storage.ProcessBaselineKeyR\x04keys\x128\n" +
-	"\fadd_elements\x18\x02 \x03(\v2\x15.storage.BaselineItemR\vaddElements\x12>\n" +
-	"\x0fremove_elements\x18\x03 \x03(\v2\x15.storage.BaselineItemR\x0eremoveElements\"R\n" +
-	"\x18ProcessBaselinesResponse\x126\n" +
-	"\tbaselines\x18\x01 \x03(\v2\x18.storage.ProcessBaselineR\tbaselines\"a\n" +
+	"%api/v1/process_baseline_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1estorage/process_baseline.proto\x1a!google/protobuf/go_features.proto\"N\n" +
+	"\x19GetProcessBaselineRequest\x121\n" +
+	"\x03key\x18\x01 \x01(\v2\x1b.storage.ProcessBaselineKeyB\x02(\x01R\x03key\"\xd6\x01\n" +
+	"\x1dUpdateProcessBaselinesRequest\x123\n" +
+	"\x04keys\x18\x01 \x03(\v2\x1b.storage.ProcessBaselineKeyB\x02(\x01R\x04keys\x12<\n" +
+	"\fadd_elements\x18\x02 \x03(\v2\x15.storage.BaselineItemB\x02(\x01R\vaddElements\x12B\n" +
+	"\x0fremove_elements\x18\x03 \x03(\v2\x15.storage.BaselineItemB\x02(\x01R\x0eremoveElements\"V\n" +
+	"\x18ProcessBaselinesResponse\x12:\n" +
+	"\tbaselines\x18\x01 \x03(\v2\x18.storage.ProcessBaselineB\x02(\x01R\tbaselines\"e\n" +
 	"\x1aProcessBaselineUpdateError\x12\x14\n" +
-	"\x05error\x18\x01 \x01(\tR\x05error\x12-\n" +
-	"\x03key\x18\x02 \x01(\v2\x1b.storage.ProcessBaselineKeyR\x03key\">\n" +
+	"\x05error\x18\x01 \x01(\tR\x05error\x121\n" +
+	"\x03key\x18\x02 \x01(\v2\x1b.storage.ProcessBaselineKeyB\x02(\x01R\x03key\">\n" +
 	"\"BulkUpdateProcessBaselinesResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x90\x01\n" +
-	"\x1eUpdateProcessBaselinesResponse\x126\n" +
-	"\tbaselines\x18\x01 \x03(\v2\x18.storage.ProcessBaselineR\tbaselines\x126\n" +
-	"\x06errors\x18\x02 \x03(\v2\x1e.v1.ProcessBaselineUpdateErrorR\x06errors\"f\n" +
-	"\x1bLockProcessBaselinesRequest\x12/\n" +
-	"\x04keys\x18\x01 \x03(\v2\x1b.storage.ProcessBaselineKeyR\x04keys\x12\x16\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x98\x01\n" +
+	"\x1eUpdateProcessBaselinesResponse\x12:\n" +
+	"\tbaselines\x18\x01 \x03(\v2\x18.storage.ProcessBaselineB\x02(\x01R\tbaselines\x12:\n" +
+	"\x06errors\x18\x02 \x03(\v2\x1e.v1.ProcessBaselineUpdateErrorB\x02(\x01R\x06errors\"j\n" +
+	"\x1bLockProcessBaselinesRequest\x123\n" +
+	"\x04keys\x18\x01 \x03(\v2\x1b.storage.ProcessBaselineKeyB\x02(\x01R\x04keys\x12\x16\n" +
 	"\x06locked\x18\x02 \x01(\bR\x06locked\"\\\n" +
 	"\x1bBulkProcessBaselinesRequest\x12\x1d\n" +
 	"\n" +

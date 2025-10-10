@@ -38,10 +38,12 @@ type ServiceAccount struct {
 	xxx_hidden_AutomountToken   bool                   `protobuf:"varint,9,opt,name=automount_token,json=automountToken"`
 	xxx_hidden_Secrets          []string               `protobuf:"bytes,10,rep,name=secrets"`
 	xxx_hidden_ImagePullSecrets []string               `protobuf:"bytes,11,rep,name=image_pull_secrets,json=imagePullSecrets"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ServiceAccount) Reset() {
@@ -135,7 +137,14 @@ func (x *ServiceAccount) GetAnnotations() map[string]string {
 
 func (x *ServiceAccount) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -195,7 +204,12 @@ func (x *ServiceAccount) SetAnnotations(v map[string]string) {
 }
 
 func (x *ServiceAccount) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
+	}
 }
 
 func (x *ServiceAccount) SetAutomountToken(v bool) {
@@ -250,7 +264,7 @@ func (x *ServiceAccount) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *ServiceAccount) HasAutomountToken() bool {
@@ -286,7 +300,8 @@ func (x *ServiceAccount) ClearClusterId() {
 }
 
 func (x *ServiceAccount) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ServiceAccount) ClearAutomountToken() {
@@ -336,7 +351,10 @@ func (b0 ServiceAccount_builder) Build() *ServiceAccount {
 	}
 	x.xxx_hidden_Labels = b.Labels
 	x.xxx_hidden_Annotations = b.Annotations
-	x.xxx_hidden_CreatedAt = b.CreatedAt
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
 	if b.AutomountToken != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
 		x.xxx_hidden_AutomountToken = *b.AutomountToken
@@ -350,18 +368,18 @@ var File_storage_service_account_proto protoreflect.FileDescriptor
 
 const file_storage_service_account_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/service_account.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xc4\x04\n" +
+	"\x1dstorage/service_account.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xd0\x04\n" +
 	"\x0eServiceAccount\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
 	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12!\n" +
 	"\fcluster_name\x18\x04 \x01(\tR\vclusterName\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x05 \x01(\tR\tclusterId\x12;\n" +
-	"\x06labels\x18\x06 \x03(\v2#.storage.ServiceAccount.LabelsEntryR\x06labels\x12J\n" +
-	"\vannotations\x18\a \x03(\v2(.storage.ServiceAccount.AnnotationsEntryR\vannotations\x129\n" +
+	"cluster_id\x18\x05 \x01(\tR\tclusterId\x12?\n" +
+	"\x06labels\x18\x06 \x03(\v2#.storage.ServiceAccount.LabelsEntryB\x02(\x01R\x06labels\x12N\n" +
+	"\vannotations\x18\a \x03(\v2(.storage.ServiceAccount.AnnotationsEntryB\x02(\x01R\vannotations\x12=\n" +
 	"\n" +
-	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12'\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\x12'\n" +
 	"\x0fautomount_token\x18\t \x01(\bR\x0eautomountToken\x12\x18\n" +
 	"\asecrets\x18\n" +
 	" \x03(\tR\asecrets\x12,\n" +

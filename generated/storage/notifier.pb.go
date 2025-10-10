@@ -1234,10 +1234,12 @@ type Jira struct {
 	xxx_hidden_PriorityMappings  *[]*Jira_PriorityMapping `protobuf:"bytes,5,rep,name=priority_mappings,json=priorityMappings"`
 	xxx_hidden_DefaultFieldsJson *string                  `protobuf:"bytes,6,opt,name=default_fields_json,json=defaultFieldsJson"`
 	xxx_hidden_DisablePriority   bool                     `protobuf:"varint,7,opt,name=disablePriority"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Jira) Reset() {
@@ -1307,8 +1309,13 @@ func (x *Jira) GetIssueType() string {
 
 func (x *Jira) GetPriorityMappings() []*Jira_PriorityMapping {
 	if x != nil {
-		if x.xxx_hidden_PriorityMappings != nil {
-			return *x.xxx_hidden_PriorityMappings
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PriorityMappings) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *[]*Jira_PriorityMapping
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PriorityMappings), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1352,7 +1359,14 @@ func (x *Jira) SetIssueType(v string) {
 }
 
 func (x *Jira) SetPriorityMappings(v []*Jira_PriorityMapping) {
-	x.xxx_hidden_PriorityMappings = &v
+	var sv *[]*Jira_PriorityMapping
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PriorityMappings), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Jira_PriorityMapping{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_PriorityMappings), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *Jira) SetDefaultFieldsJson(v string) {
@@ -1470,7 +1484,10 @@ func (b0 Jira_builder) Build() *Jira {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
 		x.xxx_hidden_IssueType = b.IssueType
 	}
-	x.xxx_hidden_PriorityMappings = &b.PriorityMappings
+	if b.PriorityMappings != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_PriorityMappings = &b.PriorityMappings
+	}
 	if b.DefaultFieldsJson != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
 		x.xxx_hidden_DefaultFieldsJson = b.DefaultFieldsJson
@@ -1889,10 +1906,12 @@ type Splunk struct {
 	xxx_hidden_AuditLoggingEnabled         bool                                 `protobuf:"varint,5,opt,name=audit_logging_enabled,json=auditLoggingEnabled"`
 	xxx_hidden_DerivedSourceTypeDeprecated isSplunk_DerivedSourceTypeDeprecated `protobuf_oneof:"derived_source_type_deprecated"`
 	xxx_hidden_SourceTypes                 map[string]string                    `protobuf:"bytes,7,rep,name=source_types,json=sourceTypes" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	XXX_raceDetectHookData                 protoimpl.RaceDetectHookData
-	XXX_presence                           [1]uint32
-	unknownFields                          protoimpl.UnknownFields
-	sizeCache                              protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Splunk) Reset() {
@@ -2275,10 +2294,12 @@ type Generic struct {
 	xxx_hidden_Headers             *[]*KeyValuePair       `protobuf:"bytes,6,rep,name=headers"`
 	xxx_hidden_ExtraFields         *[]*KeyValuePair       `protobuf:"bytes,7,rep,name=extra_fields,json=extraFields"`
 	xxx_hidden_AuditLoggingEnabled bool                   `protobuf:"varint,8,opt,name=audit_logging_enabled,json=auditLoggingEnabled"`
-	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
-	XXX_presence                   [1]uint32
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Generic) Reset() {
@@ -2355,8 +2376,13 @@ func (x *Generic) GetPassword() string {
 
 func (x *Generic) GetHeaders() []*KeyValuePair {
 	if x != nil {
-		if x.xxx_hidden_Headers != nil {
-			return *x.xxx_hidden_Headers
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Headers) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *[]*KeyValuePair
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Headers), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2364,8 +2390,13 @@ func (x *Generic) GetHeaders() []*KeyValuePair {
 
 func (x *Generic) GetExtraFields() []*KeyValuePair {
 	if x != nil {
-		if x.xxx_hidden_ExtraFields != nil {
-			return *x.xxx_hidden_ExtraFields
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ExtraFields) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *[]*KeyValuePair
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExtraFields), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2404,11 +2435,25 @@ func (x *Generic) SetPassword(v string) {
 }
 
 func (x *Generic) SetHeaders(v []*KeyValuePair) {
-	x.xxx_hidden_Headers = &v
+	var sv *[]*KeyValuePair
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Headers), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*KeyValuePair{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Headers), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
 }
 
 func (x *Generic) SetExtraFields(v []*KeyValuePair) {
-	x.xxx_hidden_ExtraFields = &v
+	var sv *[]*KeyValuePair
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExtraFields), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*KeyValuePair{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ExtraFields), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
 }
 
 func (x *Generic) SetAuditLoggingEnabled(v bool) {
@@ -2526,8 +2571,14 @@ func (b0 Generic_builder) Build() *Generic {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
 		x.xxx_hidden_Password = b.Password
 	}
-	x.xxx_hidden_Headers = &b.Headers
-	x.xxx_hidden_ExtraFields = &b.ExtraFields
+	if b.Headers != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_Headers = &b.Headers
+	}
+	if b.ExtraFields != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_ExtraFields = &b.ExtraFields
+	}
 	if b.AuditLoggingEnabled != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
 		x.xxx_hidden_AuditLoggingEnabled = *b.AuditLoggingEnabled
@@ -2941,10 +2992,12 @@ type Syslog struct {
 	xxx_hidden_ExtraFields    *[]*KeyValuePair       `protobuf:"bytes,3,rep,name=extra_fields,json=extraFields"`
 	xxx_hidden_MessageFormat  Syslog_MessageFormat   `protobuf:"varint,4,opt,name=message_format,json=messageFormat,enum=storage.Syslog_MessageFormat"`
 	xxx_hidden_MaxMessageSize int32                  `protobuf:"varint,5,opt,name=max_message_size,json=maxMessageSize"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Syslog) Reset() {
@@ -2992,8 +3045,13 @@ func (x *Syslog) GetTcpConfig() *Syslog_TCPConfig {
 
 func (x *Syslog) GetExtraFields() []*KeyValuePair {
 	if x != nil {
-		if x.xxx_hidden_ExtraFields != nil {
-			return *x.xxx_hidden_ExtraFields
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ExtraFields) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*KeyValuePair
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExtraFields), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -3029,7 +3087,14 @@ func (x *Syslog) SetTcpConfig(v *Syslog_TCPConfig) {
 }
 
 func (x *Syslog) SetExtraFields(v []*KeyValuePair) {
-	x.xxx_hidden_ExtraFields = &v
+	var sv *[]*KeyValuePair
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExtraFields), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*KeyValuePair{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ExtraFields), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *Syslog) SetMessageFormat(v Syslog_MessageFormat) {
@@ -3143,7 +3208,10 @@ func (b0 Syslog_builder) Build() *Syslog {
 	if b.TcpConfig != nil {
 		x.xxx_hidden_Endpoint = &syslog_TcpConfig{b.TcpConfig}
 	}
-	x.xxx_hidden_ExtraFields = &b.ExtraFields
+	if b.ExtraFields != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_ExtraFields = &b.ExtraFields
+	}
 	if b.MessageFormat != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
 		x.xxx_hidden_MessageFormat = *b.MessageFormat
@@ -3891,14 +3959,14 @@ const file_storage_notifier_proto_rawDesc = "" +
 	"\x0fservice_account\x18\x01 \x01(\tR\x0eserviceAccount\x12\x1b\n" +
 	"\tsource_id\x18\x04 \x01(\tR\bsourceId\x12\x1f\n" +
 	"\vwif_enabled\x18\x05 \x01(\bR\n" +
-	"wifEnabledJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04\"\xfc\x02\n" +
+	"wifEnabledJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04\"\x80\x03\n" +
 	"\x04Jira\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1a\n" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\x12\x1d\n" +
 	"\n" +
-	"issue_type\x18\x04 \x01(\tR\tissueType\x12J\n" +
-	"\x11priority_mappings\x18\x05 \x03(\v2\x1d.storage.Jira.PriorityMappingR\x10priorityMappings\x12.\n" +
+	"issue_type\x18\x04 \x01(\tR\tissueType\x12N\n" +
+	"\x11priority_mappings\x18\x05 \x03(\v2\x1d.storage.Jira.PriorityMappingB\x02(\x01R\x10priorityMappings\x12.\n" +
 	"\x13default_fields_json\x18\x06 \x01(\tR\x11defaultFieldsJson\x12(\n" +
 	"\x0fdisablePriority\x18\a \x01(\bR\x0fdisablePriority\x1ae\n" +
 	"\x0fPriorityMapping\x12-\n" +
@@ -3923,7 +3991,7 @@ const file_storage_notifier_proto_rawDesc = "" +
 	"AuthMethod\x12\f\n" +
 	"\bDISABLED\x10\x00\x12\t\n" +
 	"\x05PLAIN\x10\x01\x12\t\n" +
-	"\x05LOGIN\x10\x02\"\x95\x03\n" +
+	"\x05LOGIN\x10\x02\"\x99\x03\n" +
 	"\x06Splunk\x12\x1d\n" +
 	"\n" +
 	"http_token\x18\x01 \x01(\tR\thttpToken\x12#\n" +
@@ -3931,22 +3999,22 @@ const file_storage_notifier_proto_rawDesc = "" +
 	"\binsecure\x18\x03 \x01(\bR\binsecure\x12\x1a\n" +
 	"\btruncate\x18\x04 \x01(\x03R\btruncate\x122\n" +
 	"\x15audit_logging_enabled\x18\x05 \x01(\bR\x13auditLoggingEnabled\x124\n" +
-	"\x13derived_source_type\x18\x06 \x01(\bB\x02\x18\x01H\x00R\x11derivedSourceType\x12C\n" +
-	"\fsource_types\x18\a \x03(\v2 .storage.Splunk.SourceTypesEntryR\vsourceTypes\x1a>\n" +
+	"\x13derived_source_type\x18\x06 \x01(\bB\x02\x18\x01H\x00R\x11derivedSourceType\x12G\n" +
+	"\fsource_types\x18\a \x03(\v2 .storage.Splunk.SourceTypesEntryB\x02(\x01R\vsourceTypes\x1a>\n" +
 	"\x10SourceTypesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B \n" +
 	"\x1ederived_source_type_deprecated\"$\n" +
 	"\tPagerDuty\x12\x17\n" +
-	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\"\xbb\x02\n" +
+	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\"\xc3\x02\n" +
 	"\aGeneric\x12\x1a\n" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12$\n" +
 	"\rskipTLSVerify\x18\x02 \x01(\bR\rskipTLSVerify\x12\x17\n" +
 	"\aca_cert\x18\x03 \x01(\tR\x06caCert\x12\x1a\n" +
 	"\busername\x18\x04 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x05 \x01(\tR\bpassword\x12/\n" +
-	"\aheaders\x18\x06 \x03(\v2\x15.storage.KeyValuePairR\aheaders\x128\n" +
-	"\fextra_fields\x18\a \x03(\v2\x15.storage.KeyValuePairR\vextraFields\x122\n" +
+	"\bpassword\x18\x05 \x01(\tR\bpassword\x123\n" +
+	"\aheaders\x18\x06 \x03(\v2\x15.storage.KeyValuePairB\x02(\x01R\aheaders\x12<\n" +
+	"\fextra_fields\x18\a \x03(\v2\x15.storage.KeyValuePairB\x02(\x01R\vextraFields\x122\n" +
 	"\x15audit_logging_enabled\x18\b \x01(\bR\x13auditLoggingEnabled\"a\n" +
 	"\tSumoLogic\x12.\n" +
 	"\x13http_source_address\x18\x01 \x01(\tR\x11httpSourceAddress\x12$\n" +
@@ -3970,12 +4038,12 @@ const file_storage_notifier_proto_rawDesc = "" +
 	"\vclient_cert\x18\x01 \x01(\tR\n" +
 	"clientCert\x12\x1f\n" +
 	"\vprivate_key\x18\x02 \x01(\tR\n" +
-	"privateKey\"\xd5\x04\n" +
+	"privateKey\"\xd9\x04\n" +
 	"\x06Syslog\x12D\n" +
 	"\x0elocal_facility\x18\x01 \x01(\x0e2\x1d.storage.Syslog.LocalFacilityR\rlocalFacility\x12:\n" +
 	"\n" +
-	"tcp_config\x18\x02 \x01(\v2\x19.storage.Syslog.TCPConfigH\x00R\ttcpConfig\x128\n" +
-	"\fextra_fields\x18\x03 \x03(\v2\x15.storage.KeyValuePairR\vextraFields\x12D\n" +
+	"tcp_config\x18\x02 \x01(\v2\x19.storage.Syslog.TCPConfigH\x00R\ttcpConfig\x12<\n" +
+	"\fextra_fields\x18\x03 \x03(\v2\x15.storage.KeyValuePairB\x02(\x01R\vextraFields\x12D\n" +
 	"\x0emessage_format\x18\x04 \x01(\x0e2\x1d.storage.Syslog.MessageFormatR\rmessageFormat\x12(\n" +
 	"\x10max_message_size\x18\x05 \x01(\x05R\x0emaxMessageSize\x1a|\n" +
 	"\tTCPConfig\x12\x1a\n" +

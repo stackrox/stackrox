@@ -333,10 +333,12 @@ type LogLevelResponse struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Level        *string                `protobuf:"bytes,1,opt,name=level"`
 	xxx_hidden_ModuleLevels *[]*ModuleLevel        `protobuf:"bytes,2,rep,name=module_levels,json=moduleLevels"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *LogLevelResponse) Reset() {
@@ -376,8 +378,13 @@ func (x *LogLevelResponse) GetLevel() string {
 
 func (x *LogLevelResponse) GetModuleLevels() []*ModuleLevel {
 	if x != nil {
-		if x.xxx_hidden_ModuleLevels != nil {
-			return *x.xxx_hidden_ModuleLevels
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ModuleLevels) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*ModuleLevel
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ModuleLevels), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -389,7 +396,14 @@ func (x *LogLevelResponse) SetLevel(v string) {
 }
 
 func (x *LogLevelResponse) SetModuleLevels(v []*ModuleLevel) {
-	x.xxx_hidden_ModuleLevels = &v
+	var sv *[]*ModuleLevel
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ModuleLevels), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ModuleLevel{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ModuleLevels), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *LogLevelResponse) HasLevel() bool {
@@ -419,7 +433,10 @@ func (b0 LogLevelResponse_builder) Build() *LogLevelResponse {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Level = b.Level
 	}
-	x.xxx_hidden_ModuleLevels = &b.ModuleLevels
+	if b.ModuleLevels != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_ModuleLevels = &b.ModuleLevels
+	}
 	return m0
 }
 
@@ -431,6 +448,10 @@ type AuthorizationTraceResponse struct {
 	xxx_hidden_Response    *AuthorizationTraceResponse_Response `protobuf:"bytes,4,opt,name=response"`
 	xxx_hidden_User        *AuthorizationTraceResponse_User     `protobuf:"bytes,5,opt,name=user"`
 	xxx_hidden_Trace       *AuthorizationTraceResponse_Trace    `protobuf:"bytes,6,opt,name=trace"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -462,134 +483,212 @@ func (x *AuthorizationTraceResponse) ProtoReflect() protoreflect.Message {
 
 func (x *AuthorizationTraceResponse) GetArrivedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ArrivedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ArrivedAt) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ArrivedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *AuthorizationTraceResponse) GetProcessedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ProcessedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ProcessedAt) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ProcessedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *AuthorizationTraceResponse) GetRequest() *AuthorizationTraceResponse_Request {
 	if x != nil {
-		return x.xxx_hidden_Request
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Request) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *AuthorizationTraceResponse_Request
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Request), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *AuthorizationTraceResponse) GetResponse() *AuthorizationTraceResponse_Response {
 	if x != nil {
-		return x.xxx_hidden_Response
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Response) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *AuthorizationTraceResponse_Response
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Response), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *AuthorizationTraceResponse) GetUser() *AuthorizationTraceResponse_User {
 	if x != nil {
-		return x.xxx_hidden_User
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_User) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *AuthorizationTraceResponse_User
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_User), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *AuthorizationTraceResponse) GetTrace() *AuthorizationTraceResponse_Trace {
 	if x != nil {
-		return x.xxx_hidden_Trace
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Trace) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *AuthorizationTraceResponse_Trace
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Trace), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *AuthorizationTraceResponse) SetArrivedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ArrivedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ArrivedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	}
 }
 
 func (x *AuthorizationTraceResponse) SetProcessedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ProcessedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ProcessedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	}
 }
 
 func (x *AuthorizationTraceResponse) SetRequest(v *AuthorizationTraceResponse_Request) {
-	x.xxx_hidden_Request = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Request, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	}
 }
 
 func (x *AuthorizationTraceResponse) SetResponse(v *AuthorizationTraceResponse_Response) {
-	x.xxx_hidden_Response = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Response, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	}
 }
 
 func (x *AuthorizationTraceResponse) SetUser(v *AuthorizationTraceResponse_User) {
-	x.xxx_hidden_User = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_User, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	}
 }
 
 func (x *AuthorizationTraceResponse) SetTrace(v *AuthorizationTraceResponse_Trace) {
-	x.xxx_hidden_Trace = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Trace, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
+	}
 }
 
 func (x *AuthorizationTraceResponse) HasArrivedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ArrivedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AuthorizationTraceResponse) HasProcessedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ProcessedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *AuthorizationTraceResponse) HasRequest() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Request != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *AuthorizationTraceResponse) HasResponse() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Response != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *AuthorizationTraceResponse) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *AuthorizationTraceResponse) HasTrace() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Trace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *AuthorizationTraceResponse) ClearArrivedAt() {
-	x.xxx_hidden_ArrivedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ArrivedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *AuthorizationTraceResponse) ClearProcessedAt() {
-	x.xxx_hidden_ProcessedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ProcessedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *AuthorizationTraceResponse) ClearRequest() {
-	x.xxx_hidden_Request = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Request, (*AuthorizationTraceResponse_Request)(nil))
 }
 
 func (x *AuthorizationTraceResponse) ClearResponse() {
-	x.xxx_hidden_Response = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Response, (*AuthorizationTraceResponse_Response)(nil))
 }
 
 func (x *AuthorizationTraceResponse) ClearUser() {
-	x.xxx_hidden_User = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_User, (*AuthorizationTraceResponse_User)(nil))
 }
 
 func (x *AuthorizationTraceResponse) ClearTrace() {
-	x.xxx_hidden_Trace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Trace, (*AuthorizationTraceResponse_Trace)(nil))
 }
 
 type AuthorizationTraceResponse_builder struct {
@@ -607,12 +706,30 @@ func (b0 AuthorizationTraceResponse_builder) Build() *AuthorizationTraceResponse
 	m0 := &AuthorizationTraceResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ArrivedAt = b.ArrivedAt
-	x.xxx_hidden_ProcessedAt = b.ProcessedAt
-	x.xxx_hidden_Request = b.Request
-	x.xxx_hidden_Response = b.Response
-	x.xxx_hidden_User = b.User
-	x.xxx_hidden_Trace = b.Trace
+	if b.ArrivedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_ArrivedAt = b.ArrivedAt
+	}
+	if b.ProcessedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_ProcessedAt = b.ProcessedAt
+	}
+	if b.Request != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_Request = b.Request
+	}
+	if b.Response != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_Response = b.Response
+	}
+	if b.User != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_User = b.User
+	}
+	if b.Trace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_Trace = b.Trace
+	}
 	return m0
 }
 
@@ -843,10 +960,12 @@ type AuthorizationTraceResponse_User struct {
 	xxx_hidden_FriendlyName          *string                                  `protobuf:"bytes,2,opt,name=friendly_name,json=friendlyName"`
 	xxx_hidden_AggregatedPermissions map[string]storage.Access                `protobuf:"bytes,3,rep,name=aggregated_permissions,json=aggregatedPermissions" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
 	xxx_hidden_Roles                 *[]*AuthorizationTraceResponse_User_Role `protobuf:"bytes,4,rep,name=roles"`
-	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
-	XXX_presence                     [1]uint32
-	unknownFields                    protoimpl.UnknownFields
-	sizeCache                        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AuthorizationTraceResponse_User) Reset() {
@@ -903,8 +1022,13 @@ func (x *AuthorizationTraceResponse_User) GetAggregatedPermissions() map[string]
 
 func (x *AuthorizationTraceResponse_User) GetRoles() []*AuthorizationTraceResponse_User_Role {
 	if x != nil {
-		if x.xxx_hidden_Roles != nil {
-			return *x.xxx_hidden_Roles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Roles) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*AuthorizationTraceResponse_User_Role
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -925,7 +1049,14 @@ func (x *AuthorizationTraceResponse_User) SetAggregatedPermissions(v map[string]
 }
 
 func (x *AuthorizationTraceResponse_User) SetRoles(v []*AuthorizationTraceResponse_User_Role) {
-	x.xxx_hidden_Roles = &v
+	var sv *[]*AuthorizationTraceResponse_User_Role
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*AuthorizationTraceResponse_User_Role{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *AuthorizationTraceResponse_User) HasUsername() bool {
@@ -974,7 +1105,10 @@ func (b0 AuthorizationTraceResponse_User_builder) Build() *AuthorizationTraceRes
 		x.xxx_hidden_FriendlyName = b.FriendlyName
 	}
 	x.xxx_hidden_AggregatedPermissions = b.AggregatedPermissions
-	x.xxx_hidden_Roles = &b.Roles
+	if b.Roles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Roles = &b.Roles
+	}
 	return m0
 }
 
@@ -982,10 +1116,12 @@ type AuthorizationTraceResponse_Trace struct {
 	state                       protoimpl.MessageState                        `protogen:"opaque.v1"`
 	xxx_hidden_ScopeCheckerType *string                                       `protobuf:"bytes,1,opt,name=scope_checker_type,json=scopeCheckerType"`
 	xxx_hidden_Authorizer       isAuthorizationTraceResponse_Trace_Authorizer `protobuf_oneof:"authorizer"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AuthorizationTraceResponse_Trace) Reset() {
@@ -1146,10 +1282,12 @@ type AuthorizationTraceResponse_User_Role struct {
 	xxx_hidden_Permissions     map[string]storage.Access        `protobuf:"bytes,2,rep,name=permissions" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
 	xxx_hidden_AccessScopeName *string                          `protobuf:"bytes,3,opt,name=access_scope_name,json=accessScopeName"`
 	xxx_hidden_AccessScope     *storage.SimpleAccessScope_Rules `protobuf:"bytes,4,opt,name=access_scope,json=accessScope"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AuthorizationTraceResponse_User_Role) Reset() {
@@ -1206,7 +1344,14 @@ func (x *AuthorizationTraceResponse_User_Role) GetAccessScopeName() string {
 
 func (x *AuthorizationTraceResponse_User_Role) GetAccessScope() *storage.SimpleAccessScope_Rules {
 	if x != nil {
-		return x.xxx_hidden_AccessScope
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AccessScope) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *storage.SimpleAccessScope_Rules
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AccessScope), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1226,7 +1371,12 @@ func (x *AuthorizationTraceResponse_User_Role) SetAccessScopeName(v string) {
 }
 
 func (x *AuthorizationTraceResponse_User_Role) SetAccessScope(v *storage.SimpleAccessScope_Rules) {
-	x.xxx_hidden_AccessScope = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AccessScope, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	}
 }
 
 func (x *AuthorizationTraceResponse_User_Role) HasName() bool {
@@ -1247,7 +1397,7 @@ func (x *AuthorizationTraceResponse_User_Role) HasAccessScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_AccessScope != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *AuthorizationTraceResponse_User_Role) ClearName() {
@@ -1261,7 +1411,8 @@ func (x *AuthorizationTraceResponse_User_Role) ClearAccessScopeName() {
 }
 
 func (x *AuthorizationTraceResponse_User_Role) ClearAccessScope() {
-	x.xxx_hidden_AccessScope = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AccessScope, (*storage.SimpleAccessScope_Rules)(nil))
 }
 
 type AuthorizationTraceResponse_User_Role_builder struct {
@@ -1286,7 +1437,10 @@ func (b0 AuthorizationTraceResponse_User_Role_builder) Build() *AuthorizationTra
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_AccessScopeName = b.AccessScopeName
 	}
-	x.xxx_hidden_AccessScope = b.AccessScope
+	if b.AccessScope != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_AccessScope = b.AccessScope
+	}
 	return m0
 }
 
@@ -1297,10 +1451,12 @@ type AuthorizationTraceResponse_Trace_BuiltInAuthorizer struct {
 	xxx_hidden_DeniedAuthzDecisions  map[string]int32       `protobuf:"bytes,3,rep,name=denied_authz_decisions,json=deniedAuthzDecisions" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	xxx_hidden_AllowedAuthzDecisions map[string]int32       `protobuf:"bytes,4,rep,name=allowed_authz_decisions,json=allowedAuthzDecisions" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	xxx_hidden_EffectiveAccessScopes map[string]string      `protobuf:"bytes,5,rep,name=effective_access_scopes,json=effectiveAccessScopes" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
-	XXX_presence                     [1]uint32
-	unknownFields                    protoimpl.UnknownFields
-	sizeCache                        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Reset() {
@@ -1449,18 +1605,18 @@ const file_api_v1_debug_service_proto_rawDesc = "" +
 	"\amodules\x18\x02 \x03(\tR\amodules\";\n" +
 	"\vModuleLevel\x12\x16\n" +
 	"\x06module\x18\x01 \x01(\tR\x06module\x12\x14\n" +
-	"\x05level\x18\x02 \x01(\tR\x05level\"^\n" +
+	"\x05level\x18\x02 \x01(\tR\x05level\"b\n" +
 	"\x10LogLevelResponse\x12\x14\n" +
-	"\x05level\x18\x01 \x01(\tR\x05level\x124\n" +
-	"\rmodule_levels\x18\x02 \x03(\v2\x0f.v1.ModuleLevelR\fmoduleLevels\"\x9b\x11\n" +
-	"\x1aAuthorizationTraceResponse\x129\n" +
+	"\x05level\x18\x01 \x01(\tR\x05level\x128\n" +
+	"\rmodule_levels\x18\x02 \x03(\v2\x0f.v1.ModuleLevelB\x02(\x01R\fmoduleLevels\"\xd3\x11\n" +
+	"\x1aAuthorizationTraceResponse\x12=\n" +
 	"\n" +
-	"arrived_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tarrivedAt\x12=\n" +
-	"\fprocessed_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\vprocessedAt\x12@\n" +
-	"\arequest\x18\x03 \x01(\v2&.v1.AuthorizationTraceResponse.RequestR\arequest\x12C\n" +
-	"\bresponse\x18\x04 \x01(\v2'.v1.AuthorizationTraceResponse.ResponseR\bresponse\x127\n" +
-	"\x04user\x18\x05 \x01(\v2#.v1.AuthorizationTraceResponse.UserR\x04user\x12:\n" +
-	"\x05trace\x18\x06 \x01(\v2$.v1.AuthorizationTraceResponse.TraceR\x05trace\x1a=\n" +
+	"arrived_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tarrivedAt\x12A\n" +
+	"\fprocessed_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vprocessedAt\x12D\n" +
+	"\arequest\x18\x03 \x01(\v2&.v1.AuthorizationTraceResponse.RequestB\x02(\x01R\arequest\x12G\n" +
+	"\bresponse\x18\x04 \x01(\v2'.v1.AuthorizationTraceResponse.ResponseB\x02(\x01R\bresponse\x12;\n" +
+	"\x04user\x18\x05 \x01(\v2#.v1.AuthorizationTraceResponse.UserB\x02(\x01R\x04user\x12>\n" +
+	"\x05trace\x18\x06 \x01(\v2$.v1.AuthorizationTraceResponse.TraceB\x02(\x01R\x05trace\x1a=\n" +
 	"\aRequest\x12\x1a\n" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x1a\xa0\x01\n" +
@@ -1470,32 +1626,32 @@ const file_api_v1_debug_service_proto_rawDesc = "" +
 	"\x06Status\x12\x12\n" +
 	"\x0eUNKNOWN_STATUS\x10\x00\x12\v\n" +
 	"\aSUCCESS\x10\x01\x12\v\n" +
-	"\aFAILURE\x10\x02\x1a\x95\x05\n" +
+	"\aFAILURE\x10\x02\x1a\xa5\x05\n" +
 	"\x04User\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12#\n" +
-	"\rfriendly_name\x18\x02 \x01(\tR\ffriendlyName\x12u\n" +
-	"\x16aggregated_permissions\x18\x03 \x03(\v2>.v1.AuthorizationTraceResponse.User.AggregatedPermissionsEntryR\x15aggregatedPermissions\x12>\n" +
-	"\x05roles\x18\x04 \x03(\v2(.v1.AuthorizationTraceResponse.User.RoleR\x05roles\x1a\xb9\x02\n" +
+	"\rfriendly_name\x18\x02 \x01(\tR\ffriendlyName\x12y\n" +
+	"\x16aggregated_permissions\x18\x03 \x03(\v2>.v1.AuthorizationTraceResponse.User.AggregatedPermissionsEntryB\x02(\x01R\x15aggregatedPermissions\x12B\n" +
+	"\x05roles\x18\x04 \x03(\v2(.v1.AuthorizationTraceResponse.User.RoleB\x02(\x01R\x05roles\x1a\xc1\x02\n" +
 	"\x04Role\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12[\n" +
-	"\vpermissions\x18\x02 \x03(\v29.v1.AuthorizationTraceResponse.User.Role.PermissionsEntryR\vpermissions\x12*\n" +
-	"\x11access_scope_name\x18\x03 \x01(\tR\x0faccessScopeName\x12C\n" +
-	"\faccess_scope\x18\x04 \x01(\v2 .storage.SimpleAccessScope.RulesR\vaccessScope\x1aO\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12_\n" +
+	"\vpermissions\x18\x02 \x03(\v29.v1.AuthorizationTraceResponse.User.Role.PermissionsEntryB\x02(\x01R\vpermissions\x12*\n" +
+	"\x11access_scope_name\x18\x03 \x01(\tR\x0faccessScopeName\x12G\n" +
+	"\faccess_scope\x18\x04 \x01(\v2 .storage.SimpleAccessScope.RulesB\x02(\x01R\vaccessScope\x1aO\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
 	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01\x1aY\n" +
 	"\x1aAggregatedPermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01\x1a\x8c\a\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01\x1a\x9c\a\n" +
 	"\x05Trace\x12,\n" +
-	"\x12scope_checker_type\x18\x01 \x01(\tR\x10scopeCheckerType\x12S\n" +
-	"\bbuilt_in\x18\x02 \x01(\v26.v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizerH\x00R\abuiltIn\x1a\xf1\x05\n" +
+	"\x12scope_checker_type\x18\x01 \x01(\tR\x10scopeCheckerType\x12W\n" +
+	"\bbuilt_in\x18\x02 \x01(\v26.v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizerB\x02(\x01H\x00R\abuiltIn\x1a\xfd\x05\n" +
 	"\x11BuiltInAuthorizer\x12,\n" +
 	"\x12clusters_total_num\x18\x01 \x01(\x05R\x10clustersTotalNum\x120\n" +
-	"\x14namespaces_total_num\x18\x02 \x01(\x05R\x12namespacesTotalNum\x12\x86\x01\n" +
-	"\x16denied_authz_decisions\x18\x03 \x03(\v2P.v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizer.DeniedAuthzDecisionsEntryR\x14deniedAuthzDecisions\x12\x89\x01\n" +
-	"\x17allowed_authz_decisions\x18\x04 \x03(\v2Q.v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizer.AllowedAuthzDecisionsEntryR\x15allowedAuthzDecisions\x12\x89\x01\n" +
-	"\x17effective_access_scopes\x18\x05 \x03(\v2Q.v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizer.EffectiveAccessScopesEntryR\x15effectiveAccessScopes\x1aG\n" +
+	"\x14namespaces_total_num\x18\x02 \x01(\x05R\x12namespacesTotalNum\x12\x8a\x01\n" +
+	"\x16denied_authz_decisions\x18\x03 \x03(\v2P.v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizer.DeniedAuthzDecisionsEntryB\x02(\x01R\x14deniedAuthzDecisions\x12\x8d\x01\n" +
+	"\x17allowed_authz_decisions\x18\x04 \x03(\v2Q.v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizer.AllowedAuthzDecisionsEntryB\x02(\x01R\x15allowedAuthzDecisions\x12\x8d\x01\n" +
+	"\x17effective_access_scopes\x18\x05 \x03(\v2Q.v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizer.EffectiveAccessScopesEntryB\x02(\x01R\x15effectiveAccessScopes\x1aG\n" +
 	"\x19DeniedAuthzDecisionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1aH\n" +

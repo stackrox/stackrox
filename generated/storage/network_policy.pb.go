@@ -126,6 +126,8 @@ type NetworkPolicy struct {
 	xxx_hidden_Yaml        *string                `protobuf:"bytes,9,opt,name=yaml"`
 	xxx_hidden_ApiVersion  *string                `protobuf:"bytes,10,opt,name=api_version,json=apiVersion"`
 	xxx_hidden_Created     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -250,7 +252,14 @@ func (x *NetworkPolicy) GetApiVersion() string {
 
 func (x *NetworkPolicy) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Created
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -303,7 +312,12 @@ func (x *NetworkPolicy) SetApiVersion(v string) {
 }
 
 func (x *NetworkPolicy) SetCreated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Created = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
+	}
 }
 
 func (x *NetworkPolicy) HasId() bool {
@@ -366,7 +380,7 @@ func (x *NetworkPolicy) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Created != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
 }
 
 func (x *NetworkPolicy) ClearId() {
@@ -409,7 +423,8 @@ func (x *NetworkPolicy) ClearApiVersion() {
 }
 
 func (x *NetworkPolicy) ClearCreated() {
-	x.xxx_hidden_Created = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
 }
 
 type NetworkPolicy_builder struct {
@@ -463,7 +478,10 @@ func (b0 NetworkPolicy_builder) Build() *NetworkPolicy {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
 		x.xxx_hidden_ApiVersion = b.ApiVersion
 	}
-	x.xxx_hidden_Created = b.Created
+	if b.Created != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
+		x.xxx_hidden_Created = b.Created
+	}
 	return m0
 }
 
@@ -473,6 +491,10 @@ type NetworkPolicySpec struct {
 	xxx_hidden_Ingress     *[]*NetworkPolicyIngressRule `protobuf:"bytes,2,rep,name=ingress"`
 	xxx_hidden_Egress      *[]*NetworkPolicyEgressRule  `protobuf:"bytes,3,rep,name=egress"`
 	xxx_hidden_PolicyTypes []NetworkPolicyType          `protobuf:"varint,4,rep,packed,name=policy_types,json=policyTypes,enum=storage.NetworkPolicyType"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -511,8 +533,13 @@ func (x *NetworkPolicySpec) GetPodSelector() *LabelSelector {
 
 func (x *NetworkPolicySpec) GetIngress() []*NetworkPolicyIngressRule {
 	if x != nil {
-		if x.xxx_hidden_Ingress != nil {
-			return *x.xxx_hidden_Ingress
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ingress) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*NetworkPolicyIngressRule
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ingress), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -520,8 +547,13 @@ func (x *NetworkPolicySpec) GetIngress() []*NetworkPolicyIngressRule {
 
 func (x *NetworkPolicySpec) GetEgress() []*NetworkPolicyEgressRule {
 	if x != nil {
-		if x.xxx_hidden_Egress != nil {
-			return *x.xxx_hidden_Egress
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Egress) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*NetworkPolicyEgressRule
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Egress), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -539,11 +571,25 @@ func (x *NetworkPolicySpec) SetPodSelector(v *LabelSelector) {
 }
 
 func (x *NetworkPolicySpec) SetIngress(v []*NetworkPolicyIngressRule) {
-	x.xxx_hidden_Ingress = &v
+	var sv *[]*NetworkPolicyIngressRule
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ingress), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkPolicyIngressRule{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ingress), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *NetworkPolicySpec) SetEgress(v []*NetworkPolicyEgressRule) {
-	x.xxx_hidden_Egress = &v
+	var sv *[]*NetworkPolicyEgressRule
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Egress), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkPolicyEgressRule{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Egress), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *NetworkPolicySpec) SetPolicyTypes(v []NetworkPolicyType) {
@@ -575,8 +621,14 @@ func (b0 NetworkPolicySpec_builder) Build() *NetworkPolicySpec {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_PodSelector = b.PodSelector
-	x.xxx_hidden_Ingress = &b.Ingress
-	x.xxx_hidden_Egress = &b.Egress
+	if b.Ingress != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Ingress = &b.Ingress
+	}
+	if b.Egress != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Egress = &b.Egress
+	}
 	x.xxx_hidden_PolicyTypes = b.PolicyTypes
 	return m0
 }
@@ -585,8 +637,12 @@ type NetworkPolicyEgressRule struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Ports *[]*NetworkPolicyPort  `protobuf:"bytes,1,rep,name=ports"`
 	xxx_hidden_To    *[]*NetworkPolicyPeer  `protobuf:"bytes,2,rep,name=to"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyEgressRule) Reset() {
@@ -616,8 +672,13 @@ func (x *NetworkPolicyEgressRule) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicyEgressRule) GetPorts() []*NetworkPolicyPort {
 	if x != nil {
-		if x.xxx_hidden_Ports != nil {
-			return *x.xxx_hidden_Ports
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ports) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*NetworkPolicyPort
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -625,19 +686,38 @@ func (x *NetworkPolicyEgressRule) GetPorts() []*NetworkPolicyPort {
 
 func (x *NetworkPolicyEgressRule) GetTo() []*NetworkPolicyPeer {
 	if x != nil {
-		if x.xxx_hidden_To != nil {
-			return *x.xxx_hidden_To
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_To) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*NetworkPolicyPeer
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_To), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *NetworkPolicyEgressRule) SetPorts(v []*NetworkPolicyPort) {
-	x.xxx_hidden_Ports = &v
+	var sv *[]*NetworkPolicyPort
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkPolicyPort{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *NetworkPolicyEgressRule) SetTo(v []*NetworkPolicyPeer) {
-	x.xxx_hidden_To = &v
+	var sv *[]*NetworkPolicyPeer
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_To), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkPolicyPeer{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_To), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 type NetworkPolicyEgressRule_builder struct {
@@ -651,8 +731,14 @@ func (b0 NetworkPolicyEgressRule_builder) Build() *NetworkPolicyEgressRule {
 	m0 := &NetworkPolicyEgressRule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Ports = &b.Ports
-	x.xxx_hidden_To = &b.To
+	if b.Ports != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Ports = &b.Ports
+	}
+	if b.To != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_To = &b.To
+	}
 	return m0
 }
 
@@ -1067,8 +1153,12 @@ type NetworkPolicyIngressRule struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Ports *[]*NetworkPolicyPort  `protobuf:"bytes,1,rep,name=ports"`
 	xxx_hidden_From  *[]*NetworkPolicyPeer  `protobuf:"bytes,2,rep,name=from"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyIngressRule) Reset() {
@@ -1098,8 +1188,13 @@ func (x *NetworkPolicyIngressRule) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicyIngressRule) GetPorts() []*NetworkPolicyPort {
 	if x != nil {
-		if x.xxx_hidden_Ports != nil {
-			return *x.xxx_hidden_Ports
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ports) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*NetworkPolicyPort
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1107,19 +1202,38 @@ func (x *NetworkPolicyIngressRule) GetPorts() []*NetworkPolicyPort {
 
 func (x *NetworkPolicyIngressRule) GetFrom() []*NetworkPolicyPeer {
 	if x != nil {
-		if x.xxx_hidden_From != nil {
-			return *x.xxx_hidden_From
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_From) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*NetworkPolicyPeer
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_From), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *NetworkPolicyIngressRule) SetPorts(v []*NetworkPolicyPort) {
-	x.xxx_hidden_Ports = &v
+	var sv *[]*NetworkPolicyPort
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkPolicyPort{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *NetworkPolicyIngressRule) SetFrom(v []*NetworkPolicyPeer) {
-	x.xxx_hidden_From = &v
+	var sv *[]*NetworkPolicyPeer
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_From), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkPolicyPeer{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_From), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 type NetworkPolicyIngressRule_builder struct {
@@ -1133,8 +1247,14 @@ func (b0 NetworkPolicyIngressRule_builder) Build() *NetworkPolicyIngressRule {
 	m0 := &NetworkPolicyIngressRule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Ports = &b.Ports
-	x.xxx_hidden_From = &b.From
+	if b.Ports != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Ports = &b.Ports
+	}
+	if b.From != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_From = &b.From
+	}
 	return m0
 }
 
@@ -1252,9 +1372,11 @@ func (b0 NetworkPolicyReference_builder) Build() *NetworkPolicyReference {
 
 // Next available tag: 3
 type NetworkPolicyModification struct {
-	state                  protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_ApplyYaml   *string                    `protobuf:"bytes,1,opt,name=apply_yaml,json=applyYaml"`
-	xxx_hidden_ToDelete    *[]*NetworkPolicyReference `protobuf:"bytes,2,rep,name=to_delete,json=toDelete"`
+	state                protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_ApplyYaml *string                    `protobuf:"bytes,1,opt,name=apply_yaml,json=applyYaml"`
+	xxx_hidden_ToDelete  *[]*NetworkPolicyReference `protobuf:"bytes,2,rep,name=to_delete,json=toDelete"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1298,8 +1420,13 @@ func (x *NetworkPolicyModification) GetApplyYaml() string {
 
 func (x *NetworkPolicyModification) GetToDelete() []*NetworkPolicyReference {
 	if x != nil {
-		if x.xxx_hidden_ToDelete != nil {
-			return *x.xxx_hidden_ToDelete
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ToDelete) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*NetworkPolicyReference
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ToDelete), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1311,7 +1438,14 @@ func (x *NetworkPolicyModification) SetApplyYaml(v string) {
 }
 
 func (x *NetworkPolicyModification) SetToDelete(v []*NetworkPolicyReference) {
-	x.xxx_hidden_ToDelete = &v
+	var sv *[]*NetworkPolicyReference
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ToDelete), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkPolicyReference{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ToDelete), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *NetworkPolicyModification) HasApplyYaml() bool {
@@ -1341,7 +1475,10 @@ func (b0 NetworkPolicyModification_builder) Build() *NetworkPolicyModification {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_ApplyYaml = b.ApplyYaml
 	}
-	x.xxx_hidden_ToDelete = &b.ToDelete
+	if b.ToDelete != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_ToDelete = &b.ToDelete
+	}
 	return m0
 }
 
@@ -1352,10 +1489,12 @@ type NetworkPolicyApplicationUndoRecord struct {
 	xxx_hidden_ApplyTimestamp       *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=apply_timestamp,json=applyTimestamp"`
 	xxx_hidden_OriginalModification *NetworkPolicyModification `protobuf:"bytes,3,opt,name=original_modification,json=originalModification"`
 	xxx_hidden_UndoModification     *NetworkPolicyModification `protobuf:"bytes,4,opt,name=undo_modification,json=undoModification"`
-	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
-	XXX_presence                    [1]uint32
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) Reset() {
@@ -1405,7 +1544,14 @@ func (x *NetworkPolicyApplicationUndoRecord) GetUser() string {
 
 func (x *NetworkPolicyApplicationUndoRecord) GetApplyTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ApplyTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ApplyTimestamp) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ApplyTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1435,7 +1581,12 @@ func (x *NetworkPolicyApplicationUndoRecord) SetUser(v string) {
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) SetApplyTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ApplyTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ApplyTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	}
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) SetOriginalModification(v *NetworkPolicyModification) {
@@ -1464,7 +1615,7 @@ func (x *NetworkPolicyApplicationUndoRecord) HasApplyTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ApplyTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) HasOriginalModification() bool {
@@ -1492,7 +1643,8 @@ func (x *NetworkPolicyApplicationUndoRecord) ClearUser() {
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) ClearApplyTimestamp() {
-	x.xxx_hidden_ApplyTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ApplyTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) ClearOriginalModification() {
@@ -1525,7 +1677,10 @@ func (b0 NetworkPolicyApplicationUndoRecord_builder) Build() *NetworkPolicyAppli
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_User = b.User
 	}
-	x.xxx_hidden_ApplyTimestamp = b.ApplyTimestamp
+	if b.ApplyTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_ApplyTimestamp = b.ApplyTimestamp
+	}
 	x.xxx_hidden_OriginalModification = b.OriginalModification
 	x.xxx_hidden_UndoModification = b.UndoModification
 	return m0
@@ -1705,36 +1860,36 @@ var File_storage_network_policy_proto protoreflect.FileDescriptor
 
 const file_storage_network_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x1cstorage/network_policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14storage/labels.proto\x1a!google/protobuf/go_features.proto\"\xb0\x04\n" +
+	"\x1cstorage/network_policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14storage/labels.proto\x1a!google/protobuf/go_features.proto\"\xbc\x04\n" +
 	"\rNetworkPolicy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x04 \x01(\tR\vclusterName\x12\x1c\n" +
-	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x12:\n" +
-	"\x06labels\x18\x06 \x03(\v2\".storage.NetworkPolicy.LabelsEntryR\x06labels\x12I\n" +
-	"\vannotations\x18\a \x03(\v2'.storage.NetworkPolicy.AnnotationsEntryR\vannotations\x12.\n" +
+	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x12>\n" +
+	"\x06labels\x18\x06 \x03(\v2\".storage.NetworkPolicy.LabelsEntryB\x02(\x01R\x06labels\x12M\n" +
+	"\vannotations\x18\a \x03(\v2'.storage.NetworkPolicy.AnnotationsEntryB\x02(\x01R\vannotations\x12.\n" +
 	"\x04spec\x18\b \x01(\v2\x1a.storage.NetworkPolicySpecR\x04spec\x12\x12\n" +
 	"\x04yaml\x18\t \x01(\tR\x04yaml\x12\x1f\n" +
 	"\vapi_version\x18\n" +
 	" \x01(\tR\n" +
-	"apiVersion\x124\n" +
-	"\acreated\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x1a9\n" +
+	"apiVersion\x128\n" +
+	"\acreated\x18\v \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\acreated\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x84\x02\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8c\x02\n" +
 	"\x11NetworkPolicySpec\x129\n" +
-	"\fpod_selector\x18\x01 \x01(\v2\x16.storage.LabelSelectorR\vpodSelector\x12;\n" +
-	"\aingress\x18\x02 \x03(\v2!.storage.NetworkPolicyIngressRuleR\aingress\x128\n" +
-	"\x06egress\x18\x03 \x03(\v2 .storage.NetworkPolicyEgressRuleR\x06egress\x12=\n" +
-	"\fpolicy_types\x18\x04 \x03(\x0e2\x1a.storage.NetworkPolicyTypeR\vpolicyTypes\"w\n" +
-	"\x17NetworkPolicyEgressRule\x120\n" +
-	"\x05ports\x18\x01 \x03(\v2\x1a.storage.NetworkPolicyPortR\x05ports\x12*\n" +
-	"\x02to\x18\x02 \x03(\v2\x1a.storage.NetworkPolicyPeerR\x02to\"\xc2\x01\n" +
+	"\fpod_selector\x18\x01 \x01(\v2\x16.storage.LabelSelectorR\vpodSelector\x12?\n" +
+	"\aingress\x18\x02 \x03(\v2!.storage.NetworkPolicyIngressRuleB\x02(\x01R\aingress\x12<\n" +
+	"\x06egress\x18\x03 \x03(\v2 .storage.NetworkPolicyEgressRuleB\x02(\x01R\x06egress\x12=\n" +
+	"\fpolicy_types\x18\x04 \x03(\x0e2\x1a.storage.NetworkPolicyTypeR\vpolicyTypes\"\x7f\n" +
+	"\x17NetworkPolicyEgressRule\x124\n" +
+	"\x05ports\x18\x01 \x03(\v2\x1a.storage.NetworkPolicyPortB\x02(\x01R\x05ports\x12.\n" +
+	"\x02to\x18\x02 \x03(\v2\x1a.storage.NetworkPolicyPeerB\x02(\x01R\x02to\"\xc2\x01\n" +
 	"\x11NetworkPolicyPeer\x129\n" +
 	"\fpod_selector\x18\x01 \x01(\v2\x16.storage.LabelSelectorR\vpodSelector\x12E\n" +
 	"\x12namespace_selector\x18\x02 \x01(\v2\x16.storage.LabelSelectorR\x11namespaceSelector\x12+\n" +
@@ -1747,22 +1902,22 @@ const file_storage_network_policy_proto_rawDesc = "" +
 	"\x04port\x18\x02 \x01(\x05H\x00R\x04port\x12\x1d\n" +
 	"\tport_name\x18\x03 \x01(\tH\x00R\bportNameB\n" +
 	"\n" +
-	"\bport_ref\"|\n" +
-	"\x18NetworkPolicyIngressRule\x120\n" +
-	"\x05ports\x18\x01 \x03(\v2\x1a.storage.NetworkPolicyPortR\x05ports\x12.\n" +
-	"\x04from\x18\x02 \x03(\v2\x1a.storage.NetworkPolicyPeerR\x04from\"J\n" +
+	"\bport_ref\"\x84\x01\n" +
+	"\x18NetworkPolicyIngressRule\x124\n" +
+	"\x05ports\x18\x01 \x03(\v2\x1a.storage.NetworkPolicyPortB\x02(\x01R\x05ports\x122\n" +
+	"\x04from\x18\x02 \x03(\v2\x1a.storage.NetworkPolicyPeerB\x02(\x01R\x04from\"J\n" +
 	"\x16NetworkPolicyReference\x12\x1c\n" +
 	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"x\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"|\n" +
 	"\x19NetworkPolicyModification\x12\x1d\n" +
 	"\n" +
-	"apply_yaml\x18\x01 \x01(\tR\tapplyYaml\x12<\n" +
-	"\tto_delete\x18\x02 \x03(\v2\x1f.storage.NetworkPolicyReferenceR\btoDelete\"\xc6\x02\n" +
+	"apply_yaml\x18\x01 \x01(\tR\tapplyYaml\x12@\n" +
+	"\tto_delete\x18\x02 \x03(\v2\x1f.storage.NetworkPolicyReferenceB\x02(\x01R\btoDelete\"\xca\x02\n" +
 	"\"NetworkPolicyApplicationUndoRecord\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x05 \x01(\tR\tclusterId\x12\x12\n" +
-	"\x04user\x18\x01 \x01(\tR\x04user\x12C\n" +
-	"\x0fapply_timestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0eapplyTimestamp\x12W\n" +
+	"\x04user\x18\x01 \x01(\tR\x04user\x12G\n" +
+	"\x0fapply_timestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x0eapplyTimestamp\x12W\n" +
 	"\x15original_modification\x18\x03 \x01(\v2\".storage.NetworkPolicyModificationR\x14originalModification\x12O\n" +
 	"\x11undo_modification\x18\x04 \x01(\v2\".storage.NetworkPolicyModificationR\x10undoModification\"\xde\x01\n" +
 	",NetworkPolicyApplicationUndoDeploymentRecord\x12#\n" +

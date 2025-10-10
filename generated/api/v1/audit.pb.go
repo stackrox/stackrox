@@ -217,10 +217,12 @@ type Audit_Message struct {
 	xxx_hidden_Request      *Audit_Message_Request `protobuf:"bytes,5,opt,name=request"`
 	xxx_hidden_Method       Audit_AccessMethod     `protobuf:"varint,6,opt,name=method,enum=v1.Audit_AccessMethod"`
 	xxx_hidden_Interaction  Audit_Interaction      `protobuf:"varint,7,opt,name=interaction,enum=v1.Audit_Interaction"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Audit_Message) Reset() {
@@ -250,7 +252,14 @@ func (x *Audit_Message) ProtoReflect() protoreflect.Message {
 
 func (x *Audit_Message) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Time
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Time) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Time), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -276,7 +285,14 @@ func (x *Audit_Message) GetStatusReason() string {
 
 func (x *Audit_Message) GetUser() *storage.UserInfo {
 	if x != nil {
-		return x.xxx_hidden_User
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_User) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *storage.UserInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_User), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -307,7 +323,12 @@ func (x *Audit_Message) GetInteraction() Audit_Interaction {
 }
 
 func (x *Audit_Message) SetTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Time = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	}
 }
 
 func (x *Audit_Message) SetStatus(v Audit_RequestStatus) {
@@ -321,7 +342,12 @@ func (x *Audit_Message) SetStatusReason(v string) {
 }
 
 func (x *Audit_Message) SetUser(v *storage.UserInfo) {
-	x.xxx_hidden_User = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_User, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	}
 }
 
 func (x *Audit_Message) SetRequest(v *Audit_Message_Request) {
@@ -342,7 +368,7 @@ func (x *Audit_Message) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Time != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Audit_Message) HasStatus() bool {
@@ -363,7 +389,7 @@ func (x *Audit_Message) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Audit_Message) HasRequest() bool {
@@ -388,7 +414,8 @@ func (x *Audit_Message) HasInteraction() bool {
 }
 
 func (x *Audit_Message) ClearTime() {
-	x.xxx_hidden_Time = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Audit_Message) ClearStatus() {
@@ -402,7 +429,8 @@ func (x *Audit_Message) ClearStatusReason() {
 }
 
 func (x *Audit_Message) ClearUser() {
-	x.xxx_hidden_User = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_User, (*storage.UserInfo)(nil))
 }
 
 func (x *Audit_Message) ClearRequest() {
@@ -435,7 +463,10 @@ func (b0 Audit_Message_builder) Build() *Audit_Message {
 	m0 := &Audit_Message{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Time = b.Time
+	if b.Time != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Time = b.Time
+	}
 	if b.Status != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
 		x.xxx_hidden_Status = *b.Status
@@ -444,7 +475,10 @@ func (b0 Audit_Message_builder) Build() *Audit_Message {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
 		x.xxx_hidden_StatusReason = b.StatusReason
 	}
-	x.xxx_hidden_User = b.User
+	if b.User != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_User = b.User
+	}
 	x.xxx_hidden_Request = b.Request
 	if b.Method != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
@@ -464,10 +498,12 @@ type Audit_Message_Request struct {
 	xxx_hidden_Payload       *anypb.Any                           `protobuf:"bytes,3,opt,name=payload"`
 	xxx_hidden_SourceHeaders *Audit_Message_Request_SourceHeaders `protobuf:"bytes,4,opt,name=source_headers,json=sourceHeaders"`
 	xxx_hidden_SourceIp      *string                              `protobuf:"bytes,5,opt,name=source_ip,json=sourceIp"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Audit_Message_Request) Reset() {
@@ -517,7 +553,14 @@ func (x *Audit_Message_Request) GetMethod() string {
 
 func (x *Audit_Message_Request) GetPayload() *anypb.Any {
 	if x != nil {
-		return x.xxx_hidden_Payload
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Payload) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *anypb.Any
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Payload), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -550,7 +593,12 @@ func (x *Audit_Message_Request) SetMethod(v string) {
 }
 
 func (x *Audit_Message_Request) SetPayload(v *anypb.Any) {
-	x.xxx_hidden_Payload = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Payload, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	}
 }
 
 func (x *Audit_Message_Request) SetSourceHeaders(v *Audit_Message_Request_SourceHeaders) {
@@ -580,7 +628,7 @@ func (x *Audit_Message_Request) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Payload != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Audit_Message_Request) HasSourceHeaders() bool {
@@ -608,7 +656,8 @@ func (x *Audit_Message_Request) ClearMethod() {
 }
 
 func (x *Audit_Message_Request) ClearPayload() {
-	x.xxx_hidden_Payload = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Payload, (*anypb.Any)(nil))
 }
 
 func (x *Audit_Message_Request) ClearSourceHeaders() {
@@ -662,7 +711,10 @@ func (b0 Audit_Message_Request_builder) Build() *Audit_Message_Request {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_Method = b.Method
 	}
-	x.xxx_hidden_Payload = b.Payload
+	if b.Payload != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Payload = b.Payload
+	}
 	x.xxx_hidden_SourceHeaders = b.SourceHeaders
 	if b.SourceIp != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
@@ -824,20 +876,20 @@ var File_api_v1_audit_proto protoreflect.FileDescriptor
 
 const file_api_v1_audit_proto_rawDesc = "" +
 	"\n" +
-	"\x12api/v1/audit.proto\x12\x02v1\x1a\x19google/protobuf/any.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\xa3\a\n" +
-	"\x05Audit\x1a\xae\x05\n" +
-	"\aMessage\x12.\n" +
-	"\x04time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12/\n" +
+	"\x12api/v1/audit.proto\x12\x02v1\x1a\x19google/protobuf/any.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\xaf\a\n" +
+	"\x05Audit\x1a\xba\x05\n" +
+	"\aMessage\x122\n" +
+	"\x04time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x04time\x12/\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x17.v1.Audit.RequestStatusR\x06status\x12#\n" +
-	"\rstatus_reason\x18\x03 \x01(\tR\fstatusReason\x12%\n" +
-	"\x04user\x18\x04 \x01(\v2\x11.storage.UserInfoR\x04user\x123\n" +
+	"\rstatus_reason\x18\x03 \x01(\tR\fstatusReason\x12)\n" +
+	"\x04user\x18\x04 \x01(\v2\x11.storage.UserInfoB\x02(\x01R\x04user\x123\n" +
 	"\arequest\x18\x05 \x01(\v2\x19.v1.Audit.Message.RequestR\arequest\x12.\n" +
 	"\x06method\x18\x06 \x01(\x0e2\x16.v1.Audit.AccessMethodR\x06method\x127\n" +
-	"\vinteraction\x18\a \x01(\x0e2\x15.v1.Audit.InteractionR\vinteraction\x1a\xd7\x02\n" +
+	"\vinteraction\x18\a \x01(\x0e2\x15.v1.Audit.InteractionR\vinteraction\x1a\xdb\x02\n" +
 	"\aRequest\x12\x1a\n" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x12.\n" +
-	"\apayload\x18\x03 \x01(\v2\x14.google.protobuf.AnyR\apayload\x12N\n" +
+	"\x06method\x18\x02 \x01(\tR\x06method\x122\n" +
+	"\apayload\x18\x03 \x01(\v2\x14.google.protobuf.AnyB\x02(\x01R\apayload\x12N\n" +
 	"\x0esource_headers\x18\x04 \x01(\v2'.v1.Audit.Message.Request.SourceHeadersR\rsourceHeaders\x12\x1b\n" +
 	"\tsource_ip\x18\x05 \x01(\tR\bsourceIp\x1a{\n" +
 	"\rSourceHeaders\x12&\n" +

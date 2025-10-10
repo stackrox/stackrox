@@ -166,8 +166,12 @@ func (b0 FeatureFlag_builder) Build() *FeatureFlag {
 type GetFeatureFlagsResponse struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_FeatureFlags *[]*FeatureFlag        `protobuf:"bytes,1,rep,name=feature_flags,json=featureFlags"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetFeatureFlagsResponse) Reset() {
@@ -197,15 +201,27 @@ func (x *GetFeatureFlagsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetFeatureFlagsResponse) GetFeatureFlags() []*FeatureFlag {
 	if x != nil {
-		if x.xxx_hidden_FeatureFlags != nil {
-			return *x.xxx_hidden_FeatureFlags
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_FeatureFlags) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*FeatureFlag
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_FeatureFlags), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetFeatureFlagsResponse) SetFeatureFlags(v []*FeatureFlag) {
-	x.xxx_hidden_FeatureFlags = &v
+	var sv *[]*FeatureFlag
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_FeatureFlags), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*FeatureFlag{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_FeatureFlags), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetFeatureFlagsResponse_builder struct {
@@ -218,7 +234,10 @@ func (b0 GetFeatureFlagsResponse_builder) Build() *GetFeatureFlagsResponse {
 	m0 := &GetFeatureFlagsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_FeatureFlags = &b.FeatureFlags
+	if b.FeatureFlags != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_FeatureFlags = &b.FeatureFlags
+	}
 	return m0
 }
 
@@ -230,9 +249,9 @@ const file_api_v1_feature_flag_service_proto_rawDesc = "" +
 	"\vFeatureFlag\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x17\n" +
 	"\aenv_var\x18\x02 \x01(\tR\x06envVar\x12\x18\n" +
-	"\aenabled\x18\x03 \x01(\bR\aenabledJ\x04\b\x04\x10\x05\"O\n" +
-	"\x17GetFeatureFlagsResponse\x124\n" +
-	"\rfeature_flags\x18\x01 \x03(\v2\x0f.v1.FeatureFlagR\ffeatureFlags2i\n" +
+	"\aenabled\x18\x03 \x01(\bR\aenabledJ\x04\b\x04\x10\x05\"S\n" +
+	"\x17GetFeatureFlagsResponse\x128\n" +
+	"\rfeature_flags\x18\x01 \x03(\v2\x0f.v1.FeatureFlagB\x02(\x01R\ffeatureFlags2i\n" +
 	"\x12FeatureFlagService\x12S\n" +
 	"\x0fGetFeatureFlags\x12\t.v1.Empty\x1a\x1b.v1.GetFeatureFlagsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/featureflagsB/\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"

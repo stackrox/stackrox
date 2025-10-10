@@ -732,10 +732,12 @@ type DecommissionedClusterRetentionConfig struct {
 	xxx_hidden_IgnoreClusterLabels   map[string]string      `protobuf:"bytes,2,rep,name=ignore_cluster_labels,json=ignoreClusterLabels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_LastUpdated           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_updated,json=lastUpdated"`
 	xxx_hidden_CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt"`
-	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
-	XXX_presence                     [1]uint32
-	unknownFields                    protoimpl.UnknownFields
-	sizeCache                        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DecommissionedClusterRetentionConfig) Reset() {
@@ -779,14 +781,28 @@ func (x *DecommissionedClusterRetentionConfig) GetIgnoreClusterLabels() map[stri
 
 func (x *DecommissionedClusterRetentionConfig) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *DecommissionedClusterRetentionConfig) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -801,11 +817,21 @@ func (x *DecommissionedClusterRetentionConfig) SetIgnoreClusterLabels(v map[stri
 }
 
 func (x *DecommissionedClusterRetentionConfig) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	}
 }
 
 func (x *DecommissionedClusterRetentionConfig) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	}
 }
 
 func (x *DecommissionedClusterRetentionConfig) HasRetentionDurationDays() bool {
@@ -819,14 +845,14 @@ func (x *DecommissionedClusterRetentionConfig) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DecommissionedClusterRetentionConfig) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *DecommissionedClusterRetentionConfig) ClearRetentionDurationDays() {
@@ -835,11 +861,13 @@ func (x *DecommissionedClusterRetentionConfig) ClearRetentionDurationDays() {
 }
 
 func (x *DecommissionedClusterRetentionConfig) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *DecommissionedClusterRetentionConfig) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 type DecommissionedClusterRetentionConfig_builder struct {
@@ -860,8 +888,14 @@ func (b0 DecommissionedClusterRetentionConfig_builder) Build() *DecommissionedCl
 		x.xxx_hidden_RetentionDurationDays = *b.RetentionDurationDays
 	}
 	x.xxx_hidden_IgnoreClusterLabels = b.IgnoreClusterLabels
-	x.xxx_hidden_LastUpdated = b.LastUpdated
-	x.xxx_hidden_CreatedAt = b.CreatedAt
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
 	return m0
 }
 
@@ -1483,10 +1517,12 @@ type PlatformComponentConfig struct {
 	state                        protoimpl.MessageState           `protogen:"opaque.v1"`
 	xxx_hidden_Rules             *[]*PlatformComponentConfig_Rule `protobuf:"bytes,1,rep,name=rules"`
 	xxx_hidden_NeedsReevaluation bool                             `protobuf:"varint,2,opt,name=needs_reevaluation,json=needsReevaluation"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PlatformComponentConfig) Reset() {
@@ -1516,8 +1552,13 @@ func (x *PlatformComponentConfig) ProtoReflect() protoreflect.Message {
 
 func (x *PlatformComponentConfig) GetRules() []*PlatformComponentConfig_Rule {
 	if x != nil {
-		if x.xxx_hidden_Rules != nil {
-			return *x.xxx_hidden_Rules
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Rules) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*PlatformComponentConfig_Rule
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1531,7 +1572,14 @@ func (x *PlatformComponentConfig) GetNeedsReevaluation() bool {
 }
 
 func (x *PlatformComponentConfig) SetRules(v []*PlatformComponentConfig_Rule) {
-	x.xxx_hidden_Rules = &v
+	var sv *[]*PlatformComponentConfig_Rule
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*PlatformComponentConfig_Rule{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *PlatformComponentConfig) SetNeedsReevaluation(v bool) {
@@ -1562,7 +1610,10 @@ func (b0 PlatformComponentConfig_builder) Build() *PlatformComponentConfig {
 	m0 := &PlatformComponentConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Rules = &b.Rules
+	if b.Rules != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Rules = &b.Rules
+	}
 	if b.NeedsReevaluation != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_NeedsReevaluation = *b.NeedsReevaluation
@@ -1943,10 +1994,12 @@ type PrometheusMetrics_Group struct {
 	state                             protoimpl.MessageState                     `protogen:"opaque.v1"`
 	xxx_hidden_GatheringPeriodMinutes uint32                                     `protobuf:"varint,1,opt,name=gathering_period_minutes,json=gatheringPeriodMinutes"`
 	xxx_hidden_Descriptors            map[string]*PrometheusMetrics_Group_Labels `protobuf:"bytes,2,rep,name=descriptors" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
-	XXX_presence                      [1]uint32
-	unknownFields                     protoimpl.UnknownFields
-	sizeCache                         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PrometheusMetrics_Group) Reset() {
@@ -2379,10 +2432,12 @@ type VulnerabilityExceptionConfig_ExpiryOptions struct {
 	xxx_hidden_FixableCveOptions *VulnerabilityExceptionConfig_FixableCVEOptions `protobuf:"bytes,2,opt,name=fixable_cve_options,json=fixableCveOptions"`
 	xxx_hidden_CustomDate        bool                                            `protobuf:"varint,3,opt,name=custom_date,json=customDate"`
 	xxx_hidden_Indefinite        bool                                            `protobuf:"varint,4,opt,name=indefinite"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) Reset() {
@@ -2412,8 +2467,13 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) ProtoReflect() protoreflect
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetDayOptions() []*DayOption {
 	if x != nil {
-		if x.xxx_hidden_DayOptions != nil {
-			return *x.xxx_hidden_DayOptions
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_DayOptions) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*DayOption
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_DayOptions), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2441,7 +2501,14 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetIndefinite() bool {
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) SetDayOptions(v []*DayOption) {
-	x.xxx_hidden_DayOptions = &v
+	var sv *[]*DayOption
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_DayOptions), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DayOption{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_DayOptions), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) SetFixableCveOptions(v *VulnerabilityExceptionConfig_FixableCVEOptions) {
@@ -2506,7 +2573,10 @@ func (b0 VulnerabilityExceptionConfig_ExpiryOptions_builder) Build() *Vulnerabil
 	m0 := &VulnerabilityExceptionConfig_ExpiryOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_DayOptions = &b.DayOptions
+	if b.DayOptions != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_DayOptions = &b.DayOptions
+	}
 	x.xxx_hidden_FixableCveOptions = b.FixableCveOptions
 	if b.CustomDate != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
@@ -2549,27 +2619,27 @@ const file_storage_config_proto_rawDesc = "" +
 	"'deleted_runtime_retention_duration_days\x18\x02 \x01(\x05R#deletedRuntimeRetentionDurationDays\x12L\n" +
 	"#all_runtime_retention_duration_days\x18\x03 \x01(\x05R\x1fallRuntimeRetentionDurationDays\x12V\n" +
 	"(attempted_deploy_retention_duration_days\x18\x04 \x01(\x05R$attemptedDeployRetentionDurationDays\x12X\n" +
-	")attempted_runtime_retention_duration_days\x18\x05 \x01(\x05R%attemptedRuntimeRetentionDurationDays\"\x9c\x03\n" +
+	")attempted_runtime_retention_duration_days\x18\x05 \x01(\x05R%attemptedRuntimeRetentionDurationDays\"\xa8\x03\n" +
 	"$DecommissionedClusterRetentionConfig\x126\n" +
-	"\x17retention_duration_days\x18\x01 \x01(\x05R\x15retentionDurationDays\x12z\n" +
-	"\x15ignore_cluster_labels\x18\x02 \x03(\v2F.storage.DecommissionedClusterRetentionConfig.IgnoreClusterLabelsEntryR\x13ignoreClusterLabels\x12=\n" +
-	"\flast_updated\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x129\n" +
+	"\x17retention_duration_days\x18\x01 \x01(\x05R\x15retentionDurationDays\x12~\n" +
+	"\x15ignore_cluster_labels\x18\x02 \x03(\v2F.storage.DecommissionedClusterRetentionConfig.IgnoreClusterLabelsEntryB\x02(\x01R\x13ignoreClusterLabels\x12A\n" +
+	"\flast_updated\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x12=\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x1aF\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\x1aF\n" +
 	"\x18IgnoreClusterLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x87\x02\n" +
 	"\x15ReportRetentionConfig\x12E\n" +
 	"\x1fhistory_retention_duration_days\x18\x01 \x01(\rR\x1chistoryRetentionDurationDays\x12K\n" +
 	"\"downloadable_report_retention_days\x18\x02 \x01(\rR\x1fdownloadableReportRetentionDays\x12Z\n" +
-	"*downloadable_report_global_retention_bytes\x18\x03 \x01(\rR&downloadableReportGlobalRetentionBytes\"\xb2\x04\n" +
+	"*downloadable_report_global_retention_bytes\x18\x03 \x01(\rR&downloadableReportGlobalRetentionBytes\"\xb6\x04\n" +
 	"\x11PrometheusMetrics\x12U\n" +
 	"\x15image_vulnerabilities\x18\x01 \x01(\v2 .storage.PrometheusMetrics.GroupR\x14imageVulnerabilities\x12M\n" +
 	"\x11policy_violations\x18\x02 \x01(\v2 .storage.PrometheusMetrics.GroupR\x10policyViolations\x12S\n" +
-	"\x14node_vulnerabilities\x18\x03 \x01(\v2 .storage.PrometheusMetrics.GroupR\x13nodeVulnerabilities\x1a\xa1\x02\n" +
+	"\x14node_vulnerabilities\x18\x03 \x01(\v2 .storage.PrometheusMetrics.GroupR\x13nodeVulnerabilities\x1a\xa5\x02\n" +
 	"\x05Group\x128\n" +
-	"\x18gathering_period_minutes\x18\x01 \x01(\rR\x16gatheringPeriodMinutes\x12S\n" +
-	"\vdescriptors\x18\x02 \x03(\v21.storage.PrometheusMetrics.Group.DescriptorsEntryR\vdescriptors\x1a \n" +
+	"\x18gathering_period_minutes\x18\x01 \x01(\rR\x16gatheringPeriodMinutes\x12W\n" +
+	"\vdescriptors\x18\x02 \x03(\v21.storage.PrometheusMetrics.Group.DescriptorsEntryB\x02(\x01R\vdescriptors\x1a \n" +
 	"\x06Labels\x12\x16\n" +
 	"\x06labels\x18\x01 \x03(\tR\x06labels\x1ag\n" +
 	"\x10DescriptorsEntry\x12\x10\n" +
@@ -2585,9 +2655,9 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x1evulnerability_exception_config\x18\a \x01(\v2%.storage.VulnerabilityExceptionConfigR\x1cvulnerabilityExceptionConfig\x12e\n" +
 	"\x1cadministration_events_config\x18\b \x01(\v2#.storage.AdministrationEventsConfigR\x1aadministrationEventsConfig\x124\n" +
 	"\ametrics\x18\t \x01(\v2\x1a.storage.PrometheusMetricsR\ametricsB\x11\n" +
-	"\x0falert_retention\"\xa5\x02\n" +
-	"\x17PlatformComponentConfig\x12;\n" +
-	"\x05rules\x18\x01 \x03(\v2%.storage.PlatformComponentConfig.RuleR\x05rules\x12-\n" +
+	"\x0falert_retention\"\xa9\x02\n" +
+	"\x17PlatformComponentConfig\x12?\n" +
+	"\x05rules\x18\x01 \x03(\v2%.storage.PlatformComponentConfig.RuleB\x02(\x01R\x05rules\x12-\n" +
 	"\x12needs_reevaluation\x18\x02 \x01(\bR\x11needsReevaluation\x1a\x9d\x01\n" +
 	"\x04Rule\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12Z\n" +
@@ -2597,16 +2667,16 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x06Config\x12:\n" +
 	"\rpublic_config\x18\x01 \x01(\v2\x15.storage.PublicConfigR\fpublicConfig\x12=\n" +
 	"\x0eprivate_config\x18\x02 \x01(\v2\x16.storage.PrivateConfigR\rprivateConfig\x12\\\n" +
-	"\x19platform_component_config\x18\x03 \x01(\v2 .storage.PlatformComponentConfigR\x17platformComponentConfig\"\xc2\x03\n" +
+	"\x19platform_component_config\x18\x03 \x01(\v2 .storage.PlatformComponentConfigR\x17platformComponentConfig\"\xc6\x03\n" +
 	"\x1cVulnerabilityExceptionConfig\x12Z\n" +
 	"\x0eexpiry_options\x18\x01 \x01(\v23.storage.VulnerabilityExceptionConfig.ExpiryOptionsR\rexpiryOptions\x1aU\n" +
 	"\x11FixableCVEOptions\x12\x1f\n" +
 	"\vall_fixable\x18\x01 \x01(\bR\n" +
 	"allFixable\x12\x1f\n" +
 	"\vany_fixable\x18\x02 \x01(\bR\n" +
-	"anyFixable\x1a\xee\x01\n" +
-	"\rExpiryOptions\x123\n" +
-	"\vday_options\x18\x01 \x03(\v2\x12.storage.DayOptionR\n" +
+	"anyFixable\x1a\xf2\x01\n" +
+	"\rExpiryOptions\x127\n" +
+	"\vday_options\x18\x01 \x03(\v2\x12.storage.DayOptionB\x02(\x01R\n" +
 	"dayOptions\x12g\n" +
 	"\x13fixable_cve_options\x18\x02 \x01(\v27.storage.VulnerabilityExceptionConfig.FixableCVEOptionsR\x11fixableCveOptions\x12\x1f\n" +
 	"\vcustom_date\x18\x03 \x01(\bR\n" +

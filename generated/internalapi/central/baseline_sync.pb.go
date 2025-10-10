@@ -25,8 +25,12 @@ const (
 type BaselineSync struct {
 	state                protoimpl.MessageState      `protogen:"opaque.v1"`
 	xxx_hidden_Baselines *[]*storage.ProcessBaseline `protobuf:"bytes,1,rep,name=baselines"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *BaselineSync) Reset() {
@@ -56,15 +60,27 @@ func (x *BaselineSync) ProtoReflect() protoreflect.Message {
 
 func (x *BaselineSync) GetBaselines() []*storage.ProcessBaseline {
 	if x != nil {
-		if x.xxx_hidden_Baselines != nil {
-			return *x.xxx_hidden_Baselines
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Baselines) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ProcessBaseline
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Baselines), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *BaselineSync) SetBaselines(v []*storage.ProcessBaseline) {
-	x.xxx_hidden_Baselines = &v
+	var sv *[]*storage.ProcessBaseline
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Baselines), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ProcessBaseline{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Baselines), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type BaselineSync_builder struct {
@@ -77,7 +93,10 @@ func (b0 BaselineSync_builder) Build() *BaselineSync {
 	m0 := &BaselineSync{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Baselines = &b.Baselines
+	if b.Baselines != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Baselines = &b.Baselines
+	}
 	return m0
 }
 
@@ -85,9 +104,9 @@ var File_internalapi_central_baseline_sync_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_baseline_sync_proto_rawDesc = "" +
 	"\n" +
-	"'internalapi/central/baseline_sync.proto\x12\acentral\x1a\x1estorage/process_baseline.proto\x1a!google/protobuf/go_features.proto\"F\n" +
-	"\fBaselineSync\x126\n" +
-	"\tbaselines\x18\x01 \x03(\v2\x18.storage.ProcessBaselineR\tbaselinesB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"'internalapi/central/baseline_sync.proto\x12\acentral\x1a\x1estorage/process_baseline.proto\x1a!google/protobuf/go_features.proto\"J\n" +
+	"\fBaselineSync\x12:\n" +
+	"\tbaselines\x18\x01 \x03(\v2\x18.storage.ProcessBaselineB\x02(\x01R\tbaselinesB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_baseline_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_central_baseline_sync_proto_goTypes = []any{

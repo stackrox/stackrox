@@ -215,8 +215,12 @@ func (b0 GetAuthProvidersRequest_builder) Build() *GetAuthProvidersRequest {
 type GetLoginAuthProvidersResponse struct {
 	state                    protoimpl.MessageState                              `protogen:"opaque.v1"`
 	xxx_hidden_AuthProviders *[]*GetLoginAuthProvidersResponse_LoginAuthProvider `protobuf:"bytes,1,rep,name=auth_providers,json=authProviders"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetLoginAuthProvidersResponse) Reset() {
@@ -246,15 +250,27 @@ func (x *GetLoginAuthProvidersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetLoginAuthProvidersResponse) GetAuthProviders() []*GetLoginAuthProvidersResponse_LoginAuthProvider {
 	if x != nil {
-		if x.xxx_hidden_AuthProviders != nil {
-			return *x.xxx_hidden_AuthProviders
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AuthProviders) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*GetLoginAuthProvidersResponse_LoginAuthProvider
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetLoginAuthProvidersResponse) SetAuthProviders(v []*GetLoginAuthProvidersResponse_LoginAuthProvider) {
-	x.xxx_hidden_AuthProviders = &v
+	var sv *[]*GetLoginAuthProvidersResponse_LoginAuthProvider
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*GetLoginAuthProvidersResponse_LoginAuthProvider{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetLoginAuthProvidersResponse_builder struct {
@@ -267,15 +283,22 @@ func (b0 GetLoginAuthProvidersResponse_builder) Build() *GetLoginAuthProvidersRe
 	m0 := &GetLoginAuthProvidersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_AuthProviders = &b.AuthProviders
+	if b.AuthProviders != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_AuthProviders = &b.AuthProviders
+	}
 	return m0
 }
 
 type GetAuthProvidersResponse struct {
 	state                    protoimpl.MessageState   `protogen:"opaque.v1"`
 	xxx_hidden_AuthProviders *[]*storage.AuthProvider `protobuf:"bytes,1,rep,name=auth_providers,json=authProviders"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAuthProvidersResponse) Reset() {
@@ -305,15 +328,27 @@ func (x *GetAuthProvidersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAuthProvidersResponse) GetAuthProviders() []*storage.AuthProvider {
 	if x != nil {
-		if x.xxx_hidden_AuthProviders != nil {
-			return *x.xxx_hidden_AuthProviders
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AuthProviders) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.AuthProvider
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetAuthProvidersResponse) SetAuthProviders(v []*storage.AuthProvider) {
-	x.xxx_hidden_AuthProviders = &v
+	var sv *[]*storage.AuthProvider
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.AuthProvider{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetAuthProvidersResponse_builder struct {
@@ -326,15 +361,22 @@ func (b0 GetAuthProvidersResponse_builder) Build() *GetAuthProvidersResponse {
 	m0 := &GetAuthProvidersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_AuthProviders = &b.AuthProviders
+	if b.AuthProviders != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_AuthProviders = &b.AuthProviders
+	}
 	return m0
 }
 
 type PostAuthProviderRequest struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Provider *storage.AuthProvider  `protobuf:"bytes,1,opt,name=provider"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PostAuthProviderRequest) Reset() {
@@ -364,24 +406,37 @@ func (x *PostAuthProviderRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PostAuthProviderRequest) GetProvider() *storage.AuthProvider {
 	if x != nil {
-		return x.xxx_hidden_Provider
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Provider) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.AuthProvider
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Provider), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *PostAuthProviderRequest) SetProvider(v *storage.AuthProvider) {
-	x.xxx_hidden_Provider = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Provider, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *PostAuthProviderRequest) HasProvider() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Provider != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PostAuthProviderRequest) ClearProvider() {
-	x.xxx_hidden_Provider = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Provider, (*storage.AuthProvider)(nil))
 }
 
 type PostAuthProviderRequest_builder struct {
@@ -394,7 +449,10 @@ func (b0 PostAuthProviderRequest_builder) Build() *PostAuthProviderRequest {
 	m0 := &PostAuthProviderRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Provider = b.Provider
+	if b.Provider != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Provider = b.Provider
+	}
 	return m0
 }
 
@@ -787,6 +845,8 @@ type ExchangeTokenResponse struct {
 	xxx_hidden_ClientState *string                `protobuf:"bytes,2,opt,name=client_state,json=clientState"`
 	xxx_hidden_Test        bool                   `protobuf:"varint,3,opt,name=test"`
 	xxx_hidden_User        *AuthStatus            `protobuf:"bytes,4,opt,name=user"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -847,7 +907,14 @@ func (x *ExchangeTokenResponse) GetTest() bool {
 
 func (x *ExchangeTokenResponse) GetUser() *AuthStatus {
 	if x != nil {
-		return x.xxx_hidden_User
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_User) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *AuthStatus
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_User), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -868,7 +935,12 @@ func (x *ExchangeTokenResponse) SetTest(v bool) {
 }
 
 func (x *ExchangeTokenResponse) SetUser(v *AuthStatus) {
-	x.xxx_hidden_User = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_User, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	}
 }
 
 func (x *ExchangeTokenResponse) HasToken() bool {
@@ -896,7 +968,7 @@ func (x *ExchangeTokenResponse) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ExchangeTokenResponse) ClearToken() {
@@ -915,7 +987,8 @@ func (x *ExchangeTokenResponse) ClearTest() {
 }
 
 func (x *ExchangeTokenResponse) ClearUser() {
-	x.xxx_hidden_User = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_User, (*AuthStatus)(nil))
 }
 
 type ExchangeTokenResponse_builder struct {
@@ -943,15 +1016,22 @@ func (b0 ExchangeTokenResponse_builder) Build() *ExchangeTokenResponse {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_Test = *b.Test
 	}
-	x.xxx_hidden_User = b.User
+	if b.User != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_User = b.User
+	}
 	return m0
 }
 
 type AvailableProviderTypesResponse struct {
 	state                        protoimpl.MessageState                              `protogen:"opaque.v1"`
 	xxx_hidden_AuthProviderTypes *[]*AvailableProviderTypesResponse_AuthProviderType `protobuf:"bytes,1,rep,name=auth_provider_types,json=authProviderTypes"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AvailableProviderTypesResponse) Reset() {
@@ -981,15 +1061,27 @@ func (x *AvailableProviderTypesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *AvailableProviderTypesResponse) GetAuthProviderTypes() []*AvailableProviderTypesResponse_AuthProviderType {
 	if x != nil {
-		if x.xxx_hidden_AuthProviderTypes != nil {
-			return *x.xxx_hidden_AuthProviderTypes
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AuthProviderTypes) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*AvailableProviderTypesResponse_AuthProviderType
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviderTypes), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *AvailableProviderTypesResponse) SetAuthProviderTypes(v []*AvailableProviderTypesResponse_AuthProviderType) {
-	x.xxx_hidden_AuthProviderTypes = &v
+	var sv *[]*AvailableProviderTypesResponse_AuthProviderType
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviderTypes), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*AvailableProviderTypesResponse_AuthProviderType{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviderTypes), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type AvailableProviderTypesResponse_builder struct {
@@ -1002,7 +1094,10 @@ func (b0 AvailableProviderTypesResponse_builder) Build() *AvailableProviderTypes
 	m0 := &AvailableProviderTypesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_AuthProviderTypes = &b.AuthProviderTypes
+	if b.AuthProviderTypes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_AuthProviderTypes = &b.AuthProviderTypes
+	}
 	return m0
 }
 
@@ -1284,18 +1379,18 @@ const file_api_v1_authprovider_service_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"A\n" +
 	"\x17GetAuthProvidersRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
-	"\x04type\x18\x02 \x01(\tR\x04type\"\xe5\x01\n" +
-	"\x1dGetLoginAuthProvidersResponse\x12Z\n" +
-	"\x0eauth_providers\x18\x01 \x03(\v23.v1.GetLoginAuthProvidersResponse.LoginAuthProviderR\rauthProviders\x1ah\n" +
+	"\x04type\x18\x02 \x01(\tR\x04type\"\xe9\x01\n" +
+	"\x1dGetLoginAuthProvidersResponse\x12^\n" +
+	"\x0eauth_providers\x18\x01 \x03(\v23.v1.GetLoginAuthProvidersResponse.LoginAuthProviderB\x02(\x01R\rauthProviders\x1ah\n" +
 	"\x11LoginAuthProvider\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1b\n" +
-	"\tlogin_url\x18\x05 \x01(\tR\bloginUrl\"X\n" +
-	"\x18GetAuthProvidersResponse\x12<\n" +
-	"\x0eauth_providers\x18\x01 \x03(\v2\x15.storage.AuthProviderR\rauthProviders\"L\n" +
-	"\x17PostAuthProviderRequest\x121\n" +
-	"\bprovider\x18\x01 \x01(\v2\x15.storage.AuthProviderR\bprovider\"x\n" +
+	"\tlogin_url\x18\x05 \x01(\tR\bloginUrl\"\\\n" +
+	"\x18GetAuthProvidersResponse\x12@\n" +
+	"\x0eauth_providers\x18\x01 \x03(\v2\x15.storage.AuthProviderB\x02(\x01R\rauthProviders\"P\n" +
+	"\x17PostAuthProviderRequest\x125\n" +
+	"\bprovider\x18\x01 \x01(\v2\x15.storage.AuthProviderB\x02(\x01R\bprovider\"x\n" +
 	"\x19UpdateAuthProviderRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x04name\x18\x02 \x01(\tH\x00R\x04name\x12\x1a\n" +
@@ -1306,14 +1401,14 @@ const file_api_v1_authprovider_service_proto_rawDesc = "" +
 	"\x14ExchangeTokenRequest\x12%\n" +
 	"\x0eexternal_token\x18\x01 \x01(\tR\rexternalToken\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
-	"\x05state\x18\x03 \x01(\tR\x05state\"\x88\x01\n" +
+	"\x05state\x18\x03 \x01(\tR\x05state\"\x8c\x01\n" +
 	"\x15ExchangeTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12!\n" +
 	"\fclient_state\x18\x02 \x01(\tR\vclientState\x12\x12\n" +
-	"\x04test\x18\x03 \x01(\bR\x04test\x12\"\n" +
-	"\x04user\x18\x04 \x01(\v2\x0e.v1.AuthStatusR\x04user\"\xe0\x01\n" +
-	"\x1eAvailableProviderTypesResponse\x12c\n" +
-	"\x13auth_provider_types\x18\x01 \x03(\v23.v1.AvailableProviderTypesResponse.AuthProviderTypeR\x11authProviderTypes\x1aY\n" +
+	"\x04test\x18\x03 \x01(\bR\x04test\x12&\n" +
+	"\x04user\x18\x04 \x01(\v2\x0e.v1.AuthStatusB\x02(\x01R\x04user\"\xe4\x01\n" +
+	"\x1eAvailableProviderTypesResponse\x12g\n" +
+	"\x13auth_provider_types\x18\x01 \x03(\v23.v1.AvailableProviderTypesResponse.AuthProviderTypeB\x02(\x01R\x11authProviderTypes\x1aY\n" +
 	"\x10AuthProviderType\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x121\n" +
 	"\x14suggested_attributes\x18\x02 \x03(\tR\x13suggestedAttributes2\xca\a\n" +

@@ -180,6 +180,8 @@ type SortOption struct {
 	xxx_hidden_Field       *string                `protobuf:"bytes,1,opt,name=field"`
 	xxx_hidden_Reversed    bool                   `protobuf:"varint,2,opt,name=reversed"`
 	xxx_hidden_AggregateBy *AggregateBy           `protobuf:"bytes,3,opt,name=aggregate_by,json=aggregateBy"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -230,7 +232,14 @@ func (x *SortOption) GetReversed() bool {
 
 func (x *SortOption) GetAggregateBy() *AggregateBy {
 	if x != nil {
-		return x.xxx_hidden_AggregateBy
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AggregateBy) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *AggregateBy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AggregateBy), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -246,7 +255,12 @@ func (x *SortOption) SetReversed(v bool) {
 }
 
 func (x *SortOption) SetAggregateBy(v *AggregateBy) {
-	x.xxx_hidden_AggregateBy = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AggregateBy, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	}
 }
 
 func (x *SortOption) HasField() bool {
@@ -267,7 +281,7 @@ func (x *SortOption) HasAggregateBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_AggregateBy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *SortOption) ClearField() {
@@ -281,7 +295,8 @@ func (x *SortOption) ClearReversed() {
 }
 
 func (x *SortOption) ClearAggregateBy() {
-	x.xxx_hidden_AggregateBy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AggregateBy, (*AggregateBy)(nil))
 }
 
 type SortOption_builder struct {
@@ -305,7 +320,10 @@ func (b0 SortOption_builder) Build() *SortOption {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Reversed = *b.Reversed
 	}
-	x.xxx_hidden_AggregateBy = b.AggregateBy
+	if b.AggregateBy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_AggregateBy = b.AggregateBy
+	}
 	return m0
 }
 
@@ -315,6 +333,8 @@ type Pagination struct {
 	xxx_hidden_Offset      int32                  `protobuf:"varint,2,opt,name=offset"`
 	xxx_hidden_SortOption  *SortOption            `protobuf:"bytes,3,opt,name=sort_option,json=sortOption"`
 	xxx_hidden_SortOptions *[]*SortOption         `protobuf:"bytes,4,rep,name=sort_options,json=sortOptions"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -362,15 +382,27 @@ func (x *Pagination) GetOffset() int32 {
 
 func (x *Pagination) GetSortOption() *SortOption {
 	if x != nil {
-		return x.xxx_hidden_SortOption
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SortOption) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *SortOption
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOption), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *Pagination) GetSortOptions() []*SortOption {
 	if x != nil {
-		if x.xxx_hidden_SortOptions != nil {
-			return *x.xxx_hidden_SortOptions
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SortOptions) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*SortOption
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -387,11 +419,23 @@ func (x *Pagination) SetOffset(v int32) {
 }
 
 func (x *Pagination) SetSortOption(v *SortOption) {
-	x.xxx_hidden_SortOption = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_SortOption, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	}
 }
 
 func (x *Pagination) SetSortOptions(v []*SortOption) {
-	x.xxx_hidden_SortOptions = &v
+	var sv *[]*SortOption
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SortOption{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *Pagination) HasLimit() bool {
@@ -412,7 +456,7 @@ func (x *Pagination) HasSortOption() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SortOption != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Pagination) ClearLimit() {
@@ -426,7 +470,8 @@ func (x *Pagination) ClearOffset() {
 }
 
 func (x *Pagination) ClearSortOption() {
-	x.xxx_hidden_SortOption = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_SortOption, (*SortOption)(nil))
 }
 
 type Pagination_builder struct {
@@ -451,8 +496,14 @@ func (b0 Pagination_builder) Build() *Pagination {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
 		x.xxx_hidden_Offset = *b.Offset
 	}
-	x.xxx_hidden_SortOption = b.SortOption
-	x.xxx_hidden_SortOptions = &b.SortOptions
+	if b.SortOption != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_SortOption = b.SortOption
+	}
+	if b.SortOptions != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_SortOptions = &b.SortOptions
+	}
 	return m0
 }
 
@@ -463,19 +514,19 @@ const file_api_v1_pagination_proto_rawDesc = "" +
 	"\x17api/v1/pagination.proto\x12\x02v1\x1a!google/protobuf/go_features.proto\"V\n" +
 	"\vAggregateBy\x12+\n" +
 	"\baggrFunc\x18\x01 \x01(\x0e2\x0f.v1.AggregationR\baggrFunc\x12\x1a\n" +
-	"\bdistinct\x18\x02 \x01(\bR\bdistinct\"r\n" +
+	"\bdistinct\x18\x02 \x01(\bR\bdistinct\"v\n" +
 	"\n" +
 	"SortOption\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x1a\n" +
-	"\breversed\x18\x02 \x01(\bR\breversed\x122\n" +
-	"\faggregate_by\x18\x03 \x01(\v2\x0f.v1.AggregateByR\vaggregateBy\"\x9e\x01\n" +
+	"\breversed\x18\x02 \x01(\bR\breversed\x126\n" +
+	"\faggregate_by\x18\x03 \x01(\v2\x0f.v1.AggregateByB\x02(\x01R\vaggregateBy\"\xa6\x01\n" +
 	"\n" +
 	"Pagination\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x02 \x01(\x05R\x06offset\x12/\n" +
-	"\vsort_option\x18\x03 \x01(\v2\x0e.v1.SortOptionR\n" +
-	"sortOption\x121\n" +
-	"\fsort_options\x18\x04 \x03(\v2\x0e.v1.SortOptionR\vsortOptions*5\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\x123\n" +
+	"\vsort_option\x18\x03 \x01(\v2\x0e.v1.SortOptionB\x02(\x01R\n" +
+	"sortOption\x125\n" +
+	"\fsort_options\x18\x04 \x03(\v2\x0e.v1.SortOptionB\x02(\x01R\vsortOptions*5\n" +
 	"\vAggregation\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\t\n" +
 	"\x05COUNT\x10\x01\x12\a\n" +

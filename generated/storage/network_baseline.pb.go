@@ -170,8 +170,12 @@ type NetworkBaselinePeer struct {
 	state                 protoimpl.MessageState                  `protogen:"opaque.v1"`
 	xxx_hidden_Entity     *NetworkEntity                          `protobuf:"bytes,1,opt,name=entity"`
 	xxx_hidden_Properties *[]*NetworkBaselineConnectionProperties `protobuf:"bytes,2,rep,name=properties"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkBaselinePeer) Reset() {
@@ -208,8 +212,13 @@ func (x *NetworkBaselinePeer) GetEntity() *NetworkEntity {
 
 func (x *NetworkBaselinePeer) GetProperties() []*NetworkBaselineConnectionProperties {
 	if x != nil {
-		if x.xxx_hidden_Properties != nil {
-			return *x.xxx_hidden_Properties
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Properties) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*NetworkBaselineConnectionProperties
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Properties), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -220,7 +229,14 @@ func (x *NetworkBaselinePeer) SetEntity(v *NetworkEntity) {
 }
 
 func (x *NetworkBaselinePeer) SetProperties(v []*NetworkBaselineConnectionProperties) {
-	x.xxx_hidden_Properties = &v
+	var sv *[]*NetworkBaselineConnectionProperties
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Properties), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkBaselineConnectionProperties{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Properties), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *NetworkBaselinePeer) HasEntity() bool {
@@ -247,7 +263,10 @@ func (b0 NetworkBaselinePeer_builder) Build() *NetworkBaselinePeer {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Entity = b.Entity
-	x.xxx_hidden_Properties = &b.Properties
+	if b.Properties != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Properties = &b.Properties
+	}
 	return m0
 }
 
@@ -264,10 +283,12 @@ type NetworkBaseline struct {
 	xxx_hidden_ObservationPeriodEnd *timestamppb.Timestamp  `protobuf:"bytes,6,opt,name=observation_period_end,json=observationPeriodEnd"`
 	xxx_hidden_Locked               bool                    `protobuf:"varint,7,opt,name=locked"`
 	xxx_hidden_DeploymentName       *string                 `protobuf:"bytes,8,opt,name=deployment_name,json=deploymentName"`
-	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
-	XXX_presence                    [1]uint32
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkBaseline) Reset() {
@@ -327,8 +348,13 @@ func (x *NetworkBaseline) GetNamespace() string {
 
 func (x *NetworkBaseline) GetPeers() []*NetworkBaselinePeer {
 	if x != nil {
-		if x.xxx_hidden_Peers != nil {
-			return *x.xxx_hidden_Peers
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Peers) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*NetworkBaselinePeer
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Peers), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -336,8 +362,13 @@ func (x *NetworkBaseline) GetPeers() []*NetworkBaselinePeer {
 
 func (x *NetworkBaseline) GetForbiddenPeers() []*NetworkBaselinePeer {
 	if x != nil {
-		if x.xxx_hidden_ForbiddenPeers != nil {
-			return *x.xxx_hidden_ForbiddenPeers
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ForbiddenPeers) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *[]*NetworkBaselinePeer
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ForbiddenPeers), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -345,7 +376,14 @@ func (x *NetworkBaseline) GetForbiddenPeers() []*NetworkBaselinePeer {
 
 func (x *NetworkBaseline) GetObservationPeriodEnd() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ObservationPeriodEnd
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ObservationPeriodEnd) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ObservationPeriodEnd), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -383,15 +421,34 @@ func (x *NetworkBaseline) SetNamespace(v string) {
 }
 
 func (x *NetworkBaseline) SetPeers(v []*NetworkBaselinePeer) {
-	x.xxx_hidden_Peers = &v
+	var sv *[]*NetworkBaselinePeer
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Peers), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkBaselinePeer{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Peers), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
 }
 
 func (x *NetworkBaseline) SetForbiddenPeers(v []*NetworkBaselinePeer) {
-	x.xxx_hidden_ForbiddenPeers = &v
+	var sv *[]*NetworkBaselinePeer
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ForbiddenPeers), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkBaselinePeer{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ForbiddenPeers), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
 }
 
 func (x *NetworkBaseline) SetObservationPeriodEnd(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ObservationPeriodEnd = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ObservationPeriodEnd, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	}
 }
 
 func (x *NetworkBaseline) SetLocked(v bool) {
@@ -429,7 +486,7 @@ func (x *NetworkBaseline) HasObservationPeriodEnd() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ObservationPeriodEnd != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *NetworkBaseline) HasLocked() bool {
@@ -462,7 +519,8 @@ func (x *NetworkBaseline) ClearNamespace() {
 }
 
 func (x *NetworkBaseline) ClearObservationPeriodEnd() {
-	x.xxx_hidden_ObservationPeriodEnd = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ObservationPeriodEnd, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *NetworkBaseline) ClearLocked() {
@@ -514,9 +572,18 @@ func (b0 NetworkBaseline_builder) Build() *NetworkBaseline {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
 		x.xxx_hidden_Namespace = b.Namespace
 	}
-	x.xxx_hidden_Peers = &b.Peers
-	x.xxx_hidden_ForbiddenPeers = &b.ForbiddenPeers
-	x.xxx_hidden_ObservationPeriodEnd = b.ObservationPeriodEnd
+	if b.Peers != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		x.xxx_hidden_Peers = &b.Peers
+	}
+	if b.ForbiddenPeers != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
+		x.xxx_hidden_ForbiddenPeers = &b.ForbiddenPeers
+	}
+	if b.ObservationPeriodEnd != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_ObservationPeriodEnd = b.ObservationPeriodEnd
+	}
 	if b.Locked != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
 		x.xxx_hidden_Locked = *b.Locked
@@ -536,20 +603,20 @@ const file_storage_network_baseline_proto_rawDesc = "" +
 	"#NetworkBaselineConnectionProperties\x12\x18\n" +
 	"\aingress\x18\x01 \x01(\bR\aingress\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\rR\x04port\x12/\n" +
-	"\bprotocol\x18\x03 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\"\x93\x01\n" +
+	"\bprotocol\x18\x03 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\"\x97\x01\n" +
 	"\x13NetworkBaselinePeer\x12.\n" +
-	"\x06entity\x18\x01 \x01(\v2\x16.storage.NetworkEntityR\x06entity\x12L\n" +
+	"\x06entity\x18\x01 \x01(\v2\x16.storage.NetworkEntityR\x06entity\x12P\n" +
 	"\n" +
-	"properties\x18\x02 \x03(\v2,.storage.NetworkBaselineConnectionPropertiesR\n" +
-	"properties\"\x81\x03\n" +
+	"properties\x18\x02 \x03(\v2,.storage.NetworkBaselineConnectionPropertiesB\x02(\x01R\n" +
+	"properties\"\x8d\x03\n" +
 	"\x0fNetworkBaseline\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x02 \x01(\tR\tclusterId\x12\x1c\n" +
-	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x122\n" +
-	"\x05peers\x18\x04 \x03(\v2\x1c.storage.NetworkBaselinePeerR\x05peers\x12E\n" +
-	"\x0fforbidden_peers\x18\x05 \x03(\v2\x1c.storage.NetworkBaselinePeerR\x0eforbiddenPeers\x12P\n" +
-	"\x16observation_period_end\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x14observationPeriodEnd\x12\x16\n" +
+	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x126\n" +
+	"\x05peers\x18\x04 \x03(\v2\x1c.storage.NetworkBaselinePeerB\x02(\x01R\x05peers\x12I\n" +
+	"\x0fforbidden_peers\x18\x05 \x03(\v2\x1c.storage.NetworkBaselinePeerB\x02(\x01R\x0eforbiddenPeers\x12T\n" +
+	"\x16observation_period_end\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x14observationPeriodEnd\x12\x16\n" +
 	"\x06locked\x18\a \x01(\bR\x06locked\x12'\n" +
 	"\x0fdeployment_name\x18\b \x01(\tR\x0edeploymentNameB6\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"

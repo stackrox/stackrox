@@ -92,10 +92,12 @@ type ComplianceOperatorCheckResult struct {
 	xxx_hidden_Instructions *string                                   `protobuf:"bytes,7,opt,name=instructions"`
 	xxx_hidden_Labels       map[string]string                         `protobuf:"bytes,8,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Annotations  map[string]string                         `protobuf:"bytes,9,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorCheckResult) Reset() {
@@ -395,6 +397,8 @@ type ComplianceOperatorProfile struct {
 	xxx_hidden_Annotations map[string]string                  `protobuf:"bytes,6,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Description *string                            `protobuf:"bytes,7,opt,name=description"`
 	xxx_hidden_Rules       *[]*ComplianceOperatorProfile_Rule `protobuf:"bytes,8,rep,name=rules"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -492,8 +496,13 @@ func (x *ComplianceOperatorProfile) GetDescription() string {
 
 func (x *ComplianceOperatorProfile) GetRules() []*ComplianceOperatorProfile_Rule {
 	if x != nil {
-		if x.xxx_hidden_Rules != nil {
-			return *x.xxx_hidden_Rules
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Rules) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *[]*ComplianceOperatorProfile_Rule
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -533,7 +542,14 @@ func (x *ComplianceOperatorProfile) SetDescription(v string) {
 }
 
 func (x *ComplianceOperatorProfile) SetRules(v []*ComplianceOperatorProfile_Rule) {
-	x.xxx_hidden_Rules = &v
+	var sv *[]*ComplianceOperatorProfile_Rule
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceOperatorProfile_Rule{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
 }
 
 func (x *ComplianceOperatorProfile) HasId() bool {
@@ -635,7 +651,10 @@ func (b0 ComplianceOperatorProfile_builder) Build() *ComplianceOperatorProfile {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
 		x.xxx_hidden_Description = b.Description
 	}
-	x.xxx_hidden_Rules = &b.Rules
+	if b.Rules != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_Rules = &b.Rules
+	}
 	return m0
 }
 
@@ -651,6 +670,8 @@ type ComplianceOperatorRule struct {
 	xxx_hidden_Title       *string                `protobuf:"bytes,7,opt,name=title"`
 	xxx_hidden_Description *string                `protobuf:"bytes,8,opt,name=description"`
 	xxx_hidden_Rationale   *string                `protobuf:"bytes,9,opt,name=rationale"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -953,6 +974,8 @@ type ComplianceOperatorScanSettingBinding struct {
 	xxx_hidden_Labels      map[string]string                                `protobuf:"bytes,4,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Annotations map[string]string                                `protobuf:"bytes,5,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Profiles    *[]*ComplianceOperatorScanSettingBinding_Profile `protobuf:"bytes,6,rep,name=profiles"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1030,8 +1053,13 @@ func (x *ComplianceOperatorScanSettingBinding) GetAnnotations() map[string]strin
 
 func (x *ComplianceOperatorScanSettingBinding) GetProfiles() []*ComplianceOperatorScanSettingBinding_Profile {
 	if x != nil {
-		if x.xxx_hidden_Profiles != nil {
-			return *x.xxx_hidden_Profiles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Profiles) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *[]*ComplianceOperatorScanSettingBinding_Profile
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Profiles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1061,7 +1089,14 @@ func (x *ComplianceOperatorScanSettingBinding) SetAnnotations(v map[string]strin
 }
 
 func (x *ComplianceOperatorScanSettingBinding) SetProfiles(v []*ComplianceOperatorScanSettingBinding_Profile) {
-	x.xxx_hidden_Profiles = &v
+	var sv *[]*ComplianceOperatorScanSettingBinding_Profile
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Profiles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceOperatorScanSettingBinding_Profile{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Profiles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
 }
 
 func (x *ComplianceOperatorScanSettingBinding) HasId() bool {
@@ -1129,7 +1164,10 @@ func (b0 ComplianceOperatorScanSettingBinding_builder) Build() *ComplianceOperat
 	}
 	x.xxx_hidden_Labels = b.Labels
 	x.xxx_hidden_Annotations = b.Annotations
-	x.xxx_hidden_Profiles = &b.Profiles
+	if b.Profiles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_Profiles = &b.Profiles
+	}
 	return m0
 }
 
@@ -1141,6 +1179,8 @@ type ComplianceOperatorScan struct {
 	xxx_hidden_ProfileId   *string                `protobuf:"bytes,4,opt,name=profile_id,json=profileId"`
 	xxx_hidden_Labels      map[string]string      `protobuf:"bytes,5,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Annotations map[string]string      `protobuf:"bytes,6,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1498,7 +1538,7 @@ var File_storage_compliance_operator_proto protoreflect.FileDescriptor
 
 const file_storage_compliance_operator_proto_rawDesc = "" +
 	"\n" +
-	"!storage/compliance_operator.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"\xb1\x05\n" +
+	"!storage/compliance_operator.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"\xb9\x05\n" +
 	"\x1dComplianceOperatorCheckResult\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bcheck_id\x18\x02 \x01(\tR\acheckId\x12\x1d\n" +
@@ -1508,9 +1548,9 @@ const file_storage_compliance_operator_proto_rawDesc = "" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12J\n" +
 	"\x06status\x18\x05 \x01(\x0e22.storage.ComplianceOperatorCheckResult.CheckStatusR\x06status\x12 \n" +
 	"\vdescription\x18\x06 \x01(\tR\vdescription\x12\"\n" +
-	"\finstructions\x18\a \x01(\tR\finstructions\x12J\n" +
-	"\x06labels\x18\b \x03(\v22.storage.ComplianceOperatorCheckResult.LabelsEntryR\x06labels\x12Y\n" +
-	"\vannotations\x18\t \x03(\v27.storage.ComplianceOperatorCheckResult.AnnotationsEntryR\vannotations\x1a9\n" +
+	"\finstructions\x18\a \x01(\tR\finstructions\x12N\n" +
+	"\x06labels\x18\b \x03(\v22.storage.ComplianceOperatorCheckResult.LabelsEntryB\x02(\x01R\x06labels\x12]\n" +
+	"\vannotations\x18\t \x03(\v27.storage.ComplianceOperatorCheckResult.AnnotationsEntryB\x02(\x01R\vannotations\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -1526,18 +1566,18 @@ const file_storage_compliance_operator_proto_rawDesc = "" +
 	"\n" +
 	"\x06MANUAL\x10\x05\x12\x12\n" +
 	"\x0eNOT_APPLICABLE\x10\x06\x12\x10\n" +
-	"\fINCONSISTENT\x10\a\"\x94\x04\n" +
+	"\fINCONSISTENT\x10\a\"\xa0\x04\n" +
 	"\x19ComplianceOperatorProfile\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
 	"profile_id\x18\x02 \x01(\tR\tprofileId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12F\n" +
-	"\x06labels\x18\x05 \x03(\v2..storage.ComplianceOperatorProfile.LabelsEntryR\x06labels\x12U\n" +
-	"\vannotations\x18\x06 \x03(\v23.storage.ComplianceOperatorProfile.AnnotationsEntryR\vannotations\x12 \n" +
-	"\vdescription\x18\a \x01(\tR\vdescription\x12=\n" +
-	"\x05rules\x18\b \x03(\v2'.storage.ComplianceOperatorProfile.RuleR\x05rules\x1a9\n" +
+	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12J\n" +
+	"\x06labels\x18\x05 \x03(\v2..storage.ComplianceOperatorProfile.LabelsEntryB\x02(\x01R\x06labels\x12Y\n" +
+	"\vannotations\x18\x06 \x03(\v23.storage.ComplianceOperatorProfile.AnnotationsEntryB\x02(\x01R\vannotations\x12 \n" +
+	"\vdescription\x18\a \x01(\tR\vdescription\x12A\n" +
+	"\x05rules\x18\b \x03(\v2'.storage.ComplianceOperatorProfile.RuleB\x02(\x01R\x05rules\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -1545,15 +1585,15 @@ const file_storage_compliance_operator_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a\x1a\n" +
 	"\x04Rule\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\xde\x03\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xe6\x03\n" +
 	"\x16ComplianceOperatorRule\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\arule_id\x18\x02 \x01(\tR\x06ruleId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12C\n" +
-	"\x06labels\x18\x05 \x03(\v2+.storage.ComplianceOperatorRule.LabelsEntryR\x06labels\x12R\n" +
-	"\vannotations\x18\x06 \x03(\v20.storage.ComplianceOperatorRule.AnnotationsEntryR\vannotations\x12\x14\n" +
+	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12G\n" +
+	"\x06labels\x18\x05 \x03(\v2+.storage.ComplianceOperatorRule.LabelsEntryB\x02(\x01R\x06labels\x12V\n" +
+	"\vannotations\x18\x06 \x03(\v20.storage.ComplianceOperatorRule.AnnotationsEntryB\x02(\x01R\vannotations\x12\x14\n" +
 	"\x05title\x18\a \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\b \x01(\tR\vdescription\x12\x1c\n" +
 	"\trationale\x18\t \x01(\tR\trationale\x1a9\n" +
@@ -1562,15 +1602,15 @@ const file_storage_compliance_operator_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8b\x04\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x97\x04\n" +
 	"$ComplianceOperatorScanSettingBinding\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12Q\n" +
-	"\x06labels\x18\x04 \x03(\v29.storage.ComplianceOperatorScanSettingBinding.LabelsEntryR\x06labels\x12`\n" +
-	"\vannotations\x18\x05 \x03(\v2>.storage.ComplianceOperatorScanSettingBinding.AnnotationsEntryR\vannotations\x12Q\n" +
-	"\bprofiles\x18\x06 \x03(\v25.storage.ComplianceOperatorScanSettingBinding.ProfileR\bprofiles\x1a9\n" +
+	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12U\n" +
+	"\x06labels\x18\x04 \x03(\v29.storage.ComplianceOperatorScanSettingBinding.LabelsEntryB\x02(\x01R\x06labels\x12d\n" +
+	"\vannotations\x18\x05 \x03(\v2>.storage.ComplianceOperatorScanSettingBinding.AnnotationsEntryB\x02(\x01R\vannotations\x12U\n" +
+	"\bprofiles\x18\x06 \x03(\v25.storage.ComplianceOperatorScanSettingBinding.ProfileB\x02(\x01R\bprofiles\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -1578,16 +1618,16 @@ const file_storage_compliance_operator_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a\x1d\n" +
 	"\aProfile\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\x8e\x03\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\x96\x03\n" +
 	"\x16ComplianceOperatorScan\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12\x1d\n" +
 	"\n" +
-	"profile_id\x18\x04 \x01(\tR\tprofileId\x12C\n" +
-	"\x06labels\x18\x05 \x03(\v2+.storage.ComplianceOperatorScan.LabelsEntryR\x06labels\x12R\n" +
-	"\vannotations\x18\x06 \x03(\v20.storage.ComplianceOperatorScan.AnnotationsEntryR\vannotations\x1a9\n" +
+	"profile_id\x18\x04 \x01(\tR\tprofileId\x12G\n" +
+	"\x06labels\x18\x05 \x03(\v2+.storage.ComplianceOperatorScan.LabelsEntryB\x02(\x01R\x06labels\x12V\n" +
+	"\vannotations\x18\x06 \x03(\v20.storage.ComplianceOperatorScan.AnnotationsEntryB\x02(\x01R\vannotations\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +

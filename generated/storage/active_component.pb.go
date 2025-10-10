@@ -29,10 +29,12 @@ type ActiveComponent struct {
 	xxx_hidden_ComponentId              *string                                   `protobuf:"bytes,4,opt,name=component_id,json=componentId"`
 	xxx_hidden_DEPRECATEDActiveContexts map[string]*ActiveComponent_ActiveContext `protobuf:"bytes,2,rep,name=DEPRECATED_active_contexts,json=DEPRECATEDActiveContexts" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_ActiveContextsSlice      *[]*ActiveComponent_ActiveContext         `protobuf:"bytes,5,rep,name=active_contexts_slice,json=activeContextsSlice"`
-	XXX_raceDetectHookData              protoimpl.RaceDetectHookData
-	XXX_presence                        [1]uint32
-	unknownFields                       protoimpl.UnknownFields
-	sizeCache                           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ActiveComponent) Reset() {
@@ -99,8 +101,13 @@ func (x *ActiveComponent) GetDEPRECATEDActiveContexts() map[string]*ActiveCompon
 
 func (x *ActiveComponent) GetActiveContextsSlice() []*ActiveComponent_ActiveContext {
 	if x != nil {
-		if x.xxx_hidden_ActiveContextsSlice != nil {
-			return *x.xxx_hidden_ActiveContextsSlice
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ActiveContextsSlice) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *[]*ActiveComponent_ActiveContext
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ActiveContextsSlice), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -126,7 +133,14 @@ func (x *ActiveComponent) SetDEPRECATEDActiveContexts(v map[string]*ActiveCompon
 }
 
 func (x *ActiveComponent) SetActiveContextsSlice(v []*ActiveComponent_ActiveContext) {
-	x.xxx_hidden_ActiveContextsSlice = &v
+	var sv *[]*ActiveComponent_ActiveContext
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ActiveContextsSlice), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ActiveComponent_ActiveContext{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ActiveContextsSlice), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *ActiveComponent) HasId() bool {
@@ -194,7 +208,10 @@ func (b0 ActiveComponent_builder) Build() *ActiveComponent {
 		x.xxx_hidden_ComponentId = b.ComponentId
 	}
 	x.xxx_hidden_DEPRECATEDActiveContexts = b.DEPRECATEDActiveContexts
-	x.xxx_hidden_ActiveContextsSlice = &b.ActiveContextsSlice
+	if b.ActiveContextsSlice != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_ActiveContextsSlice = &b.ActiveContextsSlice
+	}
 	return m0
 }
 
@@ -314,13 +331,13 @@ var File_storage_active_component_proto protoreflect.FileDescriptor
 
 const file_storage_active_component_proto_rawDesc = "" +
 	"\n" +
-	"\x1estorage/active_component.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"\x83\x04\n" +
+	"\x1estorage/active_component.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"\x8b\x04\n" +
 	"\x0fActiveComponent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
 	"\rdeployment_id\x18\x03 \x01(\tR\fdeploymentId\x12!\n" +
-	"\fcomponent_id\x18\x04 \x01(\tR\vcomponentId\x12t\n" +
-	"\x1aDEPRECATED_active_contexts\x18\x02 \x03(\v26.storage.ActiveComponent.DEPRECATEDActiveContextsEntryR\x18DEPRECATEDActiveContexts\x12Z\n" +
-	"\x15active_contexts_slice\x18\x05 \x03(\v2&.storage.ActiveComponent.ActiveContextR\x13activeContextsSlice\x1aQ\n" +
+	"\fcomponent_id\x18\x04 \x01(\tR\vcomponentId\x12x\n" +
+	"\x1aDEPRECATED_active_contexts\x18\x02 \x03(\v26.storage.ActiveComponent.DEPRECATEDActiveContextsEntryB\x02(\x01R\x18DEPRECATEDActiveContexts\x12^\n" +
+	"\x15active_contexts_slice\x18\x05 \x03(\v2&.storage.ActiveComponent.ActiveContextB\x02(\x01R\x13activeContextsSlice\x1aQ\n" +
 	"\rActiveContext\x12%\n" +
 	"\x0econtainer_name\x18\x01 \x01(\tR\rcontainerName\x12\x19\n" +
 	"\bimage_id\x18\x02 \x01(\tR\aimageId\x1as\n" +

@@ -1016,10 +1016,12 @@ type CVE struct {
 	xxx_hidden_SuppressExpiry     *timestamppb.Timestamp         `protobuf:"bytes,17,opt,name=suppress_expiry,json=suppressExpiry"`
 	xxx_hidden_DistroSpecifics    map[string]*CVE_DistroSpecific `protobuf:"bytes,19,rep,name=distro_specifics,json=distroSpecifics" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Severity           VulnerabilitySeverity          `protobuf:"varint,20,opt,name=severity,enum=storage.VulnerabilitySeverity"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CVE) Reset() {
@@ -5124,7 +5126,7 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\x11storage/cve.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"Z\n" +
 	"\x04EPSS\x12)\n" +
 	"\x10epss_probability\x18\x01 \x01(\x02R\x0fepssProbability\x12'\n" +
-	"\x0fepss_percentile\x18\x02 \x01(\x02R\x0eepssPercentile\"\xbf\v\n" +
+	"\x0fepss_percentile\x18\x02 \x01(\x02R\x0eepssPercentile\"\xc3\v\n" +
 	"\x03CVE\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04cvss\x18\x02 \x01(\x02R\x04cvss\x12!\n" +
@@ -5148,8 +5150,8 @@ const file_storage_cve_proto_rawDesc = "" +
 	"suppressed\x18\f \x01(\bR\n" +
 	"suppressed\x12K\n" +
 	"\x13suppress_activation\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\x12suppressActivation\x12C\n" +
-	"\x0fsuppress_expiry\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\x0esuppressExpiry\x12L\n" +
-	"\x10distro_specifics\x18\x13 \x03(\v2!.storage.CVE.DistroSpecificsEntryR\x0fdistroSpecifics\x12:\n" +
+	"\x0fsuppress_expiry\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\x0esuppressExpiry\x12P\n" +
+	"\x10distro_specifics\x18\x13 \x03(\v2!.storage.CVE.DistroSpecificsEntryB\x02(\x01R\x0fdistroSpecifics\x12:\n" +
 	"\bseverity\x18\x14 \x01(\x0e2\x1e.storage.VulnerabilitySeverityR\bseverity\x1a\xf4\x01\n" +
 	"\x0eDistroSpecific\x12:\n" +
 	"\bseverity\x18\x01 \x01(\x0e2\x1e.storage.VulnerabilitySeverityR\bseverity\x12\x12\n" +

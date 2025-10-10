@@ -31,10 +31,12 @@ type HTTPEndpointConfig struct {
 	xxx_hidden_Headers       *[]*KeyValuePair       `protobuf:"bytes,6,rep,name=headers"`
 	xxx_hidden_ClientCertPem *string                `protobuf:"bytes,7,opt,name=client_cert_pem,json=clientCertPem"`
 	xxx_hidden_ClientKeyPem  *string                `protobuf:"bytes,8,opt,name=client_key_pem,json=clientKeyPem"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *HTTPEndpointConfig) Reset() {
@@ -111,8 +113,13 @@ func (x *HTTPEndpointConfig) GetPassword() string {
 
 func (x *HTTPEndpointConfig) GetHeaders() []*KeyValuePair {
 	if x != nil {
-		if x.xxx_hidden_Headers != nil {
-			return *x.xxx_hidden_Headers
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Headers) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *[]*KeyValuePair
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Headers), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -164,7 +171,14 @@ func (x *HTTPEndpointConfig) SetPassword(v string) {
 }
 
 func (x *HTTPEndpointConfig) SetHeaders(v []*KeyValuePair) {
-	x.xxx_hidden_Headers = &v
+	var sv *[]*KeyValuePair
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Headers), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*KeyValuePair{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Headers), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
 }
 
 func (x *HTTPEndpointConfig) SetClientCertPem(v string) {
@@ -301,7 +315,10 @@ func (b0 HTTPEndpointConfig_builder) Build() *HTTPEndpointConfig {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
 		x.xxx_hidden_Password = b.Password
 	}
-	x.xxx_hidden_Headers = &b.Headers
+	if b.Headers != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_Headers = &b.Headers
+	}
 	if b.ClientCertPem != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
 		x.xxx_hidden_ClientCertPem = b.ClientCertPem
@@ -317,14 +334,14 @@ var File_storage_http_endpoint_proto protoreflect.FileDescriptor
 
 const file_storage_http_endpoint_proto_rawDesc = "" +
 	"\n" +
-	"\x1bstorage/http_endpoint.proto\x12\astorage\x1a\x14storage/common.proto\x1a!google/protobuf/go_features.proto\"\xa8\x02\n" +
+	"\x1bstorage/http_endpoint.proto\x12\astorage\x1a\x14storage/common.proto\x1a!google/protobuf/go_features.proto\"\xac\x02\n" +
 	"\x12HTTPEndpointConfig\x12\x1a\n" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12&\n" +
 	"\x0fskip_tls_verify\x18\x02 \x01(\bR\rskipTlsVerify\x12\x17\n" +
 	"\aca_cert\x18\x03 \x01(\tR\x06caCert\x12\x1a\n" +
 	"\busername\x18\x04 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x05 \x01(\tR\bpassword\x12/\n" +
-	"\aheaders\x18\x06 \x03(\v2\x15.storage.KeyValuePairR\aheaders\x12&\n" +
+	"\bpassword\x18\x05 \x01(\tR\bpassword\x123\n" +
+	"\aheaders\x18\x06 \x03(\v2\x15.storage.KeyValuePairB\x02(\x01R\aheaders\x12&\n" +
 	"\x0fclient_cert_pem\x18\a \x01(\tR\rclientCertPem\x12$\n" +
 	"\x0eclient_key_pem\x18\b \x01(\tR\fclientKeyPemB6\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"

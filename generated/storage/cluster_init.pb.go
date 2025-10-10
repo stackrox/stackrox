@@ -64,14 +64,16 @@ func (x InitBundleMeta_InitBundleVersion) Number() protoreflect.EnumNumber {
 }
 
 type InitBundleMeta struct {
-	state                  protoimpl.MessageState           `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                          `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                          `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_CreatedAt   *timestamppb.Timestamp           `protobuf:"bytes,3,opt,name=created_at,json=createdAt"`
-	xxx_hidden_CreatedBy   *User                            `protobuf:"bytes,4,opt,name=created_by,json=createdBy"`
-	xxx_hidden_IsRevoked   bool                             `protobuf:"varint,5,opt,name=is_revoked,json=isRevoked"`
-	xxx_hidden_ExpiresAt   *timestamppb.Timestamp           `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt"`
-	xxx_hidden_Version     InitBundleMeta_InitBundleVersion `protobuf:"varint,7,opt,name=version,enum=storage.InitBundleMeta_InitBundleVersion"`
+	state                protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Id        *string                          `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name      *string                          `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_CreatedAt *timestamppb.Timestamp           `protobuf:"bytes,3,opt,name=created_at,json=createdAt"`
+	xxx_hidden_CreatedBy *User                            `protobuf:"bytes,4,opt,name=created_by,json=createdBy"`
+	xxx_hidden_IsRevoked bool                             `protobuf:"varint,5,opt,name=is_revoked,json=isRevoked"`
+	xxx_hidden_ExpiresAt *timestamppb.Timestamp           `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt"`
+	xxx_hidden_Version   InitBundleMeta_InitBundleVersion `protobuf:"varint,7,opt,name=version,enum=storage.InitBundleMeta_InitBundleVersion"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -125,7 +127,14 @@ func (x *InitBundleMeta) GetName() string {
 
 func (x *InitBundleMeta) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -146,7 +155,14 @@ func (x *InitBundleMeta) GetIsRevoked() bool {
 
 func (x *InitBundleMeta) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ExpiresAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ExpiresAt) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExpiresAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -171,7 +187,12 @@ func (x *InitBundleMeta) SetName(v string) {
 }
 
 func (x *InitBundleMeta) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
+	}
 }
 
 func (x *InitBundleMeta) SetCreatedBy(v *User) {
@@ -184,7 +205,12 @@ func (x *InitBundleMeta) SetIsRevoked(v bool) {
 }
 
 func (x *InitBundleMeta) SetExpiresAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ExpiresAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ExpiresAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+	}
 }
 
 func (x *InitBundleMeta) SetVersion(v InitBundleMeta_InitBundleVersion) {
@@ -210,7 +236,7 @@ func (x *InitBundleMeta) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *InitBundleMeta) HasCreatedBy() bool {
@@ -231,7 +257,7 @@ func (x *InitBundleMeta) HasExpiresAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ExpiresAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *InitBundleMeta) HasVersion() bool {
@@ -252,7 +278,8 @@ func (x *InitBundleMeta) ClearName() {
 }
 
 func (x *InitBundleMeta) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *InitBundleMeta) ClearCreatedBy() {
@@ -265,7 +292,8 @@ func (x *InitBundleMeta) ClearIsRevoked() {
 }
 
 func (x *InitBundleMeta) ClearExpiresAt() {
-	x.xxx_hidden_ExpiresAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ExpiresAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *InitBundleMeta) ClearVersion() {
@@ -297,13 +325,19 @@ func (b0 InitBundleMeta_builder) Build() *InitBundleMeta {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
 		x.xxx_hidden_Name = b.Name
 	}
-	x.xxx_hidden_CreatedAt = b.CreatedAt
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
 	x.xxx_hidden_CreatedBy = b.CreatedBy
 	if b.IsRevoked != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
 		x.xxx_hidden_IsRevoked = *b.IsRevoked
 	}
-	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	if b.ExpiresAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	}
 	if b.Version != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
 		x.xxx_hidden_Version = *b.Version
@@ -315,18 +349,18 @@ var File_storage_cluster_init_proto protoreflect.FileDescriptor
 
 const file_storage_cluster_init_proto_rawDesc = "" +
 	"\n" +
-	"\x1astorage/cluster_init.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\xeb\x02\n" +
+	"\x1astorage/cluster_init.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\xf3\x02\n" +
 	"\x0eInitBundleMeta\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12=\n" +
 	"\n" +
-	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12,\n" +
+	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\x12,\n" +
 	"\n" +
 	"created_by\x18\x04 \x01(\v2\r.storage.UserR\tcreatedBy\x12\x1d\n" +
 	"\n" +
-	"is_revoked\x18\x05 \x01(\bR\tisRevoked\x129\n" +
+	"is_revoked\x18\x05 \x01(\bR\tisRevoked\x12=\n" +
 	"\n" +
-	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12C\n" +
+	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\texpiresAt\x12C\n" +
 	"\aversion\x18\a \x01(\x0e2).storage.InitBundleMeta.InitBundleVersionR\aversion\"-\n" +
 	"\x11InitBundleVersion\x12\x0f\n" +
 	"\vINIT_BUNDLE\x10\x00\x12\a\n" +

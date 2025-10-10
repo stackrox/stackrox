@@ -29,10 +29,12 @@ type Namespace struct {
 	xxx_hidden_NumDeployments     int32                      `protobuf:"varint,2,opt,name=num_deployments,json=numDeployments"`
 	xxx_hidden_NumSecrets         int32                      `protobuf:"varint,3,opt,name=num_secrets,json=numSecrets"`
 	xxx_hidden_NumNetworkPolicies int32                      `protobuf:"varint,4,opt,name=num_network_policies,json=numNetworkPolicies"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Namespace) Reset() {
@@ -62,7 +64,14 @@ func (x *Namespace) ProtoReflect() protoreflect.Message {
 
 func (x *Namespace) GetMetadata() *storage.NamespaceMetadata {
 	if x != nil {
-		return x.xxx_hidden_Metadata
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Metadata) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.NamespaceMetadata
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Metadata), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -89,7 +98,12 @@ func (x *Namespace) GetNumNetworkPolicies() int32 {
 }
 
 func (x *Namespace) SetMetadata(v *storage.NamespaceMetadata) {
-	x.xxx_hidden_Metadata = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	}
 }
 
 func (x *Namespace) SetNumDeployments(v int32) {
@@ -111,7 +125,7 @@ func (x *Namespace) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Metadata != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Namespace) HasNumDeployments() bool {
@@ -136,7 +150,8 @@ func (x *Namespace) HasNumNetworkPolicies() bool {
 }
 
 func (x *Namespace) ClearMetadata() {
-	x.xxx_hidden_Metadata = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, (*storage.NamespaceMetadata)(nil))
 }
 
 func (x *Namespace) ClearNumDeployments() {
@@ -167,7 +182,10 @@ func (b0 Namespace_builder) Build() *Namespace {
 	m0 := &Namespace{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Metadata = b.Metadata
+	if b.Metadata != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Metadata = b.Metadata
+	}
 	if b.NumDeployments != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
 		x.xxx_hidden_NumDeployments = *b.NumDeployments
@@ -186,8 +204,12 @@ func (b0 Namespace_builder) Build() *Namespace {
 type GetNamespacesResponse struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Namespaces *[]*Namespace          `protobuf:"bytes,1,rep,name=namespaces"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetNamespacesResponse) Reset() {
@@ -217,15 +239,27 @@ func (x *GetNamespacesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetNamespacesResponse) GetNamespaces() []*Namespace {
 	if x != nil {
-		if x.xxx_hidden_Namespaces != nil {
-			return *x.xxx_hidden_Namespaces
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Namespaces) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*Namespace
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetNamespacesResponse) SetNamespaces(v []*Namespace) {
-	x.xxx_hidden_Namespaces = &v
+	var sv *[]*Namespace
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Namespace{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetNamespacesResponse_builder struct {
@@ -238,15 +272,22 @@ func (b0 GetNamespacesResponse_builder) Build() *GetNamespacesResponse {
 	m0 := &GetNamespacesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Namespaces = &b.Namespaces
+	if b.Namespaces != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Namespaces = &b.Namespaces
+	}
 	return m0
 }
 
 type GetNamespaceRequest struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Query *RawQuery              `protobuf:"bytes,1,opt,name=query"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetNamespaceRequest) Reset() {
@@ -276,24 +317,37 @@ func (x *GetNamespaceRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetNamespaceRequest) GetQuery() *RawQuery {
 	if x != nil {
-		return x.xxx_hidden_Query
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Query) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *RawQuery
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetNamespaceRequest) SetQuery(v *RawQuery) {
-	x.xxx_hidden_Query = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetNamespaceRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetNamespaceRequest) ClearQuery() {
-	x.xxx_hidden_Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, (*RawQuery)(nil))
 }
 
 type GetNamespaceRequest_builder struct {
@@ -306,7 +360,10 @@ func (b0 GetNamespaceRequest_builder) Build() *GetNamespaceRequest {
 	m0 := &GetNamespaceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Query = b.Query
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Query = b.Query
+	}
 	return m0
 }
 
@@ -314,19 +371,19 @@ var File_api_v1_namespace_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_namespace_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/v1/namespace_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a storage/namespace_metadata.proto\x1a!google/protobuf/go_features.proto\"\xbf\x01\n" +
-	"\tNamespace\x126\n" +
-	"\bmetadata\x18\x01 \x01(\v2\x1a.storage.NamespaceMetadataR\bmetadata\x12'\n" +
+	"\x1eapi/v1/namespace_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a storage/namespace_metadata.proto\x1a!google/protobuf/go_features.proto\"\xc3\x01\n" +
+	"\tNamespace\x12:\n" +
+	"\bmetadata\x18\x01 \x01(\v2\x1a.storage.NamespaceMetadataB\x02(\x01R\bmetadata\x12'\n" +
 	"\x0fnum_deployments\x18\x02 \x01(\x05R\x0enumDeployments\x12\x1f\n" +
 	"\vnum_secrets\x18\x03 \x01(\x05R\n" +
 	"numSecrets\x120\n" +
-	"\x14num_network_policies\x18\x04 \x01(\x05R\x12numNetworkPolicies\"F\n" +
-	"\x15GetNamespacesResponse\x12-\n" +
+	"\x14num_network_policies\x18\x04 \x01(\x05R\x12numNetworkPolicies\"J\n" +
+	"\x15GetNamespacesResponse\x121\n" +
 	"\n" +
-	"namespaces\x18\x01 \x03(\v2\r.v1.NamespaceR\n" +
-	"namespaces\"9\n" +
-	"\x13GetNamespaceRequest\x12\"\n" +
-	"\x05query\x18\x01 \x01(\v2\f.v1.RawQueryR\x05query2\xbd\x01\n" +
+	"namespaces\x18\x01 \x03(\v2\r.v1.NamespaceB\x02(\x01R\n" +
+	"namespaces\"=\n" +
+	"\x13GetNamespaceRequest\x12&\n" +
+	"\x05query\x18\x01 \x01(\v2\f.v1.RawQueryB\x02(\x01R\x05query2\xbd\x01\n" +
 	"\x10NamespaceService\x12[\n" +
 	"\rGetNamespaces\x12\x17.v1.GetNamespaceRequest\x1a\x19.v1.GetNamespacesResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/namespaces\x12L\n" +
 	"\fGetNamespace\x12\x10.v1.ResourceByID\x1a\r.v1.Namespace\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/namespaces/{id}B/\n" +

@@ -163,10 +163,12 @@ type KubernetesEvent struct {
 	xxx_hidden_UserAgent        *string                         `protobuf:"bytes,18,opt,name=user_agent,json=userAgent"`
 	xxx_hidden_ResponseStatus   *KubernetesEvent_ResponseStatus `protobuf:"bytes,19,opt,name=response_status,json=responseStatus"`
 	xxx_hidden_RequestUri       *string                         `protobuf:"bytes,20,opt,name=request_uri,json=requestUri"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *KubernetesEvent) Reset() {
@@ -213,7 +215,14 @@ func (x *KubernetesEvent) GetObject() *KubernetesEvent_Object {
 
 func (x *KubernetesEvent) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Timestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -303,7 +312,12 @@ func (x *KubernetesEvent) SetObject(v *KubernetesEvent_Object) {
 }
 
 func (x *KubernetesEvent) SetTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Timestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
+	}
 }
 
 func (x *KubernetesEvent) SetApiVerb(v KubernetesEvent_APIVerb) {
@@ -371,7 +385,7 @@ func (x *KubernetesEvent) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Timestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *KubernetesEvent) HasApiVerb() bool {
@@ -449,7 +463,8 @@ func (x *KubernetesEvent) ClearObject() {
 }
 
 func (x *KubernetesEvent) ClearTimestamp() {
-	x.xxx_hidden_Timestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *KubernetesEvent) ClearApiVerb() {
@@ -546,7 +561,10 @@ func (b0 KubernetesEvent_builder) Build() *KubernetesEvent {
 		x.xxx_hidden_Id = b.Id
 	}
 	x.xxx_hidden_Object = b.Object
-	x.xxx_hidden_Timestamp = b.Timestamp
+	if b.Timestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
+		x.xxx_hidden_Timestamp = b.Timestamp
+	}
 	if b.ApiVerb != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
 		x.xxx_hidden_ApiVerb = *b.ApiVerb
@@ -1127,11 +1145,11 @@ var File_storage_kube_event_proto protoreflect.FileDescriptor
 
 const file_storage_kube_event_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/kube_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xa3\v\n" +
+	"\x18storage/kube_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xa7\v\n" +
 	"\x0fKubernetesEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
-	"\x06object\x18\x02 \x01(\v2\x1f.storage.KubernetesEvent.ObjectR\x06object\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12;\n" +
+	"\x06object\x18\x02 \x01(\v2\x1f.storage.KubernetesEvent.ObjectR\x06object\x12<\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\ttimestamp\x12;\n" +
 	"\bapi_verb\x18\x04 \x01(\x0e2 .storage.KubernetesEvent.APIVerbR\aapiVerb\x12J\n" +
 	"\rpod_exec_args\x18\x05 \x01(\v2$.storage.KubernetesEvent.PodExecArgsH\x00R\vpodExecArgs\x12`\n" +
 	"\x15pod_port_forward_args\x18\x06 \x01(\v2+.storage.KubernetesEvent.PodPortForwardArgsH\x00R\x12podPortForwardArgs\x121\n" +

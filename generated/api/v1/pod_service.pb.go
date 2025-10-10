@@ -26,8 +26,12 @@ const (
 type PodsResponse struct {
 	state           protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Pods *[]*storage.Pod        `protobuf:"bytes,1,rep,name=pods"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PodsResponse) Reset() {
@@ -57,15 +61,27 @@ func (x *PodsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *PodsResponse) GetPods() []*storage.Pod {
 	if x != nil {
-		if x.xxx_hidden_Pods != nil {
-			return *x.xxx_hidden_Pods
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Pods) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.Pod
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Pods), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *PodsResponse) SetPods(v []*storage.Pod) {
-	x.xxx_hidden_Pods = &v
+	var sv *[]*storage.Pod
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Pods), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Pod{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Pods), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type PodsResponse_builder struct {
@@ -78,7 +94,10 @@ func (b0 PodsResponse_builder) Build() *PodsResponse {
 	m0 := &PodsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Pods = &b.Pods
+	if b.Pods != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Pods = &b.Pods
+	}
 	return m0
 }
 
@@ -193,8 +212,12 @@ func (b0 ExportPodRequest_builder) Build() *ExportPodRequest {
 type ExportPodResponse struct {
 	state          protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Pod *storage.Pod           `protobuf:"bytes,1,opt,name=pod"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ExportPodResponse) Reset() {
@@ -224,24 +247,37 @@ func (x *ExportPodResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ExportPodResponse) GetPod() *storage.Pod {
 	if x != nil {
-		return x.xxx_hidden_Pod
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Pod) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Pod
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Pod), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ExportPodResponse) SetPod(v *storage.Pod) {
-	x.xxx_hidden_Pod = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pod, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *ExportPodResponse) HasPod() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Pod != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ExportPodResponse) ClearPod() {
-	x.xxx_hidden_Pod = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pod, (*storage.Pod)(nil))
 }
 
 type ExportPodResponse_builder struct {
@@ -254,7 +290,10 @@ func (b0 ExportPodResponse_builder) Build() *ExportPodResponse {
 	m0 := &ExportPodResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Pod = b.Pod
+	if b.Pod != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Pod = b.Pod
+	}
 	return m0
 }
 
@@ -262,14 +301,14 @@ var File_api_v1_pod_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_pod_service_proto_rawDesc = "" +
 	"\n" +
-	"\x18api/v1/pod_service.proto\x12\x02v1\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\x1a!google/protobuf/go_features.proto\"0\n" +
-	"\fPodsResponse\x12 \n" +
-	"\x04pods\x18\x01 \x03(\v2\f.storage.PodR\x04pods\"B\n" +
+	"\x18api/v1/pod_service.proto\x12\x02v1\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\x1a!google/protobuf/go_features.proto\"4\n" +
+	"\fPodsResponse\x12$\n" +
+	"\x04pods\x18\x01 \x03(\v2\f.storage.PodB\x02(\x01R\x04pods\"B\n" +
 	"\x10ExportPodRequest\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
-	"\x05query\x18\x02 \x01(\tR\x05query\"3\n" +
-	"\x11ExportPodResponse\x12\x1e\n" +
-	"\x03pod\x18\x01 \x01(\v2\f.storage.PodR\x03pod2\x9f\x01\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\"7\n" +
+	"\x11ExportPodResponse\x12\"\n" +
+	"\x03pod\x18\x01 \x01(\v2\f.storage.PodB\x02(\x01R\x03pod2\x9f\x01\n" +
 	"\n" +
 	"PodService\x12;\n" +
 	"\aGetPods\x12\f.v1.RawQuery\x1a\x10.v1.PodsResponse\"\x10\x82\xd3\xe4\x93\x02\n" +

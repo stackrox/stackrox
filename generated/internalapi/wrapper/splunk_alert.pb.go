@@ -25,10 +25,12 @@ const (
 // Splunk notification needs the source of data
 // and the type of data.
 type SplunkEvent struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Event       *anypb.Any             `protobuf:"bytes,1,opt,name=event"`
-	xxx_hidden_Source      *string                `protobuf:"bytes,2,opt,name=source"`
-	xxx_hidden_Sourcetype  *string                `protobuf:"bytes,3,opt,name=sourcetype"`
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Event      *anypb.Any             `protobuf:"bytes,1,opt,name=event"`
+	xxx_hidden_Source     *string                `protobuf:"bytes,2,opt,name=source"`
+	xxx_hidden_Sourcetype *string                `protobuf:"bytes,3,opt,name=sourcetype"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -62,7 +64,14 @@ func (x *SplunkEvent) ProtoReflect() protoreflect.Message {
 
 func (x *SplunkEvent) GetEvent() *anypb.Any {
 	if x != nil {
-		return x.xxx_hidden_Event
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Event) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *anypb.Any
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Event), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -88,7 +97,12 @@ func (x *SplunkEvent) GetSourcetype() string {
 }
 
 func (x *SplunkEvent) SetEvent(v *anypb.Any) {
-	x.xxx_hidden_Event = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Event, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	}
 }
 
 func (x *SplunkEvent) SetSource(v string) {
@@ -105,7 +119,7 @@ func (x *SplunkEvent) HasEvent() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Event != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SplunkEvent) HasSource() bool {
@@ -123,7 +137,8 @@ func (x *SplunkEvent) HasSourcetype() bool {
 }
 
 func (x *SplunkEvent) ClearEvent() {
-	x.xxx_hidden_Event = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Event, (*anypb.Any)(nil))
 }
 
 func (x *SplunkEvent) ClearSource() {
@@ -148,7 +163,10 @@ func (b0 SplunkEvent_builder) Build() *SplunkEvent {
 	m0 := &SplunkEvent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Event = b.Event
+	if b.Event != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Event = b.Event
+	}
 	if b.Source != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Source = b.Source
@@ -164,9 +182,9 @@ var File_internalapi_wrapper_splunk_alert_proto protoreflect.FileDescriptor
 
 const file_internalapi_wrapper_splunk_alert_proto_rawDesc = "" +
 	"\n" +
-	"&internalapi/wrapper/splunk_alert.proto\x12\awrapper\x1a\x19google/protobuf/any.proto\x1a!google/protobuf/go_features.proto\"q\n" +
-	"\vSplunkEvent\x12*\n" +
-	"\x05event\x18\x01 \x01(\v2\x14.google.protobuf.AnyR\x05event\x12\x16\n" +
+	"&internalapi/wrapper/splunk_alert.proto\x12\awrapper\x1a\x19google/protobuf/any.proto\x1a!google/protobuf/go_features.proto\"u\n" +
+	"\vSplunkEvent\x12.\n" +
+	"\x05event\x18\x01 \x01(\v2\x14.google.protobuf.AnyB\x02(\x01R\x05event\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x1e\n" +
 	"\n" +
 	"sourcetype\x18\x03 \x01(\tR\n" +

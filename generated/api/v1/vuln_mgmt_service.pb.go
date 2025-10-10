@@ -141,10 +141,12 @@ func (b0 VulnMgmtExportWorkloadsRequest_builder) Build() *VulnMgmtExportWorkload
 // The workloads response contains the full image details including the
 // vulnerability data.
 type VulnMgmtExportWorkloadsResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Deployment  *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment"`
-	xxx_hidden_Images      *[]*storage.Image      `protobuf:"bytes,2,rep,name=images"`
-	xxx_hidden_LivePods    int32                  `protobuf:"varint,3,opt,name=live_pods,json=livePods"`
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Deployment *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment"`
+	xxx_hidden_Images     *[]*storage.Image      `protobuf:"bytes,2,rep,name=images"`
+	xxx_hidden_LivePods   int32                  `protobuf:"varint,3,opt,name=live_pods,json=livePods"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -178,15 +180,27 @@ func (x *VulnMgmtExportWorkloadsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *VulnMgmtExportWorkloadsResponse) GetDeployment() *storage.Deployment {
 	if x != nil {
-		return x.xxx_hidden_Deployment
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Deployment) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Deployment
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployment), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) GetImages() []*storage.Image {
 	if x != nil {
-		if x.xxx_hidden_Images != nil {
-			return *x.xxx_hidden_Images
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Images) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.Image
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Images), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -200,11 +214,23 @@ func (x *VulnMgmtExportWorkloadsResponse) GetLivePods() int32 {
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) SetDeployment(v *storage.Deployment) {
-	x.xxx_hidden_Deployment = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Deployment, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	}
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) SetImages(v []*storage.Image) {
-	x.xxx_hidden_Images = &v
+	var sv *[]*storage.Image
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Images), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Image{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Images), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) SetLivePods(v int32) {
@@ -216,7 +242,7 @@ func (x *VulnMgmtExportWorkloadsResponse) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Deployment != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) HasLivePods() bool {
@@ -227,7 +253,8 @@ func (x *VulnMgmtExportWorkloadsResponse) HasLivePods() bool {
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) ClearDeployment() {
-	x.xxx_hidden_Deployment = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Deployment, (*storage.Deployment)(nil))
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) ClearLivePods() {
@@ -247,8 +274,14 @@ func (b0 VulnMgmtExportWorkloadsResponse_builder) Build() *VulnMgmtExportWorkloa
 	m0 := &VulnMgmtExportWorkloadsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Deployment = b.Deployment
-	x.xxx_hidden_Images = &b.Images
+	if b.Deployment != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Deployment = b.Deployment
+	}
+	if b.Images != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Images = &b.Images
+	}
 	if b.LivePods != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
 		x.xxx_hidden_LivePods = *b.LivePods
@@ -263,12 +296,12 @@ const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
 	"\x1eapi/v1/vuln_mgmt_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\x1a!google/protobuf/go_features.proto\"P\n" +
 	"\x1eVulnMgmtExportWorkloadsRequest\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
-	"\x05query\x18\x02 \x01(\tR\x05query\"\x9b\x01\n" +
-	"\x1fVulnMgmtExportWorkloadsResponse\x123\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\"\xa3\x01\n" +
+	"\x1fVulnMgmtExportWorkloadsResponse\x127\n" +
 	"\n" +
-	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +
-	"deployment\x12&\n" +
-	"\x06images\x18\x02 \x03(\v2\x0e.storage.ImageR\x06images\x12\x1b\n" +
+	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentB\x02(\x01R\n" +
+	"deployment\x12*\n" +
+	"\x06images\x18\x02 \x03(\v2\x0e.storage.ImageB\x02(\x01R\x06images\x12\x1b\n" +
 	"\tlive_pods\x18\x03 \x01(\x05R\blivePods2\xa0\x01\n" +
 	"\x0fVulnMgmtService\x12\x8c\x01\n" +
 	"\x17VulnMgmtExportWorkloads\x12\".v1.VulnMgmtExportWorkloadsRequest\x1a#.v1.VulnMgmtExportWorkloadsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/export/vuln-mgmt/workloads0\x01B/\n" +

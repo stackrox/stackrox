@@ -28,8 +28,12 @@ const (
 type ListRolesResponse struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Roles *[]*storage.K8SRole    `protobuf:"bytes,1,rep,name=roles"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListRolesResponse) Reset() {
@@ -59,15 +63,27 @@ func (x *ListRolesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListRolesResponse) GetRoles() []*storage.K8SRole {
 	if x != nil {
-		if x.xxx_hidden_Roles != nil {
-			return *x.xxx_hidden_Roles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Roles) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.K8SRole
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListRolesResponse) SetRoles(v []*storage.K8SRole) {
-	x.xxx_hidden_Roles = &v
+	var sv *[]*storage.K8SRole
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.K8SRole{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListRolesResponse_builder struct {
@@ -80,15 +96,22 @@ func (b0 ListRolesResponse_builder) Build() *ListRolesResponse {
 	m0 := &ListRolesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Roles = &b.Roles
+	if b.Roles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Roles = &b.Roles
+	}
 	return m0
 }
 
 type GetRoleResponse struct {
 	state           protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Role *storage.K8SRole       `protobuf:"bytes,1,opt,name=role"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetRoleResponse) Reset() {
@@ -118,24 +141,37 @@ func (x *GetRoleResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRoleResponse) GetRole() *storage.K8SRole {
 	if x != nil {
-		return x.xxx_hidden_Role
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Role) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.K8SRole
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Role), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetRoleResponse) SetRole(v *storage.K8SRole) {
-	x.xxx_hidden_Role = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Role, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetRoleResponse) HasRole() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Role != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetRoleResponse) ClearRole() {
-	x.xxx_hidden_Role = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Role, (*storage.K8SRole)(nil))
 }
 
 type GetRoleResponse_builder struct {
@@ -148,7 +184,10 @@ func (b0 GetRoleResponse_builder) Build() *GetRoleResponse {
 	m0 := &GetRoleResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Role = b.Role
+	if b.Role != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Role = b.Role
+	}
 	return m0
 }
 
@@ -157,8 +196,12 @@ func (b0 GetRoleResponse_builder) Build() *GetRoleResponse {
 type ListRoleBindingsResponse struct {
 	state               protoimpl.MessageState     `protogen:"opaque.v1"`
 	xxx_hidden_Bindings *[]*storage.K8SRoleBinding `protobuf:"bytes,1,rep,name=bindings"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListRoleBindingsResponse) Reset() {
@@ -188,15 +231,27 @@ func (x *ListRoleBindingsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListRoleBindingsResponse) GetBindings() []*storage.K8SRoleBinding {
 	if x != nil {
-		if x.xxx_hidden_Bindings != nil {
-			return *x.xxx_hidden_Bindings
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Bindings) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.K8SRoleBinding
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Bindings), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListRoleBindingsResponse) SetBindings(v []*storage.K8SRoleBinding) {
-	x.xxx_hidden_Bindings = &v
+	var sv *[]*storage.K8SRoleBinding
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Bindings), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.K8SRoleBinding{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Bindings), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListRoleBindingsResponse_builder struct {
@@ -209,15 +264,22 @@ func (b0 ListRoleBindingsResponse_builder) Build() *ListRoleBindingsResponse {
 	m0 := &ListRoleBindingsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Bindings = &b.Bindings
+	if b.Bindings != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Bindings = &b.Bindings
+	}
 	return m0
 }
 
 type GetRoleBindingResponse struct {
 	state              protoimpl.MessageState  `protogen:"opaque.v1"`
 	xxx_hidden_Binding *storage.K8SRoleBinding `protobuf:"bytes,1,opt,name=binding"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetRoleBindingResponse) Reset() {
@@ -247,24 +309,37 @@ func (x *GetRoleBindingResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRoleBindingResponse) GetBinding() *storage.K8SRoleBinding {
 	if x != nil {
-		return x.xxx_hidden_Binding
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Binding) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.K8SRoleBinding
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Binding), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetRoleBindingResponse) SetBinding(v *storage.K8SRoleBinding) {
-	x.xxx_hidden_Binding = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Binding, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetRoleBindingResponse) HasBinding() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Binding != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetRoleBindingResponse) ClearBinding() {
-	x.xxx_hidden_Binding = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Binding, (*storage.K8SRoleBinding)(nil))
 }
 
 type GetRoleBindingResponse_builder struct {
@@ -277,7 +352,10 @@ func (b0 GetRoleBindingResponse_builder) Build() *GetRoleBindingResponse {
 	m0 := &GetRoleBindingResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Binding = b.Binding
+	if b.Binding != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Binding = b.Binding
+	}
 	return m0
 }
 
@@ -286,8 +364,12 @@ func (b0 GetRoleBindingResponse_builder) Build() *GetRoleBindingResponse {
 type ListSubjectsResponse struct {
 	state                      protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_SubjectAndRoles *[]*SubjectAndRoles    `protobuf:"bytes,1,rep,name=subject_and_roles,json=subjectAndRoles"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListSubjectsResponse) Reset() {
@@ -317,15 +399,27 @@ func (x *ListSubjectsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListSubjectsResponse) GetSubjectAndRoles() []*SubjectAndRoles {
 	if x != nil {
-		if x.xxx_hidden_SubjectAndRoles != nil {
-			return *x.xxx_hidden_SubjectAndRoles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SubjectAndRoles) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*SubjectAndRoles
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SubjectAndRoles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListSubjectsResponse) SetSubjectAndRoles(v []*SubjectAndRoles) {
-	x.xxx_hidden_SubjectAndRoles = &v
+	var sv *[]*SubjectAndRoles
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SubjectAndRoles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SubjectAndRoles{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_SubjectAndRoles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListSubjectsResponse_builder struct {
@@ -338,7 +432,10 @@ func (b0 ListSubjectsResponse_builder) Build() *ListSubjectsResponse {
 	m0 := &ListSubjectsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_SubjectAndRoles = &b.SubjectAndRoles
+	if b.SubjectAndRoles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_SubjectAndRoles = &b.SubjectAndRoles
+	}
 	return m0
 }
 
@@ -346,8 +443,12 @@ type SubjectAndRoles struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Subject *storage.Subject       `protobuf:"bytes,1,opt,name=subject"`
 	xxx_hidden_Roles   *[]*storage.K8SRole    `protobuf:"bytes,2,rep,name=roles"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SubjectAndRoles) Reset() {
@@ -377,37 +478,62 @@ func (x *SubjectAndRoles) ProtoReflect() protoreflect.Message {
 
 func (x *SubjectAndRoles) GetSubject() *storage.Subject {
 	if x != nil {
-		return x.xxx_hidden_Subject
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Subject) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Subject
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Subject), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *SubjectAndRoles) GetRoles() []*storage.K8SRole {
 	if x != nil {
-		if x.xxx_hidden_Roles != nil {
-			return *x.xxx_hidden_Roles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Roles) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.K8SRole
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *SubjectAndRoles) SetSubject(v *storage.Subject) {
-	x.xxx_hidden_Subject = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Subject, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *SubjectAndRoles) SetRoles(v []*storage.K8SRole) {
-	x.xxx_hidden_Roles = &v
+	var sv *[]*storage.K8SRole
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.K8SRole{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *SubjectAndRoles) HasSubject() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Subject != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SubjectAndRoles) ClearSubject() {
-	x.xxx_hidden_Subject = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Subject, (*storage.Subject)(nil))
 }
 
 type SubjectAndRoles_builder struct {
@@ -421,8 +547,14 @@ func (b0 SubjectAndRoles_builder) Build() *SubjectAndRoles {
 	m0 := &SubjectAndRoles{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Subject = b.Subject
-	x.xxx_hidden_Roles = &b.Roles
+	if b.Subject != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Subject = b.Subject
+	}
+	if b.Roles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Roles = &b.Roles
+	}
 	return m0
 }
 
@@ -431,8 +563,12 @@ type GetSubjectResponse struct {
 	xxx_hidden_Subject      *storage.Subject       `protobuf:"bytes,1,opt,name=subject"`
 	xxx_hidden_ClusterRoles *[]*storage.K8SRole    `protobuf:"bytes,2,rep,name=cluster_roles,json=clusterRoles"`
 	xxx_hidden_ScopedRoles  *[]*ScopedRoles        `protobuf:"bytes,3,rep,name=scoped_roles,json=scopedRoles"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetSubjectResponse) Reset() {
@@ -462,15 +598,27 @@ func (x *GetSubjectResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetSubjectResponse) GetSubject() *storage.Subject {
 	if x != nil {
-		return x.xxx_hidden_Subject
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Subject) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Subject
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Subject), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetSubjectResponse) GetClusterRoles() []*storage.K8SRole {
 	if x != nil {
-		if x.xxx_hidden_ClusterRoles != nil {
-			return *x.xxx_hidden_ClusterRoles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ClusterRoles) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.K8SRole
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ClusterRoles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -478,34 +626,59 @@ func (x *GetSubjectResponse) GetClusterRoles() []*storage.K8SRole {
 
 func (x *GetSubjectResponse) GetScopedRoles() []*ScopedRoles {
 	if x != nil {
-		if x.xxx_hidden_ScopedRoles != nil {
-			return *x.xxx_hidden_ScopedRoles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScopedRoles) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*ScopedRoles
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScopedRoles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetSubjectResponse) SetSubject(v *storage.Subject) {
-	x.xxx_hidden_Subject = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Subject, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	}
 }
 
 func (x *GetSubjectResponse) SetClusterRoles(v []*storage.K8SRole) {
-	x.xxx_hidden_ClusterRoles = &v
+	var sv *[]*storage.K8SRole
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ClusterRoles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.K8SRole{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ClusterRoles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *GetSubjectResponse) SetScopedRoles(v []*ScopedRoles) {
-	x.xxx_hidden_ScopedRoles = &v
+	var sv *[]*ScopedRoles
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScopedRoles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ScopedRoles{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ScopedRoles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *GetSubjectResponse) HasSubject() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Subject != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetSubjectResponse) ClearSubject() {
-	x.xxx_hidden_Subject = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Subject, (*storage.Subject)(nil))
 }
 
 type GetSubjectResponse_builder struct {
@@ -520,16 +693,27 @@ func (b0 GetSubjectResponse_builder) Build() *GetSubjectResponse {
 	m0 := &GetSubjectResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Subject = b.Subject
-	x.xxx_hidden_ClusterRoles = &b.ClusterRoles
-	x.xxx_hidden_ScopedRoles = &b.ScopedRoles
+	if b.Subject != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Subject = b.Subject
+	}
+	if b.ClusterRoles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_ClusterRoles = &b.ClusterRoles
+	}
+	if b.ScopedRoles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_ScopedRoles = &b.ScopedRoles
+	}
 	return m0
 }
 
 type ScopedRoles struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Namespace   *string                `protobuf:"bytes,1,opt,name=namespace"`
-	xxx_hidden_Roles       *[]*storage.K8SRole    `protobuf:"bytes,2,rep,name=roles"`
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Namespace *string                `protobuf:"bytes,1,opt,name=namespace"`
+	xxx_hidden_Roles     *[]*storage.K8SRole    `protobuf:"bytes,2,rep,name=roles"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -573,8 +757,13 @@ func (x *ScopedRoles) GetNamespace() string {
 
 func (x *ScopedRoles) GetRoles() []*storage.K8SRole {
 	if x != nil {
-		if x.xxx_hidden_Roles != nil {
-			return *x.xxx_hidden_Roles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Roles) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.K8SRole
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -586,7 +775,14 @@ func (x *ScopedRoles) SetNamespace(v string) {
 }
 
 func (x *ScopedRoles) SetRoles(v []*storage.K8SRole) {
-	x.xxx_hidden_Roles = &v
+	var sv *[]*storage.K8SRole
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.K8SRole{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ScopedRoles) HasNamespace() bool {
@@ -616,7 +812,10 @@ func (b0 ScopedRoles_builder) Build() *ScopedRoles {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Namespace = b.Namespace
 	}
-	x.xxx_hidden_Roles = &b.Roles
+	if b.Roles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Roles = &b.Roles
+	}
 	return m0
 }
 
@@ -624,27 +823,27 @@ var File_api_v1_rbac_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_rbac_service_proto_rawDesc = "" +
 	"\n" +
-	"\x19api/v1/rbac_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x12storage/rbac.proto\x1a!google/protobuf/go_features.proto\";\n" +
-	"\x11ListRolesResponse\x12&\n" +
-	"\x05roles\x18\x01 \x03(\v2\x10.storage.K8sRoleR\x05roles\"7\n" +
-	"\x0fGetRoleResponse\x12$\n" +
-	"\x04role\x18\x01 \x01(\v2\x10.storage.K8sRoleR\x04role\"O\n" +
-	"\x18ListRoleBindingsResponse\x123\n" +
-	"\bbindings\x18\x01 \x03(\v2\x17.storage.K8sRoleBindingR\bbindings\"K\n" +
-	"\x16GetRoleBindingResponse\x121\n" +
-	"\abinding\x18\x01 \x01(\v2\x17.storage.K8sRoleBindingR\abinding\"W\n" +
-	"\x14ListSubjectsResponse\x12?\n" +
-	"\x11subject_and_roles\x18\x01 \x03(\v2\x13.v1.SubjectAndRolesR\x0fsubjectAndRoles\"e\n" +
-	"\x0fSubjectAndRoles\x12*\n" +
-	"\asubject\x18\x01 \x01(\v2\x10.storage.SubjectR\asubject\x12&\n" +
-	"\x05roles\x18\x02 \x03(\v2\x10.storage.K8sRoleR\x05roles\"\xab\x01\n" +
-	"\x12GetSubjectResponse\x12*\n" +
-	"\asubject\x18\x01 \x01(\v2\x10.storage.SubjectR\asubject\x125\n" +
-	"\rcluster_roles\x18\x02 \x03(\v2\x10.storage.K8sRoleR\fclusterRoles\x122\n" +
-	"\fscoped_roles\x18\x03 \x03(\v2\x0f.v1.ScopedRolesR\vscopedRoles\"S\n" +
+	"\x19api/v1/rbac_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x12storage/rbac.proto\x1a!google/protobuf/go_features.proto\"?\n" +
+	"\x11ListRolesResponse\x12*\n" +
+	"\x05roles\x18\x01 \x03(\v2\x10.storage.K8sRoleB\x02(\x01R\x05roles\";\n" +
+	"\x0fGetRoleResponse\x12(\n" +
+	"\x04role\x18\x01 \x01(\v2\x10.storage.K8sRoleB\x02(\x01R\x04role\"S\n" +
+	"\x18ListRoleBindingsResponse\x127\n" +
+	"\bbindings\x18\x01 \x03(\v2\x17.storage.K8sRoleBindingB\x02(\x01R\bbindings\"O\n" +
+	"\x16GetRoleBindingResponse\x125\n" +
+	"\abinding\x18\x01 \x01(\v2\x17.storage.K8sRoleBindingB\x02(\x01R\abinding\"[\n" +
+	"\x14ListSubjectsResponse\x12C\n" +
+	"\x11subject_and_roles\x18\x01 \x03(\v2\x13.v1.SubjectAndRolesB\x02(\x01R\x0fsubjectAndRoles\"m\n" +
+	"\x0fSubjectAndRoles\x12.\n" +
+	"\asubject\x18\x01 \x01(\v2\x10.storage.SubjectB\x02(\x01R\asubject\x12*\n" +
+	"\x05roles\x18\x02 \x03(\v2\x10.storage.K8sRoleB\x02(\x01R\x05roles\"\xb7\x01\n" +
+	"\x12GetSubjectResponse\x12.\n" +
+	"\asubject\x18\x01 \x01(\v2\x10.storage.SubjectB\x02(\x01R\asubject\x129\n" +
+	"\rcluster_roles\x18\x02 \x03(\v2\x10.storage.K8sRoleB\x02(\x01R\fclusterRoles\x126\n" +
+	"\fscoped_roles\x18\x03 \x03(\v2\x0f.v1.ScopedRolesB\x02(\x01R\vscopedRoles\"W\n" +
 	"\vScopedRoles\x12\x1c\n" +
-	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x12&\n" +
-	"\x05roles\x18\x02 \x03(\v2\x10.storage.K8sRoleR\x05roles2\x8b\x04\n" +
+	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x12*\n" +
+	"\x05roles\x18\x02 \x03(\v2\x10.storage.K8sRoleB\x02(\x01R\x05roles2\x8b\x04\n" +
 	"\vRbacService\x12M\n" +
 	"\aGetRole\x12\x10.v1.ResourceByID\x1a\x13.v1.GetRoleResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/rbac/roles/{id}\x12H\n" +
 	"\tListRoles\x12\f.v1.RawQuery\x1a\x15.v1.ListRolesResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/rbac/roles\x12^\n" +

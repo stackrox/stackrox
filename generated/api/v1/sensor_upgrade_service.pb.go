@@ -67,8 +67,12 @@ func (x GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus) Number() 
 type UpdateSensorUpgradeConfigRequest struct {
 	state             protoimpl.MessageState       `protogen:"opaque.v1"`
 	xxx_hidden_Config *storage.SensorUpgradeConfig `protobuf:"bytes,1,opt,name=config"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpdateSensorUpgradeConfigRequest) Reset() {
@@ -98,24 +102,37 @@ func (x *UpdateSensorUpgradeConfigRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateSensorUpgradeConfigRequest) GetConfig() *storage.SensorUpgradeConfig {
 	if x != nil {
-		return x.xxx_hidden_Config
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Config) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.SensorUpgradeConfig
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Config), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *UpdateSensorUpgradeConfigRequest) SetConfig(v *storage.SensorUpgradeConfig) {
-	x.xxx_hidden_Config = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *UpdateSensorUpgradeConfigRequest) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Config != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpdateSensorUpgradeConfigRequest) ClearConfig() {
-	x.xxx_hidden_Config = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, (*storage.SensorUpgradeConfig)(nil))
 }
 
 type UpdateSensorUpgradeConfigRequest_builder struct {
@@ -128,15 +145,22 @@ func (b0 UpdateSensorUpgradeConfigRequest_builder) Build() *UpdateSensorUpgradeC
 	m0 := &UpdateSensorUpgradeConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Config = b.Config
+	if b.Config != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Config = b.Config
+	}
 	return m0
 }
 
 type GetSensorUpgradeConfigResponse struct {
 	state             protoimpl.MessageState                        `protogen:"opaque.v1"`
 	xxx_hidden_Config *GetSensorUpgradeConfigResponse_UpgradeConfig `protobuf:"bytes,1,opt,name=config"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetSensorUpgradeConfigResponse) Reset() {
@@ -166,24 +190,37 @@ func (x *GetSensorUpgradeConfigResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetSensorUpgradeConfigResponse) GetConfig() *GetSensorUpgradeConfigResponse_UpgradeConfig {
 	if x != nil {
-		return x.xxx_hidden_Config
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Config) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *GetSensorUpgradeConfigResponse_UpgradeConfig
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Config), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetSensorUpgradeConfigResponse) SetConfig(v *GetSensorUpgradeConfigResponse_UpgradeConfig) {
-	x.xxx_hidden_Config = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetSensorUpgradeConfigResponse) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Config != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetSensorUpgradeConfigResponse) ClearConfig() {
-	x.xxx_hidden_Config = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, (*GetSensorUpgradeConfigResponse_UpgradeConfig)(nil))
 }
 
 type GetSensorUpgradeConfigResponse_builder struct {
@@ -196,7 +233,10 @@ func (b0 GetSensorUpgradeConfigResponse_builder) Build() *GetSensorUpgradeConfig
 	m0 := &GetSensorUpgradeConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Config = b.Config
+	if b.Config != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Config = b.Config
+	}
 	return m0
 }
 
@@ -311,11 +351,11 @@ var File_api_v1_sensor_upgrade_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_sensor_upgrade_service_proto_rawDesc = "" +
 	"\n" +
-	"#api/v1/sensor_upgrade_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1cstorage/sensor_upgrade.proto\x1a!google/protobuf/go_features.proto\"X\n" +
-	" UpdateSensorUpgradeConfigRequest\x124\n" +
-	"\x06config\x18\x01 \x01(\v2\x1c.storage.SensorUpgradeConfigR\x06config\"\xe5\x02\n" +
-	"\x1eGetSensorUpgradeConfigResponse\x12H\n" +
-	"\x06config\x18\x01 \x01(\v20.v1.GetSensorUpgradeConfigResponse.UpgradeConfigR\x06config\x1a\xb4\x01\n" +
+	"#api/v1/sensor_upgrade_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1cstorage/sensor_upgrade.proto\x1a!google/protobuf/go_features.proto\"\\\n" +
+	" UpdateSensorUpgradeConfigRequest\x128\n" +
+	"\x06config\x18\x01 \x01(\v2\x1c.storage.SensorUpgradeConfigB\x02(\x01R\x06config\"\xe9\x02\n" +
+	"\x1eGetSensorUpgradeConfigResponse\x12L\n" +
+	"\x06config\x18\x01 \x01(\v20.v1.GetSensorUpgradeConfigResponse.UpgradeConfigB\x02(\x01R\x06config\x1a\xb4\x01\n" +
 	"\rUpgradeConfig\x12.\n" +
 	"\x13enable_auto_upgrade\x18\x01 \x01(\bR\x11enableAutoUpgrade\x12s\n" +
 	"\x14auto_upgrade_feature\x18\x02 \x01(\x0e2A.v1.GetSensorUpgradeConfigResponse.SensorAutoUpgradeFeatureStatusR\x12autoUpgradeFeature\"B\n" +

@@ -72,10 +72,12 @@ type HelmManagedConfigInit struct {
 	xxx_hidden_ClusterName   *string                        `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName"`
 	xxx_hidden_ClusterId     *string                        `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
 	xxx_hidden_ManagedBy     storage.ManagerType            `protobuf:"varint,5,opt,name=managed_by,json=managedBy,enum=storage.ManagerType"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *HelmManagedConfigInit) Reset() {
@@ -105,7 +107,14 @@ func (x *HelmManagedConfigInit) ProtoReflect() protoreflect.Message {
 
 func (x *HelmManagedConfigInit) GetClusterConfig() *storage.CompleteClusterConfig {
 	if x != nil {
-		return x.xxx_hidden_ClusterConfig
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ClusterConfig) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.CompleteClusterConfig
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ClusterConfig), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -140,7 +149,12 @@ func (x *HelmManagedConfigInit) GetManagedBy() storage.ManagerType {
 }
 
 func (x *HelmManagedConfigInit) SetClusterConfig(v *storage.CompleteClusterConfig) {
-	x.xxx_hidden_ClusterConfig = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ClusterConfig, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	}
 }
 
 func (x *HelmManagedConfigInit) SetClusterName(v string) {
@@ -162,7 +176,7 @@ func (x *HelmManagedConfigInit) HasClusterConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ClusterConfig != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *HelmManagedConfigInit) HasClusterName() bool {
@@ -187,7 +201,8 @@ func (x *HelmManagedConfigInit) HasManagedBy() bool {
 }
 
 func (x *HelmManagedConfigInit) ClearClusterConfig() {
-	x.xxx_hidden_ClusterConfig = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ClusterConfig, (*storage.CompleteClusterConfig)(nil))
 }
 
 func (x *HelmManagedConfigInit) ClearClusterName() {
@@ -218,7 +233,10 @@ func (b0 HelmManagedConfigInit_builder) Build() *HelmManagedConfigInit {
 	m0 := &HelmManagedConfigInit{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ClusterConfig = b.ClusterConfig
+	if b.ClusterConfig != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_ClusterConfig = b.ClusterConfig
+	}
 	if b.ClusterName != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
 		x.xxx_hidden_ClusterName = b.ClusterName
@@ -243,10 +261,12 @@ type SensorHello struct {
 	xxx_hidden_PolicyVersion            *string                                 `protobuf:"bytes,4,opt,name=policy_version,json=policyVersion"`
 	xxx_hidden_SensorState              SensorHello_SensorState                 `protobuf:"varint,6,opt,name=sensor_state,json=sensorState,enum=central.SensorHello_SensorState"`
 	xxx_hidden_RequestDeduperState      bool                                    `protobuf:"varint,7,opt,name=request_deduper_state,json=requestDeduperState"`
-	XXX_raceDetectHookData              protoimpl.RaceDetectHookData
-	XXX_presence                        [1]uint32
-	unknownFields                       protoimpl.UnknownFields
-	sizeCache                           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SensorHello) Reset() {
@@ -293,7 +313,14 @@ func (x *SensorHello) GetCapabilities() []string {
 
 func (x *SensorHello) GetDeploymentIdentification() *storage.SensorDeploymentIdentification {
 	if x != nil {
-		return x.xxx_hidden_DeploymentIdentification
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_DeploymentIdentification) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *storage.SensorDeploymentIdentification
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_DeploymentIdentification), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -341,7 +368,12 @@ func (x *SensorHello) SetCapabilities(v []string) {
 }
 
 func (x *SensorHello) SetDeploymentIdentification(v *storage.SensorDeploymentIdentification) {
-	x.xxx_hidden_DeploymentIdentification = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_DeploymentIdentification, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
+	}
 }
 
 func (x *SensorHello) SetHelmManagedConfigInit(v *HelmManagedConfigInit) {
@@ -374,7 +406,7 @@ func (x *SensorHello) HasDeploymentIdentification() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_DeploymentIdentification != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *SensorHello) HasHelmManagedConfigInit() bool {
@@ -411,7 +443,8 @@ func (x *SensorHello) ClearSensorVersion() {
 }
 
 func (x *SensorHello) ClearDeploymentIdentification() {
-	x.xxx_hidden_DeploymentIdentification = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_DeploymentIdentification, (*storage.SensorDeploymentIdentification)(nil))
 }
 
 func (x *SensorHello) ClearHelmManagedConfigInit() {
@@ -457,7 +490,10 @@ func (b0 SensorHello_builder) Build() *SensorHello {
 		x.xxx_hidden_SensorVersion = b.SensorVersion
 	}
 	x.xxx_hidden_Capabilities = b.Capabilities
-	x.xxx_hidden_DeploymentIdentification = b.DeploymentIdentification
+	if b.DeploymentIdentification != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_DeploymentIdentification = b.DeploymentIdentification
+	}
 	x.xxx_hidden_HelmManagedConfigInit = b.HelmManagedConfigInit
 	if b.PolicyVersion != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
@@ -482,10 +518,12 @@ type CentralHello struct {
 	xxx_hidden_CentralId        *string                `protobuf:"bytes,4,opt,name=central_id,json=centralId"`
 	xxx_hidden_Capabilities     []string               `protobuf:"bytes,5,rep,name=capabilities"`
 	xxx_hidden_SendDeduperState bool                   `protobuf:"varint,6,opt,name=send_deduper_state,json=sendDeduperState"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CentralHello) Reset() {
@@ -677,18 +715,18 @@ var File_internalapi_central_hello_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_hello_proto_rawDesc = "" +
 	"\n" +
-	"\x1finternalapi/central/hello.proto\x12\acentral\x1a\x15storage/cluster.proto\x1a!google/protobuf/go_features.proto\"\xdb\x01\n" +
-	"\x15HelmManagedConfigInit\x12E\n" +
-	"\x0ecluster_config\x18\x01 \x01(\v2\x1e.storage.CompleteClusterConfigR\rclusterConfig\x12!\n" +
+	"\x1finternalapi/central/hello.proto\x12\acentral\x1a\x15storage/cluster.proto\x1a!google/protobuf/go_features.proto\"\xdf\x01\n" +
+	"\x15HelmManagedConfigInit\x12I\n" +
+	"\x0ecluster_config\x18\x01 \x01(\v2\x1e.storage.CompleteClusterConfigB\x02(\x01R\rclusterConfig\x12!\n" +
 	"\fcluster_name\x18\x02 \x01(\tR\vclusterName\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x123\n" +
 	"\n" +
-	"managed_by\x18\x05 \x01(\x0e2\x14.storage.ManagerTypeR\tmanagedByJ\x04\b\x04\x10\x05\"\xef\x03\n" +
+	"managed_by\x18\x05 \x01(\x0e2\x14.storage.ManagerTypeR\tmanagedByJ\x04\b\x04\x10\x05\"\xf3\x03\n" +
 	"\vSensorHello\x12%\n" +
 	"\x0esensor_version\x18\x01 \x01(\tR\rsensorVersion\x12\"\n" +
-	"\fcapabilities\x18\x02 \x03(\tR\fcapabilities\x12d\n" +
-	"\x19deployment_identification\x18\x05 \x01(\v2'.storage.SensorDeploymentIdentificationR\x18deploymentIdentification\x12W\n" +
+	"\fcapabilities\x18\x02 \x03(\tR\fcapabilities\x12h\n" +
+	"\x19deployment_identification\x18\x05 \x01(\v2'.storage.SensorDeploymentIdentificationB\x02(\x01R\x18deploymentIdentification\x12W\n" +
 	"\x18helm_managed_config_init\x18\x03 \x01(\v2\x1e.central.HelmManagedConfigInitR\x15helmManagedConfigInit\x12%\n" +
 	"\x0epolicy_version\x18\x04 \x01(\tR\rpolicyVersion\x12C\n" +
 	"\fsensor_state\x18\x06 \x01(\x0e2 .central.SensorHello.SensorStateR\vsensorState\x122\n" +
@@ -696,11 +734,11 @@ const file_internalapi_central_hello_proto_rawDesc = "" +
 	"\vSensorState\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTARTUP\x10\x01\x12\r\n" +
-	"\tRECONNECT\x10\x02\"\xce\x02\n" +
+	"\tRECONNECT\x10\x02\"\xd2\x02\n" +
 	"\fCentralHello\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12F\n" +
-	"\vcert_bundle\x18\x02 \x03(\v2%.central.CentralHello.CertBundleEntryR\n" +
+	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12J\n" +
+	"\vcert_bundle\x18\x02 \x03(\v2%.central.CentralHello.CertBundleEntryB\x02(\x01R\n" +
 	"certBundle\x12'\n" +
 	"\x0fmanaged_central\x18\x03 \x01(\bR\x0emanagedCentral\x12\x1d\n" +
 	"\n" +

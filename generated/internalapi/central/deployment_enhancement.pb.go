@@ -26,6 +26,8 @@ type DeploymentEnhancementMessage struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
 	xxx_hidden_Deployments *[]*storage.Deployment `protobuf:"bytes,2,rep,name=deployments"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -69,8 +71,13 @@ func (x *DeploymentEnhancementMessage) GetId() string {
 
 func (x *DeploymentEnhancementMessage) GetDeployments() []*storage.Deployment {
 	if x != nil {
-		if x.xxx_hidden_Deployments != nil {
-			return *x.xxx_hidden_Deployments
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Deployments) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.Deployment
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -82,7 +89,14 @@ func (x *DeploymentEnhancementMessage) SetId(v string) {
 }
 
 func (x *DeploymentEnhancementMessage) SetDeployments(v []*storage.Deployment) {
-	x.xxx_hidden_Deployments = &v
+	var sv *[]*storage.Deployment
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Deployment{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DeploymentEnhancementMessage) HasId() bool {
@@ -112,7 +126,10 @@ func (b0 DeploymentEnhancementMessage_builder) Build() *DeploymentEnhancementMes
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Id = b.Id
 	}
-	x.xxx_hidden_Deployments = &b.Deployments
+	if b.Deployments != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Deployments = &b.Deployments
+	}
 	return m0
 }
 
@@ -256,10 +273,10 @@ var File_internalapi_central_deployment_enhancement_proto protoreflect.FileDescr
 
 const file_internalapi_central_deployment_enhancement_proto_rawDesc = "" +
 	"\n" +
-	"0internalapi/central/deployment_enhancement.proto\x12\acentral\x1a\x18storage/deployment.proto\x1a!google/protobuf/go_features.proto\"e\n" +
+	"0internalapi/central/deployment_enhancement.proto\x12\acentral\x1a\x18storage/deployment.proto\x1a!google/protobuf/go_features.proto\"i\n" +
 	"\x1cDeploymentEnhancementMessage\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
-	"\vdeployments\x18\x02 \x03(\v2\x13.storage.DeploymentR\vdeployments\"W\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
+	"\vdeployments\x18\x02 \x03(\v2\x13.storage.DeploymentB\x02(\x01R\vdeployments\"W\n" +
 	"\x1cDeploymentEnhancementRequest\x127\n" +
 	"\x03msg\x18\x01 \x01(\v2%.central.DeploymentEnhancementMessageR\x03msg\"X\n" +
 	"\x1dDeploymentEnhancementResponse\x127\n" +

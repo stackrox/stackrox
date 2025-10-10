@@ -23,14 +23,16 @@ const (
 )
 
 type TokenMetadata struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Roles       []string               `protobuf:"bytes,7,rep,name=roles"`
-	xxx_hidden_IssuedAt    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt"`
-	xxx_hidden_Expiration  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expiration"`
-	xxx_hidden_Revoked     bool                   `protobuf:"varint,6,opt,name=revoked"`
-	xxx_hidden_Role        *string                `protobuf:"bytes,3,opt,name=role"`
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name       *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Roles      []string               `protobuf:"bytes,7,rep,name=roles"`
+	xxx_hidden_IssuedAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt"`
+	xxx_hidden_Expiration *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expiration"`
+	xxx_hidden_Revoked    bool                   `protobuf:"varint,6,opt,name=revoked"`
+	xxx_hidden_Role       *string                `protobuf:"bytes,3,opt,name=role"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -91,14 +93,28 @@ func (x *TokenMetadata) GetRoles() []string {
 
 func (x *TokenMetadata) GetIssuedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_IssuedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_IssuedAt) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_IssuedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *TokenMetadata) GetExpiration() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Expiration
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Expiration) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Expiration), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -136,11 +152,21 @@ func (x *TokenMetadata) SetRoles(v []string) {
 }
 
 func (x *TokenMetadata) SetIssuedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_IssuedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_IssuedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	}
 }
 
 func (x *TokenMetadata) SetExpiration(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Expiration = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiration, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
+	}
 }
 
 func (x *TokenMetadata) SetRevoked(v bool) {
@@ -172,14 +198,14 @@ func (x *TokenMetadata) HasIssuedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_IssuedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *TokenMetadata) HasExpiration() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Expiration != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *TokenMetadata) HasRevoked() bool {
@@ -208,11 +234,13 @@ func (x *TokenMetadata) ClearName() {
 }
 
 func (x *TokenMetadata) ClearIssuedAt() {
-	x.xxx_hidden_IssuedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_IssuedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *TokenMetadata) ClearExpiration() {
-	x.xxx_hidden_Expiration = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiration, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *TokenMetadata) ClearRevoked() {
@@ -252,8 +280,14 @@ func (b0 TokenMetadata_builder) Build() *TokenMetadata {
 		x.xxx_hidden_Name = b.Name
 	}
 	x.xxx_hidden_Roles = b.Roles
-	x.xxx_hidden_IssuedAt = b.IssuedAt
-	x.xxx_hidden_Expiration = b.Expiration
+	if b.IssuedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_IssuedAt = b.IssuedAt
+	}
+	if b.Expiration != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_Expiration = b.Expiration
+	}
 	if b.Revoked != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
 		x.xxx_hidden_Revoked = *b.Revoked
@@ -269,14 +303,14 @@ var File_storage_api_token_proto protoreflect.FileDescriptor
 
 const file_storage_api_token_proto_rawDesc = "" +
 	"\n" +
-	"\x17storage/api_token.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xf0\x01\n" +
+	"\x17storage/api_token.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xf8\x01\n" +
 	"\rTokenMetadata\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
-	"\x05roles\x18\a \x03(\tR\x05roles\x127\n" +
-	"\tissued_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x12:\n" +
+	"\x05roles\x18\a \x03(\tR\x05roles\x12;\n" +
+	"\tissued_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\bissuedAt\x12>\n" +
 	"\n" +
-	"expiration\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"expiration\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\n" +
 	"expiration\x12\x18\n" +
 	"\arevoked\x18\x06 \x01(\bR\arevoked\x12\x16\n" +
 	"\x04role\x18\x03 \x01(\tB\x02\x18\x01R\x04roleB6\n" +

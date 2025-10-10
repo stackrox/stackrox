@@ -23,9 +23,11 @@ const (
 )
 
 type InstallationInfo struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Created     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created"`
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id      *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Created *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -69,7 +71,14 @@ func (x *InstallationInfo) GetId() string {
 
 func (x *InstallationInfo) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Created
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -80,7 +89,12 @@ func (x *InstallationInfo) SetId(v string) {
 }
 
 func (x *InstallationInfo) SetCreated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Created = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *InstallationInfo) HasId() bool {
@@ -94,7 +108,7 @@ func (x *InstallationInfo) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Created != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *InstallationInfo) ClearId() {
@@ -103,7 +117,8 @@ func (x *InstallationInfo) ClearId() {
 }
 
 func (x *InstallationInfo) ClearCreated() {
-	x.xxx_hidden_Created = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
 }
 
 type InstallationInfo_builder struct {
@@ -121,7 +136,10 @@ func (b0 InstallationInfo_builder) Build() *InstallationInfo {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Id = b.Id
 	}
-	x.xxx_hidden_Created = b.Created
+	if b.Created != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Created = b.Created
+	}
 	return m0
 }
 
@@ -129,10 +147,10 @@ var File_storage_installation_proto protoreflect.FileDescriptor
 
 const file_storage_installation_proto_rawDesc = "" +
 	"\n" +
-	"\x1astorage/installation.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"X\n" +
+	"\x1astorage/installation.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\\\n" +
 	"\x10InstallationInfo\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
-	"\acreated\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\acreatedB6\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x128\n" +
+	"\acreated\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\acreatedB6\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_installation_proto_msgTypes = make([]protoimpl.MessageInfo, 1)

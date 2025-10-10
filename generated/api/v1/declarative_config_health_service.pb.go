@@ -26,8 +26,12 @@ const (
 type GetDeclarativeConfigHealthsResponse struct {
 	state              protoimpl.MessageState              `protogen:"opaque.v1"`
 	xxx_hidden_Healths *[]*storage.DeclarativeConfigHealth `protobuf:"bytes,1,rep,name=healths"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetDeclarativeConfigHealthsResponse) Reset() {
@@ -57,15 +61,27 @@ func (x *GetDeclarativeConfigHealthsResponse) ProtoReflect() protoreflect.Messag
 
 func (x *GetDeclarativeConfigHealthsResponse) GetHealths() []*storage.DeclarativeConfigHealth {
 	if x != nil {
-		if x.xxx_hidden_Healths != nil {
-			return *x.xxx_hidden_Healths
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Healths) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.DeclarativeConfigHealth
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Healths), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetDeclarativeConfigHealthsResponse) SetHealths(v []*storage.DeclarativeConfigHealth) {
-	x.xxx_hidden_Healths = &v
+	var sv *[]*storage.DeclarativeConfigHealth
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Healths), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.DeclarativeConfigHealth{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Healths), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetDeclarativeConfigHealthsResponse_builder struct {
@@ -78,7 +94,10 @@ func (b0 GetDeclarativeConfigHealthsResponse_builder) Build() *GetDeclarativeCon
 	m0 := &GetDeclarativeConfigHealthsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Healths = &b.Healths
+	if b.Healths != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Healths = &b.Healths
+	}
 	return m0
 }
 
@@ -86,9 +105,9 @@ var File_api_v1_declarative_config_health_service_proto protoreflect.FileDescrip
 
 const file_api_v1_declarative_config_health_service_proto_rawDesc = "" +
 	"\n" +
-	".api/v1/declarative_config_health_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a'storage/declarative_config_health.proto\x1a!google/protobuf/go_features.proto\"a\n" +
-	"#GetDeclarativeConfigHealthsResponse\x12:\n" +
-	"\ahealths\x18\x01 \x03(\v2 .storage.DeclarativeConfigHealthR\ahealths2\x9a\x01\n" +
+	".api/v1/declarative_config_health_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a'storage/declarative_config_health.proto\x1a!google/protobuf/go_features.proto\"e\n" +
+	"#GetDeclarativeConfigHealthsResponse\x12>\n" +
+	"\ahealths\x18\x01 \x03(\v2 .storage.DeclarativeConfigHealthB\x02(\x01R\ahealths2\x9a\x01\n" +
 	"\x1eDeclarativeConfigHealthService\x12x\n" +
 	"\x1bGetDeclarativeConfigHealths\x12\t.v1.Empty\x1a'.v1.GetDeclarativeConfigHealthsResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/v1/declarative-config/healthB/\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"

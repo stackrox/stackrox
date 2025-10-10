@@ -22,9 +22,11 @@ const (
 )
 
 type Hash struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_Hashes      map[string]uint64      `protobuf:"bytes,2,rep,name=hashes" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Hashes    map[string]uint64      `protobuf:"bytes,2,rep,name=hashes" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -117,11 +119,11 @@ var File_storage_hash_proto protoreflect.FileDescriptor
 
 const file_storage_hash_proto_rawDesc = "" +
 	"\n" +
-	"\x12storage/hash.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"\x93\x01\n" +
+	"\x12storage/hash.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"\x97\x01\n" +
 	"\x04Hash\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x01 \x01(\tR\tclusterId\x121\n" +
-	"\x06hashes\x18\x02 \x03(\v2\x19.storage.Hash.HashesEntryR\x06hashes\x1a9\n" +
+	"cluster_id\x18\x01 \x01(\tR\tclusterId\x125\n" +
+	"\x06hashes\x18\x02 \x03(\v2\x19.storage.Hash.HashesEntryB\x02(\x01R\x06hashes\x1a9\n" +
 	"\vHashesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01B6\n" +

@@ -139,10 +139,12 @@ type User struct {
 	xxx_hidden_AuthProviderId *string                `protobuf:"bytes,2,opt,name=auth_provider_id,json=authProviderId"`
 	xxx_hidden_Attributes     *[]*UserAttribute      `protobuf:"bytes,3,rep,name=attributes"`
 	xxx_hidden_IdpToken       *string                `protobuf:"bytes,4,opt,name=idp_token,json=idpToken"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *User) Reset() {
@@ -192,8 +194,13 @@ func (x *User) GetAuthProviderId() string {
 
 func (x *User) GetAttributes() []*UserAttribute {
 	if x != nil {
-		if x.xxx_hidden_Attributes != nil {
-			return *x.xxx_hidden_Attributes
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Attributes) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*UserAttribute
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Attributes), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -220,7 +227,14 @@ func (x *User) SetAuthProviderId(v string) {
 }
 
 func (x *User) SetAttributes(v []*UserAttribute) {
-	x.xxx_hidden_Attributes = &v
+	var sv *[]*UserAttribute
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Attributes), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*UserAttribute{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Attributes), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *User) SetIdpToken(v string) {
@@ -285,7 +299,10 @@ func (b0 User_builder) Build() *User {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
 		x.xxx_hidden_AuthProviderId = b.AuthProviderId
 	}
-	x.xxx_hidden_Attributes = &b.Attributes
+	if b.Attributes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Attributes = &b.Attributes
+	}
 	if b.IdpToken != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
 		x.xxx_hidden_IdpToken = b.IdpToken
@@ -410,10 +427,12 @@ type UserInfo struct {
 	xxx_hidden_FriendlyName *string                    `protobuf:"bytes,2,opt,name=friendly_name,json=friendlyName"`
 	xxx_hidden_Permissions  *UserInfo_ResourceToAccess `protobuf:"bytes,4,opt,name=permissions"`
 	xxx_hidden_Roles        *[]*UserInfo_Role          `protobuf:"bytes,5,rep,name=roles"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UserInfo) Reset() {
@@ -470,8 +489,13 @@ func (x *UserInfo) GetPermissions() *UserInfo_ResourceToAccess {
 
 func (x *UserInfo) GetRoles() []*UserInfo_Role {
 	if x != nil {
-		if x.xxx_hidden_Roles != nil {
-			return *x.xxx_hidden_Roles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Roles) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *[]*UserInfo_Role
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -492,7 +516,14 @@ func (x *UserInfo) SetPermissions(v *UserInfo_ResourceToAccess) {
 }
 
 func (x *UserInfo) SetRoles(v []*UserInfo_Role) {
-	x.xxx_hidden_Roles = &v
+	var sv *[]*UserInfo_Role
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*UserInfo_Role{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *UserInfo) HasUsername() bool {
@@ -552,7 +583,10 @@ func (b0 UserInfo_builder) Build() *UserInfo {
 		x.xxx_hidden_FriendlyName = b.FriendlyName
 	}
 	x.xxx_hidden_Permissions = b.Permissions
-	x.xxx_hidden_Roles = &b.Roles
+	if b.Roles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Roles = &b.Roles
+	}
 	return m0
 }
 
@@ -562,10 +596,12 @@ type UserInfo_Role struct {
 	state                       protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Name             *string                `protobuf:"bytes,1,opt,name=name"`
 	xxx_hidden_ResourceToAccess map[string]Access      `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UserInfo_Role) Reset() {
@@ -717,30 +753,30 @@ const file_storage_user_proto_rawDesc = "" +
 	"\x12storage/user.proto\x12\astorage\x1a\x12storage/role.proto\x1a!google/protobuf/go_features.proto\".\n" +
 	"\bSlimUser\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x95\x01\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x99\x01\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12(\n" +
-	"\x10auth_provider_id\x18\x02 \x01(\tR\x0eauthProviderId\x126\n" +
+	"\x10auth_provider_id\x18\x02 \x01(\tR\x0eauthProviderId\x12:\n" +
 	"\n" +
-	"attributes\x18\x03 \x03(\v2\x16.storage.UserAttributeR\n" +
+	"attributes\x18\x03 \x03(\v2\x16.storage.UserAttributeB\x02(\x01R\n" +
 	"attributes\x12\x1b\n" +
 	"\tidp_token\x18\x04 \x01(\tR\bidpToken\"7\n" +
 	"\rUserAttribute\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\"\xf9\x04\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"\x85\x05\n" +
 	"\bUserInfo\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12#\n" +
 	"\rfriendly_name\x18\x02 \x01(\tR\ffriendlyName\x12D\n" +
-	"\vpermissions\x18\x04 \x01(\v2\".storage.UserInfo.ResourceToAccessR\vpermissions\x12,\n" +
-	"\x05roles\x18\x05 \x03(\v2\x16.storage.UserInfo.RoleR\x05roles\x1a\xd2\x01\n" +
+	"\vpermissions\x18\x04 \x01(\v2\".storage.UserInfo.ResourceToAccessR\vpermissions\x120\n" +
+	"\x05roles\x18\x05 \x03(\v2\x16.storage.UserInfo.RoleB\x02(\x01R\x05roles\x1a\xd6\x01\n" +
 	"\x04Role\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12Z\n" +
-	"\x12resource_to_access\x18\x03 \x03(\v2,.storage.UserInfo.Role.ResourceToAccessEntryR\x10resourceToAccess\x1aT\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12^\n" +
+	"\x12resource_to_access\x18\x03 \x03(\v2,.storage.UserInfo.Role.ResourceToAccessEntryB\x02(\x01R\x10resourceToAccess\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x02\x10\x03\x1a\xdc\x01\n" +
-	"\x10ResourceToAccess\x12f\n" +
-	"\x12resource_to_access\x18\x03 \x03(\v28.storage.UserInfo.ResourceToAccess.ResourceToAccessEntryR\x10resourceToAccess\x1aT\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x02\x10\x03\x1a\xe0\x01\n" +
+	"\x10ResourceToAccess\x12j\n" +
+	"\x12resource_to_access\x18\x03 \x03(\v28.storage.UserInfo.ResourceToAccess.ResourceToAccessEntryB\x02(\x01R\x10resourceToAccess\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
 	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x01\x10\x02J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04B6\n" +

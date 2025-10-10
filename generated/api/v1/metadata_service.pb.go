@@ -908,8 +908,12 @@ func (b0 DatabaseStatus_builder) Build() *DatabaseStatus {
 type DatabaseBackupStatus struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_BackupInfo *storage.BackupInfo    `protobuf:"bytes,1,opt,name=backup_info,json=backupInfo"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DatabaseBackupStatus) Reset() {
@@ -939,24 +943,37 @@ func (x *DatabaseBackupStatus) ProtoReflect() protoreflect.Message {
 
 func (x *DatabaseBackupStatus) GetBackupInfo() *storage.BackupInfo {
 	if x != nil {
-		return x.xxx_hidden_BackupInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_BackupInfo) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.BackupInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_BackupInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *DatabaseBackupStatus) SetBackupInfo(v *storage.BackupInfo) {
-	x.xxx_hidden_BackupInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_BackupInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *DatabaseBackupStatus) HasBackupInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_BackupInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DatabaseBackupStatus) ClearBackupInfo() {
-	x.xxx_hidden_BackupInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_BackupInfo, (*storage.BackupInfo)(nil))
 }
 
 type DatabaseBackupStatus_builder struct {
@@ -969,7 +986,10 @@ func (b0 DatabaseBackupStatus_builder) Build() *DatabaseBackupStatus {
 	m0 := &DatabaseBackupStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_BackupInfo = b.BackupInfo
+	if b.BackupInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_BackupInfo = b.BackupInfo
+	}
 	return m0
 }
 
@@ -1231,9 +1251,9 @@ const file_api_v1_metadata_service_proto_rawDesc = "" +
 	"\x06Hidden\x10\x00\x12\v\n" +
 	"\aRocksDB\x10\x01\x12\x0e\n" +
 	"\n" +
-	"PostgresDB\x10\x02\"L\n" +
-	"\x14DatabaseBackupStatus\x124\n" +
-	"\vbackup_info\x18\x01 \x01(\v2\x13.storage.BackupInfoR\n" +
+	"PostgresDB\x10\x02\"P\n" +
+	"\x14DatabaseBackupStatus\x128\n" +
+	"\vbackup_info\x18\x01 \x01(\v2\x13.storage.BackupInfoB\x02(\x01R\n" +
 	"backupInfo\"\x90\x06\n" +
 	"\x1bCentralServicesCapabilities\x12\x9a\x01\n" +
 	"3central_scanning_can_use_container_iam_role_for_ecr\x18\x01 \x01(\x0e20.v1.CentralServicesCapabilities.CapabilityStatusR+centralScanningCanUseContainerIamRoleForEcr\x12\x89\x01\n" +

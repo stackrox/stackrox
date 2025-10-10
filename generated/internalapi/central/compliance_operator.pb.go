@@ -634,6 +634,10 @@ func (b0 DisableComplianceRequest_builder) Build() *DisableComplianceRequest {
 type SyncComplianceScanConfigRequest struct {
 	state                  protoimpl.MessageState               `protogen:"opaque.v1"`
 	xxx_hidden_ScanConfigs *[]*ApplyComplianceScanConfigRequest `protobuf:"bytes,1,rep,name=scan_configs,json=scanConfigs"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -665,15 +669,27 @@ func (x *SyncComplianceScanConfigRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SyncComplianceScanConfigRequest) GetScanConfigs() []*ApplyComplianceScanConfigRequest {
 	if x != nil {
-		if x.xxx_hidden_ScanConfigs != nil {
-			return *x.xxx_hidden_ScanConfigs
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScanConfigs) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ApplyComplianceScanConfigRequest
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanConfigs), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *SyncComplianceScanConfigRequest) SetScanConfigs(v []*ApplyComplianceScanConfigRequest) {
-	x.xxx_hidden_ScanConfigs = &v
+	var sv *[]*ApplyComplianceScanConfigRequest
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanConfigs), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ApplyComplianceScanConfigRequest{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ScanConfigs), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type SyncComplianceScanConfigRequest_builder struct {
@@ -686,7 +702,10 @@ func (b0 SyncComplianceScanConfigRequest_builder) Build() *SyncComplianceScanCon
 	m0 := &SyncComplianceScanConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ScanConfigs = &b.ScanConfigs
+	if b.ScanConfigs != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_ScanConfigs = &b.ScanConfigs
+	}
 	return m0
 }
 
@@ -1729,10 +1748,12 @@ type ComplianceOperatorCheckResultV2 struct {
 	xxx_hidden_Rationale    *string                                     `protobuf:"bytes,16,opt,name=rationale"`
 	xxx_hidden_ValuesUsed   []string                                    `protobuf:"bytes,17,rep,name=valuesUsed"`
 	xxx_hidden_Warnings     []string                                    `protobuf:"bytes,18,rep,name=warnings"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorCheckResultV2) Reset() {
@@ -1854,7 +1875,14 @@ func (x *ComplianceOperatorCheckResultV2) GetAnnotations() map[string]string {
 
 func (x *ComplianceOperatorCheckResultV2) GetCreatedTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedTime) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1952,7 +1980,12 @@ func (x *ComplianceOperatorCheckResultV2) SetAnnotations(v map[string]string) {
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetCreatedTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 16)
+	}
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetScanName(v string) {
@@ -2038,7 +2071,7 @@ func (x *ComplianceOperatorCheckResultV2) HasCreatedTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
 }
 
 func (x *ComplianceOperatorCheckResultV2) HasScanName() bool {
@@ -2103,7 +2136,8 @@ func (x *ComplianceOperatorCheckResultV2) ClearInstructions() {
 }
 
 func (x *ComplianceOperatorCheckResultV2) ClearCreatedTime() {
-	x.xxx_hidden_CreatedTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ComplianceOperatorCheckResultV2) ClearScanName() {
@@ -2180,7 +2214,10 @@ func (b0 ComplianceOperatorCheckResultV2_builder) Build() *ComplianceOperatorChe
 	}
 	x.xxx_hidden_Labels = b.Labels
 	x.xxx_hidden_Annotations = b.Annotations
-	x.xxx_hidden_CreatedTime = b.CreatedTime
+	if b.CreatedTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 16)
+		x.xxx_hidden_CreatedTime = b.CreatedTime
+	}
 	if b.ScanName != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 16)
 		x.xxx_hidden_ScanName = b.ScanName
@@ -2212,10 +2249,12 @@ type ComplianceOperatorProfileV2 struct {
 	xxx_hidden_Rules          *[]*ComplianceOperatorProfileV2_Rule `protobuf:"bytes,8,rep,name=rules"`
 	xxx_hidden_Title          *string                              `protobuf:"bytes,9,opt,name=title"`
 	xxx_hidden_Values         []string                             `protobuf:"bytes,10,rep,name=values"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorProfileV2) Reset() {
@@ -2309,8 +2348,13 @@ func (x *ComplianceOperatorProfileV2) GetDescription() string {
 
 func (x *ComplianceOperatorProfileV2) GetRules() []*ComplianceOperatorProfileV2_Rule {
 	if x != nil {
-		if x.xxx_hidden_Rules != nil {
-			return *x.xxx_hidden_Rules
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Rules) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *[]*ComplianceOperatorProfileV2_Rule
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2367,7 +2411,14 @@ func (x *ComplianceOperatorProfileV2) SetDescription(v string) {
 }
 
 func (x *ComplianceOperatorProfileV2) SetRules(v []*ComplianceOperatorProfileV2_Rule) {
-	x.xxx_hidden_Rules = &v
+	var sv *[]*ComplianceOperatorProfileV2_Rule
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceOperatorProfileV2_Rule{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 10)
 }
 
 func (x *ComplianceOperatorProfileV2) SetTitle(v string) {
@@ -2492,7 +2543,10 @@ func (b0 ComplianceOperatorProfileV2_builder) Build() *ComplianceOperatorProfile
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 10)
 		x.xxx_hidden_Description = b.Description
 	}
-	x.xxx_hidden_Rules = &b.Rules
+	if b.Rules != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
+		x.xxx_hidden_Rules = &b.Rules
+	}
 	if b.Title != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
 		x.xxx_hidden_Title = b.Title
@@ -2518,10 +2572,12 @@ type ComplianceOperatorRuleV2 struct {
 	xxx_hidden_Fixes        *[]*ComplianceOperatorRuleV2_Fix `protobuf:"bytes,11,rep,name=fixes"`
 	xxx_hidden_Warning      *string                          `protobuf:"bytes,12,opt,name=warning"`
 	xxx_hidden_Instructions *string                          `protobuf:"bytes,13,opt,name=instructions"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorRuleV2) Reset() {
@@ -2644,8 +2700,13 @@ func (x *ComplianceOperatorRuleV2) GetRationale() string {
 
 func (x *ComplianceOperatorRuleV2) GetFixes() []*ComplianceOperatorRuleV2_Fix {
 	if x != nil {
-		if x.xxx_hidden_Fixes != nil {
-			return *x.xxx_hidden_Fixes
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Fixes) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *[]*ComplianceOperatorRuleV2_Fix
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Fixes), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -2720,7 +2781,14 @@ func (x *ComplianceOperatorRuleV2) SetRationale(v string) {
 }
 
 func (x *ComplianceOperatorRuleV2) SetFixes(v []*ComplianceOperatorRuleV2_Fix) {
-	x.xxx_hidden_Fixes = &v
+	var sv *[]*ComplianceOperatorRuleV2_Fix
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Fixes), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceOperatorRuleV2_Fix{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Fixes), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 13)
 }
 
 func (x *ComplianceOperatorRuleV2) SetWarning(v string) {
@@ -2909,7 +2977,10 @@ func (b0 ComplianceOperatorRuleV2_builder) Build() *ComplianceOperatorRuleV2 {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 13)
 		x.xxx_hidden_Rationale = b.Rationale
 	}
-	x.xxx_hidden_Fixes = &b.Fixes
+	if b.Fixes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 13)
+		x.xxx_hidden_Fixes = &b.Fixes
+	}
 	if b.Warning != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 13)
 		x.xxx_hidden_Warning = b.Warning
@@ -2930,6 +3001,8 @@ type ComplianceOperatorScanV2 struct {
 	xxx_hidden_Annotations map[string]string               `protobuf:"bytes,5,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_ScanType    *string                         `protobuf:"bytes,6,opt,name=scan_type,json=scanType"`
 	xxx_hidden_Status      *ComplianceOperatorScanStatusV2 `protobuf:"bytes,7,opt,name=status"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -3162,10 +3235,12 @@ type ComplianceOperatorScanStatusV2 struct {
 	xxx_hidden_StartTime        *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime"`
 	xxx_hidden_EndTime          *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime"`
 	xxx_hidden_LastStartTime    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_start_time,json=lastStartTime"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorScanStatusV2) Reset() {
@@ -3249,21 +3324,42 @@ func (x *ComplianceOperatorScanStatusV2) GetRemainingRetries() int64 {
 
 func (x *ComplianceOperatorScanStatusV2) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_StartTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_StartTime) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_StartTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetEndTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_EndTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_EndTime) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_EndTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetLastStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastStartTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastStartTime) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastStartTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -3299,15 +3395,30 @@ func (x *ComplianceOperatorScanStatusV2) SetRemainingRetries(v int64) {
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetStartTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_StartTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
+	}
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetEndTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_EndTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_EndTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
+	}
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetLastStartTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastStartTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastStartTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
+	}
 }
 
 func (x *ComplianceOperatorScanStatusV2) HasPhase() bool {
@@ -3356,21 +3467,21 @@ func (x *ComplianceOperatorScanStatusV2) HasStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_StartTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ComplianceOperatorScanStatusV2) HasEndTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_EndTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *ComplianceOperatorScanStatusV2) HasLastStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastStartTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *ComplianceOperatorScanStatusV2) ClearPhase() {
@@ -3404,15 +3515,18 @@ func (x *ComplianceOperatorScanStatusV2) ClearRemainingRetries() {
 }
 
 func (x *ComplianceOperatorScanStatusV2) ClearStartTime() {
-	x.xxx_hidden_StartTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ComplianceOperatorScanStatusV2) ClearEndTime() {
-	x.xxx_hidden_EndTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_EndTime, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ComplianceOperatorScanStatusV2) ClearLastStartTime() {
-	x.xxx_hidden_LastStartTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastStartTime, (*timestamppb.Timestamp)(nil))
 }
 
 type ComplianceOperatorScanStatusV2_builder struct {
@@ -3459,9 +3573,18 @@ func (b0 ComplianceOperatorScanStatusV2_builder) Build() *ComplianceOperatorScan
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
 		x.xxx_hidden_RemainingRetries = *b.RemainingRetries
 	}
-	x.xxx_hidden_StartTime = b.StartTime
-	x.xxx_hidden_EndTime = b.EndTime
-	x.xxx_hidden_LastStartTime = b.LastStartTime
+	if b.StartTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
+		x.xxx_hidden_StartTime = b.StartTime
+	}
+	if b.EndTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
+		x.xxx_hidden_EndTime = b.EndTime
+	}
+	if b.LastStartTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
+		x.xxx_hidden_LastStartTime = b.LastStartTime
+	}
 	return m0
 }
 
@@ -3474,10 +3597,12 @@ type ComplianceOperatorScanSettingBindingV2 struct {
 	xxx_hidden_Labels          map[string]string         `protobuf:"bytes,6,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Annotations     map[string]string         `protobuf:"bytes,7,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_Status          *ComplianceOperatorStatus `protobuf:"bytes,8,opt,name=status"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) Reset() {
@@ -3683,10 +3808,12 @@ type ComplianceOperatorCondition struct {
 	xxx_hidden_Reason             *string                `protobuf:"bytes,3,opt,name=reason"`
 	xxx_hidden_Message            *string                `protobuf:"bytes,4,opt,name=message"`
 	xxx_hidden_LastTransitionTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_transition_time,json=lastTransitionTime"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorCondition) Reset() {
@@ -3756,7 +3883,14 @@ func (x *ComplianceOperatorCondition) GetMessage() string {
 
 func (x *ComplianceOperatorCondition) GetLastTransitionTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastTransitionTime
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastTransitionTime) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastTransitionTime), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -3782,7 +3916,12 @@ func (x *ComplianceOperatorCondition) SetMessage(v string) {
 }
 
 func (x *ComplianceOperatorCondition) SetLastTransitionTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastTransitionTime = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastTransitionTime, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
+	}
 }
 
 func (x *ComplianceOperatorCondition) HasType() bool {
@@ -3817,7 +3956,7 @@ func (x *ComplianceOperatorCondition) HasLastTransitionTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastTransitionTime != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ComplianceOperatorCondition) ClearType() {
@@ -3841,7 +3980,8 @@ func (x *ComplianceOperatorCondition) ClearMessage() {
 }
 
 func (x *ComplianceOperatorCondition) ClearLastTransitionTime() {
-	x.xxx_hidden_LastTransitionTime = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastTransitionTime, (*timestamppb.Timestamp)(nil))
 }
 
 type ComplianceOperatorCondition_builder struct {
@@ -3874,7 +4014,10 @@ func (b0 ComplianceOperatorCondition_builder) Build() *ComplianceOperatorConditi
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
 		x.xxx_hidden_Message = b.Message
 	}
-	x.xxx_hidden_LastTransitionTime = b.LastTransitionTime
+	if b.LastTransitionTime != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_LastTransitionTime = b.LastTransitionTime
+	}
 	return m0
 }
 
@@ -3884,10 +4027,12 @@ type ComplianceOperatorStatus struct {
 	xxx_hidden_Result       *string                         `protobuf:"bytes,2,opt,name=result"`
 	xxx_hidden_ErrorMessage *string                         `protobuf:"bytes,3,opt,name=error_message,json=errorMessage"`
 	xxx_hidden_Conditions   *[]*ComplianceOperatorCondition `protobuf:"bytes,4,rep,name=conditions"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorStatus) Reset() {
@@ -3947,8 +4092,13 @@ func (x *ComplianceOperatorStatus) GetErrorMessage() string {
 
 func (x *ComplianceOperatorStatus) GetConditions() []*ComplianceOperatorCondition {
 	if x != nil {
-		if x.xxx_hidden_Conditions != nil {
-			return *x.xxx_hidden_Conditions
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Conditions) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*ComplianceOperatorCondition
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Conditions), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -3970,7 +4120,14 @@ func (x *ComplianceOperatorStatus) SetErrorMessage(v string) {
 }
 
 func (x *ComplianceOperatorStatus) SetConditions(v []*ComplianceOperatorCondition) {
-	x.xxx_hidden_Conditions = &v
+	var sv *[]*ComplianceOperatorCondition
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Conditions), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceOperatorCondition{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Conditions), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *ComplianceOperatorStatus) HasPhase() bool {
@@ -4034,7 +4191,10 @@ func (b0 ComplianceOperatorStatus_builder) Build() *ComplianceOperatorStatus {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_ErrorMessage = b.ErrorMessage
 	}
-	x.xxx_hidden_Conditions = &b.Conditions
+	if b.Conditions != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Conditions = &b.Conditions
+	}
 	return m0
 }
 
@@ -6048,9 +6208,9 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x17EnableComplianceRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"*\n" +
 	"\x18DisableComplianceRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"o\n" +
-	"\x1fSyncComplianceScanConfigRequest\x12L\n" +
-	"\fscan_configs\x18\x01 \x03(\v2).central.ApplyComplianceScanConfigRequestR\vscanConfigs\"\x8e\v\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"s\n" +
+	"\x1fSyncComplianceScanConfigRequest\x12P\n" +
+	"\fscan_configs\x18\x01 \x03(\v2).central.ApplyComplianceScanConfigRequestB\x02(\x01R\vscanConfigs\"\x8e\v\n" +
 	" ApplyComplianceScanConfigRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12`\n" +
 	"\x0escheduled_scan\x18\x03 \x01(\v27.central.ApplyComplianceScanConfigRequest.ScheduledScanH\x00R\rscheduledScan\x12]\n" +
@@ -6117,7 +6277,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x05error\x18\x02 \x01(\tH\x00R\x05errorB\t\n" +
 	"\apayloadB\n" +
 	"\n" +
-	"\bresponse\"\xdf\a\n" +
+	"\bresponse\"\xeb\a\n" +
 	"\x1fComplianceOperatorCheckResultV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bcheck_id\x18\x02 \x01(\tR\acheckId\x12\x1d\n" +
@@ -6128,11 +6288,11 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x06status\x18\x05 \x01(\x0e24.central.ComplianceOperatorCheckResultV2.CheckStatusR\x06status\x12C\n" +
 	"\bseverity\x18\x06 \x01(\x0e2'.central.ComplianceOperatorRuleSeverityR\bseverity\x12 \n" +
 	"\vdescription\x18\a \x01(\tR\vdescription\x12\"\n" +
-	"\finstructions\x18\b \x01(\tR\finstructions\x12L\n" +
-	"\x06labels\x18\t \x03(\v24.central.ComplianceOperatorCheckResultV2.LabelsEntryR\x06labels\x12[\n" +
+	"\finstructions\x18\b \x01(\tR\finstructions\x12P\n" +
+	"\x06labels\x18\t \x03(\v24.central.ComplianceOperatorCheckResultV2.LabelsEntryB\x02(\x01R\x06labels\x12_\n" +
 	"\vannotations\x18\n" +
-	" \x03(\v29.central.ComplianceOperatorCheckResultV2.AnnotationsEntryR\vannotations\x12=\n" +
-	"\fcreated_time\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\vcreatedTime\x12\x1b\n" +
+	" \x03(\v29.central.ComplianceOperatorCheckResultV2.AnnotationsEntryB\x02(\x01R\vannotations\x12A\n" +
+	"\fcreated_time\x18\v \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vcreatedTime\x12\x1b\n" +
 	"\tscan_name\x18\x0e \x01(\tR\bscanName\x12\x1d\n" +
 	"\n" +
 	"suite_name\x18\x0f \x01(\tR\tsuiteName\x12\x1c\n" +
@@ -6156,17 +6316,17 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\n" +
 	"\x06MANUAL\x10\x05\x12\x12\n" +
 	"\x0eNOT_APPLICABLE\x10\x06\x12\x10\n" +
-	"\fINCONSISTENT\x10\aJ\x04\b\f\x10\rJ\x04\b\r\x10\x0e\"\xdd\x04\n" +
+	"\fINCONSISTENT\x10\aJ\x04\b\f\x10\rJ\x04\b\r\x10\x0e\"\xe9\x04\n" +
 	"\x1bComplianceOperatorProfileV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
 	"profile_id\x18\x02 \x01(\tR\tprofileId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12'\n" +
-	"\x0fprofile_version\x18\x04 \x01(\tR\x0eprofileVersion\x12H\n" +
-	"\x06labels\x18\x05 \x03(\v20.central.ComplianceOperatorProfileV2.LabelsEntryR\x06labels\x12W\n" +
-	"\vannotations\x18\x06 \x03(\v25.central.ComplianceOperatorProfileV2.AnnotationsEntryR\vannotations\x12 \n" +
-	"\vdescription\x18\a \x01(\tR\vdescription\x12?\n" +
-	"\x05rules\x18\b \x03(\v2).central.ComplianceOperatorProfileV2.RuleR\x05rules\x12\x14\n" +
+	"\x0fprofile_version\x18\x04 \x01(\tR\x0eprofileVersion\x12L\n" +
+	"\x06labels\x18\x05 \x03(\v20.central.ComplianceOperatorProfileV2.LabelsEntryB\x02(\x01R\x06labels\x12[\n" +
+	"\vannotations\x18\x06 \x03(\v25.central.ComplianceOperatorProfileV2.AnnotationsEntryB\x02(\x01R\vannotations\x12 \n" +
+	"\vdescription\x18\a \x01(\tR\vdescription\x12C\n" +
+	"\x05rules\x18\b \x03(\v2).central.ComplianceOperatorProfileV2.RuleB\x02(\x01R\x05rules\x12\x14\n" +
 	"\x05title\x18\t \x01(\tR\x05title\x12\x16\n" +
 	"\x06values\x18\n" +
 	" \x03(\tR\x06values\x1a9\n" +
@@ -6177,20 +6337,20 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a#\n" +
 	"\x04Rule\x12\x1b\n" +
-	"\trule_name\x18\x01 \x01(\tR\bruleName\"\xe5\x05\n" +
+	"\trule_name\x18\x01 \x01(\tR\bruleName\"\xf1\x05\n" +
 	"\x18ComplianceOperatorRuleV2\x12\x17\n" +
 	"\arule_id\x18\x01 \x01(\tR\x06ruleId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1b\n" +
 	"\trule_type\x18\x04 \x01(\tR\bruleType\x12C\n" +
-	"\bseverity\x18\x05 \x01(\x0e2'.central.ComplianceOperatorRuleSeverityR\bseverity\x12E\n" +
-	"\x06labels\x18\x06 \x03(\v2-.central.ComplianceOperatorRuleV2.LabelsEntryR\x06labels\x12T\n" +
-	"\vannotations\x18\a \x03(\v22.central.ComplianceOperatorRuleV2.AnnotationsEntryR\vannotations\x12\x14\n" +
+	"\bseverity\x18\x05 \x01(\x0e2'.central.ComplianceOperatorRuleSeverityR\bseverity\x12I\n" +
+	"\x06labels\x18\x06 \x03(\v2-.central.ComplianceOperatorRuleV2.LabelsEntryB\x02(\x01R\x06labels\x12X\n" +
+	"\vannotations\x18\a \x03(\v22.central.ComplianceOperatorRuleV2.AnnotationsEntryB\x02(\x01R\vannotations\x12\x14\n" +
 	"\x05title\x18\b \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\t \x01(\tR\vdescription\x12\x1c\n" +
 	"\trationale\x18\n" +
-	" \x01(\tR\trationale\x12;\n" +
-	"\x05fixes\x18\v \x03(\v2%.central.ComplianceOperatorRuleV2.FixR\x05fixes\x12\x18\n" +
+	" \x01(\tR\trationale\x12?\n" +
+	"\x05fixes\x18\v \x03(\v2%.central.ComplianceOperatorRuleV2.FixB\x02(\x01R\x05fixes\x12\x18\n" +
 	"\awarning\x18\f \x01(\tR\awarning\x12\"\n" +
 	"\finstructions\x18\r \x01(\tR\finstructions\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
@@ -6203,14 +6363,14 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\bplatform\x18\x01 \x01(\tR\bplatform\x12\x1e\n" +
 	"\n" +
 	"disruption\x18\x02 \x01(\tR\n" +
-	"disruption\"\xd3\x03\n" +
+	"disruption\"\xdb\x03\n" +
 	"\x18ComplianceOperatorScanV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
-	"profile_id\x18\x03 \x01(\tR\tprofileId\x12E\n" +
-	"\x06labels\x18\x04 \x03(\v2-.central.ComplianceOperatorScanV2.LabelsEntryR\x06labels\x12T\n" +
-	"\vannotations\x18\x05 \x03(\v22.central.ComplianceOperatorScanV2.AnnotationsEntryR\vannotations\x12\x1b\n" +
+	"profile_id\x18\x03 \x01(\tR\tprofileId\x12I\n" +
+	"\x06labels\x18\x04 \x03(\v2-.central.ComplianceOperatorScanV2.LabelsEntryB\x02(\x01R\x06labels\x12X\n" +
+	"\vannotations\x18\x05 \x03(\v22.central.ComplianceOperatorScanV2.AnnotationsEntryB\x02(\x01R\vannotations\x12\x1b\n" +
 	"\tscan_type\x18\x06 \x01(\tR\bscanType\x12?\n" +
 	"\x06status\x18\a \x01(\v2'.central.ComplianceOperatorScanStatusV2R\x06status\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
@@ -6218,44 +6378,44 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x97\x03\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa3\x03\n" +
 	"\x1eComplianceOperatorScanStatusV2\x12\x14\n" +
 	"\x05phase\x18\x01 \x01(\tR\x05phase\x12\x16\n" +
 	"\x06result\x18\x02 \x01(\tR\x06result\x12#\n" +
 	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12#\n" +
 	"\rcurrent_index\x18\x04 \x01(\x03R\fcurrentIndex\x12\x1a\n" +
 	"\bwarnings\x18\x05 \x01(\tR\bwarnings\x12+\n" +
-	"\x11remaining_retries\x18\x06 \x01(\x03R\x10remainingRetries\x129\n" +
+	"\x11remaining_retries\x18\x06 \x01(\x03R\x10remainingRetries\x12=\n" +
 	"\n" +
-	"start_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x125\n" +
-	"\bend_time\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\x12B\n" +
-	"\x0flast_start_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\rlastStartTime\"\x92\x04\n" +
+	"start_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tstartTime\x129\n" +
+	"\bend_time\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\aendTime\x12F\n" +
+	"\x0flast_start_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\rlastStartTime\"\x9a\x04\n" +
 	"&ComplianceOperatorScanSettingBindingV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12#\n" +
 	"\rprofile_names\x18\x03 \x03(\tR\fprofileNames\x12*\n" +
-	"\x11scan_setting_name\x18\x04 \x01(\tR\x0fscanSettingName\x12S\n" +
-	"\x06labels\x18\x06 \x03(\v2;.central.ComplianceOperatorScanSettingBindingV2.LabelsEntryR\x06labels\x12b\n" +
-	"\vannotations\x18\a \x03(\v2@.central.ComplianceOperatorScanSettingBindingV2.AnnotationsEntryR\vannotations\x129\n" +
+	"\x11scan_setting_name\x18\x04 \x01(\tR\x0fscanSettingName\x12W\n" +
+	"\x06labels\x18\x06 \x03(\v2;.central.ComplianceOperatorScanSettingBindingV2.LabelsEntryB\x02(\x01R\x06labels\x12f\n" +
+	"\vannotations\x18\a \x03(\v2@.central.ComplianceOperatorScanSettingBindingV2.AnnotationsEntryB\x02(\x01R\vannotations\x129\n" +
 	"\x06status\x18\b \x01(\v2!.central.ComplianceOperatorStatusR\x06status\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01J\x04\b\x05\x10\x06\"\xc9\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01J\x04\b\x05\x10\x06\"\xcd\x01\n" +
 	"\x1bComplianceOperatorCondition\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\x12L\n" +
-	"\x14last_transition_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x12lastTransitionTime\"\xb3\x01\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\x12P\n" +
+	"\x14last_transition_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x12lastTransitionTime\"\xb7\x01\n" +
 	"\x18ComplianceOperatorStatus\x12\x14\n" +
 	"\x05phase\x18\x01 \x01(\tR\x05phase\x12\x16\n" +
 	"\x06result\x18\x02 \x01(\tR\x06result\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12D\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12H\n" +
 	"\n" +
-	"conditions\x18\x04 \x03(\v2$.central.ComplianceOperatorConditionR\n" +
+	"conditions\x18\x04 \x03(\v2$.central.ComplianceOperatorConditionB\x02(\x01R\n" +
 	"conditions\"\x80\x01\n" +
 	"\x19ComplianceOperatorSuiteV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +

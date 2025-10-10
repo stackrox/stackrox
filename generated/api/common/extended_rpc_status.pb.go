@@ -25,11 +25,13 @@ const (
 // The `Status` type defines a logical error model that is suitable for
 // different programming environments, including REST APIs and RPC APIs.
 type ExtendedRpcStatus struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Code        int32                  `protobuf:"varint,1,opt,name=code"`
-	xxx_hidden_Message     *string                `protobuf:"bytes,2,opt,name=message"`
-	xxx_hidden_Details     *[]*anypb.Any          `protobuf:"bytes,3,rep,name=details"`
-	xxx_hidden_Error       *string                `protobuf:"bytes,4,opt,name=error"`
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Code    int32                  `protobuf:"varint,1,opt,name=code"`
+	xxx_hidden_Message *string                `protobuf:"bytes,2,opt,name=message"`
+	xxx_hidden_Details *[]*anypb.Any          `protobuf:"bytes,3,rep,name=details"`
+	xxx_hidden_Error   *string                `protobuf:"bytes,4,opt,name=error"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -80,8 +82,13 @@ func (x *ExtendedRpcStatus) GetMessage() string {
 
 func (x *ExtendedRpcStatus) GetDetails() []*anypb.Any {
 	if x != nil {
-		if x.xxx_hidden_Details != nil {
-			return *x.xxx_hidden_Details
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Details) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*anypb.Any
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Details), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -109,7 +116,14 @@ func (x *ExtendedRpcStatus) SetMessage(v string) {
 }
 
 func (x *ExtendedRpcStatus) SetDetails(v []*anypb.Any) {
-	x.xxx_hidden_Details = &v
+	var sv *[]*anypb.Any
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Details), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*anypb.Any{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Details), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 // Deprecated: Marked as deprecated in api/common/extended_rpc_status.proto.
@@ -187,7 +201,10 @@ func (b0 ExtendedRpcStatus_builder) Build() *ExtendedRpcStatus {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
 		x.xxx_hidden_Message = b.Message
 	}
-	x.xxx_hidden_Details = &b.Details
+	if b.Details != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Details = &b.Details
+	}
 	if b.Error != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
 		x.xxx_hidden_Error = b.Error
@@ -199,11 +216,11 @@ var File_api_common_extended_rpc_status_proto protoreflect.FileDescriptor
 
 const file_api_common_extended_rpc_status_proto_rawDesc = "" +
 	"\n" +
-	"$api/common/extended_rpc_status.proto\x12\x06common\x1a\x19google/protobuf/any.proto\x1a!google/protobuf/go_features.proto\"\x8b\x01\n" +
+	"$api/common/extended_rpc_status.proto\x12\x06common\x1a\x19google/protobuf/any.proto\x1a!google/protobuf/go_features.proto\"\x8f\x01\n" +
 	"\x11ExtendedRpcStatus\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\x12.\n" +
-	"\adetails\x18\x03 \x03(\v2\x14.google.protobuf.AnyR\adetails\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x122\n" +
+	"\adetails\x18\x03 \x03(\v2\x14.google.protobuf.AnyB\x02(\x01R\adetails\x12\x18\n" +
 	"\x05error\x18\x04 \x01(\tB\x02\x18\x01R\x05errorB;\n" +
 	"\x1cio.stackrox.proto.api.commonZ\x13./api/common;common\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 

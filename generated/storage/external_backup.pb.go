@@ -75,10 +75,12 @@ type ExternalBackup struct {
 	xxx_hidden_BackupsToKeep          int32                                   `protobuf:"varint,5,opt,name=backups_to_keep,json=backupsToKeep"`
 	xxx_hidden_Config                 isExternalBackup_Config                 `protobuf_oneof:"Config"`
 	xxx_hidden_IncludeCertificatesOpt isExternalBackup_IncludeCertificatesOpt `protobuf_oneof:"include_certificates_opt"`
-	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
-	XXX_presence                      [1]uint32
-	unknownFields                     protoimpl.UnknownFields
-	sizeCache                         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ExternalBackup) Reset() {
@@ -138,7 +140,14 @@ func (x *ExternalBackup) GetType() string {
 
 func (x *ExternalBackup) GetSchedule() *Schedule {
 	if x != nil {
-		return x.xxx_hidden_Schedule
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Schedule) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *Schedule
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Schedule), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -203,7 +212,12 @@ func (x *ExternalBackup) SetType(v string) {
 }
 
 func (x *ExternalBackup) SetSchedule(v *Schedule) {
-	x.xxx_hidden_Schedule = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Schedule, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	}
 }
 
 func (x *ExternalBackup) SetBackupsToKeep(v int32) {
@@ -265,7 +279,7 @@ func (x *ExternalBackup) HasSchedule() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Schedule != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ExternalBackup) HasBackupsToKeep() bool {
@@ -338,7 +352,8 @@ func (x *ExternalBackup) ClearType() {
 }
 
 func (x *ExternalBackup) ClearSchedule() {
-	x.xxx_hidden_Schedule = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Schedule, (*Schedule)(nil))
 }
 
 func (x *ExternalBackup) ClearBackupsToKeep() {
@@ -450,7 +465,10 @@ func (b0 ExternalBackup_builder) Build() *ExternalBackup {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
 		x.xxx_hidden_Type = b.Type
 	}
-	x.xxx_hidden_Schedule = b.Schedule
+	if b.Schedule != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_Schedule = b.Schedule
+	}
 	if b.BackupsToKeep != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
 		x.xxx_hidden_BackupsToKeep = *b.BackupsToKeep
@@ -1260,12 +1278,12 @@ var File_storage_external_backup_proto protoreflect.FileDescriptor
 
 const file_storage_external_backup_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/external_backup.proto\x12\astorage\x1a\x16storage/schedule.proto\x1a!google/protobuf/go_features.proto\"\x88\x03\n" +
+	"\x1dstorage/external_backup.proto\x12\astorage\x1a\x16storage/schedule.proto\x1a!google/protobuf/go_features.proto\"\x8c\x03\n" +
 	"\x0eExternalBackup\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
-	"\x04type\x18\x03 \x01(\tR\x04type\x12-\n" +
-	"\bschedule\x18\x04 \x01(\v2\x11.storage.ScheduleR\bschedule\x12&\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\x121\n" +
+	"\bschedule\x18\x04 \x01(\v2\x11.storage.ScheduleB\x02(\x01R\bschedule\x12&\n" +
 	"\x0fbackups_to_keep\x18\x05 \x01(\x05R\rbackupsToKeep\x12#\n" +
 	"\x02s3\x18\x06 \x01(\v2\x11.storage.S3ConfigH\x00R\x02s3\x12&\n" +
 	"\x03gcs\x18\a \x01(\v2\x12.storage.GCSConfigH\x00R\x03gcs\x12;\n" +

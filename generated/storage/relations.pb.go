@@ -557,10 +557,12 @@ type ImageCVEEdge struct {
 	xxx_hidden_State                VulnerabilityState     `protobuf:"varint,3,opt,name=state,enum=storage.VulnerabilityState"`
 	xxx_hidden_ImageId              *string                `protobuf:"bytes,4,opt,name=image_id,json=imageId"`
 	xxx_hidden_ImageCveId           *string                `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId"`
-	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
-	XXX_presence                    [1]uint32
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImageCVEEdge) Reset() {
@@ -600,7 +602,14 @@ func (x *ImageCVEEdge) GetId() string {
 
 func (x *ImageCVEEdge) GetFirstImageOccurrence() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_FirstImageOccurrence
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_FirstImageOccurrence) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_FirstImageOccurrence), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -640,7 +649,12 @@ func (x *ImageCVEEdge) SetId(v string) {
 }
 
 func (x *ImageCVEEdge) SetFirstImageOccurrence(v *timestamppb.Timestamp) {
-	x.xxx_hidden_FirstImageOccurrence = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FirstImageOccurrence, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	}
 }
 
 func (x *ImageCVEEdge) SetState(v VulnerabilityState) {
@@ -669,7 +683,7 @@ func (x *ImageCVEEdge) HasFirstImageOccurrence() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_FirstImageOccurrence != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ImageCVEEdge) HasState() bool {
@@ -699,7 +713,8 @@ func (x *ImageCVEEdge) ClearId() {
 }
 
 func (x *ImageCVEEdge) ClearFirstImageOccurrence() {
-	x.xxx_hidden_FirstImageOccurrence = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FirstImageOccurrence, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ImageCVEEdge) ClearState() {
@@ -737,7 +752,10 @@ func (b0 ImageCVEEdge_builder) Build() *ImageCVEEdge {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
 		x.xxx_hidden_Id = b.Id
 	}
-	x.xxx_hidden_FirstImageOccurrence = b.FirstImageOccurrence
+	if b.FirstImageOccurrence != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_FirstImageOccurrence = b.FirstImageOccurrence
+	}
 	if b.State != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
 		x.xxx_hidden_State = *b.State
@@ -1576,10 +1594,10 @@ const file_storage_relations_proto_rawDesc = "" +
 	"\x12image_component_id\x18\x04 \x01(\tR\x10imageComponentId\x12 \n" +
 	"\fimage_cve_id\x18\x05 \x01(\tR\n" +
 	"imageCveId:\x02\x18\x01B\x0e\n" +
-	"\fhas_fixed_by\"\xe4\x01\n" +
+	"\fhas_fixed_by\"\xe8\x01\n" +
 	"\fImageCVEEdge\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12P\n" +
-	"\x16first_image_occurrence\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x14firstImageOccurrence\x121\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12T\n" +
+	"\x16first_image_occurrence\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x14firstImageOccurrence\x121\n" +
 	"\x05state\x18\x03 \x01(\x0e2\x1b.storage.VulnerabilityStateR\x05state\x12\x19\n" +
 	"\bimage_id\x18\x04 \x01(\tR\aimageId\x12 \n" +
 	"\fimage_cve_id\x18\x05 \x01(\tR\n" +

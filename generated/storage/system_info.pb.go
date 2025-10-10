@@ -27,10 +27,12 @@ type BackupInfo struct {
 	xxx_hidden_BackupLastRunAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=backup_last_run_at,json=backupLastRunAt"`
 	xxx_hidden_Status          OperationStatus        `protobuf:"varint,2,opt,name=status,enum=storage.OperationStatus"`
 	xxx_hidden_Requestor       *SlimUser              `protobuf:"bytes,3,opt,name=requestor"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *BackupInfo) Reset() {
@@ -60,7 +62,14 @@ func (x *BackupInfo) ProtoReflect() protoreflect.Message {
 
 func (x *BackupInfo) GetBackupLastRunAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_BackupLastRunAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_BackupLastRunAt) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_BackupLastRunAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -82,7 +91,12 @@ func (x *BackupInfo) GetRequestor() *SlimUser {
 }
 
 func (x *BackupInfo) SetBackupLastRunAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_BackupLastRunAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_BackupLastRunAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	}
 }
 
 func (x *BackupInfo) SetStatus(v OperationStatus) {
@@ -98,7 +112,7 @@ func (x *BackupInfo) HasBackupLastRunAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_BackupLastRunAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *BackupInfo) HasStatus() bool {
@@ -116,7 +130,8 @@ func (x *BackupInfo) HasRequestor() bool {
 }
 
 func (x *BackupInfo) ClearBackupLastRunAt() {
-	x.xxx_hidden_BackupLastRunAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_BackupLastRunAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *BackupInfo) ClearStatus() {
@@ -140,7 +155,10 @@ func (b0 BackupInfo_builder) Build() *BackupInfo {
 	m0 := &BackupInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_BackupLastRunAt = b.BackupLastRunAt
+	if b.BackupLastRunAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_BackupLastRunAt = b.BackupLastRunAt
+	}
 	if b.Status != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Status = *b.Status
@@ -221,10 +239,10 @@ var File_storage_system_info_proto protoreflect.FileDescriptor
 
 const file_storage_system_info_proto_rawDesc = "" +
 	"\n" +
-	"\x19storage/system_info.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1estorage/operation_status.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\xb8\x01\n" +
+	"\x19storage/system_info.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1estorage/operation_status.proto\x1a\x12storage/user.proto\x1a!google/protobuf/go_features.proto\"\xbc\x01\n" +
 	"\n" +
-	"BackupInfo\x12G\n" +
-	"\x12backup_last_run_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x0fbackupLastRunAt\x120\n" +
+	"BackupInfo\x12K\n" +
+	"\x12backup_last_run_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x0fbackupLastRunAt\x120\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x18.storage.OperationStatusR\x06status\x12/\n" +
 	"\trequestor\x18\x03 \x01(\v2\x11.storage.SlimUserR\trequestor\"B\n" +
 	"\n" +

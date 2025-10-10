@@ -82,10 +82,12 @@ type SplunkViolationsResponse struct {
 	state                    protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Violations    *[]*SplunkViolation    `protobuf:"bytes,1,rep,name=violations"`
 	xxx_hidden_NewCheckpoint *string                `protobuf:"bytes,6,opt,name=new_checkpoint,json=newCheckpoint"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SplunkViolationsResponse) Reset() {
@@ -115,8 +117,13 @@ func (x *SplunkViolationsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *SplunkViolationsResponse) GetViolations() []*SplunkViolation {
 	if x != nil {
-		if x.xxx_hidden_Violations != nil {
-			return *x.xxx_hidden_Violations
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Violations) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*SplunkViolation
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Violations), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -133,7 +140,14 @@ func (x *SplunkViolationsResponse) GetNewCheckpoint() string {
 }
 
 func (x *SplunkViolationsResponse) SetViolations(v []*SplunkViolation) {
-	x.xxx_hidden_Violations = &v
+	var sv *[]*SplunkViolation
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Violations), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*SplunkViolation{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Violations), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *SplunkViolationsResponse) SetNewCheckpoint(v string) {
@@ -165,7 +179,10 @@ func (b0 SplunkViolationsResponse_builder) Build() *SplunkViolationsResponse {
 	m0 := &SplunkViolationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Violations = &b.Violations
+	if b.Violations != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Violations = &b.Violations
+	}
 	if b.NewCheckpoint != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_NewCheckpoint = b.NewCheckpoint
@@ -1307,10 +1324,12 @@ type SplunkViolation_DeploymentInfo struct {
 	xxx_hidden_DeploymentContainers  *[]*storage.Alert_Deployment_Container `protobuf:"bytes,109,rep,name=deployment_containers,json=deploymentContainers"`
 	xxx_hidden_DeploymentAnnotations map[string]string                      `protobuf:"bytes,110,rep,name=deployment_annotations,json=deploymentAnnotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_DeploymentImage       *storage.ContainerImage                `protobuf:"bytes,201,opt,name=deployment_image,json=deploymentImage"`
-	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
-	XXX_presence                     [1]uint32
-	unknownFields                    protoimpl.UnknownFields
-	sizeCache                        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SplunkViolation_DeploymentInfo) Reset() {
@@ -2127,12 +2146,12 @@ var File_api_integrations_splunk_service_proto protoreflect.FileDescriptor
 
 const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\n" +
-	"%api/integrations/splunk_service.proto\x12\fintegrations\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x13storage/alert.proto\x1a\x18storage/deployment.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"\x80\x01\n" +
-	"\x18SplunkViolationsResponse\x12=\n" +
+	"%api/integrations/splunk_service.proto\x12\fintegrations\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x13storage/alert.proto\x1a\x18storage/deployment.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"\x84\x01\n" +
+	"\x18SplunkViolationsResponse\x12A\n" +
 	"\n" +
-	"violations\x18\x01 \x03(\v2\x1d.integrations.SplunkViolationR\n" +
+	"violations\x18\x01 \x03(\v2\x1d.integrations.SplunkViolationB\x02(\x01R\n" +
 	"violations\x12%\n" +
-	"\x0enew_checkpoint\x18\x06 \x01(\tR\rnewCheckpoint\"\xcd\x1a\n" +
+	"\x0enew_checkpoint\x18\x06 \x01(\tR\rnewCheckpoint\"\xd6\x1a\n" +
 	"\x0fSplunkViolation\x12R\n" +
 	"\x0eviolation_info\x18\x01 \x01(\v2+.integrations.SplunkViolation.ViolationInfoR\rviolationInfo\x12F\n" +
 	"\n" +
@@ -2177,19 +2196,19 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"processUid\x12>\n" +
 	"\vprocess_gid\x18\xd1\x01 \x01(\v2\x1c.google.protobuf.UInt32ValueR\n" +
 	"processGid\x12U\n" +
-	"\x14process_lineage_info\x18\xd2\x01 \x03(\v2\".storage.ProcessSignal.LineageInfoR\x12processLineageInfo\x1a\xd3\x06\n" +
+	"\x14process_lineage_info\x18\xd2\x01 \x03(\v2\".storage.ProcessSignal.LineageInfoR\x12processLineageInfo\x1a\xdc\x06\n" +
 	"\x0eDeploymentInfo\x12#\n" +
 	"\rdeployment_id\x18e \x01(\tR\fdeploymentId\x12'\n" +
 	"\x0fdeployment_name\x18f \x01(\tR\x0edeploymentName\x12'\n" +
 	"\x0fdeployment_type\x18g \x01(\tR\x0edeploymentType\x121\n" +
 	"\x14deployment_namespace\x18h \x01(\tR\x13deploymentNamespace\x126\n" +
-	"\x17deployment_namespace_id\x18i \x01(\tR\x15deploymentNamespaceId\x12o\n" +
-	"\x11deployment_labels\x18j \x03(\v2B.integrations.SplunkViolation.DeploymentInfo.DeploymentLabelsEntryR\x10deploymentLabels\x12\x1d\n" +
+	"\x17deployment_namespace_id\x18i \x01(\tR\x15deploymentNamespaceId\x12s\n" +
+	"\x11deployment_labels\x18j \x03(\v2B.integrations.SplunkViolation.DeploymentInfo.DeploymentLabelsEntryB\x02(\x01R\x10deploymentLabels\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18k \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18l \x01(\tR\vclusterName\x12X\n" +
-	"\x15deployment_containers\x18m \x03(\v2#.storage.Alert.Deployment.ContainerR\x14deploymentContainers\x12~\n" +
-	"\x16deployment_annotations\x18n \x03(\v2G.integrations.SplunkViolation.DeploymentInfo.DeploymentAnnotationsEntryR\x15deploymentAnnotations\x12C\n" +
+	"\x15deployment_containers\x18m \x03(\v2#.storage.Alert.Deployment.ContainerR\x14deploymentContainers\x12\x82\x01\n" +
+	"\x16deployment_annotations\x18n \x03(\v2G.integrations.SplunkViolation.DeploymentInfo.DeploymentAnnotationsEntryB\x02(\x01R\x15deploymentAnnotations\x12C\n" +
 	"\x10deployment_image\x18\xc9\x01 \x01(\v2\x17.storage.ContainerImageR\x0fdeploymentImage\x1aC\n" +
 	"\x15DeploymentLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

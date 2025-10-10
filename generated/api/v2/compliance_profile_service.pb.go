@@ -35,10 +35,12 @@ type ComplianceProfile struct {
 	xxx_hidden_Title          *string                 `protobuf:"bytes,9,opt,name=title"`
 	xxx_hidden_Values         []string                `protobuf:"bytes,10,rep,name=values"`
 	xxx_hidden_Standards      *[]*ComplianceBenchmark `protobuf:"bytes,11,rep,name=standards"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceProfile) Reset() {
@@ -118,8 +120,13 @@ func (x *ComplianceProfile) GetDescription() string {
 
 func (x *ComplianceProfile) GetRules() []*ComplianceRule {
 	if x != nil {
-		if x.xxx_hidden_Rules != nil {
-			return *x.xxx_hidden_Rules
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Rules) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *[]*ComplianceRule
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -154,8 +161,13 @@ func (x *ComplianceProfile) GetValues() []string {
 
 func (x *ComplianceProfile) GetStandards() []*ComplianceBenchmark {
 	if x != nil {
-		if x.xxx_hidden_Standards != nil {
-			return *x.xxx_hidden_Standards
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Standards) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *[]*ComplianceBenchmark
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Standards), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -187,7 +199,14 @@ func (x *ComplianceProfile) SetDescription(v string) {
 }
 
 func (x *ComplianceProfile) SetRules(v []*ComplianceRule) {
-	x.xxx_hidden_Rules = &v
+	var sv *[]*ComplianceRule
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceRule{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 10)
 }
 
 func (x *ComplianceProfile) SetProduct(v string) {
@@ -205,7 +224,14 @@ func (x *ComplianceProfile) SetValues(v []string) {
 }
 
 func (x *ComplianceProfile) SetStandards(v []*ComplianceBenchmark) {
-	x.xxx_hidden_Standards = &v
+	var sv *[]*ComplianceBenchmark
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Standards), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceBenchmark{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Standards), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
 }
 
 func (x *ComplianceProfile) HasId() bool {
@@ -331,7 +357,10 @@ func (b0 ComplianceProfile_builder) Build() *ComplianceProfile {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 10)
 		x.xxx_hidden_Description = b.Description
 	}
-	x.xxx_hidden_Rules = &b.Rules
+	if b.Rules != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 10)
+		x.xxx_hidden_Rules = &b.Rules
+	}
 	if b.Product != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 10)
 		x.xxx_hidden_Product = b.Product
@@ -341,15 +370,20 @@ func (b0 ComplianceProfile_builder) Build() *ComplianceProfile {
 		x.xxx_hidden_Title = b.Title
 	}
 	x.xxx_hidden_Values = b.Values
-	x.xxx_hidden_Standards = &b.Standards
+	if b.Standards != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
+		x.xxx_hidden_Standards = &b.Standards
+	}
 	return m0
 }
 
 // ListComplianceProfilesResponse provides a list of profiles
 type ListComplianceProfilesResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Profiles    *[]*ComplianceProfile  `protobuf:"bytes,1,rep,name=profiles"`
-	xxx_hidden_TotalCount  int32                  `protobuf:"varint,3,opt,name=total_count,json=totalCount"`
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Profiles   *[]*ComplianceProfile  `protobuf:"bytes,1,rep,name=profiles"`
+	xxx_hidden_TotalCount int32                  `protobuf:"varint,3,opt,name=total_count,json=totalCount"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -383,8 +417,13 @@ func (x *ListComplianceProfilesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListComplianceProfilesResponse) GetProfiles() []*ComplianceProfile {
 	if x != nil {
-		if x.xxx_hidden_Profiles != nil {
-			return *x.xxx_hidden_Profiles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Profiles) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ComplianceProfile
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Profiles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -398,7 +437,14 @@ func (x *ListComplianceProfilesResponse) GetTotalCount() int32 {
 }
 
 func (x *ListComplianceProfilesResponse) SetProfiles(v []*ComplianceProfile) {
-	x.xxx_hidden_Profiles = &v
+	var sv *[]*ComplianceProfile
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Profiles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceProfile{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Profiles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ListComplianceProfilesResponse) SetTotalCount(v int32) {
@@ -429,7 +475,10 @@ func (b0 ListComplianceProfilesResponse_builder) Build() *ListComplianceProfiles
 	m0 := &ListComplianceProfilesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Profiles = &b.Profiles
+	if b.Profiles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Profiles = &b.Profiles
+	}
 	if b.TotalCount != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_TotalCount = *b.TotalCount
@@ -439,9 +488,11 @@ func (b0 ListComplianceProfilesResponse_builder) Build() *ListComplianceProfiles
 
 // ListComplianceProfileSummaryResponse provides a list of profiles summaries
 type ListComplianceProfileSummaryResponse struct {
-	state                  protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Profiles    *[]*ComplianceProfileSummary `protobuf:"bytes,1,rep,name=profiles"`
-	xxx_hidden_TotalCount  int32                        `protobuf:"varint,2,opt,name=total_count,json=totalCount"`
+	state                 protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_Profiles   *[]*ComplianceProfileSummary `protobuf:"bytes,1,rep,name=profiles"`
+	xxx_hidden_TotalCount int32                        `protobuf:"varint,2,opt,name=total_count,json=totalCount"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -475,8 +526,13 @@ func (x *ListComplianceProfileSummaryResponse) ProtoReflect() protoreflect.Messa
 
 func (x *ListComplianceProfileSummaryResponse) GetProfiles() []*ComplianceProfileSummary {
 	if x != nil {
-		if x.xxx_hidden_Profiles != nil {
-			return *x.xxx_hidden_Profiles
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Profiles) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ComplianceProfileSummary
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Profiles), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -490,7 +546,14 @@ func (x *ListComplianceProfileSummaryResponse) GetTotalCount() int32 {
 }
 
 func (x *ListComplianceProfileSummaryResponse) SetProfiles(v []*ComplianceProfileSummary) {
-	x.xxx_hidden_Profiles = &v
+	var sv *[]*ComplianceProfileSummary
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Profiles), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ComplianceProfileSummary{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Profiles), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ListComplianceProfileSummaryResponse) SetTotalCount(v int32) {
@@ -521,7 +584,10 @@ func (b0 ListComplianceProfileSummaryResponse_builder) Build() *ListCompliancePr
 	m0 := &ListComplianceProfileSummaryResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Profiles = &b.Profiles
+	if b.Profiles != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Profiles = &b.Profiles
+	}
 	if b.TotalCount != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_TotalCount = *b.TotalCount
@@ -718,25 +784,25 @@ var File_api_v2_compliance_profile_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_compliance_profile_service_proto_rawDesc = "" +
 	"\n" +
-	"'api/v2/compliance_profile_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"\xd4\x02\n" +
+	"'api/v2/compliance_profile_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"\xdc\x02\n" +
 	"\x11ComplianceProfile\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12'\n" +
 	"\x0fprofile_version\x18\x03 \x01(\tR\x0eprofileVersion\x12!\n" +
 	"\fproduct_type\x18\x04 \x01(\tR\vproductType\x12 \n" +
-	"\vdescription\x18\x06 \x01(\tR\vdescription\x12(\n" +
-	"\x05rules\x18\a \x03(\v2\x12.v2.ComplianceRuleR\x05rules\x12\x18\n" +
+	"\vdescription\x18\x06 \x01(\tR\vdescription\x12,\n" +
+	"\x05rules\x18\a \x03(\v2\x12.v2.ComplianceRuleB\x02(\x01R\x05rules\x12\x18\n" +
 	"\aproduct\x18\b \x01(\tR\aproduct\x12\x14\n" +
 	"\x05title\x18\t \x01(\tR\x05title\x12\x16\n" +
 	"\x06values\x18\n" +
-	" \x03(\tR\x06values\x125\n" +
-	"\tstandards\x18\v \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandardsJ\x04\b\x05\x10\x06\"t\n" +
-	"\x1eListComplianceProfilesResponse\x121\n" +
-	"\bprofiles\x18\x01 \x03(\v2\x15.v2.ComplianceProfileR\bprofiles\x12\x1f\n" +
+	" \x03(\tR\x06values\x129\n" +
+	"\tstandards\x18\v \x03(\v2\x17.v2.ComplianceBenchmarkB\x02(\x01R\tstandardsJ\x04\b\x05\x10\x06\"x\n" +
+	"\x1eListComplianceProfilesResponse\x125\n" +
+	"\bprofiles\x18\x01 \x03(\v2\x15.v2.ComplianceProfileB\x02(\x01R\bprofiles\x12\x1f\n" +
 	"\vtotal_count\x18\x03 \x01(\x05R\n" +
-	"totalCount\"\x81\x01\n" +
-	"$ListComplianceProfileSummaryResponse\x128\n" +
-	"\bprofiles\x18\x01 \x03(\v2\x1c.v2.ComplianceProfileSummaryR\bprofiles\x12\x1f\n" +
+	"totalCount\"\x85\x01\n" +
+	"$ListComplianceProfileSummaryResponse\x12<\n" +
+	"\bprofiles\x18\x01 \x03(\v2\x1c.v2.ComplianceProfileSummaryB\x02(\x01R\bprofiles\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
 	"totalCount\"^\n" +
 	"\x19ProfilesForClusterRequest\x12\x1d\n" +

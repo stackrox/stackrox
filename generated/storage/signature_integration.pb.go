@@ -29,10 +29,12 @@ type SignatureIntegration struct {
 	xxx_hidden_CosignCertificates *[]*CosignCertificateVerification `protobuf:"bytes,4,rep,name=cosign_certificates,json=cosignCertificates"`
 	xxx_hidden_TransparencyLog    *TransparencyLogVerification      `protobuf:"bytes,5,opt,name=transparency_log,json=transparencyLog"`
 	xxx_hidden_Traits             *Traits                           `protobuf:"bytes,6,opt,name=traits"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SignatureIntegration) Reset() {
@@ -89,8 +91,13 @@ func (x *SignatureIntegration) GetCosign() *CosignPublicKeyVerification {
 
 func (x *SignatureIntegration) GetCosignCertificates() []*CosignCertificateVerification {
 	if x != nil {
-		if x.xxx_hidden_CosignCertificates != nil {
-			return *x.xxx_hidden_CosignCertificates
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CosignCertificates) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*CosignCertificateVerification
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CosignCertificates), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -125,7 +132,14 @@ func (x *SignatureIntegration) SetCosign(v *CosignPublicKeyVerification) {
 }
 
 func (x *SignatureIntegration) SetCosignCertificates(v []*CosignCertificateVerification) {
-	x.xxx_hidden_CosignCertificates = &v
+	var sv *[]*CosignCertificateVerification
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CosignCertificates), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*CosignCertificateVerification{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_CosignCertificates), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *SignatureIntegration) SetTransparencyLog(v *TransparencyLogVerification) {
@@ -217,7 +231,10 @@ func (b0 SignatureIntegration_builder) Build() *SignatureIntegration {
 		x.xxx_hidden_Name = b.Name
 	}
 	x.xxx_hidden_Cosign = b.Cosign
-	x.xxx_hidden_CosignCertificates = &b.CosignCertificates
+	if b.CosignCertificates != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_CosignCertificates = &b.CosignCertificates
+	}
 	x.xxx_hidden_TransparencyLog = b.TransparencyLog
 	x.xxx_hidden_Traits = b.Traits
 	return m0
@@ -226,8 +243,12 @@ func (b0 SignatureIntegration_builder) Build() *SignatureIntegration {
 type CosignPublicKeyVerification struct {
 	state                 protoimpl.MessageState                    `protogen:"opaque.v1"`
 	xxx_hidden_PublicKeys *[]*CosignPublicKeyVerification_PublicKey `protobuf:"bytes,3,rep,name=public_keys,json=publicKeys"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CosignPublicKeyVerification) Reset() {
@@ -257,15 +278,27 @@ func (x *CosignPublicKeyVerification) ProtoReflect() protoreflect.Message {
 
 func (x *CosignPublicKeyVerification) GetPublicKeys() []*CosignPublicKeyVerification_PublicKey {
 	if x != nil {
-		if x.xxx_hidden_PublicKeys != nil {
-			return *x.xxx_hidden_PublicKeys
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PublicKeys) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*CosignPublicKeyVerification_PublicKey
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PublicKeys), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *CosignPublicKeyVerification) SetPublicKeys(v []*CosignPublicKeyVerification_PublicKey) {
-	x.xxx_hidden_PublicKeys = &v
+	var sv *[]*CosignPublicKeyVerification_PublicKey
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PublicKeys), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*CosignPublicKeyVerification_PublicKey{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_PublicKeys), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type CosignPublicKeyVerification_builder struct {
@@ -278,7 +311,10 @@ func (b0 CosignPublicKeyVerification_builder) Build() *CosignPublicKeyVerificati
 	m0 := &CosignPublicKeyVerification{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PublicKeys = &b.PublicKeys
+	if b.PublicKeys != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_PublicKeys = &b.PublicKeys
+	}
 	return m0
 }
 
@@ -919,16 +955,16 @@ var File_storage_signature_integration_proto protoreflect.FileDescriptor
 
 const file_storage_signature_integration_proto_rawDesc = "" +
 	"\n" +
-	"#storage/signature_integration.proto\x12\astorage\x1a\x14storage/traits.proto\x1a!google/protobuf/go_features.proto\"\xcb\x02\n" +
+	"#storage/signature_integration.proto\x12\astorage\x1a\x14storage/traits.proto\x1a!google/protobuf/go_features.proto\"\xcf\x02\n" +
 	"\x14SignatureIntegration\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12<\n" +
-	"\x06cosign\x18\x03 \x01(\v2$.storage.CosignPublicKeyVerificationR\x06cosign\x12W\n" +
-	"\x13cosign_certificates\x18\x04 \x03(\v2&.storage.CosignCertificateVerificationR\x12cosignCertificates\x12O\n" +
+	"\x06cosign\x18\x03 \x01(\v2$.storage.CosignPublicKeyVerificationR\x06cosign\x12[\n" +
+	"\x13cosign_certificates\x18\x04 \x03(\v2&.storage.CosignCertificateVerificationB\x02(\x01R\x12cosignCertificates\x12O\n" +
 	"\x10transparency_log\x18\x05 \x01(\v2$.storage.TransparencyLogVerificationR\x0ftransparencyLog\x12'\n" +
-	"\x06traits\x18\x06 \x01(\v2\x0f.storage.TraitsR\x06traits\"\xbc\x01\n" +
-	"\x1bCosignPublicKeyVerification\x12O\n" +
-	"\vpublic_keys\x18\x03 \x03(\v2..storage.CosignPublicKeyVerification.PublicKeyR\n" +
+	"\x06traits\x18\x06 \x01(\v2\x0f.storage.TraitsR\x06traits\"\xc0\x01\n" +
+	"\x1bCosignPublicKeyVerification\x12S\n" +
+	"\vpublic_keys\x18\x03 \x03(\v2..storage.CosignPublicKeyVerification.PublicKeyB\x02(\x01R\n" +
 	"publicKeys\x1aL\n" +
 	"\tPublicKey\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12+\n" +

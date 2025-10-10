@@ -124,10 +124,12 @@ type IntegrationHealth struct {
 	xxx_hidden_Status        IntegrationHealth_Status `protobuf:"varint,4,opt,name=status,enum=storage.IntegrationHealth_Status"`
 	xxx_hidden_ErrorMessage  *string                  `protobuf:"bytes,5,opt,name=error_message,json=errorMessage"`
 	xxx_hidden_LastTimestamp *timestamppb.Timestamp   `protobuf:"bytes,6,opt,name=last_timestamp,json=lastTimestamp"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *IntegrationHealth) Reset() {
@@ -205,7 +207,14 @@ func (x *IntegrationHealth) GetErrorMessage() string {
 
 func (x *IntegrationHealth) GetLastTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastTimestamp) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -236,7 +245,12 @@ func (x *IntegrationHealth) SetErrorMessage(v string) {
 }
 
 func (x *IntegrationHealth) SetLastTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
+	}
 }
 
 func (x *IntegrationHealth) HasId() bool {
@@ -278,7 +292,7 @@ func (x *IntegrationHealth) HasLastTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *IntegrationHealth) ClearId() {
@@ -307,7 +321,8 @@ func (x *IntegrationHealth) ClearErrorMessage() {
 }
 
 func (x *IntegrationHealth) ClearLastTimestamp() {
-	x.xxx_hidden_LastTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 type IntegrationHealth_builder struct {
@@ -346,7 +361,10 @@ func (b0 IntegrationHealth_builder) Build() *IntegrationHealth {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
 		x.xxx_hidden_ErrorMessage = b.ErrorMessage
 	}
-	x.xxx_hidden_LastTimestamp = b.LastTimestamp
+	if b.LastTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_LastTimestamp = b.LastTimestamp
+	}
 	return m0
 }
 
@@ -354,14 +372,14 @@ var File_storage_integration_health_proto protoreflect.FileDescriptor
 
 const file_storage_integration_health_proto_rawDesc = "" +
 	"\n" +
-	" storage/integration_health.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xa6\x03\n" +
+	" storage/integration_health.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xaa\x03\n" +
 	"\x11IntegrationHealth\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x123\n" +
 	"\x04type\x18\x03 \x01(\x0e2\x1f.storage.IntegrationHealth.TypeR\x04type\x129\n" +
 	"\x06status\x18\x04 \x01(\x0e2!.storage.IntegrationHealth.StatusR\x06status\x12#\n" +
-	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\x12A\n" +
-	"\x0elast_timestamp\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\rlastTimestamp\"7\n" +
+	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\x12E\n" +
+	"\x0elast_timestamp\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\rlastTimestamp\"7\n" +
 	"\x06Status\x12\x11\n" +
 	"\rUNINITIALIZED\x10\x00\x12\r\n" +
 	"\tUNHEALTHY\x10\x01\x12\v\n" +

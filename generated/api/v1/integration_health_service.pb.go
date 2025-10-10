@@ -68,8 +68,12 @@ func (x VulnDefinitionsInfoRequest_Component) Number() protoreflect.EnumNumber {
 type GetIntegrationHealthResponse struct {
 	state                        protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_IntegrationHealth *[]*storage.IntegrationHealth `protobuf:"bytes,1,rep,name=integrationHealth"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetIntegrationHealthResponse) Reset() {
@@ -99,15 +103,27 @@ func (x *GetIntegrationHealthResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetIntegrationHealthResponse) GetIntegrationHealth() []*storage.IntegrationHealth {
 	if x != nil {
-		if x.xxx_hidden_IntegrationHealth != nil {
-			return *x.xxx_hidden_IntegrationHealth
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_IntegrationHealth) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.IntegrationHealth
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_IntegrationHealth), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetIntegrationHealthResponse) SetIntegrationHealth(v []*storage.IntegrationHealth) {
-	x.xxx_hidden_IntegrationHealth = &v
+	var sv *[]*storage.IntegrationHealth
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_IntegrationHealth), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.IntegrationHealth{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_IntegrationHealth), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetIntegrationHealthResponse_builder struct {
@@ -120,7 +136,10 @@ func (b0 GetIntegrationHealthResponse_builder) Build() *GetIntegrationHealthResp
 	m0 := &GetIntegrationHealthResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_IntegrationHealth = &b.IntegrationHealth
+	if b.IntegrationHealth != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_IntegrationHealth = &b.IntegrationHealth
+	}
 	return m0
 }
 
@@ -204,8 +223,12 @@ func (b0 VulnDefinitionsInfoRequest_builder) Build() *VulnDefinitionsInfoRequest
 type VulnDefinitionsInfo struct {
 	state                           protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_LastUpdatedTimestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=last_updated_timestamp,json=lastUpdatedTimestamp"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VulnDefinitionsInfo) Reset() {
@@ -235,24 +258,37 @@ func (x *VulnDefinitionsInfo) ProtoReflect() protoreflect.Message {
 
 func (x *VulnDefinitionsInfo) GetLastUpdatedTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdatedTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdatedTimestamp) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdatedTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *VulnDefinitionsInfo) SetLastUpdatedTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdatedTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdatedTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *VulnDefinitionsInfo) HasLastUpdatedTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdatedTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VulnDefinitionsInfo) ClearLastUpdatedTimestamp() {
-	x.xxx_hidden_LastUpdatedTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdatedTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 type VulnDefinitionsInfo_builder struct {
@@ -265,7 +301,10 @@ func (b0 VulnDefinitionsInfo_builder) Build() *VulnDefinitionsInfo {
 	m0 := &VulnDefinitionsInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_LastUpdatedTimestamp = b.LastUpdatedTimestamp
+	if b.LastUpdatedTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_LastUpdatedTimestamp = b.LastUpdatedTimestamp
+	}
 	return m0
 }
 
@@ -273,17 +312,17 @@ var File_api_v1_integration_health_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_integration_health_service_proto_rawDesc = "" +
 	"\n" +
-	"'api/v1/integration_health_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a storage/integration_health.proto\x1a!google/protobuf/go_features.proto\"h\n" +
-	"\x1cGetIntegrationHealthResponse\x12H\n" +
-	"\x11integrationHealth\x18\x01 \x03(\v2\x1a.storage.IntegrationHealthR\x11integrationHealth\"\x8e\x01\n" +
+	"'api/v1/integration_health_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a storage/integration_health.proto\x1a!google/protobuf/go_features.proto\"l\n" +
+	"\x1cGetIntegrationHealthResponse\x12L\n" +
+	"\x11integrationHealth\x18\x01 \x03(\v2\x1a.storage.IntegrationHealthB\x02(\x01R\x11integrationHealth\"\x8e\x01\n" +
 	"\x1aVulnDefinitionsInfoRequest\x12F\n" +
 	"\tcomponent\x18\x01 \x01(\x0e2(.v1.VulnDefinitionsInfoRequest.ComponentR\tcomponent\"(\n" +
 	"\tComponent\x12\v\n" +
 	"\aSCANNER\x10\x00\x12\x0e\n" +
 	"\n" +
-	"SCANNER_V4\x10\x01\"g\n" +
-	"\x13VulnDefinitionsInfo\x12P\n" +
-	"\x16last_updated_timestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x14lastUpdatedTimestamp2\xe1\x04\n" +
+	"SCANNER_V4\x10\x01\"k\n" +
+	"\x13VulnDefinitionsInfo\x12T\n" +
+	"\x16last_updated_timestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x14lastUpdatedTimestamp2\xe1\x04\n" +
 	"\x18IntegrationHealthService\x12t\n" +
 	"\x14GetImageIntegrations\x12\t.v1.Empty\x1a .v1.GetIntegrationHealthResponse\"/\x82\xd3\xe4\x93\x02)\x12'/v1/integrationhealth/imageintegrations\x12d\n" +
 	"\fGetNotifiers\x12\t.v1.Empty\x1a .v1.GetIntegrationHealthResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/integrationhealth/notifiers\x12n\n" +

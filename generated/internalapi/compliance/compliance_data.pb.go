@@ -114,6 +114,8 @@ type File struct {
 	xxx_hidden_Content     []byte                 `protobuf:"bytes,7,opt,name=content"`
 	xxx_hidden_IsDir       bool                   `protobuf:"varint,8,opt,name=is_dir,json=isDir"`
 	xxx_hidden_Children    *[]*File               `protobuf:"bytes,9,rep,name=children"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -212,8 +214,13 @@ func (x *File) GetIsDir() bool {
 
 func (x *File) GetChildren() []*File {
 	if x != nil {
-		if x.xxx_hidden_Children != nil {
-			return *x.xxx_hidden_Children
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Children) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *[]*File
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Children), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -263,7 +270,14 @@ func (x *File) SetIsDir(v bool) {
 }
 
 func (x *File) SetChildren(v []*File) {
-	x.xxx_hidden_Children = &v
+	var sv *[]*File
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Children), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*File{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Children), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
 }
 
 func (x *File) HasPath() bool {
@@ -412,15 +426,20 @@ func (b0 File_builder) Build() *File {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
 		x.xxx_hidden_IsDir = *b.IsDir
 	}
-	x.xxx_hidden_Children = &b.Children
+	if b.Children != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
+		x.xxx_hidden_Children = &b.Children
+	}
 	return m0
 }
 
 // Next Available Tag: 3
 type CommandLine struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Process     *string                `protobuf:"bytes,1,opt,name=process"`
-	xxx_hidden_Args        *[]*CommandLine_Args   `protobuf:"bytes,2,rep,name=args"`
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Process *string                `protobuf:"bytes,1,opt,name=process"`
+	xxx_hidden_Args    *[]*CommandLine_Args   `protobuf:"bytes,2,rep,name=args"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -464,8 +483,13 @@ func (x *CommandLine) GetProcess() string {
 
 func (x *CommandLine) GetArgs() []*CommandLine_Args {
 	if x != nil {
-		if x.xxx_hidden_Args != nil {
-			return *x.xxx_hidden_Args
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Args) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*CommandLine_Args
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Args), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -477,7 +501,14 @@ func (x *CommandLine) SetProcess(v string) {
 }
 
 func (x *CommandLine) SetArgs(v []*CommandLine_Args) {
-	x.xxx_hidden_Args = &v
+	var sv *[]*CommandLine_Args
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Args), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*CommandLine_Args{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Args), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *CommandLine) HasProcess() bool {
@@ -507,7 +538,10 @@ func (b0 CommandLine_builder) Build() *CommandLine {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Process = b.Process
 	}
-	x.xxx_hidden_Args = &b.Args
+	if b.Args != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Args = &b.Args
+	}
 	return m0
 }
 
@@ -733,10 +767,12 @@ type ComplianceReturn struct {
 	xxx_hidden_ContainerRuntimeInfo *ContainerRuntimeInfo   `protobuf:"bytes,9,opt,name=container_runtime_info,json=containerRuntimeInfo"`
 	xxx_hidden_Time                 *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time"`
 	xxx_hidden_Evidence             *GZIPDataChunk          `protobuf:"bytes,10,opt,name=evidence"`
-	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
-	XXX_presence                    [1]uint32
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComplianceReturn) Reset() {
@@ -821,7 +857,14 @@ func (x *ComplianceReturn) GetContainerRuntimeInfo() *ContainerRuntimeInfo {
 
 func (x *ComplianceReturn) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Time
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Time) {
+				protoimpl.X.UnmarshalField(x, 7)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Time), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -864,7 +907,12 @@ func (x *ComplianceReturn) SetContainerRuntimeInfo(v *ContainerRuntimeInfo) {
 }
 
 func (x *ComplianceReturn) SetTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Time = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
+	}
 }
 
 func (x *ComplianceReturn) SetEvidence(v *GZIPDataChunk) {
@@ -903,7 +951,7 @@ func (x *ComplianceReturn) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Time != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *ComplianceReturn) HasEvidence() bool {
@@ -932,7 +980,8 @@ func (x *ComplianceReturn) ClearContainerRuntimeInfo() {
 }
 
 func (x *ComplianceReturn) ClearTime() {
-	x.xxx_hidden_Time = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ComplianceReturn) ClearEvidence() {
@@ -970,7 +1019,10 @@ func (b0 ComplianceReturn_builder) Build() *ComplianceReturn {
 	x.xxx_hidden_Files = b.Files
 	x.xxx_hidden_SystemdFiles = b.SystemdFiles
 	x.xxx_hidden_ContainerRuntimeInfo = b.ContainerRuntimeInfo
-	x.xxx_hidden_Time = b.Time
+	if b.Time != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
+		x.xxx_hidden_Time = b.Time
+	}
 	x.xxx_hidden_Evidence = b.Evidence
 	return m0
 }
@@ -1099,7 +1151,7 @@ const file_internalapi_compliance_compliance_data_proto_rawDesc = "" +
 	",internalapi/compliance/compliance_data.proto\x12\n" +
 	"compliance\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/compliance.proto\x1a!google/protobuf/go_features.proto\"#\n" +
 	"\rGZIPDataChunk\x12\x12\n" +
-	"\x04gzip\x18\x01 \x01(\fR\x04gzip\"\x81\x02\n" +
+	"\x04gzip\x18\x01 \x01(\fR\x04gzip\"\x85\x02\n" +
 	"\x04File\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04user\x18\x02 \x01(\rR\x04user\x12\x1b\n" +
@@ -1109,11 +1161,11 @@ const file_internalapi_compliance_compliance_data_proto_rawDesc = "" +
 	"group_name\x18\x05 \x01(\tR\tgroupName\x12 \n" +
 	"\vpermissions\x18\x06 \x01(\rR\vpermissions\x12\x18\n" +
 	"\acontent\x18\a \x01(\fR\acontent\x12\x15\n" +
-	"\x06is_dir\x18\b \x01(\bR\x05isDir\x12,\n" +
-	"\bchildren\x18\t \x03(\v2\x10.compliance.FileR\bchildren\"\xb1\x01\n" +
+	"\x06is_dir\x18\b \x01(\bR\x05isDir\x120\n" +
+	"\bchildren\x18\t \x03(\v2\x10.compliance.FileB\x02(\x01R\bchildren\"\xb5\x01\n" +
 	"\vCommandLine\x12\x18\n" +
-	"\aprocess\x18\x01 \x01(\tR\aprocess\x120\n" +
-	"\x04args\x18\x02 \x03(\v2\x1c.compliance.CommandLine.ArgsR\x04args\x1aV\n" +
+	"\aprocess\x18\x01 \x01(\tR\aprocess\x124\n" +
+	"\x04args\x18\x02 \x03(\v2\x1c.compliance.CommandLine.ArgsB\x02(\x01R\x04args\x1aV\n" +
 	"\x04Args\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x16\n" +
 	"\x06values\x18\x02 \x03(\tR\x06values\x12$\n" +
@@ -1122,26 +1174,26 @@ const file_internalapi_compliance_compliance_data_proto_rawDesc = "" +
 	"\x13insecure_registries\x18\x01 \x03(\tR\x12insecureRegistries\x12%\n" +
 	"\x0einsecure_cidrs\x18\x02 \x03(\tR\rinsecureCidrs\"m\n" +
 	"\x14ContainerRuntimeInfo\x12U\n" +
-	"\x13insecure_registries\x18\x01 \x01(\v2$.compliance.InsecureRegistriesConfigR\x12insecureRegistries\"\xc4\x03\n" +
-	"\x18ComplianceStandardResult\x12h\n" +
-	"\x12node_check_results\x18\x01 \x03(\v2:.compliance.ComplianceStandardResult.NodeCheckResultsEntryR\x10nodeCheckResults\x12q\n" +
-	"\x15cluster_check_results\x18\x02 \x03(\v2=.compliance.ComplianceStandardResult.ClusterCheckResultsEntryR\x13clusterCheckResults\x1ac\n" +
+	"\x13insecure_registries\x18\x01 \x01(\v2$.compliance.InsecureRegistriesConfigR\x12insecureRegistries\"\xcc\x03\n" +
+	"\x18ComplianceStandardResult\x12l\n" +
+	"\x12node_check_results\x18\x01 \x03(\v2:.compliance.ComplianceStandardResult.NodeCheckResultsEntryB\x02(\x01R\x10nodeCheckResults\x12u\n" +
+	"\x15cluster_check_results\x18\x02 \x03(\v2=.compliance.ComplianceStandardResult.ClusterCheckResultsEntryB\x02(\x01R\x13clusterCheckResults\x1ac\n" +
 	"\x15NodeCheckResultsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x124\n" +
 	"\x05value\x18\x02 \x01(\v2\x1e.storage.ComplianceResultValueR\x05value:\x028\x01\x1af\n" +
 	"\x18ClusterCheckResultsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x124\n" +
-	"\x05value\x18\x02 \x01(\v2\x1e.storage.ComplianceResultValueR\x05value:\x028\x01\"\xa9\x06\n" +
+	"\x05value\x18\x02 \x01(\v2\x1e.storage.ComplianceResultValueR\x05value:\x028\x01\"\xb9\x06\n" +
 	"\x10ComplianceReturn\x12\x1b\n" +
 	"\tnode_name\x18\x01 \x01(\tR\bnodeName\x12\x1b\n" +
 	"\tscrape_id\x18\x02 \x01(\tR\bscrapeId\x12:\n" +
 	"\vdocker_data\x18\x03 \x01(\v2\x19.compliance.GZIPDataChunkR\n" +
-	"dockerData\x12S\n" +
-	"\rcommand_lines\x18\x04 \x03(\v2..compliance.ComplianceReturn.CommandLinesEntryR\fcommandLines\x12=\n" +
-	"\x05files\x18\x05 \x03(\v2'.compliance.ComplianceReturn.FilesEntryR\x05files\x12S\n" +
-	"\rsystemd_files\x18\x06 \x03(\v2..compliance.ComplianceReturn.SystemdFilesEntryR\fsystemdFiles\x12V\n" +
-	"\x16container_runtime_info\x18\t \x01(\v2 .compliance.ContainerRuntimeInfoR\x14containerRuntimeInfo\x12.\n" +
-	"\x04time\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x125\n" +
+	"dockerData\x12W\n" +
+	"\rcommand_lines\x18\x04 \x03(\v2..compliance.ComplianceReturn.CommandLinesEntryB\x02(\x01R\fcommandLines\x12A\n" +
+	"\x05files\x18\x05 \x03(\v2'.compliance.ComplianceReturn.FilesEntryB\x02(\x01R\x05files\x12W\n" +
+	"\rsystemd_files\x18\x06 \x03(\v2..compliance.ComplianceReturn.SystemdFilesEntryB\x02(\x01R\fsystemdFiles\x12V\n" +
+	"\x16container_runtime_info\x18\t \x01(\v2 .compliance.ContainerRuntimeInfoR\x14containerRuntimeInfo\x122\n" +
+	"\x04time\x18\a \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x04time\x125\n" +
 	"\bevidence\x18\n" +
 	" \x01(\v2\x19.compliance.GZIPDataChunkR\bevidence\x1aX\n" +
 	"\x11CommandLinesEntry\x12\x10\n" +

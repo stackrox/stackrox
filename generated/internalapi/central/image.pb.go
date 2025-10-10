@@ -208,10 +208,12 @@ type ImageIntegrations struct {
 	xxx_hidden_UpdatedIntegrations   *[]*storage.ImageIntegration `protobuf:"bytes,1,rep,name=updated_integrations,json=updatedIntegrations"`
 	xxx_hidden_DeletedIntegrationIds []string                     `protobuf:"bytes,2,rep,name=deleted_integration_ids,json=deletedIntegrationIds"`
 	xxx_hidden_Refresh               bool                         `protobuf:"varint,3,opt,name=refresh"`
-	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
-	XXX_presence                     [1]uint32
-	unknownFields                    protoimpl.UnknownFields
-	sizeCache                        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImageIntegrations) Reset() {
@@ -241,8 +243,13 @@ func (x *ImageIntegrations) ProtoReflect() protoreflect.Message {
 
 func (x *ImageIntegrations) GetUpdatedIntegrations() []*storage.ImageIntegration {
 	if x != nil {
-		if x.xxx_hidden_UpdatedIntegrations != nil {
-			return *x.xxx_hidden_UpdatedIntegrations
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UpdatedIntegrations) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ImageIntegration
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedIntegrations), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -263,7 +270,14 @@ func (x *ImageIntegrations) GetRefresh() bool {
 }
 
 func (x *ImageIntegrations) SetUpdatedIntegrations(v []*storage.ImageIntegration) {
-	x.xxx_hidden_UpdatedIntegrations = &v
+	var sv *[]*storage.ImageIntegration
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedIntegrations), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ImageIntegration{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedIntegrations), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *ImageIntegrations) SetDeletedIntegrationIds(v []string) {
@@ -301,7 +315,10 @@ func (b0 ImageIntegrations_builder) Build() *ImageIntegrations {
 	m0 := &ImageIntegrations{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UpdatedIntegrations = &b.UpdatedIntegrations
+	if b.UpdatedIntegrations != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_UpdatedIntegrations = &b.UpdatedIntegrations
+	}
 	x.xxx_hidden_DeletedIntegrationIds = b.DeletedIntegrationIds
 	if b.Refresh != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
@@ -321,9 +338,9 @@ const file_internalapi_central_image_proto_rawDesc = "" +
 	"\n" +
 	"image_name\x18\x02 \x01(\tR\timageName\x12\x14\n" +
 	"\x05force\x18\x03 \x01(\bR\x05force\x12\x1c\n" +
-	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\xb3\x01\n" +
-	"\x11ImageIntegrations\x12L\n" +
-	"\x14updated_integrations\x18\x01 \x03(\v2\x19.storage.ImageIntegrationR\x13updatedIntegrations\x126\n" +
+	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\xb7\x01\n" +
+	"\x11ImageIntegrations\x12P\n" +
+	"\x14updated_integrations\x18\x01 \x03(\v2\x19.storage.ImageIntegrationB\x02(\x01R\x13updatedIntegrations\x126\n" +
 	"\x17deleted_integration_ids\x18\x02 \x03(\tR\x15deletedIntegrationIds\x12\x18\n" +
 	"\arefresh\x18\x03 \x01(\bR\arefreshB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 

@@ -190,6 +190,8 @@ type TestClone struct {
 	xxx_hidden_BytesSlice  [][]byte                        `protobuf:"bytes,13,rep,name=bytes_slice,json=bytesSlice"`
 	xxx_hidden_Bytes       []byte                          `protobuf:"bytes,14,opt,name=bytes"`
 	xxx_hidden_SubMessage  *TestCloneSubMessage            `protobuf:"bytes,15,opt,name=sub_message,json=subMessage"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -613,15 +615,15 @@ const file_test_test_proto_rawDesc = "" +
 	"\x0ftest/test.proto\x12\x04test\x1a\x19google/protobuf/any.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"C\n" +
 	"\x13TestCloneSubMessage\x12\x14\n" +
 	"\x05int32\x18\x01 \x01(\x05R\x05int32\x12\x16\n" +
-	"\x06string\x18\x02 \x01(\tR\x06string\"\xb6\a\n" +
+	"\x06string\x18\x02 \x01(\tR\x06string\"\xc2\a\n" +
 	"\tTestClone\x12\x1b\n" +
 	"\tint_slice\x18\x01 \x03(\x05R\bintSlice\x12!\n" +
 	"\fstring_slice\x18\x02 \x03(\tR\vstringSlice\x12<\n" +
-	"\fsub_messages\x18\x03 \x03(\v2\x19.test.TestCloneSubMessageR\vsubMessages\x12@\n" +
-	"\vmessage_map\x18\x04 \x03(\v2\x1f.test.TestClone.MessageMapEntryR\n" +
-	"messageMap\x12=\n" +
+	"\fsub_messages\x18\x03 \x03(\v2\x19.test.TestCloneSubMessageR\vsubMessages\x12D\n" +
+	"\vmessage_map\x18\x04 \x03(\v2\x1f.test.TestClone.MessageMapEntryB\x02(\x01R\n" +
+	"messageMap\x12A\n" +
 	"\n" +
-	"string_map\x18\x05 \x03(\v2\x1e.test.TestClone.StringMapEntryR\tstringMap\x128\n" +
+	"string_map\x18\x05 \x03(\v2\x1e.test.TestClone.StringMapEntryB\x02(\x01R\tstringMap\x128\n" +
 	"\n" +
 	"enum_slice\x18\x06 \x03(\x0e2\x19.test.TestClone.CloneEnumR\tenumSlice\x12*\n" +
 	"\x02ts\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x02ts\x12\x16\n" +
@@ -629,8 +631,8 @@ const file_test_test_proto_rawDesc = "" +
 	"\x06string\x18\t \x01(\tH\x00R\x06string\x12-\n" +
 	"\x03msg\x18\n" +
 	" \x01(\v2\x19.test.TestCloneSubMessageH\x00R\x03msg\x12&\n" +
-	"\x03any\x18\v \x01(\v2\x14.google.protobuf.AnyR\x03any\x12:\n" +
-	"\tbytes_map\x18\f \x03(\v2\x1d.test.TestClone.BytesMapEntryR\bbytesMap\x12\x1f\n" +
+	"\x03any\x18\v \x01(\v2\x14.google.protobuf.AnyR\x03any\x12>\n" +
+	"\tbytes_map\x18\f \x03(\v2\x1d.test.TestClone.BytesMapEntryB\x02(\x01R\bbytesMap\x12\x1f\n" +
 	"\vbytes_slice\x18\r \x03(\fR\n" +
 	"bytesSlice\x12\x14\n" +
 	"\x05bytes\x18\x0e \x01(\fR\x05bytes\x12:\n" +

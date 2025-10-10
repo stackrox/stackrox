@@ -76,6 +76,8 @@ type VirtualMachine struct {
 	xxx_hidden_VsockCid    int32                  `protobuf:"varint,6,opt,name=vsock_cid,json=vsockCid"`
 	xxx_hidden_VsockCidSet bool                   `protobuf:"varint,7,opt,name=vsock_cid_set,json=vsockCidSet"`
 	xxx_hidden_State       VirtualMachine_State   `protobuf:"varint,8,opt,name=state,enum=virtualmachine.v1.VirtualMachine_State"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -353,14 +355,14 @@ var File_internalapi_virtualmachine_v1_virtual_machine_proto protoreflect.FileDe
 
 const file_internalapi_virtualmachine_v1_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"3internalapi/virtualmachine/v1/virtual_machine.proto\x12\x11virtualmachine.v1\x1a!google/protobuf/go_features.proto\"\x9f\x03\n" +
+	"3internalapi/virtualmachine/v1/virtual_machine.proto\x12\x11virtualmachine.v1\x1a!google/protobuf/go_features.proto\"\xa3\x03\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12B\n" +
-	"\x05facts\x18\x05 \x03(\v2,.virtualmachine.v1.VirtualMachine.FactsEntryR\x05facts\x12\x1b\n" +
+	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12F\n" +
+	"\x05facts\x18\x05 \x03(\v2,.virtualmachine.v1.VirtualMachine.FactsEntryB\x02(\x01R\x05facts\x12\x1b\n" +
 	"\tvsock_cid\x18\x06 \x01(\x05R\bvsockCid\x12\"\n" +
 	"\rvsock_cid_set\x18\a \x01(\bR\vvsockCidSet\x12=\n" +
 	"\x05state\x18\b \x01(\x0e2'.virtualmachine.v1.VirtualMachine.StateR\x05state\x1a8\n" +

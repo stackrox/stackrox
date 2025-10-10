@@ -23,10 +23,12 @@ const (
 )
 
 type GetImageRequest struct {
-	state                  protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Image       *storage.ContainerImage `protobuf:"bytes,1,opt,name=image"`
-	xxx_hidden_Namespace   *string                 `protobuf:"bytes,3,opt,name=namespace"`
-	xxx_hidden_ScanInline  bool                    `protobuf:"varint,2,opt,name=scan_inline,json=scanInline"`
+	state                 protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Image      *storage.ContainerImage `protobuf:"bytes,1,opt,name=image"`
+	xxx_hidden_Namespace  *string                 `protobuf:"bytes,3,opt,name=namespace"`
+	xxx_hidden_ScanInline bool                    `protobuf:"varint,2,opt,name=scan_inline,json=scanInline"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -60,7 +62,14 @@ func (x *GetImageRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetImageRequest) GetImage() *storage.ContainerImage {
 	if x != nil {
-		return x.xxx_hidden_Image
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Image) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.ContainerImage
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Image), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -83,7 +92,12 @@ func (x *GetImageRequest) GetScanInline() bool {
 }
 
 func (x *GetImageRequest) SetImage(v *storage.ContainerImage) {
-	x.xxx_hidden_Image = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Image, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	}
 }
 
 func (x *GetImageRequest) SetNamespace(v string) {
@@ -100,7 +114,7 @@ func (x *GetImageRequest) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Image != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetImageRequest) HasNamespace() bool {
@@ -118,7 +132,8 @@ func (x *GetImageRequest) HasScanInline() bool {
 }
 
 func (x *GetImageRequest) ClearImage() {
-	x.xxx_hidden_Image = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Image, (*storage.ContainerImage)(nil))
 }
 
 func (x *GetImageRequest) ClearNamespace() {
@@ -143,7 +158,10 @@ func (b0 GetImageRequest_builder) Build() *GetImageRequest {
 	m0 := &GetImageRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Image = b.Image
+	if b.Image != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Image = b.Image
+	}
 	if b.Namespace != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Namespace = b.Namespace
@@ -158,8 +176,12 @@ func (b0 GetImageRequest_builder) Build() *GetImageRequest {
 type GetImageResponse struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Image *storage.Image         `protobuf:"bytes,1,opt,name=image"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetImageResponse) Reset() {
@@ -189,24 +211,37 @@ func (x *GetImageResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetImageResponse) GetImage() *storage.Image {
 	if x != nil {
-		return x.xxx_hidden_Image
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Image) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Image
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Image), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetImageResponse) SetImage(v *storage.Image) {
-	x.xxx_hidden_Image = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Image, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetImageResponse) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Image != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetImageResponse) ClearImage() {
-	x.xxx_hidden_Image = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Image, (*storage.Image)(nil))
 }
 
 type GetImageResponse_builder struct {
@@ -219,7 +254,10 @@ func (b0 GetImageResponse_builder) Build() *GetImageResponse {
 	m0 := &GetImageResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Image = b.Image
+	if b.Image != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Image = b.Image
+	}
 	return m0
 }
 
@@ -227,14 +265,14 @@ var File_internalapi_sensor_image_iservice_proto protoreflect.FileDescriptor
 
 const file_internalapi_sensor_image_iservice_proto_rawDesc = "" +
 	"\n" +
-	"'internalapi/sensor/image_iservice.proto\x12\x06sensor\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\x1a!google/protobuf/go_features.proto\"\x7f\n" +
-	"\x0fGetImageRequest\x12-\n" +
-	"\x05image\x18\x01 \x01(\v2\x17.storage.ContainerImageR\x05image\x12\x1c\n" +
+	"'internalapi/sensor/image_iservice.proto\x12\x06sensor\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\x1a!google/protobuf/go_features.proto\"\x83\x01\n" +
+	"\x0fGetImageRequest\x121\n" +
+	"\x05image\x18\x01 \x01(\v2\x17.storage.ContainerImageB\x02(\x01R\x05image\x12\x1c\n" +
 	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12\x1f\n" +
 	"\vscan_inline\x18\x02 \x01(\bR\n" +
-	"scanInline\"8\n" +
-	"\x10GetImageResponse\x12$\n" +
-	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image2M\n" +
+	"scanInline\"<\n" +
+	"\x10GetImageResponse\x12(\n" +
+	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageB\x02(\x01R\x05image2M\n" +
 	"\fImageService\x12=\n" +
 	"\bGetImage\x12\x17.sensor.GetImageRequest\x1a\x18.sensor.GetImageResponseB%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 

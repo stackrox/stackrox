@@ -1227,6 +1227,8 @@ type OrchestratorMetadata struct {
 	xxx_hidden_IsOpenshift isOrchestratorMetadata_IsOpenshift `protobuf_oneof:"is_openshift"`
 	xxx_hidden_BuildDate   *timestamppb.Timestamp             `protobuf:"bytes,2,opt,name=build_date,json=buildDate"`
 	xxx_hidden_ApiVersions []string                           `protobuf:"bytes,3,rep,name=api_versions,json=apiVersions"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1279,7 +1281,14 @@ func (x *OrchestratorMetadata) GetOpenshiftVersion() string {
 
 func (x *OrchestratorMetadata) GetBuildDate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_BuildDate
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_BuildDate) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_BuildDate), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1301,7 +1310,12 @@ func (x *OrchestratorMetadata) SetOpenshiftVersion(v string) {
 }
 
 func (x *OrchestratorMetadata) SetBuildDate(v *timestamppb.Timestamp) {
-	x.xxx_hidden_BuildDate = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_BuildDate, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	}
 }
 
 func (x *OrchestratorMetadata) SetApiVersions(v []string) {
@@ -1334,7 +1348,7 @@ func (x *OrchestratorMetadata) HasBuildDate() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_BuildDate != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *OrchestratorMetadata) ClearVersion() {
@@ -1353,7 +1367,8 @@ func (x *OrchestratorMetadata) ClearOpenshiftVersion() {
 }
 
 func (x *OrchestratorMetadata) ClearBuildDate() {
-	x.xxx_hidden_BuildDate = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_BuildDate, (*timestamppb.Timestamp)(nil))
 }
 
 const OrchestratorMetadata_IsOpenshift_not_set_case case_OrchestratorMetadata_IsOpenshift = 0
@@ -1393,7 +1408,10 @@ func (b0 OrchestratorMetadata_builder) Build() *OrchestratorMetadata {
 	if b.OpenshiftVersion != nil {
 		x.xxx_hidden_IsOpenshift = &orchestratorMetadata_OpenshiftVersion{*b.OpenshiftVersion}
 	}
-	x.xxx_hidden_BuildDate = b.BuildDate
+	if b.BuildDate != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_BuildDate = b.BuildDate
+	}
 	x.xxx_hidden_ApiVersions = b.ApiVersions
 	return m0
 }
@@ -2316,10 +2334,12 @@ type CompleteClusterConfig struct {
 	xxx_hidden_StaticConfig      *StaticClusterConfig   `protobuf:"bytes,2,opt,name=static_config,json=staticConfig"`
 	xxx_hidden_ConfigFingerprint *string                `protobuf:"bytes,3,opt,name=config_fingerprint,json=configFingerprint"`
 	xxx_hidden_ClusterLabels     map[string]string      `protobuf:"bytes,4,rep,name=cluster_labels,json=clusterLabels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CompleteClusterConfig) Reset() {
@@ -2726,10 +2746,12 @@ type Cluster struct {
 	xxx_hidden_ManagedBy                      ManagerType                     `protobuf:"varint,30,opt,name=managed_by,json=managedBy,enum=storage.ManagerType"`
 	xxx_hidden_SensorCapabilities             []string                        `protobuf:"bytes,31,rep,name=sensor_capabilities,json=sensorCapabilities"`
 	xxx_hidden_AdmissionControllerFailOnError bool                            `protobuf:"varint,32,opt,name=admission_controller_fail_on_error,json=admissionControllerFailOnError"`
-	XXX_raceDetectHookData                    protoimpl.RaceDetectHookData
-	XXX_presence                              [1]uint32
-	unknownFields                             protoimpl.UnknownFields
-	sizeCache                                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Cluster) Reset() {
@@ -3452,8 +3474,12 @@ type ClusterCertExpiryStatus struct {
 	state                          protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_SensorCertExpiry    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=sensor_cert_expiry,json=sensorCertExpiry"`
 	xxx_hidden_SensorCertNotBefore *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=sensor_cert_not_before,json=sensorCertNotBefore"`
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ClusterCertExpiryStatus) Reset() {
@@ -3483,46 +3509,72 @@ func (x *ClusterCertExpiryStatus) ProtoReflect() protoreflect.Message {
 
 func (x *ClusterCertExpiryStatus) GetSensorCertExpiry() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_SensorCertExpiry
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SensorCertExpiry) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SensorCertExpiry), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ClusterCertExpiryStatus) GetSensorCertNotBefore() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_SensorCertNotBefore
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SensorCertNotBefore) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SensorCertNotBefore), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ClusterCertExpiryStatus) SetSensorCertExpiry(v *timestamppb.Timestamp) {
-	x.xxx_hidden_SensorCertExpiry = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_SensorCertExpiry, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *ClusterCertExpiryStatus) SetSensorCertNotBefore(v *timestamppb.Timestamp) {
-	x.xxx_hidden_SensorCertNotBefore = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_SensorCertNotBefore, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *ClusterCertExpiryStatus) HasSensorCertExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SensorCertExpiry != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ClusterCertExpiryStatus) HasSensorCertNotBefore() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SensorCertNotBefore != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ClusterCertExpiryStatus) ClearSensorCertExpiry() {
-	x.xxx_hidden_SensorCertExpiry = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_SensorCertExpiry, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ClusterCertExpiryStatus) ClearSensorCertNotBefore() {
-	x.xxx_hidden_SensorCertNotBefore = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_SensorCertNotBefore, (*timestamppb.Timestamp)(nil))
 }
 
 type ClusterCertExpiryStatus_builder struct {
@@ -3536,8 +3588,14 @@ func (b0 ClusterCertExpiryStatus_builder) Build() *ClusterCertExpiryStatus {
 	m0 := &ClusterCertExpiryStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_SensorCertExpiry = b.SensorCertExpiry
-	x.xxx_hidden_SensorCertNotBefore = b.SensorCertNotBefore
+	if b.SensorCertExpiry != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_SensorCertExpiry = b.SensorCertExpiry
+	}
+	if b.SensorCertNotBefore != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_SensorCertNotBefore = b.SensorCertNotBefore
+	}
 	return m0
 }
 
@@ -3549,10 +3607,12 @@ type ClusterStatus struct {
 	xxx_hidden_OrchestratorMetadata  *OrchestratorMetadata    `protobuf:"bytes,4,opt,name=orchestrator_metadata,json=orchestratorMetadata"`
 	xxx_hidden_UpgradeStatus         *ClusterUpgradeStatus    `protobuf:"bytes,5,opt,name=upgrade_status,json=upgradeStatus"`
 	xxx_hidden_CertExpiryStatus      *ClusterCertExpiryStatus `protobuf:"bytes,6,opt,name=cert_expiry_status,json=certExpiryStatus"`
-	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
-	XXX_presence                     [1]uint32
-	unknownFields                    protoimpl.UnknownFields
-	sizeCache                        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ClusterStatus) Reset() {
@@ -3592,7 +3652,14 @@ func (x *ClusterStatus) GetSensorVersion() string {
 
 func (x *ClusterStatus) GetDEPRECATEDLastContact() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_DEPRECATEDLastContact
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_DEPRECATEDLastContact) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_DEPRECATEDLastContact), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -3631,7 +3698,12 @@ func (x *ClusterStatus) SetSensorVersion(v string) {
 }
 
 func (x *ClusterStatus) SetDEPRECATEDLastContact(v *timestamppb.Timestamp) {
-	x.xxx_hidden_DEPRECATEDLastContact = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_DEPRECATEDLastContact, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	}
 }
 
 func (x *ClusterStatus) SetProviderMetadata(v *ProviderMetadata) {
@@ -3661,7 +3733,7 @@ func (x *ClusterStatus) HasDEPRECATEDLastContact() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_DEPRECATEDLastContact != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ClusterStatus) HasProviderMetadata() bool {
@@ -3698,7 +3770,8 @@ func (x *ClusterStatus) ClearSensorVersion() {
 }
 
 func (x *ClusterStatus) ClearDEPRECATEDLastContact() {
-	x.xxx_hidden_DEPRECATEDLastContact = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_DEPRECATEDLastContact, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ClusterStatus) ClearProviderMetadata() {
@@ -3737,7 +3810,10 @@ func (b0 ClusterStatus_builder) Build() *ClusterStatus {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
 		x.xxx_hidden_SensorVersion = b.SensorVersion
 	}
-	x.xxx_hidden_DEPRECATEDLastContact = b.DEPRECATEDLastContact
+	if b.DEPRECATEDLastContact != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_DEPRECATEDLastContact = b.DEPRECATEDLastContact
+	}
 	x.xxx_hidden_ProviderMetadata = b.ProviderMetadata
 	x.xxx_hidden_OrchestratorMetadata = b.OrchestratorMetadata
 	x.xxx_hidden_UpgradeStatus = b.UpgradeStatus
@@ -3889,10 +3965,12 @@ type UpgradeProgress struct {
 	xxx_hidden_UpgradeState        UpgradeProgress_UpgradeState `protobuf:"varint,1,opt,name=upgrade_state,json=upgradeState,enum=storage.UpgradeProgress_UpgradeState"`
 	xxx_hidden_UpgradeStatusDetail *string                      `protobuf:"bytes,2,opt,name=upgrade_status_detail,json=upgradeStatusDetail"`
 	xxx_hidden_Since               *timestamppb.Timestamp       `protobuf:"bytes,3,opt,name=since"`
-	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
-	XXX_presence                   [1]uint32
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpgradeProgress) Reset() {
@@ -3941,7 +4019,14 @@ func (x *UpgradeProgress) GetUpgradeStatusDetail() string {
 
 func (x *UpgradeProgress) GetSince() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Since
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Since) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Since), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -3957,7 +4042,12 @@ func (x *UpgradeProgress) SetUpgradeStatusDetail(v string) {
 }
 
 func (x *UpgradeProgress) SetSince(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Since = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Since, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	}
 }
 
 func (x *UpgradeProgress) HasUpgradeState() bool {
@@ -3978,7 +4068,7 @@ func (x *UpgradeProgress) HasSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Since != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *UpgradeProgress) ClearUpgradeState() {
@@ -3992,7 +4082,8 @@ func (x *UpgradeProgress) ClearUpgradeStatusDetail() {
 }
 
 func (x *UpgradeProgress) ClearSince() {
-	x.xxx_hidden_Since = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Since, (*timestamppb.Timestamp)(nil))
 }
 
 type UpgradeProgress_builder struct {
@@ -4015,7 +4106,10 @@ func (b0 UpgradeProgress_builder) Build() *UpgradeProgress {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_UpgradeStatusDetail = b.UpgradeStatusDetail
 	}
-	x.xxx_hidden_Since = b.Since
+	if b.Since != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Since = b.Since
+	}
 	return m0
 }
 
@@ -4025,10 +4119,12 @@ type AuditLogFileState struct {
 	state                       protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_CollectLogsSince *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=collect_logs_since,json=collectLogsSince"`
 	xxx_hidden_LastAuditId      *string                `protobuf:"bytes,2,opt,name=last_audit_id,json=lastAuditId"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AuditLogFileState) Reset() {
@@ -4058,7 +4154,14 @@ func (x *AuditLogFileState) ProtoReflect() protoreflect.Message {
 
 func (x *AuditLogFileState) GetCollectLogsSince() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CollectLogsSince
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CollectLogsSince) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CollectLogsSince), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -4074,7 +4177,12 @@ func (x *AuditLogFileState) GetLastAuditId() string {
 }
 
 func (x *AuditLogFileState) SetCollectLogsSince(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CollectLogsSince = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CollectLogsSince, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *AuditLogFileState) SetLastAuditId(v string) {
@@ -4086,7 +4194,7 @@ func (x *AuditLogFileState) HasCollectLogsSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CollectLogsSince != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AuditLogFileState) HasLastAuditId() bool {
@@ -4097,7 +4205,8 @@ func (x *AuditLogFileState) HasLastAuditId() bool {
 }
 
 func (x *AuditLogFileState) ClearCollectLogsSince() {
-	x.xxx_hidden_CollectLogsSince = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CollectLogsSince, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *AuditLogFileState) ClearLastAuditId() {
@@ -4116,7 +4225,10 @@ func (b0 AuditLogFileState_builder) Build() *AuditLogFileState {
 	m0 := &AuditLogFileState{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CollectLogsSince = b.CollectLogsSince
+	if b.CollectLogsSince != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_CollectLogsSince = b.CollectLogsSince
+	}
 	if b.LastAuditId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_LastAuditId = b.LastAuditId
@@ -4137,10 +4249,12 @@ type ClusterHealthStatus struct {
 	xxx_hidden_ScannerHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,11,opt,name=scanner_health_status,json=scannerHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel"`
 	xxx_hidden_LastContact                  *timestamppb.Timestamp                `protobuf:"bytes,5,opt,name=last_contact,json=lastContact"`
 	xxx_hidden_HealthInfoComplete           bool                                  `protobuf:"varint,6,opt,name=health_info_complete,json=healthInfoComplete"`
-	XXX_raceDetectHookData                  protoimpl.RaceDetectHookData
-	XXX_presence                            [1]uint32
-	unknownFields                           protoimpl.UnknownFields
-	sizeCache                               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ClusterHealthStatus) Reset() {
@@ -4246,7 +4360,14 @@ func (x *ClusterHealthStatus) GetScannerHealthStatus() ClusterHealthStatus_Healt
 
 func (x *ClusterHealthStatus) GetLastContact() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastContact
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastContact) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastContact), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -4301,7 +4422,12 @@ func (x *ClusterHealthStatus) SetScannerHealthStatus(v ClusterHealthStatus_Healt
 }
 
 func (x *ClusterHealthStatus) SetLastContact(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastContact = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastContact, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
+	}
 }
 
 func (x *ClusterHealthStatus) SetHealthInfoComplete(v bool) {
@@ -4376,7 +4502,7 @@ func (x *ClusterHealthStatus) HasLastContact() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastContact != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *ClusterHealthStatus) HasHealthInfoComplete() bool {
@@ -4429,7 +4555,8 @@ func (x *ClusterHealthStatus) ClearScannerHealthStatus() {
 }
 
 func (x *ClusterHealthStatus) ClearLastContact() {
-	x.xxx_hidden_LastContact = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastContact, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ClusterHealthStatus) ClearHealthInfoComplete() {
@@ -4496,7 +4623,10 @@ func (b0 ClusterHealthStatus_builder) Build() *ClusterHealthStatus {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
 		x.xxx_hidden_ScannerHealthStatus = *b.ScannerHealthStatus
 	}
-	x.xxx_hidden_LastContact = b.LastContact
+	if b.LastContact != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
+		x.xxx_hidden_LastContact = b.LastContact
+	}
 	if b.HealthInfoComplete != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
 		x.xxx_hidden_HealthInfoComplete = *b.HealthInfoComplete
@@ -5458,10 +5588,12 @@ type ClusterUpgradeStatus_UpgradeProcessStatus struct {
 	xxx_hidden_InitiatedAt   *timestamppb.Timestamp                                       `protobuf:"bytes,5,opt,name=initiated_at,json=initiatedAt"`
 	xxx_hidden_Progress      *UpgradeProgress                                             `protobuf:"bytes,6,opt,name=progress"`
 	xxx_hidden_Type          ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType `protobuf:"varint,7,opt,name=type,enum=storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) Reset() {
@@ -5528,7 +5660,14 @@ func (x *ClusterUpgradeStatus_UpgradeProcessStatus) GetUpgraderImage() string {
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) GetInitiatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_InitiatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_InitiatedAt) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_InitiatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -5570,7 +5709,12 @@ func (x *ClusterUpgradeStatus_UpgradeProcessStatus) SetUpgraderImage(v string) {
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) SetInitiatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_InitiatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_InitiatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
+	}
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) SetProgress(v *UpgradeProgress) {
@@ -5614,7 +5758,7 @@ func (x *ClusterUpgradeStatus_UpgradeProcessStatus) HasInitiatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_InitiatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) HasProgress() bool {
@@ -5652,7 +5796,8 @@ func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ClearUpgraderImage() {
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ClearInitiatedAt() {
-	x.xxx_hidden_InitiatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_InitiatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ClearProgress() {
@@ -5696,7 +5841,10 @@ func (b0 ClusterUpgradeStatus_UpgradeProcessStatus_builder) Build() *ClusterUpgr
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
 		x.xxx_hidden_UpgraderImage = b.UpgraderImage
 	}
-	x.xxx_hidden_InitiatedAt = b.InitiatedAt
+	if b.InitiatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_InitiatedAt = b.InitiatedAt
+	}
 	x.xxx_hidden_Progress = b.Progress
 	if b.Type != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
@@ -5740,12 +5888,12 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\bverified\x18\x0f \x01(\bR\bverified\x122\n" +
 	"\acluster\x18\x10 \x01(\v2\x18.storage.ClusterMetadataR\aclusterB\n" +
 	"\n" +
-	"\bProvider\"\xcd\x01\n" +
+	"\bProvider\"\xd1\x01\n" +
 	"\x14OrchestratorMetadata\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12-\n" +
-	"\x11openshift_version\x18\x04 \x01(\tH\x00R\x10openshiftVersion\x129\n" +
+	"\x11openshift_version\x18\x04 \x01(\tH\x00R\x10openshiftVersion\x12=\n" +
 	"\n" +
-	"build_date\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tbuildDate\x12!\n" +
+	"build_date\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tbuildDate\x12!\n" +
 	"\fapi_versions\x18\x03 \x03(\tR\vapiVersionsB\x0e\n" +
 	"\fis_openshift\"\xd4\x01\n" +
 	"\x19AdmissionControllerConfig\x12\x18\n" +
@@ -5777,12 +5925,12 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x1badmission_controller_config\x18\x01 \x01(\v2\".storage.AdmissionControllerConfigR\x19admissionControllerConfig\x12+\n" +
 	"\x11registry_override\x18\x02 \x01(\tR\x10registryOverride\x12,\n" +
 	"\x12disable_audit_logs\x18\x03 \x01(\bR\x10disableAuditLogs\x12s\n" +
-	"\"auto_lock_process_baselines_config\x18\x04 \x01(\v2'.storage.AutoLockProcessBaselinesConfigR\x1eautoLockProcessBaselinesConfig\"\xeb\x02\n" +
+	"\"auto_lock_process_baselines_config\x18\x04 \x01(\v2'.storage.AutoLockProcessBaselinesConfigR\x1eautoLockProcessBaselinesConfig\"\xef\x02\n" +
 	"\x15CompleteClusterConfig\x12D\n" +
 	"\x0edynamic_config\x18\x01 \x01(\v2\x1d.storage.DynamicClusterConfigR\rdynamicConfig\x12A\n" +
 	"\rstatic_config\x18\x02 \x01(\v2\x1c.storage.StaticClusterConfigR\fstaticConfig\x12-\n" +
-	"\x12config_fingerprint\x18\x03 \x01(\tR\x11configFingerprint\x12X\n" +
-	"\x0ecluster_labels\x18\x04 \x03(\v21.storage.CompleteClusterConfig.ClusterLabelsEntryR\rclusterLabels\x1a@\n" +
+	"\x12config_fingerprint\x18\x03 \x01(\tR\x11configFingerprint\x12\\\n" +
+	"\x0ecluster_labels\x18\x04 \x03(\v21.storage.CompleteClusterConfig.ClusterLabelsEntryB\x02(\x01R\rclusterLabels\x1a@\n" +
 	"\x12ClusterLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa9\x02\n" +
@@ -5792,12 +5940,12 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\rapp_namespace\x18\x03 \x01(\tR\fappNamespace\x12(\n" +
 	"\x10app_namespace_id\x18\x04 \x01(\tR\x0eappNamespaceId\x122\n" +
 	"\x15app_serviceaccount_id\x18\x05 \x01(\tR\x13appServiceaccountId\x12\"\n" +
-	"\rk8s_node_name\x18\x06 \x01(\tR\vk8sNodeName\"\xfd\v\n" +
+	"\rk8s_node_name\x18\x06 \x01(\tR\vk8sNodeName\"\x85\f\n" +
 	"\aCluster\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12(\n" +
-	"\x04type\x18\x03 \x01(\x0e2\x14.storage.ClusterTypeR\x04type\x124\n" +
-	"\x06labels\x18\x1b \x03(\v2\x1c.storage.Cluster.LabelsEntryR\x06labels\x12\x1d\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x14.storage.ClusterTypeR\x04type\x128\n" +
+	"\x06labels\x18\x1b \x03(\v2\x1c.storage.Cluster.LabelsEntryB\x02(\x01R\x06labels\x12\x1d\n" +
 	"\n" +
 	"main_image\x18\x04 \x01(\tR\tmainImage\x12'\n" +
 	"\x0fcollector_image\x18\x10 \x01(\tR\x0ecollectorImage\x120\n" +
@@ -5815,8 +5963,8 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x0eslim_collector\x18\x17 \x01(\bR\rslimCollector\x12?\n" +
 	"\vhelm_config\x18\x18 \x01(\v2\x1e.storage.CompleteClusterConfigR\n" +
 	"helmConfig\x12Z\n" +
-	"\x15most_recent_sensor_id\x18\x1a \x01(\v2'.storage.SensorDeploymentIdentificationR\x12mostRecentSensorId\x12K\n" +
-	"\x0faudit_log_state\x18\x1c \x03(\v2#.storage.Cluster.AuditLogStateEntryR\rauditLogState\x12$\n" +
+	"\x15most_recent_sensor_id\x18\x1a \x01(\v2'.storage.SensorDeploymentIdentificationR\x12mostRecentSensorId\x12O\n" +
+	"\x0faudit_log_state\x18\x1c \x03(\v2#.storage.Cluster.AuditLogStateEntryB\x02(\x01R\rauditLogState\x12$\n" +
 	"\x0einit_bundle_id\x18\x1d \x01(\tR\finitBundleId\x123\n" +
 	"\n" +
 	"managed_by\x18\x1e \x01(\x0e2\x14.storage.ManagerTypeR\tmanagedBy\x12/\n" +
@@ -5829,27 +5977,27 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
 	"\x05value\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x05value:\x028\x01J\x04\b\x06\x10\aJ\x04\b\b\x10\tJ\x04\b\t\x10\n" +
 	"J\x04\b\n" +
-	"\x10\vJ\x04\b\v\x10\fJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0f\"\xb4\x01\n" +
-	"\x17ClusterCertExpiryStatus\x12H\n" +
-	"\x12sensor_cert_expiry\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x10sensorCertExpiry\x12O\n" +
-	"\x16sensor_cert_not_before\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x13sensorCertNotBefore\"\xbc\x03\n" +
+	"\x10\vJ\x04\b\v\x10\fJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0f\"\xbc\x01\n" +
+	"\x17ClusterCertExpiryStatus\x12L\n" +
+	"\x12sensor_cert_expiry\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x10sensorCertExpiry\x12S\n" +
+	"\x16sensor_cert_not_before\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x13sensorCertNotBefore\"\xc0\x03\n" +
 	"\rClusterStatus\x12%\n" +
-	"\x0esensor_version\x18\x01 \x01(\tR\rsensorVersion\x12R\n" +
-	"\x17DEPRECATED_last_contact\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x15DEPRECATEDLastContact\x12F\n" +
+	"\x0esensor_version\x18\x01 \x01(\tR\rsensorVersion\x12V\n" +
+	"\x17DEPRECATED_last_contact\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x15DEPRECATEDLastContact\x12F\n" +
 	"\x11provider_metadata\x18\x03 \x01(\v2\x19.storage.ProviderMetadataR\x10providerMetadata\x12R\n" +
 	"\x15orchestrator_metadata\x18\x04 \x01(\v2\x1d.storage.OrchestratorMetadataR\x14orchestratorMetadata\x12D\n" +
 	"\x0eupgrade_status\x18\x05 \x01(\v2\x1d.storage.ClusterUpgradeStatusR\rupgradeStatus\x12N\n" +
-	"\x12cert_expiry_status\x18\x06 \x01(\v2 .storage.ClusterCertExpiryStatusR\x10certExpiryStatus\"\xa1\x06\n" +
+	"\x12cert_expiry_status\x18\x06 \x01(\v2 .storage.ClusterCertExpiryStatusR\x10certExpiryStatus\"\xa5\x06\n" +
 	"\x14ClusterUpgradeStatus\x12Q\n" +
 	"\rupgradability\x18\x01 \x01(\x0e2+.storage.ClusterUpgradeStatus.UpgradabilityR\rupgradability\x12>\n" +
 	"\x1bupgradability_status_reason\x18\x02 \x01(\tR\x19upgradabilityStatusReason\x12b\n" +
-	"\x13most_recent_process\x18\x03 \x01(\v22.storage.ClusterUpgradeStatus.UpgradeProcessStatusR\x11mostRecentProcess\x1a\x92\x03\n" +
+	"\x13most_recent_process\x18\x03 \x01(\v22.storage.ClusterUpgradeStatus.UpgradeProcessStatusR\x11mostRecentProcess\x1a\x96\x03\n" +
 	"\x14UpgradeProcessStatus\x12\x16\n" +
 	"\x06active\x18\x01 \x01(\bR\x06active\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12%\n" +
 	"\x0etarget_version\x18\x03 \x01(\tR\rtargetVersion\x12%\n" +
-	"\x0eupgrader_image\x18\x04 \x01(\tR\rupgraderImage\x12=\n" +
-	"\finitiated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vinitiatedAt\x124\n" +
+	"\x0eupgrader_image\x18\x04 \x01(\tR\rupgraderImage\x12A\n" +
+	"\finitiated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vinitiatedAt\x124\n" +
 	"\bprogress\x18\x06 \x01(\v2\x18.storage.UpgradeProgressR\bprogress\x12Y\n" +
 	"\x04type\x18\a \x01(\x0e2E.storage.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessTypeR\x04type\"4\n" +
 	"\x12UpgradeProcessType\x12\v\n" +
@@ -5861,11 +6009,11 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"UP_TO_DATE\x10\x01\x12\x1b\n" +
 	"\x17MANUAL_UPGRADE_REQUIRED\x10\x02\x12\x19\n" +
 	"\x15AUTO_UPGRADE_POSSIBLE\x10\x03\x12\x19\n" +
-	"\x15SENSOR_VERSION_HIGHER\x10\x04\"\xc4\x04\n" +
+	"\x15SENSOR_VERSION_HIGHER\x10\x04\"\xc8\x04\n" +
 	"\x0fUpgradeProgress\x12J\n" +
 	"\rupgrade_state\x18\x01 \x01(\x0e2%.storage.UpgradeProgress.UpgradeStateR\fupgradeState\x122\n" +
-	"\x15upgrade_status_detail\x18\x02 \x01(\tR\x13upgradeStatusDetail\x120\n" +
-	"\x05since\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x05since\"\xfe\x02\n" +
+	"\x15upgrade_status_detail\x18\x02 \x01(\tR\x13upgradeStatusDetail\x124\n" +
+	"\x05since\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x05since\"\xfe\x02\n" +
 	"\fUpgradeState\x12\x18\n" +
 	"\x14UPGRADE_INITIALIZING\x10\x00\x12\x16\n" +
 	"\x12UPGRADER_LAUNCHING\x10\x01\x12\x15\n" +
@@ -5880,10 +6028,10 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x19UPGRADE_ERROR_ROLLED_BACK\x10\x0e\x12!\n" +
 	"\x1dUPGRADE_ERROR_ROLLBACK_FAILED\x10\x0f\x12\x19\n" +
 	"\x15UPGRADE_ERROR_UNKNOWN\x10\x10\x12\x15\n" +
-	"\x11UPGRADE_TIMED_OUT\x10\x11\"\x81\x01\n" +
-	"\x11AuditLogFileState\x12H\n" +
-	"\x12collect_logs_since\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x10collectLogsSince\x12\"\n" +
-	"\rlast_audit_id\x18\x02 \x01(\tR\vlastAuditId\"\x88\b\n" +
+	"\x11UPGRADE_TIMED_OUT\x10\x11\"\x85\x01\n" +
+	"\x11AuditLogFileState\x12L\n" +
+	"\x12collect_logs_since\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x10collectLogsSince\x12\"\n" +
+	"\rlast_audit_id\x18\x02 \x01(\tR\vlastAuditId\"\x8c\b\n" +
 	"\x13ClusterHealthStatus\x12\x0e\n" +
 	"\x02id\x18\t \x01(\tR\x02id\x12P\n" +
 	"\x15collector_health_info\x18\x01 \x01(\v2\x1c.storage.CollectorHealthInfoR\x13collectorHealthInfo\x12f\n" +
@@ -5894,8 +6042,8 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x17collector_health_status\x18\x03 \x01(\x0e2..storage.ClusterHealthStatus.HealthStatusLabelR\x15collectorHealthStatus\x12b\n" +
 	"\x15overall_health_status\x18\x04 \x01(\x0e2..storage.ClusterHealthStatus.HealthStatusLabelR\x13overallHealthStatus\x12u\n" +
 	"\x1fadmission_control_health_status\x18\a \x01(\x0e2..storage.ClusterHealthStatus.HealthStatusLabelR\x1cadmissionControlHealthStatus\x12b\n" +
-	"\x15scanner_health_status\x18\v \x01(\x0e2..storage.ClusterHealthStatus.HealthStatusLabelR\x13scannerHealthStatus\x12=\n" +
-	"\flast_contact\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vlastContact\x120\n" +
+	"\x15scanner_health_status\x18\v \x01(\x0e2..storage.ClusterHealthStatus.HealthStatusLabelR\x13scannerHealthStatus\x12A\n" +
+	"\flast_contact\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastContact\x120\n" +
 	"\x14health_info_complete\x18\x06 \x01(\bR\x12healthInfoComplete\"a\n" +
 	"\x11HealthStatusLabel\x12\x11\n" +
 	"\rUNINITIALIZED\x10\x00\x12\x0f\n" +

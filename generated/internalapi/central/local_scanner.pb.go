@@ -179,9 +179,11 @@ func (b0 IssueLocalScannerCertsRequest_builder) Build() *IssueLocalScannerCertsR
 }
 
 type IssueLocalScannerCertsResponse struct {
-	state                  protoimpl.MessageState                    `protogen:"opaque.v1"`
-	xxx_hidden_RequestId   *string                                   `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
-	xxx_hidden_Response    isIssueLocalScannerCertsResponse_Response `protobuf_oneof:"response"`
+	state                protoimpl.MessageState                    `protogen:"opaque.v1"`
+	xxx_hidden_RequestId *string                                   `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
+	xxx_hidden_Response  isIssueLocalScannerCertsResponse_Response `protobuf_oneof:"response"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -393,11 +395,11 @@ const file_internalapi_central_local_scanner_proto_rawDesc = "" +
 	"\amessage\x18\x01 \x01(\tR\amessage\">\n" +
 	"\x1dIssueLocalScannerCertsRequest\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x01 \x01(\tR\trequestId\"\xd4\x01\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\"\xd8\x01\n" +
 	"\x1eIssueLocalScannerCertsResponse\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x01 \x01(\tR\trequestId\x12I\n" +
-	"\fcertificates\x18\x02 \x01(\v2#.storage.TypedServiceCertificateSetH\x00R\fcertificates\x12<\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12M\n" +
+	"\fcertificates\x18\x02 \x01(\v2#.storage.TypedServiceCertificateSetB\x02(\x01H\x00R\fcertificates\x12<\n" +
 	"\x05error\x18\x03 \x01(\v2$.central.LocalScannerCertsIssueErrorH\x00R\x05errorB\n" +
 	"\n" +
 	"\bresponseB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"

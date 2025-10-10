@@ -139,6 +139,8 @@ type K8SRole struct {
 	xxx_hidden_Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt"`
 	xxx_hidden_Rules       *[]*PolicyRule         `protobuf:"bytes,10,rep,name=rules"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -243,15 +245,27 @@ func (x *K8SRole) GetAnnotations() map[string]string {
 
 func (x *K8SRole) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *K8SRole) GetRules() []*PolicyRule {
 	if x != nil {
-		if x.xxx_hidden_Rules != nil {
-			return *x.xxx_hidden_Rules
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Rules) {
+				protoimpl.X.UnmarshalField(x, 10)
+			}
+			var rv *[]*PolicyRule
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -296,11 +310,23 @@ func (x *K8SRole) SetAnnotations(v map[string]string) {
 }
 
 func (x *K8SRole) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
+	}
 }
 
 func (x *K8SRole) SetRules(v []*PolicyRule) {
-	x.xxx_hidden_Rules = &v
+	var sv *[]*PolicyRule
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*PolicyRule{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
 }
 
 func (x *K8SRole) HasId() bool {
@@ -349,7 +375,7 @@ func (x *K8SRole) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *K8SRole) ClearId() {
@@ -383,7 +409,8 @@ func (x *K8SRole) ClearClusterRole() {
 }
 
 func (x *K8SRole) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 type K8SRole_builder struct {
@@ -431,8 +458,14 @@ func (b0 K8SRole_builder) Build() *K8SRole {
 	}
 	x.xxx_hidden_Labels = b.Labels
 	x.xxx_hidden_Annotations = b.Annotations
-	x.xxx_hidden_CreatedAt = b.CreatedAt
-	x.xxx_hidden_Rules = &b.Rules
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
+	if b.Rules != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
+		x.xxx_hidden_Rules = &b.Rules
+	}
 	return m0
 }
 
@@ -566,6 +599,8 @@ type K8SRoleBinding struct {
 	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt"`
 	xxx_hidden_Subjects    *[]*Subject            `protobuf:"bytes,10,rep,name=subjects"`
 	xxx_hidden_RoleId      *string                `protobuf:"bytes,11,opt,name=role_id,json=roleId"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -670,15 +705,27 @@ func (x *K8SRoleBinding) GetAnnotations() map[string]string {
 
 func (x *K8SRoleBinding) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
+				protoimpl.X.UnmarshalField(x, 9)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *K8SRoleBinding) GetSubjects() []*Subject {
 	if x != nil {
-		if x.xxx_hidden_Subjects != nil {
-			return *x.xxx_hidden_Subjects
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Subjects) {
+				protoimpl.X.UnmarshalField(x, 10)
+			}
+			var rv *[]*Subject
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Subjects), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -733,11 +780,23 @@ func (x *K8SRoleBinding) SetAnnotations(v map[string]string) {
 }
 
 func (x *K8SRoleBinding) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
+	}
 }
 
 func (x *K8SRoleBinding) SetSubjects(v []*Subject) {
-	x.xxx_hidden_Subjects = &v
+	var sv *[]*Subject
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Subjects), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Subject{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Subjects), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
 }
 
 func (x *K8SRoleBinding) SetRoleId(v string) {
@@ -791,7 +850,7 @@ func (x *K8SRoleBinding) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *K8SRoleBinding) HasRoleId() bool {
@@ -832,7 +891,8 @@ func (x *K8SRoleBinding) ClearClusterRole() {
 }
 
 func (x *K8SRoleBinding) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *K8SRoleBinding) ClearRoleId() {
@@ -889,8 +949,14 @@ func (b0 K8SRoleBinding_builder) Build() *K8SRoleBinding {
 	}
 	x.xxx_hidden_Labels = b.Labels
 	x.xxx_hidden_Annotations = b.Annotations
-	x.xxx_hidden_CreatedAt = b.CreatedAt
-	x.xxx_hidden_Subjects = &b.Subjects
+	if b.CreatedAt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
+		x.xxx_hidden_CreatedAt = b.CreatedAt
+	}
+	if b.Subjects != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
+		x.xxx_hidden_Subjects = &b.Subjects
+	}
 	if b.RoleId != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
 		x.xxx_hidden_RoleId = b.RoleId
@@ -1146,7 +1212,7 @@ var File_storage_rbac_proto protoreflect.FileDescriptor
 
 const file_storage_rbac_proto_rawDesc = "" +
 	"\n" +
-	"\x12storage/rbac.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x8c\x04\n" +
+	"\x12storage/rbac.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\x9c\x04\n" +
 	"\aK8sRole\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
@@ -1154,13 +1220,13 @@ const file_storage_rbac_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x12!\n" +
-	"\fcluster_role\x18\x06 \x01(\bR\vclusterRole\x124\n" +
-	"\x06labels\x18\a \x03(\v2\x1c.storage.K8sRole.LabelsEntryR\x06labels\x12C\n" +
-	"\vannotations\x18\b \x03(\v2!.storage.K8sRole.AnnotationsEntryR\vannotations\x129\n" +
+	"\fcluster_role\x18\x06 \x01(\bR\vclusterRole\x128\n" +
+	"\x06labels\x18\a \x03(\v2\x1c.storage.K8sRole.LabelsEntryB\x02(\x01R\x06labels\x12G\n" +
+	"\vannotations\x18\b \x03(\v2!.storage.K8sRole.AnnotationsEntryB\x02(\x01R\vannotations\x12=\n" +
 	"\n" +
-	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12)\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\x12-\n" +
 	"\x05rules\x18\n" +
-	" \x03(\v2\x13.storage.PolicyRuleR\x05rules\x1a9\n" +
+	" \x03(\v2\x13.storage.PolicyRuleB\x02(\x01R\x05rules\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -1174,7 +1240,7 @@ const file_storage_rbac_proto_rawDesc = "" +
 	"api_groups\x18\x02 \x03(\tR\tapiGroups\x12\x1c\n" +
 	"\tresources\x18\x03 \x03(\tR\tresources\x12*\n" +
 	"\x11non_resource_urls\x18\x04 \x03(\tR\x0fnonResourceUrls\x12%\n" +
-	"\x0eresource_names\x18\x05 \x03(\tR\rresourceNames\"\xbd\x04\n" +
+	"\x0eresource_names\x18\x05 \x03(\tR\rresourceNames\"\xcd\x04\n" +
 	"\x0eK8sRoleBinding\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
@@ -1182,13 +1248,13 @@ const file_storage_rbac_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x12!\n" +
-	"\fcluster_role\x18\x06 \x01(\bR\vclusterRole\x12;\n" +
-	"\x06labels\x18\a \x03(\v2#.storage.K8sRoleBinding.LabelsEntryR\x06labels\x12J\n" +
-	"\vannotations\x18\b \x03(\v2(.storage.K8sRoleBinding.AnnotationsEntryR\vannotations\x129\n" +
+	"\fcluster_role\x18\x06 \x01(\bR\vclusterRole\x12?\n" +
+	"\x06labels\x18\a \x03(\v2#.storage.K8sRoleBinding.LabelsEntryB\x02(\x01R\x06labels\x12N\n" +
+	"\vannotations\x18\b \x03(\v2(.storage.K8sRoleBinding.AnnotationsEntryB\x02(\x01R\vannotations\x12=\n" +
 	"\n" +
-	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12,\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\tcreatedAt\x120\n" +
 	"\bsubjects\x18\n" +
-	" \x03(\v2\x10.storage.SubjectR\bsubjects\x12\x17\n" +
+	" \x03(\v2\x10.storage.SubjectB\x02(\x01R\bsubjects\x12\x17\n" +
 	"\arole_id\x18\v \x01(\tR\x06roleId\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

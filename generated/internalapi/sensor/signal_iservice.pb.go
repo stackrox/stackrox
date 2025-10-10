@@ -202,11 +202,11 @@ var File_internalapi_sensor_signal_iservice_proto protoreflect.FileDescriptor
 
 const file_internalapi_sensor_signal_iservice_proto_rawDesc = "" +
 	"\n" +
-	"(internalapi/sensor/signal_iservice.proto\x12\x06sensor\x1a\x12api/v1/empty.proto\x1a\x13api/v1/signal.proto\x1a\"internalapi/sensor/collector.proto\x1a!google/protobuf/go_features.proto\"\xa4\x01\n" +
+	"(internalapi/sensor/signal_iservice.proto\x12\x06sensor\x1a\x12api/v1/empty.proto\x1a\x13api/v1/signal.proto\x1a\"internalapi/sensor/collector.proto\x1a!google/protobuf/go_features.proto\"\xa8\x01\n" +
 	"\x13SignalStreamMessage\x12`\n" +
-	"\x1acollector_register_request\x18\x01 \x01(\v2 .sensor.CollectorRegisterRequestH\x00R\x18collectorRegisterRequest\x12$\n" +
+	"\x1acollector_register_request\x18\x01 \x01(\v2 .sensor.CollectorRegisterRequestH\x00R\x18collectorRegisterRequest\x12(\n" +
 	"\x06signal\x18\x02 \x01(\v2\n" +
-	".v1.SignalH\x00R\x06signalB\x05\n" +
+	".v1.SignalB\x02(\x01H\x00R\x06signalB\x05\n" +
 	"\x03msg2J\n" +
 	"\rSignalService\x129\n" +
 	"\vPushSignals\x12\x1b.sensor.SignalStreamMessage\x1a\t.v1.Empty(\x010\x01B(Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"

@@ -509,8 +509,12 @@ func (b0 EnvVarsResponse_builder) Build() *EnvVarsResponse {
 type ReconciliationStatsByClusterResponse struct {
 	state            protoimpl.MessageState                                                 `protogen:"opaque.v1"`
 	xxx_hidden_Stats *[]*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster `protobuf:"bytes,1,rep,name=stats"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ReconciliationStatsByClusterResponse) Reset() {
@@ -540,15 +544,27 @@ func (x *ReconciliationStatsByClusterResponse) ProtoReflect() protoreflect.Messa
 
 func (x *ReconciliationStatsByClusterResponse) GetStats() []*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster {
 	if x != nil {
-		if x.xxx_hidden_Stats != nil {
-			return *x.xxx_hidden_Stats
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Stats) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Stats), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ReconciliationStatsByClusterResponse) SetStats(v []*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) {
-	x.xxx_hidden_Stats = &v
+	var sv *[]*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Stats), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Stats), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ReconciliationStatsByClusterResponse_builder struct {
@@ -561,7 +577,10 @@ func (b0 ReconciliationStatsByClusterResponse_builder) Build() *ReconciliationSt
 	m0 := &ReconciliationStatsByClusterResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Stats = &b.Stats
+	if b.Stats != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Stats = &b.Stats
+	}
 	return m0
 }
 
@@ -721,10 +740,12 @@ type ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster struct {
 	xxx_hidden_ClusterId            *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
 	xxx_hidden_ReconciliationDone   bool                   `protobuf:"varint,2,opt,name=reconciliation_done,json=reconciliationDone"`
 	xxx_hidden_DeletedObjectsByType map[string]int32       `protobuf:"bytes,3,rep,name=deleted_objects_by_type,json=deletedObjectsByType" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
-	XXX_presence                    [1]uint32
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) Reset() {
@@ -860,14 +881,14 @@ const file_internalapi_central_development_service_proto_rawDesc = "" +
 	"\x12RandomDataResponse\x12\x12\n" +
 	"\x04data\x18\x01 \x01(\fR\x04data\",\n" +
 	"\x0fEnvVarsResponse\x12\x19\n" +
-	"\benv_vars\x18\x01 \x03(\tR\aenvVars\"\xe3\x03\n" +
-	"$ReconciliationStatsByClusterResponse\x12a\n" +
-	"\x05stats\x18\x01 \x03(\v2K.central.ReconciliationStatsByClusterResponse.ReconciliationStatsForClusterR\x05stats\x1a\xd7\x02\n" +
+	"\benv_vars\x18\x01 \x03(\tR\aenvVars\"\xeb\x03\n" +
+	"$ReconciliationStatsByClusterResponse\x12e\n" +
+	"\x05stats\x18\x01 \x03(\v2K.central.ReconciliationStatsByClusterResponse.ReconciliationStatsForClusterB\x02(\x01R\x05stats\x1a\xdb\x02\n" +
 	"\x1dReconciliationStatsForCluster\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12/\n" +
-	"\x13reconciliation_done\x18\x02 \x01(\bR\x12reconciliationDone\x12\x9c\x01\n" +
-	"\x17deleted_objects_by_type\x18\x03 \x03(\v2e.central.ReconciliationStatsByClusterResponse.ReconciliationStatsForCluster.DeletedObjectsByTypeEntryR\x14deletedObjectsByType\x1aG\n" +
+	"\x13reconciliation_done\x18\x02 \x01(\bR\x12reconciliationDone\x12\xa0\x01\n" +
+	"\x17deleted_objects_by_type\x18\x03 \x03(\v2e.central.ReconciliationStatsByClusterResponse.ReconciliationStatsForCluster.DeletedObjectsByTypeEntryB\x02(\x01R\x14deletedObjectsByType\x1aG\n" +
 	"\x19DeletedObjectsByTypeEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"=\n" +

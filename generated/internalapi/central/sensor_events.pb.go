@@ -200,10 +200,12 @@ type AlertResults struct {
 	xxx_hidden_Alerts       *[]*storage.Alert      `protobuf:"bytes,2,rep,name=alerts"`
 	xxx_hidden_Stage        storage.LifecycleStage `protobuf:"varint,3,opt,name=stage,enum=storage.LifecycleStage"`
 	xxx_hidden_Source       AlertResults_Source    `protobuf:"varint,4,opt,name=source,enum=central.AlertResults_Source"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AlertResults) Reset() {
@@ -243,8 +245,13 @@ func (x *AlertResults) GetDeploymentId() string {
 
 func (x *AlertResults) GetAlerts() []*storage.Alert {
 	if x != nil {
-		if x.xxx_hidden_Alerts != nil {
-			return *x.xxx_hidden_Alerts
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Alerts) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.Alert
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -274,7 +281,14 @@ func (x *AlertResults) SetDeploymentId(v string) {
 }
 
 func (x *AlertResults) SetAlerts(v []*storage.Alert) {
-	x.xxx_hidden_Alerts = &v
+	var sv *[]*storage.Alert
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Alert{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *AlertResults) SetStage(v storage.LifecycleStage) {
@@ -341,7 +355,10 @@ func (b0 AlertResults_builder) Build() *AlertResults {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
 		x.xxx_hidden_DeploymentId = b.DeploymentId
 	}
-	x.xxx_hidden_Alerts = &b.Alerts
+	if b.Alerts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Alerts = &b.Alerts
+	}
 	if b.Stage != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_Stage = *b.Stage
@@ -502,10 +519,12 @@ type SensorEvent struct {
 	xxx_hidden_Timing          *Timing                       `protobuf:"bytes,3,opt,name=timing"`
 	xxx_hidden_SensorHashOneof isSensorEvent_SensorHashOneof `protobuf_oneof:"sensor_hash_oneof"`
 	xxx_hidden_Resource        isSensorEvent_Resource        `protobuf_oneof:"resource"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SensorEvent) Reset() {
@@ -3035,9 +3054,11 @@ func (b0 KillScrape_builder) Build() *KillScrape {
 }
 
 type ScrapeUpdate struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ScrapeId    *string                `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId"`
-	xxx_hidden_Update      isScrapeUpdate_Update  `protobuf_oneof:"update"`
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ScrapeId *string                `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId"`
+	xxx_hidden_Update   isScrapeUpdate_Update  `protobuf_oneof:"update"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -3701,10 +3722,12 @@ type NetworkPoliciesCommand_Apply struct {
 	state                   protoimpl.MessageState             `protogen:"opaque.v1"`
 	xxx_hidden_ApplyId      *string                            `protobuf:"bytes,1,opt,name=apply_id,json=applyId"`
 	xxx_hidden_Modification *storage.NetworkPolicyModification `protobuf:"bytes,2,opt,name=modification"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkPoliciesCommand_Apply) Reset() {
@@ -3744,7 +3767,14 @@ func (x *NetworkPoliciesCommand_Apply) GetApplyId() string {
 
 func (x *NetworkPoliciesCommand_Apply) GetModification() *storage.NetworkPolicyModification {
 	if x != nil {
-		return x.xxx_hidden_Modification
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Modification) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.NetworkPolicyModification
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Modification), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -3755,7 +3785,12 @@ func (x *NetworkPoliciesCommand_Apply) SetApplyId(v string) {
 }
 
 func (x *NetworkPoliciesCommand_Apply) SetModification(v *storage.NetworkPolicyModification) {
-	x.xxx_hidden_Modification = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Modification, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *NetworkPoliciesCommand_Apply) HasApplyId() bool {
@@ -3769,7 +3804,7 @@ func (x *NetworkPoliciesCommand_Apply) HasModification() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Modification != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkPoliciesCommand_Apply) ClearApplyId() {
@@ -3778,7 +3813,8 @@ func (x *NetworkPoliciesCommand_Apply) ClearApplyId() {
 }
 
 func (x *NetworkPoliciesCommand_Apply) ClearModification() {
-	x.xxx_hidden_Modification = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Modification, (*storage.NetworkPolicyModification)(nil))
 }
 
 type NetworkPoliciesCommand_Apply_builder struct {
@@ -3796,7 +3832,10 @@ func (b0 NetworkPoliciesCommand_Apply_builder) Build() *NetworkPoliciesCommand_A
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_ApplyId = b.ApplyId
 	}
-	x.xxx_hidden_Modification = b.Modification
+	if b.Modification != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Modification = b.Modification
+	}
 	return m0
 }
 
@@ -3931,10 +3970,12 @@ type NetworkPoliciesResponse_Apply struct {
 	state                       protoimpl.MessageState             `protogen:"opaque.v1"`
 	xxx_hidden_ApplyId          *string                            `protobuf:"bytes,1,opt,name=apply_id,json=applyId"`
 	xxx_hidden_UndoModification *storage.NetworkPolicyModification `protobuf:"bytes,2,opt,name=undo_modification,json=undoModification"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkPoliciesResponse_Apply) Reset() {
@@ -3974,7 +4015,14 @@ func (x *NetworkPoliciesResponse_Apply) GetApplyId() string {
 
 func (x *NetworkPoliciesResponse_Apply) GetUndoModification() *storage.NetworkPolicyModification {
 	if x != nil {
-		return x.xxx_hidden_UndoModification
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UndoModification) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.NetworkPolicyModification
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UndoModification), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -3985,7 +4033,12 @@ func (x *NetworkPoliciesResponse_Apply) SetApplyId(v string) {
 }
 
 func (x *NetworkPoliciesResponse_Apply) SetUndoModification(v *storage.NetworkPolicyModification) {
-	x.xxx_hidden_UndoModification = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UndoModification, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *NetworkPoliciesResponse_Apply) HasApplyId() bool {
@@ -3999,7 +4052,7 @@ func (x *NetworkPoliciesResponse_Apply) HasUndoModification() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_UndoModification != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkPoliciesResponse_Apply) ClearApplyId() {
@@ -4008,7 +4061,8 @@ func (x *NetworkPoliciesResponse_Apply) ClearApplyId() {
 }
 
 func (x *NetworkPoliciesResponse_Apply) ClearUndoModification() {
-	x.xxx_hidden_UndoModification = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UndoModification, (*storage.NetworkPolicyModification)(nil))
 }
 
 type NetworkPoliciesResponse_Apply_builder struct {
@@ -4026,7 +4080,10 @@ func (b0 NetworkPoliciesResponse_Apply_builder) Build() *NetworkPoliciesResponse
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_ApplyId = b.ApplyId
 	}
-	x.xxx_hidden_UndoModification = b.UndoModification
+	if b.UndoModification != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_UndoModification = b.UndoModification
+	}
 	return m0
 }
 
@@ -4285,10 +4342,10 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\n" +
 	"'internalapi/central/sensor_events.proto\x12\acentral\x1a-internalapi/central/compliance_operator.proto\x1a,internalapi/compliance/compliance_data.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a0internalapi/virtualmachine/v1/index_report.proto\x1a3internalapi/virtualmachine/v1/virtual_machine.proto\x1a\x13storage/alert.proto\x1a\x15storage/cluster.proto\x1a!storage/compliance_operator.proto\x1a\x18storage/deployment.proto\x1a\x1fstorage/image_integration.proto\x1a storage/namespace_metadata.proto\x1a\x1cstorage/network_policy.proto\x1a\x12storage/node.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x12storage/rbac.proto\x1a\x14storage/secret.proto\x1a\x1dstorage/service_account.proto\x1a!google/protobuf/go_features.proto\">\n" +
 	"\x17ReprocessDeploymentRisk\x12#\n" +
-	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"\xf1\x01\n" +
+	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"\xf5\x01\n" +
 	"\fAlertResults\x12#\n" +
-	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12&\n" +
-	"\x06alerts\x18\x02 \x03(\v2\x0e.storage.AlertR\x06alerts\x12-\n" +
+	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12*\n" +
+	"\x06alerts\x18\x02 \x03(\v2\x0e.storage.AlertB\x02(\x01R\x06alerts\x12-\n" +
 	"\x05stage\x18\x03 \x01(\x0e2\x17.storage.LifecycleStageR\x05stage\x124\n" +
 	"\x06source\x18\x04 \x01(\x0e2\x1c.central.AlertResults.SourceR\x06source\"/\n" +
 	"\x06Source\x12\x14\n" +
@@ -4299,41 +4356,41 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"dispatcher\x18\x01 \x01(\tR\n" +
 	"dispatcher\x12\x1a\n" +
 	"\bresource\x18\x02 \x01(\tR\bresource\x12\x14\n" +
-	"\x05nanos\x18\x03 \x01(\x03R\x05nanos\"\x9f\x16\n" +
+	"\x05nanos\x18\x03 \x01(\x03R\x05nanos\"\xf7\x16\n" +
 	"\vSensorEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x06action\x18\x02 \x01(\x0e2\x17.central.ResourceActionR\x06action\x12'\n" +
 	"\x06timing\x18\x03 \x01(\v2\x0f.central.TimingR\x06timing\x12!\n" +
 	"\vsensor_hash\x18\x1a \x01(\x04H\x00R\n" +
-	"sensorHash\x12?\n" +
-	"\x0enetwork_policy\x18\x04 \x01(\v2\x16.storage.NetworkPolicyH\x01R\rnetworkPolicy\x125\n" +
+	"sensorHash\x12C\n" +
+	"\x0enetwork_policy\x18\x04 \x01(\v2\x16.storage.NetworkPolicyB\x02(\x01H\x01R\rnetworkPolicy\x129\n" +
 	"\n" +
-	"deployment\x18\x05 \x01(\v2\x13.storage.DeploymentH\x01R\n" +
-	"deployment\x12 \n" +
-	"\x03pod\x18\x13 \x01(\v2\f.storage.PodH\x01R\x03pod\x12:\n" +
-	"\tnamespace\x18\x06 \x01(\v2\x1a.storage.NamespaceMetadataH\x01R\tnamespace\x12)\n" +
-	"\x06secret\x18\a \x01(\v2\x0f.storage.SecretH\x01R\x06secret\x12#\n" +
-	"\x04node\x18\t \x01(\v2\r.storage.NodeH\x01R\x04node\x12?\n" +
-	"\x0enode_inventory\x18\x19 \x01(\v2\x16.storage.NodeInventoryH\x01R\rnodeInventory\x12<\n" +
-	"\findex_report\x18\" \x01(\v2\x17.scanner.v4.IndexReportH\x01R\vindexReport\x12B\n" +
-	"\x0fservice_account\x18\x0e \x01(\v2\x17.storage.ServiceAccountH\x01R\x0eserviceAccount\x12&\n" +
-	"\x04role\x18\x0f \x01(\v2\x10.storage.K8sRoleH\x01R\x04role\x123\n" +
-	"\abinding\x18\x10 \x01(\v2\x17.storage.K8sRoleBindingH\x01R\abinding\x12H\n" +
-	"\x11process_indicator\x18\b \x01(\v2\x19.storage.ProcessIndicatorH\x01R\x10processIndicator\x12H\n" +
+	"deployment\x18\x05 \x01(\v2\x13.storage.DeploymentB\x02(\x01H\x01R\n" +
+	"deployment\x12$\n" +
+	"\x03pod\x18\x13 \x01(\v2\f.storage.PodB\x02(\x01H\x01R\x03pod\x12>\n" +
+	"\tnamespace\x18\x06 \x01(\v2\x1a.storage.NamespaceMetadataB\x02(\x01H\x01R\tnamespace\x12-\n" +
+	"\x06secret\x18\a \x01(\v2\x0f.storage.SecretB\x02(\x01H\x01R\x06secret\x12'\n" +
+	"\x04node\x18\t \x01(\v2\r.storage.NodeB\x02(\x01H\x01R\x04node\x12C\n" +
+	"\x0enode_inventory\x18\x19 \x01(\v2\x16.storage.NodeInventoryB\x02(\x01H\x01R\rnodeInventory\x12@\n" +
+	"\findex_report\x18\" \x01(\v2\x17.scanner.v4.IndexReportB\x02(\x01H\x01R\vindexReport\x12F\n" +
+	"\x0fservice_account\x18\x0e \x01(\v2\x17.storage.ServiceAccountB\x02(\x01H\x01R\x0eserviceAccount\x12*\n" +
+	"\x04role\x18\x0f \x01(\v2\x10.storage.K8sRoleB\x02(\x01H\x01R\x04role\x127\n" +
+	"\abinding\x18\x10 \x01(\v2\x17.storage.K8sRoleBindingB\x02(\x01H\x01R\abinding\x12L\n" +
+	"\x11process_indicator\x18\b \x01(\v2\x19.storage.ProcessIndicatorB\x02(\x01H\x01R\x10processIndicator\x12L\n" +
 	"\x11provider_metadata\x18\n" +
-	" \x01(\v2\x19.storage.ProviderMetadataH\x01R\x10providerMetadata\x12>\n" +
-	"\x06synced\x18\v \x01(\v2$.central.SensorEvent.ResourcesSyncedH\x01R\x06synced\x12T\n" +
-	"\x15orchestrator_metadata\x18\f \x01(\v2\x1d.storage.OrchestratorMetadataH\x01R\x14orchestratorMetadata\x12H\n" +
-	"\x11image_integration\x18\r \x01(\v2\x19.storage.ImageIntegrationH\x01R\x10imageIntegration\x12U\n" +
+	" \x01(\v2\x19.storage.ProviderMetadataB\x02(\x01H\x01R\x10providerMetadata\x12>\n" +
+	"\x06synced\x18\v \x01(\v2$.central.SensorEvent.ResourcesSyncedH\x01R\x06synced\x12X\n" +
+	"\x15orchestrator_metadata\x18\f \x01(\v2\x1d.storage.OrchestratorMetadataB\x02(\x01H\x01R\x14orchestratorMetadata\x12L\n" +
+	"\x11image_integration\x18\r \x01(\v2\x19.storage.ImageIntegrationB\x02(\x01H\x01R\x10imageIntegration\x12U\n" +
 	"\x14reprocess_deployment\x18\x11 \x01(\v2 .central.ReprocessDeploymentRiskH\x01R\x13reprocessDeployment\x12<\n" +
-	"\ralert_results\x18\x12 \x01(\v2\x15.central.AlertResultsH\x01R\falertResults\x12f\n" +
-	"\x1acompliance_operator_result\x18\x14 \x01(\v2&.storage.ComplianceOperatorCheckResultH\x01R\x18complianceOperatorResult\x12d\n" +
-	"\x1bcompliance_operator_profile\x18\x15 \x01(\v2\".storage.ComplianceOperatorProfileH\x01R\x19complianceOperatorProfile\x12[\n" +
-	"\x18compliance_operator_rule\x18\x16 \x01(\v2\x1f.storage.ComplianceOperatorRuleH\x01R\x16complianceOperatorRule\x12\x87\x01\n" +
-	"(compliance_operator_scan_setting_binding\x18\x17 \x01(\v2-.storage.ComplianceOperatorScanSettingBindingH\x01R$complianceOperatorScanSettingBinding\x12[\n" +
-	"\x18compliance_operator_scan\x18\x18 \x01(\v2\x1f.storage.ComplianceOperatorScanH\x01R\x16complianceOperatorScan\x12f\n" +
-	"\x1cvirtual_machine_index_report\x18# \x01(\v2#.virtualmachine.v1.IndexReportEventH\x01R\x19virtualMachineIndexReport\x12L\n" +
-	"\x0fvirtual_machine\x18$ \x01(\v2!.virtualmachine.v1.VirtualMachineH\x01R\x0evirtualMachine\x12m\n" +
+	"\ralert_results\x18\x12 \x01(\v2\x15.central.AlertResultsH\x01R\falertResults\x12j\n" +
+	"\x1acompliance_operator_result\x18\x14 \x01(\v2&.storage.ComplianceOperatorCheckResultB\x02(\x01H\x01R\x18complianceOperatorResult\x12h\n" +
+	"\x1bcompliance_operator_profile\x18\x15 \x01(\v2\".storage.ComplianceOperatorProfileB\x02(\x01H\x01R\x19complianceOperatorProfile\x12_\n" +
+	"\x18compliance_operator_rule\x18\x16 \x01(\v2\x1f.storage.ComplianceOperatorRuleB\x02(\x01H\x01R\x16complianceOperatorRule\x12\x8b\x01\n" +
+	"(compliance_operator_scan_setting_binding\x18\x17 \x01(\v2-.storage.ComplianceOperatorScanSettingBindingB\x02(\x01H\x01R$complianceOperatorScanSettingBinding\x12_\n" +
+	"\x18compliance_operator_scan\x18\x18 \x01(\v2\x1f.storage.ComplianceOperatorScanB\x02(\x01H\x01R\x16complianceOperatorScan\x12j\n" +
+	"\x1cvirtual_machine_index_report\x18# \x01(\v2#.virtualmachine.v1.IndexReportEventB\x02(\x01H\x01R\x19virtualMachineIndexReport\x12P\n" +
+	"\x0fvirtual_machine\x18$ \x01(\v2!.virtualmachine.v1.VirtualMachineB\x02(\x01H\x01R\x0evirtualMachine\x12m\n" +
 	"\x1dcompliance_operator_result_v2\x18\x1b \x01(\v2(.central.ComplianceOperatorCheckResultV2H\x01R\x1acomplianceOperatorResultV2\x12k\n" +
 	"\x1ecompliance_operator_profile_v2\x18\x1c \x01(\v2$.central.ComplianceOperatorProfileV2H\x01R\x1bcomplianceOperatorProfileV2\x12b\n" +
 	"\x1bcompliance_operator_rule_v2\x18\x1d \x01(\v2!.central.ComplianceOperatorRuleV2H\x01R\x18complianceOperatorRuleV2\x12b\n" +
@@ -4375,32 +4432,32 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\thostnames\x18\x01 \x03(\tR\thostnames\x12\x1c\n" +
 	"\tstandards\x18\x02 \x03(\tR\tstandards\"\f\n" +
 	"\n" +
-	"KillScrape\"\x81\x02\n" +
+	"KillScrape\"\x85\x02\n" +
 	"\fScrapeUpdate\x12\x1b\n" +
-	"\tscrape_id\x18\x01 \x01(\tR\bscrapeId\x12K\n" +
-	"\x11compliance_return\x18\x02 \x01(\v2\x1c.compliance.ComplianceReturnH\x00R\x10complianceReturn\x12?\n" +
+	"\tscrape_id\x18\x01 \x01(\tR\bscrapeId\x12O\n" +
+	"\x11compliance_return\x18\x02 \x01(\v2\x1c.compliance.ComplianceReturnB\x02(\x01H\x00R\x10complianceReturn\x12?\n" +
 	"\x0escrape_started\x18\x03 \x01(\v2\x16.central.ScrapeStartedH\x00R\rscrapeStarted\x12<\n" +
 	"\rscrape_killed\x18\x04 \x01(\v2\x15.central.ScrapeKilledH\x00R\fscrapeKilledB\b\n" +
 	"\x06update\"4\n" +
 	"\rScrapeStarted\x12#\n" +
 	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\"3\n" +
 	"\fScrapeKilled\x12#\n" +
-	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\"\xaf\x02\n" +
+	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\"\xb3\x02\n" +
 	"\x16NetworkPoliciesCommand\x12\x15\n" +
 	"\x06seq_id\x18\x01 \x01(\x03R\x05seqId\x12A\n" +
-	"\apayload\x18\x02 \x01(\v2'.central.NetworkPoliciesCommand.PayloadR\apayload\x1aj\n" +
+	"\apayload\x18\x02 \x01(\v2'.central.NetworkPoliciesCommand.PayloadR\apayload\x1an\n" +
 	"\x05Apply\x12\x19\n" +
-	"\bapply_id\x18\x01 \x01(\tR\aapplyId\x12F\n" +
-	"\fmodification\x18\x02 \x01(\v2\".storage.NetworkPolicyModificationR\fmodification\x1aO\n" +
+	"\bapply_id\x18\x01 \x01(\tR\aapplyId\x12J\n" +
+	"\fmodification\x18\x02 \x01(\v2\".storage.NetworkPolicyModificationB\x02(\x01R\fmodification\x1aO\n" +
 	"\aPayload\x12=\n" +
 	"\x05apply\x18\x01 \x01(\v2%.central.NetworkPoliciesCommand.ApplyH\x00R\x05applyB\x05\n" +
-	"\x03cmd\"\x9f\x03\n" +
+	"\x03cmd\"\xa3\x03\n" +
 	"\x17NetworkPoliciesResponse\x12\x15\n" +
 	"\x06seq_id\x18\x01 \x01(\x03R\x05seqId\x12B\n" +
-	"\apayload\x18\x02 \x01(\v2(.central.NetworkPoliciesResponse.PayloadR\apayload\x1as\n" +
+	"\apayload\x18\x02 \x01(\v2(.central.NetworkPoliciesResponse.PayloadR\apayload\x1aw\n" +
 	"\x05Apply\x12\x19\n" +
-	"\bapply_id\x18\x01 \x01(\tR\aapplyId\x12O\n" +
-	"\x11undo_modification\x18\x02 \x01(\v2\".storage.NetworkPolicyModificationR\x10undoModification\x1a!\n" +
+	"\bapply_id\x18\x01 \x01(\tR\aapplyId\x12S\n" +
+	"\x11undo_modification\x18\x02 \x01(\v2\".storage.NetworkPolicyModificationB\x02(\x01R\x10undoModification\x1a!\n" +
 	"\x05Error\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x1a\x90\x01\n" +
 	"\aPayload\x12>\n" +

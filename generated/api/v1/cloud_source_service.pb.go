@@ -76,10 +76,12 @@ type CloudSource struct {
 	xxx_hidden_Credentials         *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials"`
 	xxx_hidden_SkipTestIntegration bool                     `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration"`
 	xxx_hidden_Config              isCloudSource_Config     `protobuf_oneof:"Config"`
-	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
-	XXX_presence                   [1]uint32
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CloudSource) Reset() {
@@ -138,7 +140,14 @@ func (x *CloudSource) GetType() CloudSource_Type {
 
 func (x *CloudSource) GetCredentials() *CloudSource_Credentials {
 	if x != nil {
-		return x.xxx_hidden_Credentials
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Credentials) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *CloudSource_Credentials
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Credentials), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -184,7 +193,12 @@ func (x *CloudSource) SetType(v CloudSource_Type) {
 }
 
 func (x *CloudSource) SetCredentials(v *CloudSource_Credentials) {
-	x.xxx_hidden_Credentials = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Credentials, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	}
 }
 
 func (x *CloudSource) SetSkipTestIntegration(v bool) {
@@ -233,7 +247,7 @@ func (x *CloudSource) HasCredentials() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Credentials != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *CloudSource) HasSkipTestIntegration() bool {
@@ -282,7 +296,8 @@ func (x *CloudSource) ClearType() {
 }
 
 func (x *CloudSource) ClearCredentials() {
-	x.xxx_hidden_Credentials = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Credentials, (*CloudSource_Credentials)(nil))
 }
 
 func (x *CloudSource) ClearSkipTestIntegration() {
@@ -354,7 +369,10 @@ func (b0 CloudSource_builder) Build() *CloudSource {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
 		x.xxx_hidden_Type = *b.Type
 	}
-	x.xxx_hidden_Credentials = b.Credentials
+	if b.Credentials != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_Credentials = b.Credentials
+	}
 	if b.SkipTestIntegration != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
 		x.xxx_hidden_SkipTestIntegration = *b.SkipTestIntegration
@@ -634,8 +652,12 @@ func (b0 CloudSourcesFilter_builder) Build() *CloudSourcesFilter {
 type CountCloudSourcesRequest struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Filter *CloudSourcesFilter    `protobuf:"bytes,1,opt,name=filter"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CountCloudSourcesRequest) Reset() {
@@ -665,24 +687,37 @@ func (x *CountCloudSourcesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CountCloudSourcesRequest) GetFilter() *CloudSourcesFilter {
 	if x != nil {
-		return x.xxx_hidden_Filter
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Filter) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *CloudSourcesFilter
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Filter), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *CountCloudSourcesRequest) SetFilter(v *CloudSourcesFilter) {
-	x.xxx_hidden_Filter = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *CountCloudSourcesRequest) HasFilter() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Filter != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CountCloudSourcesRequest) ClearFilter() {
-	x.xxx_hidden_Filter = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, (*CloudSourcesFilter)(nil))
 }
 
 type CountCloudSourcesRequest_builder struct {
@@ -696,7 +731,10 @@ func (b0 CountCloudSourcesRequest_builder) Build() *CountCloudSourcesRequest {
 	m0 := &CountCloudSourcesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Filter = b.Filter
+	if b.Filter != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Filter = b.Filter
+	}
 	return m0
 }
 
@@ -856,6 +894,10 @@ func (b0 GetCloudSourceRequest_builder) Build() *GetCloudSourceRequest {
 type GetCloudSourceResponse struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_CloudSource *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -887,24 +929,37 @@ func (x *GetCloudSourceResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetCloudSourceResponse) GetCloudSource() *CloudSource {
 	if x != nil {
-		return x.xxx_hidden_CloudSource
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloudSource) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *CloudSource
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloudSource), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetCloudSourceResponse) SetCloudSource(v *CloudSource) {
-	x.xxx_hidden_CloudSource = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloudSource, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *GetCloudSourceResponse) HasCloudSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CloudSource != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetCloudSourceResponse) ClearCloudSource() {
-	x.xxx_hidden_CloudSource = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloudSource, (*CloudSource)(nil))
 }
 
 type GetCloudSourceResponse_builder struct {
@@ -917,7 +972,10 @@ func (b0 GetCloudSourceResponse_builder) Build() *GetCloudSourceResponse {
 	m0 := &GetCloudSourceResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CloudSource = b.CloudSource
+	if b.CloudSource != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_CloudSource = b.CloudSource
+	}
 	return m0
 }
 
@@ -925,8 +983,12 @@ type ListCloudSourcesRequest struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Pagination *Pagination            `protobuf:"bytes,1,opt,name=pagination"`
 	xxx_hidden_Filter     *CloudSourcesFilter    `protobuf:"bytes,2,opt,name=filter"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListCloudSourcesRequest) Reset() {
@@ -956,46 +1018,72 @@ func (x *ListCloudSourcesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListCloudSourcesRequest) GetPagination() *Pagination {
 	if x != nil {
-		return x.xxx_hidden_Pagination
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Pagination) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *Pagination
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Pagination), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ListCloudSourcesRequest) GetFilter() *CloudSourcesFilter {
 	if x != nil {
-		return x.xxx_hidden_Filter
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Filter) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *CloudSourcesFilter
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Filter), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ListCloudSourcesRequest) SetPagination(v *Pagination) {
-	x.xxx_hidden_Pagination = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *ListCloudSourcesRequest) SetFilter(v *CloudSourcesFilter) {
-	x.xxx_hidden_Filter = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *ListCloudSourcesRequest) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Pagination != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ListCloudSourcesRequest) HasFilter() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Filter != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ListCloudSourcesRequest) ClearPagination() {
-	x.xxx_hidden_Pagination = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, (*Pagination)(nil))
 }
 
 func (x *ListCloudSourcesRequest) ClearFilter() {
-	x.xxx_hidden_Filter = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, (*CloudSourcesFilter)(nil))
 }
 
 type ListCloudSourcesRequest_builder struct {
@@ -1011,16 +1099,26 @@ func (b0 ListCloudSourcesRequest_builder) Build() *ListCloudSourcesRequest {
 	m0 := &ListCloudSourcesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Pagination = b.Pagination
-	x.xxx_hidden_Filter = b.Filter
+	if b.Pagination != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Pagination = b.Pagination
+	}
+	if b.Filter != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Filter = b.Filter
+	}
 	return m0
 }
 
 type ListCloudSourcesResponse struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_CloudSources *[]*CloudSource        `protobuf:"bytes,1,rep,name=cloud_sources,json=cloudSources"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListCloudSourcesResponse) Reset() {
@@ -1050,15 +1148,27 @@ func (x *ListCloudSourcesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListCloudSourcesResponse) GetCloudSources() []*CloudSource {
 	if x != nil {
-		if x.xxx_hidden_CloudSources != nil {
-			return *x.xxx_hidden_CloudSources
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloudSources) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*CloudSource
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloudSources), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListCloudSourcesResponse) SetCloudSources(v []*CloudSource) {
-	x.xxx_hidden_CloudSources = &v
+	var sv *[]*CloudSource
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloudSources), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*CloudSource{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_CloudSources), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListCloudSourcesResponse_builder struct {
@@ -1071,13 +1181,20 @@ func (b0 ListCloudSourcesResponse_builder) Build() *ListCloudSourcesResponse {
 	m0 := &ListCloudSourcesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CloudSources = &b.CloudSources
+	if b.CloudSources != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_CloudSources = &b.CloudSources
+	}
 	return m0
 }
 
 type CreateCloudSourceRequest struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_CloudSource *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -1109,24 +1226,37 @@ func (x *CreateCloudSourceRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateCloudSourceRequest) GetCloudSource() *CloudSource {
 	if x != nil {
-		return x.xxx_hidden_CloudSource
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloudSource) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *CloudSource
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloudSource), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *CreateCloudSourceRequest) SetCloudSource(v *CloudSource) {
-	x.xxx_hidden_CloudSource = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloudSource, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *CreateCloudSourceRequest) HasCloudSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CloudSource != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CreateCloudSourceRequest) ClearCloudSource() {
-	x.xxx_hidden_CloudSource = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloudSource, (*CloudSource)(nil))
 }
 
 type CreateCloudSourceRequest_builder struct {
@@ -1139,13 +1269,20 @@ func (b0 CreateCloudSourceRequest_builder) Build() *CreateCloudSourceRequest {
 	m0 := &CreateCloudSourceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CloudSource = b.CloudSource
+	if b.CloudSource != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_CloudSource = b.CloudSource
+	}
 	return m0
 }
 
 type CreateCloudSourceResponse struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_CloudSource *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -1177,24 +1314,37 @@ func (x *CreateCloudSourceResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateCloudSourceResponse) GetCloudSource() *CloudSource {
 	if x != nil {
-		return x.xxx_hidden_CloudSource
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloudSource) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *CloudSource
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloudSource), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *CreateCloudSourceResponse) SetCloudSource(v *CloudSource) {
-	x.xxx_hidden_CloudSource = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloudSource, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *CreateCloudSourceResponse) HasCloudSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CloudSource != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CreateCloudSourceResponse) ClearCloudSource() {
-	x.xxx_hidden_CloudSource = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloudSource, (*CloudSource)(nil))
 }
 
 type CreateCloudSourceResponse_builder struct {
@@ -1207,7 +1357,10 @@ func (b0 CreateCloudSourceResponse_builder) Build() *CreateCloudSourceResponse {
 	m0 := &CreateCloudSourceResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CloudSource = b.CloudSource
+	if b.CloudSource != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_CloudSource = b.CloudSource
+	}
 	return m0
 }
 
@@ -1215,10 +1368,12 @@ type UpdateCloudSourceRequest struct {
 	state                        protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_CloudSource       *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource"`
 	xxx_hidden_UpdateCredentials bool                   `protobuf:"varint,2,opt,name=update_credentials,json=updateCredentials"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpdateCloudSourceRequest) Reset() {
@@ -1248,7 +1403,14 @@ func (x *UpdateCloudSourceRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateCloudSourceRequest) GetCloudSource() *CloudSource {
 	if x != nil {
-		return x.xxx_hidden_CloudSource
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloudSource) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *CloudSource
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloudSource), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1261,7 +1423,12 @@ func (x *UpdateCloudSourceRequest) GetUpdateCredentials() bool {
 }
 
 func (x *UpdateCloudSourceRequest) SetCloudSource(v *CloudSource) {
-	x.xxx_hidden_CloudSource = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloudSource, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *UpdateCloudSourceRequest) SetUpdateCredentials(v bool) {
@@ -1273,7 +1440,7 @@ func (x *UpdateCloudSourceRequest) HasCloudSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CloudSource != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpdateCloudSourceRequest) HasUpdateCredentials() bool {
@@ -1284,7 +1451,8 @@ func (x *UpdateCloudSourceRequest) HasUpdateCredentials() bool {
 }
 
 func (x *UpdateCloudSourceRequest) ClearCloudSource() {
-	x.xxx_hidden_CloudSource = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloudSource, (*CloudSource)(nil))
 }
 
 func (x *UpdateCloudSourceRequest) ClearUpdateCredentials() {
@@ -1306,7 +1474,10 @@ func (b0 UpdateCloudSourceRequest_builder) Build() *UpdateCloudSourceRequest {
 	m0 := &UpdateCloudSourceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CloudSource = b.CloudSource
+	if b.CloudSource != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_CloudSource = b.CloudSource
+	}
 	if b.UpdateCredentials != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_UpdateCredentials = *b.UpdateCredentials
@@ -1396,10 +1567,12 @@ type TestCloudSourceRequest struct {
 	state                        protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_CloudSource       *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource"`
 	xxx_hidden_UpdateCredentials bool                   `protobuf:"varint,2,opt,name=update_credentials,json=updateCredentials"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TestCloudSourceRequest) Reset() {
@@ -1429,7 +1602,14 @@ func (x *TestCloudSourceRequest) ProtoReflect() protoreflect.Message {
 
 func (x *TestCloudSourceRequest) GetCloudSource() *CloudSource {
 	if x != nil {
-		return x.xxx_hidden_CloudSource
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloudSource) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *CloudSource
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloudSource), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1442,7 +1622,12 @@ func (x *TestCloudSourceRequest) GetUpdateCredentials() bool {
 }
 
 func (x *TestCloudSourceRequest) SetCloudSource(v *CloudSource) {
-	x.xxx_hidden_CloudSource = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloudSource, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *TestCloudSourceRequest) SetUpdateCredentials(v bool) {
@@ -1454,7 +1639,7 @@ func (x *TestCloudSourceRequest) HasCloudSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CloudSource != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *TestCloudSourceRequest) HasUpdateCredentials() bool {
@@ -1465,7 +1650,8 @@ func (x *TestCloudSourceRequest) HasUpdateCredentials() bool {
 }
 
 func (x *TestCloudSourceRequest) ClearCloudSource() {
-	x.xxx_hidden_CloudSource = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloudSource, (*CloudSource)(nil))
 }
 
 func (x *TestCloudSourceRequest) ClearUpdateCredentials() {
@@ -1487,7 +1673,10 @@ func (b0 TestCloudSourceRequest_builder) Build() *TestCloudSourceRequest {
 	m0 := &TestCloudSourceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CloudSource = b.CloudSource
+	if b.CloudSource != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_CloudSource = b.CloudSource
+	}
 	if b.UpdateCredentials != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_UpdateCredentials = *b.UpdateCredentials
@@ -1646,15 +1835,15 @@ var File_api_v1_cloud_source_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_cloud_source_service_proto_rawDesc = "" +
 	"\n" +
-	"!api/v1/cloud_source_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"\xe7\x03\n" +
+	"!api/v1/cloud_source_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto\"\xf3\x03\n" +
 	"\vCloudSource\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12(\n" +
-	"\x04type\x18\x03 \x01(\x0e2\x14.v1.CloudSource.TypeR\x04type\x12=\n" +
-	"\vcredentials\x18\x04 \x01(\v2\x1b.v1.CloudSource.CredentialsR\vcredentials\x122\n" +
-	"\x15skip_test_integration\x18\x05 \x01(\bR\x13skipTestIntegration\x12=\n" +
-	"\rpaladin_cloud\x18\x06 \x01(\v2\x16.v1.PaladinCloudConfigH\x00R\fpaladinCloud\x12!\n" +
-	"\x03ocm\x18\a \x01(\v2\r.v1.OCMConfigH\x00R\x03ocm\x1ag\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x14.v1.CloudSource.TypeR\x04type\x12A\n" +
+	"\vcredentials\x18\x04 \x01(\v2\x1b.v1.CloudSource.CredentialsB\x02(\x01R\vcredentials\x122\n" +
+	"\x15skip_test_integration\x18\x05 \x01(\bR\x13skipTestIntegration\x12A\n" +
+	"\rpaladin_cloud\x18\x06 \x01(\v2\x16.v1.PaladinCloudConfigB\x02(\x01H\x00R\fpaladinCloud\x12%\n" +
+	"\x03ocm\x18\a \x01(\v2\r.v1.OCMConfigB\x02(\x01H\x00R\x03ocm\x1ag\n" +
 	"\vCredentials\x12\x16\n" +
 	"\x06secret\x18\x01 \x01(\tR\x06secret\x12\x1b\n" +
 	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12#\n" +
@@ -1670,33 +1859,33 @@ const file_api_v1_cloud_source_service_proto_rawDesc = "" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\"V\n" +
 	"\x12CloudSourcesFilter\x12\x14\n" +
 	"\x05names\x18\x01 \x03(\tR\x05names\x12*\n" +
-	"\x05types\x18\x02 \x03(\x0e2\x14.v1.CloudSource.TypeR\x05types\"J\n" +
-	"\x18CountCloudSourcesRequest\x12.\n" +
-	"\x06filter\x18\x01 \x01(\v2\x16.v1.CloudSourcesFilterR\x06filter\"1\n" +
+	"\x05types\x18\x02 \x03(\x0e2\x14.v1.CloudSource.TypeR\x05types\"N\n" +
+	"\x18CountCloudSourcesRequest\x122\n" +
+	"\x06filter\x18\x01 \x01(\v2\x16.v1.CloudSourcesFilterB\x02(\x01R\x06filter\"1\n" +
 	"\x19CountCloudSourcesResponse\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\"'\n" +
 	"\x15GetCloudSourceRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"L\n" +
-	"\x16GetCloudSourceResponse\x122\n" +
-	"\fcloud_source\x18\x01 \x01(\v2\x0f.v1.CloudSourceR\vcloudSource\"y\n" +
-	"\x17ListCloudSourcesRequest\x12.\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"P\n" +
+	"\x16GetCloudSourceResponse\x126\n" +
+	"\fcloud_source\x18\x01 \x01(\v2\x0f.v1.CloudSourceB\x02(\x01R\vcloudSource\"\x81\x01\n" +
+	"\x17ListCloudSourcesRequest\x122\n" +
 	"\n" +
-	"pagination\x18\x01 \x01(\v2\x0e.v1.PaginationR\n" +
-	"pagination\x12.\n" +
-	"\x06filter\x18\x02 \x01(\v2\x16.v1.CloudSourcesFilterR\x06filter\"P\n" +
-	"\x18ListCloudSourcesResponse\x124\n" +
-	"\rcloud_sources\x18\x01 \x03(\v2\x0f.v1.CloudSourceR\fcloudSources\"N\n" +
-	"\x18CreateCloudSourceRequest\x122\n" +
-	"\fcloud_source\x18\x01 \x01(\v2\x0f.v1.CloudSourceR\vcloudSource\"O\n" +
-	"\x19CreateCloudSourceResponse\x122\n" +
-	"\fcloud_source\x18\x01 \x01(\v2\x0f.v1.CloudSourceR\vcloudSource\"}\n" +
-	"\x18UpdateCloudSourceRequest\x122\n" +
-	"\fcloud_source\x18\x01 \x01(\v2\x0f.v1.CloudSourceR\vcloudSource\x12-\n" +
+	"pagination\x18\x01 \x01(\v2\x0e.v1.PaginationB\x02(\x01R\n" +
+	"pagination\x122\n" +
+	"\x06filter\x18\x02 \x01(\v2\x16.v1.CloudSourcesFilterB\x02(\x01R\x06filter\"T\n" +
+	"\x18ListCloudSourcesResponse\x128\n" +
+	"\rcloud_sources\x18\x01 \x03(\v2\x0f.v1.CloudSourceB\x02(\x01R\fcloudSources\"R\n" +
+	"\x18CreateCloudSourceRequest\x126\n" +
+	"\fcloud_source\x18\x01 \x01(\v2\x0f.v1.CloudSourceB\x02(\x01R\vcloudSource\"S\n" +
+	"\x19CreateCloudSourceResponse\x126\n" +
+	"\fcloud_source\x18\x01 \x01(\v2\x0f.v1.CloudSourceB\x02(\x01R\vcloudSource\"\x81\x01\n" +
+	"\x18UpdateCloudSourceRequest\x126\n" +
+	"\fcloud_source\x18\x01 \x01(\v2\x0f.v1.CloudSourceB\x02(\x01R\vcloudSource\x12-\n" +
 	"\x12update_credentials\x18\x02 \x01(\bR\x11updateCredentials\"*\n" +
 	"\x18DeleteCloudSourceRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"{\n" +
-	"\x16TestCloudSourceRequest\x122\n" +
-	"\fcloud_source\x18\x01 \x01(\v2\x0f.v1.CloudSourceR\vcloudSource\x12-\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x7f\n" +
+	"\x16TestCloudSourceRequest\x126\n" +
+	"\fcloud_source\x18\x01 \x01(\v2\x0f.v1.CloudSourceB\x02(\x01R\vcloudSource\x12-\n" +
 	"\x12update_credentials\x18\x02 \x01(\bR\x11updateCredentials2\xf4\x05\n" +
 	"\x13CloudSourcesService\x12q\n" +
 	"\x11CountCloudSources\x12\x1c.v1.CountCloudSourcesRequest\x1a\x1d.v1.CountCloudSourcesResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/count/cloud-sources\x12g\n" +

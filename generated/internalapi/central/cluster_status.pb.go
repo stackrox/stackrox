@@ -257,8 +257,12 @@ type RawClusterHealthInfo struct {
 	xxx_hidden_CollectorHealthInfo        *storage.CollectorHealthInfo        `protobuf:"bytes,1,opt,name=collector_health_info,json=collectorHealthInfo"`
 	xxx_hidden_AdmissionControlHealthInfo *storage.AdmissionControlHealthInfo `protobuf:"bytes,2,opt,name=admission_control_health_info,json=admissionControlHealthInfo"`
 	xxx_hidden_ScannerHealthInfo          *storage.ScannerHealthInfo          `protobuf:"bytes,3,opt,name=scanner_health_info,json=scannerHealthInfo"`
-	unknownFields                         protoimpl.UnknownFields
-	sizeCache                             protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *RawClusterHealthInfo) Reset() {
@@ -288,68 +292,107 @@ func (x *RawClusterHealthInfo) ProtoReflect() protoreflect.Message {
 
 func (x *RawClusterHealthInfo) GetCollectorHealthInfo() *storage.CollectorHealthInfo {
 	if x != nil {
-		return x.xxx_hidden_CollectorHealthInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CollectorHealthInfo) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.CollectorHealthInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CollectorHealthInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *RawClusterHealthInfo) GetAdmissionControlHealthInfo() *storage.AdmissionControlHealthInfo {
 	if x != nil {
-		return x.xxx_hidden_AdmissionControlHealthInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AdmissionControlHealthInfo) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.AdmissionControlHealthInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AdmissionControlHealthInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *RawClusterHealthInfo) GetScannerHealthInfo() *storage.ScannerHealthInfo {
 	if x != nil {
-		return x.xxx_hidden_ScannerHealthInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScannerHealthInfo) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *storage.ScannerHealthInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScannerHealthInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *RawClusterHealthInfo) SetCollectorHealthInfo(v *storage.CollectorHealthInfo) {
-	x.xxx_hidden_CollectorHealthInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CollectorHealthInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	}
 }
 
 func (x *RawClusterHealthInfo) SetAdmissionControlHealthInfo(v *storage.AdmissionControlHealthInfo) {
-	x.xxx_hidden_AdmissionControlHealthInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AdmissionControlHealthInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	}
 }
 
 func (x *RawClusterHealthInfo) SetScannerHealthInfo(v *storage.ScannerHealthInfo) {
-	x.xxx_hidden_ScannerHealthInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ScannerHealthInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	}
 }
 
 func (x *RawClusterHealthInfo) HasCollectorHealthInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CollectorHealthInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *RawClusterHealthInfo) HasAdmissionControlHealthInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_AdmissionControlHealthInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *RawClusterHealthInfo) HasScannerHealthInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScannerHealthInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *RawClusterHealthInfo) ClearCollectorHealthInfo() {
-	x.xxx_hidden_CollectorHealthInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CollectorHealthInfo, (*storage.CollectorHealthInfo)(nil))
 }
 
 func (x *RawClusterHealthInfo) ClearAdmissionControlHealthInfo() {
-	x.xxx_hidden_AdmissionControlHealthInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AdmissionControlHealthInfo, (*storage.AdmissionControlHealthInfo)(nil))
 }
 
 func (x *RawClusterHealthInfo) ClearScannerHealthInfo() {
-	x.xxx_hidden_ScannerHealthInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ScannerHealthInfo, (*storage.ScannerHealthInfo)(nil))
 }
 
 type RawClusterHealthInfo_builder struct {
@@ -364,9 +407,18 @@ func (b0 RawClusterHealthInfo_builder) Build() *RawClusterHealthInfo {
 	m0 := &RawClusterHealthInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CollectorHealthInfo = b.CollectorHealthInfo
-	x.xxx_hidden_AdmissionControlHealthInfo = b.AdmissionControlHealthInfo
-	x.xxx_hidden_ScannerHealthInfo = b.ScannerHealthInfo
+	if b.CollectorHealthInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_CollectorHealthInfo = b.CollectorHealthInfo
+	}
+	if b.AdmissionControlHealthInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_AdmissionControlHealthInfo = b.AdmissionControlHealthInfo
+	}
+	if b.ScannerHealthInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_ScannerHealthInfo = b.ScannerHealthInfo
+	}
 	return m0
 }
 
@@ -419,15 +471,15 @@ const file_internalapi_central_cluster_status_proto_rawDesc = "" +
 	"\n" +
 	"(internalapi/central/cluster_status.proto\x12\acentral\x1a\x15storage/cluster.proto\x1a!google/protobuf/go_features.proto\"A\n" +
 	"\x1bDeploymentEnvironmentUpdate\x12\"\n" +
-	"\fenvironments\x18\x01 \x03(\tR\fenvironments\"\xaa\x01\n" +
-	"\x13ClusterStatusUpdate\x120\n" +
-	"\x06status\x18\x01 \x01(\v2\x16.storage.ClusterStatusH\x00R\x06status\x12Z\n" +
+	"\fenvironments\x18\x01 \x03(\tR\fenvironments\"\xae\x01\n" +
+	"\x13ClusterStatusUpdate\x124\n" +
+	"\x06status\x18\x01 \x01(\v2\x16.storage.ClusterStatusB\x02(\x01H\x00R\x06status\x12Z\n" +
 	"\x15deployment_env_update\x18\x02 \x01(\v2$.central.DeploymentEnvironmentUpdateH\x00R\x13deploymentEnvUpdateB\x05\n" +
-	"\x03msg\"\x9c\x02\n" +
-	"\x14RawClusterHealthInfo\x12P\n" +
-	"\x15collector_health_info\x18\x01 \x01(\v2\x1c.storage.CollectorHealthInfoR\x13collectorHealthInfo\x12f\n" +
-	"\x1dadmission_control_health_info\x18\x02 \x01(\v2#.storage.AdmissionControlHealthInfoR\x1aadmissionControlHealthInfo\x12J\n" +
-	"\x13scanner_health_info\x18\x03 \x01(\v2\x1a.storage.ScannerHealthInfoR\x11scannerHealthInfo\"\x17\n" +
+	"\x03msg\"\xa8\x02\n" +
+	"\x14RawClusterHealthInfo\x12T\n" +
+	"\x15collector_health_info\x18\x01 \x01(\v2\x1c.storage.CollectorHealthInfoB\x02(\x01R\x13collectorHealthInfo\x12j\n" +
+	"\x1dadmission_control_health_info\x18\x02 \x01(\v2#.storage.AdmissionControlHealthInfoB\x02(\x01R\x1aadmissionControlHealthInfo\x12N\n" +
+	"\x13scanner_health_info\x18\x03 \x01(\v2\x1a.storage.ScannerHealthInfoB\x02(\x01R\x11scannerHealthInfo\"\x17\n" +
 	"\x15ClusterHealthResponseB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_cluster_status_proto_msgTypes = make([]protoimpl.MessageInfo, 4)

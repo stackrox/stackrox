@@ -213,8 +213,12 @@ func (b0 GetImageRequest_builder) Build() *GetImageRequest {
 type ListImagesResponse struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Images *[]*storage.ListImage  `protobuf:"bytes,1,rep,name=images"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListImagesResponse) Reset() {
@@ -244,15 +248,27 @@ func (x *ListImagesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListImagesResponse) GetImages() []*storage.ListImage {
 	if x != nil {
-		if x.xxx_hidden_Images != nil {
-			return *x.xxx_hidden_Images
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Images) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ListImage
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Images), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListImagesResponse) SetImages(v []*storage.ListImage) {
-	x.xxx_hidden_Images = &v
+	var sv *[]*storage.ListImage
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Images), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ListImage{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Images), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListImagesResponse_builder struct {
@@ -265,7 +281,10 @@ func (b0 ListImagesResponse_builder) Build() *ListImagesResponse {
 	m0 := &ListImagesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Images = &b.Images
+	if b.Images != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Images = &b.Images
+	}
 	return m0
 }
 
@@ -553,10 +572,12 @@ func (b0 ScanImageRequest_builder) Build() *ScanImageRequest {
 }
 
 type ScanImageInternalRequest struct {
-	state                  protoimpl.MessageState           `protogen:"opaque.v1"`
-	xxx_hidden_Image       *storage.ContainerImage          `protobuf:"bytes,1,opt,name=image"`
-	xxx_hidden_CachedOnly  bool                             `protobuf:"varint,3,opt,name=cached_only,json=cachedOnly"`
-	xxx_hidden_Source      *ScanImageInternalRequest_Source `protobuf:"bytes,4,opt,name=source"`
+	state                 protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Image      *storage.ContainerImage          `protobuf:"bytes,1,opt,name=image"`
+	xxx_hidden_CachedOnly bool                             `protobuf:"varint,3,opt,name=cached_only,json=cachedOnly"`
+	xxx_hidden_Source     *ScanImageInternalRequest_Source `protobuf:"bytes,4,opt,name=source"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -590,7 +611,14 @@ func (x *ScanImageInternalRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ScanImageInternalRequest) GetImage() *storage.ContainerImage {
 	if x != nil {
-		return x.xxx_hidden_Image
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Image) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.ContainerImage
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Image), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -604,13 +632,25 @@ func (x *ScanImageInternalRequest) GetCachedOnly() bool {
 
 func (x *ScanImageInternalRequest) GetSource() *ScanImageInternalRequest_Source {
 	if x != nil {
-		return x.xxx_hidden_Source
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Source) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *ScanImageInternalRequest_Source
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Source), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ScanImageInternalRequest) SetImage(v *storage.ContainerImage) {
-	x.xxx_hidden_Image = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Image, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	}
 }
 
 func (x *ScanImageInternalRequest) SetCachedOnly(v bool) {
@@ -619,14 +659,19 @@ func (x *ScanImageInternalRequest) SetCachedOnly(v bool) {
 }
 
 func (x *ScanImageInternalRequest) SetSource(v *ScanImageInternalRequest_Source) {
-	x.xxx_hidden_Source = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Source, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	}
 }
 
 func (x *ScanImageInternalRequest) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Image != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ScanImageInternalRequest) HasCachedOnly() bool {
@@ -640,11 +685,12 @@ func (x *ScanImageInternalRequest) HasSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Source != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ScanImageInternalRequest) ClearImage() {
-	x.xxx_hidden_Image = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Image, (*storage.ContainerImage)(nil))
 }
 
 func (x *ScanImageInternalRequest) ClearCachedOnly() {
@@ -653,7 +699,8 @@ func (x *ScanImageInternalRequest) ClearCachedOnly() {
 }
 
 func (x *ScanImageInternalRequest) ClearSource() {
-	x.xxx_hidden_Source = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Source, (*ScanImageInternalRequest_Source)(nil))
 }
 
 type ScanImageInternalRequest_builder struct {
@@ -668,20 +715,30 @@ func (b0 ScanImageInternalRequest_builder) Build() *ScanImageInternalRequest {
 	m0 := &ScanImageInternalRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Image = b.Image
+	if b.Image != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Image = b.Image
+	}
 	if b.CachedOnly != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_CachedOnly = *b.CachedOnly
 	}
-	x.xxx_hidden_Source = b.Source
+	if b.Source != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Source = b.Source
+	}
 	return m0
 }
 
 type ScanImageInternalResponse struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Image *storage.Image         `protobuf:"bytes,1,opt,name=image"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ScanImageInternalResponse) Reset() {
@@ -711,24 +768,37 @@ func (x *ScanImageInternalResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ScanImageInternalResponse) GetImage() *storage.Image {
 	if x != nil {
-		return x.xxx_hidden_Image
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Image) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Image
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Image), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ScanImageInternalResponse) SetImage(v *storage.Image) {
-	x.xxx_hidden_Image = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Image, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *ScanImageInternalResponse) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Image != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ScanImageInternalResponse) ClearImage() {
-	x.xxx_hidden_Image = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Image, (*storage.Image)(nil))
 }
 
 type ScanImageInternalResponse_builder struct {
@@ -741,7 +811,10 @@ func (b0 ScanImageInternalResponse_builder) Build() *ScanImageInternalResponse {
 	m0 := &ScanImageInternalResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Image = b.Image
+	if b.Image != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Image = b.Image
+	}
 	return m0
 }
 
@@ -753,10 +826,12 @@ type GetImageVulnerabilitiesInternalRequest struct {
 	xxx_hidden_IsClusterLocal bool                   `protobuf:"varint,6,opt,name=is_cluster_local,json=isClusterLocal"`
 	xxx_hidden_Components     *v1.Components         `protobuf:"bytes,4,opt,name=components"`
 	xxx_hidden_Notes          []v1.Note              `protobuf:"varint,5,rep,packed,name=notes,enum=scannerV1.Note"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) Reset() {
@@ -796,14 +871,28 @@ func (x *GetImageVulnerabilitiesInternalRequest) GetImageId() string {
 
 func (x *GetImageVulnerabilitiesInternalRequest) GetImageName() *storage.ImageName {
 	if x != nil {
-		return x.xxx_hidden_ImageName
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ImageName) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.ImageName
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ImageName), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) GetMetadata() *storage.ImageMetadata {
 	if x != nil {
-		return x.xxx_hidden_Metadata
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Metadata) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *storage.ImageMetadata
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Metadata), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -817,7 +906,14 @@ func (x *GetImageVulnerabilitiesInternalRequest) GetIsClusterLocal() bool {
 
 func (x *GetImageVulnerabilitiesInternalRequest) GetComponents() *v1.Components {
 	if x != nil {
-		return x.xxx_hidden_Components
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Components) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *v1.Components
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -835,11 +931,21 @@ func (x *GetImageVulnerabilitiesInternalRequest) SetImageId(v string) {
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) SetImageName(v *storage.ImageName) {
-	x.xxx_hidden_ImageName = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ImageName, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	}
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) SetMetadata(v *storage.ImageMetadata) {
-	x.xxx_hidden_Metadata = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	}
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) SetIsClusterLocal(v bool) {
@@ -848,7 +954,12 @@ func (x *GetImageVulnerabilitiesInternalRequest) SetIsClusterLocal(v bool) {
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) SetComponents(v *v1.Components) {
-	x.xxx_hidden_Components = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Components, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	}
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) SetNotes(v []v1.Note) {
@@ -866,14 +977,14 @@ func (x *GetImageVulnerabilitiesInternalRequest) HasImageName() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ImageName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Metadata != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) HasIsClusterLocal() bool {
@@ -887,7 +998,7 @@ func (x *GetImageVulnerabilitiesInternalRequest) HasComponents() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Components != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) ClearImageId() {
@@ -896,11 +1007,13 @@ func (x *GetImageVulnerabilitiesInternalRequest) ClearImageId() {
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) ClearImageName() {
-	x.xxx_hidden_ImageName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ImageName, (*storage.ImageName)(nil))
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) ClearMetadata() {
-	x.xxx_hidden_Metadata = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, (*storage.ImageMetadata)(nil))
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) ClearIsClusterLocal() {
@@ -909,7 +1022,8 @@ func (x *GetImageVulnerabilitiesInternalRequest) ClearIsClusterLocal() {
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) ClearComponents() {
-	x.xxx_hidden_Components = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Components, (*v1.Components)(nil))
 }
 
 type GetImageVulnerabilitiesInternalRequest_builder struct {
@@ -931,13 +1045,22 @@ func (b0 GetImageVulnerabilitiesInternalRequest_builder) Build() *GetImageVulner
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
 		x.xxx_hidden_ImageId = b.ImageId
 	}
-	x.xxx_hidden_ImageName = b.ImageName
-	x.xxx_hidden_Metadata = b.Metadata
+	if b.ImageName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_ImageName = b.ImageName
+	}
+	if b.Metadata != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_Metadata = b.Metadata
+	}
 	if b.IsClusterLocal != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
 		x.xxx_hidden_IsClusterLocal = *b.IsClusterLocal
 	}
-	x.xxx_hidden_Components = b.Components
+	if b.Components != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_Components = b.Components
+	}
 	x.xxx_hidden_Notes = b.Notes
 	return m0
 }
@@ -956,10 +1079,12 @@ type EnrichLocalImageInternalRequest struct {
 	xxx_hidden_RequestId      *string                 `protobuf:"bytes,9,opt,name=request_id,json=requestId"`
 	xxx_hidden_Force          bool                    `protobuf:"varint,10,opt,name=force"`
 	xxx_hidden_V4Contents     *v4.Contents            `protobuf:"bytes,11,opt,name=v4_contents,json=v4Contents"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *EnrichLocalImageInternalRequest) Reset() {
@@ -1009,28 +1134,56 @@ func (x *EnrichLocalImageInternalRequest) GetImageId() string {
 
 func (x *EnrichLocalImageInternalRequest) GetImageName() *storage.ImageName {
 	if x != nil {
-		return x.xxx_hidden_ImageName
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ImageName) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.ImageName
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ImageName), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *EnrichLocalImageInternalRequest) GetMetadata() *storage.ImageMetadata {
 	if x != nil {
-		return x.xxx_hidden_Metadata
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Metadata) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *storage.ImageMetadata
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Metadata), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *EnrichLocalImageInternalRequest) GetImageSignature() *storage.ImageSignature {
 	if x != nil {
-		return x.xxx_hidden_ImageSignature
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ImageSignature) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *storage.ImageSignature
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ImageSignature), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *EnrichLocalImageInternalRequest) GetComponents() *v1.Components {
 	if x != nil {
-		return x.xxx_hidden_Components
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Components) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *v1.Components
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Components), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1078,7 +1231,14 @@ func (x *EnrichLocalImageInternalRequest) GetForce() bool {
 
 func (x *EnrichLocalImageInternalRequest) GetV4Contents() *v4.Contents {
 	if x != nil {
-		return x.xxx_hidden_V4Contents
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 11) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_V4Contents) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *v4.Contents
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_V4Contents), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1094,19 +1254,39 @@ func (x *EnrichLocalImageInternalRequest) SetImageId(v string) {
 }
 
 func (x *EnrichLocalImageInternalRequest) SetImageName(v *storage.ImageName) {
-	x.xxx_hidden_ImageName = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ImageName, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 12)
+	}
 }
 
 func (x *EnrichLocalImageInternalRequest) SetMetadata(v *storage.ImageMetadata) {
-	x.xxx_hidden_Metadata = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 12)
+	}
 }
 
 func (x *EnrichLocalImageInternalRequest) SetImageSignature(v *storage.ImageSignature) {
-	x.xxx_hidden_ImageSignature = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ImageSignature, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 12)
+	}
 }
 
 func (x *EnrichLocalImageInternalRequest) SetComponents(v *v1.Components) {
-	x.xxx_hidden_Components = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Components, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 12)
+	}
 }
 
 func (x *EnrichLocalImageInternalRequest) SetNotes(v []v1.Note) {
@@ -1133,7 +1313,12 @@ func (x *EnrichLocalImageInternalRequest) SetForce(v bool) {
 }
 
 func (x *EnrichLocalImageInternalRequest) SetV4Contents(v *v4.Contents) {
-	x.xxx_hidden_V4Contents = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_V4Contents, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 12)
+	}
 }
 
 func (x *EnrichLocalImageInternalRequest) HasIndexerVersion() bool {
@@ -1154,28 +1339,28 @@ func (x *EnrichLocalImageInternalRequest) HasImageName() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ImageName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *EnrichLocalImageInternalRequest) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Metadata != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *EnrichLocalImageInternalRequest) HasImageSignature() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ImageSignature != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *EnrichLocalImageInternalRequest) HasComponents() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Components != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *EnrichLocalImageInternalRequest) HasError() bool {
@@ -1203,7 +1388,7 @@ func (x *EnrichLocalImageInternalRequest) HasV4Contents() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_V4Contents != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
 }
 
 func (x *EnrichLocalImageInternalRequest) ClearIndexerVersion() {
@@ -1217,19 +1402,23 @@ func (x *EnrichLocalImageInternalRequest) ClearImageId() {
 }
 
 func (x *EnrichLocalImageInternalRequest) ClearImageName() {
-	x.xxx_hidden_ImageName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ImageName, (*storage.ImageName)(nil))
 }
 
 func (x *EnrichLocalImageInternalRequest) ClearMetadata() {
-	x.xxx_hidden_Metadata = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, (*storage.ImageMetadata)(nil))
 }
 
 func (x *EnrichLocalImageInternalRequest) ClearImageSignature() {
-	x.xxx_hidden_ImageSignature = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ImageSignature, (*storage.ImageSignature)(nil))
 }
 
 func (x *EnrichLocalImageInternalRequest) ClearComponents() {
-	x.xxx_hidden_Components = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Components, (*v1.Components)(nil))
 }
 
 func (x *EnrichLocalImageInternalRequest) ClearError() {
@@ -1248,7 +1437,8 @@ func (x *EnrichLocalImageInternalRequest) ClearForce() {
 }
 
 func (x *EnrichLocalImageInternalRequest) ClearV4Contents() {
-	x.xxx_hidden_V4Contents = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_V4Contents, (*v4.Contents)(nil))
 }
 
 type EnrichLocalImageInternalRequest_builder struct {
@@ -1280,10 +1470,22 @@ func (b0 EnrichLocalImageInternalRequest_builder) Build() *EnrichLocalImageInter
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 12)
 		x.xxx_hidden_ImageId = b.ImageId
 	}
-	x.xxx_hidden_ImageName = b.ImageName
-	x.xxx_hidden_Metadata = b.Metadata
-	x.xxx_hidden_ImageSignature = b.ImageSignature
-	x.xxx_hidden_Components = b.Components
+	if b.ImageName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 12)
+		x.xxx_hidden_ImageName = b.ImageName
+	}
+	if b.Metadata != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 12)
+		x.xxx_hidden_Metadata = b.Metadata
+	}
+	if b.ImageSignature != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 12)
+		x.xxx_hidden_ImageSignature = b.ImageSignature
+	}
+	if b.Components != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 12)
+		x.xxx_hidden_Components = b.Components
+	}
 	x.xxx_hidden_Notes = b.Notes
 	x.xxx_hidden_ImageNotes = b.ImageNotes
 	if b.Error != nil {
@@ -1298,7 +1500,10 @@ func (b0 EnrichLocalImageInternalRequest_builder) Build() *EnrichLocalImageInter
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 12)
 		x.xxx_hidden_Force = *b.Force
 	}
-	x.xxx_hidden_V4Contents = b.V4Contents
+	if b.V4Contents != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 12)
+		x.xxx_hidden_V4Contents = b.V4Contents
+	}
 	return m0
 }
 
@@ -1414,9 +1619,11 @@ func (b0 UpdateLocalScanStatusInternalRequest_builder) Build() *UpdateLocalScanS
 }
 
 type DeleteImagesRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query       *RawQuery              `protobuf:"bytes,1,opt,name=query"`
-	xxx_hidden_Confirm     bool                   `protobuf:"varint,2,opt,name=confirm"`
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query   *RawQuery              `protobuf:"bytes,1,opt,name=query"`
+	xxx_hidden_Confirm bool                   `protobuf:"varint,2,opt,name=confirm"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1450,7 +1657,14 @@ func (x *DeleteImagesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteImagesRequest) GetQuery() *RawQuery {
 	if x != nil {
-		return x.xxx_hidden_Query
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Query) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *RawQuery
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1463,7 +1677,12 @@ func (x *DeleteImagesRequest) GetConfirm() bool {
 }
 
 func (x *DeleteImagesRequest) SetQuery(v *RawQuery) {
-	x.xxx_hidden_Query = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *DeleteImagesRequest) SetConfirm(v bool) {
@@ -1475,7 +1694,7 @@ func (x *DeleteImagesRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DeleteImagesRequest) HasConfirm() bool {
@@ -1486,7 +1705,8 @@ func (x *DeleteImagesRequest) HasConfirm() bool {
 }
 
 func (x *DeleteImagesRequest) ClearQuery() {
-	x.xxx_hidden_Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, (*RawQuery)(nil))
 }
 
 func (x *DeleteImagesRequest) ClearConfirm() {
@@ -1505,7 +1725,10 @@ func (b0 DeleteImagesRequest_builder) Build() *DeleteImagesRequest {
 	m0 := &DeleteImagesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Query = b.Query
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Query = b.Query
+	}
 	if b.Confirm != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_Confirm = *b.Confirm
@@ -1929,8 +2152,12 @@ func (b0 UnwatchImageRequest_builder) Build() *UnwatchImageRequest {
 type GetWatchedImagesResponse struct {
 	state                    protoimpl.MessageState   `protogen:"opaque.v1"`
 	xxx_hidden_WatchedImages *[]*storage.WatchedImage `protobuf:"bytes,1,rep,name=watched_images,json=watchedImages"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetWatchedImagesResponse) Reset() {
@@ -1960,15 +2187,27 @@ func (x *GetWatchedImagesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetWatchedImagesResponse) GetWatchedImages() []*storage.WatchedImage {
 	if x != nil {
-		if x.xxx_hidden_WatchedImages != nil {
-			return *x.xxx_hidden_WatchedImages
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_WatchedImages) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.WatchedImage
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_WatchedImages), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetWatchedImagesResponse) SetWatchedImages(v []*storage.WatchedImage) {
-	x.xxx_hidden_WatchedImages = &v
+	var sv *[]*storage.WatchedImage
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_WatchedImages), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.WatchedImage{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_WatchedImages), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type GetWatchedImagesResponse_builder struct {
@@ -1981,7 +2220,10 @@ func (b0 GetWatchedImagesResponse_builder) Build() *GetWatchedImagesResponse {
 	m0 := &GetWatchedImagesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_WatchedImages = &b.WatchedImages
+	if b.WatchedImages != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_WatchedImages = &b.WatchedImages
+	}
 	return m0
 }
 
@@ -2141,8 +2383,12 @@ func (b0 ExportImageRequest_builder) Build() *ExportImageRequest {
 type ExportImageResponse struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Image *storage.Image         `protobuf:"bytes,1,opt,name=image"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ExportImageResponse) Reset() {
@@ -2172,24 +2418,37 @@ func (x *ExportImageResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ExportImageResponse) GetImage() *storage.Image {
 	if x != nil {
-		return x.xxx_hidden_Image
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Image) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Image
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Image), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ExportImageResponse) SetImage(v *storage.Image) {
-	x.xxx_hidden_Image = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Image, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	}
 }
 
 func (x *ExportImageResponse) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Image != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ExportImageResponse) ClearImage() {
-	x.xxx_hidden_Image = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Image, (*storage.Image)(nil))
 }
 
 type ExportImageResponse_builder struct {
@@ -2202,7 +2461,10 @@ func (b0 ExportImageResponse_builder) Build() *ExportImageResponse {
 	m0 := &ExportImageResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Image = b.Image
+	if b.Image != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Image = b.Image
+	}
 	return m0
 }
 
@@ -2384,9 +2646,9 @@ const file_api_v1_image_service_proto_rawDesc = "" +
 	"\x0fGetImageRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0finclude_snoozed\x18\x02 \x01(\bR\x0eincludeSnoozed\x12+\n" +
-	"\x11strip_description\x18\x03 \x01(\bR\x10stripDescription\"@\n" +
-	"\x12ListImagesResponse\x12*\n" +
-	"\x06images\x18\x01 \x03(\v2\x12.storage.ListImageR\x06images\"+\n" +
+	"\x11strip_description\x18\x03 \x01(\bR\x10stripDescription\"D\n" +
+	"\x12ListImagesResponse\x12.\n" +
+	"\x06images\x18\x01 \x03(\v2\x12.storage.ListImageB\x02(\x01R\x06images\"+\n" +
 	"\x13CountImagesResponse\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\"\xa8\x01\n" +
 	"\x10ScanImageRequest\x12\x1d\n" +
@@ -2395,38 +2657,38 @@ const file_api_v1_image_service_proto_rawDesc = "" +
 	"\x05force\x18\x02 \x01(\bR\x05force\x12'\n" +
 	"\x0finclude_snoozed\x18\x03 \x01(\bR\x0eincludeSnoozed\x12\x18\n" +
 	"\acluster\x18\x04 \x01(\tR\acluster\x12\x1c\n" +
-	"\tnamespace\x18\x05 \x01(\tR\tnamespace\"\xa2\x02\n" +
-	"\x18ScanImageInternalRequest\x12-\n" +
-	"\x05image\x18\x01 \x01(\v2\x17.storage.ContainerImageR\x05image\x12\x1f\n" +
+	"\tnamespace\x18\x05 \x01(\tR\tnamespace\"\xaa\x02\n" +
+	"\x18ScanImageInternalRequest\x121\n" +
+	"\x05image\x18\x01 \x01(\v2\x17.storage.ContainerImageB\x02(\x01R\x05image\x12\x1f\n" +
 	"\vcached_only\x18\x03 \x01(\bR\n" +
-	"cachedOnly\x12;\n" +
-	"\x06source\x18\x04 \x01(\v2#.v1.ScanImageInternalRequest.SourceR\x06source\x1as\n" +
+	"cachedOnly\x12?\n" +
+	"\x06source\x18\x04 \x01(\v2#.v1.ScanImageInternalRequest.SourceB\x02(\x01R\x06source\x1as\n" +
 	"\x06Source\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12,\n" +
-	"\x12image_pull_secrets\x18\x03 \x03(\tR\x10imagePullSecretsJ\x04\b\x02\x10\x03\"A\n" +
-	"\x19ScanImageInternalResponse\x12$\n" +
-	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image\"\xb2\x02\n" +
+	"\x12image_pull_secrets\x18\x03 \x03(\tR\x10imagePullSecretsJ\x04\b\x02\x10\x03\"E\n" +
+	"\x19ScanImageInternalResponse\x12(\n" +
+	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageB\x02(\x01R\x05image\"\xbe\x02\n" +
 	"&GetImageVulnerabilitiesInternalRequest\x12\x19\n" +
-	"\bimage_id\x18\x01 \x01(\tR\aimageId\x121\n" +
+	"\bimage_id\x18\x01 \x01(\tR\aimageId\x125\n" +
 	"\n" +
-	"image_name\x18\x02 \x01(\v2\x12.storage.ImageNameR\timageName\x122\n" +
-	"\bmetadata\x18\x03 \x01(\v2\x16.storage.ImageMetadataR\bmetadata\x12(\n" +
-	"\x10is_cluster_local\x18\x06 \x01(\bR\x0eisClusterLocal\x125\n" +
+	"image_name\x18\x02 \x01(\v2\x12.storage.ImageNameB\x02(\x01R\timageName\x126\n" +
+	"\bmetadata\x18\x03 \x01(\v2\x16.storage.ImageMetadataB\x02(\x01R\bmetadata\x12(\n" +
+	"\x10is_cluster_local\x18\x06 \x01(\bR\x0eisClusterLocal\x129\n" +
 	"\n" +
-	"components\x18\x04 \x01(\v2\x15.scannerV1.ComponentsR\n" +
+	"components\x18\x04 \x01(\v2\x15.scannerV1.ComponentsB\x02(\x01R\n" +
 	"components\x12%\n" +
-	"\x05notes\x18\x05 \x03(\x0e2\x0f.scannerV1.NoteR\x05notes\"\xa4\x04\n" +
+	"\x05notes\x18\x05 \x03(\x0e2\x0f.scannerV1.NoteR\x05notes\"\xb8\x04\n" +
 	"\x1fEnrichLocalImageInternalRequest\x12'\n" +
 	"\x0findexer_version\x18\f \x01(\tR\x0eindexerVersion\x12\x19\n" +
-	"\bimage_id\x18\x01 \x01(\tR\aimageId\x121\n" +
+	"\bimage_id\x18\x01 \x01(\tR\aimageId\x125\n" +
 	"\n" +
-	"image_name\x18\x02 \x01(\v2\x12.storage.ImageNameR\timageName\x122\n" +
-	"\bmetadata\x18\x03 \x01(\v2\x16.storage.ImageMetadataR\bmetadata\x12@\n" +
-	"\x0fimage_signature\x18\x04 \x01(\v2\x17.storage.ImageSignatureR\x0eimageSignature\x125\n" +
+	"image_name\x18\x02 \x01(\v2\x12.storage.ImageNameB\x02(\x01R\timageName\x126\n" +
+	"\bmetadata\x18\x03 \x01(\v2\x16.storage.ImageMetadataB\x02(\x01R\bmetadata\x12D\n" +
+	"\x0fimage_signature\x18\x04 \x01(\v2\x17.storage.ImageSignatureB\x02(\x01R\x0eimageSignature\x129\n" +
 	"\n" +
-	"components\x18\x05 \x01(\v2\x15.scannerV1.ComponentsR\n" +
+	"components\x18\x05 \x01(\v2\x15.scannerV1.ComponentsB\x02(\x01R\n" +
 	"components\x12%\n" +
 	"\x05notes\x18\x06 \x03(\x0e2\x0f.scannerV1.NoteR\x05notes\x124\n" +
 	"\vimage_notes\x18\a \x03(\x0e2\x13.storage.Image.NoteR\n" +
@@ -2435,15 +2697,15 @@ const file_api_v1_image_service_proto_rawDesc = "" +
 	"\n" +
 	"request_id\x18\t \x01(\tR\trequestId\x12\x14\n" +
 	"\x05force\x18\n" +
-	" \x01(\bR\x05force\x125\n" +
-	"\vv4_contents\x18\v \x01(\v2\x14.scanner.v4.ContentsR\n" +
+	" \x01(\bR\x05force\x129\n" +
+	"\vv4_contents\x18\v \x01(\v2\x14.scanner.v4.ContentsB\x02(\x01R\n" +
 	"v4Contents\"[\n" +
 	"$UpdateLocalScanStatusInternalRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"S\n" +
-	"\x13DeleteImagesRequest\x12\"\n" +
-	"\x05query\x18\x01 \x01(\v2\f.v1.RawQueryR\x05query\x12\x18\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"W\n" +
+	"\x13DeleteImagesRequest\x12&\n" +
+	"\x05query\x18\x01 \x01(\v2\f.v1.RawQueryB\x02(\x01R\x05query\x12\x18\n" +
 	"\aconfirm\x18\x02 \x01(\bR\aconfirm\"P\n" +
 	"\x14DeleteImagesResponse\x12\x1f\n" +
 	"\vnum_deleted\x18\x01 \x01(\rR\n" +
@@ -2462,16 +2724,16 @@ const file_api_v1_image_service_proto_rawDesc = "" +
 	"\x14NO_VALID_INTEGRATION\x10\x02\x12\x0f\n" +
 	"\vSCAN_FAILED\x10\x03\")\n" +
 	"\x13UnwatchImageRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"X\n" +
-	"\x18GetWatchedImagesResponse\x12<\n" +
-	"\x0ewatched_images\x18\x01 \x03(\v2\x15.storage.WatchedImageR\rwatchedImages\":\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\\\n" +
+	"\x18GetWatchedImagesResponse\x12@\n" +
+	"\x0ewatched_images\x18\x01 \x03(\v2\x15.storage.WatchedImageB\x02(\x01R\rwatchedImages\":\n" +
 	" ScanImageInternalResponseDetails\x1a\x16\n" +
 	"\x14TooManyParallelScans\"D\n" +
 	"\x12ExportImageRequest\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
-	"\x05query\x18\x02 \x01(\tR\x05query\";\n" +
-	"\x13ExportImageResponse\x12$\n" +
-	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image2\xce\t\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\"?\n" +
+	"\x13ExportImageResponse\x12(\n" +
+	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageB\x02(\x01R\x05image2\xce\t\n" +
 	"\fImageService\x12H\n" +
 	"\bGetImage\x12\x13.v1.GetImageRequest\x1a\x0e.storage.Image\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/images/{id}\x12M\n" +
 	"\vCountImages\x12\f.v1.RawQuery\x1a\x17.v1.CountImagesResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/imagescount\x12F\n" +

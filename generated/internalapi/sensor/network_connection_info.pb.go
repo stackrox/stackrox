@@ -28,8 +28,12 @@ type NetworkConnectionInfo struct {
 	xxx_hidden_UpdatedConnections *[]*NetworkConnection  `protobuf:"bytes,1,rep,name=updated_connections,json=updatedConnections"`
 	xxx_hidden_UpdatedEndpoints   *[]*NetworkEndpoint    `protobuf:"bytes,3,rep,name=updated_endpoints,json=updatedEndpoints"`
 	xxx_hidden_Time               *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkConnectionInfo) Reset() {
@@ -59,8 +63,13 @@ func (x *NetworkConnectionInfo) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkConnectionInfo) GetUpdatedConnections() []*NetworkConnection {
 	if x != nil {
-		if x.xxx_hidden_UpdatedConnections != nil {
-			return *x.xxx_hidden_UpdatedConnections
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UpdatedConnections) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*NetworkConnection
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedConnections), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -68,8 +77,13 @@ func (x *NetworkConnectionInfo) GetUpdatedConnections() []*NetworkConnection {
 
 func (x *NetworkConnectionInfo) GetUpdatedEndpoints() []*NetworkEndpoint {
 	if x != nil {
-		if x.xxx_hidden_UpdatedEndpoints != nil {
-			return *x.xxx_hidden_UpdatedEndpoints
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UpdatedEndpoints) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*NetworkEndpoint
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedEndpoints), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -77,32 +91,59 @@ func (x *NetworkConnectionInfo) GetUpdatedEndpoints() []*NetworkEndpoint {
 
 func (x *NetworkConnectionInfo) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Time
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Time) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Time), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *NetworkConnectionInfo) SetUpdatedConnections(v []*NetworkConnection) {
-	x.xxx_hidden_UpdatedConnections = &v
+	var sv *[]*NetworkConnection
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedConnections), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkConnection{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedConnections), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *NetworkConnectionInfo) SetUpdatedEndpoints(v []*NetworkEndpoint) {
-	x.xxx_hidden_UpdatedEndpoints = &v
+	var sv *[]*NetworkEndpoint
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedEndpoints), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*NetworkEndpoint{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedEndpoints), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *NetworkConnectionInfo) SetTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Time = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	}
 }
 
 func (x *NetworkConnectionInfo) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Time != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *NetworkConnectionInfo) ClearTime() {
-	x.xxx_hidden_Time = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, (*timestamppb.Timestamp)(nil))
 }
 
 type NetworkConnectionInfo_builder struct {
@@ -122,9 +163,18 @@ func (b0 NetworkConnectionInfo_builder) Build() *NetworkConnectionInfo {
 	m0 := &NetworkConnectionInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UpdatedConnections = &b.UpdatedConnections
-	x.xxx_hidden_UpdatedEndpoints = &b.UpdatedEndpoints
-	x.xxx_hidden_Time = b.Time
+	if b.UpdatedConnections != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_UpdatedConnections = &b.UpdatedConnections
+	}
+	if b.UpdatedEndpoints != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_UpdatedEndpoints = &b.UpdatedEndpoints
+	}
+	if b.Time != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Time = b.Time
+	}
 	return m0
 }
 
@@ -138,10 +188,12 @@ type NetworkConnection struct {
 	xxx_hidden_Role           ClientServerRole       `protobuf:"varint,5,opt,name=role,enum=sensor.ClientServerRole"`
 	xxx_hidden_ContainerId    *string                `protobuf:"bytes,6,opt,name=container_id,json=containerId"`
 	xxx_hidden_CloseTimestamp *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=close_timestamp,json=closeTimestamp"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkConnection) Reset() {
@@ -222,7 +274,14 @@ func (x *NetworkConnection) GetContainerId() string {
 
 func (x *NetworkConnection) GetCloseTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CloseTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloseTimestamp) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloseTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -256,7 +315,12 @@ func (x *NetworkConnection) SetContainerId(v string) {
 }
 
 func (x *NetworkConnection) SetCloseTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CloseTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
+	}
 }
 
 func (x *NetworkConnection) HasSocketFamily() bool {
@@ -305,7 +369,7 @@ func (x *NetworkConnection) HasCloseTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CloseTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *NetworkConnection) ClearSocketFamily() {
@@ -337,7 +401,8 @@ func (x *NetworkConnection) ClearContainerId() {
 }
 
 func (x *NetworkConnection) ClearCloseTimestamp() {
-	x.xxx_hidden_CloseTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 type NetworkConnection_builder struct {
@@ -376,7 +441,10 @@ func (b0 NetworkConnection_builder) Build() *NetworkConnection {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
 		x.xxx_hidden_ContainerId = b.ContainerId
 	}
-	x.xxx_hidden_CloseTimestamp = b.CloseTimestamp
+	if b.CloseTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_CloseTimestamp = b.CloseTimestamp
+	}
 	return m0
 }
 
@@ -388,10 +456,12 @@ type NetworkEndpoint struct {
 	xxx_hidden_ContainerId    *string                          `protobuf:"bytes,4,opt,name=container_id,json=containerId"`
 	xxx_hidden_CloseTimestamp *timestamppb.Timestamp           `protobuf:"bytes,5,opt,name=close_timestamp,json=closeTimestamp"`
 	xxx_hidden_Originator     *storage.NetworkProcessUniqueKey `protobuf:"bytes,6,opt,name=originator"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkEndpoint) Reset() {
@@ -456,14 +526,28 @@ func (x *NetworkEndpoint) GetContainerId() string {
 
 func (x *NetworkEndpoint) GetCloseTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CloseTimestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloseTimestamp) {
+				protoimpl.X.UnmarshalField(x, 5)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloseTimestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *NetworkEndpoint) GetOriginator() *storage.NetworkProcessUniqueKey {
 	if x != nil {
-		return x.xxx_hidden_Originator
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Originator) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *storage.NetworkProcessUniqueKey
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Originator), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -488,11 +572,21 @@ func (x *NetworkEndpoint) SetContainerId(v string) {
 }
 
 func (x *NetworkEndpoint) SetCloseTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CloseTimestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	}
 }
 
 func (x *NetworkEndpoint) SetOriginator(v *storage.NetworkProcessUniqueKey) {
-	x.xxx_hidden_Originator = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Originator, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
+	}
 }
 
 func (x *NetworkEndpoint) HasSocketFamily() bool {
@@ -527,14 +621,14 @@ func (x *NetworkEndpoint) HasCloseTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CloseTimestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *NetworkEndpoint) HasOriginator() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Originator != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *NetworkEndpoint) ClearSocketFamily() {
@@ -557,11 +651,13 @@ func (x *NetworkEndpoint) ClearContainerId() {
 }
 
 func (x *NetworkEndpoint) ClearCloseTimestamp() {
-	x.xxx_hidden_CloseTimestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *NetworkEndpoint) ClearOriginator() {
-	x.xxx_hidden_Originator = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Originator, (*storage.NetworkProcessUniqueKey)(nil))
 }
 
 type NetworkEndpoint_builder struct {
@@ -595,8 +691,14 @@ func (b0 NetworkEndpoint_builder) Build() *NetworkEndpoint {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
 		x.xxx_hidden_ContainerId = b.ContainerId
 	}
-	x.xxx_hidden_CloseTimestamp = b.CloseTimestamp
-	x.xxx_hidden_Originator = b.Originator
+	if b.CloseTimestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_CloseTimestamp = b.CloseTimestamp
+	}
+	if b.Originator != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_Originator = b.Originator
+	}
 	return m0
 }
 
@@ -748,27 +850,27 @@ var File_internalapi_sensor_network_connection_info_proto protoreflect.FileDescr
 
 const file_internalapi_sensor_network_connection_info_proto_rawDesc = "" +
 	"\n" +
-	"0internalapi/sensor/network_connection_info.proto\x12\x06sensor\x1a\x1fgoogle/protobuf/timestamp.proto\x1a&internalapi/sensor/network_enums.proto\x1a\x1astorage/network_flow.proto\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"\xd9\x01\n" +
-	"\x15NetworkConnectionInfo\x12J\n" +
-	"\x13updated_connections\x18\x01 \x03(\v2\x19.sensor.NetworkConnectionR\x12updatedConnections\x12D\n" +
-	"\x11updated_endpoints\x18\x03 \x03(\v2\x17.sensor.NetworkEndpointR\x10updatedEndpoints\x12.\n" +
-	"\x04time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\"\x91\x03\n" +
+	"0internalapi/sensor/network_connection_info.proto\x12\x06sensor\x1a\x1fgoogle/protobuf/timestamp.proto\x1a&internalapi/sensor/network_enums.proto\x1a\x1astorage/network_flow.proto\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"\xe5\x01\n" +
+	"\x15NetworkConnectionInfo\x12N\n" +
+	"\x13updated_connections\x18\x01 \x03(\v2\x19.sensor.NetworkConnectionB\x02(\x01R\x12updatedConnections\x12H\n" +
+	"\x11updated_endpoints\x18\x03 \x03(\v2\x17.sensor.NetworkEndpointB\x02(\x01R\x10updatedEndpoints\x122\n" +
+	"\x04time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x04time\"\x95\x03\n" +
 	"\x11NetworkConnection\x129\n" +
 	"\rsocket_family\x18\x01 \x01(\x0e2\x14.sensor.SocketFamilyR\fsocketFamily\x12;\n" +
 	"\rlocal_address\x18\x02 \x01(\v2\x16.sensor.NetworkAddressR\flocalAddress\x12=\n" +
 	"\x0eremote_address\x18\x03 \x01(\v2\x16.sensor.NetworkAddressR\rremoteAddress\x12/\n" +
 	"\bprotocol\x18\x04 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\x12,\n" +
 	"\x04role\x18\x05 \x01(\x0e2\x18.sensor.ClientServerRoleR\x04role\x12!\n" +
-	"\fcontainer_id\x18\x06 \x01(\tR\vcontainerId\x12C\n" +
-	"\x0fclose_timestamp\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x0ecloseTimestamp\"\xe6\x02\n" +
+	"\fcontainer_id\x18\x06 \x01(\tR\vcontainerId\x12G\n" +
+	"\x0fclose_timestamp\x18\v \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x0ecloseTimestamp\"\xee\x02\n" +
 	"\x0fNetworkEndpoint\x129\n" +
 	"\rsocket_family\x18\x01 \x01(\x0e2\x14.sensor.SocketFamilyR\fsocketFamily\x12/\n" +
 	"\bprotocol\x18\x02 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\x12=\n" +
 	"\x0elisten_address\x18\x03 \x01(\v2\x16.sensor.NetworkAddressR\rlistenAddress\x12!\n" +
-	"\fcontainer_id\x18\x04 \x01(\tR\vcontainerId\x12C\n" +
-	"\x0fclose_timestamp\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x0ecloseTimestamp\x12@\n" +
+	"\fcontainer_id\x18\x04 \x01(\tR\vcontainerId\x12G\n" +
+	"\x0fclose_timestamp\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x0ecloseTimestamp\x12D\n" +
 	"\n" +
-	"originator\x18\x06 \x01(\v2 .storage.NetworkProcessUniqueKeyR\n" +
+	"originator\x18\x06 \x01(\v2 .storage.NetworkProcessUniqueKeyB\x02(\x01R\n" +
 	"originator\"f\n" +
 	"\x0eNetworkAddress\x12!\n" +
 	"\faddress_data\x18\x01 \x01(\fR\vaddressData\x12\x12\n" +

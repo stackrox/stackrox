@@ -23,10 +23,12 @@ const (
 )
 
 type LogImbue struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Timestamp   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp"`
-	xxx_hidden_Log         []byte                 `protobuf:"bytes,3,opt,name=log"`
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id        *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp"`
+	xxx_hidden_Log       []byte                 `protobuf:"bytes,3,opt,name=log"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -70,7 +72,14 @@ func (x *LogImbue) GetId() string {
 
 func (x *LogImbue) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Timestamp
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -88,7 +97,12 @@ func (x *LogImbue) SetId(v string) {
 }
 
 func (x *LogImbue) SetTimestamp(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Timestamp = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	}
 }
 
 func (x *LogImbue) SetLog(v []byte) {
@@ -110,7 +124,7 @@ func (x *LogImbue) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Timestamp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *LogImbue) HasLog() bool {
@@ -126,7 +140,8 @@ func (x *LogImbue) ClearId() {
 }
 
 func (x *LogImbue) ClearTimestamp() {
-	x.xxx_hidden_Timestamp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *LogImbue) ClearLog() {
@@ -150,7 +165,10 @@ func (b0 LogImbue_builder) Build() *LogImbue {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
 		x.xxx_hidden_Id = b.Id
 	}
-	x.xxx_hidden_Timestamp = b.Timestamp
+	if b.Timestamp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Timestamp = b.Timestamp
+	}
 	if b.Log != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
 		x.xxx_hidden_Log = b.Log
@@ -162,10 +180,10 @@ var File_storage_log_proto protoreflect.FileDescriptor
 
 const file_storage_log_proto_rawDesc = "" +
 	"\n" +
-	"\x11storage/log.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"f\n" +
+	"\x11storage/log.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"j\n" +
 	"\bLogImbue\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x128\n" +
-	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x10\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12<\n" +
+	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\ttimestamp\x12\x10\n" +
 	"\x03log\x18\x03 \x01(\fR\x03logB6\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 

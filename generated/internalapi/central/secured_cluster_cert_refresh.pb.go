@@ -213,9 +213,11 @@ func (b0 IssueSecuredClusterCertsRequest_builder) Build() *IssueSecuredClusterCe
 }
 
 type IssueSecuredClusterCertsResponse struct {
-	state                  protoimpl.MessageState                      `protogen:"opaque.v1"`
-	xxx_hidden_RequestId   *string                                     `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
-	xxx_hidden_Response    isIssueSecuredClusterCertsResponse_Response `protobuf_oneof:"response"`
+	state                protoimpl.MessageState                      `protogen:"opaque.v1"`
+	xxx_hidden_RequestId *string                                     `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
+	xxx_hidden_Response  isIssueSecuredClusterCertsResponse_Response `protobuf_oneof:"response"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -428,11 +430,11 @@ const file_internalapi_central_secured_cluster_cert_refresh_proto_rawDesc = "" +
 	"\x1fIssueSecuredClusterCertsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12%\n" +
-	"\x0eca_fingerprint\x18\x02 \x01(\tR\rcaFingerprint\"\xd8\x01\n" +
+	"\x0eca_fingerprint\x18\x02 \x01(\tR\rcaFingerprint\"\xdc\x01\n" +
 	" IssueSecuredClusterCertsResponse\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x01 \x01(\tR\trequestId\x12I\n" +
-	"\fcertificates\x18\x02 \x01(\v2#.storage.TypedServiceCertificateSetH\x00R\fcertificates\x12>\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12M\n" +
+	"\fcertificates\x18\x02 \x01(\v2#.storage.TypedServiceCertificateSetB\x02(\x01H\x00R\fcertificates\x12>\n" +
 	"\x05error\x18\x03 \x01(\v2&.central.SecuredClusterCertsIssueErrorH\x00R\x05errorB\n" +
 	"\n" +
 	"\bresponseB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"

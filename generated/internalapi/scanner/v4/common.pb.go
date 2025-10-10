@@ -1430,8 +1430,12 @@ func (b0 Environment_builder) Build() *Environment {
 type Environment_List struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Environments *[]*Environment        `protobuf:"bytes,1,rep,name=environments"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Environment_List) Reset() {
@@ -1461,15 +1465,27 @@ func (x *Environment_List) ProtoReflect() protoreflect.Message {
 
 func (x *Environment_List) GetEnvironments() []*Environment {
 	if x != nil {
-		if x.xxx_hidden_Environments != nil {
-			return *x.xxx_hidden_Environments
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Environments) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*Environment
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Environments), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *Environment_List) SetEnvironments(v []*Environment) {
-	x.xxx_hidden_Environments = &v
+	var sv *[]*Environment
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Environments), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Environment{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Environments), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type Environment_List_builder struct {
@@ -1482,7 +1498,10 @@ func (b0 Environment_List_builder) Build() *Environment_List {
 	m0 := &Environment_List{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Environments = &b.Environments
+	if b.Environments != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Environments = &b.Environments
+	}
 	return m0
 }
 
@@ -1491,16 +1510,16 @@ var File_internalapi_scanner_v4_common_proto protoreflect.FileDescriptor
 const file_internalapi_scanner_v4_common_proto_rawDesc = "" +
 	"\n" +
 	"#internalapi/scanner/v4/common.proto\x12\n" +
-	"scanner.v4\x1a!google/protobuf/go_features.proto\"\xe3\b\n" +
+	"scanner.v4\x1a!google/protobuf/go_features.proto\"\xf3\b\n" +
 	"\bContents\x12G\n" +
-	"\x12packagesDEPRECATED\x18\x01 \x03(\v2\x13.scanner.v4.PackageB\x02\x18\x01R\x12packagesDEPRECATED\x12>\n" +
-	"\bpackages\x18\x05 \x03(\v2\".scanner.v4.Contents.PackagesEntryR\bpackages\x12V\n" +
-	"\x17distributionsDEPRECATED\x18\x02 \x03(\v2\x18.scanner.v4.DistributionB\x02\x18\x01R\x17distributionsDEPRECATED\x12M\n" +
-	"\rdistributions\x18\x06 \x03(\v2'.scanner.v4.Contents.DistributionsEntryR\rdistributions\x12R\n" +
-	"\x16repositoriesDEPRECATED\x18\x03 \x03(\v2\x16.scanner.v4.RepositoryB\x02\x18\x01R\x16repositoriesDEPRECATED\x12J\n" +
-	"\frepositories\x18\a \x03(\v2&.scanner.v4.Contents.RepositoriesEntryR\frepositories\x12l\n" +
-	"\x16environmentsDEPRECATED\x18\x04 \x03(\v20.scanner.v4.Contents.EnvironmentsDEPRECATEDEntryB\x02\x18\x01R\x16environmentsDEPRECATED\x12J\n" +
-	"\fenvironments\x18\b \x03(\v2&.scanner.v4.Contents.EnvironmentsEntryR\fenvironments\x1aP\n" +
+	"\x12packagesDEPRECATED\x18\x01 \x03(\v2\x13.scanner.v4.PackageB\x02\x18\x01R\x12packagesDEPRECATED\x12B\n" +
+	"\bpackages\x18\x05 \x03(\v2\".scanner.v4.Contents.PackagesEntryB\x02(\x01R\bpackages\x12V\n" +
+	"\x17distributionsDEPRECATED\x18\x02 \x03(\v2\x18.scanner.v4.DistributionB\x02\x18\x01R\x17distributionsDEPRECATED\x12Q\n" +
+	"\rdistributions\x18\x06 \x03(\v2'.scanner.v4.Contents.DistributionsEntryB\x02(\x01R\rdistributions\x12R\n" +
+	"\x16repositoriesDEPRECATED\x18\x03 \x03(\v2\x16.scanner.v4.RepositoryB\x02\x18\x01R\x16repositoriesDEPRECATED\x12N\n" +
+	"\frepositories\x18\a \x03(\v2&.scanner.v4.Contents.RepositoriesEntryB\x02(\x01R\frepositories\x12l\n" +
+	"\x16environmentsDEPRECATED\x18\x04 \x03(\v20.scanner.v4.Contents.EnvironmentsDEPRECATEDEntryB\x02\x18\x01R\x16environmentsDEPRECATED\x12N\n" +
+	"\fenvironments\x18\b \x03(\v2&.scanner.v4.Contents.EnvironmentsEntryB\x02(\x01R\fenvironments\x1aP\n" +
 	"\rPackagesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12)\n" +
 	"\x05value\x18\x02 \x01(\v2\x13.scanner.v4.PackageR\x05value:\x028\x01\x1aZ\n" +
@@ -1552,15 +1571,15 @@ const file_internalapi_scanner_v4_common_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x10\n" +
 	"\x03key\x18\x03 \x01(\tR\x03key\x12\x10\n" +
 	"\x03uri\x18\x04 \x01(\tR\x03uri\x12\x10\n" +
-	"\x03cpe\x18\x05 \x01(\tR\x03cpe\"\xe6\x01\n" +
+	"\x03cpe\x18\x05 \x01(\tR\x03cpe\"\xea\x01\n" +
 	"\vEnvironment\x12\x1d\n" +
 	"\n" +
 	"package_db\x18\x01 \x01(\tR\tpackageDb\x12#\n" +
 	"\rintroduced_in\x18\x02 \x01(\tR\fintroducedIn\x12'\n" +
 	"\x0fdistribution_id\x18\x03 \x01(\tR\x0edistributionId\x12%\n" +
-	"\x0erepository_ids\x18\x04 \x03(\tR\rrepositoryIds\x1aC\n" +
-	"\x04List\x12;\n" +
-	"\fenvironments\x18\x01 \x03(\v2\x17.scanner.v4.EnvironmentR\fenvironmentsB%Z\x1b./internalapi/scanner/v4;v4\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x0erepository_ids\x18\x04 \x03(\tR\rrepositoryIds\x1aG\n" +
+	"\x04List\x12?\n" +
+	"\fenvironments\x18\x01 \x03(\v2\x17.scanner.v4.EnvironmentB\x02(\x01R\fenvironmentsB%Z\x1b./internalapi/scanner/v4;v4\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_scanner_v4_common_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_internalapi_scanner_v4_common_proto_goTypes = []any{

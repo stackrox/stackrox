@@ -26,8 +26,12 @@ const (
 type DryRunResponse struct {
 	state             protoimpl.MessageState   `protogen:"opaque.v1"`
 	xxx_hidden_Alerts *[]*DryRunResponse_Alert `protobuf:"bytes,1,rep,name=alerts"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DryRunResponse) Reset() {
@@ -57,15 +61,27 @@ func (x *DryRunResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DryRunResponse) GetAlerts() []*DryRunResponse_Alert {
 	if x != nil {
-		if x.xxx_hidden_Alerts != nil {
-			return *x.xxx_hidden_Alerts
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Alerts) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*DryRunResponse_Alert
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *DryRunResponse) SetAlerts(v []*DryRunResponse_Alert) {
-	x.xxx_hidden_Alerts = &v
+	var sv *[]*DryRunResponse_Alert
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*DryRunResponse_Alert{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type DryRunResponse_builder struct {
@@ -78,7 +94,10 @@ func (b0 DryRunResponse_builder) Build() *DryRunResponse {
 	m0 := &DryRunResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Alerts = &b.Alerts
+	if b.Alerts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Alerts = &b.Alerts
+	}
 	return m0
 }
 
@@ -161,9 +180,11 @@ func (b0 JobId_builder) Build() *JobId {
 }
 
 type DryRunJobStatusResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Pending     bool                   `protobuf:"varint,1,opt,name=pending"`
-	xxx_hidden_Result      *DryRunResponse        `protobuf:"bytes,2,opt,name=result"`
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Pending bool                   `protobuf:"varint,1,opt,name=pending"`
+	xxx_hidden_Result  *DryRunResponse        `protobuf:"bytes,2,opt,name=result"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -204,7 +225,14 @@ func (x *DryRunJobStatusResponse) GetPending() bool {
 
 func (x *DryRunJobStatusResponse) GetResult() *DryRunResponse {
 	if x != nil {
-		return x.xxx_hidden_Result
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Result) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *DryRunResponse
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Result), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -215,7 +243,12 @@ func (x *DryRunJobStatusResponse) SetPending(v bool) {
 }
 
 func (x *DryRunJobStatusResponse) SetResult(v *DryRunResponse) {
-	x.xxx_hidden_Result = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Result, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *DryRunJobStatusResponse) HasPending() bool {
@@ -229,7 +262,7 @@ func (x *DryRunJobStatusResponse) HasResult() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Result != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DryRunJobStatusResponse) ClearPending() {
@@ -238,7 +271,8 @@ func (x *DryRunJobStatusResponse) ClearPending() {
 }
 
 func (x *DryRunJobStatusResponse) ClearResult() {
-	x.xxx_hidden_Result = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Result, (*DryRunResponse)(nil))
 }
 
 type DryRunJobStatusResponse_builder struct {
@@ -256,7 +290,10 @@ func (b0 DryRunJobStatusResponse_builder) Build() *DryRunJobStatusResponse {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Pending = *b.Pending
 	}
-	x.xxx_hidden_Result = b.Result
+	if b.Result != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Result = b.Result
+	}
 	return m0
 }
 
@@ -442,8 +479,12 @@ func (b0 EnableDisablePolicyNotificationRequest_builder) Build() *EnableDisableP
 type ListPoliciesResponse struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Policies *[]*storage.ListPolicy `protobuf:"bytes,1,rep,name=policies"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListPoliciesResponse) Reset() {
@@ -473,15 +514,27 @@ func (x *ListPoliciesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListPoliciesResponse) GetPolicies() []*storage.ListPolicy {
 	if x != nil {
-		if x.xxx_hidden_Policies != nil {
-			return *x.xxx_hidden_Policies
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policies) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.ListPolicy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ListPoliciesResponse) SetPolicies(v []*storage.ListPolicy) {
-	x.xxx_hidden_Policies = &v
+	var sv *[]*storage.ListPolicy
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.ListPolicy{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ListPoliciesResponse_builder struct {
@@ -494,7 +547,10 @@ func (b0 ListPoliciesResponse_builder) Build() *ListPoliciesResponse {
 	m0 := &ListPoliciesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policies = &b.Policies
+	if b.Policies != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Policies = &b.Policies
+	}
 	return m0
 }
 
@@ -502,10 +558,12 @@ type PostPolicyRequest struct {
 	state                             protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Policy                 *storage.Policy        `protobuf:"bytes,1,opt,name=policy"`
 	xxx_hidden_EnableStrictValidation bool                   `protobuf:"varint,2,opt,name=enable_strict_validation,json=enableStrictValidation"`
-	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
-	XXX_presence                      [1]uint32
-	unknownFields                     protoimpl.UnknownFields
-	sizeCache                         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PostPolicyRequest) Reset() {
@@ -535,7 +593,14 @@ func (x *PostPolicyRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PostPolicyRequest) GetPolicy() *storage.Policy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policy) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Policy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policy), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -548,7 +613,12 @@ func (x *PostPolicyRequest) GetEnableStrictValidation() bool {
 }
 
 func (x *PostPolicyRequest) SetPolicy(v *storage.Policy) {
-	x.xxx_hidden_Policy = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Policy, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *PostPolicyRequest) SetEnableStrictValidation(v bool) {
@@ -560,7 +630,7 @@ func (x *PostPolicyRequest) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PostPolicyRequest) HasEnableStrictValidation() bool {
@@ -571,7 +641,8 @@ func (x *PostPolicyRequest) HasEnableStrictValidation() bool {
 }
 
 func (x *PostPolicyRequest) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Policy, (*storage.Policy)(nil))
 }
 
 func (x *PostPolicyRequest) ClearEnableStrictValidation() {
@@ -590,7 +661,10 @@ func (b0 PostPolicyRequest_builder) Build() *PostPolicyRequest {
 	m0 := &PostPolicyRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policy = b.Policy
+	if b.Policy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Policy = b.Policy
+	}
 	if b.EnableStrictValidation != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_EnableStrictValidation = *b.EnableStrictValidation
@@ -892,9 +966,11 @@ func (b0 PolicyError_builder) Build() *PolicyError {
 }
 
 type PolicyOperationError struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PolicyId    *string                `protobuf:"bytes,1,opt,name=policy_id,json=policyId"`
-	xxx_hidden_Error       *PolicyError           `protobuf:"bytes,2,opt,name=error"`
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PolicyId *string                `protobuf:"bytes,1,opt,name=policy_id,json=policyId"`
+	xxx_hidden_Error    *PolicyError           `protobuf:"bytes,2,opt,name=error"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -938,7 +1014,14 @@ func (x *PolicyOperationError) GetPolicyId() string {
 
 func (x *PolicyOperationError) GetError() *PolicyError {
 	if x != nil {
-		return x.xxx_hidden_Error
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Error) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *PolicyError
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Error), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -949,7 +1032,12 @@ func (x *PolicyOperationError) SetPolicyId(v string) {
 }
 
 func (x *PolicyOperationError) SetError(v *PolicyError) {
-	x.xxx_hidden_Error = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Error, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *PolicyOperationError) HasPolicyId() bool {
@@ -963,7 +1051,7 @@ func (x *PolicyOperationError) HasError() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Error != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *PolicyOperationError) ClearPolicyId() {
@@ -972,7 +1060,8 @@ func (x *PolicyOperationError) ClearPolicyId() {
 }
 
 func (x *PolicyOperationError) ClearError() {
-	x.xxx_hidden_Error = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Error, (*PolicyError)(nil))
 }
 
 type PolicyOperationError_builder struct {
@@ -990,15 +1079,22 @@ func (b0 PolicyOperationError_builder) Build() *PolicyOperationError {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_PolicyId = b.PolicyId
 	}
-	x.xxx_hidden_Error = b.Error
+	if b.Error != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Error = b.Error
+	}
 	return m0
 }
 
 type PolicyOperationErrorList struct {
 	state             protoimpl.MessageState   `protogen:"opaque.v1"`
 	xxx_hidden_Errors *[]*PolicyOperationError `protobuf:"bytes,1,rep,name=errors"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PolicyOperationErrorList) Reset() {
@@ -1028,15 +1124,27 @@ func (x *PolicyOperationErrorList) ProtoReflect() protoreflect.Message {
 
 func (x *PolicyOperationErrorList) GetErrors() []*PolicyOperationError {
 	if x != nil {
-		if x.xxx_hidden_Errors != nil {
-			return *x.xxx_hidden_Errors
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Errors) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*PolicyOperationError
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Errors), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *PolicyOperationErrorList) SetErrors(v []*PolicyOperationError) {
-	x.xxx_hidden_Errors = &v
+	var sv *[]*PolicyOperationError
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Errors), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*PolicyOperationError{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Errors), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type PolicyOperationErrorList_builder struct {
@@ -1049,7 +1157,10 @@ func (b0 PolicyOperationErrorList_builder) Build() *PolicyOperationErrorList {
 	m0 := &PolicyOperationErrorList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Errors = &b.Errors
+	if b.Errors != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Errors = &b.Errors
+	}
 	return m0
 }
 
@@ -1210,8 +1321,12 @@ type ImportPoliciesRequest struct {
 	state               protoimpl.MessageState  `protogen:"opaque.v1"`
 	xxx_hidden_Metadata *ImportPoliciesMetadata `protobuf:"bytes,1,opt,name=metadata"`
 	xxx_hidden_Policies *[]*storage.Policy      `protobuf:"bytes,2,rep,name=policies"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImportPoliciesRequest) Reset() {
@@ -1241,37 +1356,62 @@ func (x *ImportPoliciesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ImportPoliciesRequest) GetMetadata() *ImportPoliciesMetadata {
 	if x != nil {
-		return x.xxx_hidden_Metadata
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Metadata) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *ImportPoliciesMetadata
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Metadata), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ImportPoliciesRequest) GetPolicies() []*storage.Policy {
 	if x != nil {
-		if x.xxx_hidden_Policies != nil {
-			return *x.xxx_hidden_Policies
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policies) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.Policy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ImportPoliciesRequest) SetMetadata(v *ImportPoliciesMetadata) {
-	x.xxx_hidden_Metadata = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *ImportPoliciesRequest) SetPolicies(v []*storage.Policy) {
-	x.xxx_hidden_Policies = &v
+	var sv *[]*storage.Policy
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Policy{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ImportPoliciesRequest) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Metadata != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ImportPoliciesRequest) ClearMetadata() {
-	x.xxx_hidden_Metadata = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, (*ImportPoliciesMetadata)(nil))
 }
 
 type ImportPoliciesRequest_builder struct {
@@ -1285,8 +1425,14 @@ func (b0 ImportPoliciesRequest_builder) Build() *ImportPoliciesRequest {
 	m0 := &ImportPoliciesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Metadata = b.Metadata
-	x.xxx_hidden_Policies = &b.Policies
+	if b.Metadata != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Metadata = b.Metadata
+	}
+	if b.Policies != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Policies = &b.Policies
+	}
 	return m0
 }
 
@@ -1522,10 +1668,12 @@ func (*importPolicyError_DuplicateName) isImportPolicyError_Metadata() {}
 func (*importPolicyError_ValidationError) isImportPolicyError_Metadata() {}
 
 type ImportPolicyResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Succeeded   bool                   `protobuf:"varint,1,opt,name=succeeded"`
-	xxx_hidden_Policy      *storage.Policy        `protobuf:"bytes,2,opt,name=policy"`
-	xxx_hidden_Errors      *[]*ImportPolicyError  `protobuf:"bytes,3,rep,name=errors"`
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Succeeded bool                   `protobuf:"varint,1,opt,name=succeeded"`
+	xxx_hidden_Policy    *storage.Policy        `protobuf:"bytes,2,opt,name=policy"`
+	xxx_hidden_Errors    *[]*ImportPolicyError  `protobuf:"bytes,3,rep,name=errors"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1566,15 +1714,27 @@ func (x *ImportPolicyResponse) GetSucceeded() bool {
 
 func (x *ImportPolicyResponse) GetPolicy() *storage.Policy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policy) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *storage.Policy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policy), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ImportPolicyResponse) GetErrors() []*ImportPolicyError {
 	if x != nil {
-		if x.xxx_hidden_Errors != nil {
-			return *x.xxx_hidden_Errors
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Errors) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*ImportPolicyError
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Errors), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1586,11 +1746,23 @@ func (x *ImportPolicyResponse) SetSucceeded(v bool) {
 }
 
 func (x *ImportPolicyResponse) SetPolicy(v *storage.Policy) {
-	x.xxx_hidden_Policy = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Policy, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	}
 }
 
 func (x *ImportPolicyResponse) SetErrors(v []*ImportPolicyError) {
-	x.xxx_hidden_Errors = &v
+	var sv *[]*ImportPolicyError
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Errors), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ImportPolicyError{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Errors), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ImportPolicyResponse) HasSucceeded() bool {
@@ -1604,7 +1776,7 @@ func (x *ImportPolicyResponse) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ImportPolicyResponse) ClearSucceeded() {
@@ -1613,7 +1785,8 @@ func (x *ImportPolicyResponse) ClearSucceeded() {
 }
 
 func (x *ImportPolicyResponse) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Policy, (*storage.Policy)(nil))
 }
 
 type ImportPolicyResponse_builder struct {
@@ -1632,8 +1805,14 @@ func (b0 ImportPolicyResponse_builder) Build() *ImportPolicyResponse {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
 		x.xxx_hidden_Succeeded = *b.Succeeded
 	}
-	x.xxx_hidden_Policy = b.Policy
-	x.xxx_hidden_Errors = &b.Errors
+	if b.Policy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Policy = b.Policy
+	}
+	if b.Errors != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Errors = &b.Errors
+	}
 	return m0
 }
 
@@ -1641,10 +1820,12 @@ type ImportPoliciesResponse struct {
 	state                   protoimpl.MessageState   `protogen:"opaque.v1"`
 	xxx_hidden_Responses    *[]*ImportPolicyResponse `protobuf:"bytes,1,rep,name=responses"`
 	xxx_hidden_AllSucceeded bool                     `protobuf:"varint,2,opt,name=all_succeeded,json=allSucceeded"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImportPoliciesResponse) Reset() {
@@ -1674,8 +1855,13 @@ func (x *ImportPoliciesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ImportPoliciesResponse) GetResponses() []*ImportPolicyResponse {
 	if x != nil {
-		if x.xxx_hidden_Responses != nil {
-			return *x.xxx_hidden_Responses
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Responses) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*ImportPolicyResponse
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Responses), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1689,7 +1875,14 @@ func (x *ImportPoliciesResponse) GetAllSucceeded() bool {
 }
 
 func (x *ImportPoliciesResponse) SetResponses(v []*ImportPolicyResponse) {
-	x.xxx_hidden_Responses = &v
+	var sv *[]*ImportPolicyResponse
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Responses), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*ImportPolicyResponse{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Responses), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ImportPoliciesResponse) SetAllSucceeded(v bool) {
@@ -1720,7 +1913,10 @@ func (b0 ImportPoliciesResponse_builder) Build() *ImportPoliciesResponse {
 	m0 := &ImportPoliciesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Responses = &b.Responses
+	if b.Responses != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Responses = &b.Responses
+	}
 	if b.AllSucceeded != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
 		x.xxx_hidden_AllSucceeded = *b.AllSucceeded
@@ -1733,10 +1929,12 @@ type PolicyFromSearchResponse struct {
 	xxx_hidden_Policy             *storage.Policy        `protobuf:"bytes,1,opt,name=policy"`
 	xxx_hidden_AlteredSearchTerms []string               `protobuf:"bytes,2,rep,name=altered_search_terms,json=alteredSearchTerms"`
 	xxx_hidden_HasNestedFields    bool                   `protobuf:"varint,3,opt,name=has_nested_fields,json=hasNestedFields"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PolicyFromSearchResponse) Reset() {
@@ -1766,7 +1964,14 @@ func (x *PolicyFromSearchResponse) ProtoReflect() protoreflect.Message {
 
 func (x *PolicyFromSearchResponse) GetPolicy() *storage.Policy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policy) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Policy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policy), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1786,7 +1991,12 @@ func (x *PolicyFromSearchResponse) GetHasNestedFields() bool {
 }
 
 func (x *PolicyFromSearchResponse) SetPolicy(v *storage.Policy) {
-	x.xxx_hidden_Policy = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Policy, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	}
 }
 
 func (x *PolicyFromSearchResponse) SetAlteredSearchTerms(v []string) {
@@ -1802,7 +2012,7 @@ func (x *PolicyFromSearchResponse) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PolicyFromSearchResponse) HasHasNestedFields() bool {
@@ -1813,7 +2023,8 @@ func (x *PolicyFromSearchResponse) HasHasNestedFields() bool {
 }
 
 func (x *PolicyFromSearchResponse) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Policy, (*storage.Policy)(nil))
 }
 
 func (x *PolicyFromSearchResponse) ClearHasNestedFields() {
@@ -1833,7 +2044,10 @@ func (b0 PolicyFromSearchResponse_builder) Build() *PolicyFromSearchResponse {
 	m0 := &PolicyFromSearchResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policy = b.Policy
+	if b.Policy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Policy = b.Policy
+	}
 	x.xxx_hidden_AlteredSearchTerms = b.AlteredSearchTerms
 	if b.HasNestedFields != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
@@ -1843,9 +2057,11 @@ func (b0 PolicyFromSearchResponse_builder) Build() *PolicyFromSearchResponse {
 }
 
 type GetPolicyMitreVectorsRequest struct {
-	state                  protoimpl.MessageState                `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                               `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Options     *GetPolicyMitreVectorsRequest_Options `protobuf:"bytes,2,opt,name=options"`
+	state              protoimpl.MessageState                `protogen:"opaque.v1"`
+	xxx_hidden_Id      *string                               `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Options *GetPolicyMitreVectorsRequest_Options `protobuf:"bytes,2,opt,name=options"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1889,7 +2105,14 @@ func (x *GetPolicyMitreVectorsRequest) GetId() string {
 
 func (x *GetPolicyMitreVectorsRequest) GetOptions() *GetPolicyMitreVectorsRequest_Options {
 	if x != nil {
-		return x.xxx_hidden_Options
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Options) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *GetPolicyMitreVectorsRequest_Options
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Options), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1900,7 +2123,12 @@ func (x *GetPolicyMitreVectorsRequest) SetId(v string) {
 }
 
 func (x *GetPolicyMitreVectorsRequest) SetOptions(v *GetPolicyMitreVectorsRequest_Options) {
-	x.xxx_hidden_Options = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Options, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *GetPolicyMitreVectorsRequest) HasId() bool {
@@ -1914,7 +2142,7 @@ func (x *GetPolicyMitreVectorsRequest) HasOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Options != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetPolicyMitreVectorsRequest) ClearId() {
@@ -1923,7 +2151,8 @@ func (x *GetPolicyMitreVectorsRequest) ClearId() {
 }
 
 func (x *GetPolicyMitreVectorsRequest) ClearOptions() {
-	x.xxx_hidden_Options = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Options, (*GetPolicyMitreVectorsRequest_Options)(nil))
 }
 
 type GetPolicyMitreVectorsRequest_builder struct {
@@ -1941,7 +2170,10 @@ func (b0 GetPolicyMitreVectorsRequest_builder) Build() *GetPolicyMitreVectorsReq
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_Id = b.Id
 	}
-	x.xxx_hidden_Options = b.Options
+	if b.Options != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Options = b.Options
+	}
 	return m0
 }
 
@@ -1949,8 +2181,12 @@ type GetPolicyMitreVectorsResponse struct {
 	state              protoimpl.MessageState        `protogen:"opaque.v1"`
 	xxx_hidden_Policy  *storage.Policy               `protobuf:"bytes,1,opt,name=policy"`
 	xxx_hidden_Vectors *[]*storage.MitreAttackVector `protobuf:"bytes,2,rep,name=vectors"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetPolicyMitreVectorsResponse) Reset() {
@@ -1980,37 +2216,62 @@ func (x *GetPolicyMitreVectorsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetPolicyMitreVectorsResponse) GetPolicy() *storage.Policy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policy) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Policy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policy), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *GetPolicyMitreVectorsResponse) GetVectors() []*storage.MitreAttackVector {
 	if x != nil {
-		if x.xxx_hidden_Vectors != nil {
-			return *x.xxx_hidden_Vectors
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Vectors) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*storage.MitreAttackVector
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vectors), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *GetPolicyMitreVectorsResponse) SetPolicy(v *storage.Policy) {
-	x.xxx_hidden_Policy = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Policy, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *GetPolicyMitreVectorsResponse) SetVectors(v []*storage.MitreAttackVector) {
-	x.xxx_hidden_Vectors = &v
+	var sv *[]*storage.MitreAttackVector
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Vectors), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.MitreAttackVector{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Vectors), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetPolicyMitreVectorsResponse) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetPolicyMitreVectorsResponse) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Policy, (*storage.Policy)(nil))
 }
 
 type GetPolicyMitreVectorsResponse_builder struct {
@@ -2024,8 +2285,14 @@ func (b0 GetPolicyMitreVectorsResponse_builder) Build() *GetPolicyMitreVectorsRe
 	m0 := &GetPolicyMitreVectorsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policy = b.Policy
-	x.xxx_hidden_Vectors = &b.Vectors
+	if b.Policy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Policy = b.Policy
+	}
+	if b.Vectors != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Vectors = &b.Vectors
+	}
 	return m0
 }
 
@@ -2201,9 +2468,9 @@ var File_api_v1_policy_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_policy_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1bapi/v1/policy_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x13storage/mitre.proto\x1a\x14storage/policy.proto\x1a!google/protobuf/go_features.proto\"\x8b\x01\n" +
-	"\x0eDryRunResponse\x120\n" +
-	"\x06alerts\x18\x01 \x03(\v2\x18.v1.DryRunResponse.AlertR\x06alerts\x1aG\n" +
+	"\x1bapi/v1/policy_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x13storage/mitre.proto\x1a\x14storage/policy.proto\x1a!google/protobuf/go_features.proto\"\x8f\x01\n" +
+	"\x0eDryRunResponse\x124\n" +
+	"\x06alerts\x18\x01 \x03(\v2\x18.v1.DryRunResponse.AlertB\x02(\x01R\x06alerts\x1aG\n" +
 	"\x05Alert\x12\x1e\n" +
 	"\n" +
 	"deployment\x18\x01 \x01(\tR\n" +
@@ -2212,10 +2479,10 @@ const file_api_v1_policy_service_proto_rawDesc = "" +
 	"violations\x18\x02 \x03(\tR\n" +
 	"violations\"\x1e\n" +
 	"\x05JobId\x12\x15\n" +
-	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"_\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"c\n" +
 	"\x17DryRunJobStatusResponse\x12\x18\n" +
-	"\apending\x18\x01 \x01(\bR\apending\x12*\n" +
-	"\x06result\x18\x02 \x01(\v2\x12.v1.DryRunResponseR\x06result\":\n" +
+	"\apending\x18\x01 \x01(\bR\apending\x12.\n" +
+	"\x06result\x18\x02 \x01(\v2\x12.v1.DryRunResponseB\x02(\x01R\x06result\":\n" +
 	"\x18PolicyCategoriesResponse\x12\x1e\n" +
 	"\n" +
 	"categories\x18\x01 \x03(\tR\n" +
@@ -2223,11 +2490,11 @@ const file_api_v1_policy_service_proto_rawDesc = "" +
 	"&EnableDisablePolicyNotificationRequest\x12\x1b\n" +
 	"\tpolicy_id\x18\x01 \x01(\tR\bpolicyId\x12!\n" +
 	"\fnotifier_ids\x18\x02 \x03(\tR\vnotifierIds\x12\x18\n" +
-	"\adisable\x18\x03 \x01(\bR\adisable\"G\n" +
-	"\x14ListPoliciesResponse\x12/\n" +
-	"\bpolicies\x18\x01 \x03(\v2\x13.storage.ListPolicyR\bpolicies\"v\n" +
-	"\x11PostPolicyRequest\x12'\n" +
-	"\x06policy\x18\x01 \x01(\v2\x0f.storage.PolicyR\x06policy\x128\n" +
+	"\adisable\x18\x03 \x01(\bR\adisable\"K\n" +
+	"\x14ListPoliciesResponse\x123\n" +
+	"\bpolicies\x18\x01 \x03(\v2\x13.storage.ListPolicyB\x02(\x01R\bpolicies\"z\n" +
+	"\x11PostPolicyRequest\x12+\n" +
+	"\x06policy\x18\x01 \x01(\v2\x0f.storage.PolicyB\x02(\x01R\x06policy\x128\n" +
 	"\x18enable_strict_validation\x18\x02 \x01(\bR\x16enableStrictValidation\"R\n" +
 	"\x12PatchPolicyRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
@@ -2237,45 +2504,45 @@ const file_api_v1_policy_service_proto_rawDesc = "" +
 	"\n" +
 	"policy_ids\x18\x01 \x03(\tR\tpolicyIds\"#\n" +
 	"\vPolicyError\x12\x14\n" +
-	"\x05error\x18\x01 \x01(\tR\x05error\"Z\n" +
+	"\x05error\x18\x01 \x01(\tR\x05error\"^\n" +
 	"\x14PolicyOperationError\x12\x1b\n" +
-	"\tpolicy_id\x18\x01 \x01(\tR\bpolicyId\x12%\n" +
-	"\x05error\x18\x02 \x01(\v2\x0f.v1.PolicyErrorR\x05error\"L\n" +
-	"\x18PolicyOperationErrorList\x120\n" +
-	"\x06errors\x18\x01 \x03(\v2\x18.v1.PolicyOperationErrorR\x06errors\">\n" +
+	"\tpolicy_id\x18\x01 \x01(\tR\bpolicyId\x12)\n" +
+	"\x05error\x18\x02 \x01(\v2\x0f.v1.PolicyErrorB\x02(\x01R\x05error\"P\n" +
+	"\x18PolicyOperationErrorList\x124\n" +
+	"\x06errors\x18\x01 \x03(\v2\x18.v1.PolicyOperationErrorB\x02(\x01R\x06errors\">\n" +
 	"\x17PolicyFromSearchRequest\x12#\n" +
 	"\rsearch_params\x18\x01 \x01(\tR\fsearchParams\"6\n" +
 	"\x16ImportPoliciesMetadata\x12\x1c\n" +
-	"\toverwrite\x18\x01 \x01(\bR\toverwrite\"|\n" +
-	"\x15ImportPoliciesRequest\x126\n" +
-	"\bmetadata\x18\x01 \x01(\v2\x1a.v1.ImportPoliciesMetadataR\bmetadata\x12+\n" +
-	"\bpolicies\x18\x02 \x03(\v2\x0f.storage.PolicyR\bpolicies\"\xa3\x01\n" +
+	"\toverwrite\x18\x01 \x01(\bR\toverwrite\"\x84\x01\n" +
+	"\x15ImportPoliciesRequest\x12:\n" +
+	"\bmetadata\x18\x01 \x01(\v2\x1a.v1.ImportPoliciesMetadataB\x02(\x01R\bmetadata\x12/\n" +
+	"\bpolicies\x18\x02 \x03(\v2\x0f.storage.PolicyB\x02(\x01R\bpolicies\"\xa3\x01\n" +
 	"\x11ImportPolicyError\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12'\n" +
 	"\x0eduplicate_name\x18\x03 \x01(\tH\x00R\rduplicateName\x12+\n" +
 	"\x10validation_error\x18\x04 \x01(\tH\x00R\x0fvalidationErrorB\n" +
 	"\n" +
-	"\bmetadata\"\x8c\x01\n" +
+	"\bmetadata\"\x94\x01\n" +
 	"\x14ImportPolicyResponse\x12\x1c\n" +
-	"\tsucceeded\x18\x01 \x01(\bR\tsucceeded\x12'\n" +
-	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyR\x06policy\x12-\n" +
-	"\x06errors\x18\x03 \x03(\v2\x15.v1.ImportPolicyErrorR\x06errors\"u\n" +
-	"\x16ImportPoliciesResponse\x126\n" +
-	"\tresponses\x18\x01 \x03(\v2\x18.v1.ImportPolicyResponseR\tresponses\x12#\n" +
-	"\rall_succeeded\x18\x02 \x01(\bR\fallSucceeded\"\xa1\x01\n" +
-	"\x18PolicyFromSearchResponse\x12'\n" +
-	"\x06policy\x18\x01 \x01(\v2\x0f.storage.PolicyR\x06policy\x120\n" +
+	"\tsucceeded\x18\x01 \x01(\bR\tsucceeded\x12+\n" +
+	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyB\x02(\x01R\x06policy\x121\n" +
+	"\x06errors\x18\x03 \x03(\v2\x15.v1.ImportPolicyErrorB\x02(\x01R\x06errors\"y\n" +
+	"\x16ImportPoliciesResponse\x12:\n" +
+	"\tresponses\x18\x01 \x03(\v2\x18.v1.ImportPolicyResponseB\x02(\x01R\tresponses\x12#\n" +
+	"\rall_succeeded\x18\x02 \x01(\bR\fallSucceeded\"\xa5\x01\n" +
+	"\x18PolicyFromSearchResponse\x12+\n" +
+	"\x06policy\x18\x01 \x01(\v2\x0f.storage.PolicyB\x02(\x01R\x06policy\x120\n" +
 	"\x14altered_search_terms\x18\x02 \x03(\tR\x12alteredSearchTerms\x12*\n" +
-	"\x11has_nested_fields\x18\x03 \x01(\bR\x0fhasNestedFields\"\xa4\x01\n" +
+	"\x11has_nested_fields\x18\x03 \x01(\bR\x0fhasNestedFields\"\xa8\x01\n" +
 	"\x1cGetPolicyMitreVectorsRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12B\n" +
-	"\aoptions\x18\x02 \x01(\v2(.v1.GetPolicyMitreVectorsRequest.OptionsR\aoptions\x1a0\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12F\n" +
+	"\aoptions\x18\x02 \x01(\v2(.v1.GetPolicyMitreVectorsRequest.OptionsB\x02(\x01R\aoptions\x1a0\n" +
 	"\aOptions\x12%\n" +
-	"\x0eexclude_policy\x18\x01 \x01(\bR\rexcludePolicy\"~\n" +
-	"\x1dGetPolicyMitreVectorsResponse\x12'\n" +
-	"\x06policy\x18\x01 \x01(\v2\x0f.storage.PolicyR\x06policy\x124\n" +
-	"\avectors\x18\x02 \x03(\v2\x1a.storage.MitreAttackVectorR\avectors2\xc6\f\n" +
+	"\x0eexclude_policy\x18\x01 \x01(\bR\rexcludePolicy\"\x86\x01\n" +
+	"\x1dGetPolicyMitreVectorsResponse\x12+\n" +
+	"\x06policy\x18\x01 \x01(\v2\x0f.storage.PolicyB\x02(\x01R\x06policy\x128\n" +
+	"\avectors\x18\x02 \x03(\v2\x1a.storage.MitreAttackVectorB\x02(\x01R\avectors2\xc6\f\n" +
 	"\rPolicyService\x12I\n" +
 	"\tGetPolicy\x12\x10.v1.ResourceByID\x1a\x0f.storage.Policy\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/policies/{id}\x12\x84\x01\n" +
 	"\x15GetPolicyMitreVectors\x12 .v1.GetPolicyMitreVectorsRequest\x1a!.v1.GetPolicyMitreVectorsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/policies/{id}/mitrevectors\x12L\n" +

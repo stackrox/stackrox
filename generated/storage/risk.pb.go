@@ -85,11 +85,13 @@ func (x RiskSubjectType) Number() protoreflect.EnumNumber {
 }
 
 type Risk struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Subject     *RiskSubject           `protobuf:"bytes,2,opt,name=subject"`
-	xxx_hidden_Score       float32                `protobuf:"fixed32,3,opt,name=score"`
-	xxx_hidden_Results     *[]*Risk_Result        `protobuf:"bytes,4,rep,name=results"`
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id      *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Subject *RiskSubject           `protobuf:"bytes,2,opt,name=subject"`
+	xxx_hidden_Score   float32                `protobuf:"fixed32,3,opt,name=score"`
+	xxx_hidden_Results *[]*Risk_Result        `protobuf:"bytes,4,rep,name=results"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -147,8 +149,13 @@ func (x *Risk) GetScore() float32 {
 
 func (x *Risk) GetResults() []*Risk_Result {
 	if x != nil {
-		if x.xxx_hidden_Results != nil {
-			return *x.xxx_hidden_Results
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Results) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*Risk_Result
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -169,7 +176,14 @@ func (x *Risk) SetScore(v float32) {
 }
 
 func (x *Risk) SetResults(v []*Risk_Result) {
-	x.xxx_hidden_Results = &v
+	var sv *[]*Risk_Result
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Risk_Result{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *Risk) HasId() bool {
@@ -229,7 +243,10 @@ func (b0 Risk_builder) Build() *Risk {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_Score = *b.Score
 	}
-	x.xxx_hidden_Results = &b.Results
+	if b.Results != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Results = &b.Results
+	}
 	return m0
 }
 
@@ -410,10 +427,12 @@ func (b0 RiskSubject_builder) Build() *RiskSubject {
 }
 
 type Risk_Result struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Factors     *[]*Risk_Result_Factor `protobuf:"bytes,2,rep,name=factors"`
-	xxx_hidden_Score       float32                `protobuf:"fixed32,3,opt,name=score"`
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name    *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Factors *[]*Risk_Result_Factor `protobuf:"bytes,2,rep,name=factors"`
+	xxx_hidden_Score   float32                `protobuf:"fixed32,3,opt,name=score"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -457,8 +476,13 @@ func (x *Risk_Result) GetName() string {
 
 func (x *Risk_Result) GetFactors() []*Risk_Result_Factor {
 	if x != nil {
-		if x.xxx_hidden_Factors != nil {
-			return *x.xxx_hidden_Factors
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Factors) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *[]*Risk_Result_Factor
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Factors), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -477,7 +501,14 @@ func (x *Risk_Result) SetName(v string) {
 }
 
 func (x *Risk_Result) SetFactors(v []*Risk_Result_Factor) {
-	x.xxx_hidden_Factors = &v
+	var sv *[]*Risk_Result_Factor
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Factors), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Risk_Result_Factor{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Factors), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *Risk_Result) SetScore(v float32) {
@@ -525,7 +556,10 @@ func (b0 Risk_Result_builder) Build() *Risk_Result {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
 		x.xxx_hidden_Name = b.Name
 	}
-	x.xxx_hidden_Factors = &b.Factors
+	if b.Factors != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Factors = &b.Factors
+	}
 	if b.Score != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
 		x.xxx_hidden_Score = *b.Score
@@ -648,15 +682,15 @@ var File_storage_risk_proto protoreflect.FileDescriptor
 
 const file_storage_risk_proto_rawDesc = "" +
 	"\n" +
-	"\x12storage/risk.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"\xae\x02\n" +
+	"\x12storage/risk.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"\xb6\x02\n" +
 	"\x04Risk\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
 	"\asubject\x18\x02 \x01(\v2\x14.storage.RiskSubjectR\asubject\x12\x14\n" +
-	"\x05score\x18\x03 \x01(\x02R\x05score\x12.\n" +
-	"\aresults\x18\x04 \x03(\v2\x14.storage.Risk.ResultR\aresults\x1a\x9f\x01\n" +
+	"\x05score\x18\x03 \x01(\x02R\x05score\x122\n" +
+	"\aresults\x18\x04 \x03(\v2\x14.storage.Risk.ResultB\x02(\x01R\aresults\x1a\xa3\x01\n" +
 	"\x06Result\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
-	"\afactors\x18\x02 \x03(\v2\x1b.storage.Risk.Result.FactorR\afactors\x12\x14\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x129\n" +
+	"\afactors\x18\x02 \x03(\v2\x1b.storage.Risk.Result.FactorB\x02(\x01R\afactors\x12\x14\n" +
 	"\x05score\x18\x03 \x01(\x02R\x05score\x1a4\n" +
 	"\x06Factor\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x10\n" +

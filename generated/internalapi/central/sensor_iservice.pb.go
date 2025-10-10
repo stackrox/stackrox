@@ -2312,10 +2312,12 @@ type DeduperState struct {
 	xxx_hidden_ResourceHashes map[string]uint64      `protobuf:"bytes,1,rep,name=resource_hashes,json=resourceHashes" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	xxx_hidden_Current        int32                  `protobuf:"varint,2,opt,name=current"`
 	xxx_hidden_Total          int32                  `protobuf:"varint,3,opt,name=total"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeduperState) Reset() {
@@ -2779,8 +2781,12 @@ func (b0 ReprocessDeployment_builder) Build() *ReprocessDeployment {
 type InvalidateImageCache struct {
 	state                protoimpl.MessageState            `protogen:"opaque.v1"`
 	xxx_hidden_ImageKeys *[]*InvalidateImageCache_ImageKey `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *InvalidateImageCache) Reset() {
@@ -2810,15 +2816,27 @@ func (x *InvalidateImageCache) ProtoReflect() protoreflect.Message {
 
 func (x *InvalidateImageCache) GetImageKeys() []*InvalidateImageCache_ImageKey {
 	if x != nil {
-		if x.xxx_hidden_ImageKeys != nil {
-			return *x.xxx_hidden_ImageKeys
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ImageKeys) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*InvalidateImageCache_ImageKey
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ImageKeys), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *InvalidateImageCache) SetImageKeys(v []*InvalidateImageCache_ImageKey) {
-	x.xxx_hidden_ImageKeys = &v
+	var sv *[]*InvalidateImageCache_ImageKey
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ImageKeys), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*InvalidateImageCache_ImageKey{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ImageKeys), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type InvalidateImageCache_builder struct {
@@ -2831,7 +2849,10 @@ func (b0 InvalidateImageCache_builder) Build() *InvalidateImageCache {
 	m0 := &InvalidateImageCache{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ImageKeys = &b.ImageKeys
+	if b.ImageKeys != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_ImageKeys = &b.ImageKeys
+	}
 	return m0
 }
 
@@ -2974,7 +2995,7 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\x1fdeployment_enhancement_response\x18\x12 \x01(\v2&.central.DeploymentEnhancementResponseH\x00R\x1ddeploymentEnhancementResponse\x12x\n" +
 	"#issue_secured_cluster_certs_request\x18\x13 \x01(\v2(.central.IssueSecuredClusterCertsRequestH\x00R\x1fissueSecuredClusterCertsRequestB\x05\n" +
 	"\x03msg\"\x16\n" +
-	"\x14ReprocessDeployments\"\xaa\x11\n" +
+	"\x14ReprocessDeployments\"\xae\x11\n" +
 	"\vMsgToSensor\x12>\n" +
 	"\venforcement\x18\x01 \x01(\v2\x1a.central.SensorEnforcementH\x00R\venforcement\x12?\n" +
 	"\x0escrape_command\x18\x02 \x01(\v2\x16.central.ScrapeCommandH\x00R\rscrapeCommand\x12[\n" +
@@ -2993,8 +3014,8 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\x0eaudit_log_sync\x18\x0e \x01(\v2\x15.central.AuditLogSyncH\x00R\fauditLogSync\x12Q\n" +
 	"\x14reprocess_deployment\x18\x0f \x01(\v2\x1c.central.ReprocessDeploymentH\x00R\x13reprocessDeployment\x12U\n" +
 	"\x16invalidate_image_cache\x18\x10 \x01(\v2\x1d.central.InvalidateImageCacheH\x00R\x14invalidateImageCache\x12u\n" +
-	"\"issue_local_scanner_certs_response\x18\x11 \x01(\v2'.central.IssueLocalScannerCertsResponseH\x00R\x1eissueLocalScannerCertsResponse\x125\n" +
-	"\rupdated_image\x18\x12 \x01(\v2\x0e.storage.ImageH\x00R\fupdatedImage\x12T\n" +
+	"\"issue_local_scanner_certs_response\x18\x11 \x01(\v2'.central.IssueLocalScannerCertsResponseH\x00R\x1eissueLocalScannerCertsResponse\x129\n" +
+	"\rupdated_image\x18\x12 \x01(\v2\x0e.storage.ImageB\x02(\x01H\x00R\fupdatedImage\x12T\n" +
 	"\x15reprocess_deployments\x18\x13 \x01(\v2\x1d.central.ReprocessDeploymentsH\x00R\x14reprocessDeployments\x12I\n" +
 	"\x12node_inventory_ack\x18\x14 \x01(\v2\x19.central.NodeInventoryACKH\x00R\x10nodeInventoryAck\x12^\n" +
 	"\x19delegated_registry_config\x18\x15 \x01(\v2 .central.DelegatedRegistryConfigH\x00R\x17delegatedRegistryConfig\x123\n" +
@@ -3006,9 +3027,9 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\rdeduper_state\x18\x1a \x01(\v2\x15.central.DeduperStateH\x00R\fdeduperState\x12m\n" +
 	"\x1edeployment_enhancement_request\x18\x1b \x01(\v2%.central.DeploymentEnhancementRequestH\x00R\x1cdeploymentEnhancementRequest\x12{\n" +
 	"$issue_secured_cluster_certs_response\x18\x1c \x01(\v2).central.IssueSecuredClusterCertsResponseH\x00R issueSecuredClusterCertsResponseB\x05\n" +
-	"\x03msg\"\xd5\x01\n" +
-	"\fDeduperState\x12R\n" +
-	"\x0fresource_hashes\x18\x01 \x03(\v2).central.DeduperState.ResourceHashesEntryR\x0eresourceHashes\x12\x18\n" +
+	"\x03msg\"\xd9\x01\n" +
+	"\fDeduperState\x12V\n" +
+	"\x0fresource_hashes\x18\x01 \x03(\v2).central.DeduperState.ResourceHashesEntryB\x02(\x01R\x0eresourceHashes\x12\x18\n" +
 	"\acurrent\x18\x02 \x01(\x05R\acurrent\x12\x14\n" +
 	"\x05total\x18\x03 \x01(\x05R\x05total\x1aA\n" +
 	"\x13ResourceHashesEntry\x12\x10\n" +
@@ -3025,22 +3046,22 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\x04NACK\x10\x01\"1\n" +
 	"\vMessageType\x12\x11\n" +
 	"\rNodeInventory\x10\x00\x12\x0f\n" +
-	"\vNodeIndexer\x10\x01\"\xe4\x01\n" +
-	"\fAuditLogSync\x12m\n" +
-	"\x1anode_audit_log_file_states\x18\x01 \x03(\v21.central.AuditLogSync.NodeAuditLogFileStatesEntryR\x16nodeAuditLogFileStates\x1ae\n" +
+	"\vNodeIndexer\x10\x01\"\xe8\x01\n" +
+	"\fAuditLogSync\x12q\n" +
+	"\x1anode_audit_log_file_states\x18\x01 \x03(\v21.central.AuditLogSync.NodeAuditLogFileStatesEntryB\x02(\x01R\x16nodeAuditLogFileStates\x1ae\n" +
 	"\x1bNodeAuditLogFileStatesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
-	"\x05value\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x05value:\x028\x01\"\xf0\x01\n" +
-	"\x12AuditLogStatusInfo\x12s\n" +
-	"\x1anode_audit_log_file_states\x18\x01 \x03(\v27.central.AuditLogStatusInfo.NodeAuditLogFileStatesEntryR\x16nodeAuditLogFileStates\x1ae\n" +
+	"\x05value\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x05value:\x028\x01\"\xf4\x01\n" +
+	"\x12AuditLogStatusInfo\x12w\n" +
+	"\x1anode_audit_log_file_states\x18\x01 \x03(\v27.central.AuditLogStatusInfo.NodeAuditLogFileStatesEntryB\x02(\x01R\x16nodeAuditLogFileStates\x1ae\n" +
 	"\x1bNodeAuditLogFileStatesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
 	"\x05value\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x05value:\x028\x01\"<\n" +
 	"\x13ReprocessDeployment\x12%\n" +
-	"\x0edeployment_ids\x18\x01 \x03(\tR\rdeploymentIds\"\xac\x01\n" +
-	"\x14InvalidateImageCache\x12E\n" +
+	"\x0edeployment_ids\x18\x01 \x03(\tR\rdeploymentIds\"\xb0\x01\n" +
+	"\x14InvalidateImageCache\x12I\n" +
 	"\n" +
-	"image_keys\x18\x01 \x03(\v2&.central.InvalidateImageCache.ImageKeyR\timageKeys\x1aM\n" +
+	"image_keys\x18\x01 \x03(\v2&.central.InvalidateImageCache.ImageKeyB\x02(\x01R\timageKeys\x1aM\n" +
 	"\bImageKey\x12\x19\n" +
 	"\bimage_id\x18\x01 \x01(\tR\aimageId\x12&\n" +
 	"\x0fimage_full_name\x18\x02 \x01(\tR\rimageFullName2P\n" +

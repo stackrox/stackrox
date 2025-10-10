@@ -288,8 +288,12 @@ type ClusterResponse struct {
 	state                           protoimpl.MessageState              `protogen:"opaque.v1"`
 	xxx_hidden_Cluster              *storage.Cluster                    `protobuf:"bytes,1,opt,name=cluster"`
 	xxx_hidden_ClusterRetentionInfo *DecommissionedClusterRetentionInfo `protobuf:"bytes,2,opt,name=cluster_retention_info,json=clusterRetentionInfo"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ClusterResponse) Reset() {
@@ -319,46 +323,72 @@ func (x *ClusterResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ClusterResponse) GetCluster() *storage.Cluster {
 	if x != nil {
-		return x.xxx_hidden_Cluster
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Cluster) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *storage.Cluster
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Cluster), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ClusterResponse) GetClusterRetentionInfo() *DecommissionedClusterRetentionInfo {
 	if x != nil {
-		return x.xxx_hidden_ClusterRetentionInfo
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ClusterRetentionInfo) {
+				protoimpl.X.UnmarshalField(x, 2)
+			}
+			var rv *DecommissionedClusterRetentionInfo
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ClusterRetentionInfo), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
 
 func (x *ClusterResponse) SetCluster(v *storage.Cluster) {
-	x.xxx_hidden_Cluster = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Cluster, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	}
 }
 
 func (x *ClusterResponse) SetClusterRetentionInfo(v *DecommissionedClusterRetentionInfo) {
-	x.xxx_hidden_ClusterRetentionInfo = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ClusterRetentionInfo, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	}
 }
 
 func (x *ClusterResponse) HasCluster() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Cluster != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ClusterResponse) HasClusterRetentionInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ClusterRetentionInfo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ClusterResponse) ClearCluster() {
-	x.xxx_hidden_Cluster = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Cluster, (*storage.Cluster)(nil))
 }
 
 func (x *ClusterResponse) ClearClusterRetentionInfo() {
-	x.xxx_hidden_ClusterRetentionInfo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ClusterRetentionInfo, (*DecommissionedClusterRetentionInfo)(nil))
 }
 
 type ClusterResponse_builder struct {
@@ -372,8 +402,14 @@ func (b0 ClusterResponse_builder) Build() *ClusterResponse {
 	m0 := &ClusterResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Cluster = b.Cluster
-	x.xxx_hidden_ClusterRetentionInfo = b.ClusterRetentionInfo
+	if b.Cluster != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Cluster = b.Cluster
+	}
+	if b.ClusterRetentionInfo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_ClusterRetentionInfo = b.ClusterRetentionInfo
+	}
 	return m0
 }
 
@@ -522,8 +558,12 @@ type ClustersList struct {
 	state                               protoimpl.MessageState                         `protogen:"opaque.v1"`
 	xxx_hidden_Clusters                 *[]*storage.Cluster                            `protobuf:"bytes,1,rep,name=clusters"`
 	xxx_hidden_ClusterIdToRetentionInfo map[string]*DecommissionedClusterRetentionInfo `protobuf:"bytes,2,rep,name=cluster_id_to_retention_info,json=clusterIdToRetentionInfo" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields                       protoimpl.UnknownFields
-	sizeCache                           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ClustersList) Reset() {
@@ -553,8 +593,13 @@ func (x *ClustersList) ProtoReflect() protoreflect.Message {
 
 func (x *ClustersList) GetClusters() []*storage.Cluster {
 	if x != nil {
-		if x.xxx_hidden_Clusters != nil {
-			return *x.xxx_hidden_Clusters
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Clusters) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*storage.Cluster
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -568,7 +613,14 @@ func (x *ClustersList) GetClusterIdToRetentionInfo() map[string]*DecommissionedC
 }
 
 func (x *ClustersList) SetClusters(v []*storage.Cluster) {
-	x.xxx_hidden_Clusters = &v
+	var sv *[]*storage.Cluster
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*storage.Cluster{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Clusters), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ClustersList) SetClusterIdToRetentionInfo(v map[string]*DecommissionedClusterRetentionInfo) {
@@ -587,7 +639,10 @@ func (b0 ClustersList_builder) Build() *ClustersList {
 	m0 := &ClustersList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Clusters = &b.Clusters
+	if b.Clusters != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Clusters = &b.Clusters
+	}
 	x.xxx_hidden_ClusterIdToRetentionInfo = b.ClusterIdToRetentionInfo
 	return m0
 }
@@ -756,17 +811,17 @@ const file_api_v1_cluster_service_proto_rawDesc = "" +
 	"\vis_excluded\x18\x01 \x01(\bH\x00R\n" +
 	"isExcluded\x120\n" +
 	"\x13days_until_deletion\x18\x02 \x01(\x05H\x00R\x11daysUntilDeletionB\x0f\n" +
-	"\rRetentionInfo\"\x9b\x01\n" +
-	"\x0fClusterResponse\x12*\n" +
-	"\acluster\x18\x01 \x01(\v2\x10.storage.ClusterR\acluster\x12\\\n" +
-	"\x16cluster_retention_info\x18\x02 \x01(\v2&.v1.DecommissionedClusterRetentionInfoR\x14clusterRetentionInfo\"\xc5\x01\n" +
+	"\rRetentionInfo\"\xa3\x01\n" +
+	"\x0fClusterResponse\x12.\n" +
+	"\acluster\x18\x01 \x01(\v2\x10.storage.ClusterB\x02(\x01R\acluster\x12`\n" +
+	"\x16cluster_retention_info\x18\x02 \x01(\v2&.v1.DecommissionedClusterRetentionInfoB\x02(\x01R\x14clusterRetentionInfo\"\xc5\x01\n" +
 	"\x17ClusterDefaultsResponse\x122\n" +
 	"\x15main_image_repository\x18\x01 \x01(\tR\x13mainImageRepository\x12<\n" +
 	"\x1acollector_image_repository\x18\x02 \x01(\tR\x18collectorImageRepository\x128\n" +
-	"\x18kernel_support_available\x18\x03 \x01(\bR\x16kernelSupportAvailable\"\xa1\x02\n" +
-	"\fClustersList\x12,\n" +
-	"\bclusters\x18\x01 \x03(\v2\x10.storage.ClusterR\bclusters\x12n\n" +
-	"\x1ccluster_id_to_retention_info\x18\x02 \x03(\v2..v1.ClustersList.ClusterIdToRetentionInfoEntryR\x18clusterIdToRetentionInfo\x1as\n" +
+	"\x18kernel_support_available\x18\x03 \x01(\bR\x16kernelSupportAvailable\"\xa9\x02\n" +
+	"\fClustersList\x120\n" +
+	"\bclusters\x18\x01 \x03(\v2\x10.storage.ClusterB\x02(\x01R\bclusters\x12r\n" +
+	"\x1ccluster_id_to_retention_info\x18\x02 \x03(\v2..v1.ClustersList.ClusterIdToRetentionInfoEntryB\x02(\x01R\x18clusterIdToRetentionInfo\x1as\n" +
 	"\x1dClusterIdToRetentionInfoEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12<\n" +
 	"\x05value\x18\x02 \x01(\v2&.v1.DecommissionedClusterRetentionInfoR\x05value:\x028\x01\"*\n" +

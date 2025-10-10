@@ -382,10 +382,12 @@ type Policy struct {
 	xxx_hidden_MitreVectorsLocked bool                          `protobuf:"varint,25,opt,name=mitre_vectors_locked,json=mitreVectorsLocked"`
 	xxx_hidden_IsDefault          bool                          `protobuf:"varint,26,opt,name=is_default,json=isDefault"`
 	xxx_hidden_Source             PolicySource                  `protobuf:"varint,27,opt,name=source,enum=storage.PolicySource"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Policy) Reset() {
@@ -495,8 +497,13 @@ func (x *Policy) GetEventSource() EventSource {
 
 func (x *Policy) GetExclusions() []*Exclusion {
 	if x != nil {
-		if x.xxx_hidden_Exclusions != nil {
-			return *x.xxx_hidden_Exclusions
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Exclusions) {
+				protoimpl.X.UnmarshalField(x, 21)
+			}
+			var rv *[]*Exclusion
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Exclusions), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -504,8 +511,13 @@ func (x *Policy) GetExclusions() []*Exclusion {
 
 func (x *Policy) GetScope() []*Scope {
 	if x != nil {
-		if x.xxx_hidden_Scope != nil {
-			return *x.xxx_hidden_Scope
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Scope) {
+				protoimpl.X.UnmarshalField(x, 11)
+			}
+			var rv *[]*Scope
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Scope), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -536,7 +548,14 @@ func (x *Policy) GetNotifiers() []string {
 
 func (x *Policy) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 14) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 15)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -580,8 +599,13 @@ func (x *Policy) GetPolicyVersion() string {
 
 func (x *Policy) GetPolicySections() []*PolicySection {
 	if x != nil {
-		if x.xxx_hidden_PolicySections != nil {
-			return *x.xxx_hidden_PolicySections
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 19) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PolicySections) {
+				protoimpl.X.UnmarshalField(x, 20)
+			}
+			var rv *[]*PolicySection
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PolicySections), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -589,8 +613,13 @@ func (x *Policy) GetPolicySections() []*PolicySection {
 
 func (x *Policy) GetMitreAttackVectors() []*Policy_MitreAttackVectors {
 	if x != nil {
-		if x.xxx_hidden_MitreAttackVectors != nil {
-			return *x.xxx_hidden_MitreAttackVectors
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 20) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_MitreAttackVectors) {
+				protoimpl.X.UnmarshalField(x, 23)
+			}
+			var rv *[]*Policy_MitreAttackVectors
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MitreAttackVectors), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -670,11 +699,25 @@ func (x *Policy) SetEventSource(v EventSource) {
 }
 
 func (x *Policy) SetExclusions(v []*Exclusion) {
-	x.xxx_hidden_Exclusions = &v
+	var sv *[]*Exclusion
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Exclusions), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Exclusion{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Exclusions), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 25)
 }
 
 func (x *Policy) SetScope(v []*Scope) {
-	x.xxx_hidden_Scope = &v
+	var sv *[]*Scope
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Scope), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Scope{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Scope), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 25)
 }
 
 func (x *Policy) SetSeverity(v Severity) {
@@ -691,7 +734,12 @@ func (x *Policy) SetNotifiers(v []string) {
 }
 
 func (x *Policy) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 14)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 25)
+	}
 }
 
 func (x *Policy) SetSORTName(v string) {
@@ -715,11 +763,25 @@ func (x *Policy) SetPolicyVersion(v string) {
 }
 
 func (x *Policy) SetPolicySections(v []*PolicySection) {
-	x.xxx_hidden_PolicySections = &v
+	var sv *[]*PolicySection
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PolicySections), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*PolicySection{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_PolicySections), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 19, 25)
 }
 
 func (x *Policy) SetMitreAttackVectors(v []*Policy_MitreAttackVectors) {
-	x.xxx_hidden_MitreAttackVectors = &v
+	var sv *[]*Policy_MitreAttackVectors
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MitreAttackVectors), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Policy_MitreAttackVectors{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_MitreAttackVectors), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 20, 25)
 }
 
 func (x *Policy) SetCriteriaLocked(v bool) {
@@ -802,7 +864,7 @@ func (x *Policy) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 14)
 }
 
 func (x *Policy) HasSORTName() bool {
@@ -902,7 +964,8 @@ func (x *Policy) ClearSeverity() {
 }
 
 func (x *Policy) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 14)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *Policy) ClearSORTName() {
@@ -1031,15 +1094,24 @@ func (b0 Policy_builder) Build() *Policy {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 25)
 		x.xxx_hidden_EventSource = *b.EventSource
 	}
-	x.xxx_hidden_Exclusions = &b.Exclusions
-	x.xxx_hidden_Scope = &b.Scope
+	if b.Exclusions != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 25)
+		x.xxx_hidden_Exclusions = &b.Exclusions
+	}
+	if b.Scope != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 25)
+		x.xxx_hidden_Scope = &b.Scope
+	}
 	if b.Severity != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 25)
 		x.xxx_hidden_Severity = *b.Severity
 	}
 	x.xxx_hidden_EnforcementActions = b.EnforcementActions
 	x.xxx_hidden_Notifiers = b.Notifiers
-	x.xxx_hidden_LastUpdated = b.LastUpdated
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 25)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
 	if b.SORTName != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 15, 25)
 		x.xxx_hidden_SORTName = b.SORTName
@@ -1056,8 +1128,14 @@ func (b0 Policy_builder) Build() *Policy {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 18, 25)
 		x.xxx_hidden_PolicyVersion = b.PolicyVersion
 	}
-	x.xxx_hidden_PolicySections = &b.PolicySections
-	x.xxx_hidden_MitreAttackVectors = &b.MitreAttackVectors
+	if b.PolicySections != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 19, 25)
+		x.xxx_hidden_PolicySections = &b.PolicySections
+	}
+	if b.MitreAttackVectors != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 20, 25)
+		x.xxx_hidden_MitreAttackVectors = &b.MitreAttackVectors
+	}
 	if b.CriteriaLocked != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 21, 25)
 		x.xxx_hidden_CriteriaLocked = *b.CriteriaLocked
@@ -1081,10 +1159,12 @@ type PolicySection struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_SectionName  *string                `protobuf:"bytes,1,opt,name=section_name,json=sectionName"`
 	xxx_hidden_PolicyGroups *[]*PolicyGroup        `protobuf:"bytes,3,rep,name=policy_groups,json=policyGroups"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PolicySection) Reset() {
@@ -1124,8 +1204,13 @@ func (x *PolicySection) GetSectionName() string {
 
 func (x *PolicySection) GetPolicyGroups() []*PolicyGroup {
 	if x != nil {
-		if x.xxx_hidden_PolicyGroups != nil {
-			return *x.xxx_hidden_PolicyGroups
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PolicyGroups) {
+				protoimpl.X.UnmarshalField(x, 3)
+			}
+			var rv *[]*PolicyGroup
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PolicyGroups), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1137,7 +1222,14 @@ func (x *PolicySection) SetSectionName(v string) {
 }
 
 func (x *PolicySection) SetPolicyGroups(v []*PolicyGroup) {
-	x.xxx_hidden_PolicyGroups = &v
+	var sv *[]*PolicyGroup
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PolicyGroups), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*PolicyGroup{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_PolicyGroups), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *PolicySection) HasSectionName() bool {
@@ -1168,7 +1260,10 @@ func (b0 PolicySection_builder) Build() *PolicySection {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_SectionName = b.SectionName
 	}
-	x.xxx_hidden_PolicyGroups = &b.PolicyGroups
+	if b.PolicyGroups != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_PolicyGroups = &b.PolicyGroups
+	}
 	return m0
 }
 
@@ -1178,10 +1273,12 @@ type PolicyGroup struct {
 	xxx_hidden_BooleanOperator BooleanOperator        `protobuf:"varint,2,opt,name=boolean_operator,json=booleanOperator,enum=storage.BooleanOperator"`
 	xxx_hidden_Negate          bool                   `protobuf:"varint,3,opt,name=negate"`
 	xxx_hidden_Values          *[]*PolicyValue        `protobuf:"bytes,4,rep,name=values"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PolicyGroup) Reset() {
@@ -1237,8 +1334,13 @@ func (x *PolicyGroup) GetNegate() bool {
 
 func (x *PolicyGroup) GetValues() []*PolicyValue {
 	if x != nil {
-		if x.xxx_hidden_Values != nil {
-			return *x.xxx_hidden_Values
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Values) {
+				protoimpl.X.UnmarshalField(x, 4)
+			}
+			var rv *[]*PolicyValue
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
@@ -1260,7 +1362,14 @@ func (x *PolicyGroup) SetNegate(v bool) {
 }
 
 func (x *PolicyGroup) SetValues(v []*PolicyValue) {
-	x.xxx_hidden_Values = &v
+	var sv *[]*PolicyValue
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*PolicyValue{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *PolicyGroup) HasFieldName() bool {
@@ -1328,7 +1437,10 @@ func (b0 PolicyGroup_builder) Build() *PolicyGroup {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_Negate = *b.Negate
 	}
-	x.xxx_hidden_Values = &b.Values
+	if b.Values != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Values = &b.Values
+	}
 	return m0
 }
 
@@ -1413,8 +1525,12 @@ func (b0 PolicyValue_builder) Build() *PolicyValue {
 type PolicyList struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Policies *[]*Policy             `protobuf:"bytes,1,rep,name=policies"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PolicyList) Reset() {
@@ -1444,15 +1560,27 @@ func (x *PolicyList) ProtoReflect() protoreflect.Message {
 
 func (x *PolicyList) GetPolicies() []*Policy {
 	if x != nil {
-		if x.xxx_hidden_Policies != nil {
-			return *x.xxx_hidden_Policies
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policies) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*Policy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *PolicyList) SetPolicies(v []*Policy) {
-	x.xxx_hidden_Policies = &v
+	var sv *[]*Policy
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Policy{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type PolicyList_builder struct {
@@ -1465,7 +1593,10 @@ func (b0 PolicyList_builder) Build() *PolicyList {
 	m0 := &PolicyList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policies = &b.Policies
+	if b.Policies != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Policies = &b.Policies
+	}
 	return m0
 }
 
@@ -1482,10 +1613,12 @@ type ListPolicy struct {
 	xxx_hidden_EventSource     EventSource            `protobuf:"varint,9,opt,name=event_source,json=eventSource,enum=storage.EventSource"`
 	xxx_hidden_IsDefault       bool                   `protobuf:"varint,10,opt,name=is_default,json=isDefault"`
 	xxx_hidden_Source          PolicySource           `protobuf:"varint,11,opt,name=source,enum=storage.PolicySource"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListPolicy) Reset() {
@@ -1575,7 +1708,14 @@ func (x *ListPolicy) GetNotifiers() []string {
 
 func (x *ListPolicy) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastUpdated
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
+				protoimpl.X.UnmarshalField(x, 8)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1639,7 +1779,12 @@ func (x *ListPolicy) SetNotifiers(v []string) {
 }
 
 func (x *ListPolicy) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastUpdated = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
+	}
 }
 
 func (x *ListPolicy) SetEventSource(v EventSource) {
@@ -1696,7 +1841,7 @@ func (x *ListPolicy) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastUpdated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *ListPolicy) HasEventSource() bool {
@@ -1746,7 +1891,8 @@ func (x *ListPolicy) ClearDisabled() {
 }
 
 func (x *ListPolicy) ClearLastUpdated() {
-	x.xxx_hidden_LastUpdated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
 }
 
 func (x *ListPolicy) ClearEventSource() {
@@ -1806,7 +1952,10 @@ func (b0 ListPolicy_builder) Build() *ListPolicy {
 	}
 	x.xxx_hidden_LifecycleStages = b.LifecycleStages
 	x.xxx_hidden_Notifiers = b.Notifiers
-	x.xxx_hidden_LastUpdated = b.LastUpdated
+	if b.LastUpdated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
+		x.xxx_hidden_LastUpdated = b.LastUpdated
+	}
 	if b.EventSource != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
 		x.xxx_hidden_EventSource = *b.EventSource
@@ -1823,11 +1972,13 @@ func (b0 ListPolicy_builder) Build() *ListPolicy {
 }
 
 type Exclusion struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Deployment  *Exclusion_Deployment  `protobuf:"bytes,5,opt,name=deployment"`
-	xxx_hidden_Image       *Exclusion_Image       `protobuf:"bytes,7,opt,name=image"`
-	xxx_hidden_Expiration  *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expiration"`
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name       *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Deployment *Exclusion_Deployment  `protobuf:"bytes,5,opt,name=deployment"`
+	xxx_hidden_Image      *Exclusion_Image       `protobuf:"bytes,7,opt,name=image"`
+	xxx_hidden_Expiration *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expiration"`
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1885,7 +2036,14 @@ func (x *Exclusion) GetImage() *Exclusion_Image {
 
 func (x *Exclusion) GetExpiration() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_Expiration
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Expiration) {
+				protoimpl.X.UnmarshalField(x, 6)
+			}
+			var rv *timestamppb.Timestamp
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Expiration), protoimpl.Pointer(&rv))
+			return rv
+		}
 	}
 	return nil
 }
@@ -1904,7 +2062,12 @@ func (x *Exclusion) SetImage(v *Exclusion_Image) {
 }
 
 func (x *Exclusion) SetExpiration(v *timestamppb.Timestamp) {
-	x.xxx_hidden_Expiration = v
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiration, v)
+	if v == nil {
+		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	} else {
+		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	}
 }
 
 func (x *Exclusion) HasName() bool {
@@ -1932,7 +2095,7 @@ func (x *Exclusion) HasExpiration() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Expiration != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Exclusion) ClearName() {
@@ -1949,7 +2112,8 @@ func (x *Exclusion) ClearImage() {
 }
 
 func (x *Exclusion) ClearExpiration() {
-	x.xxx_hidden_Expiration = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiration, (*timestamppb.Timestamp)(nil))
 }
 
 type Exclusion_builder struct {
@@ -1971,7 +2135,10 @@ func (b0 Exclusion_builder) Build() *Exclusion {
 	}
 	x.xxx_hidden_Deployment = b.Deployment
 	x.xxx_hidden_Image = b.Image
-	x.xxx_hidden_Expiration = b.Expiration
+	if b.Expiration != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Expiration = b.Expiration
+	}
 	return m0
 }
 
@@ -1980,8 +2147,12 @@ func (b0 Exclusion_builder) Build() *Exclusion {
 type ExportPoliciesResponse struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Policies *[]*Policy             `protobuf:"bytes,1,rep,name=policies"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deprecated: Do not use. This will be deleted in the near future.
+	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ExportPoliciesResponse) Reset() {
@@ -2011,15 +2182,27 @@ func (x *ExportPoliciesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ExportPoliciesResponse) GetPolicies() []*Policy {
 	if x != nil {
-		if x.xxx_hidden_Policies != nil {
-			return *x.xxx_hidden_Policies
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policies) {
+				protoimpl.X.UnmarshalField(x, 1)
+			}
+			var rv *[]*Policy
+			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&rv))
+			return *rv
 		}
 	}
 	return nil
 }
 
 func (x *ExportPoliciesResponse) SetPolicies(v []*Policy) {
-	x.xxx_hidden_Policies = &v
+	var sv *[]*Policy
+	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
+	if sv == nil {
+		sv = &[]*Policy{}
+		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
+	}
+	*sv = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 type ExportPoliciesResponse_builder struct {
@@ -2032,7 +2215,10 @@ func (b0 ExportPoliciesResponse_builder) Build() *ExportPoliciesResponse {
 	m0 := &ExportPoliciesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policies = &b.Policies
+	if b.Policies != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Policies = &b.Policies
+	}
 	return m0
 }
 
@@ -2381,7 +2567,7 @@ var File_storage_policy_proto protoreflect.FileDescriptor
 
 const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x14storage/policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\x1a\x13storage/scope.proto\x1a!google/protobuf/go_features.proto\"\xb4\t\n" +
+	"\x14storage/policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\x1a\x13storage/scope.proto\x1a!google/protobuf/go_features.proto\"\xc8\t\n" +
 	"\x06Policy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -2393,21 +2579,21 @@ const file_storage_policy_proto_rawDesc = "" +
 	"categories\x18\a \x03(\tR\n" +
 	"categories\x12B\n" +
 	"\x10lifecycle_stages\x18\t \x03(\x0e2\x17.storage.LifecycleStageR\x0flifecycleStages\x127\n" +
-	"\fevent_source\x18\x16 \x01(\x0e2\x14.storage.EventSourceR\veventSource\x122\n" +
+	"\fevent_source\x18\x16 \x01(\x0e2\x14.storage.EventSourceR\veventSource\x126\n" +
 	"\n" +
-	"exclusions\x18\x15 \x03(\v2\x12.storage.ExclusionR\n" +
-	"exclusions\x12$\n" +
-	"\x05scope\x18\v \x03(\v2\x0e.storage.ScopeR\x05scope\x12-\n" +
+	"exclusions\x18\x15 \x03(\v2\x12.storage.ExclusionB\x02(\x01R\n" +
+	"exclusions\x12(\n" +
+	"\x05scope\x18\v \x03(\v2\x0e.storage.ScopeB\x02(\x01R\x05scope\x12-\n" +
 	"\bseverity\x18\f \x01(\x0e2\x11.storage.SeverityR\bseverity\x12K\n" +
 	"\x13enforcement_actions\x18\r \x03(\x0e2\x1a.storage.EnforcementActionR\x12enforcementActions\x12\x1c\n" +
-	"\tnotifiers\x18\x0e \x03(\tR\tnotifiers\x12=\n" +
-	"\flast_updated\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12\x1b\n" +
+	"\tnotifiers\x18\x0e \x03(\tR\tnotifiers\x12A\n" +
+	"\flast_updated\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x12\x1b\n" +
 	"\tSORT_name\x18\x10 \x01(\tR\bSORTName\x12/\n" +
 	"\x13SORT_lifecycleStage\x18\x11 \x01(\tR\x12SORTLifecycleStage\x12)\n" +
 	"\x10SORT_enforcement\x18\x12 \x01(\bR\x0fSORTEnforcement\x12%\n" +
-	"\x0epolicy_version\x18\x13 \x01(\tR\rpolicyVersion\x12?\n" +
-	"\x0fpolicy_sections\x18\x14 \x03(\v2\x16.storage.PolicySectionR\x0epolicySections\x12T\n" +
-	"\x14mitre_attack_vectors\x18\x17 \x03(\v2\".storage.Policy.MitreAttackVectorsR\x12mitreAttackVectors\x12'\n" +
+	"\x0epolicy_version\x18\x13 \x01(\tR\rpolicyVersion\x12C\n" +
+	"\x0fpolicy_sections\x18\x14 \x03(\v2\x16.storage.PolicySectionB\x02(\x01R\x0epolicySections\x12X\n" +
+	"\x14mitre_attack_vectors\x18\x17 \x03(\v2\".storage.Policy.MitreAttackVectorsB\x02(\x01R\x12mitreAttackVectors\x12'\n" +
 	"\x0fcriteria_locked\x18\x18 \x01(\bR\x0ecriteriaLocked\x120\n" +
 	"\x14mitre_vectors_locked\x18\x19 \x01(\bR\x12mitreVectorsLocked\x12\x1d\n" +
 	"\n" +
@@ -2418,21 +2604,21 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
 	"techniques\x18\x02 \x03(\tR\n" +
 	"techniquesJ\x04\b\b\x10\tJ\x04\b\n" +
-	"\x10\v\"m\n" +
+	"\x10\v\"q\n" +
 	"\rPolicySection\x12!\n" +
-	"\fsection_name\x18\x01 \x01(\tR\vsectionName\x129\n" +
-	"\rpolicy_groups\x18\x03 \x03(\v2\x14.storage.PolicyGroupR\fpolicyGroups\"\xb7\x01\n" +
+	"\fsection_name\x18\x01 \x01(\tR\vsectionName\x12=\n" +
+	"\rpolicy_groups\x18\x03 \x03(\v2\x14.storage.PolicyGroupB\x02(\x01R\fpolicyGroups\"\xbb\x01\n" +
 	"\vPolicyGroup\x12\x1d\n" +
 	"\n" +
 	"field_name\x18\x01 \x01(\tR\tfieldName\x12C\n" +
 	"\x10boolean_operator\x18\x02 \x01(\x0e2\x18.storage.BooleanOperatorR\x0fbooleanOperator\x12\x16\n" +
-	"\x06negate\x18\x03 \x01(\bR\x06negate\x12,\n" +
-	"\x06values\x18\x04 \x03(\v2\x14.storage.PolicyValueR\x06values\"#\n" +
+	"\x06negate\x18\x03 \x01(\bR\x06negate\x120\n" +
+	"\x06values\x18\x04 \x03(\v2\x14.storage.PolicyValueB\x02(\x01R\x06values\"#\n" +
 	"\vPolicyValue\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\tR\x05value\"9\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value\"=\n" +
 	"\n" +
-	"PolicyList\x12+\n" +
-	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpolicies\"\xc5\x03\n" +
+	"PolicyList\x12/\n" +
+	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyB\x02(\x01R\bpolicies\"\xc9\x03\n" +
 	"\n" +
 	"ListPolicy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -2441,21 +2627,21 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\bseverity\x18\x04 \x01(\x0e2\x11.storage.SeverityR\bseverity\x12\x1a\n" +
 	"\bdisabled\x18\x05 \x01(\bR\bdisabled\x12B\n" +
 	"\x10lifecycle_stages\x18\x06 \x03(\x0e2\x17.storage.LifecycleStageR\x0flifecycleStages\x12\x1c\n" +
-	"\tnotifiers\x18\a \x03(\tR\tnotifiers\x12=\n" +
-	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x127\n" +
+	"\tnotifiers\x18\a \x03(\tR\tnotifiers\x12A\n" +
+	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x127\n" +
 	"\fevent_source\x18\t \x01(\x0e2\x14.storage.EventSourceR\veventSource\x12\x1d\n" +
 	"\n" +
 	"is_default\x18\n" +
 	" \x01(\bR\tisDefault\x12-\n" +
-	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\"\xf5\x02\n" +
+	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\"\xf9\x02\n" +
 	"\tExclusion\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12=\n" +
 	"\n" +
 	"deployment\x18\x05 \x01(\v2\x1d.storage.Exclusion.DeploymentR\n" +
 	"deployment\x12.\n" +
-	"\x05image\x18\a \x01(\v2\x18.storage.Exclusion.ImageR\x05image\x12:\n" +
+	"\x05image\x18\a \x01(\v2\x18.storage.Exclusion.ImageR\x05image\x12>\n" +
 	"\n" +
-	"expiration\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"expiration\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\n" +
 	"expiration\x1a>\n" +
 	"\tContainer\x121\n" +
 	"\n" +
@@ -2465,9 +2651,9 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12$\n" +
 	"\x05scope\x18\x04 \x01(\v2\x0e.storage.ScopeR\x05scope\x1a\x1b\n" +
 	"\x05Image\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04nameJ\x04\b\x02\x10\x03\"E\n" +
-	"\x16ExportPoliciesResponse\x12+\n" +
-	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpolicies*/\n" +
+	"\x04name\x18\x01 \x01(\tR\x04nameJ\x04\b\x02\x10\x03\"I\n" +
+	"\x16ExportPoliciesResponse\x12/\n" +
+	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyB\x02(\x01R\bpolicies*/\n" +
 	"\fPolicySource\x12\x0e\n" +
 	"\n" +
 	"IMPERATIVE\x10\x00\x12\x0f\n" +
