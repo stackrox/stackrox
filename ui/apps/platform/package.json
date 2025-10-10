@@ -78,7 +78,7 @@
         "react-spinners": "^0.10.4",
         "react-syntax-highlighter": "^15.6.1",
         "react-table-6": "^6.11.0",
-        "react-toastify": "^7.0.3",
+        "react-toastify": "^11.0.5",
         "react-transition-group": "^4.4.1",
         "react-truncate": "^2.4.0",
         "react-vis": "^1.12.1",
