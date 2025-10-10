@@ -45,6 +45,11 @@ jobs:
       run: |
         make -C .crd-schema-checker
 
+    - name: Install operator-sdk build dependencies
+      run: |
+        # operator-sdk depends on github.com/proglottis/gpgme which requires these packages
+        yum install -y pkgconf gpgme-devel
+
     - name: Get previous released version
       id: get_previous_released_version
       run: |
