@@ -101,23 +101,9 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 }
 
-func (p *Pipeline) createNewContext() {
-	p.msgCtxMux.Lock()
-	defer p.msgCtxMux.Unlock()
-	p.msgCtx, p.msgCtxCancel = context.WithCancelCause(context.Background())
-}
-
 func (p *Pipeline) getCurrentContext() context.Context {
 	// Use long-lived context that persists across disconnects for event buffering
 	return context.Background()
-}
-
-func (p *Pipeline) cancelCurrentContext() {
-	p.msgCtxMux.Lock()
-	defer p.msgCtxMux.Unlock()
-	if p.msgCtxCancel != nil {
-		p.msgCtxCancel(errSensorOffline)
-	}
 }
 
 // Process defines processes to process a ProcessIndicator
