@@ -15,10 +15,10 @@ import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import { vulnerabilitiesAllImagesPath } from 'routePaths';
-import { SetResult } from 'hooks/useSet';
+import type { SetResult } from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import {
+import type {
     VulnerabilityExceptionScope,
     VulnerabilityState,
 } from 'services/VulnerabilityExceptionService';
@@ -38,11 +38,9 @@ import {
     getWorkloadCveOverviewDefaultSortOption,
     getSeveritySortOptions,
 } from '../../utils/sortUtils';
-import {
-    CVEListQueryResult,
-    cveListQuery,
-} from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';
-import { VulnerabilitySeverityLabel } from '../../types';
+import { cveListQuery } from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';
+import type { CVEListQueryResult } from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';
+import type { VulnerabilitySeverityLabel } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';

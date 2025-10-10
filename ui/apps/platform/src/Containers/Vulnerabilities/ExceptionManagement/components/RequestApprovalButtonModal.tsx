@@ -5,10 +5,8 @@ import { useFormik } from 'formik';
 import isEqual from 'lodash/isEqual';
 
 import useModal from 'hooks/useModal';
-import {
-    VulnerabilityException,
-    approveVulnerabilityException,
-} from 'services/VulnerabilityExceptionService';
+import { approveVulnerabilityException } from 'services/VulnerabilityExceptionService';
+import type { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useRestMutation from 'hooks/useRestMutation';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';

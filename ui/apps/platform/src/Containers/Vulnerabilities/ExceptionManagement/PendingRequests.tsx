@@ -11,7 +11,8 @@ import useURLSort from 'hooks/useURLSort';
 import PageTitle from 'Components/PageTitle';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
+import { getTableUIState } from 'utils/getTableUIState';
 import {
     RequestExpires,
     RequestIDLink,
@@ -23,7 +24,6 @@ import {
 } from './components/ExceptionRequestTableCells';
 import AdvancedFiltersToolbar from '../components/AdvancedFiltersToolbar';
 import { DEFAULT_VM_PAGE_SIZE } from '../constants';
-import { getTableUIState } from '../../../utils/getTableUIState';
 import { vulnRequestSearchFilterConfig } from './searchFilterConfig';
 
 const sortFields = [

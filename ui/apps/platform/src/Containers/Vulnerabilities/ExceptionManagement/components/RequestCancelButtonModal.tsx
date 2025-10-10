@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { Alert, Button, Flex, Modal, Text } from '@patternfly/react-core';
 
-import {
-    VulnerabilityException,
-    cancelVulnerabilityException,
-} from 'services/VulnerabilityExceptionService';
+import { cancelVulnerabilityException } from 'services/VulnerabilityExceptionService';
+import type { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useModal from 'hooks/useModal';
 import useRestMutation from 'hooks/useRestMutation';
