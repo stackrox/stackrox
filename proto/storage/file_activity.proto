@@ -18,13 +18,13 @@ message FileActivity {
   }
 
   message File {
-    string path = 1;
-    string host_path = 2;
+    string path = 1; // @gotags: search:"File Path"
+    string host_path = 2; // @gotags: search: "File Host Path"
     FileMetadata meta = 3;
   }
 
-  enum Type {
-    CREATION = 0;
+  enum Operation {
+    CREATE = 0;
     UNLINK = 1;
     RENAME = 2;
     PERMISSION_CHANGE = 3;
@@ -40,10 +40,10 @@ message FileActivity {
   // information.
   ProcessIndicator process = 2;
 
-  Type type = 3;
+  Operation operation = 3; // @gotags: search:"File Operation"
 
   File file = 4;
 
   // specific to `RENAME` activity, the new location / metadata of the file.
-  optional File moved = 5;
+  optional File moved = 5; // @gotags: search:"-"
 }

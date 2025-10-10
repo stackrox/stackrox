@@ -69,7 +69,7 @@ func (m *FileActivity) CloneVT() *FileActivity {
 	r := new(FileActivity)
 	r.Timestamp = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Timestamp).CloneVT())
 	r.Process = m.Process.CloneVT()
-	r.Type = m.Type
+	r.Operation = m.Operation
 	r.File = m.File.CloneVT()
 	r.Moved = m.Moved.CloneVT()
 	if len(m.unknownFields) > 0 {
@@ -151,7 +151,7 @@ func (this *FileActivity) EqualVT(that *FileActivity) bool {
 	if !this.Process.EqualVT(that.Process) {
 		return false
 	}
-	if this.Type != that.Type {
+	if this.Operation != that.Operation {
 		return false
 	}
 	if !this.File.EqualVT(that.File) {
@@ -339,8 +339,8 @@ func (m *FileActivity) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x22
 	}
-	if m.Type != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Type))
+	if m.Operation != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Operation))
 		i--
 		dAtA[i] = 0x18
 	}
@@ -430,8 +430,8 @@ func (m *FileActivity) SizeVT() (n int) {
 		l = m.Process.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.Type != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.Type))
+	if m.Operation != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Operation))
 	}
 	if m.File != nil {
 		l = m.File.SizeVT()
@@ -871,9 +871,9 @@ func (m *FileActivity) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Operation", wireType)
 			}
-			m.Type = 0
+			m.Operation = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -883,7 +883,7 @@ func (m *FileActivity) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Type |= FileActivity_Type(b&0x7F) << shift
+				m.Operation |= FileActivity_Operation(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1424,9 +1424,9 @@ func (m *FileActivity) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Operation", wireType)
 			}
-			m.Type = 0
+			m.Operation = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1436,7 +1436,7 @@ func (m *FileActivity) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Type |= FileActivity_Type(b&0x7F) << shift
+				m.Operation |= FileActivity_Operation(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
