@@ -289,15 +289,6 @@ func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.sensorUpdates
 }
 
-func (m *networkFlowManager) resetContext() {
-	m.ctxMutex.Lock()
-	defer m.ctxMutex.Unlock()
-	if m.cancelCtx != nil {
-		m.cancelCtx()
-	}
-	m.pipelineCtx, m.cancelCtx = context.WithCancel(context.Background())
-}
-
 func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 	select {
 	case <-m.stopper.Flow().StopRequested():
@@ -309,13 +300,6 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 		// They will still be processed by the detection engine for newer entities, but
 		// sensor will not keep ordered updates indefinitely in memory.
 		return false
-	}
-}
-
-func (m *networkFlowManager) resetLastSentState() {
-	// Reset state in the UpdateComputer implementation
-	if m.updateComputer != nil {
-		m.updateComputer.ResetState()
 	}
 }
 
