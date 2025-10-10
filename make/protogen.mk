@@ -240,6 +240,7 @@ endif
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
+		--grpc-gateway_opt="use_opaque_api=true" \
 		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR:%=%,):$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
