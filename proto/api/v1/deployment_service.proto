@@ -37,7 +37,7 @@ message ListDeploymentsWithProcessInfoResponse {
     reserved 2; // formerly whitelist_statuses
     repeated storage.ContainerNameAndBaselineStatus baseline_statuses = 3;
   }
-  repeated DeploymentWithProcessInfo deployments = 1;
+  repeated DeploymentWithProcessInfo deployments = 1 [lazy = true];
 }
 
 message GetDeploymentWithRiskResponse {

@@ -71,10 +71,10 @@ message SimpleAccessScope {
     }
 
     repeated string included_clusters = 1;
-    repeated Namespace included_namespaces = 2;
+    repeated Namespace included_namespaces = 2 [lazy = true];
 
-    repeated SetBasedLabelSelector cluster_label_selectors = 3;
-    repeated SetBasedLabelSelector namespace_label_selectors = 4;
+    repeated SetBasedLabelSelector cluster_label_selectors = 3 [lazy = true];
+    repeated SetBasedLabelSelector namespace_label_selectors = 4 [lazy = true];
   }
 
   // `id` is generated and cannot be changed.
@@ -116,8 +116,8 @@ message EffectiveAccessScope {
     State state = 3;
     map<string, string> labels = 5 [lazy = true];
 
-    repeated Namespace namespaces = 4;
+    repeated Namespace namespaces = 4 [lazy = true];
   }
 
-  repeated Cluster clusters = 1;
+  repeated Cluster clusters = 1 [lazy = true];
 }

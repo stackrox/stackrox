@@ -23,5 +23,5 @@ message ActiveComponent {
   // Map from container name to the active context of an edge.
   map<string, ActiveContext> DEPRECATED_active_contexts = 2; // @gotags: search:"-"
 
-  repeated ActiveContext active_contexts_slice = 5;
+  repeated ActiveContext active_contexts_slice = 5 [lazy = true];
 }

@@ -20,7 +20,7 @@ message Namespace {
 }
 
 message GetNamespacesResponse {
-  repeated Namespace namespaces = 1;
+  repeated Namespace namespaces = 1 [lazy = true];
 }
 
 message GetNamespaceRequest {

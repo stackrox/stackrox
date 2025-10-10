@@ -15,18 +15,18 @@ option features.(pb.go).api_level = API_OPAQUE;
 // ComplianceScanStatsShim models statistics of checks for a given scan configuration
 message ComplianceScanStatsShim {
   string scan_name = 1;
-  repeated ComplianceCheckStatusCount check_stats = 2;
+  repeated ComplianceCheckStatusCount check_stats = 2 [lazy = true];
   google.protobuf.Timestamp last_scan = 3;
   string scan_config_id = 4;
 }
 
 // ComplianceProfileScanStats provides scan stats overview based on profile
 message ComplianceProfileScanStats {
-  repeated ComplianceCheckStatusCount check_stats = 1;
+  repeated ComplianceCheckStatusCount check_stats = 1 [lazy = true];
   string profile_name = 2;
   string title = 3;
   string version = 4;
-  repeated ComplianceBenchmark benchmarks = 5;
+  repeated ComplianceBenchmark benchmarks = 5 [lazy = true];
 }
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
@@ -42,13 +42,13 @@ message ComplianceScanClusterRequest {
 
 // ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans
 message ListComplianceProfileScanStatsResponse {
-  repeated ComplianceProfileScanStats scan_stats = 1;
+  repeated ComplianceProfileScanStats scan_stats = 1 [lazy = true];
   int32 total_count = 2;
 }
 
 // ListComplianceClusterProfileStatsResponse provides stats for the profiles within the scans
 message ListComplianceClusterProfileStatsResponse {
-  repeated ComplianceProfileScanStats scan_stats = 1;
+  repeated ComplianceProfileScanStats scan_stats = 1 [lazy = true];
   string cluster_id = 2;
   string cluster_name = 3;
   int32 total_count = 4;
@@ -56,7 +56,7 @@ message ListComplianceClusterProfileStatsResponse {
 
 // ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans
 message ListComplianceClusterScanStatsResponse {
-  repeated ComplianceClusterScanStats scan_stats = 1;
+  repeated ComplianceClusterScanStats scan_stats = 1 [lazy = true];
   int32 total_count = 2;
 }
 

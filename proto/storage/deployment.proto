@@ -31,7 +31,7 @@ message Deployment {
   google.protobuf.Timestamp created = 8; // @gotags: search:"Created,store,hidden" hash:"ignore"
   string cluster_id = 9; // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
   string cluster_name = 10; // @gotags: search:"Cluster,store"
-  repeated Container containers = 11;
+  repeated Container containers = 11 [lazy = true];
   reserved 12;
   map<string, string> annotations = 14 [lazy = true]; // @gotags: search:"Deployment Annotation"
   int64 priority = 15; // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
@@ -44,8 +44,8 @@ message Deployment {
   bool host_pid = 31; // @gotags: policy:"Host PID"
   bool host_ipc = 32; // @gotags: policy:"Host IPC"
   string runtime_class = 34; // @gotags: policy:"Runtime Class"
-  repeated Toleration tolerations = 22; // @gotags: search:"-"
-  repeated PortConfig ports = 24; // @gotags: policy:"Ports"
+  repeated Toleration tolerations = 22 [lazy = true]; // @gotags: search:"-"
+  repeated PortConfig ports = 24 [lazy = true]; // @gotags: policy:"Ports"
 
   int64 state_timestamp = 27; // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
   float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
@@ -75,9 +75,9 @@ message Container {
 
   ContainerImage image = 3;
   SecurityContext security_context = 4;
-  repeated Volume volumes = 5;
-  repeated PortConfig ports = 6; // Policies use the port config on the top-level deployment. @gotags: policy:",ignore" search:"-"
-  repeated EmbeddedSecret secrets = 7;
+  repeated Volume volumes = 5 [lazy = true];
+  repeated PortConfig ports = 6 [lazy = true]; // Policies use the port config on the top-level deployment. @gotags: policy:",ignore" search:"-"
+  repeated EmbeddedSecret secrets = 7 [lazy = true];
   Resources resources = 8;
 
   reserved 9; // previously instances
@@ -124,15 +124,15 @@ message Pod {
   string deployment_id = 3; // @gotags: search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"
   string namespace = 4; // @gotags: search:"Namespace,store"
   string cluster_id = 5; // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-  repeated ContainerInstance live_instances = 6;
+  repeated ContainerInstance live_instances = 6 [lazy = true];
   // Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)
   // There is one bucket (list) per container name.
-  repeated ContainerInstanceList terminated_instances = 7; // @gotags: search:"-"
+  repeated ContainerInstanceList terminated_instances = 7 [lazy = true]; // @gotags: search:"-"
   // Time Kubernetes reports the pod was created.
   google.protobuf.Timestamp started = 8;
 
   message ContainerInstanceList {
-    repeated ContainerInstance instances = 1;
+    repeated ContainerInstance instances = 1 [lazy = true];
   }
 }
 
@@ -216,7 +216,7 @@ message PortConfig {
   ExposureLevel exposure = 4; // @gotags: search:"Max Exposure Level,store"
   int32 exposed_port = 5 [deprecated = true];
 
-  repeated ExposureInfo exposure_infos = 6; // @gotags: policy:"Exposure Infos" sensorhash:"set"
+  repeated ExposureInfo exposure_infos = 6 [lazy = true]; // @gotags: policy:"Exposure Infos" sensorhash:"set"
 }
 
 message ContainerConfig {
@@ -236,7 +236,7 @@ message ContainerConfig {
       UNKNOWN = 6;
     }
   }
-  repeated EnvironmentConfig env = 1;
+  repeated EnvironmentConfig env = 1 [lazy = true];
   repeated string command = 2;
   repeated string args = 3;
   string directory = 4;

@@ -39,7 +39,7 @@ message UpgradeCheckInFromSensorRequest {
   }
 
   message UpgraderPodStates {
-    repeated UpgraderPodState states = 1;
+    repeated UpgraderPodState states = 1 [lazy = true];
   }
 
   string cluster_id = 5;

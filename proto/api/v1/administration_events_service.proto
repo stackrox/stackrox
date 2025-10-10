@@ -126,7 +126,7 @@ message ListAdministrationEventsRequest {
 }
 
 message ListAdministrationEventsResponse {
-  repeated AdministrationEvent events = 1;
+  repeated AdministrationEvent events = 1 [lazy = true];
 }
 
 service AdministrationEventService {

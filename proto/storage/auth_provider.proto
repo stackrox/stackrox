@@ -64,7 +64,7 @@ message AuthProvider {
     string attribute_key = 1;
     string attribute_value = 2;
   }
-  repeated RequiredAttribute required_attributes = 11;
+  repeated RequiredAttribute required_attributes = 11 [lazy = true];
 
   Traits traits = 12;
 

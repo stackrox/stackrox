@@ -40,7 +40,7 @@ message BaseComplianceScanConfigurationSettings {
   repeated string profiles = 2;
   Schedule scan_schedule = 3;
   string description = 4;
-  repeated NotifierConfiguration notifiers = 5;
+  repeated NotifierConfiguration notifiers = 5 [lazy = true];
 }
 
 // Next available tag: 5
@@ -56,7 +56,7 @@ message ComplianceScanConfigurationStatus {
   string id = 1;
   string scan_name = 2;
   BaseComplianceScanConfigurationSettings scan_config = 3;
-  repeated ClusterScanStatus cluster_status = 4;
+  repeated ClusterScanStatus cluster_status = 4 [lazy = true];
   google.protobuf.Timestamp created_time = 5;
   google.protobuf.Timestamp last_updated_time = 6;
   // Most recent user to update the scan settings
@@ -70,7 +70,7 @@ message ComplianceConfigClusterProfileRequest {
 }
 
 message ListComplianceScanConfigurationsResponse {
-  repeated ComplianceScanConfigurationStatus configurations = 1;
+  repeated ComplianceScanConfigurationStatus configurations = 1 [lazy = true];
   int32 total_count = 2;
 }
 
@@ -95,7 +95,7 @@ message ComplianceReportHistoryRequest {
 }
 
 message ComplianceReportHistoryResponse {
-  repeated ComplianceReportSnapshot compliance_report_snapshots = 1;
+  repeated ComplianceReportSnapshot compliance_report_snapshots = 1 [lazy = true];
 }
 
 message ComplianceReportSnapshot {
@@ -137,18 +137,18 @@ message ComplianceReportStatus {
   string error_msg = 4;
   ReportMethod report_request_type = 5;
   NotificationMethod report_notification_method = 6;
-  repeated FailedCluster failed_clusters = 7;
+  repeated FailedCluster failed_clusters = 7 [lazy = true];
 }
 
 message ListComplianceScanConfigsProfileResponse {
-  repeated ComplianceProfileSummary profiles = 1;
+  repeated ComplianceProfileSummary profiles = 1 [lazy = true];
   int32 total_count = 2;
 }
 
 message ListComplianceScanConfigsClusterProfileResponse {
   string cluster_id = 1;
   string cluster_name = 2;
-  repeated ComplianceProfileSummary profiles = 3;
+  repeated ComplianceProfileSummary profiles = 3 [lazy = true];
   int32 total_count = 4;
 }
 

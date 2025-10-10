@@ -26,5 +26,5 @@ message DelegatedRegistryConfig {
   }
 
   EnabledFor enabled_for = 1;
-  repeated DelegatedRegistry registries = 2;
+  repeated DelegatedRegistry registries = 2 [lazy = true];
 }

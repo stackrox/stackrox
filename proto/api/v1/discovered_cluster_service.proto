@@ -114,7 +114,7 @@ message ListDiscoveredClustersRequest {
 }
 
 message ListDiscoveredClustersResponse {
-  repeated DiscoveredCluster clusters = 1;
+  repeated DiscoveredCluster clusters = 1 [lazy = true];
 }
 
 service DiscoveredClustersService {

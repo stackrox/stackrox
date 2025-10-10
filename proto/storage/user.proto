@@ -19,7 +19,7 @@ message User {
   string id = 1;
   string auth_provider_id = 2;
 
-  repeated UserAttribute attributes = 3;
+  repeated UserAttribute attributes = 3 [lazy = true];
 
   string idp_token = 4;
 }
@@ -51,7 +51,7 @@ message UserInfo {
   string username = 1;
   string friendly_name = 2;
   ResourceToAccess permissions = 4;
-  repeated Role roles = 5;
+  repeated Role roles = 5 [lazy = true];
 
   reserved 3; // used to be role; use permissions instead
 }

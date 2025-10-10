@@ -39,7 +39,7 @@ message TelemetryResponsePayload {
       bytes contents = 2; // compression (if any) is handled at the gRPC level
     }
 
-    repeated File files = 1;
+    repeated File files = 1 [lazy = true];
   }
 
   message ClusterInfo {

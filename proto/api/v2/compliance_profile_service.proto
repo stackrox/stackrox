@@ -20,22 +20,22 @@ message ComplianceProfile {
   string product_type = 4;
   reserved 5;
   string description = 6;
-  repeated ComplianceRule rules = 7;
+  repeated ComplianceRule rules = 7 [lazy = true];
   string product = 8;
   string title = 9;
   repeated string values = 10;
-  repeated ComplianceBenchmark standards = 11;
+  repeated ComplianceBenchmark standards = 11 [lazy = true];
 }
 
 // ListComplianceProfilesResponse provides a list of profiles
 message ListComplianceProfilesResponse {
-  repeated ComplianceProfile profiles = 1;
+  repeated ComplianceProfile profiles = 1 [lazy = true];
   int32 total_count = 3;
 }
 
 // ListComplianceProfileSummaryResponse provides a list of profiles summaries
 message ListComplianceProfileSummaryResponse {
-  repeated ComplianceProfileSummary profiles = 1;
+  repeated ComplianceProfileSummary profiles = 1 [lazy = true];
   int32 total_count = 2;
 }
 

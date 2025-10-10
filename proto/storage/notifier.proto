@@ -72,7 +72,7 @@ message Jira {
     Severity severity = 1;
     string priority_name = 2;
   }
-  repeated PriorityMapping priority_mappings = 5;
+  repeated PriorityMapping priority_mappings = 5 [lazy = true];
   string default_fields_json = 6;
   bool disablePriority = 7;
 }
@@ -125,8 +125,8 @@ message Generic {
   string username = 4; // @gotags: scrub:"dependent"
   // The password for the integration. The server will mask the value of this credential in responses and logs.
   string password = 5; // @gotags: scrub:"always"
-  repeated KeyValuePair headers = 6;
-  repeated KeyValuePair extra_fields = 7;
+  repeated KeyValuePair headers = 6 [lazy = true];
+  repeated KeyValuePair extra_fields = 7 [lazy = true];
   bool audit_logging_enabled = 8;
 }
 
@@ -198,7 +198,7 @@ message Syslog {
   oneof endpoint {
     TCPConfig tcp_config = 2;
   }
-  repeated KeyValuePair extra_fields = 3;
+  repeated KeyValuePair extra_fields = 3 [lazy = true];
 
   enum MessageFormat {
     LEGACY = 0;

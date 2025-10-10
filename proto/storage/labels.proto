@@ -30,7 +30,7 @@ message LabelSelector {
   // This is actually a oneof, but we can't make it one due to backwards
   // compatibility constraints.
   map<string, string> match_labels = 1 [lazy = true];
-  repeated Requirement requirements = 2;
+  repeated Requirement requirements = 2 [lazy = true];
 }
 
 // SetBasedLabelSelector only allows set-based label requirements.
@@ -55,5 +55,5 @@ message SetBasedLabelSelector {
   // Tag 1 is reserved to enable upgrade from SetBasedLabelSelector to
   // LabelSelector
   reserved 1;
-  repeated Requirement requirements = 2;
+  repeated Requirement requirements = 2 [lazy = true];
 }

@@ -22,7 +22,7 @@ message GetActiveComplianceRunsRequest {
 }
 
 message GetActiveComplianceRunsResponse {
-  repeated ComplianceRun active_runs = 1;
+  repeated ComplianceRun active_runs = 1 [lazy = true];
 }
 
 message ComplianceRun {
@@ -60,7 +60,7 @@ message GetRecentComplianceRunsRequest {
 }
 
 message GetRecentComplianceRunsResponse {
-  repeated ComplianceRun compliance_runs = 1;
+  repeated ComplianceRun compliance_runs = 1 [lazy = true];
 }
 
 message TriggerComplianceRunRequest {
@@ -77,7 +77,7 @@ message TriggerComplianceRunsRequest {
 }
 
 message TriggerComplianceRunsResponse {
-  repeated ComplianceRun started_runs = 1;
+  repeated ComplianceRun started_runs = 1 [lazy = true];
 }
 
 message GetComplianceRunStatusesRequest {
@@ -87,7 +87,7 @@ message GetComplianceRunStatusesRequest {
 
 message GetComplianceRunStatusesResponse {
   repeated string invalid_run_ids = 1;
-  repeated ComplianceRun runs = 2;
+  repeated ComplianceRun runs = 2 [lazy = true];
 }
 
 service ComplianceManagementService {

@@ -18,10 +18,10 @@ message Risk {
       string url = 2;
     }
     string name = 1;
-    repeated Factor factors = 2;
+    repeated Factor factors = 2 [lazy = true];
     float score = 3;
   }
-  repeated Result results = 4;
+  repeated Result results = 4 [lazy = true];
 }
 
 message RiskSubject {

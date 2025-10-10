@@ -24,7 +24,7 @@ message ComplianceRule {
     string platform = 1;
     string disruption = 2;
   }
-  repeated Fix fixes = 10;
+  repeated Fix fixes = 10 [lazy = true];
   string id = 11;
   string rule_id = 12;
   string parent_rule = 13;
@@ -59,8 +59,8 @@ message ComplianceCheckResultStatusCount {
   string check_name = 1;
   string rationale = 2;
   string rule_name = 3;
-  repeated ComplianceCheckStatusCount check_stats = 4;
-  repeated ComplianceControl controls = 5;
+  repeated ComplianceCheckStatusCount check_stats = 4 [lazy = true];
+  repeated ComplianceControl controls = 5 [lazy = true];
 }
 
 message ComplianceControl {
@@ -80,7 +80,7 @@ message ComplianceBenchmark {
 
 // ListComplianceProfileResults provides scan stats overview based on profile
 message ListComplianceProfileResults {
-  repeated ComplianceCheckResultStatusCount profile_results = 1;
+  repeated ComplianceCheckResultStatusCount profile_results = 1 [lazy = true];
   string profile_name = 2;
   int32 total_count = 3;
 }
@@ -88,14 +88,14 @@ message ListComplianceProfileResults {
 // ComplianceClusterOverallStats provides overall stats for cluster
 message ComplianceClusterOverallStats {
   ComplianceScanCluster cluster = 1;
-  repeated ComplianceCheckStatusCount check_stats = 2;
+  repeated ComplianceCheckStatusCount check_stats = 2 [lazy = true];
   repeated string cluster_errors = 3;
   google.protobuf.Timestamp last_scan_time = 4;
 }
 
 // ListComplianceCheckScanStatsResponse provides stats per cluster
 message ListComplianceClusterOverallStatsResponse {
-  repeated ComplianceClusterOverallStats scan_stats = 1;
+  repeated ComplianceClusterOverallStats scan_stats = 1 [lazy = true];
   int32 total_count = 2;
 }
 
@@ -118,5 +118,5 @@ message ComplianceProfileSummary {
   string title = 4;
   int32 rule_count = 5;
   string profile_version = 6;
-  repeated ComplianceBenchmark standards = 7;
+  repeated ComplianceBenchmark standards = 7 [lazy = true];
 }

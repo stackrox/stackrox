@@ -65,7 +65,7 @@ message Repository {
 // discovered in.
 message Environment {
   message List {
-    repeated Environment environments = 1;
+    repeated Environment environments = 1 [lazy = true];
   }
   string package_db = 1;
   string introduced_in = 2;

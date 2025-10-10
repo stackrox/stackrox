@@ -116,10 +116,10 @@ message VulnerabilityRequest {
   repeated SlimUser approvers = 6 [deprecated = true]; // @gotags: sql:"ignore_labels(User ID)"
   google.protobuf.Timestamp created_at = 7; // @gotags: search:"Created Time"
   google.protobuf.Timestamp last_updated = 8; // @gotags: search:"Last Updated"
-  repeated RequestComment comments = 9;
+  repeated RequestComment comments = 9 [lazy = true];
   Scope scope = 10;
   Requester requester_v2 = 28;
-  repeated Approver approvers_v2 = 29;
+  repeated Approver approvers_v2 = 29 [lazy = true];
 
   // 11 to 15 reserved for the request type oneof.
   oneof req {

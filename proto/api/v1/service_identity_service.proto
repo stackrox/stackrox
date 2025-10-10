@@ -31,7 +31,7 @@ message Authority {
 }
 
 message Authorities {
-  repeated Authority authorities = 1;
+  repeated Authority authorities = 1 [lazy = true];
 }
 
 service ServiceIdentityService {

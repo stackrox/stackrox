@@ -11,7 +11,7 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message DelegatedRegistryClustersResponse {
-  repeated DelegatedRegistryCluster clusters = 1;
+  repeated DelegatedRegistryCluster clusters = 1 [lazy = true];
 }
 
 message DelegatedRegistryCluster {
@@ -55,7 +55,7 @@ message DelegatedRegistryConfig {
   // but in addition images that match the specified paths will be scanned locally by the secured clusters
   // (images from the OCP integrated registry are always scanned locally). Images that do not match a path
   // will be scanned via central services
-  repeated DelegatedRegistry registries = 3;
+  repeated DelegatedRegistry registries = 3 [lazy = true];
 }
 
 // DelegatedRegistryConfigService APIs can be used to control how to route image scans amongst

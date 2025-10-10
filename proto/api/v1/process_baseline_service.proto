@@ -38,7 +38,7 @@ message BulkUpdateProcessBaselinesResponse {
 
 message UpdateProcessBaselinesResponse {
   repeated storage.ProcessBaseline baselines = 1;
-  repeated ProcessBaselineUpdateError errors = 2;
+  repeated ProcessBaselineUpdateError errors = 2 [lazy = true];
 }
 
 message LockProcessBaselinesRequest {

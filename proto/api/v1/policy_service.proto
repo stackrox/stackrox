@@ -19,7 +19,7 @@ message DryRunResponse {
     string deployment = 1;
     repeated string violations = 2;
   }
-  repeated Alert alerts = 1;
+  repeated Alert alerts = 1 [lazy = true];
 }
 
 message JobId {
@@ -71,7 +71,7 @@ message PolicyOperationError {
 }
 
 message PolicyOperationErrorList {
-  repeated PolicyOperationError errors = 1;
+  repeated PolicyOperationError errors = 1 [lazy = true];
 }
 
 message PolicyFromSearchRequest {
@@ -99,11 +99,11 @@ message ImportPolicyError {
 message ImportPolicyResponse {
   bool succeeded = 1;
   storage.Policy policy = 2;
-  repeated ImportPolicyError errors = 3;
+  repeated ImportPolicyError errors = 3 [lazy = true];
 }
 
 message ImportPoliciesResponse {
-  repeated ImportPolicyResponse responses = 1;
+  repeated ImportPolicyResponse responses = 1 [lazy = true];
   bool all_succeeded = 2;
 }
 

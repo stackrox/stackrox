@@ -38,7 +38,7 @@ message GetRoleBindingResponse {
 // A list of k8s subjects (users and groups only, for service accounts, try the service account service)
 // Next Tag: 2
 message ListSubjectsResponse {
-  repeated SubjectAndRoles subject_and_roles = 1;
+  repeated SubjectAndRoles subject_and_roles = 1 [lazy = true];
 }
 
 message SubjectAndRoles {
@@ -49,7 +49,7 @@ message SubjectAndRoles {
 message GetSubjectResponse {
   storage.Subject subject = 1;
   repeated storage.K8sRole cluster_roles = 2;
-  repeated ScopedRoles scoped_roles = 3;
+  repeated ScopedRoles scoped_roles = 3 [lazy = true];
 }
 
 message ScopedRoles {

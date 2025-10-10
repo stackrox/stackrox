@@ -112,7 +112,7 @@ message PlatformComponentConfig {
     string name = 1;
     NamespaceRule namespace_rule = 2;
   }
-  repeated Rule rules = 1;
+  repeated Rule rules = 1 [lazy = true];
   bool needs_reevaluation = 2;
 }
 
@@ -129,7 +129,7 @@ message VulnerabilityExceptionConfig {
   }
 
   message ExpiryOptions {
-    repeated DayOption day_options = 1;
+    repeated DayOption day_options = 1 [lazy = true];
     FixableCVEOptions fixable_cve_options = 2;
     bool custom_date = 3;
     bool indefinite = 4;

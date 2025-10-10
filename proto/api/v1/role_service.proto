@@ -52,11 +52,11 @@ message ScopeObject {
 }
 
 message GetClustersForPermissionsResponse {
-  repeated ScopeObject clusters = 1;
+  repeated ScopeObject clusters = 1 [lazy = true];
 }
 
 message GetNamespacesForClusterAndPermissionsResponse {
-  repeated ScopeObject namespaces = 1;
+  repeated ScopeObject namespaces = 1 [lazy = true];
 }
 
 message ComputeEffectiveAccessScopeRequest {

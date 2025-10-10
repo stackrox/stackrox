@@ -38,9 +38,9 @@ message Policy {
 
   reserved 10; //was repeated Exclusion whitelists
   // Define deployments or images that should be excluded from this policy.
-  repeated Exclusion exclusions = 21; // @gotags: crYaml:",omitempty"
+  repeated Exclusion exclusions = 21 [lazy = true]; // @gotags: crYaml:",omitempty"
   // Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything.
-  repeated Scope scope = 11; // @gotags: crYaml:",omitempty"
+  repeated Scope scope = 11 [lazy = true]; // @gotags: crYaml:",omitempty"
 
   // Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY.
   Severity severity = 12; // @gotags: search:"Severity,store" crYaml:",stringer"
@@ -62,14 +62,14 @@ message Policy {
 
   string policy_version = 19; // @gotags: crYaml:"-"
   // PolicySections define the violation criteria for this policy.
-  repeated PolicySection policy_sections = 20; // @gotags: crYaml:"policySections,omitempty"
+  repeated PolicySection policy_sections = 20 [lazy = true]; // @gotags: crYaml:"policySections,omitempty"
 
   message MitreAttackVectors {
     string tactic = 1;
     repeated string techniques = 2;
   }
 
-  repeated MitreAttackVectors mitre_attack_vectors = 23; // @gotags: crYaml:"mitreAttackVectors,omitempty"
+  repeated MitreAttackVectors mitre_attack_vectors = 23 [lazy = true]; // @gotags: crYaml:"mitreAttackVectors,omitempty"
 
   // Read-only field. If true, the policy's criteria fields are rendered read-only.
   bool criteria_locked = 24; // @gotags: crYaml:"criteriaLocked"
@@ -95,7 +95,7 @@ enum EventSource {
 message PolicySection {
   string section_name = 1; // @gotags: crYaml:"sectionName,omitempty"
   // The set of policies groups that make up this section.  Each group can be considered an individual criterion.
-  repeated PolicyGroup policy_groups = 3; // @gotags: crYaml:"policyGroups,omitempty"
+  repeated PolicyGroup policy_groups = 3 [lazy = true]; // @gotags: crYaml:"policyGroups,omitempty"
 }
 
 message PolicyGroup {
@@ -106,7 +106,7 @@ message PolicyGroup {
   // Determines if the evaluation of this PolicyGroup is negated.  Default to false.
   bool negate = 3; // @gotags: crYaml:",omitempty"
   // List of values for the specified field
-  repeated PolicyValue values = 4; // @gotags: crYaml:",omitempty"
+  repeated PolicyValue values = 4 [lazy = true]; // @gotags: crYaml:",omitempty"
 }
 
 message PolicyValue {
@@ -119,7 +119,7 @@ enum BooleanOperator {
 }
 
 message PolicyList {
-  repeated Policy policies = 1;
+  repeated Policy policies = 1 [lazy = true];
 }
 
 message ListPolicy {

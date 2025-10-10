@@ -16,7 +16,7 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 // SplunkViolationsResponse is what StackRox Platform returns on the request from Splunk Technology Addon for StackRox.
 message SplunkViolationsResponse {
-  repeated SplunkViolation violations = 1;
+  repeated SplunkViolation violations = 1 [lazy = true];
 
   // new_checkpoint sets the checkpoint value for Splunk to use on the next call.
   string new_checkpoint = 6;

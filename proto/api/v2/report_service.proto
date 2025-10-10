@@ -27,7 +27,7 @@ message ReportConfiguration {
 
   ReportSchedule schedule = 6;
   ResourceScope resource_scope = 7;
-  repeated NotifierConfiguration notifiers = 8;
+  repeated NotifierConfiguration notifiers = 8 [lazy = true];
 }
 
 message VulnerabilityReportFilters {
@@ -120,7 +120,7 @@ message EmailNotifierConfiguration {
 }
 
 message ListReportConfigurationsResponse {
-  repeated ReportConfiguration report_configs = 1;
+  repeated ReportConfiguration report_configs = 1 [lazy = true];
 }
 
 message CountReportConfigurationsResponse {
@@ -137,7 +137,7 @@ message GetViewBasedReportHistoryRequest {
 }
 
 message ReportHistoryResponse {
-  repeated ReportSnapshot report_snapshots = 1;
+  repeated ReportSnapshot report_snapshots = 1 [lazy = true];
 }
 
 message ReportStatusResponse {
@@ -161,7 +161,7 @@ message ReportSnapshot {
   CollectionSnapshot collection_snapshot = 6;
   ReportSchedule schedule = 7;
   ReportStatus report_status = 8;
-  repeated NotifierConfiguration notifiers = 9;
+  repeated NotifierConfiguration notifiers = 9 [lazy = true];
   SlimUser user = 10;
   bool is_download_available = 11;
   string area_of_concern = 13;

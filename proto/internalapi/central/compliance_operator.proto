@@ -37,7 +37,7 @@ message DisableComplianceRequest {
 // SyncComplianceScanConfigRequest contains a list of the Scan Configs that should be applied in the cluster.
 // This is use during Central/Sensor connection' startup to reconcile ScanSettings and ScanSettingBindings.
 message SyncComplianceScanConfigRequest {
-  repeated ApplyComplianceScanConfigRequest scan_configs = 1;
+  repeated ApplyComplianceScanConfigRequest scan_configs = 1 [lazy = true];
 }
 
 // ApplyComplianceScanConfigRequest contains information about a compliance scan configuration to be applied to secured cluster.
@@ -193,7 +193,7 @@ message ComplianceOperatorProfileV2 {
   message Rule {
     string rule_name = 1;
   }
-  repeated Rule rules = 8;
+  repeated Rule rules = 8 [lazy = true];
   string title = 9;
   repeated string values = 10;
 }
@@ -215,7 +215,7 @@ message ComplianceOperatorRuleV2 {
     string platform = 1;
     string disruption = 2;
   }
-  repeated Fix fixes = 11;
+  repeated Fix fixes = 11 [lazy = true];
   string warning = 12;
   string instructions = 13;
 }
@@ -268,7 +268,7 @@ message ComplianceOperatorStatus {
   string phase = 1;
   string result = 2;
   string error_message = 3;
-  repeated ComplianceOperatorCondition conditions = 4;
+  repeated ComplianceOperatorCondition conditions = 4 [lazy = true];
 }
 
 message ComplianceOperatorSuiteV2 {

@@ -30,7 +30,7 @@ message AuthMachineToMachineConfig {
     string value_expression = 2;
     string role = 3; // @gotags: sql:"fk(Role:name),restrict-delete"
   }
-  repeated Mapping mappings = 4;
+  repeated Mapping mappings = 4 [lazy = true];
 
   // The issuer is related to an ID token's issuer.
   // Spec: https://openid.net/specs/openid-connect-core-1_0.html#IDToken.

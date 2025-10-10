@@ -42,7 +42,7 @@ message VirtualMachineScan {
     OS_UNSUPPORTED = 2;
   }
   repeated Note notes = 3;
-  repeated ScanComponent components = 4;
+  repeated ScanComponent components = 4 [lazy = true];
 }
 
 message GetVirtualMachineRequest {
@@ -51,7 +51,7 @@ message GetVirtualMachineRequest {
 }
 
 message ListVirtualMachinesResponse {
-  repeated VirtualMachine virtual_machines = 1;
+  repeated VirtualMachine virtual_machines = 1 [lazy = true];
   int32 total_count = 2;
 }
 

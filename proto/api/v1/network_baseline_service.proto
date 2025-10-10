@@ -55,11 +55,11 @@ message NetworkBaselinePeerStatus {
 
 message NetworkBaselineStatusRequest {
   string deployment_id = 1;
-  repeated NetworkBaselineStatusPeer peers = 2;
+  repeated NetworkBaselineStatusPeer peers = 2 [lazy = true];
 }
 
 message NetworkBaselineStatusResponse {
-  repeated NetworkBaselinePeerStatus statuses = 1;
+  repeated NetworkBaselinePeerStatus statuses = 1 [lazy = true];
 }
 
 message NetworkBaselineExternalStatusRequest {
@@ -70,15 +70,15 @@ message NetworkBaselineExternalStatusRequest {
 }
 
 message NetworkBaselineExternalStatusResponse {
-  repeated NetworkBaselinePeerStatus anomalous = 1;
+  repeated NetworkBaselinePeerStatus anomalous = 1 [lazy = true];
   int32 total_anomalous = 2;
-  repeated NetworkBaselinePeerStatus baseline = 3;
+  repeated NetworkBaselinePeerStatus baseline = 3 [lazy = true];
   int32 total_baseline = 4;
 }
 
 message ModifyBaselineStatusForPeersRequest {
   string deployment_id = 1;
-  repeated NetworkBaselinePeerStatus peers = 2;
+  repeated NetworkBaselinePeerStatus peers = 2 [lazy = true];
 }
 
 service NetworkBaselineService {

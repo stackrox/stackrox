@@ -27,7 +27,7 @@ message NetworkEdgeProperties {
 }
 
 message NetworkEdgePropertiesBundle {
-  repeated NetworkEdgeProperties properties = 1;
+  repeated NetworkEdgeProperties properties = 1 [lazy = true];
 }
 
 message NetworkNode {
@@ -52,7 +52,7 @@ message NetworkGraphRequest {
 
 message NetworkGraph {
   uint32 epoch = 1;
-  repeated NetworkNode nodes = 2;
+  repeated NetworkNode nodes = 2 [lazy = true];
 }
 
 message CreateNetworkEntityRequest {
@@ -101,7 +101,7 @@ message ExternalNetworkFlowMetadata {
 }
 
 message GetExternalNetworkFlowsMetadataResponse {
-  repeated ExternalNetworkFlowMetadata entities = 1;
+  repeated ExternalNetworkFlowMetadata entities = 1 [lazy = true];
   int32 total_entities = 2;
 }
 

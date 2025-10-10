@@ -99,7 +99,7 @@ message NetworkGraphDiff {
 
 message SimulateNetworkGraphResponse {
   NetworkGraph simulated_graph = 1;
-  repeated NetworkPolicyInSimulation policies = 2;
+  repeated NetworkPolicyInSimulation policies = 2 [lazy = true];
 
   NetworkGraphDiff added = 3;
   NetworkGraphDiff removed = 4;
@@ -147,7 +147,7 @@ message GetBaselineGeneratedPolicyForDeploymentResponse {
 }
 
 message GetAllowedPeersFromCurrentPolicyForDeploymentResponse {
-  repeated NetworkBaselineStatusPeer allowed_peers = 1;
+  repeated NetworkBaselineStatusPeer allowed_peers = 1 [lazy = true];
 }
 
 message ApplyNetworkPolicyYamlForDeploymentRequest {
@@ -172,9 +172,9 @@ message GetDiffFlowsGroupedFlow {
 }
 
 message GetDiffFlowsResponse {
-  repeated GetDiffFlowsGroupedFlow added = 1;
-  repeated GetDiffFlowsGroupedFlow removed = 2;
-  repeated GetDiffFlowsReconciledFlow reconciled = 3;
+  repeated GetDiffFlowsGroupedFlow added = 1 [lazy = true];
+  repeated GetDiffFlowsGroupedFlow removed = 2 [lazy = true];
+  repeated GetDiffFlowsReconciledFlow reconciled = 3 [lazy = true];
 }
 
 service NetworkPolicyService {

@@ -16,7 +16,7 @@ message ProbeUploadManifest {
     uint32 crc32 = 3;
   }
 
-  repeated File files = 1;
+  repeated File files = 1 [lazy = true];
 }
 
 message GetExistingProbesRequest {
@@ -24,7 +24,7 @@ message GetExistingProbesRequest {
 }
 
 message GetExistingProbesResponse {
-  repeated ProbeUploadManifest.File existing_files = 1;
+  repeated ProbeUploadManifest.File existing_files = 1 [lazy = true];
 }
 
 service ProbeUploadService {

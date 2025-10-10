@@ -42,7 +42,7 @@ message ComplianceOperatorProfile {
   message Rule {
     string name = 1;
   }
-  repeated Rule rules = 8;
+  repeated Rule rules = 8 [lazy = true];
 }
 
 // Next Tag: 10
@@ -68,7 +68,7 @@ message ComplianceOperatorScanSettingBinding {
   message Profile {
     string name = 1;
   }
-  repeated Profile profiles = 6;
+  repeated Profile profiles = 6 [lazy = true];
 }
 
 message ComplianceOperatorScan {

@@ -32,7 +32,7 @@ message ReportSnapshot {
   CollectionSnapshot collection = 7;
   storage.Schedule schedule = 8;
   ReportStatus report_status = 9;
-  repeated NotifierSnapshot notifiers = 10;
+  repeated NotifierSnapshot notifiers = 10 [lazy = true];
   SlimUser requester = 11;
   // fields related to view based reports
   // area_of_concern refers to view from which report is generated - user workload, platform component etc

@@ -26,8 +26,8 @@ message ProcessBaseline {
   string id = 1; // @gotags: sql:"pk"
   ProcessBaselineKey key = 2;
 
-  repeated BaselineElement elements = 3;
-  repeated BaselineElement element_graveyard = 8; // @gotags: search:"-"
+  repeated BaselineElement elements = 3 [lazy = true];
+  repeated BaselineElement element_graveyard = 8 [lazy = true]; // @gotags: search:"-"
 
   google.protobuf.Timestamp created = 4;
   google.protobuf.Timestamp user_locked_timestamp = 5;
@@ -65,5 +65,5 @@ message ProcessBaselineResults {
   string deployment_id = 1; // @gotags: sql:"pk,type(uuid)"
   string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
   string namespace = 4; // @gotags: search:"Namespace,hidden,store"
-  repeated ContainerNameAndBaselineStatus baseline_statuses = 2;
+  repeated ContainerNameAndBaselineStatus baseline_statuses = 2 [lazy = true];
 }

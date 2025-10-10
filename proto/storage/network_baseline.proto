@@ -28,7 +28,7 @@ message NetworkBaselinePeer {
   NetworkEntity entity = 1;
 
   // Will always have at least one element
-  repeated NetworkBaselineConnectionProperties properties = 2;
+  repeated NetworkBaselineConnectionProperties properties = 2 [lazy = true];
 }
 
 // NetworkBaseline represents a network baseline of a deployment. It contains all
@@ -41,13 +41,13 @@ message NetworkBaseline {
   string cluster_id = 2; // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
   string namespace = 3; // @gotags: search:"Namespace,hidden,store"
 
-  repeated NetworkBaselinePeer peers = 4; // @gotags: search:"-"
+  repeated NetworkBaselinePeer peers = 4 [lazy = true]; // @gotags: search:"-"
 
   // A list of peers that will never be added to the baseline.
   // For now, this contains peers that the user has manually removed.
   // This is used to ensure we don't add it back in the event
   // we see the flow again.
-  repeated NetworkBaselinePeer forbidden_peers = 5; // @gotags: search:"-"
+  repeated NetworkBaselinePeer forbidden_peers = 5 [lazy = true]; // @gotags: search:"-"
 
   google.protobuf.Timestamp observation_period_end = 6;
 

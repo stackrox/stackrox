@@ -29,7 +29,7 @@ message K8sRole {
   map<string, string> annotations = 8 [lazy = true]; // @gotags: search:"Role Annotation"
   google.protobuf.Timestamp created_at = 9;
 
-  repeated PolicyRule rules = 10; // @gotags: sensorhash:"set"
+  repeated PolicyRule rules = 10 [lazy = true]; // @gotags: sensorhash:"set"
 }
 
 // Properties of an individual rules that grant permissions to resources.
@@ -58,7 +58,7 @@ message K8sRoleBinding {
   map<string, string> annotations = 8 [lazy = true]; // @gotags: search:"Role Binding Annotation"
   google.protobuf.Timestamp created_at = 9;
 
-  repeated Subject subjects = 10;
+  repeated Subject subjects = 10 [lazy = true];
   string role_id = 11; // @gotags: search:"Role ID" sql:"type(uuid)"
 }
 

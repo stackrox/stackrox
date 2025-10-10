@@ -80,10 +80,10 @@ message VulnerabilityException {
   // If set to `true`, this field indicates that the exception is no longer enforced.
   bool expired = 5;
   SlimUser requester = 6;
-  repeated SlimUser approvers = 7;
+  repeated SlimUser approvers = 7 [lazy = true];
   google.protobuf.Timestamp created_at = 8;
   google.protobuf.Timestamp last_updated = 9;
-  repeated Comment comments = 10;
+  repeated Comment comments = 10 [lazy = true];
   // Indicates the scope of enforcement of the exception.
   Scope scope = 11;
 
@@ -120,7 +120,7 @@ message GetVulnerabilityExceptionResponse {
 }
 
 message ListVulnerabilityExceptionsResponse {
-  repeated VulnerabilityException exceptions = 1;
+  repeated VulnerabilityException exceptions = 1 [lazy = true];
 }
 
 // next available tag: 6

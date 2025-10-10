@@ -78,7 +78,7 @@ message NetworkEntityInfo {
     string namespace = 2;
     string cluster = 3 [deprecated = true];
 
-    repeated ListenPort listen_ports = 4;
+    repeated ListenPort listen_ports = 4 [lazy = true];
   }
 
   // Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated.

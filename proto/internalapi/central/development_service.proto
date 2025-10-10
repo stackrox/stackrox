@@ -46,7 +46,7 @@ message ReconciliationStatsByClusterResponse {
     bool reconciliation_done = 2;
     map<string, int32> deleted_objects_by_type = 3;
   }
-  repeated ReconciliationStatsForCluster stats = 1;
+  repeated ReconciliationStatsForCluster stats = 1 [lazy = true];
 }
 
 message ReplicateImageRequest {

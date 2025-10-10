@@ -21,7 +21,7 @@ message MitreTechnique {
 
 message MitreAttackVector {
   MitreTactic tactic = 1;
-  repeated MitreTechnique techniques = 2;
+  repeated MitreTechnique techniques = 2 [lazy = true];
 }
 
 message MitreAttackMatrix {
@@ -31,10 +31,10 @@ message MitreAttackMatrix {
   }
 
   MatrixInfo matrix_info = 1;
-  repeated MitreAttackVector vectors = 2;
+  repeated MitreAttackVector vectors = 2 [lazy = true];
 }
 
 message MitreAttackBundle {
   string version = 1;
-  repeated MitreAttackMatrix matrices = 2;
+  repeated MitreAttackMatrix matrices = 2 [lazy = true];
 }

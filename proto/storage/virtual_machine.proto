@@ -47,7 +47,7 @@ message VirtualMachineScan {
     OS_UNSUPPORTED = 2;
   }
   repeated Note notes = 3;
-  repeated EmbeddedVirtualMachineScanComponent components = 4;
+  repeated EmbeddedVirtualMachineScanComponent components = 4 [lazy = true];
 }
 
 message EmbeddedVirtualMachineScanComponent {
@@ -57,7 +57,7 @@ message EmbeddedVirtualMachineScanComponent {
     float top_cvss = 3;
   }
   float risk_score = 4;
-  repeated VirtualMachineVulnerability vulnerabilities = 5;
+  repeated VirtualMachineVulnerability vulnerabilities = 5 [lazy = true];
   SourceType source = 6;
   enum Note {
     UNSPECIFIED = 0;
@@ -88,10 +88,10 @@ message VirtualMachineCVEInfo {
   // Time when the CVE was first seen in the system.
   google.protobuf.Timestamp created_at = 5;
   google.protobuf.Timestamp last_modified = 6;
-  repeated Reference references = 7;
+  repeated Reference references = 7 [lazy = true];
 
   // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
-  repeated CVSSScore cvss_metrics = 8;
+  repeated CVSSScore cvss_metrics = 8 [lazy = true];
   VirtualMachineEPSS epss = 9;
   VirtualMachineAdvisory advisory = 10;
 }

@@ -16,7 +16,7 @@ message ScanComponent {
   }
   float risk_score = 4;
   string architecture = 5;
-  repeated EmbeddedVulnerability vulns = 6;
+  repeated EmbeddedVulnerability vulns = 6 [lazy = true];
   SourceType source = 7;
   // Note specifies a conditional status of the scan component.
   enum Note {

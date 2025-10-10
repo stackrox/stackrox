@@ -30,7 +30,7 @@ message AuthStatus {
   string refresh_url = 4;
   storage.AuthProvider auth_provider = 5;
   storage.UserInfo user_info = 6;
-  repeated UserAttribute user_attributes = 7;
+  repeated UserAttribute user_attributes = 7 [lazy = true];
   // Token returned to ACS by the underlying identity provider. This field is set only in a few,
   // specific contexts. Do not rely on this field being present in the response.
   string idp_token = 8;
@@ -75,7 +75,7 @@ message AuthMachineToMachineConfig {
     string role = 3;
   }
   // At least one mapping is required to resolve to a valid role for the access token to be successfully generated.
-  repeated Mapping mappings = 4;
+  repeated Mapping mappings = 4 [lazy = true];
 
   // The issuer of the related OIDC provider issuing the ID tokens to exchange.
   //
@@ -90,7 +90,7 @@ message AuthMachineToMachineConfig {
 }
 
 message ListAuthMachineToMachineConfigResponse {
-  repeated AuthMachineToMachineConfig configs = 1;
+  repeated AuthMachineToMachineConfig configs = 1 [lazy = true];
 }
 
 message GetAuthMachineToMachineConfigResponse {

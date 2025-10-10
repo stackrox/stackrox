@@ -27,23 +27,23 @@ message ProcessGroup {
 message ProcessNameGroup {
   string name = 1;
   uint32 times_executed = 2;
-  repeated ProcessGroup groups = 3;
+  repeated ProcessGroup groups = 3 [lazy = true];
 }
 
 message GetGroupedProcessesResponse {
-  repeated ProcessNameGroup groups = 3;
+  repeated ProcessNameGroup groups = 3 [lazy = true];
 }
 
 message ProcessNameAndContainerNameGroup {
   string name = 1;
   string container_name = 2;
   uint32 times_executed = 3;
-  repeated ProcessGroup groups = 4;
+  repeated ProcessGroup groups = 4 [lazy = true];
   bool suspicious = 5;
 }
 
 message GetGroupedProcessesWithContainerResponse {
-  repeated ProcessNameAndContainerNameGroup groups = 3;
+  repeated ProcessNameAndContainerNameGroup groups = 3 [lazy = true];
 }
 
 message CountProcessesResponse {

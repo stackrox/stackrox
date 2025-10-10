@@ -29,7 +29,7 @@ message GetLoginAuthProvidersResponse {
     string type = 3;
     string login_url = 5;
   }
-  repeated LoginAuthProvider auth_providers = 1;
+  repeated LoginAuthProvider auth_providers = 1 [lazy = true];
 }
 
 message GetAuthProvidersResponse {
@@ -70,7 +70,7 @@ message AvailableProviderTypesResponse {
     string type = 1;
     repeated string suggested_attributes = 2;
   }
-  repeated AuthProviderType auth_provider_types = 1;
+  repeated AuthProviderType auth_provider_types = 1 [lazy = true];
 }
 
 service AuthProviderService {

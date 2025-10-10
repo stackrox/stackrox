@@ -34,7 +34,7 @@ message ReportConfiguration {
   ReportLastRunStatus last_run_status = 9;
   google.protobuf.Timestamp last_successful_run_time = 10;
   ResourceScope resource_scope = 11;
-  repeated NotifierConfiguration notifiers = 12;
+  repeated NotifierConfiguration notifiers = 12 [lazy = true];
   SlimUser creator = 13; // @gotags: sql:"ignore_labels(User ID)"
   int32 version = 14; // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
 }
@@ -70,7 +70,7 @@ message VulnerabilityReportFilters {
     bool since_last_sent_scheduled_report = 6;
     google.protobuf.Timestamp since_start_date = 7;
   }
-  repeated SimpleAccessScope.Rules access_scope_rules = 8;
+  repeated SimpleAccessScope.Rules access_scope_rules = 8 [lazy = true];
   bool include_nvd_cvss = 9;
   bool include_epss_probability = 10;
   bool include_advisory = 11;
@@ -85,5 +85,5 @@ message ResourceScope {
 // filter for view based reports
 message ViewBasedVulnerabilityReportFilters {
   string query = 1;
-  repeated SimpleAccessScope.Rules access_scope_rules = 2;
+  repeated SimpleAccessScope.Rules access_scope_rules = 2 [lazy = true];
 }

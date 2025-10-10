@@ -99,7 +99,7 @@ message DBExportManifest {
     fixed32 decoded_crc32 = 5;
   }
 
-  repeated File files = 1;
+  repeated File files = 1 [lazy = true];
 }
 
 // DBExportFormat describes a format (= a collection of files) for the database export.
@@ -110,11 +110,11 @@ message DBExportFormat {
   }
 
   string format_name = 1;
-  repeated File files = 2;
+  repeated File files = 2 [lazy = true];
 }
 
 message GetDBExportCapabilitiesResponse {
-  repeated DBExportFormat formats = 1;
+  repeated DBExportFormat formats = 1 [lazy = true];
   repeated DBExportManifest.EncodingType supported_encodings = 2;
 }
 

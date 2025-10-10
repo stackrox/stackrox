@@ -19,5 +19,5 @@ message SensorUpgradeTrigger {
 
   string image = 2;
   repeated string command = 3;
-  repeated EnvVarDef env_vars = 4;
+  repeated EnvVarDef env_vars = 4 [lazy = true];
 }

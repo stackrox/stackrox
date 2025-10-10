@@ -27,7 +27,7 @@ message UserAttributeTuple {
 
 // Next Tag: 2
 message GetUsersAttributesResponse {
-  repeated UserAttributeTuple users_attributes = 1;
+  repeated UserAttributeTuple users_attributes = 1 [lazy = true];
 }
 
 service UserService {

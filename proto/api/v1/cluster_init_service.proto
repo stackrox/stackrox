@@ -21,7 +21,7 @@ message InitBundleMeta {
 
   string id = 1;
   string name = 2;
-  repeated ImpactedCluster impacted_clusters = 6;
+  repeated ImpactedCluster impacted_clusters = 6 [lazy = true];
   google.protobuf.Timestamp created_at = 3;
   storage.User created_by = 4;
   google.protobuf.Timestamp expires_at = 5;
@@ -51,11 +51,11 @@ message GetCAConfigResponse {
 }
 
 message InitBundleMetasResponse {
-  repeated InitBundleMeta items = 1;
+  repeated InitBundleMeta items = 1 [lazy = true];
 }
 
 message CRSMetasResponse {
-  repeated CRSMeta items = 1;
+  repeated CRSMeta items = 1 [lazy = true];
 }
 
 message InitBundleGenRequest {
@@ -86,10 +86,10 @@ message InitBundleRevokeResponse {
   message InitBundleRevocationError {
     string id = 1;
     string error = 2;
-    repeated InitBundleMeta.ImpactedCluster impacted_clusters = 3;
+    repeated InitBundleMeta.ImpactedCluster impacted_clusters = 3 [lazy = true];
   }
 
-  repeated InitBundleRevocationError init_bundle_revocation_errors = 2;
+  repeated InitBundleRevocationError init_bundle_revocation_errors = 2 [lazy = true];
   repeated string init_bundle_revoked_ids = 3;
 }
 
@@ -99,7 +99,7 @@ message CRSRevokeResponse {
     string error = 2;
   }
 
-  repeated CRSRevocationError crs_revocation_errors = 2;
+  repeated CRSRevocationError crs_revocation_errors = 2 [lazy = true];
   repeated string revoked_ids = 3;
 }
 

@@ -19,7 +19,7 @@ message Image {
   // This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with
   // different locations.
   // TODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise.
-  repeated ImageName names = 18; // @gotags: search:"-"
+  repeated ImageName names = 18 [lazy = true]; // @gotags: search:"-"
 
   ImageMetadata metadata = 2;
   ImageScan scan = 3; // @gotags: policy:"Image Scan"
@@ -69,7 +69,7 @@ message DataSource {
 message ImageScan {
   string scanner_version = 6;
   google.protobuf.Timestamp scan_time = 1; // @gotags: search:"Image Scan Time,store"
-  repeated EmbeddedImageScanComponent components = 2; // @gotags: sql:"-"
+  repeated EmbeddedImageScanComponent components = 2 [lazy = true]; // @gotags: sql:"-"
   string operating_system = 4; // @gotags: search:"Image OS,store"
   // DataSource contains information about which integration was used to scan the image
   DataSource data_source = 3;
@@ -89,7 +89,7 @@ message ImageScan {
 }
 
 message ImageSignatureVerificationData {
-  repeated ImageSignatureVerificationResult results = 1;
+  repeated ImageSignatureVerificationResult results = 1 [lazy = true];
 }
 
 // Next Tag: 6
@@ -124,7 +124,7 @@ message EmbeddedImageScanComponent {
   string name = 1; // @gotags: search:"Component,store"
   string version = 2; // @gotags: search:"Component Version,store"
   License license = 3;
-  repeated EmbeddedVulnerability vulns = 4; // @gotags: hash:"set"
+  repeated EmbeddedVulnerability vulns = 4 [lazy = true]; // @gotags: hash:"set"
   oneof has_layer_index {
     int32 layer_index = 5;
   }
@@ -142,7 +142,7 @@ message EmbeddedImageScanComponent {
     repeated string dependencies = 2;
   }
   // Values are cleared after moving to cache, remove them from the grpc return as well
-  repeated Executable executables = 12; // @gotags: json:"-"
+  repeated Executable executables = 12 [lazy = true]; // @gotags: json:"-"
   string architecture = 13;
 }
 
@@ -183,7 +183,7 @@ message ImageMetadata {
 }
 
 message ImageSignature {
-  repeated Signature signatures = 1;
+  repeated Signature signatures = 1 [lazy = true];
   google.protobuf.Timestamp fetched = 2; // @gotags: search:"Image Signature Fetched Time,hidden"
 }
 
@@ -209,7 +209,7 @@ message V1Metadata {
   string digest = 1;
   google.protobuf.Timestamp created = 2; // @gotags: search:"Image Created Time,store"
   string author = 3;
-  repeated ImageLayer layers = 4;
+  repeated ImageLayer layers = 4 [lazy = true];
   string user = 5; // @gotags: search:"Image User"
   repeated string command = 6; // @gotags: search:"Image Command"
   repeated string entrypoint = 7; // @gotags: search:"Image Entrypoint"

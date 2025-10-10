@@ -18,7 +18,7 @@ message FeatureFlag {
 }
 
 message GetFeatureFlagsResponse {
-  repeated FeatureFlag feature_flags = 1;
+  repeated FeatureFlag feature_flags = 1 [lazy = true];
 }
 
 // FeatureFlagService retrieves information about feature flags.

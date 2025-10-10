@@ -56,7 +56,7 @@ message ComplianceIntegrationStatusRequest {
 }
 
 message ListComplianceIntegrationsResponse {
-  repeated ComplianceIntegration integrations = 1;
+  repeated ComplianceIntegration integrations = 1 [lazy = true];
   int32 total_count = 2;
 }
 

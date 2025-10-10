@@ -14,10 +14,10 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message NetworkConnectionInfo {
   // Network connections that were added from the last time state was sent.
-  repeated NetworkConnection updated_connections = 1;
+  repeated NetworkConnection updated_connections = 1 [lazy = true];
 
   // Listening endpoints that were added from the last time state was sent.
-  repeated NetworkEndpoint updated_endpoints = 3;
+  repeated NetworkEndpoint updated_endpoints = 3 [lazy = true];
 
   // For active connections, the timestamp of the entire message serves as the latest timestamp
   // that connection was deemed active = the connection was not closed yet at that moment.

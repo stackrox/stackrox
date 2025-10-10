@@ -25,7 +25,7 @@ message File {
   uint32 permissions = 6;
   bytes content = 7;
   bool is_dir = 8;
-  repeated File children = 9;
+  repeated File children = 9 [lazy = true];
 }
 
 // Next Available Tag: 3
@@ -37,7 +37,7 @@ message CommandLine {
     repeated string values = 2;
     File file = 3; // This will be set if it looks like the value defines a file and we found the file
   }
-  repeated Args args = 2;
+  repeated Args args = 2 [lazy = true];
 }
 
 message InsecureRegistriesConfig {

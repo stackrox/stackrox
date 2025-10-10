@@ -55,7 +55,7 @@ message GetAlertsGroupResponse {
     int64 num_alerts = 2;
   }
 
-  repeated PolicyGroup alerts_by_policies = 1;
+  repeated PolicyGroup alerts_by_policies = 1 [lazy = true];
 }
 
 message GetAlertsCountsRequest {
@@ -75,9 +75,9 @@ message GetAlertsCountsResponse {
       storage.Severity severity = 1;
       int64 count = 2;
     }
-    repeated AlertCounts counts = 2;
+    repeated AlertCounts counts = 2 [lazy = true];
   }
-  repeated AlertGroup groups = 1;
+  repeated AlertGroup groups = 1 [lazy = true];
 }
 
 enum Type {
@@ -96,11 +96,11 @@ message GetAlertTimeseriesResponse {
     string cluster = 1;
     message AlertEvents {
       storage.Severity severity = 1;
-      repeated AlertEvent events = 2;
+      repeated AlertEvent events = 2 [lazy = true];
     }
-    repeated AlertEvents severities = 2;
+    repeated AlertEvents severities = 2 [lazy = true];
   }
-  repeated ClusterAlerts clusters = 1;
+  repeated ClusterAlerts clusters = 1 [lazy = true];
 }
 
 // AlertService APIs can be used to manage alerts.

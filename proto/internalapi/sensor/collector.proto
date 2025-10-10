@@ -85,7 +85,7 @@ message ProcessSignal {
   bool scraped = 10;
 
   // Process LineageInfo
-  repeated LineageInfo lineage_info = 11;
+  repeated LineageInfo lineage_info = 11 [lazy = true];
 
   message LineageInfo {
     uint32 parent_uid = 1;

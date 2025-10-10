@@ -57,7 +57,7 @@ message ComplianceOperatorProfileV2 {
   message Rule {
     string rule_name = 1; // @gotags: search:"-" sql:"fk(ComplianceOperatorRuleV2:name),no-fk-constraint"
   }
-  repeated Rule rules = 10;
+  repeated Rule rules = 10 [lazy = true];
   string product = 11;
   string title = 12;
   repeated string values = 13;
@@ -80,9 +80,9 @@ message ComplianceOperatorRuleV2 {
     string platform = 1;
     string disruption = 2;
   }
-  repeated Fix fixes = 11;
+  repeated Fix fixes = 11 [lazy = true];
   string warning = 12;
-  repeated RuleControls controls = 13;
+  repeated RuleControls controls = 13 [lazy = true];
   string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
   string rule_ref_id = 15; // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
   string parent_rule = 16;
@@ -108,7 +108,7 @@ message ComplianceOperatorScanConfigurationV2 {
   message ProfileName {
     string profile_name = 1; // @gotags: search:"Compliance Config Profile Name,hidden" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
   }
-  repeated ProfileName profiles = 8;
+  repeated ProfileName profiles = 8 [lazy = true];
   repeated NodeRole node_roles = 9;
   // Will be configurable via env var
   bool strict_node_scan = 10;
@@ -122,8 +122,8 @@ message ComplianceOperatorScanConfigurationV2 {
   message Cluster {
     string cluster_id = 1; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
   }
-  repeated Cluster clusters = 16;
-  repeated NotifierConfiguration notifiers = 17;
+  repeated Cluster clusters = 16 [lazy = true];
+  repeated NotifierConfiguration notifiers = 17 [lazy = true];
 }
 
 // Next Tag: 7
@@ -154,7 +154,7 @@ message ComplianceOperatorBenchmarkV2 {
     string profile_version = 2; // @gotags: search:"Compliance Profile Version" sql:"fk(ComplianceOperatorProfileV2:profile_version),no-fk-constraint"
   }
 
-  repeated Profile profiles = 8;
+  repeated Profile profiles = 8 [lazy = true];
 }
 
 // Next Tag: 21
@@ -258,7 +258,7 @@ message ComplianceOperatorStatus {
   string phase = 1;
   string result = 2;
   string error_message = 3;
-  repeated ComplianceOperatorCondition conditions = 4;
+  repeated ComplianceOperatorCondition conditions = 4 [lazy = true];
 }
 
 // Next Tag: 5
@@ -303,7 +303,7 @@ message ComplianceOperatorReportSnapshotV2 {
     google.protobuf.Timestamp last_started_time = 2; // @gotags: search:"Compliance Scan Last Started Time,hidden" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"
   }
 
-  repeated Scan scans = 7;
+  repeated Scan scans = 7 [lazy = true];
 
   ComplianceOperatorReportData report_data = 8; // @gotags: search:"-"
 
@@ -315,7 +315,7 @@ message ComplianceOperatorReportSnapshotV2 {
     repeated string scanNames = 5;
   }
 
-  repeated FailedCluster failed_clusters = 9;
+  repeated FailedCluster failed_clusters = 9 [lazy = true];
 }
 
 // Next available tag: 4
@@ -338,7 +338,7 @@ message ComplianceOperatorReportData {
   }
 
   ComplianceOperatorScanConfigurationV2 scan_configuration = 1; // @gotags: search:"-" sql:"-"
-  repeated ClusterStatus cluster_status = 2;
+  repeated ClusterStatus cluster_status = 2 [lazy = true];
   google.protobuf.Timestamp last_executed_time = 3;
 }
 

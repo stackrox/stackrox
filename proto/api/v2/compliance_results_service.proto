@@ -38,7 +38,7 @@ message ComplianceCheckResult {
   string rule_name = 12;
   map<string, string> labels = 13 [lazy = true];
   map<string, string> annotations = 14 [lazy = true];
-  repeated ComplianceControl controls = 15;
+  repeated ComplianceControl controls = 15 [lazy = true];
 }
 
 message ComplianceCheckData {
@@ -52,7 +52,7 @@ message ComplianceClusterCheckStatus {
   string check_id = 1;
   string check_name = 2;
 
-  repeated ClusterCheckStatus clusters = 3;
+  repeated ClusterCheckStatus clusters = 3 [lazy = true];
   string description = 4;
   string instructions = 5;
   reserved 6;
@@ -62,39 +62,39 @@ message ComplianceClusterCheckStatus {
   repeated string warnings = 10;
   map<string, string> labels = 11 [lazy = true];
   map<string, string> annotations = 12 [lazy = true];
-  repeated ComplianceControl controls = 13;
+  repeated ComplianceControl controls = 13 [lazy = true];
 }
 
 // ComplianceScanResult provides the results of a scan
 message ComplianceScanResult {
   string scan_name = 1;
   string profile_name = 2;
-  repeated ComplianceClusterCheckStatus check_results = 3;
+  repeated ComplianceClusterCheckStatus check_results = 3 [lazy = true];
   string scan_config_id = 4;
 }
 
 // ListComplianceScanResultsResponse provides the complete scan results
 message ListComplianceScanResultsResponse {
-  repeated ComplianceScanResult scan_results = 1;
+  repeated ComplianceScanResult scan_results = 1 [lazy = true];
 }
 
 // ListComplianceResultsResponse provides the complete scan results
 message ListComplianceResultsResponse {
-  repeated ComplianceCheckData scan_results = 1;
+  repeated ComplianceCheckData scan_results = 1 [lazy = true];
   int32 total_count = 2;
 }
 
 // ListComplianceCheckClusterResponse provides stats per cluster
 message ListComplianceCheckClusterResponse {
-  repeated ClusterCheckStatus check_results = 1;
+  repeated ClusterCheckStatus check_results = 1 [lazy = true];
   string profile_name = 2;
   string check_name = 3;
   int32 total_count = 4;
-  repeated ComplianceControl controls = 5;
+  repeated ComplianceControl controls = 5 [lazy = true];
 }
 
 message ListComplianceCheckResultResponse {
-  repeated ComplianceCheckResult check_results = 1;
+  repeated ComplianceCheckResult check_results = 1 [lazy = true];
   string profile_name = 2;
   string cluster_id = 3;
   int32 total_count = 4;

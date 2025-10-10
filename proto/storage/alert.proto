@@ -28,7 +28,7 @@ message Alert {
       ContainerImage image = 3; // @gotags: search:"-" sql:"ignore-fks,ignore-index"
       string name = 10;
     }
-    repeated Container containers = 11;
+    repeated Container containers = 11 [lazy = true];
     map<string, string> annotations = 14 [lazy = true]; // @gotags: sensorhash:"ignore"
     bool inactive = 15; // @gotags: search:"Inactive Deployment"
   }
@@ -66,7 +66,7 @@ message Alert {
         string key = 1;
         string value = 2;
       }
-      repeated KeyValueAttr attrs = 1;
+      repeated KeyValueAttr attrs = 1 [lazy = true];
     }
     message NetworkFlowInfo {
       message Entity {
@@ -98,7 +98,7 @@ message Alert {
 
   message ProcessViolation {
     string message = 1;
-    repeated ProcessIndicator processes = 2; // @gotags: sql:"ignore-fks"
+    repeated ProcessIndicator processes = 2 [lazy = true]; // @gotags: sql:"ignore-fks"
   }
 
   message Enforcement {
@@ -137,7 +137,7 @@ message Alert {
   }
 
   // For run-time phase alert, a maximum of 40 violations are retained.
-  repeated Violation violations = 5; // @gotags: search:"-"
+  repeated Violation violations = 5 [lazy = true]; // @gotags: search:"-"
   ProcessViolation process_violation = 13; // @gotags: search:"-"
 
   Enforcement enforcement = 6;

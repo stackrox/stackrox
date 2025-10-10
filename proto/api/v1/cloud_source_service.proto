@@ -90,7 +90,7 @@ message ListCloudSourcesRequest {
 }
 
 message ListCloudSourcesResponse {
-  repeated CloudSource cloud_sources = 1;
+  repeated CloudSource cloud_sources = 1 [lazy = true];
 }
 
 message CreateCloudSourceRequest {

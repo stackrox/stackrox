@@ -27,14 +27,14 @@ message NetworkPolicy {
 
 message NetworkPolicySpec {
   LabelSelector pod_selector = 1;
-  repeated NetworkPolicyIngressRule ingress = 2;
-  repeated NetworkPolicyEgressRule egress = 3;
+  repeated NetworkPolicyIngressRule ingress = 2 [lazy = true];
+  repeated NetworkPolicyEgressRule egress = 3 [lazy = true];
   repeated NetworkPolicyType policy_types = 4;
 }
 
 message NetworkPolicyEgressRule {
-  repeated NetworkPolicyPort ports = 1;
-  repeated NetworkPolicyPeer to = 2;
+  repeated NetworkPolicyPort ports = 1 [lazy = true];
+  repeated NetworkPolicyPeer to = 2 [lazy = true];
 }
 
 message NetworkPolicyPeer {
@@ -71,8 +71,8 @@ enum NetworkPolicyType {
 }
 
 message NetworkPolicyIngressRule {
-  repeated NetworkPolicyPort ports = 1;
-  repeated NetworkPolicyPeer from = 2;
+  repeated NetworkPolicyPort ports = 1 [lazy = true];
+  repeated NetworkPolicyPeer from = 2 [lazy = true];
 }
 
 // Next available tag: 3
@@ -84,7 +84,7 @@ message NetworkPolicyReference {
 // Next available tag: 3
 message NetworkPolicyModification {
   string apply_yaml = 1;
-  repeated NetworkPolicyReference to_delete = 2;
+  repeated NetworkPolicyReference to_delete = 2 [lazy = true];
 }
 
 message NetworkPolicyApplicationUndoRecord {

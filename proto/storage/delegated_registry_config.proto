@@ -26,5 +26,5 @@ message DelegatedRegistryConfig {
 
   EnabledFor enabled_for = 1;
   string default_cluster_id = 2;
-  repeated DelegatedRegistry registries = 3;
+  repeated DelegatedRegistry registries = 3 [lazy = true];
 }

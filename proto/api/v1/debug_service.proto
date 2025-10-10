@@ -29,7 +29,7 @@ message ModuleLevel {
 
 message LogLevelResponse {
   string level = 1;
-  repeated ModuleLevel module_levels = 2;
+  repeated ModuleLevel module_levels = 2 [lazy = true];
 }
 
 message AuthorizationTraceResponse {
@@ -60,7 +60,7 @@ message AuthorizationTraceResponse {
     string username = 1;
     string friendly_name = 2;
     map<string, storage.Access> aggregated_permissions = 3;
-    repeated Role roles = 4;
+    repeated Role roles = 4 [lazy = true];
   }
 
   message Trace {

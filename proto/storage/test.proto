@@ -57,7 +57,7 @@ message TestSingleKeyStruct {
     }
     Nested2 nested2 = 2;
   }
-  repeated Nested nested = 13;
+  repeated Nested nested = 13 [lazy = true];
 
   message OneOfNested {
     string nested = 1;
@@ -121,7 +121,7 @@ message TestSingleUUIDKeyStruct {
     }
     Nested2 nested2 = 2;
   }
-  repeated Nested nested = 13;
+  repeated Nested nested = 13 [lazy = true];
 
   message OneOfNested {
     string nested = 1;
@@ -198,7 +198,7 @@ message TestStruct {
     }
     Nested2 nested2 = 2;
   }
-  repeated Nested nested = 13;
+  repeated Nested nested = 13 [lazy = true];
 
   message OneOfNested {
     string nested = 1; // @gotags: search:"Test Oneof Nested String"
@@ -238,10 +238,10 @@ message TestGrandparent {
     }
 
     string val = 1; // @gotags: search:"Test Grandparent Embedded"
-    repeated Embedded2 embedded2 = 2;
+    repeated Embedded2 embedded2 = 2 [lazy = true];
   }
 
-  repeated Embedded embedded = 3;
+  repeated Embedded embedded = 3 [lazy = true];
 
   int64 priority = 4; // @gotags: search:"Test Grandparent Priority"
   float risk_score = 5; // @gotags: search:"Test Grandparent Risk Score"
@@ -255,7 +255,7 @@ message TestParent1 {
     string child_id = 1; // @gotags: sql:"fk(TestChild1:id),no-fk-constraint"
   }
 
-  repeated Child1Ref children = 3;
+  repeated Child1Ref children = 3 [lazy = true];
 
   string val = 4; // @gotags: search:"Test Parent1 Val"
   repeated string string_slice = 5; // @gotags: search:"Test Parent1 String Slice"

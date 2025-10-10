@@ -15,7 +15,7 @@ message SignatureIntegration {
 
   CosignPublicKeyVerification cosign = 3;
 
-  repeated CosignCertificateVerification cosign_certificates = 4;
+  repeated CosignCertificateVerification cosign_certificates = 4 [lazy = true];
 
   TransparencyLogVerification transparency_log = 5;
 
@@ -27,7 +27,7 @@ message CosignPublicKeyVerification {
     string name = 1;
     string public_key_pem_enc = 2;
   }
-  repeated PublicKey public_keys = 3;
+  repeated PublicKey public_keys = 3 [lazy = true];
 }
 
 // Holds all verification data for verifying certificates attached to cosign signatures.

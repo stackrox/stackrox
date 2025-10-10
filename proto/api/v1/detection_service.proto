@@ -59,10 +59,10 @@ message DeployDetectionResponse {
     repeated storage.Alert alerts = 3;
   }
 
-  repeated Run runs = 1;
+  repeated Run runs = 1 [lazy = true];
   // The reference will be in the format: namespace/name[<group>/<version>, Kind=<kind>].
   repeated string ignored_object_refs = 2;
-  repeated DeployDetectionRemark remarks = 3;
+  repeated DeployDetectionRemark remarks = 3 [lazy = true];
 }
 
 message DeployDetectionRemark {
@@ -74,7 +74,7 @@ message DeployDetectionRemark {
 // This is a helper message for the roxctl JSON report, as jsonpb can only serialize protobuf messages
 message ResultAggregation {
   repeated storage.Alert alerts = 1;
-  repeated DeployDetectionRemark remarks = 2;
+  repeated DeployDetectionRemark remarks = 2 [lazy = true];
 }
 
 // DetectionService APIs can be used to check for build and deploy time policy violations.
