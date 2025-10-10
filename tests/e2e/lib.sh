@@ -217,7 +217,7 @@ deploy_stackrox_operator() {
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
 
         make -C operator kuttl deploy-via-olm \
-          INDEX_IMG_BASE="brew.registry.redhat.io/rh-osbs/iib" \
+          INDEX_IMG_BASE="quay.io/rhacs-eng/stackrox-operator-index" \
           INDEX_IMG_TAG="$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')" \
           INSTALL_CHANNEL="$(< operator/midstream/iib.json jq -r '.operator.channel')" \
           INSTALL_VERSION="v$(< operator/midstream/iib.json jq -r '.operator.version')"
