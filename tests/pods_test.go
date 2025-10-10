@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -49,19 +50,42 @@ func TestPod(testT *testing.T) {
 		createPod(testT, client, kPod)
 
 		// Wait for pod to be fully running before proceeding
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		// Increased timeout to 3 minutes to handle slow CI environments (image pull, scheduling, etc.)
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()
 
 		var k8sPod *coreV1.Pod
-		testutils.Retry(retryT, 30, 2*time.Second, func(waitT testutils.T) {
+		// Increased from 30×2s (60s) to 60×3s (180s) to account for slower pod startup in CI
+		testutils.Retry(retryT, 60, 3*time.Second, func(waitT testutils.T) {
 			var err error
 			k8sPod, err = client.CoreV1().Pods(kPod.GetNamespace()).Get(ctx, kPod.GetName(), metav1.GetOptions{})
 			require.NoError(waitT, err, "failed to get pod %s", kPod.GetName())
-			require.Equal(waitT, coreV1.PodRunning, k8sPod.Status.Phase, "pod not in Running phase yet")
+
+			// Log pod status for debugging
+			testT.Logf("Pod phase: %s, Reason: %s, Message: %s",
+				k8sPod.Status.Phase, k8sPod.Status.Reason, k8sPod.Status.Message)
+
+			// Provide detailed error message if pod is not running
+			if k8sPod.Status.Phase != coreV1.PodRunning {
+				var containerInfo strings.Builder
+				for _, status := range k8sPod.Status.ContainerStatuses {
+					containerInfo.WriteString(fmt.Sprintf("\n  - %s: ready=%v, started=%v",
+						status.Name, status.Ready, status.Started != nil && *status.Started))
+					if status.State.Waiting != nil {
+						containerInfo.WriteString(fmt.Sprintf(", waiting: %s - %s",
+							status.State.Waiting.Reason, status.State.Waiting.Message))
+					}
+				}
+				require.Failf(waitT, "pod not in Running phase",
+					"Pod %s is in %s phase (expected Running)\nContainers:%s\nPod Reason: %s\nPod Message: %s",
+					kPod.GetName(), k8sPod.Status.Phase, containerInfo.String(),
+					k8sPod.Status.Reason, k8sPod.Status.Message)
+			}
 
 			// Ensure all containers are ready before checking for process events
 			for _, status := range k8sPod.Status.ContainerStatuses {
-				require.True(waitT, status.Ready, "container %s not ready", status.Name)
+				require.True(waitT, status.Ready, "container %s not ready (state: %+v)",
+					status.Name, status.State)
 			}
 		})
 
