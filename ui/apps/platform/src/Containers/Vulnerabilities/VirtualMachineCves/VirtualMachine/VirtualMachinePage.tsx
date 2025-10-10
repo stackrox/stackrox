@@ -21,6 +21,7 @@ import { getVirtualMachine } from 'services/VirtualMachineService';
 import { detailsTabValues } from '../../types';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import VirtualMachinePageHeader from './VirtualMachinePageHeader';
+import VirtualMachinePagePackages from './VirtualMachinePagePackages';
 import VirtualMachinePageVulnerabilities from './VirtualMachinePageVulnerabilities';
 
 const VULNERABILITIES_TAB_ID = 'vulnerabilities-tab-content';
@@ -121,7 +122,13 @@ function VirtualMachinePage() {
                     </TabContent>
                 )}
                 {activeTabKey === packagesTabKey && (
-                    <TabContent id={PACKAGES_TAB_ID}>packages table here</TabContent>
+                    <TabContent id={PACKAGES_TAB_ID}>
+                        <VirtualMachinePagePackages
+                            virtualMachineData={virtualMachineData}
+                            isLoadingVirtualMachineData={isLoading}
+                            errorVirtualMachineData={error}
+                        />
+                    </TabContent>
                 )}
             </PageSection>
         </>

@@ -20,6 +20,12 @@ export function isFixableStatus(value: unknown): value is FixableStatus {
     return fixableStatuses.some((status) => status === value);
 }
 
+const scannableStatuses = ['Scanned', 'Not scanned'] as const;
+export type ScannableStatus = (typeof scannableStatuses)[number];
+export function isScannableStatus(value: unknown): value is ScannableStatus {
+    return scannableStatuses.some((status) => status === value);
+}
+
 // `QuerySearchFilter` is a restricted subset of the `SearchFilter` obtained from the URL that
 // has been parsed to convert values to the format expected by the backend. It also restricts
 // the filter values to a `string[]` for consistency.
