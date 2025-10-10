@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Flex, Modal, Title } from '@patternfly/react-core';
 
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
@@ -6,9 +7,10 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import {
     defaultValues,
     validationSchema,
-    EmailIntegrationFormValues,
 } from 'Containers/Integrations/IntegrationForm/Forms/EmailIntegrationForm';
-import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import type { EmailIntegrationFormValues } from 'Containers/Integrations/IntegrationForm/Forms/EmailIntegrationForm';
+import FormMessage from 'Components/PatternFly/FormMessage';
+import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import useFormModal from 'hooks/patternfly/useFormModal';
 import { createIntegration } from 'services/IntegrationsService';
 import EmailNotifierForm from './EmailNotifierForm';
