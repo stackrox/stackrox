@@ -28,7 +28,7 @@ function ContainerResourcesInfo({ resources }: ContainerResourcesInfoProps) {
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                     <DescriptionListGroup>
-                        <DescriptionListTerm>CPU limet (cores)</DescriptionListTerm>
+                        <DescriptionListTerm>CPU limit (cores)</DescriptionListTerm>
                         <DescriptionListDescription>
                             {resources.cpuCoresLimit}
                         </DescriptionListDescription>
