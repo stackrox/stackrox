@@ -1,4 +1,4 @@
-import { QueryValue } from 'hooks/useURLParameter';
+import type { QueryValue } from 'hooks/useURLParameter';
 
 export type SimulationType = 'baseline' | 'networkPolicy';
 

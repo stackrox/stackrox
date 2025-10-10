@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
     Alert,
     AlertGroup,
@@ -31,7 +32,7 @@ type NetworkPolicyYAML = {
 
 const allNetworkPoliciesId = 'All network policies';
 
-function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React.ReactElement {
+function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): ReactElement {
     const { networkPolicies, networkPolicyErrors, isLoading, error } =
         useFetchNetworkPolicies(policyIds);
 
@@ -93,7 +94,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
         );
     }
 
-    let policyErrorBanner: React.ReactNode = null;
+    let policyErrorBanner: ReactNode = null;
 
     if (networkPolicyErrors.length > 0) {
         policyErrorBanner = (

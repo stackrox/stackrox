@@ -3,11 +3,11 @@ import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patter
 
 import useAnalytics, { DEPLOYMENT_FLOWS_TOGGLE_CLICKED } from 'hooks/useAnalytics';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { QueryValue } from 'hooks/useURLParameter';
+import type { QueryValue } from 'hooks/useURLParameter';
 
 import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
-import { EdgeState } from '../components/EdgeStateSelect';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import type { EdgeState } from '../components/EdgeStateSelect';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { isInternalFlow } from '../utils/networkGraphUtils';
 
 import InternalFlows from './InternalFlows';

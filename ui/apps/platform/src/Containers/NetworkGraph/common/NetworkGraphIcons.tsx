@@ -1,5 +1,6 @@
 import React from 'react';
-import { Badge, BadgeProps } from '@patternfly/react-core';
+import { Badge } from '@patternfly/react-core';
+import type { BadgeProps } from '@patternfly/react-core';
 
 export const clusterBadgeText = 'CL';
 export const namespaceBadgeText = 'NS';
