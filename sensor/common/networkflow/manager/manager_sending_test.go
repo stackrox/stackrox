@@ -24,7 +24,6 @@ const (
 )
 
 func TestSendNetworkFlows(t *testing.T) {
-	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
 	t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "true")
 	suite.Run(t, new(sendNetflowsSuite))
 }

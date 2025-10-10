@@ -29,8 +29,7 @@ const (
 )
 
 func TestProcessPipelineOfflineV3(t *testing.T) {
-	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
-	// In v3 going from online to offline and vice-versa won't do anything.
+	// With event buffering enabled, going from online to offline and vice-versa won't do anything.
 	// The tests add the functions online and offline to illustrate how the pipeline would be called in a real scenario.
 	cases := map[string]struct {
 		entities []clusterentities.ContainerMetadata
@@ -173,7 +172,7 @@ func assertSize(size int) func(*testing.T, *Pipeline) {
 }
 
 func TestProcessPipelineOfflineV1(t *testing.T) {
-	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")
+	t.Skip("Test skipped: feature is now always enabled with event buffering")
 	containerMetadata1 := clusterentities.ContainerMetadata{
 		DeploymentID: "mock-deployment-1",
 		ContainerID:  "1e43ac4f61f9",

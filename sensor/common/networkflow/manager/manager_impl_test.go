@@ -198,8 +198,8 @@ func (s *NetworkFlowManagerTestSuite) TestAddNoOriginator() {
 }
 
 func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
-	// This test is for v1/v2 behavior
-	s.T().Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")
+	// This test verifies offline mode behavior without event buffering
+	s.T().Skip("Test skipped: feature is now always enabled with event buffering")
 	s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
 	const (
 		srcID       = "src-id"
@@ -364,8 +364,8 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 }
 
 func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
-	// This test is for v1/v2 behavior
-	s.T().Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")
+	// This test verifies message expiration behavior without event buffering
+	s.T().Skip("Test skipped: feature is now always enabled with event buffering")
 	s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
 	hostname := "hostname"
 	containerID := "container-id"

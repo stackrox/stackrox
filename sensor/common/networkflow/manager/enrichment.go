@@ -123,11 +123,6 @@ const (
 	// Multiple collector messages can report the same endpoint, so we only process the most recent one.
 	EnrichmentReasonEpDuplicate EnrichmentReasonEp = "duplicate"
 
-	// EnrichmentReasonEpFeatureDisabled is returned when the SensorCapturesIntermediateEvents feature is disabled.
-	// This means Sensor is configured to not capture intermediate network events while in offline mode,
-	// so the enrichment should be skipped while in offline mode.
-	EnrichmentReasonEpFeatureDisabled EnrichmentReasonEp = "feature-disabled"
-
 	// EnrichmentReasonEpFeaturePlopDisabled is returned when the ProcessesListeningOnPort feature is disabled.
 	// This means PLoP (Processes Listening on Ports) enrichment will not be performed.
 	EnrichmentReasonEpFeaturePlopDisabled EnrichmentReasonEp = "feature-plop-disabled"
