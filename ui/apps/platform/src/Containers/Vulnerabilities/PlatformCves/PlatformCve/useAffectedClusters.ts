@@ -1,7 +1,8 @@
 import { gql, useQuery } from '@apollo/client';
-import { ClientPagination, Pagination } from 'services/types';
+import type { ClientPagination, Pagination } from 'services/types';
 import { getPaginationParams } from 'utils/searchUtils';
-import { AffectedCluster, affectedClusterFragment } from './AffectedClustersTable';
+import { affectedClusterFragment } from './AffectedClustersTable';
+import type { AffectedCluster } from './AffectedClustersTable';
 
 const affectedClustersQuery = gql`
     ${affectedClusterFragment}
