@@ -40,7 +40,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
             tag
         }
         scan {
-            components {
+            imageComponents {
                 name
                 layerIndex
                 version

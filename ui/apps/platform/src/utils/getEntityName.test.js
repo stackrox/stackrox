@@ -163,7 +163,7 @@ describe('getEntityName', () => {
             component: {
                 id: 'bGlieG1sMg:Mi45LjErZGZzZzEtNStkZWI4dTQ',
                 name: 'libxml2',
-                __typename: 'EmbeddedImageScanComponent',
+                __typename: 'ImageComponent',
             },
         };
 

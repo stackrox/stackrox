@@ -514,7 +514,7 @@ export const IMAGE_LIST_FRAGMENT = gql`
 `;
 
 export const VULN_COMPONENT_LIST_FRAGMENT = gql`
-    fragment componentFields on EmbeddedImageScanComponent {
+    fragment componentFields on ImageComponent {
         id
         name
         version
