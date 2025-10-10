@@ -1,7 +1,7 @@
-import {
+import { isDeferralException } from 'services/VulnerabilityExceptionService';
+import type {
     VulnerabilityException,
     VulnerabilityExceptionScope,
-    isDeferralException,
 } from 'services/VulnerabilityExceptionService';
 
 export function getImageScopeSearchValue({ imageScope }: VulnerabilityExceptionScope): string {

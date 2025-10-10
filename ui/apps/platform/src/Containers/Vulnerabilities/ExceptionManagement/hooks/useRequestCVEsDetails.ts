@@ -1,6 +1,6 @@
 import { gql, useQuery } from '@apollo/client';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
+import type { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 import { sortCveDistroList } from '../../utils/sortUtils';
 import { getImageScopeSearchValue } from '../utils';
 

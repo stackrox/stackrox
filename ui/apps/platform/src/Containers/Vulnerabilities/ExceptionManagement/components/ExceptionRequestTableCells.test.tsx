@@ -1,12 +1,9 @@
-import {
+import type {
     BaseVulnerabilityException,
     VulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
-import {
-    getShouldUseUpdatedRequest,
-    getRequestedAction,
-    RequestContext,
-} from './ExceptionRequestTableCells';
+import { getShouldUseUpdatedRequest, getRequestedAction } from './ExceptionRequestTableCells';
+import type { RequestContext } from './ExceptionRequestTableCells';
 
 const baseException: BaseVulnerabilityException = {
     id: '4837bb34-5357-4b78-ad2b-188fc0b33e78',

@@ -1,4 +1,4 @@
-import { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
+import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
 import { Name as ImageName } from 'Components/CompoundSearchFilter/attributes/image';
 import { Name as ImageCveName } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import { vulnerabilityRequestAttributes } from 'Components/CompoundSearchFilter/attributes/vulnerabilityRequests';
