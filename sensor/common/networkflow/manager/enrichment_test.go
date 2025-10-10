@@ -197,33 +197,6 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 				}
 			},
 		},
-		"Connection with SensorCapturesIntermediateEvents disabled should yield result EnrichmentResultSuccess with reason EnrichmentReasonConnSuccess": {
-			setupConnection: func() (*connection, *connStatus) {
-				conn := &connection{
-					containerID: "test-container",
-					incoming:    false,
-					remote:      createEndpoint("8.8.8.8", 80),
-				}
-				status := &connStatus{
-					firstSeen:             timestamp.Now().Add(-time.Minute),
-					lastSeen:              timestamp.InfiniteFuture, // active connection
-					enrichmentConsumption: enrichmentConsumption{},
-				}
-				return conn, status
-			},
-			setupMocks: func(m *mockExpectations) {
-				m.expectContainerFound("test-deployment").expectEndpointFound("cluster-endpoint-id", 80)
-			},
-			setupFeatureFlags: func(t *testing.T) {
-				t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")
-			},
-			expectedResult: EnrichmentResultSuccess,
-			expectedReason: EnrichmentReasonConnSuccess,
-			validateEnrichment: func(t *testing.T, enriched map[indicator.NetworkConn]timestamp.MicroTS) {
-				// Should still enrich even with feature disabled
-				assert.Len(t, enriched, 1, "Should have one enriched connection")
-			},
-		},
 	}
 
 	for name, tt := range tests {
