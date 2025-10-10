@@ -299,13 +299,6 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 	}
 }
 
-func (m *networkFlowManager) resetLastSentState() {
-	// Reset state in the UpdateComputer implementation
-	if m.updateComputer != nil {
-		m.updateComputer.ResetState()
-	}
-}
-
 func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 	defer m.stopper.Flow().ReportStopped()
 	for {
