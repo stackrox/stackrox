@@ -3,8 +3,10 @@ edition = "2023";  // successor to proto2 and proto3
 package virtualmachine.v1;
 
 import "internalapi/scanner/v4/index_report.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/virtualmachine/v1;v1";
+option features.(pb.go).api_level = API_HYBRID;
 
 // The index report is collected from the virtual machine agent and contains
 // the package information.

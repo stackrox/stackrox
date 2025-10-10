@@ -4,8 +4,10 @@ package central;
 
 import "google/protobuf/timestamp.proto";
 import "storage/process_listening_on_port.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/central;central";
+option features.(pb.go).api_level = API_HYBRID;
 
 message ProcessListeningOnPortsUpdate {
   repeated storage.ProcessListeningOnPortFromSensor processes_listening_on_ports = 1;

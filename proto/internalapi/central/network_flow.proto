@@ -4,8 +4,10 @@ package central;
 
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/central;central";
+option features.(pb.go).api_level = API_HYBRID;
 
 message NetworkFlowUpdate {
   // Network flows that were added or removed from the last time state was sent to Central.

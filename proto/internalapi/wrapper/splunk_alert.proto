@@ -3,8 +3,10 @@ edition = "2023";  // successor to proto2 and proto3
 package wrapper;
 
 import "google/protobuf/any.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/wrapper;wrapper";
+option features.(pb.go).api_level = API_HYBRID;
 
 // Splunk notification needs the source of data
 // and the type of data.

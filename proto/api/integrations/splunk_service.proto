@@ -8,9 +8,11 @@ import "storage/alert.proto";
 import "storage/deployment.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./api/integrations;integrations";
 option java_package = "io.stackrox.proto.api.integrations";
+option features.(pb.go).api_level = API_HYBRID;
 
 // SplunkViolationsResponse is what StackRox Platform returns on the request from Splunk Technology Addon for StackRox.
 message SplunkViolationsResponse {

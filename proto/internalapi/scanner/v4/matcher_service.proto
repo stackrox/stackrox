@@ -6,8 +6,10 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "internalapi/scanner/v4/common.proto";
 import "internalapi/scanner/v4/vulnerability_report.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/scanner/v4;v4";
+option features.(pb.go).api_level = API_HYBRID;
 
 message GetVulnerabilitiesRequest {
   string hash_id = 1;

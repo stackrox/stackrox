@@ -6,9 +6,11 @@ import "google/protobuf/timestamp.proto";
 import "internalapi/sensor/network_enums.proto";
 import "storage/network_flow.proto";
 import "storage/process_indicator.proto";
+import "google/protobuf/go_features.proto";
 
 option cc_enable_arenas = true;
 option go_package = "./internalapi/sensor;sensor";
+option features.(pb.go).api_level = API_HYBRID;
 
 message NetworkConnectionInfo {
   // Network connections that were added from the last time state was sent.

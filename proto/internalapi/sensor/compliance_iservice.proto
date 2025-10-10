@@ -8,8 +8,10 @@ import "storage/cluster.proto";
 import "storage/container_runtime.proto";
 import "storage/kube_event.proto";
 import "storage/node.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/sensor;sensor";
+option features.(pb.go).api_level = API_HYBRID;
 
 message GetScrapeConfigRequest {
   string node_name = 1;

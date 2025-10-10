@@ -4,9 +4,11 @@ package sensor;
 
 import "google/protobuf/empty.proto";
 import "internalapi/sensor/sfa.proto";
+import "google/protobuf/go_features.proto";
 
 option cc_enable_arenas = true;
 option go_package = "./internalapi/sensor;sensor";
+option features.(pb.go).api_level = API_HYBRID;
 
 service FileActivityService {
   rpc Communicate(stream FileActivity) returns (google.protobuf.Empty);

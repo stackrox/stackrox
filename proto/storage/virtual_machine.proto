@@ -5,6 +5,8 @@ package storage;
 import "google/protobuf/timestamp.proto";
 import "storage/cve.proto";
 import "storage/image.proto";
+import "google/protobuf/go_features.proto";
+option features.(pb.go).api_level = API_HYBRID;
 
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 message VirtualMachine {

@@ -6,9 +6,11 @@ import "api/v2/common.proto";
 import "api/v2/compliance_common.proto";
 import "api/v2/search_query.proto";
 import weak "google/api/annotations.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
+option features.(pb.go).api_level = API_HYBRID;
 
 // Next Tag: 12
 message ComplianceProfile {

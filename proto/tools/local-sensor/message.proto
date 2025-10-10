@@ -3,6 +3,8 @@ edition = "2023";  // successor to proto2 and proto3
 package localSensor;
 
 import "storage/policy.proto";
+import "google/protobuf/go_features.proto";
+option features.(pb.go).api_level = API_HYBRID;
 
 message LocalSensorPolicies {
   repeated storage.Policy policies = 1;

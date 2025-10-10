@@ -4,9 +4,11 @@ package v1;
 
 import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
+option features.(pb.go).api_level = API_HYBRID;
 
 message GetUpgradeStatusResponse {
   CentralUpgradeStatus upgradeStatus = 1;

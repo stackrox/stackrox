@@ -5,9 +5,11 @@ package v1;
 import weak "google/api/annotations.proto";
 import "storage/deployment.proto";
 import "storage/image.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
+option features.(pb.go).api_level = API_HYBRID;
 
 message VulnMgmtExportWorkloadsRequest {
   // Request timeout in seconds.

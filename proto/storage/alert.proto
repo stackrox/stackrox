@@ -7,9 +7,11 @@ import "storage/deployment.proto";
 import "storage/network_flow.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
+option features.(pb.go).api_level = API_HYBRID;
 
 // Next available tag: 24
 message Alert {

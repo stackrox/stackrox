@@ -22,8 +22,10 @@ import "internalapi/central/sensor_upgrade.proto";
 import "internalapi/central/telemetry.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/central;central";
+option features.(pb.go).api_level = API_HYBRID;
 
 // next available tag: 20
 message MsgFromSensor {

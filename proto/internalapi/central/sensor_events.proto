@@ -20,8 +20,10 @@ import "storage/process_indicator.proto";
 import "storage/rbac.proto";
 import "storage/secret.proto";
 import "storage/service_account.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/central;central";
+option features.(pb.go).api_level = API_HYBRID;
 
 enum ResourceAction {
   UNSET_ACTION_RESOURCE = 0;

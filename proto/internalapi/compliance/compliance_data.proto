@@ -4,9 +4,11 @@ package compliance;
 
 import "google/protobuf/timestamp.proto";
 import "storage/compliance.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/compliance;compliance";
 option java_package = "io.stackrox.proto.compliance";
+option features.(pb.go).api_level = API_HYBRID;
 
 // Next Available Tag: 2
 message GZIPDataChunk {

@@ -5,9 +5,11 @@ package storage;
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
 import "storage/process_indicator.proto";
+import "google/protobuf/go_features.proto";
 
 option cc_enable_arenas = true;
 option go_package = "./storage;storage";
+option features.(pb.go).api_level = API_HYBRID;
 
 // The API returns an array of these
 message ProcessListeningOnPort {

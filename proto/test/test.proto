@@ -4,9 +4,11 @@ package test;
 
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./test;test";
 option java_package = "io.stackrox.proto.test";
+option features.(pb.go).api_level = API_HYBRID;
 
 message TestCloneSubMessage {
   int32 int32 = 1;

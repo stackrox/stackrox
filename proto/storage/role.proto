@@ -4,9 +4,11 @@ package storage;
 
 import "storage/labels.proto";
 import "storage/traits.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
+option features.(pb.go).api_level = API_HYBRID;
 
 // A role specifies which actions are allowed for which subset of cluster
 // objects. Permissions be can either specified directly via setting

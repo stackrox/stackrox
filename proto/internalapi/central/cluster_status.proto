@@ -3,8 +3,10 @@ edition = "2023";  // successor to proto2 and proto3
 package central;
 
 import "storage/cluster.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/central;central";
+option features.(pb.go).api_level = API_HYBRID;
 
 message DeploymentEnvironmentUpdate {
   repeated string environments = 1;

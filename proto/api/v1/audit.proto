@@ -5,9 +5,11 @@ package v1;
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/user.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
+option features.(pb.go).api_level = API_HYBRID;
 
 message Audit {
   enum RequestStatus {

@@ -5,9 +5,11 @@ package storage;
 import "google/protobuf/timestamp.proto";
 import "storage/image.proto";
 import "storage/scope.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
+option features.(pb.go).api_level = API_HYBRID;
 
 // Note: If you add a new field to the Policy proto, please update the PolicySpec struct
 // in `config-controller/api/v1alpha1/policy_types.go` and the ToProtobuf() function

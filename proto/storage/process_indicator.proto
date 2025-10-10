@@ -3,10 +3,12 @@ edition = "2023";  // successor to proto2 and proto3
 package storage;
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/go_features.proto";
 
 option cc_enable_arenas = true;
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
+option features.(pb.go).api_level = API_HYBRID;
 
 // Next available tag: 13
 message ProcessIndicator {

@@ -5,9 +5,11 @@ edition = "2023";  // successor to proto2 and proto3
 package central;
 
 import weak "google/api/annotations.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/central;central";
 option java_package = "io.stackrox.proto.internalapi.central";
+option features.(pb.go).api_level = API_HYBRID;
 
 message URLHasValidCertRequest {
   string url = 1;

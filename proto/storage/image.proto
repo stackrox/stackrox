@@ -4,9 +4,11 @@ package storage;
 
 import "google/protobuf/timestamp.proto";
 import "storage/vulnerability.proto";
+import "google/protobuf/go_features.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
+option features.(pb.go).api_level = API_HYBRID;
 
 // This proto is deprecated and replaced by ImageV2.
 // Next Tag: 19
