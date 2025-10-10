@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/process/normalize"
@@ -171,18 +170,12 @@ func NewManager(
 	mgr.purger = NewNetworkFlowPurger(clusterEntities, maxAgeSetting, WithManager(mgr))
 
 	enricherTicker.Stop()
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))
-	} else {
-		mgr.sensorUpdates = make(chan *message.ExpiringMessage)
-	}
+	mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))
 
 	if err := mgr.pubSub.Subscribe(internalmessage.SensorMessageResourceSyncFinished, func(msg *internalmessage.SensorInternalMessage) {
 		if msg.IsExpired() {
 			return
 		}
-		// Since we need to have the logic to transition to offline mode if `SensorCapturesIntermediateEvents` is disabled.
-		// We call `Notify` here to keep the logic to transition offline/online in the same place.
 		mgr.Notify(common.SensorComponentEventResourceSyncFinished)
 	}); err != nil {
 		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
@@ -283,22 +276,12 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	}()
 	switch e {
 	case common.SensorComponentEventResourceSyncFinished:
-		if features.SensorCapturesIntermediateEvents.Enabled() {
-			if m.initialSync.CompareAndSwap(false, true) {
-				m.enricherTicker.Reset(enricherCycle)
-			}
-			return
+		if m.initialSync.CompareAndSwap(false, true) {
+			m.enricherTicker.Reset(enricherCycle)
 		}
-		m.resetContext()
-		m.resetLastSentState()
-		m.centralReady.Signal()
-		m.enricherTicker.Reset(enricherCycle)
 	case common.SensorComponentEventOfflineMode:
-		if features.SensorCapturesIntermediateEvents.Enabled() {
-			return
-		}
-		m.centralReady.Reset()
-		m.enricherTicker.Stop()
+		// In offline mode with event buffering enabled, we continue operation
+		return
 	}
 }
 
@@ -316,26 +299,16 @@ func (m *networkFlowManager) resetContext() {
 }
 
 func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		select {
-		case <-m.stopper.Flow().StopRequested():
-			return false
-		case m.sensorUpdates <- message.New(msg):
-			return true
-		default:
-			// If the m.sensorUpdates queue is full, we bounce the Network Flow update.
-			// They will still be processed by the detection engine for newer entities, but
-			// sensor will not keep ordered updates indefinitely in memory.
-			return false
-		}
-	} else {
-		ctx := m.getCurrentContext()
-		select {
-		case <-m.stopper.Flow().StopRequested():
-			return false
-		case m.sensorUpdates <- message.NewExpiring(ctx, msg):
-			return true
-		}
+	select {
+	case <-m.stopper.Flow().StopRequested():
+		return false
+	case m.sensorUpdates <- message.New(msg):
+		return true
+	default:
+		// If the m.sensorUpdates queue is full, we bounce the Network Flow update.
+		// They will still be processed by the detection engine for newer entities, but
+		// sensor will not keep ordered updates indefinitely in memory.
+		return false
 	}
 }
 
@@ -353,10 +326,6 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
-			if !features.SensorCapturesIntermediateEvents.Enabled() && !m.centralReady.IsDone() {
-				log.Info("Sensor is in offline mode: skipping enriching until connection is back up")
-				continue
-			}
 			m.enrichAndSend()
 			// Measuring number of calls to `enrichAndSend` (ticks) for remembering historical endpoints
 			m.clusterEntities.RecordTick()
@@ -446,12 +415,8 @@ func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*s
 		Time:             protocompat.TimestampNow(),
 	}
 
-	var detectionContext context.Context
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		detectionContext = context.Background()
-	} else {
-		detectionContext = m.getCurrentContext()
-	}
+	// Use long-lived context for detection to continue processing during disconnects
+	detectionContext := context.Background()
 	// Before sending, run the flows through policies asynchronously (ProcessNetworkFlow creates a new goroutine for each call)
 	for _, flow := range conns {
 		m.policyDetector.ProcessNetworkFlow(detectionContext, flow)

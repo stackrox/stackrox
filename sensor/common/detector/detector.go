@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
@@ -74,13 +73,9 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
 	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
 	detectorStopper := concurrency.NewStopper()
-	netFlowQueueSize := 0
-	piQueueSize := 0
+	netFlowQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
+	piQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
 	deploymentQueueSize := 0
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		netFlowQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
-		piQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
-	}
 	if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
 		deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
 	}
@@ -274,9 +269,6 @@ func (d *detectorImpl) Stop() {
 }
 
 func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
-	if !features.SensorCapturesIntermediateEvents.Enabled() {
-		return
-	}
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
