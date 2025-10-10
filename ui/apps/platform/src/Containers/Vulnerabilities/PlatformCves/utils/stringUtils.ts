@@ -1,4 +1,4 @@
-import { ClusterType } from 'types/cluster.proto';
+import type { ClusterType } from 'types/cluster.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 
 export function displayClusterType(type: ClusterType): string {
