@@ -4,7 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,9 +14,9 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -43,20 +42,14 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*imageCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
+	result, err := pgSearch.RunSelectOneForSchema[imageCVECoreCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return 0, nil
 	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].CVECount, nil
+	return result.CVECount, nil
 }
 
 func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
@@ -73,35 +66,29 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*common.ResourceCountByImageCVESeverity
-	results, err = pgSearch.RunSelectRequestForSchema[common.ResourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
+	result, err := pgSearch.RunSelectOneForSchema[common.ResourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return &common.ResourceCountByImageCVESeverity{}, nil
-	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
-		return &common.ResourceCountByImageCVESeverity{}, err
 	}
 
 	return &common.ResourceCountByImageCVESeverity{
-		CriticalSeverityCount:        results[0].CriticalSeverityCount,
-		FixableCriticalSeverityCount: results[0].FixableCriticalSeverityCount,
+		CriticalSeverityCount:        result.CriticalSeverityCount,
+		FixableCriticalSeverityCount: result.FixableCriticalSeverityCount,
 
-		ImportantSeverityCount:        results[0].ImportantSeverityCount,
-		FixableImportantSeverityCount: results[0].FixableImportantSeverityCount,
+		ImportantSeverityCount:        result.ImportantSeverityCount,
+		FixableImportantSeverityCount: result.FixableImportantSeverityCount,
 
-		ModerateSeverityCount:        results[0].ModerateSeverityCount,
-		FixableModerateSeverityCount: results[0].FixableModerateSeverityCount,
+		ModerateSeverityCount:        result.ModerateSeverityCount,
+		FixableModerateSeverityCount: result.FixableModerateSeverityCount,
 
-		LowSeverityCount:        results[0].LowSeverityCount,
-		FixableLowSeverityCount: results[0].FixableLowSeverityCount,
+		LowSeverityCount:        result.LowSeverityCount,
+		FixableLowSeverityCount: result.FixableLowSeverityCount,
 
-		UnknownSeverityCount:        results[0].UnknownSeverityCount,
-		FixableUnknownSeverityCount: results[0].FixableUnknownSeverityCount,
+		UnknownSeverityCount:        result.UnknownSeverityCount,
+		FixableUnknownSeverityCount: result.FixableUnknownSeverityCount,
 	}, nil
 }
 
@@ -136,19 +123,17 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*imageCVECoreResponse
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, cveIDsToFilter, options))
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]CveCore, 0, len(results))
-	for _, r := range results {
+	ret := make([]CveCore, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
+	err = pgSearch.RunSelectRequestForSchemaFn[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, cveIDsToFilter, options), func(r *imageCVECoreResponse) error {
 		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
 			return r.CVEIDs[i] < r.CVEIDs[j]
 		})
 		ret = append(ret, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return ret, nil
 }
@@ -167,15 +152,16 @@ func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*deploymentResponse
-	results, err = pgSearch.RunSelectRequestForSchema[deploymentResponse](queryCtx, v.db, v.schema, q)
-	if err != nil || len(results) == 0 {
+	ret := make([]string, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
+	err = pgSearch.RunSelectRequestForSchemaFn[deploymentResponse](queryCtx, v.db, v.schema, q, func(r *deploymentResponse) error {
+		ret = append(ret, r.DeploymentID)
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
-
-	ret := make([]string, 0, len(results))
-	for _, r := range results {
-		ret = append(ret, r.DeploymentID)
+	if len(ret) == 0 {
+		return nil, nil
 	}
 	return ret, nil
 }
@@ -198,28 +184,23 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
+	ret := make([]string, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
 	if features.FlattenImageData.Enabled() {
-		var results []*imageV2Response
-		results, err = pgSearch.RunSelectRequestForSchema[imageV2Response](queryCtx, v.db, v.schema, q)
-		if err != nil || len(results) == 0 {
-			return nil, err
-		}
-
-		ret := make([]string, 0, len(results))
-		for _, r := range results {
+		err = pgSearch.RunSelectRequestForSchemaFn[imageV2Response](queryCtx, v.db, v.schema, q, func(r *imageV2Response) error {
 			ret = append(ret, r.ImageID)
-		}
-		return ret, nil
+			return nil
+		})
+	} else {
+		err = pgSearch.RunSelectRequestForSchemaFn[imageResponse](queryCtx, v.db, v.schema, q, func(r *imageResponse) error {
+			ret = append(ret, r.ImageID)
+			return nil
+		})
 	}
-	var results []*imageResponse
-	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](queryCtx, v.db, v.schema, q)
-	if err != nil || len(results) == 0 {
+	if err != nil {
 		return nil, err
 	}
-
-	ret := make([]string, 0, len(results))
-	for _, r := range results {
-		ret = append(ret, r.ImageID)
+	if len(ret) == 0 {
+		return nil, nil
 	}
 	return ret, nil
 }
@@ -303,14 +284,12 @@ func (v *imageCVECoreViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query)
 	// TODO(@charmik) : Update the SQL query generator to not include 'ORDER BY' and 'GROUP BY' fields in the select clause (before where).
 	//  SQL syntax does not need those fields in the select clause. The below query for example would work fine
 	//  "SELECT JSONB_AGG(DISTINCT(image_cves.Id)) AS cve_id FROM image_cves GROUP BY image_cves.CveBaseInfo_Cve ORDER BY MAX(image_cves.Cvss) DESC LIMIT 20;"
-	var identifiersList []*imageCVECoreResponse
-	identifiersList, err := pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q))
+	err := pgSearch.RunSelectRequestForSchemaFn[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q), func(r *imageCVECoreResponse) error {
+		cveIDsToFilter = append(cveIDsToFilter, r.CVEIDs...)
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	for _, idList := range identifiersList {
-		cveIDsToFilter = append(cveIDsToFilter, idList.CVEIDs...)
 	}
 
 	return cveIDsToFilter, nil

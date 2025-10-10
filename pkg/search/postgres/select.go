@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/utils"
@@ -40,16 +39,38 @@ func newDBScanAPI(opts ...dbscan.APIOption) *dbscan.API {
 	return api
 }
 
-// RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
+// RunSelectOneForSchema executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
-// Deprecated: Use RunSelectRequestForSchemaFn
-func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
-	result := make([]*T, 0, paginated.GetLimit(q.Pagination.GetLimit(), 100))
-	err := RunSelectRequestForSchemaFn(ctx, db, schema, q, func(t *T) error {
-		result = append(result, t)
-		return nil
+func RunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) (*T, error) {
+	var query *query
+	var err error
+	// Add this to be safe and convert panics to errors,
+	// since we do a lot of casting and other operations that could potentially panic in this code.
+	// Panics are expected ONLY in the event of a programming error, all foreseeable errors are handled
+	// the usual way.
+	defer func() {
+		if r := recover(); r != nil {
+			if query != nil {
+				log.Errorf("Query issue: %s: %v", query.AsSQL(), r)
+			} else {
+				log.Errorf("Unexpected error running search request: %v", r)
+			}
+			debug.PrintStack()
+			err = fmt.Errorf("unexpected error running search request: %v", r)
+		}
+	}()
+
+	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT)
+	if err != nil {
+		return nil, err
+	}
+	// A nil-query implies no results.
+	if query == nil {
+		return nil, nil
+	}
+	return pgutils.Retry2(ctx, func() (*T, error) {
+		return retryableRunSelectOneForSchema[T](ctx, db, query)
 	})
-	return result, err
 }
 
 // RunSelectRequestForSchemaFn executes a select request against the database for given schema. The input query must
@@ -145,6 +166,26 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		return nil, err
 	}
 	return parsedQuery, nil
+}
+
+func retryableRunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, query *query) (*T, error) {
+	if len(query.SelectedFields) == 0 {
+		return nil, errors.New("select fields required for select query")
+	}
+
+	queryStr := query.AsSQL()
+
+	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error executing query %s", queryStr)
+	}
+	defer rows.Close()
+
+	var row T
+	if err := scanAPI.ScanOne(&row, rows); err != nil {
+		return nil, errors.Wrap(err, "error scanning rows")
+	}
+	return &row, pgutils.ErrNilIfNoRows(err)
 }
 
 func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, query *query, fn func(*T) error) error {

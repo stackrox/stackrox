@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 )
@@ -69,19 +70,17 @@ func (v *imageComponentFlatViewImpl) Get(ctx context.Context, q *v1.Query) ([]Co
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*imageComponentFlatResponse
-	results, err = pgSearch.RunSelectRequestForSchema[imageComponentFlatResponse](queryCtx, v.db, v.schema, withSelectComponentCoreResponseQuery(cloned))
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]ComponentFlat, 0, len(results))
-	for _, r := range results {
+	ret := make([]ComponentFlat, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
+	err = pgSearch.RunSelectRequestForSchemaFn[imageComponentFlatResponse](queryCtx, v.db, v.schema, withSelectComponentCoreResponseQuery(cloned), func(r *imageComponentFlatResponse) error {
 		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.ComponentIDs, func(i, j int) bool {
 			return r.ComponentIDs[i] < r.ComponentIDs[j]
 		})
 		ret = append(ret, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return ret, nil
 }
