@@ -11,7 +11,7 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 // Next available tag: 24
 message Alert {

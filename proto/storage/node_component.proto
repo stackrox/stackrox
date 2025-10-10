@@ -5,7 +5,7 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 message NodeComponent {
   string id = 1; // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"

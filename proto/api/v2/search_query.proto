@@ -7,7 +7,7 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 // RawQuery represents the search query string.
 // The format of the query string is "<field name>:<value,value,...>+<field name>:<value, value,...>+..."

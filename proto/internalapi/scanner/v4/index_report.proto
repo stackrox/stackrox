@@ -9,7 +9,7 @@ import "internalapi/scanner/v4/common.proto";
 import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/scanner/v4;v4";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 message IndexReport {
   string hash_id = 1;

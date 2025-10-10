@@ -8,7 +8,7 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/compliance;compliance";
 option java_package = "io.stackrox.proto.compliance";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 // Next Available Tag: 2
 message GZIPDataChunk {

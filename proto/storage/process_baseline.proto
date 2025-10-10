@@ -8,7 +8,7 @@ import "google/protobuf/go_features.proto";
 option cc_enable_arenas = true;
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 // These protobuf messages replace the family of existing ProcessWhitelists* ones
 // and are identical to them except named differently. Reason: inclusive language.

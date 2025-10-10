@@ -12,7 +12,7 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./api/integrations;integrations";
 option java_package = "io.stackrox.proto.api.integrations";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 // SplunkViolationsResponse is what StackRox Platform returns on the request from Splunk Technology Addon for StackRox.
 message SplunkViolationsResponse {

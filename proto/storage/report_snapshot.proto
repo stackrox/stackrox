@@ -11,7 +11,7 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 // ReportSnapshot stores the snapshot of a report job. It stores a projection of ReportConfiguration, collection,
 // vulnerability filters, notifiers, etc used to generate a report. It also stores the final status of the report job.

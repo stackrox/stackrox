@@ -4,7 +4,7 @@ package localSensor;
 
 import "storage/policy.proto";
 import "google/protobuf/go_features.proto";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 message LocalSensorPolicies {
   repeated storage.Policy policies = 1;

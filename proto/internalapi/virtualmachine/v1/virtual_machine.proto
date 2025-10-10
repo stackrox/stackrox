@@ -4,7 +4,7 @@ package virtualmachine.v1;
 import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/virtualmachine/v1;v1";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 // VirtualMachine represents kube-virt k8s virtual machine resources.
 message VirtualMachine {

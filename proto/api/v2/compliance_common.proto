@@ -8,7 +8,7 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 message ComplianceRule {
   string name = 1;

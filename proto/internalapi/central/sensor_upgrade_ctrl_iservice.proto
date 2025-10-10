@@ -6,7 +6,7 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/central;central";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 message UpgradeCheckInFromUpgraderRequest {
   string cluster_id = 5;

@@ -8,7 +8,7 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 // NetworkBaselineConnectionProperties represents information about a baseline connection
 // next available tag: 4

@@ -6,7 +6,7 @@ import "internalapi/virtualmachine/v1/index_report.proto";
 import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/sensor;sensor";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 message UpsertVirtualMachineIndexReportRequest {
   virtualmachine.v1.IndexReport index_report = 1;

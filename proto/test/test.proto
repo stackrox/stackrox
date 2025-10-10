@@ -8,7 +8,7 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./test;test";
 option java_package = "io.stackrox.proto.test";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 message TestCloneSubMessage {
   int32 int32 = 1;

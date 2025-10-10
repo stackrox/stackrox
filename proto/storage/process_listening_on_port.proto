@@ -9,7 +9,7 @@ import "google/protobuf/go_features.proto";
 
 option cc_enable_arenas = true;
 option go_package = "./storage;storage";
-option features.(pb.go).api_level = API_HYBRID;
+option features.(pb.go).api_level = API_OPAQUE;
 
 // The API returns an array of these
 message ProcessListeningOnPort {
