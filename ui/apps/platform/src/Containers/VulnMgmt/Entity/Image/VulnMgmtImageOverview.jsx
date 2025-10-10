@@ -36,7 +36,7 @@ const emptyImage = {
     name: {},
     priority: 0,
     scan: {
-        components: [],
+        imageComponents: [],
     },
     topVuln: {},
     vulnCount: 0,
@@ -46,11 +46,10 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
     const { metadata, scan, topVuln, priority, notes } = safeData;
-    safeData.componentCount = scan?.components?.length || 0;
+    safeData.componentCount = scan?.imageComponents?.length || 0;
 
-    // TODO: replace this hack with feature flag selection of components or imageComponents,
-    //       after `layerIndex` is available on ImageComponent
-    safeData.imageComponentCount = scan?.components?.length || 0;
+    // Updated to use imageComponents now that layerIndex is available on ImageComponent
+    safeData.imageComponentCount = scan?.imageComponents?.length || 0;
 
     const layers = metadata ? cloneDeep(metadata.v1.layers) : [];
     const fixableCves = [];
@@ -61,16 +60,21 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
             layers[i].components = [];
             layers[i].cvesCount = 0;
         });
-        scan.components.forEach((component) => {
-            component.vulns.forEach((cve) => {
+        scan.imageComponents.forEach((component) => {
+            component.imageVulnerabilities.forEach((cve) => {
                 if (cve.isFixable) {
                     fixableCves.push(cve);
                 }
             });
 
             if (component.layerIndex !== undefined && layers[component.layerIndex]) {
-                layers[component.layerIndex].components.push(component);
-                layers[component.layerIndex].cvesCount += component.vulns.length;
+                // Transform imageVulnerabilities to vulns for CVETable compatibility
+                const transformedComponent = {
+                    ...component,
+                    vulns: component.imageVulnerabilities || []
+                };
+                layers[component.layerIndex].components.push(transformedComponent);
+                layers[component.layerIndex].cvesCount += component.imageVulnerabilities.length;
             }
         });
     }
