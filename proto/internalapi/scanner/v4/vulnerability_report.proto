@@ -2,7 +2,7 @@
 // minimal differences. See https://github.com/quay/claircore for comments
 // on the fields.
 
-syntax = "proto3";
+edition = "2023";  // successor to proto2 and proto3
 
 package scanner.v4;
 

@@ -1,4 +1,4 @@
-syntax = "proto3";
+edition = "2023";  // successor to proto2 and proto3
 
 // This is an internal service which contains tools intended to be used only for testing.
 // It will NOT be available in Central in production builds.

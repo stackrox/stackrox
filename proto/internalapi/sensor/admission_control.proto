@@ -1,4 +1,4 @@
-syntax = "proto3";
+edition = "2023";  // successor to proto2 and proto3
 
 package sensor;
 
