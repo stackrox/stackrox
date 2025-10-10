@@ -60,9 +60,9 @@ message ComplianceReturn {
   string scrape_id = 2;
 
   GZIPDataChunk docker_data = 3;
-  map<string, CommandLine> command_lines = 4;
-  map<string, File> files = 5;
-  map<string, File> systemd_files = 6;
+  map<string, CommandLine> command_lines = 4 [lazy = true];
+  map<string, File> files = 5 [lazy = true];
+  map<string, File> systemd_files = 6 [lazy = true];
 
   ContainerRuntimeInfo container_runtime_info = 9;
 

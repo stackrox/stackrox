@@ -76,7 +76,7 @@ message PrometheusMetrics {
     uint32 gathering_period_minutes = 1;
     // Metric descriptors is a map of metric names to the list of allowed
     // labels.
-    map<string, Labels> descriptors = 2;
+    map<string, Labels> descriptors = 2 [lazy = true];
   }
   Group image_vulnerabilities = 1;
   Group policy_violations = 2;

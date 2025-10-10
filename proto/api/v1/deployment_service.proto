@@ -19,7 +19,7 @@ message DeploymentLabelsResponse {
   message LabelValues {
     repeated string values = 1;
   }
-  map<string, LabelValues> labels = 1;
+  map<string, LabelValues> labels = 1 [lazy = true];
   repeated string values = 2;
 }
 

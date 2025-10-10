@@ -12,11 +12,11 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message Contents {
   repeated Package packagesDEPRECATED = 1 [deprecated = true];
-  map<string, Package> packages = 5;
+  map<string, Package> packages = 5 [lazy = true];
   repeated Distribution distributionsDEPRECATED = 2 [deprecated = true];
-  map<string, Distribution> distributions = 6;
+  map<string, Distribution> distributions = 6 [lazy = true];
   repeated Repository repositoriesDEPRECATED = 3 [deprecated = true];
-  map<string, Repository> repositories = 7;
+  map<string, Repository> repositories = 7 [lazy = true];
   map<string, Environment.List> environmentsDEPRECATED = 4 [deprecated = true];
   map<string, Environment.List> environments = 8 [lazy = true];
 }

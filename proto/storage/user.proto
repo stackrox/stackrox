@@ -34,7 +34,7 @@ message UserInfo {
   // hence only includes role name and associated permissions.
   message Role {
     string name = 1;
-    map<string, Access> resource_to_access = 3;
+    map<string, Access> resource_to_access = 3 [lazy = true];
 
     reserved 2; // global_access, not in use any more, treat as NO_ACCESS
   }
@@ -45,7 +45,7 @@ message UserInfo {
   message ResourceToAccess {
     reserved 1; // name, likely not used in permission checking
     reserved 2; // global_access, phased out
-    map<string, Access> resource_to_access = 3;
+    map<string, Access> resource_to_access = 3 [lazy = true];
   }
 
   string username = 1;

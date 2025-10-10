@@ -52,7 +52,7 @@ message PermissionSet {
   string name = 2; // @gotags: sql:"unique"
   string description = 3;
 
-  map<string, Access> resource_to_access = 4;
+  map<string, Access> resource_to_access = 4 [lazy = true];
 
   Traits traits = 5;
 }

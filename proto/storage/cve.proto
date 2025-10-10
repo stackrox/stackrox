@@ -110,7 +110,7 @@ message CVE {
   google.protobuf.Timestamp suppress_activation = 16;
   google.protobuf.Timestamp suppress_expiry = 17; // @gotags: search:"CVE Snooze Expiry,hidden"
 
-  map<string, DistroSpecific> distro_specifics = 19;
+  map<string, DistroSpecific> distro_specifics = 19 [lazy = true];
   VulnerabilitySeverity severity = 20; // @gotags: search:"Severity"
 }
 

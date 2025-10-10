@@ -86,7 +86,7 @@ message NetworkPolicyInSimulation {
 message NetworkNodeDiff {
   repeated string policy_ids = 1;
   map<int32, NetworkEdgePropertiesBundle> DEPRECATED_out_edges = 2 [deprecated = true];
-  map<string, NetworkEdgePropertiesBundle> out_edges = 5;
+  map<string, NetworkEdgePropertiesBundle> out_edges = 5 [lazy = true];
 
   bool non_isolated_ingress = 3;
   bool non_isolated_egress = 4;
@@ -94,7 +94,7 @@ message NetworkNodeDiff {
 
 message NetworkGraphDiff {
   map<int32, NetworkNodeDiff> DEPRECATED_node_diffs = 1 [deprecated = true];
-  map<string, NetworkNodeDiff> node_diffs = 2;
+  map<string, NetworkNodeDiff> node_diffs = 2 [lazy = true];
 }
 
 message SimulateNetworkGraphResponse {

@@ -183,7 +183,7 @@ message Cluster {
   SensorDeploymentIdentification most_recent_sensor_id = 26;
 
   // For internal use only.
-  map<string, AuditLogFileState> audit_log_state = 28;
+  map<string, AuditLogFileState> audit_log_state = 28 [lazy = true];
 
   string init_bundle_id = 29;
   ManagerType managed_by = 30;

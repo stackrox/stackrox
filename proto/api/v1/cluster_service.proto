@@ -49,7 +49,7 @@ message ClusterDefaultsResponse {
 message ClustersList {
   repeated storage.Cluster clusters = 1 [lazy = true];
   // Maps 'UNHEALTHY' clusters' IDs to their retention info
-  map<string, DecommissionedClusterRetentionInfo> cluster_id_to_retention_info = 2;
+  map<string, DecommissionedClusterRetentionInfo> cluster_id_to_retention_info = 2 [lazy = true];
 }
 
 message GetClustersRequest {

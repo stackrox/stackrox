@@ -44,7 +44,7 @@ message ReconciliationStatsByClusterResponse {
   message ReconciliationStatsForCluster {
     string cluster_id = 1;
     bool reconciliation_done = 2;
-    map<string, int32> deleted_objects_by_type = 3;
+    map<string, int32> deleted_objects_by_type = 3 [lazy = true];
   }
   repeated ReconciliationStatsForCluster stats = 1 [lazy = true];
 }

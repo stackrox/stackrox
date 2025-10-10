@@ -227,7 +227,7 @@ message SearchResult {
   message Matches {
     repeated string values = 1;
   }
-  map<string, Matches> field_to_matches = 4;
+  map<string, Matches> field_to_matches = 4 [lazy = true];
   double score = 5;
   // Location is intended to be a unique, yet human readable,
   // identifier for the result. For example, for a deployment,

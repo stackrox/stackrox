@@ -9,5 +9,5 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message Hash {
   string cluster_id = 1; // @gotags: sql:"pk"
-  map<string, uint64> hashes = 2;
+  map<string, uint64> hashes = 2 [lazy = true];
 }

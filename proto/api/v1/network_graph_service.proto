@@ -38,7 +38,7 @@ message NetworkNode {
   bool non_isolated_egress = 6;
   bool query_match = 7;
 
-  map<int32, NetworkEdgePropertiesBundle> out_edges = 4;
+  map<int32, NetworkEdgePropertiesBundle> out_edges = 4 [lazy = true];
 }
 
 message NetworkGraphRequest {

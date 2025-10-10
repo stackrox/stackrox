@@ -25,7 +25,7 @@ message TestClone {
   repeated int32 int_slice = 1;
   repeated string string_slice = 2;
   repeated TestCloneSubMessage sub_messages = 3;
-  map<string, TestCloneSubMessage> message_map = 4;
+  map<string, TestCloneSubMessage> message_map = 4 [lazy = true];
   map<string, string> string_map = 5 [lazy = true];
   repeated CloneEnum enum_slice = 6;
   google.protobuf.Timestamp ts = 7;
@@ -37,7 +37,7 @@ message TestClone {
   }
   google.protobuf.Any any = 11;
 
-  map<string, bytes> bytes_map = 12;
+  map<string, bytes> bytes_map = 12 [lazy = true];
   repeated bytes bytes_slice = 13;
   bytes bytes = 14;
   TestCloneSubMessage sub_message = 15;
