@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -337,7 +338,8 @@ func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 		return
 	}
 
-	*entity = storage.NetworkEntityInfo{
+	proto.Reset(entity)
+	proto.Merge(entity, &storage.NetworkEntityInfo{
 		Id:   id.String(),
 		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 		Desc: &storage.NetworkEntityInfo_ExternalSource_{
@@ -350,5 +352,5 @@ func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 				},
 			},
 		},
-	}
+	})
 }

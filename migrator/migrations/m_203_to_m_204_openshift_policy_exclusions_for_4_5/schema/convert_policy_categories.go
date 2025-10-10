@@ -12,9 +12,9 @@ func ConvertPolicyCategoryFromProto(obj *storage.PolicyCategory) (*PolicyCategor
 		return nil, err
 	}
 	model := &PolicyCategories{
-		ID:                 obj.GetId(),
-		Name:               obj.GetName(),
-		Serialized:         serialized,
+		ID:         obj.GetId(),
+		Name:       obj.GetName(),
+		Serialized: serialized,
 	}
 	return model, nil
 }
