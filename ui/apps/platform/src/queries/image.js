@@ -29,11 +29,11 @@ export const IMAGE_FRAGMENT = gql`
             tag
         }
         scan {
-            components {
+            imageComponents {
                 name
                 layerIndex
                 version
-                vulns {
+                imageVulnerabilities {
                     cve
                     cvss
                     link

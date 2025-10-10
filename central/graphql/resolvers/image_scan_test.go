@@ -103,6 +103,11 @@ func (s *ImageScanResolverTestSuite) TestGetImagesWithScan() {
 		Return([]*storage.Image{cloned}, nil)
 	s.imageDataStore.EXPECT().GetImagesBatch(gomock.Any(), gomock.Any()).
 		Return([]*storage.Image{img}, nil)
+	if features.FlattenCVEData.Enabled() {
+		s.imageComponentFlatView.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, nil)
+		s.imageComponentDataStoreV2.EXPECT().SearchRawImageComponents(gomock.Any(), gomock.Any()).
+			Return(nil, nil)
+	}
 	response := s.schema.Exec(s.ctx, imageWithScanQuery, "getImages", nil)
 	s.Len(response.Errors, 0)
 }
