@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/process/normalize"
@@ -98,17 +97,8 @@ func (p *Pipeline) Shutdown() {
 
 // Notify allows the component state to be propagated to the pipeline
 func (p *Pipeline) Notify(e common.SensorComponentEvent) {
-	// Do not cancel the context if we are in offline v3.
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		return
-	}
+	// With event buffering enabled, we use long-lived contexts and don't cancel on disconnect
 	log.Info(common.LogSensorComponentEvent(e))
-	switch e {
-	case common.SensorComponentEventCentralReachable:
-		p.createNewContext()
-	case common.SensorComponentEventOfflineMode:
-		p.cancelCurrentContext()
-	}
 }
 
 func (p *Pipeline) createNewContext() {
@@ -118,13 +108,8 @@ func (p *Pipeline) createNewContext() {
 }
 
 func (p *Pipeline) getCurrentContext() context.Context {
-	// If we are in offline v3 the context won't be cancelled on disconnect, so we can just return Background here.
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		return context.Background()
-	}
-	p.msgCtxMux.Lock()
-	defer p.msgCtxMux.Unlock()
-	return p.msgCtx
+	// Use long-lived context that persists across disconnects for event buffering
+	return context.Background()
 }
 
 func (p *Pipeline) cancelCurrentContext() {
@@ -179,23 +164,15 @@ func (p *Pipeline) sendIndicatorEvent() {
 }
 
 func (p *Pipeline) sendToCentral(msg *message.ExpiringMessage) {
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		select {
-		case p.indicators <- msg:
-		case <-p.stopper.Flow().StopRequested():
-			return
-		default:
-			metrics.IncrementProcessSignalDroppedCount()
-			log.Errorf("The output channel is full. Dropping process indicator event for deployment %s with id %s and process name %s",
-				msg.GetEvent().GetProcessIndicator().GetDeploymentId(),
-				msg.GetEvent().GetProcessIndicator().GetId(),
-				msg.GetEvent().GetProcessIndicator().GetSignal().GetName())
-		}
-	} else {
-		select {
-		case p.indicators <- msg:
-		case <-p.stopper.Flow().StopRequested():
-			return
-		}
+	select {
+	case p.indicators <- msg:
+	case <-p.stopper.Flow().StopRequested():
+		return
+	default:
+		metrics.IncrementProcessSignalDroppedCount()
+		log.Errorf("The output channel is full. Dropping process indicator event for deployment %s with id %s and process name %s",
+			msg.GetEvent().GetProcessIndicator().GetDeploymentId(),
+			msg.GetEvent().GetProcessIndicator().GetId(),
+			msg.GetEvent().GetProcessIndicator().GetSignal().GetName())
 	}
 }
