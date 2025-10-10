@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -24,7 +23,6 @@ const (
 )
 
 func TestSendNetworkFlows(t *testing.T) {
-	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
 	t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "true")
 	suite.Run(t, new(sendNetflowsSuite))
 }
