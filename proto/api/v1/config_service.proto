@@ -34,17 +34,17 @@ message VulnerabilityExceptionConfig {
     // This allows users to set expiry interval based on number of days.
     repeated DayOption day_options = 1 [lazy = true];
     // This allows users to set vulnerability request expiry based on the CVEs.
-    FixableCVEOptions fixable_cve_options = 2;
+    FixableCVEOptions fixable_cve_options = 2 [lazy = true];
     // This option, if true, allows UI to show a custom date picker for setting expiry date.
     bool custom_date = 3;
     bool indefinite = 4;
   }
 
-  ExpiryOptions expiry_options = 1;
+  ExpiryOptions expiry_options = 1 [lazy = true];
 }
 
 message GetVulnerabilityExceptionConfigResponse {
-  VulnerabilityExceptionConfig config = 1;
+  VulnerabilityExceptionConfig config = 1 [lazy = true];
 }
 
 message UpdateVulnerabilityExceptionConfigRequest {

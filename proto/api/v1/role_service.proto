@@ -75,7 +75,7 @@ message ComputeEffectiveAccessScopeRequest {
   }
 
   Detail detail = 1;
-  Payload access_scope = 2;
+  Payload access_scope = 2 [lazy = true];
 }
 
 // CreateRoleRequest unites name we take from the URL path and role body in the same structure.
@@ -86,7 +86,7 @@ message CreateRoleRequest {
 }
 
 message GetClustersForPermissionsRequest {
-  Pagination pagination = 1;
+  Pagination pagination = 1 [lazy = true];
   repeated string permissions = 2;
 }
 

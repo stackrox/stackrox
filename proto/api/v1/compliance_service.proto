@@ -18,7 +18,7 @@ message ComplianceAggregationRequest {
   repeated storage.ComplianceAggregation.Scope group_by = 1;
   storage.ComplianceAggregation.Scope unit = 2;
 
-  RawQuery where = 3;
+  RawQuery where = 3 [lazy = true];
 }
 
 message ComplianceStandardMetadata {
@@ -59,13 +59,13 @@ message ComplianceControl {
 }
 
 message ComplianceStandard {
-  ComplianceStandardMetadata metadata = 1;
+  ComplianceStandardMetadata metadata = 1 [lazy = true];
   repeated ComplianceControlGroup groups = 2 [lazy = true]; // @gotags: search:"-"
   repeated ComplianceControl controls = 3 [lazy = true]; // @gotags: search:"-"
 }
 
 message GetComplianceStandardResponse {
-  ComplianceStandard standard = 1;
+  ComplianceStandard standard = 1 [lazy = true];
 }
 
 message GetComplianceStandardsResponse {

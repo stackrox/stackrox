@@ -54,7 +54,7 @@ message AdministrationEvent {
     // to be set, depending on the context of the administration event.
     string name = 3;
   }
-  Resource resource = 7;
+  Resource resource = 7 [lazy = true];
 
   // Occurrences associated with the event. When events may occur multiple times, the
   // occurrences track the amount.
@@ -105,7 +105,7 @@ message AdministrationEventsFilter {
 
 message CountAdministrationEventsRequest {
   // For filtering the events based on the requested fields.
-  AdministrationEventsFilter filter = 1;
+  AdministrationEventsFilter filter = 1 [lazy = true];
 }
 
 message CountAdministrationEventsResponse {
@@ -114,15 +114,15 @@ message CountAdministrationEventsResponse {
 }
 
 message GetAdministrationEventResponse {
-  AdministrationEvent event = 1;
+  AdministrationEvent event = 1 [lazy = true];
 }
 
 message ListAdministrationEventsRequest {
   // For dividing the events response into chunks.
-  Pagination pagination = 1;
+  Pagination pagination = 1 [lazy = true];
 
   // For filtering the events based on the requested fields.
-  AdministrationEventsFilter filter = 2;
+  AdministrationEventsFilter filter = 2 [lazy = true];
 }
 
 message ListAdministrationEventsResponse {

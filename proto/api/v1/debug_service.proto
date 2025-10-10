@@ -74,16 +74,16 @@ message AuthorizationTraceResponse {
 
     string scope_checker_type = 1;
     oneof authorizer {
-      BuiltInAuthorizer built_in = 2;
+      BuiltInAuthorizer built_in = 2 [lazy = true];
     }
   }
 
   google.protobuf.Timestamp arrived_at = 1 [lazy = true];
   google.protobuf.Timestamp processed_at = 2 [lazy = true];
-  Request request = 3;
-  Response response = 4;
-  User user = 5;
-  Trace trace = 6;
+  Request request = 3 [lazy = true];
+  Response response = 4 [lazy = true];
+  User user = 5 [lazy = true];
+  Trace trace = 6 [lazy = true];
 }
 
 // APIs for debugging.

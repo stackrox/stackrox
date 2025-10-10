@@ -24,7 +24,7 @@ message GetNamespacesResponse {
 }
 
 message GetNamespaceRequest {
-  RawQuery query = 1;
+  RawQuery query = 1 [lazy = true];
 }
 
 service NamespaceService {

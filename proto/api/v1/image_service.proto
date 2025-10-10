@@ -52,7 +52,7 @@ message ScanImageInternalRequest {
   storage.ContainerImage image = 1 [lazy = true];
   reserved 2;
   bool cached_only = 3;
-  Source source = 4;
+  Source source = 4 [lazy = true];
 }
 
 message ScanImageInternalResponse {
@@ -89,7 +89,7 @@ message UpdateLocalScanStatusInternalRequest {
 }
 
 message DeleteImagesRequest {
-  RawQuery query = 1;
+  RawQuery query = 1 [lazy = true];
   bool confirm = 2;
 }
 

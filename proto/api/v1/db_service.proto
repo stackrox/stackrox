@@ -29,10 +29,10 @@ message DBRestoreRequestHeader {
   // A manifest of all the files in the restore data. The remainder of a restore request body (without the header),
   // independent of the export format, is always a concatenation of all encoded file data, with no separators in
   // between (determined purely by the order and sizes listed in the manifest).
-  DBExportManifest manifest = 2;
+  DBExportManifest manifest = 2 [lazy = true];
 
   // Information about the local file with which the restore was initiated. Optional.
-  LocalFileInfo local_file = 3;
+  LocalFileInfo local_file = 3 [lazy = true];
 }
 
 // The metadata of an ongoing or completed restore process. This is the *static* metadata, which will not change
@@ -41,7 +41,7 @@ message DBRestoreProcessMetadata {
   // An ID identifying the restore process. Auto-assigned.
   string id = 1;
   // The header with which the restore was initiated.
-  DBRestoreRequestHeader header = 2;
+  DBRestoreRequestHeader header = 2 [lazy = true];
 
   // The time at which the restore process was started.
   google.protobuf.Timestamp start_time = 3 [lazy = true];
@@ -62,11 +62,11 @@ message DBRestoreProcessStatus {
     int64 pos = 1;
   }
 
-  DBRestoreProcessMetadata metadata = 1;
+  DBRestoreProcessMetadata metadata = 1 [lazy = true];
 
   string attempt_id = 2;
   State state = 3;
-  ResumeInfo resume_info = 4; // only populated if state is PAUSED
+  ResumeInfo resume_info = 4 [lazy = true]; // only populated if state is PAUSED
   string error = 5; // only populated when state is COMPLETED
 
   int64 bytes_read = 6; // Payload bytes read so far (approximate)
@@ -119,7 +119,7 @@ message GetDBExportCapabilitiesResponse {
 }
 
 message GetActiveDBRestoreProcessResponse {
-  DBRestoreProcessStatus active_status = 1;
+  DBRestoreProcessStatus active_status = 1 [lazy = true];
 }
 
 message InterruptDBRestoreProcessRequest {

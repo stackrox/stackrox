@@ -42,7 +42,7 @@ message GetNetworkGraphRequest {
 
   // If set to true, include port-level information in the network policy graph.
   bool include_ports = 3;
-  NetworkGraphScope scope = 4;
+  NetworkGraphScope scope = 4 [lazy = true];
 }
 
 message SimulateNetworkGraphRequest {
@@ -53,7 +53,7 @@ message SimulateNetworkGraphRequest {
   // If set to true, include port-level information in the network policy graph.
   bool include_ports = 4;
   bool include_node_diff = 5;
-  NetworkGraphScope scope = 6;
+  NetworkGraphScope scope = 6 [lazy = true];
 }
 
 message ApplyNetworkPolicyYamlRequest {
@@ -98,11 +98,11 @@ message NetworkGraphDiff {
 }
 
 message SimulateNetworkGraphResponse {
-  NetworkGraph simulated_graph = 1;
+  NetworkGraph simulated_graph = 1 [lazy = true];
   repeated NetworkPolicyInSimulation policies = 2 [lazy = true];
 
-  NetworkGraphDiff added = 3;
-  NetworkGraphDiff removed = 4;
+  NetworkGraphDiff added = 3 [lazy = true];
+  NetworkGraphDiff removed = 4 [lazy = true];
 }
 
 message GetNetworkGraphEpochRequest {

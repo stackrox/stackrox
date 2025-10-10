@@ -31,13 +31,13 @@ message CloudSource {
     // Used for client authentication in combination with client_id.
     string client_secret = 3; // @gotags: scrub:"always"
   }
-  Credentials credentials = 4;
+  Credentials credentials = 4 [lazy = true];
 
   bool skip_test_integration = 5;
 
   oneof Config {
-    PaladinCloudConfig paladin_cloud = 6;
-    OCMConfig ocm = 7;
+    PaladinCloudConfig paladin_cloud = 6 [lazy = true];
+    OCMConfig ocm = 7 [lazy = true];
   }
 }
 
@@ -66,7 +66,7 @@ message CloudSourcesFilter {
 
 message CountCloudSourcesRequest {
   // Filters cloud sources based on the requested fields.
-  CloudSourcesFilter filter = 1;
+  CloudSourcesFilter filter = 1 [lazy = true];
 }
 
 message CountCloudSourcesResponse {
@@ -78,15 +78,15 @@ message GetCloudSourceRequest {
 }
 
 message GetCloudSourceResponse {
-  CloudSource cloud_source = 1;
+  CloudSource cloud_source = 1 [lazy = true];
 }
 
 message ListCloudSourcesRequest {
   // Divides the response into chunks.
-  Pagination pagination = 1;
+  Pagination pagination = 1 [lazy = true];
 
   // Filters cloud sources based on the requested fields.
-  CloudSourcesFilter filter = 2;
+  CloudSourcesFilter filter = 2 [lazy = true];
 }
 
 message ListCloudSourcesResponse {
@@ -94,15 +94,15 @@ message ListCloudSourcesResponse {
 }
 
 message CreateCloudSourceRequest {
-  CloudSource cloud_source = 1;
+  CloudSource cloud_source = 1 [lazy = true];
 }
 
 message CreateCloudSourceResponse {
-  CloudSource cloud_source = 1;
+  CloudSource cloud_source = 1 [lazy = true];
 }
 
 message UpdateCloudSourceRequest {
-  CloudSource cloud_source = 1;
+  CloudSource cloud_source = 1 [lazy = true];
   // If true, cloud_source must include valid credentials.
   // If false, the resource must already exist and
   // credentials in cloud_source are ignored.
@@ -114,7 +114,7 @@ message DeleteCloudSourceRequest {
 }
 
 message TestCloudSourceRequest {
-  CloudSource cloud_source = 1;
+  CloudSource cloud_source = 1 [lazy = true];
   // If true, cloud_source must include valid credentials.
   // If false, the resource must already exist and
   // credentials in cloud_source are ignored.

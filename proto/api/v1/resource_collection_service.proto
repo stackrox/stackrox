@@ -20,12 +20,12 @@ message ListCollectionSelectorsResponse {
 
 message GetCollectionRequest {
   string id = 1;
-  CollectionDeploymentMatchOptions options = 2;
+  CollectionDeploymentMatchOptions options = 2 [lazy = true];
 }
 
 message CollectionDeploymentMatchOptions {
   bool with_matches = 1;
-  RawQuery filter_query = 2;
+  RawQuery filter_query = 2 [lazy = true];
 }
 
 message GetCollectionResponse {
@@ -34,7 +34,7 @@ message GetCollectionResponse {
 }
 
 message GetCollectionCountRequest {
-  RawQuery query = 1;
+  RawQuery query = 1 [lazy = true];
 }
 
 message GetCollectionCountResponse {
@@ -70,7 +70,7 @@ message DryRunCollectionRequest {
   string description = 3;
   repeated storage.ResourceSelector resource_selectors = 4 [lazy = true];
   repeated string embedded_collection_ids = 5;
-  CollectionDeploymentMatchOptions options = 6;
+  CollectionDeploymentMatchOptions options = 6 [lazy = true];
 }
 
 message DryRunCollectionResponse {
@@ -78,7 +78,7 @@ message DryRunCollectionResponse {
 }
 
 message ListCollectionsRequest {
-  RawQuery query = 1;
+  RawQuery query = 1 [lazy = true];
 }
 
 message ListCollectionsResponse {

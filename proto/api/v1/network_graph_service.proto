@@ -46,7 +46,7 @@ message NetworkGraphRequest {
   string query = 2;
   google.protobuf.Timestamp since = 3 [lazy = true];
   bool include_ports = 4;
-  NetworkGraphScope scope = 5;
+  NetworkGraphScope scope = 5 [lazy = true];
   bool include_policies = 6;
 }
 
@@ -79,7 +79,7 @@ message GetExternalNetworkFlowsRequest {
   string entity_id = 2;
   string query = 3;
   google.protobuf.Timestamp since = 4 [lazy = true];
-  Pagination pagination = 5;
+  Pagination pagination = 5 [lazy = true];
 }
 
 message GetExternalNetworkFlowsResponse {
@@ -92,7 +92,7 @@ message GetExternalNetworkFlowsMetadataRequest {
   string cluster_id = 1;
   string query = 2;
   google.protobuf.Timestamp since = 3 [lazy = true];
-  Pagination pagination = 4;
+  Pagination pagination = 4 [lazy = true];
 }
 
 message ExternalNetworkFlowMetadata {

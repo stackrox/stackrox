@@ -11,7 +11,7 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message GetUpgradeStatusResponse {
-  CentralUpgradeStatus upgradeStatus = 1;
+  CentralUpgradeStatus upgradeStatus = 1 [lazy = true];
 }
 
 service CentralHealthService {

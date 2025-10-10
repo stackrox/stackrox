@@ -109,7 +109,7 @@ enum SearchDataType {
 // RawQuery is used in ListAPIs to search for a particular object.
 message RawQuery {
   string query = 1;
-  Pagination pagination = 2;
+  Pagination pagination = 2 [lazy = true];
 }
 
 // RawSearchRequest is used to scope a given search in a specific category.
@@ -128,7 +128,7 @@ message QuerySortOption {
     // of field+search_after values in specified sorting order will be returned.
     string search_after = 3;
   }
-  AggregateBy aggregate_by = 4;
+  AggregateBy aggregate_by = 4 [lazy = true];
 }
 
 message QueryField {
@@ -139,12 +139,12 @@ message QueryField {
 
 message QuerySelectFilter {
   string name = 1;
-  Query query = 2;
+  Query query = 2 [lazy = true];
 }
 
 message QuerySelect {
-  QueryField field = 1;
-  QuerySelectFilter filter = 2;
+  QueryField field = 1 [lazy = true];
+  QuerySelectFilter filter = 2 [lazy = true];
 }
 
 message QueryGroupBy {
@@ -158,21 +158,21 @@ message QueryPagination {
 }
 
 message BooleanQuery {
-  ConjunctionQuery must = 1;
-  DisjunctionQuery must_not = 2;
+  ConjunctionQuery must = 1 [lazy = true];
+  DisjunctionQuery must_not = 2 [lazy = true];
 }
 
 // next tag: 9
 message Query {
   oneof query {
-    ConjunctionQuery conjunction = 1;
-    DisjunctionQuery disjunction = 2;
-    BaseQuery base_query = 3;
-    BooleanQuery boolean_query = 6;
+    ConjunctionQuery conjunction = 1 [lazy = true];
+    DisjunctionQuery disjunction = 2 [lazy = true];
+    BaseQuery base_query = 3 [lazy = true];
+    BooleanQuery boolean_query = 6 [lazy = true];
   }
   repeated QuerySelect selects = 8 [lazy = true];
-  QueryGroupBy group_by = 7;
-  QueryPagination pagination = 4;
+  QueryGroupBy group_by = 7 [lazy = true];
+  QueryPagination pagination = 4 [lazy = true];
   reserved 5; // previously SearchOptions
 }
 
@@ -203,10 +203,10 @@ message DocIDQuery {
 
 message BaseQuery {
   oneof query {
-    MatchFieldQuery match_field_query = 2;
-    MatchLinkedFieldsQuery match_linked_fields_query = 3;
-    DocIDQuery doc_id_query = 4;
-    MatchNoneQuery match_none_query = 5;
+    MatchFieldQuery match_field_query = 2 [lazy = true];
+    MatchLinkedFieldsQuery match_linked_fields_query = 3 [lazy = true];
+    DocIDQuery doc_id_query = 4 [lazy = true];
+    MatchNoneQuery match_none_query = 5 [lazy = true];
   }
 }
 

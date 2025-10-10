@@ -18,7 +18,7 @@ message ComplianceRunSelection {
 }
 
 message GetActiveComplianceRunsRequest {
-  ComplianceRunSelection selection = 1;
+  ComplianceRunSelection selection = 1 [lazy = true];
 }
 
 message GetActiveComplianceRunsResponse {
@@ -69,11 +69,11 @@ message TriggerComplianceRunRequest {
 }
 
 message TriggerComplianceRunResponse {
-  ComplianceRun started_run = 1;
+  ComplianceRun started_run = 1 [lazy = true];
 }
 
 message TriggerComplianceRunsRequest {
-  ComplianceRunSelection selection = 1;
+  ComplianceRunSelection selection = 1 [lazy = true];
 }
 
 message TriggerComplianceRunsResponse {

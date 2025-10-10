@@ -37,7 +37,7 @@ message DecommissionedClusterRetentionInfo {
 
 message ClusterResponse {
   storage.Cluster cluster = 1 [lazy = true];
-  DecommissionedClusterRetentionInfo cluster_retention_info = 2;
+  DecommissionedClusterRetentionInfo cluster_retention_info = 2 [lazy = true];
 }
 
 message ClusterDefaultsResponse {

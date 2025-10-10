@@ -28,7 +28,7 @@ message JobId {
 
 message DryRunJobStatusResponse {
   bool pending = 1;
-  DryRunResponse result = 2;
+  DryRunResponse result = 2 [lazy = true];
 }
 
 message PolicyCategoriesResponse {
@@ -67,7 +67,7 @@ message PolicyError {
 
 message PolicyOperationError {
   string policy_id = 1;
-  PolicyError error = 2;
+  PolicyError error = 2 [lazy = true];
 }
 
 message PolicyOperationErrorList {
@@ -83,7 +83,7 @@ message ImportPoliciesMetadata {
 }
 
 message ImportPoliciesRequest {
-  ImportPoliciesMetadata metadata = 1;
+  ImportPoliciesMetadata metadata = 1 [lazy = true];
   repeated storage.Policy policies = 2 [lazy = true];
 }
 
@@ -120,7 +120,7 @@ message GetPolicyMitreVectorsRequest {
   }
 
   string id = 1;
-  Options options = 2;
+  Options options = 2 [lazy = true];
 }
 
 message GetPolicyMitreVectorsResponse {

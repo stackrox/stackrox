@@ -13,7 +13,7 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message GetProcessesListeningOnPortsRequest {
   string deployment_id = 1;
-  Pagination pagination = 2;
+  Pagination pagination = 2 [lazy = true];
 }
 
 message GetProcessesListeningOnPortsResponse {

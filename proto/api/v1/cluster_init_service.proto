@@ -36,13 +36,13 @@ message CRSMeta {
 }
 
 message InitBundleGenResponse {
-  InitBundleMeta meta = 1;
+  InitBundleMeta meta = 1 [lazy = true];
   bytes helm_values_bundle = 2;
   bytes kubectl_bundle = 3;
 }
 
 message CRSGenResponse {
-  CRSMeta meta = 1;
+  CRSMeta meta = 1 [lazy = true];
   bytes crs = 2;
 }
 

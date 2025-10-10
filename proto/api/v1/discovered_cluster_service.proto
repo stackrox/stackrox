@@ -50,7 +50,7 @@ message DiscoveredCluster {
     // Timestamp at which the cluster was first discovered by the cloud source.
     google.protobuf.Timestamp first_discovered_at = 6 [lazy = true];
   }
-  Metadata metadata = 2;
+  Metadata metadata = 2 [lazy = true];
 
   enum Status {
     // The status of the cluster is unknown. May occur if a secured cluster
@@ -71,7 +71,7 @@ message DiscoveredCluster {
     string id = 1;
   }
   // The cloud source integration from which the cluster was discovered.
-  CloudSource source = 4;
+  CloudSource source = 4 [lazy = true];
 }
 
 message DiscoveredClustersFilter {
@@ -90,7 +90,7 @@ message DiscoveredClustersFilter {
 
 message CountDiscoveredClustersRequest {
   // Filters discovered clusters based on the requested fields.
-  DiscoveredClustersFilter filter = 1;
+  DiscoveredClustersFilter filter = 1 [lazy = true];
 }
 
 message CountDiscoveredClustersResponse {
@@ -102,15 +102,15 @@ message GetDiscoveredClusterRequest {
 }
 
 message GetDiscoveredClusterResponse {
-  DiscoveredCluster cluster = 1;
+  DiscoveredCluster cluster = 1 [lazy = true];
 }
 
 message ListDiscoveredClustersRequest {
   // Divides the response into chunks.
-  Pagination pagination = 1;
+  Pagination pagination = 1 [lazy = true];
 
   // Filters cloud sources based on the requested fields.
-  DiscoveredClustersFilter filter = 2;
+  DiscoveredClustersFilter filter = 2 [lazy = true];
 }
 
 message ListDiscoveredClustersResponse {

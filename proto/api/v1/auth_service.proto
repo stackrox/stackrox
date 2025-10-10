@@ -86,7 +86,7 @@ message AuthMachineToMachineConfig {
   // GENERIC config must have a distinct issuer.
   string issuer = 5;
 
-  Traits traits = 6;
+  Traits traits = 6 [lazy = true];
 }
 
 message ListAuthMachineToMachineConfigResponse {
@@ -94,19 +94,19 @@ message ListAuthMachineToMachineConfigResponse {
 }
 
 message GetAuthMachineToMachineConfigResponse {
-  AuthMachineToMachineConfig config = 1;
+  AuthMachineToMachineConfig config = 1 [lazy = true];
 }
 
 message AddAuthMachineToMachineConfigRequest {
-  AuthMachineToMachineConfig config = 1;
+  AuthMachineToMachineConfig config = 1 [lazy = true];
 }
 
 message AddAuthMachineToMachineConfigResponse {
-  AuthMachineToMachineConfig config = 1;
+  AuthMachineToMachineConfig config = 1 [lazy = true];
 }
 
 message UpdateAuthMachineToMachineConfigRequest {
-  AuthMachineToMachineConfig config = 1;
+  AuthMachineToMachineConfig config = 1 [lazy = true];
 }
 
 message ExchangeAuthMachineToMachineTokenRequest {

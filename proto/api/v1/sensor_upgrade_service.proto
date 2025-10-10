@@ -27,7 +27,7 @@ message GetSensorUpgradeConfigResponse {
     SensorAutoUpgradeFeatureStatus auto_upgrade_feature = 2;
   }
 
-  UpgradeConfig config = 1;
+  UpgradeConfig config = 1 [lazy = true];
 }
 
 service SensorUpgradeService {

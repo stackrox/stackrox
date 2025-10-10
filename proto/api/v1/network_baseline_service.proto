@@ -25,7 +25,7 @@ message NetworkBaselinePeerEntity {
 message NetworkBaselineStatusPeer {
   // The peer entity of the connection. This can be constructed from the
   // entity object of the networkgraph API. Only the ID and type are required.
-  NetworkBaselinePeerEntity entity = 1;
+  NetworkBaselinePeerEntity entity = 1 [lazy = true];
   // The port and protocol of the destination of the given connection.
   uint32 port = 2;
   storage.L4Protocol protocol = 3;
@@ -49,7 +49,7 @@ message NetworkBaselinePeerStatus {
     ANOMALOUS = 1;
   }
 
-  NetworkBaselineStatusPeer peer = 1;
+  NetworkBaselineStatusPeer peer = 1 [lazy = true];
   Status status = 2;
 }
 
@@ -66,7 +66,7 @@ message NetworkBaselineExternalStatusRequest {
   string deployment_id = 1;
   string query = 2;
   google.protobuf.Timestamp since = 3 [lazy = true];
-  Pagination pagination = 4;
+  Pagination pagination = 4 [lazy = true];
 }
 
 message NetworkBaselineExternalStatusResponse {
