@@ -70,10 +70,9 @@ func createTestClient(secrets ...*v1.Secret) client.Interface {
 
 func TestFetchCertificates(t *testing.T) {
 	tests := map[string]struct {
-		secrets         []*v1.Secret
-		certConfigs     []CertConfig
-		expectedSuccess bool
-		expectedEnvVars map[string]string
+		secrets           []*v1.Secret
+		shouldSucceed     bool
+		expectedCertFiles map[string]string // maps env var name -> expected filename
 	}{
 		"should fetch certificates from primary secret successfully": {
 			secrets: []*v1.Secret{
@@ -83,8 +82,8 @@ func TestFetchCertificates(t *testing.T) {
 					"key.pem":  []byte("primary-key-content"),
 				}),
 			},
-			expectedSuccess: true,
-			expectedEnvVars: map[string]string{
+			shouldSucceed: true,
+			expectedCertFiles: map[string]string{
 				certEnvName:       "ca.pem",
 				sensorCertEnvName: "cert.pem",
 				sensorKeyEnvName:  "key.pem",
@@ -98,8 +97,8 @@ func TestFetchCertificates(t *testing.T) {
 					"sensor-key.pem":  []byte("legacy-key-content"),
 				}),
 			},
-			expectedSuccess: true,
-			expectedEnvVars: map[string]string{
+			shouldSucceed: true,
+			expectedCertFiles: map[string]string{
 				certEnvName:       "ca.pem",
 				sensorCertEnvName: "sensor-cert.pem",
 				sensorKeyEnvName:  "sensor-key.pem",
@@ -118,16 +117,16 @@ func TestFetchCertificates(t *testing.T) {
 					"sensor-key.pem":  []byte("legacy-key-content"),
 				}),
 			},
-			expectedSuccess: true,
-			expectedEnvVars: map[string]string{
+			shouldSucceed: true,
+			expectedCertFiles: map[string]string{
 				certEnvName:       "ca.pem",
 				sensorCertEnvName: "cert.pem",
 				sensorKeyEnvName:  "key.pem",
 			},
 		},
 		"should fail when neither secret exists": {
-			secrets:         []*v1.Secret{},
-			expectedSuccess: false,
+			secrets:       []*v1.Secret{},
+			shouldSucceed: false,
 		},
 	}
 
@@ -136,42 +135,32 @@ func TestFetchCertificates(t *testing.T) {
 			tmpDir := t.TempDir()
 			k8sClient := createTestClient(tt.secrets...)
 
-			envVars := make(map[string]string)
+			capturedEnvVars := make(map[string]string)
 			setEnvFunc := func(key, value string) error {
-				envVars[key] = value
+				capturedEnvVars[key] = value
 				return nil
 			}
 
-			var fetcher *CertificateFetcher
-			if len(tt.certConfigs) > 0 {
-				fetcher = NewCertificateFetcher(k8sClient,
-					WithOutputDir(tmpDir),
-					WithSetEnvFunc(setEnvFunc),
-					WithCertConfig(tt.certConfigs...),
-					WithHelmConfig("", "", ""),
-					WithClusterName("", "", ""))
-			} else {
-				fetcher = NewCertificateFetcher(k8sClient,
-					WithOutputDir(tmpDir),
-					WithSetEnvFunc(setEnvFunc),
-					WithHelmConfig("", "", ""),
-					WithClusterName("", "", ""))
-			}
+			fetcher := NewCertificateFetcher(k8sClient,
+				WithOutputDir(tmpDir),
+				WithSetEnvFunc(setEnvFunc),
+				WithHelmConfig("", "", ""),
+				WithClusterName("", "", ""))
 
 			err := fetcher.FetchCertificatesAndSetEnvironment()
 
-			if tt.expectedSuccess {
+			if tt.shouldSucceed {
 				require.NoError(t, err)
 
-				// Verify environment variables were set correctly
-				for envVar, fileName := range tt.expectedEnvVars {
-					expectedPath := filepath.Join(tmpDir, fileName)
-					assert.Equal(t, expectedPath, envVars[envVar],
-						"environment variable %s should point to %s", envVar, fileName)
+				// Verify environment variables point to correct certificate files
+				for envVar, expectedFilename := range tt.expectedCertFiles {
+					expectedPath := filepath.Join(tmpDir, expectedFilename)
+					assert.Equal(t, expectedPath, capturedEnvVars[envVar],
+						"environment variable %s should point to %s", envVar, expectedFilename)
 
-					// Verify file exists
+					// Verify certificate file was written
 					_, err := os.Stat(expectedPath)
-					assert.NoError(t, err, "certificate file %s should exist", fileName)
+					assert.NoError(t, err, "certificate file %s should exist", expectedFilename)
 				}
 			} else {
 				require.Error(t, err)
@@ -253,9 +242,9 @@ func TestFetchCertificates_CustomConfig(t *testing.T) {
 			tmpDir := t.TempDir()
 			k8sClient := createTestClient(tt.secrets...)
 
-			envVars := make(map[string]string)
+			capturedEnvVars := make(map[string]string)
 			setEnvFunc := func(key, value string) error {
-				envVars[key] = value
+				capturedEnvVars[key] = value
 				return nil
 			}
 
@@ -271,7 +260,8 @@ func TestFetchCertificates_CustomConfig(t *testing.T) {
 			if tt.shouldSucceed {
 				assert.NoError(t, err)
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "failed to fetch certificates from any source")
 			}
 		})
 	}
