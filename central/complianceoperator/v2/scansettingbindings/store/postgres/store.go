@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"slices"
 	"strings"
 	"time"
@@ -116,7 +117,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 func insertIntoComplianceOperatorScanSettingBindingV2(batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingBindingV2) error {
 
-	serialized, marshalErr := obj.MarshalVT()
+	serialized, marshalErr := json.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -162,7 +163,7 @@ func copyFromComplianceOperatorScanSettingBindingV2(ctx context.Context, s pgSea
 				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 				"to simply use the object.  %s", obj)
 
-			serialized, marshalErr := obj.MarshalVT()
+			serialized, marshalErr := json.Marshal(obj)
 			if marshalErr != nil {
 				return marshalErr
 			}

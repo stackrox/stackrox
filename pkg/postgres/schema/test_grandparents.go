@@ -61,7 +61,7 @@ type TestGrandparents struct {
 	Val        string  `gorm:"column:val;type:varchar"`
 	Priority   int64   `gorm:"column:priority;type:bigint"`
 	RiskScore  float32 `gorm:"column:riskscore;type:numeric"`
-	Serialized []byte  `gorm:"column:serialized;type:bytea"`
+	Serialized []byte  `gorm:"column:serialized;type:jsonb"`
 }
 
 // TestGrandparentsEmbeddeds holds the Gorm model for Postgres table `test_grandparents_embeddeds`.

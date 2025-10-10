@@ -48,5 +48,5 @@ type Risks struct {
 	SubjectClusterID string                  `gorm:"column:subject_clusterid;type:uuid;index:risks_sac_filter,type:btree"`
 	SubjectType      storage.RiskSubjectType `gorm:"column:subject_type;type:integer"`
 	Score            float32                 `gorm:"column:score;type:numeric"`
-	Serialized       []byte                  `gorm:"column:serialized;type:bytea"`
+	Serialized       []byte                  `gorm:"column:serialized;type:jsonb"`
 }

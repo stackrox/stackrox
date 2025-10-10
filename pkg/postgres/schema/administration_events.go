@@ -52,5 +52,5 @@ type AdministrationEvents struct {
 	NumOccurrences int64                            `gorm:"column:numoccurrences;type:bigint"`
 	LastOccurredAt *time.Time                       `gorm:"column:lastoccurredat;type:timestamp"`
 	CreatedAt      *time.Time                       `gorm:"column:createdat;type:timestamp"`
-	Serialized     []byte                           `gorm:"column:serialized;type:bytea"`
+	Serialized     []byte                           `gorm:"column:serialized;type:jsonb"`
 }

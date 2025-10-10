@@ -78,5 +78,5 @@ type Alerts struct {
 	State                    storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_state,type:btree"`
 	PlatformComponent        bool                                `gorm:"column:platformcomponent;type:bool"`
 	EntityType               storage.Alert_EntityType            `gorm:"column:entitytype;type:integer"`
-	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
+	Serialized               []byte                              `gorm:"column:serialized;type:jsonb"`
 }

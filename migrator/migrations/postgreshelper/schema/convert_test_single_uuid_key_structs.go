@@ -2,6 +2,8 @@
 package schema
 
 import (
+	"encoding/json"
+
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -10,7 +12,7 @@ import (
 
 // ConvertTestSingleUUIDKeyStructFromProto converts a `*storage.TestSingleUUIDKeyStruct` to Gorm model
 func ConvertTestSingleUUIDKeyStructFromProto(obj *storage.TestSingleUUIDKeyStruct) (*TestSingleUUIDKeyStructs, error) {
-	serialized, err := obj.MarshalVT()
+	serialized, err := json.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +36,7 @@ func ConvertTestSingleUUIDKeyStructFromProto(obj *storage.TestSingleUUIDKeyStruc
 // ConvertTestSingleUUIDKeyStructToProto converts Gorm model `TestSingleUUIDKeyStructs` to its protobuf type object
 func ConvertTestSingleUUIDKeyStructToProto(m *TestSingleUUIDKeyStructs) (*storage.TestSingleUUIDKeyStruct, error) {
 	var msg storage.TestSingleUUIDKeyStruct
-	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
+	if err := json.Unmarshal(m.Serialized, &msg); err != nil {
 		return nil, err
 	}
 	return &msg, nil

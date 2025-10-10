@@ -49,5 +49,5 @@ type Clusters struct {
 	Labels                            map[string]string            `gorm:"column:labels;type:jsonb"`
 	StatusProviderMetadataClusterType storage.ClusterMetadata_Type `gorm:"column:status_providermetadata_cluster_type;type:integer"`
 	StatusOrchestratorMetadataVersion string                       `gorm:"column:status_orchestratormetadata_version;type:varchar"`
-	Serialized                        []byte                       `gorm:"column:serialized;type:bytea"`
+	Serialized                        []byte                       `gorm:"column:serialized;type:jsonb"`
 }

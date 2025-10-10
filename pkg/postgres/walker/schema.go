@@ -47,7 +47,7 @@ func getSerializedField(s *Schema) Field {
 		},
 		Name:       "serialized",
 		ColumnName: "serialized",
-		SQLType:    "bytea",
+		SQLType:    "jsonb",
 		Type:       "[]byte",
 		ModelType:  "[]byte",
 		Schema:     s,

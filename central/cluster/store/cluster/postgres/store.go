@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -124,7 +125,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
 
-	serialized, marshalErr := obj.MarshalVT()
+	serialized, marshalErr := json.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}

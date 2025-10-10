@@ -63,7 +63,7 @@ type ComplianceOperatorBenchmarkV2 struct {
 	Name       string `gorm:"column:name;type:varchar"`
 	Version    string `gorm:"column:version;type:varchar"`
 	ShortName  string `gorm:"column:shortname;type:varchar"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }
 
 // ComplianceOperatorBenchmarkV2Profiles holds the Gorm model for Postgres table `compliance_operator_benchmark_v2_profiles`.
