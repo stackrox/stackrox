@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/notifier.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -169,30 +167,20 @@ func (x Syslog_MessageFormat) Number() protoreflect.EnumNumber {
 
 // Next Tag: 21
 type Notifier struct {
-	state        protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id           *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name         *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Type         *string                `protobuf:"bytes,3,opt,name=type" json:"type,omitempty"`
-	UiEndpoint   *string                `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint" json:"ui_endpoint,omitempty"`
-	LabelKey     *string                `protobuf:"bytes,8,opt,name=label_key,json=labelKey" json:"label_key,omitempty"`
-	LabelDefault *string                `protobuf:"bytes,9,opt,name=label_default,json=labelDefault" json:"label_default,omitempty"`
-	// Types that are valid to be assigned to Config:
-	//
-	//	*Notifier_Jira
-	//	*Notifier_Email
-	//	*Notifier_Cscc
-	//	*Notifier_Splunk
-	//	*Notifier_Pagerduty
-	//	*Notifier_Generic
-	//	*Notifier_Sumologic
-	//	*Notifier_AwsSecurityHub
-	//	*Notifier_Syslog
-	//	*Notifier_MicrosoftSentinel
-	Config         isNotifier_Config `protobuf_oneof:"config"`
-	NotifierSecret *string           `protobuf:"bytes,19,opt,name=notifier_secret,json=notifierSecret" json:"notifier_secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	Traits         *Traits           `protobuf:"bytes,50,opt,name=traits" json:"traits,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id             *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name           *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Type           *string                `protobuf:"bytes,3,opt,name=type"`
+	xxx_hidden_UiEndpoint     *string                `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint"`
+	xxx_hidden_LabelKey       *string                `protobuf:"bytes,8,opt,name=label_key,json=labelKey"`
+	xxx_hidden_LabelDefault   *string                `protobuf:"bytes,9,opt,name=label_default,json=labelDefault"`
+	xxx_hidden_Config         isNotifier_Config      `protobuf_oneof:"config"`
+	xxx_hidden_NotifierSecret *string                `protobuf:"bytes,19,opt,name=notifier_secret,json=notifierSecret"`
+	xxx_hidden_Traits         *Traits                `protobuf:"bytes,50,opt,name=traits"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *Notifier) Reset() {
@@ -221,57 +209,68 @@ func (x *Notifier) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Notifier) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Notifier) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Notifier) GetType() string {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if x.xxx_hidden_Type != nil {
+			return *x.xxx_hidden_Type
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Notifier) GetUiEndpoint() string {
-	if x != nil && x.UiEndpoint != nil {
-		return *x.UiEndpoint
+	if x != nil {
+		if x.xxx_hidden_UiEndpoint != nil {
+			return *x.xxx_hidden_UiEndpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Notifier) GetLabelKey() string {
-	if x != nil && x.LabelKey != nil {
-		return *x.LabelKey
+	if x != nil {
+		if x.xxx_hidden_LabelKey != nil {
+			return *x.xxx_hidden_LabelKey
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Notifier) GetLabelDefault() string {
-	if x != nil && x.LabelDefault != nil {
-		return *x.LabelDefault
+	if x != nil {
+		if x.xxx_hidden_LabelDefault != nil {
+			return *x.xxx_hidden_LabelDefault
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *Notifier) GetConfig() isNotifier_Config {
-	if x != nil {
-		return x.Config
-	}
-	return nil
-}
-
 func (x *Notifier) GetJira() *Jira {
 	if x != nil {
-		if x, ok := x.Config.(*Notifier_Jira); ok {
+		if x, ok := x.xxx_hidden_Config.(*notifier_Jira); ok {
 			return x.Jira
 		}
 	}
@@ -280,7 +279,7 @@ func (x *Notifier) GetJira() *Jira {
 
 func (x *Notifier) GetEmail() *Email {
 	if x != nil {
-		if x, ok := x.Config.(*Notifier_Email); ok {
+		if x, ok := x.xxx_hidden_Config.(*notifier_Email); ok {
 			return x.Email
 		}
 	}
@@ -289,7 +288,7 @@ func (x *Notifier) GetEmail() *Email {
 
 func (x *Notifier) GetCscc() *CSCC {
 	if x != nil {
-		if x, ok := x.Config.(*Notifier_Cscc); ok {
+		if x, ok := x.xxx_hidden_Config.(*notifier_Cscc); ok {
 			return x.Cscc
 		}
 	}
@@ -298,7 +297,7 @@ func (x *Notifier) GetCscc() *CSCC {
 
 func (x *Notifier) GetSplunk() *Splunk {
 	if x != nil {
-		if x, ok := x.Config.(*Notifier_Splunk); ok {
+		if x, ok := x.xxx_hidden_Config.(*notifier_Splunk); ok {
 			return x.Splunk
 		}
 	}
@@ -307,7 +306,7 @@ func (x *Notifier) GetSplunk() *Splunk {
 
 func (x *Notifier) GetPagerduty() *PagerDuty {
 	if x != nil {
-		if x, ok := x.Config.(*Notifier_Pagerduty); ok {
+		if x, ok := x.xxx_hidden_Config.(*notifier_Pagerduty); ok {
 			return x.Pagerduty
 		}
 	}
@@ -316,7 +315,7 @@ func (x *Notifier) GetPagerduty() *PagerDuty {
 
 func (x *Notifier) GetGeneric() *Generic {
 	if x != nil {
-		if x, ok := x.Config.(*Notifier_Generic); ok {
+		if x, ok := x.xxx_hidden_Config.(*notifier_Generic); ok {
 			return x.Generic
 		}
 	}
@@ -325,7 +324,7 @@ func (x *Notifier) GetGeneric() *Generic {
 
 func (x *Notifier) GetSumologic() *SumoLogic {
 	if x != nil {
-		if x, ok := x.Config.(*Notifier_Sumologic); ok {
+		if x, ok := x.xxx_hidden_Config.(*notifier_Sumologic); ok {
 			return x.Sumologic
 		}
 	}
@@ -334,7 +333,7 @@ func (x *Notifier) GetSumologic() *SumoLogic {
 
 func (x *Notifier) GetAwsSecurityHub() *AWSSecurityHub {
 	if x != nil {
-		if x, ok := x.Config.(*Notifier_AwsSecurityHub); ok {
+		if x, ok := x.xxx_hidden_Config.(*notifier_AwsSecurityHub); ok {
 			return x.AwsSecurityHub
 		}
 	}
@@ -343,7 +342,7 @@ func (x *Notifier) GetAwsSecurityHub() *AWSSecurityHub {
 
 func (x *Notifier) GetSyslog() *Syslog {
 	if x != nil {
-		if x, ok := x.Config.(*Notifier_Syslog); ok {
+		if x, ok := x.xxx_hidden_Config.(*notifier_Syslog); ok {
 			return x.Syslog
 		}
 	}
@@ -352,7 +351,7 @@ func (x *Notifier) GetSyslog() *Syslog {
 
 func (x *Notifier) GetMicrosoftSentinel() *MicrosoftSentinel {
 	if x != nil {
-		if x, ok := x.Config.(*Notifier_MicrosoftSentinel); ok {
+		if x, ok := x.xxx_hidden_Config.(*notifier_MicrosoftSentinel); ok {
 			return x.MicrosoftSentinel
 		}
 	}
@@ -360,185 +359,195 @@ func (x *Notifier) GetMicrosoftSentinel() *MicrosoftSentinel {
 }
 
 func (x *Notifier) GetNotifierSecret() string {
-	if x != nil && x.NotifierSecret != nil {
-		return *x.NotifierSecret
+	if x != nil {
+		if x.xxx_hidden_NotifierSecret != nil {
+			return *x.xxx_hidden_NotifierSecret
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Notifier) GetTraits() *Traits {
 	if x != nil {
-		return x.Traits
+		return x.xxx_hidden_Traits
 	}
 	return nil
 }
 
 func (x *Notifier) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
 }
 
 func (x *Notifier) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
 }
 
 func (x *Notifier) SetType(v string) {
-	x.Type = &v
+	x.xxx_hidden_Type = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
 }
 
 func (x *Notifier) SetUiEndpoint(v string) {
-	x.UiEndpoint = &v
+	x.xxx_hidden_UiEndpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
 }
 
 func (x *Notifier) SetLabelKey(v string) {
-	x.LabelKey = &v
+	x.xxx_hidden_LabelKey = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
 }
 
 func (x *Notifier) SetLabelDefault(v string) {
-	x.LabelDefault = &v
+	x.xxx_hidden_LabelDefault = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
 }
 
 func (x *Notifier) SetJira(v *Jira) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &Notifier_Jira{v}
+	x.xxx_hidden_Config = &notifier_Jira{v}
 }
 
 func (x *Notifier) SetEmail(v *Email) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &Notifier_Email{v}
+	x.xxx_hidden_Config = &notifier_Email{v}
 }
 
 func (x *Notifier) SetCscc(v *CSCC) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &Notifier_Cscc{v}
+	x.xxx_hidden_Config = &notifier_Cscc{v}
 }
 
 func (x *Notifier) SetSplunk(v *Splunk) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &Notifier_Splunk{v}
+	x.xxx_hidden_Config = &notifier_Splunk{v}
 }
 
 func (x *Notifier) SetPagerduty(v *PagerDuty) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &Notifier_Pagerduty{v}
+	x.xxx_hidden_Config = &notifier_Pagerduty{v}
 }
 
 func (x *Notifier) SetGeneric(v *Generic) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &Notifier_Generic{v}
+	x.xxx_hidden_Config = &notifier_Generic{v}
 }
 
 func (x *Notifier) SetSumologic(v *SumoLogic) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &Notifier_Sumologic{v}
+	x.xxx_hidden_Config = &notifier_Sumologic{v}
 }
 
 func (x *Notifier) SetAwsSecurityHub(v *AWSSecurityHub) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &Notifier_AwsSecurityHub{v}
+	x.xxx_hidden_Config = &notifier_AwsSecurityHub{v}
 }
 
 func (x *Notifier) SetSyslog(v *Syslog) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &Notifier_Syslog{v}
+	x.xxx_hidden_Config = &notifier_Syslog{v}
 }
 
 func (x *Notifier) SetMicrosoftSentinel(v *MicrosoftSentinel) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &Notifier_MicrosoftSentinel{v}
+	x.xxx_hidden_Config = &notifier_MicrosoftSentinel{v}
 }
 
 func (x *Notifier) SetNotifierSecret(v string) {
-	x.NotifierSecret = &v
+	x.xxx_hidden_NotifierSecret = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
 }
 
 func (x *Notifier) SetTraits(v *Traits) {
-	x.Traits = v
+	x.xxx_hidden_Traits = v
 }
 
 func (x *Notifier) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Notifier) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Notifier) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Notifier) HasUiEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.UiEndpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Notifier) HasLabelKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.LabelKey != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Notifier) HasLabelDefault() bool {
 	if x == nil {
 		return false
 	}
-	return x.LabelDefault != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Notifier) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *Notifier) HasJira() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*Notifier_Jira)
+	_, ok := x.xxx_hidden_Config.(*notifier_Jira)
 	return ok
 }
 
@@ -546,7 +555,7 @@ func (x *Notifier) HasEmail() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*Notifier_Email)
+	_, ok := x.xxx_hidden_Config.(*notifier_Email)
 	return ok
 }
 
@@ -554,7 +563,7 @@ func (x *Notifier) HasCscc() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*Notifier_Cscc)
+	_, ok := x.xxx_hidden_Config.(*notifier_Cscc)
 	return ok
 }
 
@@ -562,7 +571,7 @@ func (x *Notifier) HasSplunk() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*Notifier_Splunk)
+	_, ok := x.xxx_hidden_Config.(*notifier_Splunk)
 	return ok
 }
 
@@ -570,7 +579,7 @@ func (x *Notifier) HasPagerduty() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*Notifier_Pagerduty)
+	_, ok := x.xxx_hidden_Config.(*notifier_Pagerduty)
 	return ok
 }
 
@@ -578,7 +587,7 @@ func (x *Notifier) HasGeneric() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*Notifier_Generic)
+	_, ok := x.xxx_hidden_Config.(*notifier_Generic)
 	return ok
 }
 
@@ -586,7 +595,7 @@ func (x *Notifier) HasSumologic() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*Notifier_Sumologic)
+	_, ok := x.xxx_hidden_Config.(*notifier_Sumologic)
 	return ok
 }
 
@@ -594,7 +603,7 @@ func (x *Notifier) HasAwsSecurityHub() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*Notifier_AwsSecurityHub)
+	_, ok := x.xxx_hidden_Config.(*notifier_AwsSecurityHub)
 	return ok
 }
 
@@ -602,7 +611,7 @@ func (x *Notifier) HasSyslog() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*Notifier_Syslog)
+	_, ok := x.xxx_hidden_Config.(*notifier_Syslog)
 	return ok
 }
 
@@ -610,7 +619,7 @@ func (x *Notifier) HasMicrosoftSentinel() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*Notifier_MicrosoftSentinel)
+	_, ok := x.xxx_hidden_Config.(*notifier_MicrosoftSentinel)
 	return ok
 }
 
@@ -618,110 +627,117 @@ func (x *Notifier) HasNotifierSecret() bool {
 	if x == nil {
 		return false
 	}
-	return x.NotifierSecret != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *Notifier) HasTraits() bool {
 	if x == nil {
 		return false
 	}
-	return x.Traits != nil
+	return x.xxx_hidden_Traits != nil
 }
 
 func (x *Notifier) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Notifier) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Notifier) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Type = nil
 }
 
 func (x *Notifier) ClearUiEndpoint() {
-	x.UiEndpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_UiEndpoint = nil
 }
 
 func (x *Notifier) ClearLabelKey() {
-	x.LabelKey = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_LabelKey = nil
 }
 
 func (x *Notifier) ClearLabelDefault() {
-	x.LabelDefault = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_LabelDefault = nil
 }
 
 func (x *Notifier) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 func (x *Notifier) ClearJira() {
-	if _, ok := x.Config.(*Notifier_Jira); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*notifier_Jira); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *Notifier) ClearEmail() {
-	if _, ok := x.Config.(*Notifier_Email); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*notifier_Email); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *Notifier) ClearCscc() {
-	if _, ok := x.Config.(*Notifier_Cscc); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*notifier_Cscc); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *Notifier) ClearSplunk() {
-	if _, ok := x.Config.(*Notifier_Splunk); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*notifier_Splunk); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *Notifier) ClearPagerduty() {
-	if _, ok := x.Config.(*Notifier_Pagerduty); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*notifier_Pagerduty); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *Notifier) ClearGeneric() {
-	if _, ok := x.Config.(*Notifier_Generic); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*notifier_Generic); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *Notifier) ClearSumologic() {
-	if _, ok := x.Config.(*Notifier_Sumologic); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*notifier_Sumologic); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *Notifier) ClearAwsSecurityHub() {
-	if _, ok := x.Config.(*Notifier_AwsSecurityHub); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*notifier_AwsSecurityHub); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *Notifier) ClearSyslog() {
-	if _, ok := x.Config.(*Notifier_Syslog); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*notifier_Syslog); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *Notifier) ClearMicrosoftSentinel() {
-	if _, ok := x.Config.(*Notifier_MicrosoftSentinel); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*notifier_MicrosoftSentinel); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *Notifier) ClearNotifierSecret() {
-	x.NotifierSecret = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_NotifierSecret = nil
 }
 
 func (x *Notifier) ClearTraits() {
-	x.Traits = nil
+	x.xxx_hidden_Traits = nil
 }
 
 const Notifier_Config_not_set_case case_Notifier_Config = 0
@@ -740,26 +756,26 @@ func (x *Notifier) WhichConfig() case_Notifier_Config {
 	if x == nil {
 		return Notifier_Config_not_set_case
 	}
-	switch x.Config.(type) {
-	case *Notifier_Jira:
+	switch x.xxx_hidden_Config.(type) {
+	case *notifier_Jira:
 		return Notifier_Jira_case
-	case *Notifier_Email:
+	case *notifier_Email:
 		return Notifier_Email_case
-	case *Notifier_Cscc:
+	case *notifier_Cscc:
 		return Notifier_Cscc_case
-	case *Notifier_Splunk:
+	case *notifier_Splunk:
 		return Notifier_Splunk_case
-	case *Notifier_Pagerduty:
+	case *notifier_Pagerduty:
 		return Notifier_Pagerduty_case
-	case *Notifier_Generic:
+	case *notifier_Generic:
 		return Notifier_Generic_case
-	case *Notifier_Sumologic:
+	case *notifier_Sumologic:
 		return Notifier_Sumologic_case
-	case *Notifier_AwsSecurityHub:
+	case *notifier_AwsSecurityHub:
 		return Notifier_AwsSecurityHub_case
-	case *Notifier_Syslog:
+	case *notifier_Syslog:
 		return Notifier_Syslog_case
-	case *Notifier_MicrosoftSentinel:
+	case *notifier_MicrosoftSentinel:
 		return Notifier_MicrosoftSentinel_case
 	default:
 		return Notifier_Config_not_set_case
@@ -775,7 +791,7 @@ type Notifier_builder struct {
 	UiEndpoint   *string
 	LabelKey     *string
 	LabelDefault *string
-	// Fields of oneof Config:
+	// Fields of oneof xxx_hidden_Config:
 	Jira              *Jira
 	Email             *Email
 	Cscc              *CSCC
@@ -786,7 +802,7 @@ type Notifier_builder struct {
 	AwsSecurityHub    *AWSSecurityHub
 	Syslog            *Syslog
 	MicrosoftSentinel *MicrosoftSentinel
-	// -- end of Config
+	// -- end of xxx_hidden_Config
 	NotifierSecret *string
 	Traits         *Traits
 }
@@ -795,44 +811,65 @@ func (b0 Notifier_builder) Build() *Notifier {
 	m0 := &Notifier{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Type = b.Type
-	x.UiEndpoint = b.UiEndpoint
-	x.LabelKey = b.LabelKey
-	x.LabelDefault = b.LabelDefault
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
+		x.xxx_hidden_Type = b.Type
+	}
+	if b.UiEndpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
+		x.xxx_hidden_UiEndpoint = b.UiEndpoint
+	}
+	if b.LabelKey != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
+		x.xxx_hidden_LabelKey = b.LabelKey
+	}
+	if b.LabelDefault != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
+		x.xxx_hidden_LabelDefault = b.LabelDefault
+	}
 	if b.Jira != nil {
-		x.Config = &Notifier_Jira{b.Jira}
+		x.xxx_hidden_Config = &notifier_Jira{b.Jira}
 	}
 	if b.Email != nil {
-		x.Config = &Notifier_Email{b.Email}
+		x.xxx_hidden_Config = &notifier_Email{b.Email}
 	}
 	if b.Cscc != nil {
-		x.Config = &Notifier_Cscc{b.Cscc}
+		x.xxx_hidden_Config = &notifier_Cscc{b.Cscc}
 	}
 	if b.Splunk != nil {
-		x.Config = &Notifier_Splunk{b.Splunk}
+		x.xxx_hidden_Config = &notifier_Splunk{b.Splunk}
 	}
 	if b.Pagerduty != nil {
-		x.Config = &Notifier_Pagerduty{b.Pagerduty}
+		x.xxx_hidden_Config = &notifier_Pagerduty{b.Pagerduty}
 	}
 	if b.Generic != nil {
-		x.Config = &Notifier_Generic{b.Generic}
+		x.xxx_hidden_Config = &notifier_Generic{b.Generic}
 	}
 	if b.Sumologic != nil {
-		x.Config = &Notifier_Sumologic{b.Sumologic}
+		x.xxx_hidden_Config = &notifier_Sumologic{b.Sumologic}
 	}
 	if b.AwsSecurityHub != nil {
-		x.Config = &Notifier_AwsSecurityHub{b.AwsSecurityHub}
+		x.xxx_hidden_Config = &notifier_AwsSecurityHub{b.AwsSecurityHub}
 	}
 	if b.Syslog != nil {
-		x.Config = &Notifier_Syslog{b.Syslog}
+		x.xxx_hidden_Config = &notifier_Syslog{b.Syslog}
 	}
 	if b.MicrosoftSentinel != nil {
-		x.Config = &Notifier_MicrosoftSentinel{b.MicrosoftSentinel}
+		x.xxx_hidden_Config = &notifier_MicrosoftSentinel{b.MicrosoftSentinel}
 	}
-	x.NotifierSecret = b.NotifierSecret
-	x.Traits = b.Traits
+	if b.NotifierSecret != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
+		x.xxx_hidden_NotifierSecret = b.NotifierSecret
+	}
+	x.xxx_hidden_Traits = b.Traits
 	return m0
 }
 
@@ -850,73 +887,75 @@ type isNotifier_Config interface {
 	isNotifier_Config()
 }
 
-type Notifier_Jira struct {
+type notifier_Jira struct {
 	Jira *Jira `protobuf:"bytes,10,opt,name=jira,oneof"`
 }
 
-type Notifier_Email struct {
+type notifier_Email struct {
 	Email *Email `protobuf:"bytes,11,opt,name=email,oneof"`
 }
 
-type Notifier_Cscc struct {
+type notifier_Cscc struct {
 	Cscc *CSCC `protobuf:"bytes,12,opt,name=cscc,oneof"`
 }
 
-type Notifier_Splunk struct {
+type notifier_Splunk struct {
 	Splunk *Splunk `protobuf:"bytes,13,opt,name=splunk,oneof"`
 }
 
-type Notifier_Pagerduty struct {
+type notifier_Pagerduty struct {
 	Pagerduty *PagerDuty `protobuf:"bytes,14,opt,name=pagerduty,oneof"`
 }
 
-type Notifier_Generic struct {
+type notifier_Generic struct {
 	Generic *Generic `protobuf:"bytes,15,opt,name=generic,oneof"`
 }
 
-type Notifier_Sumologic struct {
+type notifier_Sumologic struct {
 	Sumologic *SumoLogic `protobuf:"bytes,16,opt,name=sumologic,oneof"`
 }
 
-type Notifier_AwsSecurityHub struct {
+type notifier_AwsSecurityHub struct {
 	AwsSecurityHub *AWSSecurityHub `protobuf:"bytes,17,opt,name=aws_security_hub,json=awsSecurityHub,oneof"`
 }
 
-type Notifier_Syslog struct {
+type notifier_Syslog struct {
 	Syslog *Syslog `protobuf:"bytes,18,opt,name=syslog,oneof"`
 }
 
-type Notifier_MicrosoftSentinel struct {
+type notifier_MicrosoftSentinel struct {
 	MicrosoftSentinel *MicrosoftSentinel `protobuf:"bytes,20,opt,name=microsoft_sentinel,json=microsoftSentinel,oneof"`
 }
 
-func (*Notifier_Jira) isNotifier_Config() {}
+func (*notifier_Jira) isNotifier_Config() {}
 
-func (*Notifier_Email) isNotifier_Config() {}
+func (*notifier_Email) isNotifier_Config() {}
 
-func (*Notifier_Cscc) isNotifier_Config() {}
+func (*notifier_Cscc) isNotifier_Config() {}
 
-func (*Notifier_Splunk) isNotifier_Config() {}
+func (*notifier_Splunk) isNotifier_Config() {}
 
-func (*Notifier_Pagerduty) isNotifier_Config() {}
+func (*notifier_Pagerduty) isNotifier_Config() {}
 
-func (*Notifier_Generic) isNotifier_Config() {}
+func (*notifier_Generic) isNotifier_Config() {}
 
-func (*Notifier_Sumologic) isNotifier_Config() {}
+func (*notifier_Sumologic) isNotifier_Config() {}
 
-func (*Notifier_AwsSecurityHub) isNotifier_Config() {}
+func (*notifier_AwsSecurityHub) isNotifier_Config() {}
 
-func (*Notifier_Syslog) isNotifier_Config() {}
+func (*notifier_Syslog) isNotifier_Config() {}
 
-func (*Notifier_MicrosoftSentinel) isNotifier_Config() {}
+func (*notifier_MicrosoftSentinel) isNotifier_Config() {}
 
 type AWSSecurityHub struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Region        *string                     `protobuf:"bytes,1,opt,name=region" json:"region,omitempty"`
-	Credentials   *AWSSecurityHub_Credentials `protobuf:"bytes,2,opt,name=credentials" json:"credentials,omitempty"`
-	AccountId     *string                     `protobuf:"bytes,3,opt,name=account_id,json=accountId" json:"account_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Region      *string                     `protobuf:"bytes,1,opt,name=region"`
+	xxx_hidden_Credentials *AWSSecurityHub_Credentials `protobuf:"bytes,2,opt,name=credentials"`
+	xxx_hidden_AccountId   *string                     `protobuf:"bytes,3,opt,name=account_id,json=accountId"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AWSSecurityHub) Reset() {
@@ -945,69 +984,79 @@ func (x *AWSSecurityHub) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AWSSecurityHub) GetRegion() string {
-	if x != nil && x.Region != nil {
-		return *x.Region
+	if x != nil {
+		if x.xxx_hidden_Region != nil {
+			return *x.xxx_hidden_Region
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AWSSecurityHub) GetCredentials() *AWSSecurityHub_Credentials {
 	if x != nil {
-		return x.Credentials
+		return x.xxx_hidden_Credentials
 	}
 	return nil
 }
 
 func (x *AWSSecurityHub) GetAccountId() string {
-	if x != nil && x.AccountId != nil {
-		return *x.AccountId
+	if x != nil {
+		if x.xxx_hidden_AccountId != nil {
+			return *x.xxx_hidden_AccountId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AWSSecurityHub) SetRegion(v string) {
-	x.Region = &v
+	x.xxx_hidden_Region = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *AWSSecurityHub) SetCredentials(v *AWSSecurityHub_Credentials) {
-	x.Credentials = v
+	x.xxx_hidden_Credentials = v
 }
 
 func (x *AWSSecurityHub) SetAccountId(v string) {
-	x.AccountId = &v
+	x.xxx_hidden_AccountId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *AWSSecurityHub) HasRegion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Region != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AWSSecurityHub) HasCredentials() bool {
 	if x == nil {
 		return false
 	}
-	return x.Credentials != nil
+	return x.xxx_hidden_Credentials != nil
 }
 
 func (x *AWSSecurityHub) HasAccountId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AccountId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *AWSSecurityHub) ClearRegion() {
-	x.Region = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Region = nil
 }
 
 func (x *AWSSecurityHub) ClearCredentials() {
-	x.Credentials = nil
+	x.xxx_hidden_Credentials = nil
 }
 
 func (x *AWSSecurityHub) ClearAccountId() {
-	x.AccountId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_AccountId = nil
 }
 
 type AWSSecurityHub_builder struct {
@@ -1022,20 +1071,27 @@ func (b0 AWSSecurityHub_builder) Build() *AWSSecurityHub {
 	m0 := &AWSSecurityHub{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Region = b.Region
-	x.Credentials = b.Credentials
-	x.AccountId = b.AccountId
+	if b.Region != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Region = b.Region
+	}
+	x.xxx_hidden_Credentials = b.Credentials
+	if b.AccountId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_AccountId = b.AccountId
+	}
 	return m0
 }
 
 type CSCC struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The service account for the integration. The server will mask the value of this credential in responses and logs.
-	ServiceAccount *string `protobuf:"bytes,1,opt,name=service_account,json=serviceAccount" json:"service_account,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	SourceId       *string `protobuf:"bytes,4,opt,name=source_id,json=sourceId" json:"source_id,omitempty"`
-	WifEnabled     *bool   `protobuf:"varint,5,opt,name=wif_enabled,json=wifEnabled" json:"wif_enabled,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ServiceAccount *string                `protobuf:"bytes,1,opt,name=service_account,json=serviceAccount"`
+	xxx_hidden_SourceId       *string                `protobuf:"bytes,4,opt,name=source_id,json=sourceId"`
+	xxx_hidden_WifEnabled     bool                   `protobuf:"varint,5,opt,name=wif_enabled,json=wifEnabled"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *CSCC) Reset() {
@@ -1064,69 +1120,81 @@ func (x *CSCC) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CSCC) GetServiceAccount() string {
-	if x != nil && x.ServiceAccount != nil {
-		return *x.ServiceAccount
+	if x != nil {
+		if x.xxx_hidden_ServiceAccount != nil {
+			return *x.xxx_hidden_ServiceAccount
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CSCC) GetSourceId() string {
-	if x != nil && x.SourceId != nil {
-		return *x.SourceId
+	if x != nil {
+		if x.xxx_hidden_SourceId != nil {
+			return *x.xxx_hidden_SourceId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CSCC) GetWifEnabled() bool {
-	if x != nil && x.WifEnabled != nil {
-		return *x.WifEnabled
+	if x != nil {
+		return x.xxx_hidden_WifEnabled
 	}
 	return false
 }
 
 func (x *CSCC) SetServiceAccount(v string) {
-	x.ServiceAccount = &v
+	x.xxx_hidden_ServiceAccount = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *CSCC) SetSourceId(v string) {
-	x.SourceId = &v
+	x.xxx_hidden_SourceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *CSCC) SetWifEnabled(v bool) {
-	x.WifEnabled = &v
+	x.xxx_hidden_WifEnabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *CSCC) HasServiceAccount() bool {
 	if x == nil {
 		return false
 	}
-	return x.ServiceAccount != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CSCC) HasSourceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.SourceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CSCC) HasWifEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.WifEnabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *CSCC) ClearServiceAccount() {
-	x.ServiceAccount = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ServiceAccount = nil
 }
 
 func (x *CSCC) ClearSourceId() {
-	x.SourceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_SourceId = nil
 }
 
 func (x *CSCC) ClearWifEnabled() {
-	x.WifEnabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_WifEnabled = false
 }
 
 type CSCC_builder struct {
@@ -1142,24 +1210,34 @@ func (b0 CSCC_builder) Build() *CSCC {
 	m0 := &CSCC{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ServiceAccount = b.ServiceAccount
-	x.SourceId = b.SourceId
-	x.WifEnabled = b.WifEnabled
+	if b.ServiceAccount != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_ServiceAccount = b.ServiceAccount
+	}
+	if b.SourceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_SourceId = b.SourceId
+	}
+	if b.WifEnabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_WifEnabled = *b.WifEnabled
+	}
 	return m0
 }
 
 type Jira struct {
-	state    protoimpl.MessageState `protogen:"hybrid.v1"`
-	Url      *string                `protobuf:"bytes,1,opt,name=url" json:"url,omitempty" scrub:"dependent" validate:"nolocalendpoint"`           // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	Username *string                `protobuf:"bytes,2,opt,name=username" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password          *string                 `protobuf:"bytes,3,opt,name=password" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	IssueType         *string                 `protobuf:"bytes,4,opt,name=issue_type,json=issueType" json:"issue_type,omitempty"`
-	PriorityMappings  []*Jira_PriorityMapping `protobuf:"bytes,5,rep,name=priority_mappings,json=priorityMappings" json:"priority_mappings,omitempty"`
-	DefaultFieldsJson *string                 `protobuf:"bytes,6,opt,name=default_fields_json,json=defaultFieldsJson" json:"default_fields_json,omitempty"`
-	DisablePriority   *bool                   `protobuf:"varint,7,opt,name=disablePriority" json:"disablePriority,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_Url               *string                  `protobuf:"bytes,1,opt,name=url"`
+	xxx_hidden_Username          *string                  `protobuf:"bytes,2,opt,name=username"`
+	xxx_hidden_Password          *string                  `protobuf:"bytes,3,opt,name=password"`
+	xxx_hidden_IssueType         *string                  `protobuf:"bytes,4,opt,name=issue_type,json=issueType"`
+	xxx_hidden_PriorityMappings  *[]*Jira_PriorityMapping `protobuf:"bytes,5,rep,name=priority_mappings,json=priorityMappings"`
+	xxx_hidden_DefaultFieldsJson *string                  `protobuf:"bytes,6,opt,name=default_fields_json,json=defaultFieldsJson"`
+	xxx_hidden_DisablePriority   bool                     `protobuf:"varint,7,opt,name=disablePriority"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *Jira) Reset() {
@@ -1188,146 +1266,175 @@ func (x *Jira) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Jira) GetUrl() string {
-	if x != nil && x.Url != nil {
-		return *x.Url
+	if x != nil {
+		if x.xxx_hidden_Url != nil {
+			return *x.xxx_hidden_Url
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Jira) GetUsername() string {
-	if x != nil && x.Username != nil {
-		return *x.Username
+	if x != nil {
+		if x.xxx_hidden_Username != nil {
+			return *x.xxx_hidden_Username
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Jira) GetPassword() string {
-	if x != nil && x.Password != nil {
-		return *x.Password
+	if x != nil {
+		if x.xxx_hidden_Password != nil {
+			return *x.xxx_hidden_Password
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Jira) GetIssueType() string {
-	if x != nil && x.IssueType != nil {
-		return *x.IssueType
+	if x != nil {
+		if x.xxx_hidden_IssueType != nil {
+			return *x.xxx_hidden_IssueType
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Jira) GetPriorityMappings() []*Jira_PriorityMapping {
 	if x != nil {
-		return x.PriorityMappings
+		if x.xxx_hidden_PriorityMappings != nil {
+			return *x.xxx_hidden_PriorityMappings
+		}
 	}
 	return nil
 }
 
 func (x *Jira) GetDefaultFieldsJson() string {
-	if x != nil && x.DefaultFieldsJson != nil {
-		return *x.DefaultFieldsJson
+	if x != nil {
+		if x.xxx_hidden_DefaultFieldsJson != nil {
+			return *x.xxx_hidden_DefaultFieldsJson
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Jira) GetDisablePriority() bool {
-	if x != nil && x.DisablePriority != nil {
-		return *x.DisablePriority
+	if x != nil {
+		return x.xxx_hidden_DisablePriority
 	}
 	return false
 }
 
 func (x *Jira) SetUrl(v string) {
-	x.Url = &v
+	x.xxx_hidden_Url = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *Jira) SetUsername(v string) {
-	x.Username = &v
+	x.xxx_hidden_Username = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *Jira) SetPassword(v string) {
-	x.Password = &v
+	x.xxx_hidden_Password = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *Jira) SetIssueType(v string) {
-	x.IssueType = &v
+	x.xxx_hidden_IssueType = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *Jira) SetPriorityMappings(v []*Jira_PriorityMapping) {
-	x.PriorityMappings = v
+	x.xxx_hidden_PriorityMappings = &v
 }
 
 func (x *Jira) SetDefaultFieldsJson(v string) {
-	x.DefaultFieldsJson = &v
+	x.xxx_hidden_DefaultFieldsJson = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 func (x *Jira) SetDisablePriority(v bool) {
-	x.DisablePriority = &v
+	x.xxx_hidden_DisablePriority = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *Jira) HasUrl() bool {
 	if x == nil {
 		return false
 	}
-	return x.Url != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Jira) HasUsername() bool {
 	if x == nil {
 		return false
 	}
-	return x.Username != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Jira) HasPassword() bool {
 	if x == nil {
 		return false
 	}
-	return x.Password != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Jira) HasIssueType() bool {
 	if x == nil {
 		return false
 	}
-	return x.IssueType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Jira) HasDefaultFieldsJson() bool {
 	if x == nil {
 		return false
 	}
-	return x.DefaultFieldsJson != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Jira) HasDisablePriority() bool {
 	if x == nil {
 		return false
 	}
-	return x.DisablePriority != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *Jira) ClearUrl() {
-	x.Url = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Url = nil
 }
 
 func (x *Jira) ClearUsername() {
-	x.Username = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Username = nil
 }
 
 func (x *Jira) ClearPassword() {
-	x.Password = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Password = nil
 }
 
 func (x *Jira) ClearIssueType() {
-	x.IssueType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_IssueType = nil
 }
 
 func (x *Jira) ClearDefaultFieldsJson() {
-	x.DefaultFieldsJson = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_DefaultFieldsJson = nil
 }
 
 func (x *Jira) ClearDisablePriority() {
-	x.DisablePriority = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_DisablePriority = false
 }
 
 type Jira_builder struct {
@@ -1347,34 +1454,51 @@ func (b0 Jira_builder) Build() *Jira {
 	m0 := &Jira{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Url = b.Url
-	x.Username = b.Username
-	x.Password = b.Password
-	x.IssueType = b.IssueType
-	x.PriorityMappings = b.PriorityMappings
-	x.DefaultFieldsJson = b.DefaultFieldsJson
-	x.DisablePriority = b.DisablePriority
+	if b.Url != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Url = b.Url
+	}
+	if b.Username != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Username = b.Username
+	}
+	if b.Password != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_Password = b.Password
+	}
+	if b.IssueType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_IssueType = b.IssueType
+	}
+	x.xxx_hidden_PriorityMappings = &b.PriorityMappings
+	if b.DefaultFieldsJson != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_DefaultFieldsJson = b.DefaultFieldsJson
+	}
+	if b.DisablePriority != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_DisablePriority = *b.DisablePriority
+	}
 	return m0
 }
 
 type Email struct {
-	state    protoimpl.MessageState `protogen:"hybrid.v1"`
-	Server   *string                `protobuf:"bytes,1,opt,name=server" json:"server,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	Sender   *string                `protobuf:"bytes,2,opt,name=sender" json:"sender,omitempty"`
-	Username *string                `protobuf:"bytes,3,opt,name=username" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password              *string           `protobuf:"bytes,4,opt,name=password" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	DisableTLS            *bool             `protobuf:"varint,5,opt,name=disableTLS" json:"disableTLS,omitempty"`
-	DEPRECATEDUseStartTLS *bool             `protobuf:"varint,6,opt,name=DEPRECATED_useStartTLS,json=DEPRECATEDUseStartTLS" json:"DEPRECATED_useStartTLS,omitempty"` // useStartTLS has been deprecated for startTLSAuthMethod
-	From                  *string           `protobuf:"bytes,7,opt,name=from" json:"from,omitempty"`
-	StartTLSAuthMethod    *Email_AuthMethod `protobuf:"varint,8,opt,name=startTLSAuthMethod,enum=storage.Email_AuthMethod" json:"startTLSAuthMethod,omitempty"`
-	// Set to true to allow unauthenticated SMTP
-	AllowUnauthenticatedSmtp *bool `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp" json:"allow_unauthenticated_smtp,omitempty" scrub:"disableDependentIfTrue"` // @gotags: scrub:"disableDependentIfTrue"
-	SkipTLSVerify            *bool `protobuf:"varint,10,opt,name=skipTLSVerify" json:"skipTLSVerify,omitempty"`
-	// the local FQDN sent by the client in the EHLO/HELO command. Optional, if left blank, localhost will be used
-	HostnameHeloEhlo *string `protobuf:"bytes,11,opt,name=hostname_helo_ehlo,json=hostnameHeloEhlo" json:"hostname_helo_ehlo,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Server                   *string                `protobuf:"bytes,1,opt,name=server"`
+	xxx_hidden_Sender                   *string                `protobuf:"bytes,2,opt,name=sender"`
+	xxx_hidden_Username                 *string                `protobuf:"bytes,3,opt,name=username"`
+	xxx_hidden_Password                 *string                `protobuf:"bytes,4,opt,name=password"`
+	xxx_hidden_DisableTLS               bool                   `protobuf:"varint,5,opt,name=disableTLS"`
+	xxx_hidden_DEPRECATEDUseStartTLS    bool                   `protobuf:"varint,6,opt,name=DEPRECATED_useStartTLS,json=DEPRECATEDUseStartTLS"`
+	xxx_hidden_From                     *string                `protobuf:"bytes,7,opt,name=from"`
+	xxx_hidden_StartTLSAuthMethod       Email_AuthMethod       `protobuf:"varint,8,opt,name=startTLSAuthMethod,enum=storage.Email_AuthMethod"`
+	xxx_hidden_AllowUnauthenticatedSmtp bool                   `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp"`
+	xxx_hidden_SkipTLSVerify            bool                   `protobuf:"varint,10,opt,name=skipTLSVerify"`
+	xxx_hidden_HostnameHeloEhlo         *string                `protobuf:"bytes,11,opt,name=hostname_helo_ehlo,json=hostnameHeloEhlo"`
+	XXX_raceDetectHookData              protoimpl.RaceDetectHookData
+	XXX_presence                        [1]uint32
+	unknownFields                       protoimpl.UnknownFields
+	sizeCache                           protoimpl.SizeCache
 }
 
 func (x *Email) Reset() {
@@ -1403,245 +1527,287 @@ func (x *Email) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Email) GetServer() string {
-	if x != nil && x.Server != nil {
-		return *x.Server
+	if x != nil {
+		if x.xxx_hidden_Server != nil {
+			return *x.xxx_hidden_Server
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Email) GetSender() string {
-	if x != nil && x.Sender != nil {
-		return *x.Sender
+	if x != nil {
+		if x.xxx_hidden_Sender != nil {
+			return *x.xxx_hidden_Sender
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Email) GetUsername() string {
-	if x != nil && x.Username != nil {
-		return *x.Username
+	if x != nil {
+		if x.xxx_hidden_Username != nil {
+			return *x.xxx_hidden_Username
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Email) GetPassword() string {
-	if x != nil && x.Password != nil {
-		return *x.Password
+	if x != nil {
+		if x.xxx_hidden_Password != nil {
+			return *x.xxx_hidden_Password
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Email) GetDisableTLS() bool {
-	if x != nil && x.DisableTLS != nil {
-		return *x.DisableTLS
+	if x != nil {
+		return x.xxx_hidden_DisableTLS
 	}
 	return false
 }
 
 func (x *Email) GetDEPRECATEDUseStartTLS() bool {
-	if x != nil && x.DEPRECATEDUseStartTLS != nil {
-		return *x.DEPRECATEDUseStartTLS
+	if x != nil {
+		return x.xxx_hidden_DEPRECATEDUseStartTLS
 	}
 	return false
 }
 
 func (x *Email) GetFrom() string {
-	if x != nil && x.From != nil {
-		return *x.From
+	if x != nil {
+		if x.xxx_hidden_From != nil {
+			return *x.xxx_hidden_From
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Email) GetStartTLSAuthMethod() Email_AuthMethod {
-	if x != nil && x.StartTLSAuthMethod != nil {
-		return *x.StartTLSAuthMethod
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			return x.xxx_hidden_StartTLSAuthMethod
+		}
 	}
 	return Email_DISABLED
 }
 
 func (x *Email) GetAllowUnauthenticatedSmtp() bool {
-	if x != nil && x.AllowUnauthenticatedSmtp != nil {
-		return *x.AllowUnauthenticatedSmtp
+	if x != nil {
+		return x.xxx_hidden_AllowUnauthenticatedSmtp
 	}
 	return false
 }
 
 func (x *Email) GetSkipTLSVerify() bool {
-	if x != nil && x.SkipTLSVerify != nil {
-		return *x.SkipTLSVerify
+	if x != nil {
+		return x.xxx_hidden_SkipTLSVerify
 	}
 	return false
 }
 
 func (x *Email) GetHostnameHeloEhlo() string {
-	if x != nil && x.HostnameHeloEhlo != nil {
-		return *x.HostnameHeloEhlo
+	if x != nil {
+		if x.xxx_hidden_HostnameHeloEhlo != nil {
+			return *x.xxx_hidden_HostnameHeloEhlo
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Email) SetServer(v string) {
-	x.Server = &v
+	x.xxx_hidden_Server = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
 }
 
 func (x *Email) SetSender(v string) {
-	x.Sender = &v
+	x.xxx_hidden_Sender = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
 }
 
 func (x *Email) SetUsername(v string) {
-	x.Username = &v
+	x.xxx_hidden_Username = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
 }
 
 func (x *Email) SetPassword(v string) {
-	x.Password = &v
+	x.xxx_hidden_Password = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
 }
 
 func (x *Email) SetDisableTLS(v bool) {
-	x.DisableTLS = &v
+	x.xxx_hidden_DisableTLS = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
 }
 
 func (x *Email) SetDEPRECATEDUseStartTLS(v bool) {
-	x.DEPRECATEDUseStartTLS = &v
+	x.xxx_hidden_DEPRECATEDUseStartTLS = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
 }
 
 func (x *Email) SetFrom(v string) {
-	x.From = &v
+	x.xxx_hidden_From = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
 }
 
 func (x *Email) SetStartTLSAuthMethod(v Email_AuthMethod) {
-	x.StartTLSAuthMethod = &v
+	x.xxx_hidden_StartTLSAuthMethod = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
 }
 
 func (x *Email) SetAllowUnauthenticatedSmtp(v bool) {
-	x.AllowUnauthenticatedSmtp = &v
+	x.xxx_hidden_AllowUnauthenticatedSmtp = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
 }
 
 func (x *Email) SetSkipTLSVerify(v bool) {
-	x.SkipTLSVerify = &v
+	x.xxx_hidden_SkipTLSVerify = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
 }
 
 func (x *Email) SetHostnameHeloEhlo(v string) {
-	x.HostnameHeloEhlo = &v
+	x.xxx_hidden_HostnameHeloEhlo = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
 }
 
 func (x *Email) HasServer() bool {
 	if x == nil {
 		return false
 	}
-	return x.Server != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Email) HasSender() bool {
 	if x == nil {
 		return false
 	}
-	return x.Sender != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Email) HasUsername() bool {
 	if x == nil {
 		return false
 	}
-	return x.Username != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Email) HasPassword() bool {
 	if x == nil {
 		return false
 	}
-	return x.Password != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Email) HasDisableTLS() bool {
 	if x == nil {
 		return false
 	}
-	return x.DisableTLS != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Email) HasDEPRECATEDUseStartTLS() bool {
 	if x == nil {
 		return false
 	}
-	return x.DEPRECATEDUseStartTLS != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Email) HasFrom() bool {
 	if x == nil {
 		return false
 	}
-	return x.From != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *Email) HasStartTLSAuthMethod() bool {
 	if x == nil {
 		return false
 	}
-	return x.StartTLSAuthMethod != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *Email) HasAllowUnauthenticatedSmtp() bool {
 	if x == nil {
 		return false
 	}
-	return x.AllowUnauthenticatedSmtp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *Email) HasSkipTLSVerify() bool {
 	if x == nil {
 		return false
 	}
-	return x.SkipTLSVerify != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *Email) HasHostnameHeloEhlo() bool {
 	if x == nil {
 		return false
 	}
-	return x.HostnameHeloEhlo != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
 }
 
 func (x *Email) ClearServer() {
-	x.Server = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Server = nil
 }
 
 func (x *Email) ClearSender() {
-	x.Sender = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Sender = nil
 }
 
 func (x *Email) ClearUsername() {
-	x.Username = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Username = nil
 }
 
 func (x *Email) ClearPassword() {
-	x.Password = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Password = nil
 }
 
 func (x *Email) ClearDisableTLS() {
-	x.DisableTLS = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_DisableTLS = false
 }
 
 func (x *Email) ClearDEPRECATEDUseStartTLS() {
-	x.DEPRECATEDUseStartTLS = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_DEPRECATEDUseStartTLS = false
 }
 
 func (x *Email) ClearFrom() {
-	x.From = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_From = nil
 }
 
 func (x *Email) ClearStartTLSAuthMethod() {
-	x.StartTLSAuthMethod = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_StartTLSAuthMethod = Email_DISABLED
 }
 
 func (x *Email) ClearAllowUnauthenticatedSmtp() {
-	x.AllowUnauthenticatedSmtp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_AllowUnauthenticatedSmtp = false
 }
 
 func (x *Email) ClearSkipTLSVerify() {
-	x.SkipTLSVerify = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_SkipTLSVerify = false
 }
 
 func (x *Email) ClearHostnameHeloEhlo() {
-	x.HostnameHeloEhlo = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	x.xxx_hidden_HostnameHeloEhlo = nil
 }
 
 type Email_builder struct {
@@ -1667,35 +1833,66 @@ func (b0 Email_builder) Build() *Email {
 	m0 := &Email{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Server = b.Server
-	x.Sender = b.Sender
-	x.Username = b.Username
-	x.Password = b.Password
-	x.DisableTLS = b.DisableTLS
-	x.DEPRECATEDUseStartTLS = b.DEPRECATEDUseStartTLS
-	x.From = b.From
-	x.StartTLSAuthMethod = b.StartTLSAuthMethod
-	x.AllowUnauthenticatedSmtp = b.AllowUnauthenticatedSmtp
-	x.SkipTLSVerify = b.SkipTLSVerify
-	x.HostnameHeloEhlo = b.HostnameHeloEhlo
+	if b.Server != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
+		x.xxx_hidden_Server = b.Server
+	}
+	if b.Sender != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
+		x.xxx_hidden_Sender = b.Sender
+	}
+	if b.Username != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
+		x.xxx_hidden_Username = b.Username
+	}
+	if b.Password != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
+		x.xxx_hidden_Password = b.Password
+	}
+	if b.DisableTLS != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
+		x.xxx_hidden_DisableTLS = *b.DisableTLS
+	}
+	if b.DEPRECATEDUseStartTLS != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
+		x.xxx_hidden_DEPRECATEDUseStartTLS = *b.DEPRECATEDUseStartTLS
+	}
+	if b.From != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
+		x.xxx_hidden_From = b.From
+	}
+	if b.StartTLSAuthMethod != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
+		x.xxx_hidden_StartTLSAuthMethod = *b.StartTLSAuthMethod
+	}
+	if b.AllowUnauthenticatedSmtp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
+		x.xxx_hidden_AllowUnauthenticatedSmtp = *b.AllowUnauthenticatedSmtp
+	}
+	if b.SkipTLSVerify != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
+		x.xxx_hidden_SkipTLSVerify = *b.SkipTLSVerify
+	}
+	if b.HostnameHeloEhlo != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
+		x.xxx_hidden_HostnameHeloEhlo = b.HostnameHeloEhlo
+	}
 	return m0
 }
 
 type Splunk struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
-	HttpToken           *string `protobuf:"bytes,1,opt,name=http_token,json=httpToken" json:"http_token,omitempty" scrub:"always"`          // @gotags: scrub:"always"
-	HttpEndpoint        *string `protobuf:"bytes,2,opt,name=http_endpoint,json=httpEndpoint" json:"http_endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	Insecure            *bool   `protobuf:"varint,3,opt,name=insecure" json:"insecure,omitempty"`
-	Truncate            *int64  `protobuf:"varint,4,opt,name=truncate" json:"truncate,omitempty"`
-	AuditLoggingEnabled *bool   `protobuf:"varint,5,opt,name=audit_logging_enabled,json=auditLoggingEnabled" json:"audit_logging_enabled,omitempty"`
-	// Types that are valid to be assigned to DerivedSourceTypeDeprecated:
-	//
-	//	*Splunk_DerivedSourceType
-	DerivedSourceTypeDeprecated isSplunk_DerivedSourceTypeDeprecated `protobuf_oneof:"derived_source_type_deprecated"`
-	SourceTypes                 map[string]string                    `protobuf:"bytes,7,rep,name=source_types,json=sourceTypes" json:"source_types,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state                                  protoimpl.MessageState               `protogen:"opaque.v1"`
+	xxx_hidden_HttpToken                   *string                              `protobuf:"bytes,1,opt,name=http_token,json=httpToken"`
+	xxx_hidden_HttpEndpoint                *string                              `protobuf:"bytes,2,opt,name=http_endpoint,json=httpEndpoint"`
+	xxx_hidden_Insecure                    bool                                 `protobuf:"varint,3,opt,name=insecure"`
+	xxx_hidden_Truncate                    int64                                `protobuf:"varint,4,opt,name=truncate"`
+	xxx_hidden_AuditLoggingEnabled         bool                                 `protobuf:"varint,5,opt,name=audit_logging_enabled,json=auditLoggingEnabled"`
+	xxx_hidden_DerivedSourceTypeDeprecated isSplunk_DerivedSourceTypeDeprecated `protobuf_oneof:"derived_source_type_deprecated"`
+	xxx_hidden_SourceTypes                 map[string]string                    `protobuf:"bytes,7,rep,name=source_types,json=sourceTypes" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XXX_raceDetectHookData                 protoimpl.RaceDetectHookData
+	XXX_presence                           [1]uint32
+	unknownFields                          protoimpl.UnknownFields
+	sizeCache                              protoimpl.SizeCache
 }
 
 func (x *Splunk) Reset() {
@@ -1724,51 +1921,50 @@ func (x *Splunk) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Splunk) GetHttpToken() string {
-	if x != nil && x.HttpToken != nil {
-		return *x.HttpToken
+	if x != nil {
+		if x.xxx_hidden_HttpToken != nil {
+			return *x.xxx_hidden_HttpToken
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Splunk) GetHttpEndpoint() string {
-	if x != nil && x.HttpEndpoint != nil {
-		return *x.HttpEndpoint
+	if x != nil {
+		if x.xxx_hidden_HttpEndpoint != nil {
+			return *x.xxx_hidden_HttpEndpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Splunk) GetInsecure() bool {
-	if x != nil && x.Insecure != nil {
-		return *x.Insecure
+	if x != nil {
+		return x.xxx_hidden_Insecure
 	}
 	return false
 }
 
 func (x *Splunk) GetTruncate() int64 {
-	if x != nil && x.Truncate != nil {
-		return *x.Truncate
+	if x != nil {
+		return x.xxx_hidden_Truncate
 	}
 	return 0
 }
 
 func (x *Splunk) GetAuditLoggingEnabled() bool {
-	if x != nil && x.AuditLoggingEnabled != nil {
-		return *x.AuditLoggingEnabled
+	if x != nil {
+		return x.xxx_hidden_AuditLoggingEnabled
 	}
 	return false
-}
-
-func (x *Splunk) GetDerivedSourceTypeDeprecated() isSplunk_DerivedSourceTypeDeprecated {
-	if x != nil {
-		return x.DerivedSourceTypeDeprecated
-	}
-	return nil
 }
 
 // Deprecated: Marked as deprecated in storage/notifier.proto.
 func (x *Splunk) GetDerivedSourceType() bool {
 	if x != nil {
-		if x, ok := x.DerivedSourceTypeDeprecated.(*Splunk_DerivedSourceType); ok {
+		if x, ok := x.xxx_hidden_DerivedSourceTypeDeprecated.(*splunk_DerivedSourceType); ok {
 			return x.DerivedSourceType
 		}
 	}
@@ -1777,80 +1973,85 @@ func (x *Splunk) GetDerivedSourceType() bool {
 
 func (x *Splunk) GetSourceTypes() map[string]string {
 	if x != nil {
-		return x.SourceTypes
+		return x.xxx_hidden_SourceTypes
 	}
 	return nil
 }
 
 func (x *Splunk) SetHttpToken(v string) {
-	x.HttpToken = &v
+	x.xxx_hidden_HttpToken = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *Splunk) SetHttpEndpoint(v string) {
-	x.HttpEndpoint = &v
+	x.xxx_hidden_HttpEndpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *Splunk) SetInsecure(v bool) {
-	x.Insecure = &v
+	x.xxx_hidden_Insecure = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *Splunk) SetTruncate(v int64) {
-	x.Truncate = &v
+	x.xxx_hidden_Truncate = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *Splunk) SetAuditLoggingEnabled(v bool) {
-	x.AuditLoggingEnabled = &v
+	x.xxx_hidden_AuditLoggingEnabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 // Deprecated: Marked as deprecated in storage/notifier.proto.
 func (x *Splunk) SetDerivedSourceType(v bool) {
-	x.DerivedSourceTypeDeprecated = &Splunk_DerivedSourceType{v}
+	x.xxx_hidden_DerivedSourceTypeDeprecated = &splunk_DerivedSourceType{v}
 }
 
 func (x *Splunk) SetSourceTypes(v map[string]string) {
-	x.SourceTypes = v
+	x.xxx_hidden_SourceTypes = v
 }
 
 func (x *Splunk) HasHttpToken() bool {
 	if x == nil {
 		return false
 	}
-	return x.HttpToken != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Splunk) HasHttpEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.HttpEndpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Splunk) HasInsecure() bool {
 	if x == nil {
 		return false
 	}
-	return x.Insecure != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Splunk) HasTruncate() bool {
 	if x == nil {
 		return false
 	}
-	return x.Truncate != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Splunk) HasAuditLoggingEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.AuditLoggingEnabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Splunk) HasDerivedSourceTypeDeprecated() bool {
 	if x == nil {
 		return false
 	}
-	return x.DerivedSourceTypeDeprecated != nil
+	return x.xxx_hidden_DerivedSourceTypeDeprecated != nil
 }
 
 // Deprecated: Marked as deprecated in storage/notifier.proto.
@@ -1858,38 +2059,43 @@ func (x *Splunk) HasDerivedSourceType() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.DerivedSourceTypeDeprecated.(*Splunk_DerivedSourceType)
+	_, ok := x.xxx_hidden_DerivedSourceTypeDeprecated.(*splunk_DerivedSourceType)
 	return ok
 }
 
 func (x *Splunk) ClearHttpToken() {
-	x.HttpToken = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HttpToken = nil
 }
 
 func (x *Splunk) ClearHttpEndpoint() {
-	x.HttpEndpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_HttpEndpoint = nil
 }
 
 func (x *Splunk) ClearInsecure() {
-	x.Insecure = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Insecure = false
 }
 
 func (x *Splunk) ClearTruncate() {
-	x.Truncate = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Truncate = 0
 }
 
 func (x *Splunk) ClearAuditLoggingEnabled() {
-	x.AuditLoggingEnabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_AuditLoggingEnabled = false
 }
 
 func (x *Splunk) ClearDerivedSourceTypeDeprecated() {
-	x.DerivedSourceTypeDeprecated = nil
+	x.xxx_hidden_DerivedSourceTypeDeprecated = nil
 }
 
 // Deprecated: Marked as deprecated in storage/notifier.proto.
 func (x *Splunk) ClearDerivedSourceType() {
-	if _, ok := x.DerivedSourceTypeDeprecated.(*Splunk_DerivedSourceType); ok {
-		x.DerivedSourceTypeDeprecated = nil
+	if _, ok := x.xxx_hidden_DerivedSourceTypeDeprecated.(*splunk_DerivedSourceType); ok {
+		x.xxx_hidden_DerivedSourceTypeDeprecated = nil
 	}
 }
 
@@ -1900,8 +2106,8 @@ func (x *Splunk) WhichDerivedSourceTypeDeprecated() case_Splunk_DerivedSourceTyp
 	if x == nil {
 		return Splunk_DerivedSourceTypeDeprecated_not_set_case
 	}
-	switch x.DerivedSourceTypeDeprecated.(type) {
-	case *Splunk_DerivedSourceType:
+	switch x.xxx_hidden_DerivedSourceTypeDeprecated.(type) {
+	case *splunk_DerivedSourceType:
 		return Splunk_DerivedSourceType_case
 	default:
 		return Splunk_DerivedSourceTypeDeprecated_not_set_case
@@ -1917,12 +2123,12 @@ type Splunk_builder struct {
 	Insecure            *bool
 	Truncate            *int64
 	AuditLoggingEnabled *bool
-	// Fields of oneof DerivedSourceTypeDeprecated:
+	// Fields of oneof xxx_hidden_DerivedSourceTypeDeprecated:
 	// derived_source_type is deprecated in lieu of source_types
 	//
 	// Deprecated: Marked as deprecated in storage/notifier.proto.
 	DerivedSourceType *bool
-	// -- end of DerivedSourceTypeDeprecated
+	// -- end of xxx_hidden_DerivedSourceTypeDeprecated
 	SourceTypes map[string]string
 }
 
@@ -1930,15 +2136,30 @@ func (b0 Splunk_builder) Build() *Splunk {
 	m0 := &Splunk{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HttpToken = b.HttpToken
-	x.HttpEndpoint = b.HttpEndpoint
-	x.Insecure = b.Insecure
-	x.Truncate = b.Truncate
-	x.AuditLoggingEnabled = b.AuditLoggingEnabled
-	if b.DerivedSourceType != nil {
-		x.DerivedSourceTypeDeprecated = &Splunk_DerivedSourceType{*b.DerivedSourceType}
+	if b.HttpToken != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_HttpToken = b.HttpToken
 	}
-	x.SourceTypes = b.SourceTypes
+	if b.HttpEndpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_HttpEndpoint = b.HttpEndpoint
+	}
+	if b.Insecure != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_Insecure = *b.Insecure
+	}
+	if b.Truncate != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_Truncate = *b.Truncate
+	}
+	if b.AuditLoggingEnabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_AuditLoggingEnabled = *b.AuditLoggingEnabled
+	}
+	if b.DerivedSourceType != nil {
+		x.xxx_hidden_DerivedSourceTypeDeprecated = &splunk_DerivedSourceType{*b.DerivedSourceType}
+	}
+	x.xxx_hidden_SourceTypes = b.SourceTypes
 	return m0
 }
 
@@ -1956,21 +2177,22 @@ type isSplunk_DerivedSourceTypeDeprecated interface {
 	isSplunk_DerivedSourceTypeDeprecated()
 }
 
-type Splunk_DerivedSourceType struct {
+type splunk_DerivedSourceType struct {
 	// derived_source_type is deprecated in lieu of source_types
 	//
 	// Deprecated: Marked as deprecated in storage/notifier.proto.
 	DerivedSourceType bool `protobuf:"varint,6,opt,name=derived_source_type,json=derivedSourceType,oneof"`
 }
 
-func (*Splunk_DerivedSourceType) isSplunk_DerivedSourceTypeDeprecated() {}
+func (*splunk_DerivedSourceType) isSplunk_DerivedSourceTypeDeprecated() {}
 
 type PagerDuty struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The API key for the integration. The server will mask the value of this credential in responses and logs.
-	ApiKey        *string `protobuf:"bytes,1,opt,name=api_key,json=apiKey" json:"api_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ApiKey      *string                `protobuf:"bytes,1,opt,name=api_key,json=apiKey"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PagerDuty) Reset() {
@@ -1999,25 +2221,30 @@ func (x *PagerDuty) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PagerDuty) GetApiKey() string {
-	if x != nil && x.ApiKey != nil {
-		return *x.ApiKey
+	if x != nil {
+		if x.xxx_hidden_ApiKey != nil {
+			return *x.xxx_hidden_ApiKey
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PagerDuty) SetApiKey(v string) {
-	x.ApiKey = &v
+	x.xxx_hidden_ApiKey = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *PagerDuty) HasApiKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.ApiKey != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PagerDuty) ClearApiKey() {
-	x.ApiKey = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ApiKey = nil
 }
 
 type PagerDuty_builder struct {
@@ -2031,23 +2258,27 @@ func (b0 PagerDuty_builder) Build() *PagerDuty {
 	m0 := &PagerDuty{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ApiKey = b.ApiKey
+	if b.ApiKey != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_ApiKey = b.ApiKey
+	}
 	return m0
 }
 
 type Generic struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Endpoint      *string                `protobuf:"bytes,1,opt,name=endpoint" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	SkipTLSVerify *bool                  `protobuf:"varint,2,opt,name=skipTLSVerify" json:"skipTLSVerify,omitempty"`
-	CaCert        *string                `protobuf:"bytes,3,opt,name=ca_cert,json=caCert" json:"ca_cert,omitempty"`
-	Username      *string                `protobuf:"bytes,4,opt,name=username" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password            *string         `protobuf:"bytes,5,opt,name=password" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	Headers             []*KeyValuePair `protobuf:"bytes,6,rep,name=headers" json:"headers,omitempty"`
-	ExtraFields         []*KeyValuePair `protobuf:"bytes,7,rep,name=extra_fields,json=extraFields" json:"extra_fields,omitempty"`
-	AuditLoggingEnabled *bool           `protobuf:"varint,8,opt,name=audit_logging_enabled,json=auditLoggingEnabled" json:"audit_logging_enabled,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Endpoint            *string                `protobuf:"bytes,1,opt,name=endpoint"`
+	xxx_hidden_SkipTLSVerify       bool                   `protobuf:"varint,2,opt,name=skipTLSVerify"`
+	xxx_hidden_CaCert              *string                `protobuf:"bytes,3,opt,name=ca_cert,json=caCert"`
+	xxx_hidden_Username            *string                `protobuf:"bytes,4,opt,name=username"`
+	xxx_hidden_Password            *string                `protobuf:"bytes,5,opt,name=password"`
+	xxx_hidden_Headers             *[]*KeyValuePair       `protobuf:"bytes,6,rep,name=headers"`
+	xxx_hidden_ExtraFields         *[]*KeyValuePair       `protobuf:"bytes,7,rep,name=extra_fields,json=extraFields"`
+	xxx_hidden_AuditLoggingEnabled bool                   `protobuf:"varint,8,opt,name=audit_logging_enabled,json=auditLoggingEnabled"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *Generic) Reset() {
@@ -2076,157 +2307,185 @@ func (x *Generic) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Generic) GetEndpoint() string {
-	if x != nil && x.Endpoint != nil {
-		return *x.Endpoint
+	if x != nil {
+		if x.xxx_hidden_Endpoint != nil {
+			return *x.xxx_hidden_Endpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Generic) GetSkipTLSVerify() bool {
-	if x != nil && x.SkipTLSVerify != nil {
-		return *x.SkipTLSVerify
+	if x != nil {
+		return x.xxx_hidden_SkipTLSVerify
 	}
 	return false
 }
 
 func (x *Generic) GetCaCert() string {
-	if x != nil && x.CaCert != nil {
-		return *x.CaCert
+	if x != nil {
+		if x.xxx_hidden_CaCert != nil {
+			return *x.xxx_hidden_CaCert
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Generic) GetUsername() string {
-	if x != nil && x.Username != nil {
-		return *x.Username
+	if x != nil {
+		if x.xxx_hidden_Username != nil {
+			return *x.xxx_hidden_Username
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Generic) GetPassword() string {
-	if x != nil && x.Password != nil {
-		return *x.Password
+	if x != nil {
+		if x.xxx_hidden_Password != nil {
+			return *x.xxx_hidden_Password
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Generic) GetHeaders() []*KeyValuePair {
 	if x != nil {
-		return x.Headers
+		if x.xxx_hidden_Headers != nil {
+			return *x.xxx_hidden_Headers
+		}
 	}
 	return nil
 }
 
 func (x *Generic) GetExtraFields() []*KeyValuePair {
 	if x != nil {
-		return x.ExtraFields
+		if x.xxx_hidden_ExtraFields != nil {
+			return *x.xxx_hidden_ExtraFields
+		}
 	}
 	return nil
 }
 
 func (x *Generic) GetAuditLoggingEnabled() bool {
-	if x != nil && x.AuditLoggingEnabled != nil {
-		return *x.AuditLoggingEnabled
+	if x != nil {
+		return x.xxx_hidden_AuditLoggingEnabled
 	}
 	return false
 }
 
 func (x *Generic) SetEndpoint(v string) {
-	x.Endpoint = &v
+	x.xxx_hidden_Endpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
 }
 
 func (x *Generic) SetSkipTLSVerify(v bool) {
-	x.SkipTLSVerify = &v
+	x.xxx_hidden_SkipTLSVerify = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
 }
 
 func (x *Generic) SetCaCert(v string) {
-	x.CaCert = &v
+	x.xxx_hidden_CaCert = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
 }
 
 func (x *Generic) SetUsername(v string) {
-	x.Username = &v
+	x.xxx_hidden_Username = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
 }
 
 func (x *Generic) SetPassword(v string) {
-	x.Password = &v
+	x.xxx_hidden_Password = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
 }
 
 func (x *Generic) SetHeaders(v []*KeyValuePair) {
-	x.Headers = v
+	x.xxx_hidden_Headers = &v
 }
 
 func (x *Generic) SetExtraFields(v []*KeyValuePair) {
-	x.ExtraFields = v
+	x.xxx_hidden_ExtraFields = &v
 }
 
 func (x *Generic) SetAuditLoggingEnabled(v bool) {
-	x.AuditLoggingEnabled = &v
+	x.xxx_hidden_AuditLoggingEnabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
 }
 
 func (x *Generic) HasEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.Endpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Generic) HasSkipTLSVerify() bool {
 	if x == nil {
 		return false
 	}
-	return x.SkipTLSVerify != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Generic) HasCaCert() bool {
 	if x == nil {
 		return false
 	}
-	return x.CaCert != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Generic) HasUsername() bool {
 	if x == nil {
 		return false
 	}
-	return x.Username != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Generic) HasPassword() bool {
 	if x == nil {
 		return false
 	}
-	return x.Password != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Generic) HasAuditLoggingEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.AuditLoggingEnabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *Generic) ClearEndpoint() {
-	x.Endpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Endpoint = nil
 }
 
 func (x *Generic) ClearSkipTLSVerify() {
-	x.SkipTLSVerify = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_SkipTLSVerify = false
 }
 
 func (x *Generic) ClearCaCert() {
-	x.CaCert = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_CaCert = nil
 }
 
 func (x *Generic) ClearUsername() {
-	x.Username = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Username = nil
 }
 
 func (x *Generic) ClearPassword() {
-	x.Password = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Password = nil
 }
 
 func (x *Generic) ClearAuditLoggingEnabled() {
-	x.AuditLoggingEnabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_AuditLoggingEnabled = false
 }
 
 type Generic_builder struct {
@@ -2247,23 +2506,43 @@ func (b0 Generic_builder) Build() *Generic {
 	m0 := &Generic{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Endpoint = b.Endpoint
-	x.SkipTLSVerify = b.SkipTLSVerify
-	x.CaCert = b.CaCert
-	x.Username = b.Username
-	x.Password = b.Password
-	x.Headers = b.Headers
-	x.ExtraFields = b.ExtraFields
-	x.AuditLoggingEnabled = b.AuditLoggingEnabled
+	if b.Endpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
+		x.xxx_hidden_Endpoint = b.Endpoint
+	}
+	if b.SkipTLSVerify != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
+		x.xxx_hidden_SkipTLSVerify = *b.SkipTLSVerify
+	}
+	if b.CaCert != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
+		x.xxx_hidden_CaCert = b.CaCert
+	}
+	if b.Username != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		x.xxx_hidden_Username = b.Username
+	}
+	if b.Password != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
+		x.xxx_hidden_Password = b.Password
+	}
+	x.xxx_hidden_Headers = &b.Headers
+	x.xxx_hidden_ExtraFields = &b.ExtraFields
+	if b.AuditLoggingEnabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_AuditLoggingEnabled = *b.AuditLoggingEnabled
+	}
 	return m0
 }
 
 type SumoLogic struct {
-	state             protoimpl.MessageState `protogen:"hybrid.v1"`
-	HttpSourceAddress *string                `protobuf:"bytes,1,opt,name=http_source_address,json=httpSourceAddress" json:"http_source_address,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
-	SkipTLSVerify     *bool                  `protobuf:"varint,2,opt,name=skipTLSVerify" json:"skipTLSVerify,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_HttpSourceAddress *string                `protobuf:"bytes,1,opt,name=http_source_address,json=httpSourceAddress"`
+	xxx_hidden_SkipTLSVerify     bool                   `protobuf:"varint,2,opt,name=skipTLSVerify"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *SumoLogic) Reset() {
@@ -2292,47 +2571,54 @@ func (x *SumoLogic) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SumoLogic) GetHttpSourceAddress() string {
-	if x != nil && x.HttpSourceAddress != nil {
-		return *x.HttpSourceAddress
+	if x != nil {
+		if x.xxx_hidden_HttpSourceAddress != nil {
+			return *x.xxx_hidden_HttpSourceAddress
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SumoLogic) GetSkipTLSVerify() bool {
-	if x != nil && x.SkipTLSVerify != nil {
-		return *x.SkipTLSVerify
+	if x != nil {
+		return x.xxx_hidden_SkipTLSVerify
 	}
 	return false
 }
 
 func (x *SumoLogic) SetHttpSourceAddress(v string) {
-	x.HttpSourceAddress = &v
+	x.xxx_hidden_HttpSourceAddress = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *SumoLogic) SetSkipTLSVerify(v bool) {
-	x.SkipTLSVerify = &v
+	x.xxx_hidden_SkipTLSVerify = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *SumoLogic) HasHttpSourceAddress() bool {
 	if x == nil {
 		return false
 	}
-	return x.HttpSourceAddress != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SumoLogic) HasSkipTLSVerify() bool {
 	if x == nil {
 		return false
 	}
-	return x.SkipTLSVerify != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SumoLogic) ClearHttpSourceAddress() {
-	x.HttpSourceAddress = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HttpSourceAddress = nil
 }
 
 func (x *SumoLogic) ClearSkipTLSVerify() {
-	x.SkipTLSVerify = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_SkipTLSVerify = false
 }
 
 type SumoLogic_builder struct {
@@ -2346,32 +2632,31 @@ func (b0 SumoLogic_builder) Build() *SumoLogic {
 	m0 := &SumoLogic{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HttpSourceAddress = b.HttpSourceAddress
-	x.SkipTLSVerify = b.SkipTLSVerify
+	if b.HttpSourceAddress != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_HttpSourceAddress = b.HttpSourceAddress
+	}
+	if b.SkipTLSVerify != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_SkipTLSVerify = *b.SkipTLSVerify
+	}
 	return m0
 }
 
 type MicrosoftSentinel struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// log_ingestion_endpoint is the log ingestion endpoint.
-	LogIngestionEndpoint *string `protobuf:"bytes,1,opt,name=log_ingestion_endpoint,json=logIngestionEndpoint" json:"log_ingestion_endpoint,omitempty"`
-	// directory_tenant_id contains the ID of the Microsoft Directory ID of the selected tenant.
-	DirectoryTenantId *string `protobuf:"bytes,2,opt,name=directory_tenant_id,json=directoryTenantId" json:"directory_tenant_id,omitempty"`
-	// application_client_id contains the ID of the application ID of the service principal.
-	ApplicationClientId *string `protobuf:"bytes,3,opt,name=application_client_id,json=applicationClientId" json:"application_client_id,omitempty"`
-	// secret contains the client secret.
-	Secret               *string                                     `protobuf:"bytes,4,opt,name=secret" json:"secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	AlertDcrConfig       *MicrosoftSentinel_DataCollectionRuleConfig `protobuf:"bytes,5,opt,name=alert_dcr_config,json=alertDcrConfig" json:"alert_dcr_config,omitempty"`
-	AuditLogDcrConfig    *MicrosoftSentinel_DataCollectionRuleConfig `protobuf:"bytes,6,opt,name=audit_log_dcr_config,json=auditLogDcrConfig" json:"audit_log_dcr_config,omitempty"`
-	ClientCertAuthConfig *MicrosoftSentinel_ClientCertAuthConfig     `protobuf:"bytes,7,opt,name=client_cert_auth_config,json=clientCertAuthConfig" json:"client_cert_auth_config,omitempty"`
-	// Enables authentication with short-lived tokens using Azure managed identities
-	// or Azure workload identities.
-	// The toggle exists to make the use of Azure default credentials explicit rather
-	// than always using them as a fallback. The explicit behavior is more consistent
-	// with other integrations.
-	WifEnabled    *bool `protobuf:"varint,8,opt,name=wif_enabled,json=wifEnabled" json:"wif_enabled,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                           protoimpl.MessageState                      `protogen:"opaque.v1"`
+	xxx_hidden_LogIngestionEndpoint *string                                     `protobuf:"bytes,1,opt,name=log_ingestion_endpoint,json=logIngestionEndpoint"`
+	xxx_hidden_DirectoryTenantId    *string                                     `protobuf:"bytes,2,opt,name=directory_tenant_id,json=directoryTenantId"`
+	xxx_hidden_ApplicationClientId  *string                                     `protobuf:"bytes,3,opt,name=application_client_id,json=applicationClientId"`
+	xxx_hidden_Secret               *string                                     `protobuf:"bytes,4,opt,name=secret"`
+	xxx_hidden_AlertDcrConfig       *MicrosoftSentinel_DataCollectionRuleConfig `protobuf:"bytes,5,opt,name=alert_dcr_config,json=alertDcrConfig"`
+	xxx_hidden_AuditLogDcrConfig    *MicrosoftSentinel_DataCollectionRuleConfig `protobuf:"bytes,6,opt,name=audit_log_dcr_config,json=auditLogDcrConfig"`
+	xxx_hidden_ClientCertAuthConfig *MicrosoftSentinel_ClientCertAuthConfig     `protobuf:"bytes,7,opt,name=client_cert_auth_config,json=clientCertAuthConfig"`
+	xxx_hidden_WifEnabled           bool                                        `protobuf:"varint,8,opt,name=wif_enabled,json=wifEnabled"`
+	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
+	XXX_presence                    [1]uint32
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *MicrosoftSentinel) Reset() {
@@ -2400,179 +2685,201 @@ func (x *MicrosoftSentinel) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MicrosoftSentinel) GetLogIngestionEndpoint() string {
-	if x != nil && x.LogIngestionEndpoint != nil {
-		return *x.LogIngestionEndpoint
+	if x != nil {
+		if x.xxx_hidden_LogIngestionEndpoint != nil {
+			return *x.xxx_hidden_LogIngestionEndpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MicrosoftSentinel) GetDirectoryTenantId() string {
-	if x != nil && x.DirectoryTenantId != nil {
-		return *x.DirectoryTenantId
+	if x != nil {
+		if x.xxx_hidden_DirectoryTenantId != nil {
+			return *x.xxx_hidden_DirectoryTenantId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MicrosoftSentinel) GetApplicationClientId() string {
-	if x != nil && x.ApplicationClientId != nil {
-		return *x.ApplicationClientId
+	if x != nil {
+		if x.xxx_hidden_ApplicationClientId != nil {
+			return *x.xxx_hidden_ApplicationClientId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MicrosoftSentinel) GetSecret() string {
-	if x != nil && x.Secret != nil {
-		return *x.Secret
+	if x != nil {
+		if x.xxx_hidden_Secret != nil {
+			return *x.xxx_hidden_Secret
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MicrosoftSentinel) GetAlertDcrConfig() *MicrosoftSentinel_DataCollectionRuleConfig {
 	if x != nil {
-		return x.AlertDcrConfig
+		return x.xxx_hidden_AlertDcrConfig
 	}
 	return nil
 }
 
 func (x *MicrosoftSentinel) GetAuditLogDcrConfig() *MicrosoftSentinel_DataCollectionRuleConfig {
 	if x != nil {
-		return x.AuditLogDcrConfig
+		return x.xxx_hidden_AuditLogDcrConfig
 	}
 	return nil
 }
 
 func (x *MicrosoftSentinel) GetClientCertAuthConfig() *MicrosoftSentinel_ClientCertAuthConfig {
 	if x != nil {
-		return x.ClientCertAuthConfig
+		return x.xxx_hidden_ClientCertAuthConfig
 	}
 	return nil
 }
 
 func (x *MicrosoftSentinel) GetWifEnabled() bool {
-	if x != nil && x.WifEnabled != nil {
-		return *x.WifEnabled
+	if x != nil {
+		return x.xxx_hidden_WifEnabled
 	}
 	return false
 }
 
 func (x *MicrosoftSentinel) SetLogIngestionEndpoint(v string) {
-	x.LogIngestionEndpoint = &v
+	x.xxx_hidden_LogIngestionEndpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
 }
 
 func (x *MicrosoftSentinel) SetDirectoryTenantId(v string) {
-	x.DirectoryTenantId = &v
+	x.xxx_hidden_DirectoryTenantId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
 }
 
 func (x *MicrosoftSentinel) SetApplicationClientId(v string) {
-	x.ApplicationClientId = &v
+	x.xxx_hidden_ApplicationClientId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
 }
 
 func (x *MicrosoftSentinel) SetSecret(v string) {
-	x.Secret = &v
+	x.xxx_hidden_Secret = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
 }
 
 func (x *MicrosoftSentinel) SetAlertDcrConfig(v *MicrosoftSentinel_DataCollectionRuleConfig) {
-	x.AlertDcrConfig = v
+	x.xxx_hidden_AlertDcrConfig = v
 }
 
 func (x *MicrosoftSentinel) SetAuditLogDcrConfig(v *MicrosoftSentinel_DataCollectionRuleConfig) {
-	x.AuditLogDcrConfig = v
+	x.xxx_hidden_AuditLogDcrConfig = v
 }
 
 func (x *MicrosoftSentinel) SetClientCertAuthConfig(v *MicrosoftSentinel_ClientCertAuthConfig) {
-	x.ClientCertAuthConfig = v
+	x.xxx_hidden_ClientCertAuthConfig = v
 }
 
 func (x *MicrosoftSentinel) SetWifEnabled(v bool) {
-	x.WifEnabled = &v
+	x.xxx_hidden_WifEnabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
 }
 
 func (x *MicrosoftSentinel) HasLogIngestionEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.LogIngestionEndpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *MicrosoftSentinel) HasDirectoryTenantId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DirectoryTenantId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *MicrosoftSentinel) HasApplicationClientId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ApplicationClientId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *MicrosoftSentinel) HasSecret() bool {
 	if x == nil {
 		return false
 	}
-	return x.Secret != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *MicrosoftSentinel) HasAlertDcrConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.AlertDcrConfig != nil
+	return x.xxx_hidden_AlertDcrConfig != nil
 }
 
 func (x *MicrosoftSentinel) HasAuditLogDcrConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.AuditLogDcrConfig != nil
+	return x.xxx_hidden_AuditLogDcrConfig != nil
 }
 
 func (x *MicrosoftSentinel) HasClientCertAuthConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClientCertAuthConfig != nil
+	return x.xxx_hidden_ClientCertAuthConfig != nil
 }
 
 func (x *MicrosoftSentinel) HasWifEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.WifEnabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *MicrosoftSentinel) ClearLogIngestionEndpoint() {
-	x.LogIngestionEndpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_LogIngestionEndpoint = nil
 }
 
 func (x *MicrosoftSentinel) ClearDirectoryTenantId() {
-	x.DirectoryTenantId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_DirectoryTenantId = nil
 }
 
 func (x *MicrosoftSentinel) ClearApplicationClientId() {
-	x.ApplicationClientId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ApplicationClientId = nil
 }
 
 func (x *MicrosoftSentinel) ClearSecret() {
-	x.Secret = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Secret = nil
 }
 
 func (x *MicrosoftSentinel) ClearAlertDcrConfig() {
-	x.AlertDcrConfig = nil
+	x.xxx_hidden_AlertDcrConfig = nil
 }
 
 func (x *MicrosoftSentinel) ClearAuditLogDcrConfig() {
-	x.AuditLogDcrConfig = nil
+	x.xxx_hidden_AuditLogDcrConfig = nil
 }
 
 func (x *MicrosoftSentinel) ClearClientCertAuthConfig() {
-	x.ClientCertAuthConfig = nil
+	x.xxx_hidden_ClientCertAuthConfig = nil
 }
 
 func (x *MicrosoftSentinel) ClearWifEnabled() {
-	x.WifEnabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_WifEnabled = false
 }
 
 type MicrosoftSentinel_builder struct {
@@ -2601,31 +2908,43 @@ func (b0 MicrosoftSentinel_builder) Build() *MicrosoftSentinel {
 	m0 := &MicrosoftSentinel{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LogIngestionEndpoint = b.LogIngestionEndpoint
-	x.DirectoryTenantId = b.DirectoryTenantId
-	x.ApplicationClientId = b.ApplicationClientId
-	x.Secret = b.Secret
-	x.AlertDcrConfig = b.AlertDcrConfig
-	x.AuditLogDcrConfig = b.AuditLogDcrConfig
-	x.ClientCertAuthConfig = b.ClientCertAuthConfig
-	x.WifEnabled = b.WifEnabled
+	if b.LogIngestionEndpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
+		x.xxx_hidden_LogIngestionEndpoint = b.LogIngestionEndpoint
+	}
+	if b.DirectoryTenantId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
+		x.xxx_hidden_DirectoryTenantId = b.DirectoryTenantId
+	}
+	if b.ApplicationClientId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
+		x.xxx_hidden_ApplicationClientId = b.ApplicationClientId
+	}
+	if b.Secret != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		x.xxx_hidden_Secret = b.Secret
+	}
+	x.xxx_hidden_AlertDcrConfig = b.AlertDcrConfig
+	x.xxx_hidden_AuditLogDcrConfig = b.AuditLogDcrConfig
+	x.xxx_hidden_ClientCertAuthConfig = b.ClientCertAuthConfig
+	if b.WifEnabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_WifEnabled = *b.WifEnabled
+	}
 	return m0
 }
 
 type Syslog struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	LocalFacility *Syslog_LocalFacility  `protobuf:"varint,1,opt,name=local_facility,json=localFacility,enum=storage.Syslog_LocalFacility" json:"local_facility,omitempty"`
-	// Eventually this will support TCP, UDP, and local endpoints
-	//
-	// Types that are valid to be assigned to Endpoint:
-	//
-	//	*Syslog_TcpConfig
-	Endpoint       isSyslog_Endpoint     `protobuf_oneof:"endpoint"`
-	ExtraFields    []*KeyValuePair       `protobuf:"bytes,3,rep,name=extra_fields,json=extraFields" json:"extra_fields,omitempty"`
-	MessageFormat  *Syslog_MessageFormat `protobuf:"varint,4,opt,name=message_format,json=messageFormat,enum=storage.Syslog_MessageFormat" json:"message_format,omitempty"`
-	MaxMessageSize *int32                `protobuf:"varint,5,opt,name=max_message_size,json=maxMessageSize" json:"max_message_size,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_LocalFacility  Syslog_LocalFacility   `protobuf:"varint,1,opt,name=local_facility,json=localFacility,enum=storage.Syslog_LocalFacility"`
+	xxx_hidden_Endpoint       isSyslog_Endpoint      `protobuf_oneof:"endpoint"`
+	xxx_hidden_ExtraFields    *[]*KeyValuePair       `protobuf:"bytes,3,rep,name=extra_fields,json=extraFields"`
+	xxx_hidden_MessageFormat  Syslog_MessageFormat   `protobuf:"varint,4,opt,name=message_format,json=messageFormat,enum=storage.Syslog_MessageFormat"`
+	xxx_hidden_MaxMessageSize int32                  `protobuf:"varint,5,opt,name=max_message_size,json=maxMessageSize"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *Syslog) Reset() {
@@ -2654,22 +2973,17 @@ func (x *Syslog) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Syslog) GetLocalFacility() Syslog_LocalFacility {
-	if x != nil && x.LocalFacility != nil {
-		return *x.LocalFacility
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_LocalFacility
+		}
 	}
 	return Syslog_LOCAL0
 }
 
-func (x *Syslog) GetEndpoint() isSyslog_Endpoint {
-	if x != nil {
-		return x.Endpoint
-	}
-	return nil
-}
-
 func (x *Syslog) GetTcpConfig() *Syslog_TCPConfig {
 	if x != nil {
-		if x, ok := x.Endpoint.(*Syslog_TcpConfig); ok {
+		if x, ok := x.xxx_hidden_Endpoint.(*syslog_TcpConfig); ok {
 			return x.TcpConfig
 		}
 	}
@@ -2678,68 +2992,75 @@ func (x *Syslog) GetTcpConfig() *Syslog_TCPConfig {
 
 func (x *Syslog) GetExtraFields() []*KeyValuePair {
 	if x != nil {
-		return x.ExtraFields
+		if x.xxx_hidden_ExtraFields != nil {
+			return *x.xxx_hidden_ExtraFields
+		}
 	}
 	return nil
 }
 
 func (x *Syslog) GetMessageFormat() Syslog_MessageFormat {
-	if x != nil && x.MessageFormat != nil {
-		return *x.MessageFormat
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			return x.xxx_hidden_MessageFormat
+		}
 	}
 	return Syslog_LEGACY
 }
 
 func (x *Syslog) GetMaxMessageSize() int32 {
-	if x != nil && x.MaxMessageSize != nil {
-		return *x.MaxMessageSize
+	if x != nil {
+		return x.xxx_hidden_MaxMessageSize
 	}
 	return 0
 }
 
 func (x *Syslog) SetLocalFacility(v Syslog_LocalFacility) {
-	x.LocalFacility = &v
+	x.xxx_hidden_LocalFacility = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *Syslog) SetTcpConfig(v *Syslog_TCPConfig) {
 	if v == nil {
-		x.Endpoint = nil
+		x.xxx_hidden_Endpoint = nil
 		return
 	}
-	x.Endpoint = &Syslog_TcpConfig{v}
+	x.xxx_hidden_Endpoint = &syslog_TcpConfig{v}
 }
 
 func (x *Syslog) SetExtraFields(v []*KeyValuePair) {
-	x.ExtraFields = v
+	x.xxx_hidden_ExtraFields = &v
 }
 
 func (x *Syslog) SetMessageFormat(v Syslog_MessageFormat) {
-	x.MessageFormat = &v
+	x.xxx_hidden_MessageFormat = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *Syslog) SetMaxMessageSize(v int32) {
-	x.MaxMessageSize = &v
+	x.xxx_hidden_MaxMessageSize = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *Syslog) HasLocalFacility() bool {
 	if x == nil {
 		return false
 	}
-	return x.LocalFacility != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Syslog) HasEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.Endpoint != nil
+	return x.xxx_hidden_Endpoint != nil
 }
 
 func (x *Syslog) HasTcpConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Endpoint.(*Syslog_TcpConfig)
+	_, ok := x.xxx_hidden_Endpoint.(*syslog_TcpConfig)
 	return ok
 }
 
@@ -2747,36 +3068,39 @@ func (x *Syslog) HasMessageFormat() bool {
 	if x == nil {
 		return false
 	}
-	return x.MessageFormat != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Syslog) HasMaxMessageSize() bool {
 	if x == nil {
 		return false
 	}
-	return x.MaxMessageSize != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Syslog) ClearLocalFacility() {
-	x.LocalFacility = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_LocalFacility = Syslog_LOCAL0
 }
 
 func (x *Syslog) ClearEndpoint() {
-	x.Endpoint = nil
+	x.xxx_hidden_Endpoint = nil
 }
 
 func (x *Syslog) ClearTcpConfig() {
-	if _, ok := x.Endpoint.(*Syslog_TcpConfig); ok {
-		x.Endpoint = nil
+	if _, ok := x.xxx_hidden_Endpoint.(*syslog_TcpConfig); ok {
+		x.xxx_hidden_Endpoint = nil
 	}
 }
 
 func (x *Syslog) ClearMessageFormat() {
-	x.MessageFormat = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_MessageFormat = Syslog_LEGACY
 }
 
 func (x *Syslog) ClearMaxMessageSize() {
-	x.MaxMessageSize = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_MaxMessageSize = 0
 }
 
 const Syslog_Endpoint_not_set_case case_Syslog_Endpoint = 0
@@ -2786,8 +3110,8 @@ func (x *Syslog) WhichEndpoint() case_Syslog_Endpoint {
 	if x == nil {
 		return Syslog_Endpoint_not_set_case
 	}
-	switch x.Endpoint.(type) {
-	case *Syslog_TcpConfig:
+	switch x.xxx_hidden_Endpoint.(type) {
+	case *syslog_TcpConfig:
 		return Syslog_TcpConfig_case
 	default:
 		return Syslog_Endpoint_not_set_case
@@ -2800,9 +3124,9 @@ type Syslog_builder struct {
 	LocalFacility *Syslog_LocalFacility
 	// Eventually this will support TCP, UDP, and local endpoints
 
-	// Fields of oneof Endpoint:
+	// Fields of oneof xxx_hidden_Endpoint:
 	TcpConfig *Syslog_TCPConfig
-	// -- end of Endpoint
+	// -- end of xxx_hidden_Endpoint
 	ExtraFields    []*KeyValuePair
 	MessageFormat  *Syslog_MessageFormat
 	MaxMessageSize *int32
@@ -2812,13 +3136,22 @@ func (b0 Syslog_builder) Build() *Syslog {
 	m0 := &Syslog{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LocalFacility = b.LocalFacility
-	if b.TcpConfig != nil {
-		x.Endpoint = &Syslog_TcpConfig{b.TcpConfig}
+	if b.LocalFacility != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_LocalFacility = *b.LocalFacility
 	}
-	x.ExtraFields = b.ExtraFields
-	x.MessageFormat = b.MessageFormat
-	x.MaxMessageSize = b.MaxMessageSize
+	if b.TcpConfig != nil {
+		x.xxx_hidden_Endpoint = &syslog_TcpConfig{b.TcpConfig}
+	}
+	x.xxx_hidden_ExtraFields = &b.ExtraFields
+	if b.MessageFormat != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_MessageFormat = *b.MessageFormat
+	}
+	if b.MaxMessageSize != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_MaxMessageSize = *b.MaxMessageSize
+	}
 	return m0
 }
 
@@ -2836,19 +3169,21 @@ type isSyslog_Endpoint interface {
 	isSyslog_Endpoint()
 }
 
-type Syslog_TcpConfig struct {
+type syslog_TcpConfig struct {
 	TcpConfig *Syslog_TCPConfig `protobuf:"bytes,2,opt,name=tcp_config,json=tcpConfig,oneof"`
 }
 
-func (*Syslog_TcpConfig) isSyslog_Endpoint() {}
+func (*syslog_TcpConfig) isSyslog_Endpoint() {}
 
 type AWSSecurityHub_Credentials struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	AccessKeyId     *string                `protobuf:"bytes,1,opt,name=access_key_id,json=accessKeyId" json:"access_key_id,omitempty" scrub:"always"`             // @gotags: scrub:"always"
-	SecretAccessKey *string                `protobuf:"bytes,2,opt,name=secret_access_key,json=secretAccessKey" json:"secret_access_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	StsEnabled      *bool                  `protobuf:"varint,3,opt,name=sts_enabled,json=stsEnabled" json:"sts_enabled,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AccessKeyId     *string                `protobuf:"bytes,1,opt,name=access_key_id,json=accessKeyId"`
+	xxx_hidden_SecretAccessKey *string                `protobuf:"bytes,2,opt,name=secret_access_key,json=secretAccessKey"`
+	xxx_hidden_StsEnabled      bool                   `protobuf:"varint,3,opt,name=sts_enabled,json=stsEnabled"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *AWSSecurityHub_Credentials) Reset() {
@@ -2877,69 +3212,81 @@ func (x *AWSSecurityHub_Credentials) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AWSSecurityHub_Credentials) GetAccessKeyId() string {
-	if x != nil && x.AccessKeyId != nil {
-		return *x.AccessKeyId
+	if x != nil {
+		if x.xxx_hidden_AccessKeyId != nil {
+			return *x.xxx_hidden_AccessKeyId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AWSSecurityHub_Credentials) GetSecretAccessKey() string {
-	if x != nil && x.SecretAccessKey != nil {
-		return *x.SecretAccessKey
+	if x != nil {
+		if x.xxx_hidden_SecretAccessKey != nil {
+			return *x.xxx_hidden_SecretAccessKey
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AWSSecurityHub_Credentials) GetStsEnabled() bool {
-	if x != nil && x.StsEnabled != nil {
-		return *x.StsEnabled
+	if x != nil {
+		return x.xxx_hidden_StsEnabled
 	}
 	return false
 }
 
 func (x *AWSSecurityHub_Credentials) SetAccessKeyId(v string) {
-	x.AccessKeyId = &v
+	x.xxx_hidden_AccessKeyId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *AWSSecurityHub_Credentials) SetSecretAccessKey(v string) {
-	x.SecretAccessKey = &v
+	x.xxx_hidden_SecretAccessKey = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *AWSSecurityHub_Credentials) SetStsEnabled(v bool) {
-	x.StsEnabled = &v
+	x.xxx_hidden_StsEnabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *AWSSecurityHub_Credentials) HasAccessKeyId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AccessKeyId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AWSSecurityHub_Credentials) HasSecretAccessKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.SecretAccessKey != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *AWSSecurityHub_Credentials) HasStsEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.StsEnabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *AWSSecurityHub_Credentials) ClearAccessKeyId() {
-	x.AccessKeyId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_AccessKeyId = nil
 }
 
 func (x *AWSSecurityHub_Credentials) ClearSecretAccessKey() {
-	x.SecretAccessKey = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_SecretAccessKey = nil
 }
 
 func (x *AWSSecurityHub_Credentials) ClearStsEnabled() {
-	x.StsEnabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_StsEnabled = false
 }
 
 type AWSSecurityHub_Credentials_builder struct {
@@ -2954,18 +3301,29 @@ func (b0 AWSSecurityHub_Credentials_builder) Build() *AWSSecurityHub_Credentials
 	m0 := &AWSSecurityHub_Credentials{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AccessKeyId = b.AccessKeyId
-	x.SecretAccessKey = b.SecretAccessKey
-	x.StsEnabled = b.StsEnabled
+	if b.AccessKeyId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_AccessKeyId = b.AccessKeyId
+	}
+	if b.SecretAccessKey != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_SecretAccessKey = b.SecretAccessKey
+	}
+	if b.StsEnabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_StsEnabled = *b.StsEnabled
+	}
 	return m0
 }
 
 type Jira_PriorityMapping struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Severity      *Severity              `protobuf:"varint,1,opt,name=severity,enum=storage.Severity" json:"severity,omitempty"`
-	PriorityName  *string                `protobuf:"bytes,2,opt,name=priority_name,json=priorityName" json:"priority_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Severity     Severity               `protobuf:"varint,1,opt,name=severity,enum=storage.Severity"`
+	xxx_hidden_PriorityName *string                `protobuf:"bytes,2,opt,name=priority_name,json=priorityName"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Jira_PriorityMapping) Reset() {
@@ -2994,47 +3352,56 @@ func (x *Jira_PriorityMapping) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Jira_PriorityMapping) GetSeverity() Severity {
-	if x != nil && x.Severity != nil {
-		return *x.Severity
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Severity
+		}
 	}
 	return Severity_UNSET_SEVERITY
 }
 
 func (x *Jira_PriorityMapping) GetPriorityName() string {
-	if x != nil && x.PriorityName != nil {
-		return *x.PriorityName
+	if x != nil {
+		if x.xxx_hidden_PriorityName != nil {
+			return *x.xxx_hidden_PriorityName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Jira_PriorityMapping) SetSeverity(v Severity) {
-	x.Severity = &v
+	x.xxx_hidden_Severity = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *Jira_PriorityMapping) SetPriorityName(v string) {
-	x.PriorityName = &v
+	x.xxx_hidden_PriorityName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *Jira_PriorityMapping) HasSeverity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Severity != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Jira_PriorityMapping) HasPriorityName() bool {
 	if x == nil {
 		return false
 	}
-	return x.PriorityName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Jira_PriorityMapping) ClearSeverity() {
-	x.Severity = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Severity = Severity_UNSET_SEVERITY
 }
 
 func (x *Jira_PriorityMapping) ClearPriorityName() {
-	x.PriorityName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_PriorityName = nil
 }
 
 type Jira_PriorityMapping_builder struct {
@@ -3048,19 +3415,27 @@ func (b0 Jira_PriorityMapping_builder) Build() *Jira_PriorityMapping {
 	m0 := &Jira_PriorityMapping{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Severity = b.Severity
-	x.PriorityName = b.PriorityName
+	if b.Severity != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Severity = *b.Severity
+	}
+	if b.PriorityName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_PriorityName = b.PriorityName
+	}
 	return m0
 }
 
 // DataCollectionRuleConfig contains information about the data collection rule which is a config per notifier type.
 type MicrosoftSentinel_DataCollectionRuleConfig struct {
-	state                protoimpl.MessageState `protogen:"hybrid.v1"`
-	StreamName           *string                `protobuf:"bytes,1,opt,name=stream_name,json=streamName" json:"stream_name,omitempty"`
-	DataCollectionRuleId *string                `protobuf:"bytes,2,opt,name=data_collection_rule_id,json=dataCollectionRuleId" json:"data_collection_rule_id,omitempty"`
-	Enabled              *bool                  `protobuf:"varint,3,opt,name=enabled" json:"enabled,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_StreamName           *string                `protobuf:"bytes,1,opt,name=stream_name,json=streamName"`
+	xxx_hidden_DataCollectionRuleId *string                `protobuf:"bytes,2,opt,name=data_collection_rule_id,json=dataCollectionRuleId"`
+	xxx_hidden_Enabled              bool                   `protobuf:"varint,3,opt,name=enabled"`
+	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
+	XXX_presence                    [1]uint32
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) Reset() {
@@ -3089,69 +3464,81 @@ func (x *MicrosoftSentinel_DataCollectionRuleConfig) ProtoReflect() protoreflect
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) GetStreamName() string {
-	if x != nil && x.StreamName != nil {
-		return *x.StreamName
+	if x != nil {
+		if x.xxx_hidden_StreamName != nil {
+			return *x.xxx_hidden_StreamName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) GetDataCollectionRuleId() string {
-	if x != nil && x.DataCollectionRuleId != nil {
-		return *x.DataCollectionRuleId
+	if x != nil {
+		if x.xxx_hidden_DataCollectionRuleId != nil {
+			return *x.xxx_hidden_DataCollectionRuleId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
+	if x != nil {
+		return x.xxx_hidden_Enabled
 	}
 	return false
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) SetStreamName(v string) {
-	x.StreamName = &v
+	x.xxx_hidden_StreamName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) SetDataCollectionRuleId(v string) {
-	x.DataCollectionRuleId = &v
+	x.xxx_hidden_DataCollectionRuleId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) SetEnabled(v bool) {
-	x.Enabled = &v
+	x.xxx_hidden_Enabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) HasStreamName() bool {
 	if x == nil {
 		return false
 	}
-	return x.StreamName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) HasDataCollectionRuleId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DataCollectionRuleId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.Enabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) ClearStreamName() {
-	x.StreamName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_StreamName = nil
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) ClearDataCollectionRuleId() {
-	x.DataCollectionRuleId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_DataCollectionRuleId = nil
 }
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) ClearEnabled() {
-	x.Enabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Enabled = false
 }
 
 type MicrosoftSentinel_DataCollectionRuleConfig_builder struct {
@@ -3166,21 +3553,30 @@ func (b0 MicrosoftSentinel_DataCollectionRuleConfig_builder) Build() *MicrosoftS
 	m0 := &MicrosoftSentinel_DataCollectionRuleConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.StreamName = b.StreamName
-	x.DataCollectionRuleId = b.DataCollectionRuleId
-	x.Enabled = b.Enabled
+	if b.StreamName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_StreamName = b.StreamName
+	}
+	if b.DataCollectionRuleId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_DataCollectionRuleId = b.DataCollectionRuleId
+	}
+	if b.Enabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Enabled = *b.Enabled
+	}
 	return m0
 }
 
 // client certificate which is used for authentication
 type MicrosoftSentinel_ClientCertAuthConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// PEM encoded ASN.1 DER format.
-	ClientCert *string `protobuf:"bytes,1,opt,name=client_cert,json=clientCert" json:"client_cert,omitempty"`
-	// PEM encoded PKCS #8, ASN.1 DER format.
-	PrivateKey    *string `protobuf:"bytes,2,opt,name=private_key,json=privateKey" json:"private_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClientCert  *string                `protobuf:"bytes,1,opt,name=client_cert,json=clientCert"`
+	xxx_hidden_PrivateKey  *string                `protobuf:"bytes,2,opt,name=private_key,json=privateKey"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MicrosoftSentinel_ClientCertAuthConfig) Reset() {
@@ -3209,47 +3605,57 @@ func (x *MicrosoftSentinel_ClientCertAuthConfig) ProtoReflect() protoreflect.Mes
 }
 
 func (x *MicrosoftSentinel_ClientCertAuthConfig) GetClientCert() string {
-	if x != nil && x.ClientCert != nil {
-		return *x.ClientCert
+	if x != nil {
+		if x.xxx_hidden_ClientCert != nil {
+			return *x.xxx_hidden_ClientCert
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MicrosoftSentinel_ClientCertAuthConfig) GetPrivateKey() string {
-	if x != nil && x.PrivateKey != nil {
-		return *x.PrivateKey
+	if x != nil {
+		if x.xxx_hidden_PrivateKey != nil {
+			return *x.xxx_hidden_PrivateKey
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MicrosoftSentinel_ClientCertAuthConfig) SetClientCert(v string) {
-	x.ClientCert = &v
+	x.xxx_hidden_ClientCert = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *MicrosoftSentinel_ClientCertAuthConfig) SetPrivateKey(v string) {
-	x.PrivateKey = &v
+	x.xxx_hidden_PrivateKey = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *MicrosoftSentinel_ClientCertAuthConfig) HasClientCert() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClientCert != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *MicrosoftSentinel_ClientCertAuthConfig) HasPrivateKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.PrivateKey != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *MicrosoftSentinel_ClientCertAuthConfig) ClearClientCert() {
-	x.ClientCert = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClientCert = nil
 }
 
 func (x *MicrosoftSentinel_ClientCertAuthConfig) ClearPrivateKey() {
-	x.PrivateKey = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_PrivateKey = nil
 }
 
 type MicrosoftSentinel_ClientCertAuthConfig_builder struct {
@@ -3265,19 +3671,27 @@ func (b0 MicrosoftSentinel_ClientCertAuthConfig_builder) Build() *MicrosoftSenti
 	m0 := &MicrosoftSentinel_ClientCertAuthConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClientCert = b.ClientCert
-	x.PrivateKey = b.PrivateKey
+	if b.ClientCert != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ClientCert = b.ClientCert
+	}
+	if b.PrivateKey != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_PrivateKey = b.PrivateKey
+	}
 	return m0
 }
 
 type Syslog_TCPConfig struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Hostname      *string                `protobuf:"bytes,1,opt,name=hostname" json:"hostname,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	Port          *int32                 `protobuf:"varint,2,opt,name=port" json:"port,omitempty"`
-	SkipTlsVerify *bool                  `protobuf:"varint,3,opt,name=skip_tls_verify,json=skipTlsVerify" json:"skip_tls_verify,omitempty"`
-	UseTls        *bool                  `protobuf:"varint,4,opt,name=use_tls,json=useTls" json:"use_tls,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Hostname      *string                `protobuf:"bytes,1,opt,name=hostname"`
+	xxx_hidden_Port          int32                  `protobuf:"varint,2,opt,name=port"`
+	xxx_hidden_SkipTlsVerify bool                   `protobuf:"varint,3,opt,name=skip_tls_verify,json=skipTlsVerify"`
+	xxx_hidden_UseTls        bool                   `protobuf:"varint,4,opt,name=use_tls,json=useTls"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *Syslog_TCPConfig) Reset() {
@@ -3306,91 +3720,102 @@ func (x *Syslog_TCPConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Syslog_TCPConfig) GetHostname() string {
-	if x != nil && x.Hostname != nil {
-		return *x.Hostname
+	if x != nil {
+		if x.xxx_hidden_Hostname != nil {
+			return *x.xxx_hidden_Hostname
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Syslog_TCPConfig) GetPort() int32 {
-	if x != nil && x.Port != nil {
-		return *x.Port
+	if x != nil {
+		return x.xxx_hidden_Port
 	}
 	return 0
 }
 
 func (x *Syslog_TCPConfig) GetSkipTlsVerify() bool {
-	if x != nil && x.SkipTlsVerify != nil {
-		return *x.SkipTlsVerify
+	if x != nil {
+		return x.xxx_hidden_SkipTlsVerify
 	}
 	return false
 }
 
 func (x *Syslog_TCPConfig) GetUseTls() bool {
-	if x != nil && x.UseTls != nil {
-		return *x.UseTls
+	if x != nil {
+		return x.xxx_hidden_UseTls
 	}
 	return false
 }
 
 func (x *Syslog_TCPConfig) SetHostname(v string) {
-	x.Hostname = &v
+	x.xxx_hidden_Hostname = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *Syslog_TCPConfig) SetPort(v int32) {
-	x.Port = &v
+	x.xxx_hidden_Port = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *Syslog_TCPConfig) SetSkipTlsVerify(v bool) {
-	x.SkipTlsVerify = &v
+	x.xxx_hidden_SkipTlsVerify = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *Syslog_TCPConfig) SetUseTls(v bool) {
-	x.UseTls = &v
+	x.xxx_hidden_UseTls = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *Syslog_TCPConfig) HasHostname() bool {
 	if x == nil {
 		return false
 	}
-	return x.Hostname != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Syslog_TCPConfig) HasPort() bool {
 	if x == nil {
 		return false
 	}
-	return x.Port != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Syslog_TCPConfig) HasSkipTlsVerify() bool {
 	if x == nil {
 		return false
 	}
-	return x.SkipTlsVerify != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Syslog_TCPConfig) HasUseTls() bool {
 	if x == nil {
 		return false
 	}
-	return x.UseTls != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Syslog_TCPConfig) ClearHostname() {
-	x.Hostname = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Hostname = nil
 }
 
 func (x *Syslog_TCPConfig) ClearPort() {
-	x.Port = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Port = 0
 }
 
 func (x *Syslog_TCPConfig) ClearSkipTlsVerify() {
-	x.SkipTlsVerify = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_SkipTlsVerify = false
 }
 
 func (x *Syslog_TCPConfig) ClearUseTls() {
-	x.UseTls = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_UseTls = false
 }
 
 type Syslog_TCPConfig_builder struct {
@@ -3406,10 +3831,22 @@ func (b0 Syslog_TCPConfig_builder) Build() *Syslog_TCPConfig {
 	m0 := &Syslog_TCPConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Hostname = b.Hostname
-	x.Port = b.Port
-	x.SkipTlsVerify = b.SkipTlsVerify
-	x.UseTls = b.UseTls
+	if b.Hostname != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Hostname = b.Hostname
+	}
+	if b.Port != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Port = *b.Port
+	}
+	if b.SkipTlsVerify != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_SkipTlsVerify = *b.SkipTlsVerify
+	}
+	if b.UseTls != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_UseTls = *b.UseTls
+	}
 	return m0
 }
 
@@ -3569,7 +4006,7 @@ const file_storage_notifier_proto_rawDesc = "" +
 	"\x03CEF\x10\x01B\n" +
 	"\n" +
 	"\bendpointB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_notifier_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_storage_notifier_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
@@ -3640,22 +4077,22 @@ func file_storage_notifier_proto_init() {
 	file_storage_policy_proto_init()
 	file_storage_traits_proto_init()
 	file_storage_notifier_proto_msgTypes[0].OneofWrappers = []any{
-		(*Notifier_Jira)(nil),
-		(*Notifier_Email)(nil),
-		(*Notifier_Cscc)(nil),
-		(*Notifier_Splunk)(nil),
-		(*Notifier_Pagerduty)(nil),
-		(*Notifier_Generic)(nil),
-		(*Notifier_Sumologic)(nil),
-		(*Notifier_AwsSecurityHub)(nil),
-		(*Notifier_Syslog)(nil),
-		(*Notifier_MicrosoftSentinel)(nil),
+		(*notifier_Jira)(nil),
+		(*notifier_Email)(nil),
+		(*notifier_Cscc)(nil),
+		(*notifier_Splunk)(nil),
+		(*notifier_Pagerduty)(nil),
+		(*notifier_Generic)(nil),
+		(*notifier_Sumologic)(nil),
+		(*notifier_AwsSecurityHub)(nil),
+		(*notifier_Syslog)(nil),
+		(*notifier_MicrosoftSentinel)(nil),
 	}
 	file_storage_notifier_proto_msgTypes[5].OneofWrappers = []any{
-		(*Splunk_DerivedSourceType)(nil),
+		(*splunk_DerivedSourceType)(nil),
 	}
 	file_storage_notifier_proto_msgTypes[10].OneofWrappers = []any{
-		(*Syslog_TcpConfig)(nil),
+		(*syslog_TcpConfig)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

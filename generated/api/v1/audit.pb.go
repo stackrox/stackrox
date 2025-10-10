@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/audit.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -168,7 +166,7 @@ func (x Audit_AccessMethod) Number() protoreflect.EnumNumber {
 }
 
 type Audit struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -211,16 +209,18 @@ func (b0 Audit_builder) Build() *Audit {
 }
 
 type Audit_Message struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Time          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time" json:"time,omitempty"`
-	Status        *Audit_RequestStatus   `protobuf:"varint,2,opt,name=status,enum=v1.Audit_RequestStatus" json:"status,omitempty"`
-	StatusReason  *string                `protobuf:"bytes,3,opt,name=status_reason,json=statusReason" json:"status_reason,omitempty"`
-	User          *storage.UserInfo      `protobuf:"bytes,4,opt,name=user" json:"user,omitempty"`
-	Request       *Audit_Message_Request `protobuf:"bytes,5,opt,name=request" json:"request,omitempty"`
-	Method        *Audit_AccessMethod    `protobuf:"varint,6,opt,name=method,enum=v1.Audit_AccessMethod" json:"method,omitempty"`
-	Interaction   *Audit_Interaction     `protobuf:"varint,7,opt,name=interaction,enum=v1.Audit_Interaction" json:"interaction,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Time         *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time"`
+	xxx_hidden_Status       Audit_RequestStatus    `protobuf:"varint,2,opt,name=status,enum=v1.Audit_RequestStatus"`
+	xxx_hidden_StatusReason *string                `protobuf:"bytes,3,opt,name=status_reason,json=statusReason"`
+	xxx_hidden_User         *storage.UserInfo      `protobuf:"bytes,4,opt,name=user"`
+	xxx_hidden_Request      *Audit_Message_Request `protobuf:"bytes,5,opt,name=request"`
+	xxx_hidden_Method       Audit_AccessMethod     `protobuf:"varint,6,opt,name=method,enum=v1.Audit_AccessMethod"`
+	xxx_hidden_Interaction  Audit_Interaction      `protobuf:"varint,7,opt,name=interaction,enum=v1.Audit_Interaction"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Audit_Message) Reset() {
@@ -250,156 +250,173 @@ func (x *Audit_Message) ProtoReflect() protoreflect.Message {
 
 func (x *Audit_Message) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Time
+		return x.xxx_hidden_Time
 	}
 	return nil
 }
 
 func (x *Audit_Message) GetStatus() Audit_RequestStatus {
-	if x != nil && x.Status != nil {
-		return *x.Status
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Status
+		}
 	}
 	return Audit_UNKNOWN_STATUS
 }
 
 func (x *Audit_Message) GetStatusReason() string {
-	if x != nil && x.StatusReason != nil {
-		return *x.StatusReason
+	if x != nil {
+		if x.xxx_hidden_StatusReason != nil {
+			return *x.xxx_hidden_StatusReason
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Audit_Message) GetUser() *storage.UserInfo {
 	if x != nil {
-		return x.User
+		return x.xxx_hidden_User
 	}
 	return nil
 }
 
 func (x *Audit_Message) GetRequest() *Audit_Message_Request {
 	if x != nil {
-		return x.Request
+		return x.xxx_hidden_Request
 	}
 	return nil
 }
 
 func (x *Audit_Message) GetMethod() Audit_AccessMethod {
-	if x != nil && x.Method != nil {
-		return *x.Method
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			return x.xxx_hidden_Method
+		}
 	}
 	return Audit_UNKNOWN_METHOD
 }
 
 func (x *Audit_Message) GetInteraction() Audit_Interaction {
-	if x != nil && x.Interaction != nil {
-		return *x.Interaction
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			return x.xxx_hidden_Interaction
+		}
 	}
 	return Audit_UNKNOWN_INTERACTION
 }
 
 func (x *Audit_Message) SetTime(v *timestamppb.Timestamp) {
-	x.Time = v
+	x.xxx_hidden_Time = v
 }
 
 func (x *Audit_Message) SetStatus(v Audit_RequestStatus) {
-	x.Status = &v
+	x.xxx_hidden_Status = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *Audit_Message) SetStatusReason(v string) {
-	x.StatusReason = &v
+	x.xxx_hidden_StatusReason = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *Audit_Message) SetUser(v *storage.UserInfo) {
-	x.User = v
+	x.xxx_hidden_User = v
 }
 
 func (x *Audit_Message) SetRequest(v *Audit_Message_Request) {
-	x.Request = v
+	x.xxx_hidden_Request = v
 }
 
 func (x *Audit_Message) SetMethod(v Audit_AccessMethod) {
-	x.Method = &v
+	x.xxx_hidden_Method = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 func (x *Audit_Message) SetInteraction(v Audit_Interaction) {
-	x.Interaction = &v
+	x.xxx_hidden_Interaction = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *Audit_Message) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.Time != nil
+	return x.xxx_hidden_Time != nil
 }
 
 func (x *Audit_Message) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.Status != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Audit_Message) HasStatusReason() bool {
 	if x == nil {
 		return false
 	}
-	return x.StatusReason != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Audit_Message) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.User != nil
+	return x.xxx_hidden_User != nil
 }
 
 func (x *Audit_Message) HasRequest() bool {
 	if x == nil {
 		return false
 	}
-	return x.Request != nil
+	return x.xxx_hidden_Request != nil
 }
 
 func (x *Audit_Message) HasMethod() bool {
 	if x == nil {
 		return false
 	}
-	return x.Method != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Audit_Message) HasInteraction() bool {
 	if x == nil {
 		return false
 	}
-	return x.Interaction != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *Audit_Message) ClearTime() {
-	x.Time = nil
+	x.xxx_hidden_Time = nil
 }
 
 func (x *Audit_Message) ClearStatus() {
-	x.Status = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Status = Audit_UNKNOWN_STATUS
 }
 
 func (x *Audit_Message) ClearStatusReason() {
-	x.StatusReason = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_StatusReason = nil
 }
 
 func (x *Audit_Message) ClearUser() {
-	x.User = nil
+	x.xxx_hidden_User = nil
 }
 
 func (x *Audit_Message) ClearRequest() {
-	x.Request = nil
+	x.xxx_hidden_Request = nil
 }
 
 func (x *Audit_Message) ClearMethod() {
-	x.Method = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Method = Audit_UNKNOWN_METHOD
 }
 
 func (x *Audit_Message) ClearInteraction() {
-	x.Interaction = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_Interaction = Audit_UNKNOWN_INTERACTION
 }
 
 type Audit_Message_builder struct {
@@ -418,45 +435,39 @@ func (b0 Audit_Message_builder) Build() *Audit_Message {
 	m0 := &Audit_Message{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Time = b.Time
-	x.Status = b.Status
-	x.StatusReason = b.StatusReason
-	x.User = b.User
-	x.Request = b.Request
-	x.Method = b.Method
-	x.Interaction = b.Interaction
+	x.xxx_hidden_Time = b.Time
+	if b.Status != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Status = *b.Status
+	}
+	if b.StatusReason != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_StatusReason = b.StatusReason
+	}
+	x.xxx_hidden_User = b.User
+	x.xxx_hidden_Request = b.Request
+	if b.Method != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_Method = *b.Method
+	}
+	if b.Interaction != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_Interaction = *b.Interaction
+	}
 	return m0
 }
 
 type Audit_Message_Request struct {
-	state         protoimpl.MessageState               `protogen:"hybrid.v1"`
-	Endpoint      *string                              `protobuf:"bytes,1,opt,name=endpoint" json:"endpoint,omitempty"`
-	Method        *string                              `protobuf:"bytes,2,opt,name=method" json:"method,omitempty"`
-	Payload       *anypb.Any                           `protobuf:"bytes,3,opt,name=payload" json:"payload,omitempty"`
-	SourceHeaders *Audit_Message_Request_SourceHeaders `protobuf:"bytes,4,opt,name=source_headers,json=sourceHeaders" json:"source_headers,omitempty"`
-	// The source IP of the request.
-	// This is determined from the values found within the request's source.
-	// The following priority is given:
-	//  1. X-Forwarded-For
-	//  2. Remote-Addr
-	//  3. Request address
-	//
-	// Depending on how Central configured to be exposed, the source IP _may_ be a cluster internal IP.
-	//
-	// In case of exposure with a Kubernetes Load Balancer Service, follow this configuration instruction
-	// to preserve the client IP: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
-	//
-	// In case of exposure with a Route, following types support preserving the client IP:
-	// - edge
-	// - re-encrypt
-	// The tls-passthrough type does not support preserving the client IP, due to the router not being able
-	// to decrypt the incoming HTTP request and adding additional headers (i.e. X-Forwarded-For) to the request.
-	//
-	// In case of exposure with a custom loadbalancer / ingress controller, if HTTPS is passed through to the
-	// Central, it also might not preserve the client IP correctly.
-	SourceIp      *string `protobuf:"bytes,5,opt,name=source_ip,json=sourceIp" json:"source_ip,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState               `protogen:"opaque.v1"`
+	xxx_hidden_Endpoint      *string                              `protobuf:"bytes,1,opt,name=endpoint"`
+	xxx_hidden_Method        *string                              `protobuf:"bytes,2,opt,name=method"`
+	xxx_hidden_Payload       *anypb.Any                           `protobuf:"bytes,3,opt,name=payload"`
+	xxx_hidden_SourceHeaders *Audit_Message_Request_SourceHeaders `protobuf:"bytes,4,opt,name=source_headers,json=sourceHeaders"`
+	xxx_hidden_SourceIp      *string                              `protobuf:"bytes,5,opt,name=source_ip,json=sourceIp"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *Audit_Message_Request) Reset() {
@@ -485,113 +496,128 @@ func (x *Audit_Message_Request) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Audit_Message_Request) GetEndpoint() string {
-	if x != nil && x.Endpoint != nil {
-		return *x.Endpoint
+	if x != nil {
+		if x.xxx_hidden_Endpoint != nil {
+			return *x.xxx_hidden_Endpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Audit_Message_Request) GetMethod() string {
-	if x != nil && x.Method != nil {
-		return *x.Method
+	if x != nil {
+		if x.xxx_hidden_Method != nil {
+			return *x.xxx_hidden_Method
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Audit_Message_Request) GetPayload() *anypb.Any {
 	if x != nil {
-		return x.Payload
+		return x.xxx_hidden_Payload
 	}
 	return nil
 }
 
 func (x *Audit_Message_Request) GetSourceHeaders() *Audit_Message_Request_SourceHeaders {
 	if x != nil {
-		return x.SourceHeaders
+		return x.xxx_hidden_SourceHeaders
 	}
 	return nil
 }
 
 func (x *Audit_Message_Request) GetSourceIp() string {
-	if x != nil && x.SourceIp != nil {
-		return *x.SourceIp
+	if x != nil {
+		if x.xxx_hidden_SourceIp != nil {
+			return *x.xxx_hidden_SourceIp
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Audit_Message_Request) SetEndpoint(v string) {
-	x.Endpoint = &v
+	x.xxx_hidden_Endpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *Audit_Message_Request) SetMethod(v string) {
-	x.Method = &v
+	x.xxx_hidden_Method = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *Audit_Message_Request) SetPayload(v *anypb.Any) {
-	x.Payload = v
+	x.xxx_hidden_Payload = v
 }
 
 func (x *Audit_Message_Request) SetSourceHeaders(v *Audit_Message_Request_SourceHeaders) {
-	x.SourceHeaders = v
+	x.xxx_hidden_SourceHeaders = v
 }
 
 func (x *Audit_Message_Request) SetSourceIp(v string) {
-	x.SourceIp = &v
+	x.xxx_hidden_SourceIp = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *Audit_Message_Request) HasEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.Endpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Audit_Message_Request) HasMethod() bool {
 	if x == nil {
 		return false
 	}
-	return x.Method != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Audit_Message_Request) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.Payload != nil
+	return x.xxx_hidden_Payload != nil
 }
 
 func (x *Audit_Message_Request) HasSourceHeaders() bool {
 	if x == nil {
 		return false
 	}
-	return x.SourceHeaders != nil
+	return x.xxx_hidden_SourceHeaders != nil
 }
 
 func (x *Audit_Message_Request) HasSourceIp() bool {
 	if x == nil {
 		return false
 	}
-	return x.SourceIp != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Audit_Message_Request) ClearEndpoint() {
-	x.Endpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Endpoint = nil
 }
 
 func (x *Audit_Message_Request) ClearMethod() {
-	x.Method = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Method = nil
 }
 
 func (x *Audit_Message_Request) ClearPayload() {
-	x.Payload = nil
+	x.xxx_hidden_Payload = nil
 }
 
 func (x *Audit_Message_Request) ClearSourceHeaders() {
-	x.SourceHeaders = nil
+	x.xxx_hidden_SourceHeaders = nil
 }
 
 func (x *Audit_Message_Request) ClearSourceIp() {
-	x.SourceIp = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_SourceIp = nil
 }
 
 type Audit_Message_Request_builder struct {
@@ -628,26 +654,33 @@ func (b0 Audit_Message_Request_builder) Build() *Audit_Message_Request {
 	m0 := &Audit_Message_Request{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Endpoint = b.Endpoint
-	x.Method = b.Method
-	x.Payload = b.Payload
-	x.SourceHeaders = b.SourceHeaders
-	x.SourceIp = b.SourceIp
+	if b.Endpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Endpoint = b.Endpoint
+	}
+	if b.Method != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Method = b.Method
+	}
+	x.xxx_hidden_Payload = b.Payload
+	x.xxx_hidden_SourceHeaders = b.SourceHeaders
+	if b.SourceIp != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_SourceIp = b.SourceIp
+	}
 	return m0
 }
 
 // SourceHeaders holds information about the request's source.
 type Audit_Message_Request_SourceHeaders struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The "X-Forwarded-For" header associated with the request, if it was present.
-	XForwardedFor *string `protobuf:"bytes,1,opt,name=x_forwarded_for,json=xForwardedFor" json:"x_forwarded_for,omitempty"`
-	// The "Remote-Addr" header associated with the request, if it was present.
-	RemoteAddr *string `protobuf:"bytes,2,opt,name=remote_addr,json=remoteAddr" json:"remote_addr,omitempty"`
-	// The HTTP request's address. This will always be present, but may not preserve
-	// the _actual_ client IP. See source_ip for a more detailed documentation.
-	RequestAddr   *string `protobuf:"bytes,3,opt,name=request_addr,json=requestAddr" json:"request_addr,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_XForwardedFor *string                `protobuf:"bytes,1,opt,name=x_forwarded_for,json=xForwardedFor"`
+	xxx_hidden_RemoteAddr    *string                `protobuf:"bytes,2,opt,name=remote_addr,json=remoteAddr"`
+	xxx_hidden_RequestAddr   *string                `protobuf:"bytes,3,opt,name=request_addr,json=requestAddr"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *Audit_Message_Request_SourceHeaders) Reset() {
@@ -676,69 +709,84 @@ func (x *Audit_Message_Request_SourceHeaders) ProtoReflect() protoreflect.Messag
 }
 
 func (x *Audit_Message_Request_SourceHeaders) GetXForwardedFor() string {
-	if x != nil && x.XForwardedFor != nil {
-		return *x.XForwardedFor
+	if x != nil {
+		if x.xxx_hidden_XForwardedFor != nil {
+			return *x.xxx_hidden_XForwardedFor
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Audit_Message_Request_SourceHeaders) GetRemoteAddr() string {
-	if x != nil && x.RemoteAddr != nil {
-		return *x.RemoteAddr
+	if x != nil {
+		if x.xxx_hidden_RemoteAddr != nil {
+			return *x.xxx_hidden_RemoteAddr
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Audit_Message_Request_SourceHeaders) GetRequestAddr() string {
-	if x != nil && x.RequestAddr != nil {
-		return *x.RequestAddr
+	if x != nil {
+		if x.xxx_hidden_RequestAddr != nil {
+			return *x.xxx_hidden_RequestAddr
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Audit_Message_Request_SourceHeaders) SetXForwardedFor(v string) {
-	x.XForwardedFor = &v
+	x.xxx_hidden_XForwardedFor = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *Audit_Message_Request_SourceHeaders) SetRemoteAddr(v string) {
-	x.RemoteAddr = &v
+	x.xxx_hidden_RemoteAddr = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *Audit_Message_Request_SourceHeaders) SetRequestAddr(v string) {
-	x.RequestAddr = &v
+	x.xxx_hidden_RequestAddr = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *Audit_Message_Request_SourceHeaders) HasXForwardedFor() bool {
 	if x == nil {
 		return false
 	}
-	return x.XForwardedFor != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Audit_Message_Request_SourceHeaders) HasRemoteAddr() bool {
 	if x == nil {
 		return false
 	}
-	return x.RemoteAddr != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Audit_Message_Request_SourceHeaders) HasRequestAddr() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestAddr != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Audit_Message_Request_SourceHeaders) ClearXForwardedFor() {
-	x.XForwardedFor = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_XForwardedFor = nil
 }
 
 func (x *Audit_Message_Request_SourceHeaders) ClearRemoteAddr() {
-	x.RemoteAddr = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_RemoteAddr = nil
 }
 
 func (x *Audit_Message_Request_SourceHeaders) ClearRequestAddr() {
-	x.RequestAddr = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_RequestAddr = nil
 }
 
 type Audit_Message_Request_SourceHeaders_builder struct {
@@ -757,9 +805,18 @@ func (b0 Audit_Message_Request_SourceHeaders_builder) Build() *Audit_Message_Req
 	m0 := &Audit_Message_Request_SourceHeaders{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.XForwardedFor = b.XForwardedFor
-	x.RemoteAddr = b.RemoteAddr
-	x.RequestAddr = b.RequestAddr
+	if b.XForwardedFor != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_XForwardedFor = b.XForwardedFor
+	}
+	if b.RemoteAddr != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_RemoteAddr = b.RemoteAddr
+	}
+	if b.RequestAddr != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_RequestAddr = b.RequestAddr
+	}
 	return m0
 }
 
@@ -806,7 +863,7 @@ const file_api_v1_audit_proto_rawDesc = "" +
 	"\x03CLI\x10\x01\x12\x06\n" +
 	"\x02UI\x10\x02\x12\a\n" +
 	"\x03API\x10\x03B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_api_v1_audit_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_api_v1_audit_proto_msgTypes = make([]protoimpl.MessageInfo, 4)

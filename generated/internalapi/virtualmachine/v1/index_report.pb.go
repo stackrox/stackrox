@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/virtualmachine/v1/index_report.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -27,11 +25,13 @@ const (
 // The index report is collected from the virtual machine agent and contains
 // the package information.
 type IndexReport struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	VsockCid      *string                `protobuf:"bytes,1,opt,name=vsock_cid,json=vsockCid" json:"vsock_cid,omitempty"`
-	IndexV4       *v4.IndexReport        `protobuf:"bytes,2,opt,name=index_v4,json=indexV4" json:"index_v4,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_VsockCid    *string                `protobuf:"bytes,1,opt,name=vsock_cid,json=vsockCid"`
+	xxx_hidden_IndexV4     *v4.IndexReport        `protobuf:"bytes,2,opt,name=index_v4,json=indexV4"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *IndexReport) Reset() {
@@ -60,47 +60,52 @@ func (x *IndexReport) ProtoReflect() protoreflect.Message {
 }
 
 func (x *IndexReport) GetVsockCid() string {
-	if x != nil && x.VsockCid != nil {
-		return *x.VsockCid
+	if x != nil {
+		if x.xxx_hidden_VsockCid != nil {
+			return *x.xxx_hidden_VsockCid
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *IndexReport) GetIndexV4() *v4.IndexReport {
 	if x != nil {
-		return x.IndexV4
+		return x.xxx_hidden_IndexV4
 	}
 	return nil
 }
 
 func (x *IndexReport) SetVsockCid(v string) {
-	x.VsockCid = &v
+	x.xxx_hidden_VsockCid = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *IndexReport) SetIndexV4(v *v4.IndexReport) {
-	x.IndexV4 = v
+	x.xxx_hidden_IndexV4 = v
 }
 
 func (x *IndexReport) HasVsockCid() bool {
 	if x == nil {
 		return false
 	}
-	return x.VsockCid != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *IndexReport) HasIndexV4() bool {
 	if x == nil {
 		return false
 	}
-	return x.IndexV4 != nil
+	return x.xxx_hidden_IndexV4 != nil
 }
 
 func (x *IndexReport) ClearVsockCid() {
-	x.VsockCid = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_VsockCid = nil
 }
 
 func (x *IndexReport) ClearIndexV4() {
-	x.IndexV4 = nil
+	x.xxx_hidden_IndexV4 = nil
 }
 
 type IndexReport_builder struct {
@@ -114,21 +119,24 @@ func (b0 IndexReport_builder) Build() *IndexReport {
 	m0 := &IndexReport{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.VsockCid = b.VsockCid
-	x.IndexV4 = b.IndexV4
+	if b.VsockCid != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_VsockCid = b.VsockCid
+	}
+	x.xxx_hidden_IndexV4 = b.IndexV4
 	return m0
 }
 
 // The index report event is sent to Central and contains additional information
 // to match the index report to a virtual machine.
 type IndexReportEvent struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// This is the id of the virtual machine resource that matches the vsock_cid
-	// of the report.
-	Id            *string      `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Index         *IndexReport `protobuf:"bytes,2,opt,name=index" json:"index,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Index       *IndexReport           `protobuf:"bytes,2,opt,name=index"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *IndexReportEvent) Reset() {
@@ -157,47 +165,52 @@ func (x *IndexReportEvent) ProtoReflect() protoreflect.Message {
 }
 
 func (x *IndexReportEvent) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *IndexReportEvent) GetIndex() *IndexReport {
 	if x != nil {
-		return x.Index
+		return x.xxx_hidden_Index
 	}
 	return nil
 }
 
 func (x *IndexReportEvent) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *IndexReportEvent) SetIndex(v *IndexReport) {
-	x.Index = v
+	x.xxx_hidden_Index = v
 }
 
 func (x *IndexReportEvent) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *IndexReportEvent) HasIndex() bool {
 	if x == nil {
 		return false
 	}
-	return x.Index != nil
+	return x.xxx_hidden_Index != nil
 }
 
 func (x *IndexReportEvent) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *IndexReportEvent) ClearIndex() {
-	x.Index = nil
+	x.xxx_hidden_Index = nil
 }
 
 type IndexReportEvent_builder struct {
@@ -213,8 +226,11 @@ func (b0 IndexReportEvent_builder) Build() *IndexReportEvent {
 	m0 := &IndexReportEvent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Index = b.Index
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	x.xxx_hidden_Index = b.Index
 	return m0
 }
 
@@ -228,7 +244,7 @@ const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"\bindex_v4\x18\x02 \x01(\v2\x17.scanner.v4.IndexReportR\aindexV4\"X\n" +
 	"\x10IndexReportEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
-	"\x05index\x18\x02 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\x05indexB,Z\"./internalapi/virtualmachine/v1;v1\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x05index\x18\x02 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\x05indexB,Z\"./internalapi/virtualmachine/v1;v1\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_virtualmachine_v1_index_report_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_virtualmachine_v1_index_report_proto_goTypes = []any{

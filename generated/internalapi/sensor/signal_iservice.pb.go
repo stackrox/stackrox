@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/signal_iservice.proto
 
-//go:build !protoopaque
-
 package sensor
 
 import (
@@ -26,14 +24,10 @@ const (
 
 // A single message in the event stream between Collector and Sensor.
 type SignalStreamMessage struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Msg:
-	//
-	//	*SignalStreamMessage_CollectorRegisterRequest
-	//	*SignalStreamMessage_Signal
-	Msg           isSignalStreamMessage_Msg `protobuf_oneof:"msg"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_Msg isSignalStreamMessage_Msg `protobuf_oneof:"msg"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *SignalStreamMessage) Reset() {
@@ -61,16 +55,9 @@ func (x *SignalStreamMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *SignalStreamMessage) GetMsg() isSignalStreamMessage_Msg {
-	if x != nil {
-		return x.Msg
-	}
-	return nil
-}
-
 func (x *SignalStreamMessage) GetCollectorRegisterRequest() *CollectorRegisterRequest {
 	if x != nil {
-		if x, ok := x.Msg.(*SignalStreamMessage_CollectorRegisterRequest); ok {
+		if x, ok := x.xxx_hidden_Msg.(*signalStreamMessage_CollectorRegisterRequest); ok {
 			return x.CollectorRegisterRequest
 		}
 	}
@@ -79,7 +66,7 @@ func (x *SignalStreamMessage) GetCollectorRegisterRequest() *CollectorRegisterRe
 
 func (x *SignalStreamMessage) GetSignal() *v1.Signal {
 	if x != nil {
-		if x, ok := x.Msg.(*SignalStreamMessage_Signal); ok {
+		if x, ok := x.xxx_hidden_Msg.(*signalStreamMessage_Signal); ok {
 			return x.Signal
 		}
 	}
@@ -88,32 +75,32 @@ func (x *SignalStreamMessage) GetSignal() *v1.Signal {
 
 func (x *SignalStreamMessage) SetCollectorRegisterRequest(v *CollectorRegisterRequest) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &SignalStreamMessage_CollectorRegisterRequest{v}
+	x.xxx_hidden_Msg = &signalStreamMessage_CollectorRegisterRequest{v}
 }
 
 func (x *SignalStreamMessage) SetSignal(v *v1.Signal) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &SignalStreamMessage_Signal{v}
+	x.xxx_hidden_Msg = &signalStreamMessage_Signal{v}
 }
 
 func (x *SignalStreamMessage) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.Msg != nil
+	return x.xxx_hidden_Msg != nil
 }
 
 func (x *SignalStreamMessage) HasCollectorRegisterRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*SignalStreamMessage_CollectorRegisterRequest)
+	_, ok := x.xxx_hidden_Msg.(*signalStreamMessage_CollectorRegisterRequest)
 	return ok
 }
 
@@ -121,23 +108,23 @@ func (x *SignalStreamMessage) HasSignal() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*SignalStreamMessage_Signal)
+	_, ok := x.xxx_hidden_Msg.(*signalStreamMessage_Signal)
 	return ok
 }
 
 func (x *SignalStreamMessage) ClearMsg() {
-	x.Msg = nil
+	x.xxx_hidden_Msg = nil
 }
 
 func (x *SignalStreamMessage) ClearCollectorRegisterRequest() {
-	if _, ok := x.Msg.(*SignalStreamMessage_CollectorRegisterRequest); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*signalStreamMessage_CollectorRegisterRequest); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *SignalStreamMessage) ClearSignal() {
-	if _, ok := x.Msg.(*SignalStreamMessage_Signal); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*signalStreamMessage_Signal); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
@@ -149,10 +136,10 @@ func (x *SignalStreamMessage) WhichMsg() case_SignalStreamMessage_Msg {
 	if x == nil {
 		return SignalStreamMessage_Msg_not_set_case
 	}
-	switch x.Msg.(type) {
-	case *SignalStreamMessage_CollectorRegisterRequest:
+	switch x.xxx_hidden_Msg.(type) {
+	case *signalStreamMessage_CollectorRegisterRequest:
 		return SignalStreamMessage_CollectorRegisterRequest_case
-	case *SignalStreamMessage_Signal:
+	case *signalStreamMessage_Signal:
 		return SignalStreamMessage_Signal_case
 	default:
 		return SignalStreamMessage_Msg_not_set_case
@@ -162,12 +149,12 @@ func (x *SignalStreamMessage) WhichMsg() case_SignalStreamMessage_Msg {
 type SignalStreamMessage_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Msg:
+	// Fields of oneof xxx_hidden_Msg:
 	// The first message in every stream that registers Collector with Sensor.
 	CollectorRegisterRequest *CollectorRegisterRequest
 	// A signal event observed by Collector.
 	Signal *v1.Signal
-	// -- end of Msg
+	// -- end of xxx_hidden_Msg
 }
 
 func (b0 SignalStreamMessage_builder) Build() *SignalStreamMessage {
@@ -175,10 +162,10 @@ func (b0 SignalStreamMessage_builder) Build() *SignalStreamMessage {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.CollectorRegisterRequest != nil {
-		x.Msg = &SignalStreamMessage_CollectorRegisterRequest{b.CollectorRegisterRequest}
+		x.xxx_hidden_Msg = &signalStreamMessage_CollectorRegisterRequest{b.CollectorRegisterRequest}
 	}
 	if b.Signal != nil {
-		x.Msg = &SignalStreamMessage_Signal{b.Signal}
+		x.xxx_hidden_Msg = &signalStreamMessage_Signal{b.Signal}
 	}
 	return m0
 }
@@ -197,19 +184,19 @@ type isSignalStreamMessage_Msg interface {
 	isSignalStreamMessage_Msg()
 }
 
-type SignalStreamMessage_CollectorRegisterRequest struct {
+type signalStreamMessage_CollectorRegisterRequest struct {
 	// The first message in every stream that registers Collector with Sensor.
 	CollectorRegisterRequest *CollectorRegisterRequest `protobuf:"bytes,1,opt,name=collector_register_request,json=collectorRegisterRequest,oneof"`
 }
 
-type SignalStreamMessage_Signal struct {
+type signalStreamMessage_Signal struct {
 	// A signal event observed by Collector.
 	Signal *v1.Signal `protobuf:"bytes,2,opt,name=signal,oneof"`
 }
 
-func (*SignalStreamMessage_CollectorRegisterRequest) isSignalStreamMessage_Msg() {}
+func (*signalStreamMessage_CollectorRegisterRequest) isSignalStreamMessage_Msg() {}
 
-func (*SignalStreamMessage_Signal) isSignalStreamMessage_Msg() {}
+func (*signalStreamMessage_Signal) isSignalStreamMessage_Msg() {}
 
 var File_internalapi_sensor_signal_iservice_proto protoreflect.FileDescriptor
 
@@ -222,7 +209,7 @@ const file_internalapi_sensor_signal_iservice_proto_rawDesc = "" +
 	".v1.SignalH\x00R\x06signalB\x05\n" +
 	"\x03msg2J\n" +
 	"\rSignalService\x129\n" +
-	"\vPushSignals\x12\x1b.sensor.SignalStreamMessage\x1a\t.v1.Empty(\x010\x01B(Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\vPushSignals\x12\x1b.sensor.SignalStreamMessage\x1a\t.v1.Empty(\x010\x01B(Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_signal_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_sensor_signal_iservice_proto_goTypes = []any{
@@ -250,8 +237,8 @@ func file_internalapi_sensor_signal_iservice_proto_init() {
 	}
 	file_internalapi_sensor_collector_proto_init()
 	file_internalapi_sensor_signal_iservice_proto_msgTypes[0].OneofWrappers = []any{
-		(*SignalStreamMessage_CollectorRegisterRequest)(nil),
-		(*SignalStreamMessage_Signal)(nil),
+		(*signalStreamMessage_CollectorRegisterRequest)(nil),
+		(*signalStreamMessage_Signal)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

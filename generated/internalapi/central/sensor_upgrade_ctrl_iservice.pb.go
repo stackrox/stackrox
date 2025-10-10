@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/sensor_upgrade_ctrl_iservice.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -25,17 +23,16 @@ const (
 )
 
 type UpgradeCheckInFromUpgraderRequest struct {
-	state             protoimpl.MessageState `protogen:"hybrid.v1"`
-	ClusterId         *string                `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	UpgradeProcessId  *string                `protobuf:"bytes,1,opt,name=upgrade_process_id,json=upgradeProcessId" json:"upgrade_process_id,omitempty"`
-	CurrentWorkflow   *string                `protobuf:"bytes,2,opt,name=current_workflow,json=currentWorkflow" json:"current_workflow,omitempty"`
-	LastExecutedStage *string                `protobuf:"bytes,3,opt,name=last_executed_stage,json=lastExecutedStage" json:"last_executed_stage,omitempty"`
-	// The error from the last executed stage, if any.
-	// If this is empty, that implies that the last stage
-	// was succesfully executed.
-	LastExecutedStageError *string `protobuf:"bytes,4,opt,name=last_executed_stage_error,json=lastExecutedStageError" json:"last_executed_stage_error,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId              *string                `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_UpgradeProcessId       *string                `protobuf:"bytes,1,opt,name=upgrade_process_id,json=upgradeProcessId"`
+	xxx_hidden_CurrentWorkflow        *string                `protobuf:"bytes,2,opt,name=current_workflow,json=currentWorkflow"`
+	xxx_hidden_LastExecutedStage      *string                `protobuf:"bytes,3,opt,name=last_executed_stage,json=lastExecutedStage"`
+	xxx_hidden_LastExecutedStageError *string                `protobuf:"bytes,4,opt,name=last_executed_stage_error,json=lastExecutedStageError"`
+	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
+	XXX_presence                      [1]uint32
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) Reset() {
@@ -64,113 +61,138 @@ func (x *UpgradeCheckInFromUpgraderRequest) ProtoReflect() protoreflect.Message 
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) GetUpgradeProcessId() string {
-	if x != nil && x.UpgradeProcessId != nil {
-		return *x.UpgradeProcessId
+	if x != nil {
+		if x.xxx_hidden_UpgradeProcessId != nil {
+			return *x.xxx_hidden_UpgradeProcessId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) GetCurrentWorkflow() string {
-	if x != nil && x.CurrentWorkflow != nil {
-		return *x.CurrentWorkflow
+	if x != nil {
+		if x.xxx_hidden_CurrentWorkflow != nil {
+			return *x.xxx_hidden_CurrentWorkflow
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) GetLastExecutedStage() string {
-	if x != nil && x.LastExecutedStage != nil {
-		return *x.LastExecutedStage
+	if x != nil {
+		if x.xxx_hidden_LastExecutedStage != nil {
+			return *x.xxx_hidden_LastExecutedStage
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) GetLastExecutedStageError() string {
-	if x != nil && x.LastExecutedStageError != nil {
-		return *x.LastExecutedStageError
+	if x != nil {
+		if x.xxx_hidden_LastExecutedStageError != nil {
+			return *x.xxx_hidden_LastExecutedStageError
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) SetUpgradeProcessId(v string) {
-	x.UpgradeProcessId = &v
+	x.xxx_hidden_UpgradeProcessId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) SetCurrentWorkflow(v string) {
-	x.CurrentWorkflow = &v
+	x.xxx_hidden_CurrentWorkflow = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) SetLastExecutedStage(v string) {
-	x.LastExecutedStage = &v
+	x.xxx_hidden_LastExecutedStage = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) SetLastExecutedStageError(v string) {
-	x.LastExecutedStageError = &v
+	x.xxx_hidden_LastExecutedStageError = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) HasUpgradeProcessId() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpgradeProcessId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) HasCurrentWorkflow() bool {
 	if x == nil {
 		return false
 	}
-	return x.CurrentWorkflow != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) HasLastExecutedStage() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastExecutedStage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) HasLastExecutedStageError() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastExecutedStageError != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) ClearUpgradeProcessId() {
-	x.UpgradeProcessId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_UpgradeProcessId = nil
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) ClearCurrentWorkflow() {
-	x.CurrentWorkflow = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_CurrentWorkflow = nil
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) ClearLastExecutedStage() {
-	x.LastExecutedStage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_LastExecutedStage = nil
 }
 
 func (x *UpgradeCheckInFromUpgraderRequest) ClearLastExecutedStageError() {
-	x.LastExecutedStageError = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_LastExecutedStageError = nil
 }
 
 type UpgradeCheckInFromUpgraderRequest_builder struct {
@@ -190,19 +212,36 @@ func (b0 UpgradeCheckInFromUpgraderRequest_builder) Build() *UpgradeCheckInFromU
 	m0 := &UpgradeCheckInFromUpgraderRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.UpgradeProcessId = b.UpgradeProcessId
-	x.CurrentWorkflow = b.CurrentWorkflow
-	x.LastExecutedStage = b.LastExecutedStage
-	x.LastExecutedStageError = b.LastExecutedStageError
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.UpgradeProcessId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_UpgradeProcessId = b.UpgradeProcessId
+	}
+	if b.CurrentWorkflow != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_CurrentWorkflow = b.CurrentWorkflow
+	}
+	if b.LastExecutedStage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_LastExecutedStage = b.LastExecutedStage
+	}
+	if b.LastExecutedStageError != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_LastExecutedStageError = b.LastExecutedStageError
+	}
 	return m0
 }
 
 type UpgradeCheckInFromUpgraderResponse struct {
-	state             protoimpl.MessageState `protogen:"hybrid.v1"`
-	WorkflowToExecute *string                `protobuf:"bytes,1,opt,name=workflow_to_execute,json=workflowToExecute" json:"workflow_to_execute,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_WorkflowToExecute *string                `protobuf:"bytes,1,opt,name=workflow_to_execute,json=workflowToExecute"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *UpgradeCheckInFromUpgraderResponse) Reset() {
@@ -231,25 +270,30 @@ func (x *UpgradeCheckInFromUpgraderResponse) ProtoReflect() protoreflect.Message
 }
 
 func (x *UpgradeCheckInFromUpgraderResponse) GetWorkflowToExecute() string {
-	if x != nil && x.WorkflowToExecute != nil {
-		return *x.WorkflowToExecute
+	if x != nil {
+		if x.xxx_hidden_WorkflowToExecute != nil {
+			return *x.xxx_hidden_WorkflowToExecute
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpgradeCheckInFromUpgraderResponse) SetWorkflowToExecute(v string) {
-	x.WorkflowToExecute = &v
+	x.xxx_hidden_WorkflowToExecute = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *UpgradeCheckInFromUpgraderResponse) HasWorkflowToExecute() bool {
 	if x == nil {
 		return false
 	}
-	return x.WorkflowToExecute != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpgradeCheckInFromUpgraderResponse) ClearWorkflowToExecute() {
-	x.WorkflowToExecute = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_WorkflowToExecute = nil
 }
 
 type UpgradeCheckInFromUpgraderResponse_builder struct {
@@ -262,22 +306,22 @@ func (b0 UpgradeCheckInFromUpgraderResponse_builder) Build() *UpgradeCheckInFrom
 	m0 := &UpgradeCheckInFromUpgraderResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.WorkflowToExecute = b.WorkflowToExecute
+	if b.WorkflowToExecute != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_WorkflowToExecute = b.WorkflowToExecute
+	}
 	return m0
 }
 
 type UpgradeCheckInFromSensorRequest struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	ClusterId        *string                `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	UpgradeProcessId *string                `protobuf:"bytes,1,opt,name=upgrade_process_id,json=upgradeProcessId" json:"upgrade_process_id,omitempty"`
-	// Types that are valid to be assigned to State:
-	//
-	//	*UpgradeCheckInFromSensorRequest_LaunchError
-	//	*UpgradeCheckInFromSensorRequest_PodStates
-	//	*UpgradeCheckInFromSensorRequest_DeploymentGone
-	State         isUpgradeCheckInFromSensorRequest_State `protobuf_oneof:"state"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                       protoimpl.MessageState                  `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId        *string                                 `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_UpgradeProcessId *string                                 `protobuf:"bytes,1,opt,name=upgrade_process_id,json=upgradeProcessId"`
+	xxx_hidden_State            isUpgradeCheckInFromSensorRequest_State `protobuf_oneof:"state"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *UpgradeCheckInFromSensorRequest) Reset() {
@@ -306,29 +350,28 @@ func (x *UpgradeCheckInFromSensorRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *UpgradeCheckInFromSensorRequest) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpgradeCheckInFromSensorRequest) GetUpgradeProcessId() string {
-	if x != nil && x.UpgradeProcessId != nil {
-		return *x.UpgradeProcessId
+	if x != nil {
+		if x.xxx_hidden_UpgradeProcessId != nil {
+			return *x.xxx_hidden_UpgradeProcessId
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *UpgradeCheckInFromSensorRequest) GetState() isUpgradeCheckInFromSensorRequest_State {
-	if x != nil {
-		return x.State
-	}
-	return nil
-}
-
 func (x *UpgradeCheckInFromSensorRequest) GetLaunchError() string {
 	if x != nil {
-		if x, ok := x.State.(*UpgradeCheckInFromSensorRequest_LaunchError); ok {
+		if x, ok := x.xxx_hidden_State.(*upgradeCheckInFromSensorRequest_LaunchError); ok {
 			return x.LaunchError
 		}
 	}
@@ -337,7 +380,7 @@ func (x *UpgradeCheckInFromSensorRequest) GetLaunchError() string {
 
 func (x *UpgradeCheckInFromSensorRequest) GetPodStates() *UpgradeCheckInFromSensorRequest_UpgraderPodStates {
 	if x != nil {
-		if x, ok := x.State.(*UpgradeCheckInFromSensorRequest_PodStates); ok {
+		if x, ok := x.xxx_hidden_State.(*upgradeCheckInFromSensorRequest_PodStates); ok {
 			return x.PodStates
 		}
 	}
@@ -346,7 +389,7 @@ func (x *UpgradeCheckInFromSensorRequest) GetPodStates() *UpgradeCheckInFromSens
 
 func (x *UpgradeCheckInFromSensorRequest) GetDeploymentGone() bool {
 	if x != nil {
-		if x, ok := x.State.(*UpgradeCheckInFromSensorRequest_DeploymentGone); ok {
+		if x, ok := x.xxx_hidden_State.(*upgradeCheckInFromSensorRequest_DeploymentGone); ok {
 			return x.DeploymentGone
 		}
 	}
@@ -354,55 +397,57 @@ func (x *UpgradeCheckInFromSensorRequest) GetDeploymentGone() bool {
 }
 
 func (x *UpgradeCheckInFromSensorRequest) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *UpgradeCheckInFromSensorRequest) SetUpgradeProcessId(v string) {
-	x.UpgradeProcessId = &v
+	x.xxx_hidden_UpgradeProcessId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *UpgradeCheckInFromSensorRequest) SetLaunchError(v string) {
-	x.State = &UpgradeCheckInFromSensorRequest_LaunchError{v}
+	x.xxx_hidden_State = &upgradeCheckInFromSensorRequest_LaunchError{v}
 }
 
 func (x *UpgradeCheckInFromSensorRequest) SetPodStates(v *UpgradeCheckInFromSensorRequest_UpgraderPodStates) {
 	if v == nil {
-		x.State = nil
+		x.xxx_hidden_State = nil
 		return
 	}
-	x.State = &UpgradeCheckInFromSensorRequest_PodStates{v}
+	x.xxx_hidden_State = &upgradeCheckInFromSensorRequest_PodStates{v}
 }
 
 func (x *UpgradeCheckInFromSensorRequest) SetDeploymentGone(v bool) {
-	x.State = &UpgradeCheckInFromSensorRequest_DeploymentGone{v}
+	x.xxx_hidden_State = &upgradeCheckInFromSensorRequest_DeploymentGone{v}
 }
 
 func (x *UpgradeCheckInFromSensorRequest) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpgradeCheckInFromSensorRequest) HasUpgradeProcessId() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpgradeProcessId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UpgradeCheckInFromSensorRequest) HasState() bool {
 	if x == nil {
 		return false
 	}
-	return x.State != nil
+	return x.xxx_hidden_State != nil
 }
 
 func (x *UpgradeCheckInFromSensorRequest) HasLaunchError() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.State.(*UpgradeCheckInFromSensorRequest_LaunchError)
+	_, ok := x.xxx_hidden_State.(*upgradeCheckInFromSensorRequest_LaunchError)
 	return ok
 }
 
@@ -410,7 +455,7 @@ func (x *UpgradeCheckInFromSensorRequest) HasPodStates() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.State.(*UpgradeCheckInFromSensorRequest_PodStates)
+	_, ok := x.xxx_hidden_State.(*upgradeCheckInFromSensorRequest_PodStates)
 	return ok
 }
 
@@ -418,37 +463,39 @@ func (x *UpgradeCheckInFromSensorRequest) HasDeploymentGone() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.State.(*UpgradeCheckInFromSensorRequest_DeploymentGone)
+	_, ok := x.xxx_hidden_State.(*upgradeCheckInFromSensorRequest_DeploymentGone)
 	return ok
 }
 
 func (x *UpgradeCheckInFromSensorRequest) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *UpgradeCheckInFromSensorRequest) ClearUpgradeProcessId() {
-	x.UpgradeProcessId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_UpgradeProcessId = nil
 }
 
 func (x *UpgradeCheckInFromSensorRequest) ClearState() {
-	x.State = nil
+	x.xxx_hidden_State = nil
 }
 
 func (x *UpgradeCheckInFromSensorRequest) ClearLaunchError() {
-	if _, ok := x.State.(*UpgradeCheckInFromSensorRequest_LaunchError); ok {
-		x.State = nil
+	if _, ok := x.xxx_hidden_State.(*upgradeCheckInFromSensorRequest_LaunchError); ok {
+		x.xxx_hidden_State = nil
 	}
 }
 
 func (x *UpgradeCheckInFromSensorRequest) ClearPodStates() {
-	if _, ok := x.State.(*UpgradeCheckInFromSensorRequest_PodStates); ok {
-		x.State = nil
+	if _, ok := x.xxx_hidden_State.(*upgradeCheckInFromSensorRequest_PodStates); ok {
+		x.xxx_hidden_State = nil
 	}
 }
 
 func (x *UpgradeCheckInFromSensorRequest) ClearDeploymentGone() {
-	if _, ok := x.State.(*UpgradeCheckInFromSensorRequest_DeploymentGone); ok {
-		x.State = nil
+	if _, ok := x.xxx_hidden_State.(*upgradeCheckInFromSensorRequest_DeploymentGone); ok {
+		x.xxx_hidden_State = nil
 	}
 }
 
@@ -461,12 +508,12 @@ func (x *UpgradeCheckInFromSensorRequest) WhichState() case_UpgradeCheckInFromSe
 	if x == nil {
 		return UpgradeCheckInFromSensorRequest_State_not_set_case
 	}
-	switch x.State.(type) {
-	case *UpgradeCheckInFromSensorRequest_LaunchError:
+	switch x.xxx_hidden_State.(type) {
+	case *upgradeCheckInFromSensorRequest_LaunchError:
 		return UpgradeCheckInFromSensorRequest_LaunchError_case
-	case *UpgradeCheckInFromSensorRequest_PodStates:
+	case *upgradeCheckInFromSensorRequest_PodStates:
 		return UpgradeCheckInFromSensorRequest_PodStates_case
-	case *UpgradeCheckInFromSensorRequest_DeploymentGone:
+	case *upgradeCheckInFromSensorRequest_DeploymentGone:
 		return UpgradeCheckInFromSensorRequest_DeploymentGone_case
 	default:
 		return UpgradeCheckInFromSensorRequest_State_not_set_case
@@ -478,27 +525,33 @@ type UpgradeCheckInFromSensorRequest_builder struct {
 
 	ClusterId        *string
 	UpgradeProcessId *string
-	// Fields of oneof State:
+	// Fields of oneof xxx_hidden_State:
 	LaunchError    *string
 	PodStates      *UpgradeCheckInFromSensorRequest_UpgraderPodStates
 	DeploymentGone *bool
-	// -- end of State
+	// -- end of xxx_hidden_State
 }
 
 func (b0 UpgradeCheckInFromSensorRequest_builder) Build() *UpgradeCheckInFromSensorRequest {
 	m0 := &UpgradeCheckInFromSensorRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.UpgradeProcessId = b.UpgradeProcessId
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.UpgradeProcessId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_UpgradeProcessId = b.UpgradeProcessId
+	}
 	if b.LaunchError != nil {
-		x.State = &UpgradeCheckInFromSensorRequest_LaunchError{*b.LaunchError}
+		x.xxx_hidden_State = &upgradeCheckInFromSensorRequest_LaunchError{*b.LaunchError}
 	}
 	if b.PodStates != nil {
-		x.State = &UpgradeCheckInFromSensorRequest_PodStates{b.PodStates}
+		x.xxx_hidden_State = &upgradeCheckInFromSensorRequest_PodStates{b.PodStates}
 	}
 	if b.DeploymentGone != nil {
-		x.State = &UpgradeCheckInFromSensorRequest_DeploymentGone{*b.DeploymentGone}
+		x.xxx_hidden_State = &upgradeCheckInFromSensorRequest_DeploymentGone{*b.DeploymentGone}
 	}
 	return m0
 }
@@ -517,28 +570,28 @@ type isUpgradeCheckInFromSensorRequest_State interface {
 	isUpgradeCheckInFromSensorRequest_State()
 }
 
-type UpgradeCheckInFromSensorRequest_LaunchError struct {
+type upgradeCheckInFromSensorRequest_LaunchError struct {
 	LaunchError string `protobuf:"bytes,2,opt,name=launch_error,json=launchError,oneof"`
 }
 
-type UpgradeCheckInFromSensorRequest_PodStates struct {
+type upgradeCheckInFromSensorRequest_PodStates struct {
 	PodStates *UpgradeCheckInFromSensorRequest_UpgraderPodStates `protobuf:"bytes,3,opt,name=pod_states,json=podStates,oneof"`
 }
 
-type UpgradeCheckInFromSensorRequest_DeploymentGone struct {
+type upgradeCheckInFromSensorRequest_DeploymentGone struct {
 	DeploymentGone bool `protobuf:"varint,4,opt,name=deployment_gone,json=deploymentGone,oneof"`
 }
 
-func (*UpgradeCheckInFromSensorRequest_LaunchError) isUpgradeCheckInFromSensorRequest_State() {}
+func (*upgradeCheckInFromSensorRequest_LaunchError) isUpgradeCheckInFromSensorRequest_State() {}
 
-func (*UpgradeCheckInFromSensorRequest_PodStates) isUpgradeCheckInFromSensorRequest_State() {}
+func (*upgradeCheckInFromSensorRequest_PodStates) isUpgradeCheckInFromSensorRequest_State() {}
 
-func (*UpgradeCheckInFromSensorRequest_DeploymentGone) isUpgradeCheckInFromSensorRequest_State() {}
+func (*upgradeCheckInFromSensorRequest_DeploymentGone) isUpgradeCheckInFromSensorRequest_State() {}
 
 // UpgradeCheckInResponseDetails contains proto messages that are added to details
 // when returning errors from these endpoints.
 type UpgradeCheckInResponseDetails struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -581,11 +634,13 @@ func (b0 UpgradeCheckInResponseDetails_builder) Build() *UpgradeCheckInResponseD
 }
 
 type UpgradeCheckInFromSensorRequest_PodErrorCondition struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Message       *string                `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	ImageRelated  *bool                  `protobuf:"varint,2,opt,name=image_related,json=imageRelated" json:"image_related,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Message      *string                `protobuf:"bytes,1,opt,name=message"`
+	xxx_hidden_ImageRelated bool                   `protobuf:"varint,2,opt,name=image_related,json=imageRelated"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) Reset() {
@@ -614,47 +669,54 @@ func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) ProtoReflect() proto
 }
 
 func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) GetMessage() string {
-	if x != nil && x.Message != nil {
-		return *x.Message
+	if x != nil {
+		if x.xxx_hidden_Message != nil {
+			return *x.xxx_hidden_Message
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) GetImageRelated() bool {
-	if x != nil && x.ImageRelated != nil {
-		return *x.ImageRelated
+	if x != nil {
+		return x.xxx_hidden_ImageRelated
 	}
 	return false
 }
 
 func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) SetMessage(v string) {
-	x.Message = &v
+	x.xxx_hidden_Message = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) SetImageRelated(v bool) {
-	x.ImageRelated = &v
+	x.xxx_hidden_ImageRelated = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) HasMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Message != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) HasImageRelated() bool {
 	if x == nil {
 		return false
 	}
-	return x.ImageRelated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) ClearMessage() {
-	x.Message = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Message = nil
 }
 
 func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) ClearImageRelated() {
-	x.ImageRelated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ImageRelated = false
 }
 
 type UpgradeCheckInFromSensorRequest_PodErrorCondition_builder struct {
@@ -668,18 +730,26 @@ func (b0 UpgradeCheckInFromSensorRequest_PodErrorCondition_builder) Build() *Upg
 	m0 := &UpgradeCheckInFromSensorRequest_PodErrorCondition{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Message = b.Message
-	x.ImageRelated = b.ImageRelated
+	if b.Message != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Message = b.Message
+	}
+	if b.ImageRelated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_ImageRelated = *b.ImageRelated
+	}
 	return m0
 }
 
 type UpgradeCheckInFromSensorRequest_UpgraderPodState struct {
-	state         protoimpl.MessageState                             `protogen:"hybrid.v1"`
-	PodName       *string                                            `protobuf:"bytes,1,opt,name=pod_name,json=podName" json:"pod_name,omitempty"`
-	Started       *bool                                              `protobuf:"varint,2,opt,name=started" json:"started,omitempty"`
-	Error         *UpgradeCheckInFromSensorRequest_PodErrorCondition `protobuf:"bytes,3,opt,name=error" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState                             `protogen:"opaque.v1"`
+	xxx_hidden_PodName     *string                                            `protobuf:"bytes,1,opt,name=pod_name,json=podName"`
+	xxx_hidden_Started     bool                                               `protobuf:"varint,2,opt,name=started"`
+	xxx_hidden_Error       *UpgradeCheckInFromSensorRequest_PodErrorCondition `protobuf:"bytes,3,opt,name=error"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) Reset() {
@@ -708,69 +778,76 @@ func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) ProtoReflect() protor
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) GetPodName() string {
-	if x != nil && x.PodName != nil {
-		return *x.PodName
+	if x != nil {
+		if x.xxx_hidden_PodName != nil {
+			return *x.xxx_hidden_PodName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) GetStarted() bool {
-	if x != nil && x.Started != nil {
-		return *x.Started
+	if x != nil {
+		return x.xxx_hidden_Started
 	}
 	return false
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) GetError() *UpgradeCheckInFromSensorRequest_PodErrorCondition {
 	if x != nil {
-		return x.Error
+		return x.xxx_hidden_Error
 	}
 	return nil
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) SetPodName(v string) {
-	x.PodName = &v
+	x.xxx_hidden_PodName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) SetStarted(v bool) {
-	x.Started = &v
+	x.xxx_hidden_Started = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) SetError(v *UpgradeCheckInFromSensorRequest_PodErrorCondition) {
-	x.Error = v
+	x.xxx_hidden_Error = v
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) HasPodName() bool {
 	if x == nil {
 		return false
 	}
-	return x.PodName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) HasStarted() bool {
 	if x == nil {
 		return false
 	}
-	return x.Started != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) HasError() bool {
 	if x == nil {
 		return false
 	}
-	return x.Error != nil
+	return x.xxx_hidden_Error != nil
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) ClearPodName() {
-	x.PodName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_PodName = nil
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) ClearStarted() {
-	x.Started = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Started = false
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) ClearError() {
-	x.Error = nil
+	x.xxx_hidden_Error = nil
 }
 
 type UpgradeCheckInFromSensorRequest_UpgraderPodState_builder struct {
@@ -785,17 +862,23 @@ func (b0 UpgradeCheckInFromSensorRequest_UpgraderPodState_builder) Build() *Upgr
 	m0 := &UpgradeCheckInFromSensorRequest_UpgraderPodState{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PodName = b.PodName
-	x.Started = b.Started
-	x.Error = b.Error
+	if b.PodName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_PodName = b.PodName
+	}
+	if b.Started != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Started = *b.Started
+	}
+	x.xxx_hidden_Error = b.Error
 	return m0
 }
 
 type UpgradeCheckInFromSensorRequest_UpgraderPodStates struct {
-	state         protoimpl.MessageState                              `protogen:"hybrid.v1"`
-	States        []*UpgradeCheckInFromSensorRequest_UpgraderPodState `protobuf:"bytes,1,rep,name=states" json:"states,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState                               `protogen:"opaque.v1"`
+	xxx_hidden_States *[]*UpgradeCheckInFromSensorRequest_UpgraderPodState `protobuf:"bytes,1,rep,name=states"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodStates) Reset() {
@@ -825,13 +908,15 @@ func (x *UpgradeCheckInFromSensorRequest_UpgraderPodStates) ProtoReflect() proto
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodStates) GetStates() []*UpgradeCheckInFromSensorRequest_UpgraderPodState {
 	if x != nil {
-		return x.States
+		if x.xxx_hidden_States != nil {
+			return *x.xxx_hidden_States
+		}
 	}
 	return nil
 }
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodStates) SetStates(v []*UpgradeCheckInFromSensorRequest_UpgraderPodState) {
-	x.States = v
+	x.xxx_hidden_States = &v
 }
 
 type UpgradeCheckInFromSensorRequest_UpgraderPodStates_builder struct {
@@ -844,12 +929,12 @@ func (b0 UpgradeCheckInFromSensorRequest_UpgraderPodStates_builder) Build() *Upg
 	m0 := &UpgradeCheckInFromSensorRequest_UpgraderPodStates{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.States = b.States
+	x.xxx_hidden_States = &b.States
 	return m0
 }
 
 type UpgradeCheckInResponseDetails_NoUpgradeInProgress struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -927,7 +1012,7 @@ const file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_rawDesc = "" +
 	"\x13NoUpgradeInProgress2\xf2\x01\n" +
 	"\x1bSensorUpgradeControlService\x12u\n" +
 	"\x1aUpgradeCheckInFromUpgrader\x12*.central.UpgradeCheckInFromUpgraderRequest\x1a+.central.UpgradeCheckInFromUpgraderResponse\x12\\\n" +
-	"\x18UpgradeCheckInFromSensor\x12(.central.UpgradeCheckInFromSensorRequest\x1a\x16.google.protobuf.EmptyB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x18UpgradeCheckInFromSensor\x12(.central.UpgradeCheckInFromSensorRequest\x1a\x16.google.protobuf.EmptyB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_goTypes = []any{
@@ -962,9 +1047,9 @@ func file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init() {
 		return
 	}
 	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[2].OneofWrappers = []any{
-		(*UpgradeCheckInFromSensorRequest_LaunchError)(nil),
-		(*UpgradeCheckInFromSensorRequest_PodStates)(nil),
-		(*UpgradeCheckInFromSensorRequest_DeploymentGone)(nil),
+		(*upgradeCheckInFromSensorRequest_LaunchError)(nil),
+		(*upgradeCheckInFromSensorRequest_PodStates)(nil),
+		(*upgradeCheckInFromSensorRequest_DeploymentGone)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

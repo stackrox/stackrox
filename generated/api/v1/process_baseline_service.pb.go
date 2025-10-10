@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/process_baseline_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,10 +24,10 @@ const (
 )
 
 type GetProcessBaselineRequest struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Key           *storage.ProcessBaselineKey `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Key *storage.ProcessBaselineKey `protobuf:"bytes,1,opt,name=key"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetProcessBaselineRequest) Reset() {
@@ -59,24 +57,24 @@ func (x *GetProcessBaselineRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetProcessBaselineRequest) GetKey() *storage.ProcessBaselineKey {
 	if x != nil {
-		return x.Key
+		return x.xxx_hidden_Key
 	}
 	return nil
 }
 
 func (x *GetProcessBaselineRequest) SetKey(v *storage.ProcessBaselineKey) {
-	x.Key = v
+	x.xxx_hidden_Key = v
 }
 
 func (x *GetProcessBaselineRequest) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.Key != nil
+	return x.xxx_hidden_Key != nil
 }
 
 func (x *GetProcessBaselineRequest) ClearKey() {
-	x.Key = nil
+	x.xxx_hidden_Key = nil
 }
 
 type GetProcessBaselineRequest_builder struct {
@@ -89,17 +87,17 @@ func (b0 GetProcessBaselineRequest_builder) Build() *GetProcessBaselineRequest {
 	m0 := &GetProcessBaselineRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Key = b.Key
+	x.xxx_hidden_Key = b.Key
 	return m0
 }
 
 type UpdateProcessBaselinesRequest struct {
-	state          protoimpl.MessageState        `protogen:"hybrid.v1"`
-	Keys           []*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys" json:"keys,omitempty"`
-	AddElements    []*storage.BaselineItem       `protobuf:"bytes,2,rep,name=add_elements,json=addElements" json:"add_elements,omitempty"`
-	RemoveElements []*storage.BaselineItem       `protobuf:"bytes,3,rep,name=remove_elements,json=removeElements" json:"remove_elements,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_Keys           *[]*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys"`
+	xxx_hidden_AddElements    *[]*storage.BaselineItem       `protobuf:"bytes,2,rep,name=add_elements,json=addElements"`
+	xxx_hidden_RemoveElements *[]*storage.BaselineItem       `protobuf:"bytes,3,rep,name=remove_elements,json=removeElements"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *UpdateProcessBaselinesRequest) Reset() {
@@ -129,35 +127,41 @@ func (x *UpdateProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateProcessBaselinesRequest) GetKeys() []*storage.ProcessBaselineKey {
 	if x != nil {
-		return x.Keys
+		if x.xxx_hidden_Keys != nil {
+			return *x.xxx_hidden_Keys
+		}
 	}
 	return nil
 }
 
 func (x *UpdateProcessBaselinesRequest) GetAddElements() []*storage.BaselineItem {
 	if x != nil {
-		return x.AddElements
+		if x.xxx_hidden_AddElements != nil {
+			return *x.xxx_hidden_AddElements
+		}
 	}
 	return nil
 }
 
 func (x *UpdateProcessBaselinesRequest) GetRemoveElements() []*storage.BaselineItem {
 	if x != nil {
-		return x.RemoveElements
+		if x.xxx_hidden_RemoveElements != nil {
+			return *x.xxx_hidden_RemoveElements
+		}
 	}
 	return nil
 }
 
 func (x *UpdateProcessBaselinesRequest) SetKeys(v []*storage.ProcessBaselineKey) {
-	x.Keys = v
+	x.xxx_hidden_Keys = &v
 }
 
 func (x *UpdateProcessBaselinesRequest) SetAddElements(v []*storage.BaselineItem) {
-	x.AddElements = v
+	x.xxx_hidden_AddElements = &v
 }
 
 func (x *UpdateProcessBaselinesRequest) SetRemoveElements(v []*storage.BaselineItem) {
-	x.RemoveElements = v
+	x.xxx_hidden_RemoveElements = &v
 }
 
 type UpdateProcessBaselinesRequest_builder struct {
@@ -172,17 +176,17 @@ func (b0 UpdateProcessBaselinesRequest_builder) Build() *UpdateProcessBaselinesR
 	m0 := &UpdateProcessBaselinesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Keys = b.Keys
-	x.AddElements = b.AddElements
-	x.RemoveElements = b.RemoveElements
+	x.xxx_hidden_Keys = &b.Keys
+	x.xxx_hidden_AddElements = &b.AddElements
+	x.xxx_hidden_RemoveElements = &b.RemoveElements
 	return m0
 }
 
 type ProcessBaselinesResponse struct {
-	state         protoimpl.MessageState     `protogen:"hybrid.v1"`
-	Baselines     []*storage.ProcessBaseline `protobuf:"bytes,1,rep,name=baselines" json:"baselines,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Baselines *[]*storage.ProcessBaseline `protobuf:"bytes,1,rep,name=baselines"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ProcessBaselinesResponse) Reset() {
@@ -212,13 +216,15 @@ func (x *ProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessBaselinesResponse) GetBaselines() []*storage.ProcessBaseline {
 	if x != nil {
-		return x.Baselines
+		if x.xxx_hidden_Baselines != nil {
+			return *x.xxx_hidden_Baselines
+		}
 	}
 	return nil
 }
 
 func (x *ProcessBaselinesResponse) SetBaselines(v []*storage.ProcessBaseline) {
-	x.Baselines = v
+	x.xxx_hidden_Baselines = &v
 }
 
 type ProcessBaselinesResponse_builder struct {
@@ -231,16 +237,18 @@ func (b0 ProcessBaselinesResponse_builder) Build() *ProcessBaselinesResponse {
 	m0 := &ProcessBaselinesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Baselines = b.Baselines
+	x.xxx_hidden_Baselines = &b.Baselines
 	return m0
 }
 
 type ProcessBaselineUpdateError struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Error         *string                     `protobuf:"bytes,1,opt,name=error" json:"error,omitempty"`
-	Key           *storage.ProcessBaselineKey `protobuf:"bytes,2,opt,name=key" json:"key,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Error       *string                     `protobuf:"bytes,1,opt,name=error"`
+	xxx_hidden_Key         *storage.ProcessBaselineKey `protobuf:"bytes,2,opt,name=key"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProcessBaselineUpdateError) Reset() {
@@ -269,47 +277,52 @@ func (x *ProcessBaselineUpdateError) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ProcessBaselineUpdateError) GetError() string {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		if x.xxx_hidden_Error != nil {
+			return *x.xxx_hidden_Error
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProcessBaselineUpdateError) GetKey() *storage.ProcessBaselineKey {
 	if x != nil {
-		return x.Key
+		return x.xxx_hidden_Key
 	}
 	return nil
 }
 
 func (x *ProcessBaselineUpdateError) SetError(v string) {
-	x.Error = &v
+	x.xxx_hidden_Error = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ProcessBaselineUpdateError) SetKey(v *storage.ProcessBaselineKey) {
-	x.Key = v
+	x.xxx_hidden_Key = v
 }
 
 func (x *ProcessBaselineUpdateError) HasError() bool {
 	if x == nil {
 		return false
 	}
-	return x.Error != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ProcessBaselineUpdateError) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.Key != nil
+	return x.xxx_hidden_Key != nil
 }
 
 func (x *ProcessBaselineUpdateError) ClearError() {
-	x.Error = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Error = nil
 }
 
 func (x *ProcessBaselineUpdateError) ClearKey() {
-	x.Key = nil
+	x.xxx_hidden_Key = nil
 }
 
 type ProcessBaselineUpdateError_builder struct {
@@ -323,16 +336,21 @@ func (b0 ProcessBaselineUpdateError_builder) Build() *ProcessBaselineUpdateError
 	m0 := &ProcessBaselineUpdateError{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Error = b.Error
-	x.Key = b.Key
+	if b.Error != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Error = b.Error
+	}
+	x.xxx_hidden_Key = b.Key
 	return m0
 }
 
 type BulkUpdateProcessBaselinesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Success       *bool                  `protobuf:"varint,1,opt,name=success" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Success     bool                   `protobuf:"varint,1,opt,name=success"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *BulkUpdateProcessBaselinesResponse) Reset() {
@@ -361,25 +379,27 @@ func (x *BulkUpdateProcessBaselinesResponse) ProtoReflect() protoreflect.Message
 }
 
 func (x *BulkUpdateProcessBaselinesResponse) GetSuccess() bool {
-	if x != nil && x.Success != nil {
-		return *x.Success
+	if x != nil {
+		return x.xxx_hidden_Success
 	}
 	return false
 }
 
 func (x *BulkUpdateProcessBaselinesResponse) SetSuccess(v bool) {
-	x.Success = &v
+	x.xxx_hidden_Success = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *BulkUpdateProcessBaselinesResponse) HasSuccess() bool {
 	if x == nil {
 		return false
 	}
-	return x.Success != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *BulkUpdateProcessBaselinesResponse) ClearSuccess() {
-	x.Success = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Success = false
 }
 
 type BulkUpdateProcessBaselinesResponse_builder struct {
@@ -392,16 +412,19 @@ func (b0 BulkUpdateProcessBaselinesResponse_builder) Build() *BulkUpdateProcessB
 	m0 := &BulkUpdateProcessBaselinesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Success = b.Success
+	if b.Success != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Success = *b.Success
+	}
 	return m0
 }
 
 type UpdateProcessBaselinesResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	Baselines     []*storage.ProcessBaseline    `protobuf:"bytes,1,rep,name=baselines" json:"baselines,omitempty"`
-	Errors        []*ProcessBaselineUpdateError `protobuf:"bytes,2,rep,name=errors" json:"errors,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_Baselines *[]*storage.ProcessBaseline    `protobuf:"bytes,1,rep,name=baselines"`
+	xxx_hidden_Errors    *[]*ProcessBaselineUpdateError `protobuf:"bytes,2,rep,name=errors"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *UpdateProcessBaselinesResponse) Reset() {
@@ -431,24 +454,28 @@ func (x *UpdateProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateProcessBaselinesResponse) GetBaselines() []*storage.ProcessBaseline {
 	if x != nil {
-		return x.Baselines
+		if x.xxx_hidden_Baselines != nil {
+			return *x.xxx_hidden_Baselines
+		}
 	}
 	return nil
 }
 
 func (x *UpdateProcessBaselinesResponse) GetErrors() []*ProcessBaselineUpdateError {
 	if x != nil {
-		return x.Errors
+		if x.xxx_hidden_Errors != nil {
+			return *x.xxx_hidden_Errors
+		}
 	}
 	return nil
 }
 
 func (x *UpdateProcessBaselinesResponse) SetBaselines(v []*storage.ProcessBaseline) {
-	x.Baselines = v
+	x.xxx_hidden_Baselines = &v
 }
 
 func (x *UpdateProcessBaselinesResponse) SetErrors(v []*ProcessBaselineUpdateError) {
-	x.Errors = v
+	x.xxx_hidden_Errors = &v
 }
 
 type UpdateProcessBaselinesResponse_builder struct {
@@ -462,17 +489,19 @@ func (b0 UpdateProcessBaselinesResponse_builder) Build() *UpdateProcessBaselines
 	m0 := &UpdateProcessBaselinesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Baselines = b.Baselines
-	x.Errors = b.Errors
+	x.xxx_hidden_Baselines = &b.Baselines
+	x.xxx_hidden_Errors = &b.Errors
 	return m0
 }
 
 type LockProcessBaselinesRequest struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	Keys          []*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys" json:"keys,omitempty"`
-	Locked        *bool                         `protobuf:"varint,2,opt,name=locked" json:"locked,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_Keys        *[]*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys"`
+	xxx_hidden_Locked      bool                           `protobuf:"varint,2,opt,name=locked"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *LockProcessBaselinesRequest) Reset() {
@@ -502,35 +531,39 @@ func (x *LockProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *LockProcessBaselinesRequest) GetKeys() []*storage.ProcessBaselineKey {
 	if x != nil {
-		return x.Keys
+		if x.xxx_hidden_Keys != nil {
+			return *x.xxx_hidden_Keys
+		}
 	}
 	return nil
 }
 
 func (x *LockProcessBaselinesRequest) GetLocked() bool {
-	if x != nil && x.Locked != nil {
-		return *x.Locked
+	if x != nil {
+		return x.xxx_hidden_Locked
 	}
 	return false
 }
 
 func (x *LockProcessBaselinesRequest) SetKeys(v []*storage.ProcessBaselineKey) {
-	x.Keys = v
+	x.xxx_hidden_Keys = &v
 }
 
 func (x *LockProcessBaselinesRequest) SetLocked(v bool) {
-	x.Locked = &v
+	x.xxx_hidden_Locked = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *LockProcessBaselinesRequest) HasLocked() bool {
 	if x == nil {
 		return false
 	}
-	return x.Locked != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *LockProcessBaselinesRequest) ClearLocked() {
-	x.Locked = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Locked = false
 }
 
 type LockProcessBaselinesRequest_builder struct {
@@ -544,17 +577,22 @@ func (b0 LockProcessBaselinesRequest_builder) Build() *LockProcessBaselinesReque
 	m0 := &LockProcessBaselinesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Keys = b.Keys
-	x.Locked = b.Locked
+	x.xxx_hidden_Keys = &b.Keys
+	if b.Locked != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Locked = *b.Locked
+	}
 	return m0
 }
 
 type BulkProcessBaselinesRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ClusterId     *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	Namespaces    []string               `protobuf:"bytes,2,rep,name=namespaces" json:"namespaces,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId   *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Namespaces  []string               `protobuf:"bytes,2,rep,name=namespaces"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *BulkProcessBaselinesRequest) Reset() {
@@ -583,36 +621,41 @@ func (x *BulkProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *BulkProcessBaselinesRequest) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *BulkProcessBaselinesRequest) GetNamespaces() []string {
 	if x != nil {
-		return x.Namespaces
+		return x.xxx_hidden_Namespaces
 	}
 	return nil
 }
 
 func (x *BulkProcessBaselinesRequest) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *BulkProcessBaselinesRequest) SetNamespaces(v []string) {
-	x.Namespaces = v
+	x.xxx_hidden_Namespaces = v
 }
 
 func (x *BulkProcessBaselinesRequest) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *BulkProcessBaselinesRequest) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 type BulkProcessBaselinesRequest_builder struct {
@@ -626,17 +669,22 @@ func (b0 BulkProcessBaselinesRequest_builder) Build() *BulkProcessBaselinesReque
 	m0 := &BulkProcessBaselinesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.Namespaces = b.Namespaces
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	x.xxx_hidden_Namespaces = b.Namespaces
 	return m0
 }
 
 type DeleteProcessBaselinesRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Query         *string                `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
-	Confirm       *bool                  `protobuf:"varint,2,opt,name=confirm" json:"confirm,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,1,opt,name=query"`
+	xxx_hidden_Confirm     bool                   `protobuf:"varint,2,opt,name=confirm"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeleteProcessBaselinesRequest) Reset() {
@@ -665,47 +713,54 @@ func (x *DeleteProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DeleteProcessBaselinesRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DeleteProcessBaselinesRequest) GetConfirm() bool {
-	if x != nil && x.Confirm != nil {
-		return *x.Confirm
+	if x != nil {
+		return x.xxx_hidden_Confirm
 	}
 	return false
 }
 
 func (x *DeleteProcessBaselinesRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *DeleteProcessBaselinesRequest) SetConfirm(v bool) {
-	x.Confirm = &v
+	x.xxx_hidden_Confirm = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DeleteProcessBaselinesRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DeleteProcessBaselinesRequest) HasConfirm() bool {
 	if x == nil {
 		return false
 	}
-	return x.Confirm != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DeleteProcessBaselinesRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Query = nil
 }
 
 func (x *DeleteProcessBaselinesRequest) ClearConfirm() {
-	x.Confirm = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Confirm = false
 }
 
 type DeleteProcessBaselinesRequest_builder struct {
@@ -719,17 +774,25 @@ func (b0 DeleteProcessBaselinesRequest_builder) Build() *DeleteProcessBaselinesR
 	m0 := &DeleteProcessBaselinesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Query = b.Query
-	x.Confirm = b.Confirm
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Query = b.Query
+	}
+	if b.Confirm != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Confirm = *b.Confirm
+	}
 	return m0
 }
 
 type DeleteProcessBaselinesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	NumDeleted    *int32                 `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted" json:"num_deleted,omitempty"`
-	DryRun        *bool                  `protobuf:"varint,2,opt,name=dry_run,json=dryRun" json:"dry_run,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_NumDeleted  int32                  `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted"`
+	xxx_hidden_DryRun      bool                   `protobuf:"varint,2,opt,name=dry_run,json=dryRun"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeleteProcessBaselinesResponse) Reset() {
@@ -758,47 +821,51 @@ func (x *DeleteProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DeleteProcessBaselinesResponse) GetNumDeleted() int32 {
-	if x != nil && x.NumDeleted != nil {
-		return *x.NumDeleted
+	if x != nil {
+		return x.xxx_hidden_NumDeleted
 	}
 	return 0
 }
 
 func (x *DeleteProcessBaselinesResponse) GetDryRun() bool {
-	if x != nil && x.DryRun != nil {
-		return *x.DryRun
+	if x != nil {
+		return x.xxx_hidden_DryRun
 	}
 	return false
 }
 
 func (x *DeleteProcessBaselinesResponse) SetNumDeleted(v int32) {
-	x.NumDeleted = &v
+	x.xxx_hidden_NumDeleted = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *DeleteProcessBaselinesResponse) SetDryRun(v bool) {
-	x.DryRun = &v
+	x.xxx_hidden_DryRun = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DeleteProcessBaselinesResponse) HasNumDeleted() bool {
 	if x == nil {
 		return false
 	}
-	return x.NumDeleted != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DeleteProcessBaselinesResponse) HasDryRun() bool {
 	if x == nil {
 		return false
 	}
-	return x.DryRun != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DeleteProcessBaselinesResponse) ClearNumDeleted() {
-	x.NumDeleted = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_NumDeleted = 0
 }
 
 func (x *DeleteProcessBaselinesResponse) ClearDryRun() {
-	x.DryRun = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_DryRun = false
 }
 
 type DeleteProcessBaselinesResponse_builder struct {
@@ -812,8 +879,14 @@ func (b0 DeleteProcessBaselinesResponse_builder) Build() *DeleteProcessBaselines
 	m0 := &DeleteProcessBaselinesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.NumDeleted = b.NumDeleted
-	x.DryRun = b.DryRun
+	if b.NumDeleted != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_NumDeleted = *b.NumDeleted
+	}
+	if b.DryRun != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_DryRun = *b.DryRun
+	}
 	return m0
 }
 
@@ -861,7 +934,7 @@ const file_api_v1_process_baseline_service_proto_rawDesc = "" +
 	"\x18BulkLockProcessBaselines\x12\x1f.v1.BulkProcessBaselinesRequest\x1a&.v1.BulkUpdateProcessBaselinesResponse\")\x82\xd3\xe4\x93\x02#:\x01*\x1a\x1e/v1/processbaselines/bulk/lock\x12\x92\x01\n" +
 	"\x1aBulkUnlockProcessBaselines\x12\x1f.v1.BulkProcessBaselinesRequest\x1a&.v1.BulkUpdateProcessBaselinesResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\x1a /v1/processbaselines/bulk/unlock\x12}\n" +
 	"\x16DeleteProcessBaselines\x12!.v1.DeleteProcessBaselinesRequest\x1a\".v1.DeleteProcessBaselinesResponse\"\x1c\x82\xd3\xe4\x93\x02\x16*\x14/v1/processbaselinesB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x00b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x00b\beditionsp\xe8\a"
 
 var file_api_v1_process_baseline_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_api_v1_process_baseline_service_proto_goTypes = []any{

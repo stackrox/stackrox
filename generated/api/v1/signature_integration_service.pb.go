@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/signature_integration_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,10 +24,10 @@ const (
 )
 
 type ListSignatureIntegrationsResponse struct {
-	state         protoimpl.MessageState          `protogen:"hybrid.v1"`
-	Integrations  []*storage.SignatureIntegration `protobuf:"bytes,1,rep,name=integrations" json:"integrations,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Integrations *[]*storage.SignatureIntegration `protobuf:"bytes,1,rep,name=integrations"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ListSignatureIntegrationsResponse) Reset() {
@@ -59,13 +57,15 @@ func (x *ListSignatureIntegrationsResponse) ProtoReflect() protoreflect.Message 
 
 func (x *ListSignatureIntegrationsResponse) GetIntegrations() []*storage.SignatureIntegration {
 	if x != nil {
-		return x.Integrations
+		if x.xxx_hidden_Integrations != nil {
+			return *x.xxx_hidden_Integrations
+		}
 	}
 	return nil
 }
 
 func (x *ListSignatureIntegrationsResponse) SetIntegrations(v []*storage.SignatureIntegration) {
-	x.Integrations = v
+	x.xxx_hidden_Integrations = &v
 }
 
 type ListSignatureIntegrationsResponse_builder struct {
@@ -78,7 +78,7 @@ func (b0 ListSignatureIntegrationsResponse_builder) Build() *ListSignatureIntegr
 	m0 := &ListSignatureIntegrationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Integrations = b.Integrations
+	x.xxx_hidden_Integrations = &b.Integrations
 	return m0
 }
 
@@ -95,7 +95,7 @@ const file_api_v1_signature_integration_service_proto_rawDesc = "" +
 	"\x18PostSignatureIntegration\x12\x1d.storage.SignatureIntegration\x1a\x1d.storage.SignatureIntegration\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/signatureintegrations\x12n\n" +
 	"\x17PutSignatureIntegration\x12\x1d.storage.SignatureIntegration\x1a\t.v1.Empty\")\x82\xd3\xe4\x93\x02#:\x01*\x1a\x1e/v1/signatureintegrations/{id}\x12a\n" +
 	"\x1aDeleteSignatureIntegration\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"&\x82\xd3\xe4\x93\x02 *\x1e/v1/signatureintegrations/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_signature_integration_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v1_signature_integration_service_proto_goTypes = []any{

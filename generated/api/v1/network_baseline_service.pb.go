@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/network_baseline_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -71,13 +69,15 @@ func (x NetworkBaselinePeerStatus_Status) Number() protoreflect.EnumNumber {
 }
 
 type NetworkBaselinePeerEntity struct {
-	state         protoimpl.MessageState          `protogen:"hybrid.v1"`
-	Id            *string                         `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Type          *storage.NetworkEntityInfo_Type `protobuf:"varint,2,opt,name=type,enum=storage.NetworkEntityInfo_Type" json:"type,omitempty"`
-	Name          *string                         `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	Discovered    *bool                           `protobuf:"varint,4,opt,name=discovered" json:"discovered,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                        `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Type        storage.NetworkEntityInfo_Type `protobuf:"varint,2,opt,name=type,enum=storage.NetworkEntityInfo_Type"`
+	xxx_hidden_Name        *string                        `protobuf:"bytes,3,opt,name=name"`
+	xxx_hidden_Discovered  bool                           `protobuf:"varint,4,opt,name=discovered"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkBaselinePeerEntity) Reset() {
@@ -106,91 +106,107 @@ func (x *NetworkBaselinePeerEntity) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NetworkBaselinePeerEntity) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkBaselinePeerEntity) GetType() storage.NetworkEntityInfo_Type {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return storage.NetworkEntityInfo_Type(0)
 }
 
 func (x *NetworkBaselinePeerEntity) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkBaselinePeerEntity) GetDiscovered() bool {
-	if x != nil && x.Discovered != nil {
-		return *x.Discovered
+	if x != nil {
+		return x.xxx_hidden_Discovered
 	}
 	return false
 }
 
 func (x *NetworkBaselinePeerEntity) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *NetworkBaselinePeerEntity) SetType(v storage.NetworkEntityInfo_Type) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *NetworkBaselinePeerEntity) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *NetworkBaselinePeerEntity) SetDiscovered(v bool) {
-	x.Discovered = &v
+	x.xxx_hidden_Discovered = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *NetworkBaselinePeerEntity) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NetworkBaselinePeerEntity) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkBaselinePeerEntity) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *NetworkBaselinePeerEntity) HasDiscovered() bool {
 	if x == nil {
 		return false
 	}
-	return x.Discovered != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *NetworkBaselinePeerEntity) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *NetworkBaselinePeerEntity) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Type = storage.NetworkEntityInfo_UNKNOWN_TYPE
 }
 
 func (x *NetworkBaselinePeerEntity) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *NetworkBaselinePeerEntity) ClearDiscovered() {
-	x.Discovered = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Discovered = false
 }
 
 type NetworkBaselinePeerEntity_builder struct {
@@ -206,31 +222,35 @@ func (b0 NetworkBaselinePeerEntity_builder) Build() *NetworkBaselinePeerEntity {
 	m0 := &NetworkBaselinePeerEntity{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Type = b.Type
-	x.Name = b.Name
-	x.Discovered = b.Discovered
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Type = *b.Type
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Discovered != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Discovered = *b.Discovered
+	}
 	return m0
 }
 
 type NetworkBaselineStatusPeer struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The peer entity of the connection. This can be constructed from the
-	// entity object of the networkgraph API. Only the ID and type are required.
-	Entity *NetworkBaselinePeerEntity `protobuf:"bytes,1,opt,name=entity" json:"entity,omitempty"`
-	// The port and protocol of the destination of the given connection.
-	Port     *uint32             `protobuf:"varint,2,opt,name=port" json:"port,omitempty"`
-	Protocol *storage.L4Protocol `protobuf:"varint,3,opt,name=protocol,enum=storage.L4Protocol" json:"protocol,omitempty"`
-	// A boolean representing whether the query is for an ingress or egress
-	// connection. This is defined with respect to the current deployment.
-	// Thus:
-	//   - If the connection in question is in the outEdges of the current deployment,
-	//     this should be false.
-	//   - If it is in the outEdges of the peer deployment, this
-	//     should be true.
-	Ingress       *bool `protobuf:"varint,4,opt,name=ingress" json:"ingress,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Entity      *NetworkBaselinePeerEntity `protobuf:"bytes,1,opt,name=entity"`
+	xxx_hidden_Port        uint32                     `protobuf:"varint,2,opt,name=port"`
+	xxx_hidden_Protocol    storage.L4Protocol         `protobuf:"varint,3,opt,name=protocol,enum=storage.L4Protocol"`
+	xxx_hidden_Ingress     bool                       `protobuf:"varint,4,opt,name=ingress"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkBaselineStatusPeer) Reset() {
@@ -260,90 +280,98 @@ func (x *NetworkBaselineStatusPeer) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkBaselineStatusPeer) GetEntity() *NetworkBaselinePeerEntity {
 	if x != nil {
-		return x.Entity
+		return x.xxx_hidden_Entity
 	}
 	return nil
 }
 
 func (x *NetworkBaselineStatusPeer) GetPort() uint32 {
-	if x != nil && x.Port != nil {
-		return *x.Port
+	if x != nil {
+		return x.xxx_hidden_Port
 	}
 	return 0
 }
 
 func (x *NetworkBaselineStatusPeer) GetProtocol() storage.L4Protocol {
-	if x != nil && x.Protocol != nil {
-		return *x.Protocol
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Protocol
+		}
 	}
 	return storage.L4Protocol(0)
 }
 
 func (x *NetworkBaselineStatusPeer) GetIngress() bool {
-	if x != nil && x.Ingress != nil {
-		return *x.Ingress
+	if x != nil {
+		return x.xxx_hidden_Ingress
 	}
 	return false
 }
 
 func (x *NetworkBaselineStatusPeer) SetEntity(v *NetworkBaselinePeerEntity) {
-	x.Entity = v
+	x.xxx_hidden_Entity = v
 }
 
 func (x *NetworkBaselineStatusPeer) SetPort(v uint32) {
-	x.Port = &v
+	x.xxx_hidden_Port = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *NetworkBaselineStatusPeer) SetProtocol(v storage.L4Protocol) {
-	x.Protocol = &v
+	x.xxx_hidden_Protocol = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *NetworkBaselineStatusPeer) SetIngress(v bool) {
-	x.Ingress = &v
+	x.xxx_hidden_Ingress = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *NetworkBaselineStatusPeer) HasEntity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Entity != nil
+	return x.xxx_hidden_Entity != nil
 }
 
 func (x *NetworkBaselineStatusPeer) HasPort() bool {
 	if x == nil {
 		return false
 	}
-	return x.Port != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkBaselineStatusPeer) HasProtocol() bool {
 	if x == nil {
 		return false
 	}
-	return x.Protocol != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *NetworkBaselineStatusPeer) HasIngress() bool {
 	if x == nil {
 		return false
 	}
-	return x.Ingress != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *NetworkBaselineStatusPeer) ClearEntity() {
-	x.Entity = nil
+	x.xxx_hidden_Entity = nil
 }
 
 func (x *NetworkBaselineStatusPeer) ClearPort() {
-	x.Port = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Port = 0
 }
 
 func (x *NetworkBaselineStatusPeer) ClearProtocol() {
-	x.Protocol = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Protocol = storage.L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
 func (x *NetworkBaselineStatusPeer) ClearIngress() {
-	x.Ingress = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Ingress = false
 }
 
 type NetworkBaselineStatusPeer_builder struct {
@@ -369,19 +397,30 @@ func (b0 NetworkBaselineStatusPeer_builder) Build() *NetworkBaselineStatusPeer {
 	m0 := &NetworkBaselineStatusPeer{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entity = b.Entity
-	x.Port = b.Port
-	x.Protocol = b.Protocol
-	x.Ingress = b.Ingress
+	x.xxx_hidden_Entity = b.Entity
+	if b.Port != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Port = *b.Port
+	}
+	if b.Protocol != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Protocol = *b.Protocol
+	}
+	if b.Ingress != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Ingress = *b.Ingress
+	}
 	return m0
 }
 
 type NetworkBaselinePeerStatus struct {
-	state         protoimpl.MessageState            `protogen:"hybrid.v1"`
-	Peer          *NetworkBaselineStatusPeer        `protobuf:"bytes,1,opt,name=peer" json:"peer,omitempty"`
-	Status        *NetworkBaselinePeerStatus_Status `protobuf:"varint,2,opt,name=status,enum=v1.NetworkBaselinePeerStatus_Status" json:"status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Peer        *NetworkBaselineStatusPeer       `protobuf:"bytes,1,opt,name=peer"`
+	xxx_hidden_Status      NetworkBaselinePeerStatus_Status `protobuf:"varint,2,opt,name=status,enum=v1.NetworkBaselinePeerStatus_Status"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkBaselinePeerStatus) Reset() {
@@ -411,46 +450,50 @@ func (x *NetworkBaselinePeerStatus) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkBaselinePeerStatus) GetPeer() *NetworkBaselineStatusPeer {
 	if x != nil {
-		return x.Peer
+		return x.xxx_hidden_Peer
 	}
 	return nil
 }
 
 func (x *NetworkBaselinePeerStatus) GetStatus() NetworkBaselinePeerStatus_Status {
-	if x != nil && x.Status != nil {
-		return *x.Status
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Status
+		}
 	}
 	return NetworkBaselinePeerStatus_BASELINE
 }
 
 func (x *NetworkBaselinePeerStatus) SetPeer(v *NetworkBaselineStatusPeer) {
-	x.Peer = v
+	x.xxx_hidden_Peer = v
 }
 
 func (x *NetworkBaselinePeerStatus) SetStatus(v NetworkBaselinePeerStatus_Status) {
-	x.Status = &v
+	x.xxx_hidden_Status = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *NetworkBaselinePeerStatus) HasPeer() bool {
 	if x == nil {
 		return false
 	}
-	return x.Peer != nil
+	return x.xxx_hidden_Peer != nil
 }
 
 func (x *NetworkBaselinePeerStatus) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.Status != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkBaselinePeerStatus) ClearPeer() {
-	x.Peer = nil
+	x.xxx_hidden_Peer = nil
 }
 
 func (x *NetworkBaselinePeerStatus) ClearStatus() {
-	x.Status = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Status = NetworkBaselinePeerStatus_BASELINE
 }
 
 type NetworkBaselinePeerStatus_builder struct {
@@ -464,17 +507,22 @@ func (b0 NetworkBaselinePeerStatus_builder) Build() *NetworkBaselinePeerStatus {
 	m0 := &NetworkBaselinePeerStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Peer = b.Peer
-	x.Status = b.Status
+	x.xxx_hidden_Peer = b.Peer
+	if b.Status != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Status = *b.Status
+	}
 	return m0
 }
 
 type NetworkBaselineStatusRequest struct {
-	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
-	DeploymentId  *string                      `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
-	Peers         []*NetworkBaselineStatusPeer `protobuf:"bytes,2,rep,name=peers" json:"peers,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_DeploymentId *string                       `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
+	xxx_hidden_Peers        *[]*NetworkBaselineStatusPeer `protobuf:"bytes,2,rep,name=peers"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *NetworkBaselineStatusRequest) Reset() {
@@ -503,36 +551,43 @@ func (x *NetworkBaselineStatusRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NetworkBaselineStatusRequest) GetDeploymentId() string {
-	if x != nil && x.DeploymentId != nil {
-		return *x.DeploymentId
+	if x != nil {
+		if x.xxx_hidden_DeploymentId != nil {
+			return *x.xxx_hidden_DeploymentId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkBaselineStatusRequest) GetPeers() []*NetworkBaselineStatusPeer {
 	if x != nil {
-		return x.Peers
+		if x.xxx_hidden_Peers != nil {
+			return *x.xxx_hidden_Peers
+		}
 	}
 	return nil
 }
 
 func (x *NetworkBaselineStatusRequest) SetDeploymentId(v string) {
-	x.DeploymentId = &v
+	x.xxx_hidden_DeploymentId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *NetworkBaselineStatusRequest) SetPeers(v []*NetworkBaselineStatusPeer) {
-	x.Peers = v
+	x.xxx_hidden_Peers = &v
 }
 
 func (x *NetworkBaselineStatusRequest) HasDeploymentId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NetworkBaselineStatusRequest) ClearDeploymentId() {
-	x.DeploymentId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_DeploymentId = nil
 }
 
 type NetworkBaselineStatusRequest_builder struct {
@@ -546,16 +601,19 @@ func (b0 NetworkBaselineStatusRequest_builder) Build() *NetworkBaselineStatusReq
 	m0 := &NetworkBaselineStatusRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DeploymentId = b.DeploymentId
-	x.Peers = b.Peers
+	if b.DeploymentId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_DeploymentId = b.DeploymentId
+	}
+	x.xxx_hidden_Peers = &b.Peers
 	return m0
 }
 
 type NetworkBaselineStatusResponse struct {
-	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
-	Statuses      []*NetworkBaselinePeerStatus `protobuf:"bytes,1,rep,name=statuses" json:"statuses,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Statuses *[]*NetworkBaselinePeerStatus `protobuf:"bytes,1,rep,name=statuses"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *NetworkBaselineStatusResponse) Reset() {
@@ -585,13 +643,15 @@ func (x *NetworkBaselineStatusResponse) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkBaselineStatusResponse) GetStatuses() []*NetworkBaselinePeerStatus {
 	if x != nil {
-		return x.Statuses
+		if x.xxx_hidden_Statuses != nil {
+			return *x.xxx_hidden_Statuses
+		}
 	}
 	return nil
 }
 
 func (x *NetworkBaselineStatusResponse) SetStatuses(v []*NetworkBaselinePeerStatus) {
-	x.Statuses = v
+	x.xxx_hidden_Statuses = &v
 }
 
 type NetworkBaselineStatusResponse_builder struct {
@@ -604,18 +664,20 @@ func (b0 NetworkBaselineStatusResponse_builder) Build() *NetworkBaselineStatusRe
 	m0 := &NetworkBaselineStatusResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Statuses = b.Statuses
+	x.xxx_hidden_Statuses = &b.Statuses
 	return m0
 }
 
 type NetworkBaselineExternalStatusRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	DeploymentId  *string                `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
-	Query         *string                `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
-	Since         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since" json:"since,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,4,opt,name=pagination" json:"pagination,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_DeploymentId *string                `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
+	xxx_hidden_Query        *string                `protobuf:"bytes,2,opt,name=query"`
+	xxx_hidden_Since        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since"`
+	xxx_hidden_Pagination   *Pagination            `protobuf:"bytes,4,opt,name=pagination"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *NetworkBaselineExternalStatusRequest) Reset() {
@@ -644,91 +706,101 @@ func (x *NetworkBaselineExternalStatusRequest) ProtoReflect() protoreflect.Messa
 }
 
 func (x *NetworkBaselineExternalStatusRequest) GetDeploymentId() string {
-	if x != nil && x.DeploymentId != nil {
-		return *x.DeploymentId
+	if x != nil {
+		if x.xxx_hidden_DeploymentId != nil {
+			return *x.xxx_hidden_DeploymentId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkBaselineExternalStatusRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkBaselineExternalStatusRequest) GetSince() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Since
+		return x.xxx_hidden_Since
 	}
 	return nil
 }
 
 func (x *NetworkBaselineExternalStatusRequest) GetPagination() *Pagination {
 	if x != nil {
-		return x.Pagination
+		return x.xxx_hidden_Pagination
 	}
 	return nil
 }
 
 func (x *NetworkBaselineExternalStatusRequest) SetDeploymentId(v string) {
-	x.DeploymentId = &v
+	x.xxx_hidden_DeploymentId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *NetworkBaselineExternalStatusRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *NetworkBaselineExternalStatusRequest) SetSince(v *timestamppb.Timestamp) {
-	x.Since = v
+	x.xxx_hidden_Since = v
 }
 
 func (x *NetworkBaselineExternalStatusRequest) SetPagination(v *Pagination) {
-	x.Pagination = v
+	x.xxx_hidden_Pagination = v
 }
 
 func (x *NetworkBaselineExternalStatusRequest) HasDeploymentId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NetworkBaselineExternalStatusRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkBaselineExternalStatusRequest) HasSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.Since != nil
+	return x.xxx_hidden_Since != nil
 }
 
 func (x *NetworkBaselineExternalStatusRequest) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pagination != nil
+	return x.xxx_hidden_Pagination != nil
 }
 
 func (x *NetworkBaselineExternalStatusRequest) ClearDeploymentId() {
-	x.DeploymentId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_DeploymentId = nil
 }
 
 func (x *NetworkBaselineExternalStatusRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Query = nil
 }
 
 func (x *NetworkBaselineExternalStatusRequest) ClearSince() {
-	x.Since = nil
+	x.xxx_hidden_Since = nil
 }
 
 func (x *NetworkBaselineExternalStatusRequest) ClearPagination() {
-	x.Pagination = nil
+	x.xxx_hidden_Pagination = nil
 }
 
 type NetworkBaselineExternalStatusRequest_builder struct {
@@ -744,21 +816,29 @@ func (b0 NetworkBaselineExternalStatusRequest_builder) Build() *NetworkBaselineE
 	m0 := &NetworkBaselineExternalStatusRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DeploymentId = b.DeploymentId
-	x.Query = b.Query
-	x.Since = b.Since
-	x.Pagination = b.Pagination
+	if b.DeploymentId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_DeploymentId = b.DeploymentId
+	}
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Query = b.Query
+	}
+	x.xxx_hidden_Since = b.Since
+	x.xxx_hidden_Pagination = b.Pagination
 	return m0
 }
 
 type NetworkBaselineExternalStatusResponse struct {
-	state          protoimpl.MessageState       `protogen:"hybrid.v1"`
-	Anomalous      []*NetworkBaselinePeerStatus `protobuf:"bytes,1,rep,name=anomalous" json:"anomalous,omitempty"`
-	TotalAnomalous *int32                       `protobuf:"varint,2,opt,name=total_anomalous,json=totalAnomalous" json:"total_anomalous,omitempty"`
-	Baseline       []*NetworkBaselinePeerStatus `protobuf:"bytes,3,rep,name=baseline" json:"baseline,omitempty"`
-	TotalBaseline  *int32                       `protobuf:"varint,4,opt,name=total_baseline,json=totalBaseline" json:"total_baseline,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Anomalous      *[]*NetworkBaselinePeerStatus `protobuf:"bytes,1,rep,name=anomalous"`
+	xxx_hidden_TotalAnomalous int32                         `protobuf:"varint,2,opt,name=total_anomalous,json=totalAnomalous"`
+	xxx_hidden_Baseline       *[]*NetworkBaselinePeerStatus `protobuf:"bytes,3,rep,name=baseline"`
+	xxx_hidden_TotalBaseline  int32                         `protobuf:"varint,4,opt,name=total_baseline,json=totalBaseline"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *NetworkBaselineExternalStatusResponse) Reset() {
@@ -788,68 +868,76 @@ func (x *NetworkBaselineExternalStatusResponse) ProtoReflect() protoreflect.Mess
 
 func (x *NetworkBaselineExternalStatusResponse) GetAnomalous() []*NetworkBaselinePeerStatus {
 	if x != nil {
-		return x.Anomalous
+		if x.xxx_hidden_Anomalous != nil {
+			return *x.xxx_hidden_Anomalous
+		}
 	}
 	return nil
 }
 
 func (x *NetworkBaselineExternalStatusResponse) GetTotalAnomalous() int32 {
-	if x != nil && x.TotalAnomalous != nil {
-		return *x.TotalAnomalous
+	if x != nil {
+		return x.xxx_hidden_TotalAnomalous
 	}
 	return 0
 }
 
 func (x *NetworkBaselineExternalStatusResponse) GetBaseline() []*NetworkBaselinePeerStatus {
 	if x != nil {
-		return x.Baseline
+		if x.xxx_hidden_Baseline != nil {
+			return *x.xxx_hidden_Baseline
+		}
 	}
 	return nil
 }
 
 func (x *NetworkBaselineExternalStatusResponse) GetTotalBaseline() int32 {
-	if x != nil && x.TotalBaseline != nil {
-		return *x.TotalBaseline
+	if x != nil {
+		return x.xxx_hidden_TotalBaseline
 	}
 	return 0
 }
 
 func (x *NetworkBaselineExternalStatusResponse) SetAnomalous(v []*NetworkBaselinePeerStatus) {
-	x.Anomalous = v
+	x.xxx_hidden_Anomalous = &v
 }
 
 func (x *NetworkBaselineExternalStatusResponse) SetTotalAnomalous(v int32) {
-	x.TotalAnomalous = &v
+	x.xxx_hidden_TotalAnomalous = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *NetworkBaselineExternalStatusResponse) SetBaseline(v []*NetworkBaselinePeerStatus) {
-	x.Baseline = v
+	x.xxx_hidden_Baseline = &v
 }
 
 func (x *NetworkBaselineExternalStatusResponse) SetTotalBaseline(v int32) {
-	x.TotalBaseline = &v
+	x.xxx_hidden_TotalBaseline = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *NetworkBaselineExternalStatusResponse) HasTotalAnomalous() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalAnomalous != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkBaselineExternalStatusResponse) HasTotalBaseline() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalBaseline != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *NetworkBaselineExternalStatusResponse) ClearTotalAnomalous() {
-	x.TotalAnomalous = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_TotalAnomalous = 0
 }
 
 func (x *NetworkBaselineExternalStatusResponse) ClearTotalBaseline() {
-	x.TotalBaseline = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_TotalBaseline = 0
 }
 
 type NetworkBaselineExternalStatusResponse_builder struct {
@@ -865,19 +953,27 @@ func (b0 NetworkBaselineExternalStatusResponse_builder) Build() *NetworkBaseline
 	m0 := &NetworkBaselineExternalStatusResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Anomalous = b.Anomalous
-	x.TotalAnomalous = b.TotalAnomalous
-	x.Baseline = b.Baseline
-	x.TotalBaseline = b.TotalBaseline
+	x.xxx_hidden_Anomalous = &b.Anomalous
+	if b.TotalAnomalous != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_TotalAnomalous = *b.TotalAnomalous
+	}
+	x.xxx_hidden_Baseline = &b.Baseline
+	if b.TotalBaseline != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_TotalBaseline = *b.TotalBaseline
+	}
 	return m0
 }
 
 type ModifyBaselineStatusForPeersRequest struct {
-	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
-	DeploymentId  *string                      `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
-	Peers         []*NetworkBaselinePeerStatus `protobuf:"bytes,2,rep,name=peers" json:"peers,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_DeploymentId *string                       `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
+	xxx_hidden_Peers        *[]*NetworkBaselinePeerStatus `protobuf:"bytes,2,rep,name=peers"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ModifyBaselineStatusForPeersRequest) Reset() {
@@ -906,36 +1002,43 @@ func (x *ModifyBaselineStatusForPeersRequest) ProtoReflect() protoreflect.Messag
 }
 
 func (x *ModifyBaselineStatusForPeersRequest) GetDeploymentId() string {
-	if x != nil && x.DeploymentId != nil {
-		return *x.DeploymentId
+	if x != nil {
+		if x.xxx_hidden_DeploymentId != nil {
+			return *x.xxx_hidden_DeploymentId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ModifyBaselineStatusForPeersRequest) GetPeers() []*NetworkBaselinePeerStatus {
 	if x != nil {
-		return x.Peers
+		if x.xxx_hidden_Peers != nil {
+			return *x.xxx_hidden_Peers
+		}
 	}
 	return nil
 }
 
 func (x *ModifyBaselineStatusForPeersRequest) SetDeploymentId(v string) {
-	x.DeploymentId = &v
+	x.xxx_hidden_DeploymentId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ModifyBaselineStatusForPeersRequest) SetPeers(v []*NetworkBaselinePeerStatus) {
-	x.Peers = v
+	x.xxx_hidden_Peers = &v
 }
 
 func (x *ModifyBaselineStatusForPeersRequest) HasDeploymentId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ModifyBaselineStatusForPeersRequest) ClearDeploymentId() {
-	x.DeploymentId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_DeploymentId = nil
 }
 
 type ModifyBaselineStatusForPeersRequest_builder struct {
@@ -949,8 +1052,11 @@ func (b0 ModifyBaselineStatusForPeersRequest_builder) Build() *ModifyBaselineSta
 	m0 := &ModifyBaselineStatusForPeersRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DeploymentId = b.DeploymentId
-	x.Peers = b.Peers
+	if b.DeploymentId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_DeploymentId = b.DeploymentId
+	}
+	x.xxx_hidden_Peers = &b.Peers
 	return m0
 }
 
@@ -1004,7 +1110,7 @@ const file_api_v1_network_baseline_service_proto_rawDesc = "" +
 	"\x1cModifyBaselineStatusForPeers\x12'.v1.ModifyBaselineStatusForPeersRequest\x1a\t.v1.Empty\"4\x82\xd3\xe4\x93\x02.:\x01*2)/v1/networkbaseline/{deployment_id}/peers\x12\\\n" +
 	"\x13LockNetworkBaseline\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"(\x82\xd3\xe4\x93\x02\":\x01*2\x1d/v1/networkbaseline/{id}/lock\x12`\n" +
 	"\x15UnlockNetworkBaseline\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*2\x1f/v1/networkbaseline/{id}/unlockB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x03b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x03b\beditionsp\xe8\a"
 
 var file_api_v1_network_baseline_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v1_network_baseline_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)

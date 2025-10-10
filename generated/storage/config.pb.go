@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/config.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -72,11 +70,13 @@ func (x BannerConfig_Size) Number() protoreflect.EnumNumber {
 }
 
 type LoginNotice struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Enabled       *bool                  `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
-	Text          *string                `protobuf:"bytes,2,opt,name=text" json:"text,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Enabled     bool                   `protobuf:"varint,1,opt,name=enabled"`
+	xxx_hidden_Text        *string                `protobuf:"bytes,2,opt,name=text"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *LoginNotice) Reset() {
@@ -105,47 +105,54 @@ func (x *LoginNotice) ProtoReflect() protoreflect.Message {
 }
 
 func (x *LoginNotice) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
+	if x != nil {
+		return x.xxx_hidden_Enabled
 	}
 	return false
 }
 
 func (x *LoginNotice) GetText() string {
-	if x != nil && x.Text != nil {
-		return *x.Text
+	if x != nil {
+		if x.xxx_hidden_Text != nil {
+			return *x.xxx_hidden_Text
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *LoginNotice) SetEnabled(v bool) {
-	x.Enabled = &v
+	x.xxx_hidden_Enabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *LoginNotice) SetText(v string) {
-	x.Text = &v
+	x.xxx_hidden_Text = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *LoginNotice) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.Enabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *LoginNotice) HasText() bool {
 	if x == nil {
 		return false
 	}
-	return x.Text != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *LoginNotice) ClearEnabled() {
-	x.Enabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Enabled = false
 }
 
 func (x *LoginNotice) ClearText() {
-	x.Text = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Text = nil
 }
 
 type LoginNotice_builder struct {
@@ -159,20 +166,28 @@ func (b0 LoginNotice_builder) Build() *LoginNotice {
 	m0 := &LoginNotice{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Enabled = b.Enabled
-	x.Text = b.Text
+	if b.Enabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Enabled = *b.Enabled
+	}
+	if b.Text != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Text = b.Text
+	}
 	return m0
 }
 
 type BannerConfig struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	Enabled         *bool                  `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
-	Text            *string                `protobuf:"bytes,2,opt,name=text" json:"text,omitempty"`
-	Size            *BannerConfig_Size     `protobuf:"varint,3,opt,name=size,enum=storage.BannerConfig_Size" json:"size,omitempty"`
-	Color           *string                `protobuf:"bytes,4,opt,name=color" json:"color,omitempty"`
-	BackgroundColor *string                `protobuf:"bytes,5,opt,name=background_color,json=backgroundColor" json:"background_color,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Enabled         bool                   `protobuf:"varint,1,opt,name=enabled"`
+	xxx_hidden_Text            *string                `protobuf:"bytes,2,opt,name=text"`
+	xxx_hidden_Size            BannerConfig_Size      `protobuf:"varint,3,opt,name=size,enum=storage.BannerConfig_Size"`
+	xxx_hidden_Color           *string                `protobuf:"bytes,4,opt,name=color"`
+	xxx_hidden_BackgroundColor *string                `protobuf:"bytes,5,opt,name=background_color,json=backgroundColor"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *BannerConfig) Reset() {
@@ -201,113 +216,134 @@ func (x *BannerConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *BannerConfig) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
+	if x != nil {
+		return x.xxx_hidden_Enabled
 	}
 	return false
 }
 
 func (x *BannerConfig) GetText() string {
-	if x != nil && x.Text != nil {
-		return *x.Text
+	if x != nil {
+		if x.xxx_hidden_Text != nil {
+			return *x.xxx_hidden_Text
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *BannerConfig) GetSize() BannerConfig_Size {
-	if x != nil && x.Size != nil {
-		return *x.Size
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Size
+		}
 	}
 	return BannerConfig_UNSET
 }
 
 func (x *BannerConfig) GetColor() string {
-	if x != nil && x.Color != nil {
-		return *x.Color
+	if x != nil {
+		if x.xxx_hidden_Color != nil {
+			return *x.xxx_hidden_Color
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *BannerConfig) GetBackgroundColor() string {
-	if x != nil && x.BackgroundColor != nil {
-		return *x.BackgroundColor
+	if x != nil {
+		if x.xxx_hidden_BackgroundColor != nil {
+			return *x.xxx_hidden_BackgroundColor
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *BannerConfig) SetEnabled(v bool) {
-	x.Enabled = &v
+	x.xxx_hidden_Enabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *BannerConfig) SetText(v string) {
-	x.Text = &v
+	x.xxx_hidden_Text = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *BannerConfig) SetSize(v BannerConfig_Size) {
-	x.Size = &v
+	x.xxx_hidden_Size = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *BannerConfig) SetColor(v string) {
-	x.Color = &v
+	x.xxx_hidden_Color = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *BannerConfig) SetBackgroundColor(v string) {
-	x.BackgroundColor = &v
+	x.xxx_hidden_BackgroundColor = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *BannerConfig) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.Enabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *BannerConfig) HasText() bool {
 	if x == nil {
 		return false
 	}
-	return x.Text != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *BannerConfig) HasSize() bool {
 	if x == nil {
 		return false
 	}
-	return x.Size != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *BannerConfig) HasColor() bool {
 	if x == nil {
 		return false
 	}
-	return x.Color != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *BannerConfig) HasBackgroundColor() bool {
 	if x == nil {
 		return false
 	}
-	return x.BackgroundColor != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *BannerConfig) ClearEnabled() {
-	x.Enabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Enabled = false
 }
 
 func (x *BannerConfig) ClearText() {
-	x.Text = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Text = nil
 }
 
 func (x *BannerConfig) ClearSize() {
-	x.Size = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Size = BannerConfig_UNSET
 }
 
 func (x *BannerConfig) ClearColor() {
-	x.Color = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Color = nil
 }
 
 func (x *BannerConfig) ClearBackgroundColor() {
-	x.BackgroundColor = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_BackgroundColor = nil
 }
 
 type BannerConfig_builder struct {
@@ -324,22 +360,37 @@ func (b0 BannerConfig_builder) Build() *BannerConfig {
 	m0 := &BannerConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Enabled = b.Enabled
-	x.Text = b.Text
-	x.Size = b.Size
-	x.Color = b.Color
-	x.BackgroundColor = b.BackgroundColor
+	if b.Enabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Enabled = *b.Enabled
+	}
+	if b.Text != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Text = b.Text
+	}
+	if b.Size != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Size = *b.Size
+	}
+	if b.Color != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_Color = b.Color
+	}
+	if b.BackgroundColor != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_BackgroundColor = b.BackgroundColor
+	}
 	return m0
 }
 
 type PublicConfig struct {
-	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
-	LoginNotice   *LoginNotice            `protobuf:"bytes,1,opt,name=login_notice,json=loginNotice" json:"login_notice,omitempty"`
-	Header        *BannerConfig           `protobuf:"bytes,2,opt,name=header" json:"header,omitempty"`
-	Footer        *BannerConfig           `protobuf:"bytes,3,opt,name=footer" json:"footer,omitempty"`
-	Telemetry     *TelemetryConfiguration `protobuf:"bytes,4,opt,name=telemetry" json:"telemetry,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_LoginNotice *LoginNotice            `protobuf:"bytes,1,opt,name=login_notice,json=loginNotice"`
+	xxx_hidden_Header      *BannerConfig           `protobuf:"bytes,2,opt,name=header"`
+	xxx_hidden_Footer      *BannerConfig           `protobuf:"bytes,3,opt,name=footer"`
+	xxx_hidden_Telemetry   *TelemetryConfiguration `protobuf:"bytes,4,opt,name=telemetry"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PublicConfig) Reset() {
@@ -369,90 +420,90 @@ func (x *PublicConfig) ProtoReflect() protoreflect.Message {
 
 func (x *PublicConfig) GetLoginNotice() *LoginNotice {
 	if x != nil {
-		return x.LoginNotice
+		return x.xxx_hidden_LoginNotice
 	}
 	return nil
 }
 
 func (x *PublicConfig) GetHeader() *BannerConfig {
 	if x != nil {
-		return x.Header
+		return x.xxx_hidden_Header
 	}
 	return nil
 }
 
 func (x *PublicConfig) GetFooter() *BannerConfig {
 	if x != nil {
-		return x.Footer
+		return x.xxx_hidden_Footer
 	}
 	return nil
 }
 
 func (x *PublicConfig) GetTelemetry() *TelemetryConfiguration {
 	if x != nil {
-		return x.Telemetry
+		return x.xxx_hidden_Telemetry
 	}
 	return nil
 }
 
 func (x *PublicConfig) SetLoginNotice(v *LoginNotice) {
-	x.LoginNotice = v
+	x.xxx_hidden_LoginNotice = v
 }
 
 func (x *PublicConfig) SetHeader(v *BannerConfig) {
-	x.Header = v
+	x.xxx_hidden_Header = v
 }
 
 func (x *PublicConfig) SetFooter(v *BannerConfig) {
-	x.Footer = v
+	x.xxx_hidden_Footer = v
 }
 
 func (x *PublicConfig) SetTelemetry(v *TelemetryConfiguration) {
-	x.Telemetry = v
+	x.xxx_hidden_Telemetry = v
 }
 
 func (x *PublicConfig) HasLoginNotice() bool {
 	if x == nil {
 		return false
 	}
-	return x.LoginNotice != nil
+	return x.xxx_hidden_LoginNotice != nil
 }
 
 func (x *PublicConfig) HasHeader() bool {
 	if x == nil {
 		return false
 	}
-	return x.Header != nil
+	return x.xxx_hidden_Header != nil
 }
 
 func (x *PublicConfig) HasFooter() bool {
 	if x == nil {
 		return false
 	}
-	return x.Footer != nil
+	return x.xxx_hidden_Footer != nil
 }
 
 func (x *PublicConfig) HasTelemetry() bool {
 	if x == nil {
 		return false
 	}
-	return x.Telemetry != nil
+	return x.xxx_hidden_Telemetry != nil
 }
 
 func (x *PublicConfig) ClearLoginNotice() {
-	x.LoginNotice = nil
+	x.xxx_hidden_LoginNotice = nil
 }
 
 func (x *PublicConfig) ClearHeader() {
-	x.Header = nil
+	x.xxx_hidden_Header = nil
 }
 
 func (x *PublicConfig) ClearFooter() {
-	x.Footer = nil
+	x.xxx_hidden_Footer = nil
 }
 
 func (x *PublicConfig) ClearTelemetry() {
-	x.Telemetry = nil
+	x.xxx_hidden_Telemetry = nil
 }
 
 type PublicConfig_builder struct {
@@ -468,26 +519,24 @@ func (b0 PublicConfig_builder) Build() *PublicConfig {
 	m0 := &PublicConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LoginNotice = b.LoginNotice
-	x.Header = b.Header
-	x.Footer = b.Footer
-	x.Telemetry = b.Telemetry
+	x.xxx_hidden_LoginNotice = b.LoginNotice
+	x.xxx_hidden_Header = b.Header
+	x.xxx_hidden_Footer = b.Footer
+	x.xxx_hidden_Telemetry = b.Telemetry
 	return m0
 }
 
 type AlertRetentionConfig struct {
-	state                               protoimpl.MessageState `protogen:"hybrid.v1"`
-	ResolvedDeployRetentionDurationDays *int32                 `protobuf:"varint,1,opt,name=resolved_deploy_retention_duration_days,json=resolvedDeployRetentionDurationDays" json:"resolved_deploy_retention_duration_days,omitempty"`
-	// This runtime alert retention configuration takes precedence after `allRuntimeRetentionDurationDays`.
-	DeletedRuntimeRetentionDurationDays *int32 `protobuf:"varint,2,opt,name=deleted_runtime_retention_duration_days,json=deletedRuntimeRetentionDurationDays" json:"deleted_runtime_retention_duration_days,omitempty"`
-	// This runtime alert retention configuration has highest precedence. All runtime alerts, including attempted
-	// alerts and deleted deployment alerts, are deleted even if respective retention is longer.
-	AllRuntimeRetentionDurationDays      *int32 `protobuf:"varint,3,opt,name=all_runtime_retention_duration_days,json=allRuntimeRetentionDurationDays" json:"all_runtime_retention_duration_days,omitempty"`
-	AttemptedDeployRetentionDurationDays *int32 `protobuf:"varint,4,opt,name=attempted_deploy_retention_duration_days,json=attemptedDeployRetentionDurationDays" json:"attempted_deploy_retention_duration_days,omitempty"`
-	// This runtime alert retention configuration has lowest precedence.
-	AttemptedRuntimeRetentionDurationDays *int32 `protobuf:"varint,5,opt,name=attempted_runtime_retention_duration_days,json=attemptedRuntimeRetentionDurationDays" json:"attempted_runtime_retention_duration_days,omitempty"`
-	unknownFields                         protoimpl.UnknownFields
-	sizeCache                             protoimpl.SizeCache
+	state                                            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ResolvedDeployRetentionDurationDays   int32                  `protobuf:"varint,1,opt,name=resolved_deploy_retention_duration_days,json=resolvedDeployRetentionDurationDays"`
+	xxx_hidden_DeletedRuntimeRetentionDurationDays   int32                  `protobuf:"varint,2,opt,name=deleted_runtime_retention_duration_days,json=deletedRuntimeRetentionDurationDays"`
+	xxx_hidden_AllRuntimeRetentionDurationDays       int32                  `protobuf:"varint,3,opt,name=all_runtime_retention_duration_days,json=allRuntimeRetentionDurationDays"`
+	xxx_hidden_AttemptedDeployRetentionDurationDays  int32                  `protobuf:"varint,4,opt,name=attempted_deploy_retention_duration_days,json=attemptedDeployRetentionDurationDays"`
+	xxx_hidden_AttemptedRuntimeRetentionDurationDays int32                  `protobuf:"varint,5,opt,name=attempted_runtime_retention_duration_days,json=attemptedRuntimeRetentionDurationDays"`
+	XXX_raceDetectHookData                           protoimpl.RaceDetectHookData
+	XXX_presence                                     [1]uint32
+	unknownFields                                    protoimpl.UnknownFields
+	sizeCache                                        protoimpl.SizeCache
 }
 
 func (x *AlertRetentionConfig) Reset() {
@@ -516,113 +565,123 @@ func (x *AlertRetentionConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AlertRetentionConfig) GetResolvedDeployRetentionDurationDays() int32 {
-	if x != nil && x.ResolvedDeployRetentionDurationDays != nil {
-		return *x.ResolvedDeployRetentionDurationDays
+	if x != nil {
+		return x.xxx_hidden_ResolvedDeployRetentionDurationDays
 	}
 	return 0
 }
 
 func (x *AlertRetentionConfig) GetDeletedRuntimeRetentionDurationDays() int32 {
-	if x != nil && x.DeletedRuntimeRetentionDurationDays != nil {
-		return *x.DeletedRuntimeRetentionDurationDays
+	if x != nil {
+		return x.xxx_hidden_DeletedRuntimeRetentionDurationDays
 	}
 	return 0
 }
 
 func (x *AlertRetentionConfig) GetAllRuntimeRetentionDurationDays() int32 {
-	if x != nil && x.AllRuntimeRetentionDurationDays != nil {
-		return *x.AllRuntimeRetentionDurationDays
+	if x != nil {
+		return x.xxx_hidden_AllRuntimeRetentionDurationDays
 	}
 	return 0
 }
 
 func (x *AlertRetentionConfig) GetAttemptedDeployRetentionDurationDays() int32 {
-	if x != nil && x.AttemptedDeployRetentionDurationDays != nil {
-		return *x.AttemptedDeployRetentionDurationDays
+	if x != nil {
+		return x.xxx_hidden_AttemptedDeployRetentionDurationDays
 	}
 	return 0
 }
 
 func (x *AlertRetentionConfig) GetAttemptedRuntimeRetentionDurationDays() int32 {
-	if x != nil && x.AttemptedRuntimeRetentionDurationDays != nil {
-		return *x.AttemptedRuntimeRetentionDurationDays
+	if x != nil {
+		return x.xxx_hidden_AttemptedRuntimeRetentionDurationDays
 	}
 	return 0
 }
 
 func (x *AlertRetentionConfig) SetResolvedDeployRetentionDurationDays(v int32) {
-	x.ResolvedDeployRetentionDurationDays = &v
+	x.xxx_hidden_ResolvedDeployRetentionDurationDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *AlertRetentionConfig) SetDeletedRuntimeRetentionDurationDays(v int32) {
-	x.DeletedRuntimeRetentionDurationDays = &v
+	x.xxx_hidden_DeletedRuntimeRetentionDurationDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *AlertRetentionConfig) SetAllRuntimeRetentionDurationDays(v int32) {
-	x.AllRuntimeRetentionDurationDays = &v
+	x.xxx_hidden_AllRuntimeRetentionDurationDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *AlertRetentionConfig) SetAttemptedDeployRetentionDurationDays(v int32) {
-	x.AttemptedDeployRetentionDurationDays = &v
+	x.xxx_hidden_AttemptedDeployRetentionDurationDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *AlertRetentionConfig) SetAttemptedRuntimeRetentionDurationDays(v int32) {
-	x.AttemptedRuntimeRetentionDurationDays = &v
+	x.xxx_hidden_AttemptedRuntimeRetentionDurationDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *AlertRetentionConfig) HasResolvedDeployRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResolvedDeployRetentionDurationDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AlertRetentionConfig) HasDeletedRuntimeRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeletedRuntimeRetentionDurationDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *AlertRetentionConfig) HasAllRuntimeRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.AllRuntimeRetentionDurationDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *AlertRetentionConfig) HasAttemptedDeployRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.AttemptedDeployRetentionDurationDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *AlertRetentionConfig) HasAttemptedRuntimeRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.AttemptedRuntimeRetentionDurationDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *AlertRetentionConfig) ClearResolvedDeployRetentionDurationDays() {
-	x.ResolvedDeployRetentionDurationDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ResolvedDeployRetentionDurationDays = 0
 }
 
 func (x *AlertRetentionConfig) ClearDeletedRuntimeRetentionDurationDays() {
-	x.DeletedRuntimeRetentionDurationDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_DeletedRuntimeRetentionDurationDays = 0
 }
 
 func (x *AlertRetentionConfig) ClearAllRuntimeRetentionDurationDays() {
-	x.AllRuntimeRetentionDurationDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_AllRuntimeRetentionDurationDays = 0
 }
 
 func (x *AlertRetentionConfig) ClearAttemptedDeployRetentionDurationDays() {
-	x.AttemptedDeployRetentionDurationDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_AttemptedDeployRetentionDurationDays = 0
 }
 
 func (x *AlertRetentionConfig) ClearAttemptedRuntimeRetentionDurationDays() {
-	x.AttemptedRuntimeRetentionDurationDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_AttemptedRuntimeRetentionDurationDays = 0
 }
 
 type AlertRetentionConfig_builder struct {
@@ -643,23 +702,40 @@ func (b0 AlertRetentionConfig_builder) Build() *AlertRetentionConfig {
 	m0 := &AlertRetentionConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ResolvedDeployRetentionDurationDays = b.ResolvedDeployRetentionDurationDays
-	x.DeletedRuntimeRetentionDurationDays = b.DeletedRuntimeRetentionDurationDays
-	x.AllRuntimeRetentionDurationDays = b.AllRuntimeRetentionDurationDays
-	x.AttemptedDeployRetentionDurationDays = b.AttemptedDeployRetentionDurationDays
-	x.AttemptedRuntimeRetentionDurationDays = b.AttemptedRuntimeRetentionDurationDays
+	if b.ResolvedDeployRetentionDurationDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_ResolvedDeployRetentionDurationDays = *b.ResolvedDeployRetentionDurationDays
+	}
+	if b.DeletedRuntimeRetentionDurationDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_DeletedRuntimeRetentionDurationDays = *b.DeletedRuntimeRetentionDurationDays
+	}
+	if b.AllRuntimeRetentionDurationDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_AllRuntimeRetentionDurationDays = *b.AllRuntimeRetentionDurationDays
+	}
+	if b.AttemptedDeployRetentionDurationDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_AttemptedDeployRetentionDurationDays = *b.AttemptedDeployRetentionDurationDays
+	}
+	if b.AttemptedRuntimeRetentionDurationDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_AttemptedRuntimeRetentionDurationDays = *b.AttemptedRuntimeRetentionDurationDays
+	}
 	return m0
 }
 
 // next available tag: 5
 type DecommissionedClusterRetentionConfig struct {
-	state                 protoimpl.MessageState `protogen:"hybrid.v1"`
-	RetentionDurationDays *int32                 `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays" json:"retention_duration_days,omitempty"`
-	IgnoreClusterLabels   map[string]string      `protobuf:"bytes,2,rep,name=ignore_cluster_labels,json=ignoreClusterLabels" json:"ignore_cluster_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	LastUpdated           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty"`
-	CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RetentionDurationDays int32                  `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays"`
+	xxx_hidden_IgnoreClusterLabels   map[string]string      `protobuf:"bytes,2,rep,name=ignore_cluster_labels,json=ignoreClusterLabels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_LastUpdated           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_updated,json=lastUpdated"`
+	xxx_hidden_CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt"`
+	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
+	XXX_presence                     [1]uint32
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *DecommissionedClusterRetentionConfig) Reset() {
@@ -688,80 +764,82 @@ func (x *DecommissionedClusterRetentionConfig) ProtoReflect() protoreflect.Messa
 }
 
 func (x *DecommissionedClusterRetentionConfig) GetRetentionDurationDays() int32 {
-	if x != nil && x.RetentionDurationDays != nil {
-		return *x.RetentionDurationDays
+	if x != nil {
+		return x.xxx_hidden_RetentionDurationDays
 	}
 	return 0
 }
 
 func (x *DecommissionedClusterRetentionConfig) GetIgnoreClusterLabels() map[string]string {
 	if x != nil {
-		return x.IgnoreClusterLabels
+		return x.xxx_hidden_IgnoreClusterLabels
 	}
 	return nil
 }
 
 func (x *DecommissionedClusterRetentionConfig) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastUpdated
+		return x.xxx_hidden_LastUpdated
 	}
 	return nil
 }
 
 func (x *DecommissionedClusterRetentionConfig) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return nil
 }
 
 func (x *DecommissionedClusterRetentionConfig) SetRetentionDurationDays(v int32) {
-	x.RetentionDurationDays = &v
+	x.xxx_hidden_RetentionDurationDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *DecommissionedClusterRetentionConfig) SetIgnoreClusterLabels(v map[string]string) {
-	x.IgnoreClusterLabels = v
+	x.xxx_hidden_IgnoreClusterLabels = v
 }
 
 func (x *DecommissionedClusterRetentionConfig) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.LastUpdated = v
+	x.xxx_hidden_LastUpdated = v
 }
 
 func (x *DecommissionedClusterRetentionConfig) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.CreatedAt = v
+	x.xxx_hidden_CreatedAt = v
 }
 
 func (x *DecommissionedClusterRetentionConfig) HasRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.RetentionDurationDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DecommissionedClusterRetentionConfig) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastUpdated != nil
+	return x.xxx_hidden_LastUpdated != nil
 }
 
 func (x *DecommissionedClusterRetentionConfig) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedAt != nil
+	return x.xxx_hidden_CreatedAt != nil
 }
 
 func (x *DecommissionedClusterRetentionConfig) ClearRetentionDurationDays() {
-	x.RetentionDurationDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_RetentionDurationDays = 0
 }
 
 func (x *DecommissionedClusterRetentionConfig) ClearLastUpdated() {
-	x.LastUpdated = nil
+	x.xxx_hidden_LastUpdated = nil
 }
 
 func (x *DecommissionedClusterRetentionConfig) ClearCreatedAt() {
-	x.CreatedAt = nil
+	x.xxx_hidden_CreatedAt = nil
 }
 
 type DecommissionedClusterRetentionConfig_builder struct {
@@ -777,21 +855,26 @@ func (b0 DecommissionedClusterRetentionConfig_builder) Build() *DecommissionedCl
 	m0 := &DecommissionedClusterRetentionConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RetentionDurationDays = b.RetentionDurationDays
-	x.IgnoreClusterLabels = b.IgnoreClusterLabels
-	x.LastUpdated = b.LastUpdated
-	x.CreatedAt = b.CreatedAt
+	if b.RetentionDurationDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_RetentionDurationDays = *b.RetentionDurationDays
+	}
+	x.xxx_hidden_IgnoreClusterLabels = b.IgnoreClusterLabels
+	x.xxx_hidden_LastUpdated = b.LastUpdated
+	x.xxx_hidden_CreatedAt = b.CreatedAt
 	return m0
 }
 
 // next available tag: 4
 type ReportRetentionConfig struct {
-	state                                  protoimpl.MessageState `protogen:"hybrid.v1"`
-	HistoryRetentionDurationDays           *uint32                `protobuf:"varint,1,opt,name=history_retention_duration_days,json=historyRetentionDurationDays" json:"history_retention_duration_days,omitempty"`
-	DownloadableReportRetentionDays        *uint32                `protobuf:"varint,2,opt,name=downloadable_report_retention_days,json=downloadableReportRetentionDays" json:"downloadable_report_retention_days,omitempty"`
-	DownloadableReportGlobalRetentionBytes *uint32                `protobuf:"varint,3,opt,name=downloadable_report_global_retention_bytes,json=downloadableReportGlobalRetentionBytes" json:"downloadable_report_global_retention_bytes,omitempty"`
-	unknownFields                          protoimpl.UnknownFields
-	sizeCache                              protoimpl.SizeCache
+	state                                             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_HistoryRetentionDurationDays           uint32                 `protobuf:"varint,1,opt,name=history_retention_duration_days,json=historyRetentionDurationDays"`
+	xxx_hidden_DownloadableReportRetentionDays        uint32                 `protobuf:"varint,2,opt,name=downloadable_report_retention_days,json=downloadableReportRetentionDays"`
+	xxx_hidden_DownloadableReportGlobalRetentionBytes uint32                 `protobuf:"varint,3,opt,name=downloadable_report_global_retention_bytes,json=downloadableReportGlobalRetentionBytes"`
+	XXX_raceDetectHookData                            protoimpl.RaceDetectHookData
+	XXX_presence                                      [1]uint32
+	unknownFields                                     protoimpl.UnknownFields
+	sizeCache                                         protoimpl.SizeCache
 }
 
 func (x *ReportRetentionConfig) Reset() {
@@ -820,69 +903,75 @@ func (x *ReportRetentionConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ReportRetentionConfig) GetHistoryRetentionDurationDays() uint32 {
-	if x != nil && x.HistoryRetentionDurationDays != nil {
-		return *x.HistoryRetentionDurationDays
+	if x != nil {
+		return x.xxx_hidden_HistoryRetentionDurationDays
 	}
 	return 0
 }
 
 func (x *ReportRetentionConfig) GetDownloadableReportRetentionDays() uint32 {
-	if x != nil && x.DownloadableReportRetentionDays != nil {
-		return *x.DownloadableReportRetentionDays
+	if x != nil {
+		return x.xxx_hidden_DownloadableReportRetentionDays
 	}
 	return 0
 }
 
 func (x *ReportRetentionConfig) GetDownloadableReportGlobalRetentionBytes() uint32 {
-	if x != nil && x.DownloadableReportGlobalRetentionBytes != nil {
-		return *x.DownloadableReportGlobalRetentionBytes
+	if x != nil {
+		return x.xxx_hidden_DownloadableReportGlobalRetentionBytes
 	}
 	return 0
 }
 
 func (x *ReportRetentionConfig) SetHistoryRetentionDurationDays(v uint32) {
-	x.HistoryRetentionDurationDays = &v
+	x.xxx_hidden_HistoryRetentionDurationDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *ReportRetentionConfig) SetDownloadableReportRetentionDays(v uint32) {
-	x.DownloadableReportRetentionDays = &v
+	x.xxx_hidden_DownloadableReportRetentionDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ReportRetentionConfig) SetDownloadableReportGlobalRetentionBytes(v uint32) {
-	x.DownloadableReportGlobalRetentionBytes = &v
+	x.xxx_hidden_DownloadableReportGlobalRetentionBytes = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ReportRetentionConfig) HasHistoryRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.HistoryRetentionDurationDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ReportRetentionConfig) HasDownloadableReportRetentionDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.DownloadableReportRetentionDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ReportRetentionConfig) HasDownloadableReportGlobalRetentionBytes() bool {
 	if x == nil {
 		return false
 	}
-	return x.DownloadableReportGlobalRetentionBytes != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ReportRetentionConfig) ClearHistoryRetentionDurationDays() {
-	x.HistoryRetentionDurationDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HistoryRetentionDurationDays = 0
 }
 
 func (x *ReportRetentionConfig) ClearDownloadableReportRetentionDays() {
-	x.DownloadableReportRetentionDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_DownloadableReportRetentionDays = 0
 }
 
 func (x *ReportRetentionConfig) ClearDownloadableReportGlobalRetentionBytes() {
-	x.DownloadableReportGlobalRetentionBytes = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_DownloadableReportGlobalRetentionBytes = 0
 }
 
 type ReportRetentionConfig_builder struct {
@@ -897,20 +986,29 @@ func (b0 ReportRetentionConfig_builder) Build() *ReportRetentionConfig {
 	m0 := &ReportRetentionConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HistoryRetentionDurationDays = b.HistoryRetentionDurationDays
-	x.DownloadableReportRetentionDays = b.DownloadableReportRetentionDays
-	x.DownloadableReportGlobalRetentionBytes = b.DownloadableReportGlobalRetentionBytes
+	if b.HistoryRetentionDurationDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_HistoryRetentionDurationDays = *b.HistoryRetentionDurationDays
+	}
+	if b.DownloadableReportRetentionDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_DownloadableReportRetentionDays = *b.DownloadableReportRetentionDays
+	}
+	if b.DownloadableReportGlobalRetentionBytes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_DownloadableReportGlobalRetentionBytes = *b.DownloadableReportGlobalRetentionBytes
+	}
 	return m0
 }
 
 // next available tag: 4
 type PrometheusMetrics struct {
-	state                protoimpl.MessageState   `protogen:"hybrid.v1"`
-	ImageVulnerabilities *PrometheusMetrics_Group `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities" json:"image_vulnerabilities,omitempty"`
-	PolicyViolations     *PrometheusMetrics_Group `protobuf:"bytes,2,opt,name=policy_violations,json=policyViolations" json:"policy_violations,omitempty"`
-	NodeVulnerabilities  *PrometheusMetrics_Group `protobuf:"bytes,3,opt,name=node_vulnerabilities,json=nodeVulnerabilities" json:"node_vulnerabilities,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                           protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_ImageVulnerabilities *PrometheusMetrics_Group `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities"`
+	xxx_hidden_PolicyViolations     *PrometheusMetrics_Group `protobuf:"bytes,2,opt,name=policy_violations,json=policyViolations"`
+	xxx_hidden_NodeVulnerabilities  *PrometheusMetrics_Group `protobuf:"bytes,3,opt,name=node_vulnerabilities,json=nodeVulnerabilities"`
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *PrometheusMetrics) Reset() {
@@ -940,68 +1038,68 @@ func (x *PrometheusMetrics) ProtoReflect() protoreflect.Message {
 
 func (x *PrometheusMetrics) GetImageVulnerabilities() *PrometheusMetrics_Group {
 	if x != nil {
-		return x.ImageVulnerabilities
+		return x.xxx_hidden_ImageVulnerabilities
 	}
 	return nil
 }
 
 func (x *PrometheusMetrics) GetPolicyViolations() *PrometheusMetrics_Group {
 	if x != nil {
-		return x.PolicyViolations
+		return x.xxx_hidden_PolicyViolations
 	}
 	return nil
 }
 
 func (x *PrometheusMetrics) GetNodeVulnerabilities() *PrometheusMetrics_Group {
 	if x != nil {
-		return x.NodeVulnerabilities
+		return x.xxx_hidden_NodeVulnerabilities
 	}
 	return nil
 }
 
 func (x *PrometheusMetrics) SetImageVulnerabilities(v *PrometheusMetrics_Group) {
-	x.ImageVulnerabilities = v
+	x.xxx_hidden_ImageVulnerabilities = v
 }
 
 func (x *PrometheusMetrics) SetPolicyViolations(v *PrometheusMetrics_Group) {
-	x.PolicyViolations = v
+	x.xxx_hidden_PolicyViolations = v
 }
 
 func (x *PrometheusMetrics) SetNodeVulnerabilities(v *PrometheusMetrics_Group) {
-	x.NodeVulnerabilities = v
+	x.xxx_hidden_NodeVulnerabilities = v
 }
 
 func (x *PrometheusMetrics) HasImageVulnerabilities() bool {
 	if x == nil {
 		return false
 	}
-	return x.ImageVulnerabilities != nil
+	return x.xxx_hidden_ImageVulnerabilities != nil
 }
 
 func (x *PrometheusMetrics) HasPolicyViolations() bool {
 	if x == nil {
 		return false
 	}
-	return x.PolicyViolations != nil
+	return x.xxx_hidden_PolicyViolations != nil
 }
 
 func (x *PrometheusMetrics) HasNodeVulnerabilities() bool {
 	if x == nil {
 		return false
 	}
-	return x.NodeVulnerabilities != nil
+	return x.xxx_hidden_NodeVulnerabilities != nil
 }
 
 func (x *PrometheusMetrics) ClearImageVulnerabilities() {
-	x.ImageVulnerabilities = nil
+	x.xxx_hidden_ImageVulnerabilities = nil
 }
 
 func (x *PrometheusMetrics) ClearPolicyViolations() {
-	x.PolicyViolations = nil
+	x.xxx_hidden_PolicyViolations = nil
 }
 
 func (x *PrometheusMetrics) ClearNodeVulnerabilities() {
-	x.NodeVulnerabilities = nil
+	x.xxx_hidden_NodeVulnerabilities = nil
 }
 
 type PrometheusMetrics_builder struct {
@@ -1016,31 +1114,27 @@ func (b0 PrometheusMetrics_builder) Build() *PrometheusMetrics {
 	m0 := &PrometheusMetrics{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ImageVulnerabilities = b.ImageVulnerabilities
-	x.PolicyViolations = b.PolicyViolations
-	x.NodeVulnerabilities = b.NodeVulnerabilities
+	x.xxx_hidden_ImageVulnerabilities = b.ImageVulnerabilities
+	x.xxx_hidden_PolicyViolations = b.PolicyViolations
+	x.xxx_hidden_NodeVulnerabilities = b.NodeVulnerabilities
 	return m0
 }
 
 // next available tag: 10
 type PrivateConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to AlertRetention:
-	//
-	//	*PrivateConfig_DEPRECATEDAlertRetentionDurationDays
-	//	*PrivateConfig_AlertConfig
-	AlertRetention                      isPrivateConfig_AlertRetention        `protobuf_oneof:"alert_retention"`
-	ImageRetentionDurationDays          *int32                                `protobuf:"varint,2,opt,name=image_retention_duration_days,json=imageRetentionDurationDays" json:"image_retention_duration_days,omitempty"`
-	ExpiredVulnReqRetentionDurationDays *int32                                `protobuf:"varint,4,opt,name=expired_vuln_req_retention_duration_days,json=expiredVulnReqRetentionDurationDays" json:"expired_vuln_req_retention_duration_days,omitempty"`
-	DecommissionedClusterRetention      *DecommissionedClusterRetentionConfig `protobuf:"bytes,5,opt,name=decommissioned_cluster_retention,json=decommissionedClusterRetention" json:"decommissioned_cluster_retention,omitempty"`
-	ReportRetentionConfig               *ReportRetentionConfig                `protobuf:"bytes,6,opt,name=report_retention_config,json=reportRetentionConfig" json:"report_retention_config,omitempty"`
-	VulnerabilityExceptionConfig        *VulnerabilityExceptionConfig         `protobuf:"bytes,7,opt,name=vulnerability_exception_config,json=vulnerabilityExceptionConfig" json:"vulnerability_exception_config,omitempty"`
-	AdministrationEventsConfig          *AdministrationEventsConfig           `protobuf:"bytes,8,opt,name=administration_events_config,json=administrationEventsConfig" json:"administration_events_config,omitempty"`
-	// This field defines groups of custom Prometheus metrics to be exposed by the
-	// backend on the API endpoint.
-	Metrics       *PrometheusMetrics `protobuf:"bytes,9,opt,name=metrics" json:"metrics,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                                          protoimpl.MessageState                `protogen:"opaque.v1"`
+	xxx_hidden_AlertRetention                      isPrivateConfig_AlertRetention        `protobuf_oneof:"alert_retention"`
+	xxx_hidden_ImageRetentionDurationDays          int32                                 `protobuf:"varint,2,opt,name=image_retention_duration_days,json=imageRetentionDurationDays"`
+	xxx_hidden_ExpiredVulnReqRetentionDurationDays int32                                 `protobuf:"varint,4,opt,name=expired_vuln_req_retention_duration_days,json=expiredVulnReqRetentionDurationDays"`
+	xxx_hidden_DecommissionedClusterRetention      *DecommissionedClusterRetentionConfig `protobuf:"bytes,5,opt,name=decommissioned_cluster_retention,json=decommissionedClusterRetention"`
+	xxx_hidden_ReportRetentionConfig               *ReportRetentionConfig                `protobuf:"bytes,6,opt,name=report_retention_config,json=reportRetentionConfig"`
+	xxx_hidden_VulnerabilityExceptionConfig        *VulnerabilityExceptionConfig         `protobuf:"bytes,7,opt,name=vulnerability_exception_config,json=vulnerabilityExceptionConfig"`
+	xxx_hidden_AdministrationEventsConfig          *AdministrationEventsConfig           `protobuf:"bytes,8,opt,name=administration_events_config,json=administrationEventsConfig"`
+	xxx_hidden_Metrics                             *PrometheusMetrics                    `protobuf:"bytes,9,opt,name=metrics"`
+	XXX_raceDetectHookData                         protoimpl.RaceDetectHookData
+	XXX_presence                                   [1]uint32
+	unknownFields                                  protoimpl.UnknownFields
+	sizeCache                                      protoimpl.SizeCache
 }
 
 func (x *PrivateConfig) Reset() {
@@ -1068,16 +1162,9 @@ func (x *PrivateConfig) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *PrivateConfig) GetAlertRetention() isPrivateConfig_AlertRetention {
-	if x != nil {
-		return x.AlertRetention
-	}
-	return nil
-}
-
 func (x *PrivateConfig) GetDEPRECATEDAlertRetentionDurationDays() int32 {
 	if x != nil {
-		if x, ok := x.AlertRetention.(*PrivateConfig_DEPRECATEDAlertRetentionDurationDays); ok {
+		if x, ok := x.xxx_hidden_AlertRetention.(*privateConfig_DEPRECATEDAlertRetentionDurationDays); ok {
 			return x.DEPRECATEDAlertRetentionDurationDays
 		}
 	}
@@ -1086,7 +1173,7 @@ func (x *PrivateConfig) GetDEPRECATEDAlertRetentionDurationDays() int32 {
 
 func (x *PrivateConfig) GetAlertConfig() *AlertRetentionConfig {
 	if x != nil {
-		if x, ok := x.AlertRetention.(*PrivateConfig_AlertConfig); ok {
+		if x, ok := x.xxx_hidden_AlertRetention.(*privateConfig_AlertConfig); ok {
 			return x.AlertConfig
 		}
 	}
@@ -1094,106 +1181,108 @@ func (x *PrivateConfig) GetAlertConfig() *AlertRetentionConfig {
 }
 
 func (x *PrivateConfig) GetImageRetentionDurationDays() int32 {
-	if x != nil && x.ImageRetentionDurationDays != nil {
-		return *x.ImageRetentionDurationDays
+	if x != nil {
+		return x.xxx_hidden_ImageRetentionDurationDays
 	}
 	return 0
 }
 
 func (x *PrivateConfig) GetExpiredVulnReqRetentionDurationDays() int32 {
-	if x != nil && x.ExpiredVulnReqRetentionDurationDays != nil {
-		return *x.ExpiredVulnReqRetentionDurationDays
+	if x != nil {
+		return x.xxx_hidden_ExpiredVulnReqRetentionDurationDays
 	}
 	return 0
 }
 
 func (x *PrivateConfig) GetDecommissionedClusterRetention() *DecommissionedClusterRetentionConfig {
 	if x != nil {
-		return x.DecommissionedClusterRetention
+		return x.xxx_hidden_DecommissionedClusterRetention
 	}
 	return nil
 }
 
 func (x *PrivateConfig) GetReportRetentionConfig() *ReportRetentionConfig {
 	if x != nil {
-		return x.ReportRetentionConfig
+		return x.xxx_hidden_ReportRetentionConfig
 	}
 	return nil
 }
 
 func (x *PrivateConfig) GetVulnerabilityExceptionConfig() *VulnerabilityExceptionConfig {
 	if x != nil {
-		return x.VulnerabilityExceptionConfig
+		return x.xxx_hidden_VulnerabilityExceptionConfig
 	}
 	return nil
 }
 
 func (x *PrivateConfig) GetAdministrationEventsConfig() *AdministrationEventsConfig {
 	if x != nil {
-		return x.AdministrationEventsConfig
+		return x.xxx_hidden_AdministrationEventsConfig
 	}
 	return nil
 }
 
 func (x *PrivateConfig) GetMetrics() *PrometheusMetrics {
 	if x != nil {
-		return x.Metrics
+		return x.xxx_hidden_Metrics
 	}
 	return nil
 }
 
 func (x *PrivateConfig) SetDEPRECATEDAlertRetentionDurationDays(v int32) {
-	x.AlertRetention = &PrivateConfig_DEPRECATEDAlertRetentionDurationDays{v}
+	x.xxx_hidden_AlertRetention = &privateConfig_DEPRECATEDAlertRetentionDurationDays{v}
 }
 
 func (x *PrivateConfig) SetAlertConfig(v *AlertRetentionConfig) {
 	if v == nil {
-		x.AlertRetention = nil
+		x.xxx_hidden_AlertRetention = nil
 		return
 	}
-	x.AlertRetention = &PrivateConfig_AlertConfig{v}
+	x.xxx_hidden_AlertRetention = &privateConfig_AlertConfig{v}
 }
 
 func (x *PrivateConfig) SetImageRetentionDurationDays(v int32) {
-	x.ImageRetentionDurationDays = &v
+	x.xxx_hidden_ImageRetentionDurationDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
 }
 
 func (x *PrivateConfig) SetExpiredVulnReqRetentionDurationDays(v int32) {
-	x.ExpiredVulnReqRetentionDurationDays = &v
+	x.xxx_hidden_ExpiredVulnReqRetentionDurationDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
 }
 
 func (x *PrivateConfig) SetDecommissionedClusterRetention(v *DecommissionedClusterRetentionConfig) {
-	x.DecommissionedClusterRetention = v
+	x.xxx_hidden_DecommissionedClusterRetention = v
 }
 
 func (x *PrivateConfig) SetReportRetentionConfig(v *ReportRetentionConfig) {
-	x.ReportRetentionConfig = v
+	x.xxx_hidden_ReportRetentionConfig = v
 }
 
 func (x *PrivateConfig) SetVulnerabilityExceptionConfig(v *VulnerabilityExceptionConfig) {
-	x.VulnerabilityExceptionConfig = v
+	x.xxx_hidden_VulnerabilityExceptionConfig = v
 }
 
 func (x *PrivateConfig) SetAdministrationEventsConfig(v *AdministrationEventsConfig) {
-	x.AdministrationEventsConfig = v
+	x.xxx_hidden_AdministrationEventsConfig = v
 }
 
 func (x *PrivateConfig) SetMetrics(v *PrometheusMetrics) {
-	x.Metrics = v
+	x.xxx_hidden_Metrics = v
 }
 
 func (x *PrivateConfig) HasAlertRetention() bool {
 	if x == nil {
 		return false
 	}
-	return x.AlertRetention != nil
+	return x.xxx_hidden_AlertRetention != nil
 }
 
 func (x *PrivateConfig) HasDEPRECATEDAlertRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.AlertRetention.(*PrivateConfig_DEPRECATEDAlertRetentionDurationDays)
+	_, ok := x.xxx_hidden_AlertRetention.(*privateConfig_DEPRECATEDAlertRetentionDurationDays)
 	return ok
 }
 
@@ -1201,7 +1290,7 @@ func (x *PrivateConfig) HasAlertConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.AlertRetention.(*PrivateConfig_AlertConfig)
+	_, ok := x.xxx_hidden_AlertRetention.(*privateConfig_AlertConfig)
 	return ok
 }
 
@@ -1209,93 +1298,95 @@ func (x *PrivateConfig) HasImageRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.ImageRetentionDurationDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *PrivateConfig) HasExpiredVulnReqRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.ExpiredVulnReqRetentionDurationDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *PrivateConfig) HasDecommissionedClusterRetention() bool {
 	if x == nil {
 		return false
 	}
-	return x.DecommissionedClusterRetention != nil
+	return x.xxx_hidden_DecommissionedClusterRetention != nil
 }
 
 func (x *PrivateConfig) HasReportRetentionConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.ReportRetentionConfig != nil
+	return x.xxx_hidden_ReportRetentionConfig != nil
 }
 
 func (x *PrivateConfig) HasVulnerabilityExceptionConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.VulnerabilityExceptionConfig != nil
+	return x.xxx_hidden_VulnerabilityExceptionConfig != nil
 }
 
 func (x *PrivateConfig) HasAdministrationEventsConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdministrationEventsConfig != nil
+	return x.xxx_hidden_AdministrationEventsConfig != nil
 }
 
 func (x *PrivateConfig) HasMetrics() bool {
 	if x == nil {
 		return false
 	}
-	return x.Metrics != nil
+	return x.xxx_hidden_Metrics != nil
 }
 
 func (x *PrivateConfig) ClearAlertRetention() {
-	x.AlertRetention = nil
+	x.xxx_hidden_AlertRetention = nil
 }
 
 func (x *PrivateConfig) ClearDEPRECATEDAlertRetentionDurationDays() {
-	if _, ok := x.AlertRetention.(*PrivateConfig_DEPRECATEDAlertRetentionDurationDays); ok {
-		x.AlertRetention = nil
+	if _, ok := x.xxx_hidden_AlertRetention.(*privateConfig_DEPRECATEDAlertRetentionDurationDays); ok {
+		x.xxx_hidden_AlertRetention = nil
 	}
 }
 
 func (x *PrivateConfig) ClearAlertConfig() {
-	if _, ok := x.AlertRetention.(*PrivateConfig_AlertConfig); ok {
-		x.AlertRetention = nil
+	if _, ok := x.xxx_hidden_AlertRetention.(*privateConfig_AlertConfig); ok {
+		x.xxx_hidden_AlertRetention = nil
 	}
 }
 
 func (x *PrivateConfig) ClearImageRetentionDurationDays() {
-	x.ImageRetentionDurationDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ImageRetentionDurationDays = 0
 }
 
 func (x *PrivateConfig) ClearExpiredVulnReqRetentionDurationDays() {
-	x.ExpiredVulnReqRetentionDurationDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ExpiredVulnReqRetentionDurationDays = 0
 }
 
 func (x *PrivateConfig) ClearDecommissionedClusterRetention() {
-	x.DecommissionedClusterRetention = nil
+	x.xxx_hidden_DecommissionedClusterRetention = nil
 }
 
 func (x *PrivateConfig) ClearReportRetentionConfig() {
-	x.ReportRetentionConfig = nil
+	x.xxx_hidden_ReportRetentionConfig = nil
 }
 
 func (x *PrivateConfig) ClearVulnerabilityExceptionConfig() {
-	x.VulnerabilityExceptionConfig = nil
+	x.xxx_hidden_VulnerabilityExceptionConfig = nil
 }
 
 func (x *PrivateConfig) ClearAdministrationEventsConfig() {
-	x.AdministrationEventsConfig = nil
+	x.xxx_hidden_AdministrationEventsConfig = nil
 }
 
 func (x *PrivateConfig) ClearMetrics() {
-	x.Metrics = nil
+	x.xxx_hidden_Metrics = nil
 }
 
 const PrivateConfig_AlertRetention_not_set_case case_PrivateConfig_AlertRetention = 0
@@ -1306,10 +1397,10 @@ func (x *PrivateConfig) WhichAlertRetention() case_PrivateConfig_AlertRetention 
 	if x == nil {
 		return PrivateConfig_AlertRetention_not_set_case
 	}
-	switch x.AlertRetention.(type) {
-	case *PrivateConfig_DEPRECATEDAlertRetentionDurationDays:
+	switch x.xxx_hidden_AlertRetention.(type) {
+	case *privateConfig_DEPRECATEDAlertRetentionDurationDays:
 		return PrivateConfig_DEPRECATEDAlertRetentionDurationDays_case
-	case *PrivateConfig_AlertConfig:
+	case *privateConfig_AlertConfig:
 		return PrivateConfig_AlertConfig_case
 	default:
 		return PrivateConfig_AlertRetention_not_set_case
@@ -1319,11 +1410,11 @@ func (x *PrivateConfig) WhichAlertRetention() case_PrivateConfig_AlertRetention 
 type PrivateConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof AlertRetention:
+	// Fields of oneof xxx_hidden_AlertRetention:
 	// will be deprecated after migration is ready
 	DEPRECATEDAlertRetentionDurationDays *int32
 	AlertConfig                          *AlertRetentionConfig
-	// -- end of AlertRetention
+	// -- end of xxx_hidden_AlertRetention
 	ImageRetentionDurationDays          *int32
 	ExpiredVulnReqRetentionDurationDays *int32
 	DecommissionedClusterRetention      *DecommissionedClusterRetentionConfig
@@ -1340,18 +1431,24 @@ func (b0 PrivateConfig_builder) Build() *PrivateConfig {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.DEPRECATEDAlertRetentionDurationDays != nil {
-		x.AlertRetention = &PrivateConfig_DEPRECATEDAlertRetentionDurationDays{*b.DEPRECATEDAlertRetentionDurationDays}
+		x.xxx_hidden_AlertRetention = &privateConfig_DEPRECATEDAlertRetentionDurationDays{*b.DEPRECATEDAlertRetentionDurationDays}
 	}
 	if b.AlertConfig != nil {
-		x.AlertRetention = &PrivateConfig_AlertConfig{b.AlertConfig}
+		x.xxx_hidden_AlertRetention = &privateConfig_AlertConfig{b.AlertConfig}
 	}
-	x.ImageRetentionDurationDays = b.ImageRetentionDurationDays
-	x.ExpiredVulnReqRetentionDurationDays = b.ExpiredVulnReqRetentionDurationDays
-	x.DecommissionedClusterRetention = b.DecommissionedClusterRetention
-	x.ReportRetentionConfig = b.ReportRetentionConfig
-	x.VulnerabilityExceptionConfig = b.VulnerabilityExceptionConfig
-	x.AdministrationEventsConfig = b.AdministrationEventsConfig
-	x.Metrics = b.Metrics
+	if b.ImageRetentionDurationDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
+		x.xxx_hidden_ImageRetentionDurationDays = *b.ImageRetentionDurationDays
+	}
+	if b.ExpiredVulnReqRetentionDurationDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
+		x.xxx_hidden_ExpiredVulnReqRetentionDurationDays = *b.ExpiredVulnReqRetentionDurationDays
+	}
+	x.xxx_hidden_DecommissionedClusterRetention = b.DecommissionedClusterRetention
+	x.xxx_hidden_ReportRetentionConfig = b.ReportRetentionConfig
+	x.xxx_hidden_VulnerabilityExceptionConfig = b.VulnerabilityExceptionConfig
+	x.xxx_hidden_AdministrationEventsConfig = b.AdministrationEventsConfig
+	x.xxx_hidden_Metrics = b.Metrics
 	return m0
 }
 
@@ -1369,25 +1466,27 @@ type isPrivateConfig_AlertRetention interface {
 	isPrivateConfig_AlertRetention()
 }
 
-type PrivateConfig_DEPRECATEDAlertRetentionDurationDays struct {
+type privateConfig_DEPRECATEDAlertRetentionDurationDays struct {
 	// will be deprecated after migration is ready
 	DEPRECATEDAlertRetentionDurationDays int32 `protobuf:"varint,1,opt,name=DEPRECATED_alert_retention_duration_days,json=DEPRECATEDAlertRetentionDurationDays,oneof"`
 }
 
-type PrivateConfig_AlertConfig struct {
+type privateConfig_AlertConfig struct {
 	AlertConfig *AlertRetentionConfig `protobuf:"bytes,3,opt,name=alert_config,json=alertConfig,oneof"`
 }
 
-func (*PrivateConfig_DEPRECATEDAlertRetentionDurationDays) isPrivateConfig_AlertRetention() {}
+func (*privateConfig_DEPRECATEDAlertRetentionDurationDays) isPrivateConfig_AlertRetention() {}
 
-func (*PrivateConfig_AlertConfig) isPrivateConfig_AlertRetention() {}
+func (*privateConfig_AlertConfig) isPrivateConfig_AlertRetention() {}
 
 type PlatformComponentConfig struct {
-	state             protoimpl.MessageState          `protogen:"hybrid.v1"`
-	Rules             []*PlatformComponentConfig_Rule `protobuf:"bytes,1,rep,name=rules" json:"rules,omitempty"`
-	NeedsReevaluation *bool                           `protobuf:"varint,2,opt,name=needs_reevaluation,json=needsReevaluation" json:"needs_reevaluation,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Rules             *[]*PlatformComponentConfig_Rule `protobuf:"bytes,1,rep,name=rules"`
+	xxx_hidden_NeedsReevaluation bool                             `protobuf:"varint,2,opt,name=needs_reevaluation,json=needsReevaluation"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *PlatformComponentConfig) Reset() {
@@ -1417,35 +1516,39 @@ func (x *PlatformComponentConfig) ProtoReflect() protoreflect.Message {
 
 func (x *PlatformComponentConfig) GetRules() []*PlatformComponentConfig_Rule {
 	if x != nil {
-		return x.Rules
+		if x.xxx_hidden_Rules != nil {
+			return *x.xxx_hidden_Rules
+		}
 	}
 	return nil
 }
 
 func (x *PlatformComponentConfig) GetNeedsReevaluation() bool {
-	if x != nil && x.NeedsReevaluation != nil {
-		return *x.NeedsReevaluation
+	if x != nil {
+		return x.xxx_hidden_NeedsReevaluation
 	}
 	return false
 }
 
 func (x *PlatformComponentConfig) SetRules(v []*PlatformComponentConfig_Rule) {
-	x.Rules = v
+	x.xxx_hidden_Rules = &v
 }
 
 func (x *PlatformComponentConfig) SetNeedsReevaluation(v bool) {
-	x.NeedsReevaluation = &v
+	x.xxx_hidden_NeedsReevaluation = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *PlatformComponentConfig) HasNeedsReevaluation() bool {
 	if x == nil {
 		return false
 	}
-	return x.NeedsReevaluation != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *PlatformComponentConfig) ClearNeedsReevaluation() {
-	x.NeedsReevaluation = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_NeedsReevaluation = false
 }
 
 type PlatformComponentConfig_builder struct {
@@ -1459,18 +1562,21 @@ func (b0 PlatformComponentConfig_builder) Build() *PlatformComponentConfig {
 	m0 := &PlatformComponentConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Rules = b.Rules
-	x.NeedsReevaluation = b.NeedsReevaluation
+	x.xxx_hidden_Rules = &b.Rules
+	if b.NeedsReevaluation != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_NeedsReevaluation = *b.NeedsReevaluation
+	}
 	return m0
 }
 
 type Config struct {
-	state                   protoimpl.MessageState   `protogen:"hybrid.v1"`
-	PublicConfig            *PublicConfig            `protobuf:"bytes,1,opt,name=public_config,json=publicConfig" json:"public_config,omitempty"`
-	PrivateConfig           *PrivateConfig           `protobuf:"bytes,2,opt,name=private_config,json=privateConfig" json:"private_config,omitempty"`
-	PlatformComponentConfig *PlatformComponentConfig `protobuf:"bytes,3,opt,name=platform_component_config,json=platformComponentConfig" json:"platform_component_config,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                              protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_PublicConfig            *PublicConfig            `protobuf:"bytes,1,opt,name=public_config,json=publicConfig"`
+	xxx_hidden_PrivateConfig           *PrivateConfig           `protobuf:"bytes,2,opt,name=private_config,json=privateConfig"`
+	xxx_hidden_PlatformComponentConfig *PlatformComponentConfig `protobuf:"bytes,3,opt,name=platform_component_config,json=platformComponentConfig"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *Config) Reset() {
@@ -1500,68 +1606,68 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 
 func (x *Config) GetPublicConfig() *PublicConfig {
 	if x != nil {
-		return x.PublicConfig
+		return x.xxx_hidden_PublicConfig
 	}
 	return nil
 }
 
 func (x *Config) GetPrivateConfig() *PrivateConfig {
 	if x != nil {
-		return x.PrivateConfig
+		return x.xxx_hidden_PrivateConfig
 	}
 	return nil
 }
 
 func (x *Config) GetPlatformComponentConfig() *PlatformComponentConfig {
 	if x != nil {
-		return x.PlatformComponentConfig
+		return x.xxx_hidden_PlatformComponentConfig
 	}
 	return nil
 }
 
 func (x *Config) SetPublicConfig(v *PublicConfig) {
-	x.PublicConfig = v
+	x.xxx_hidden_PublicConfig = v
 }
 
 func (x *Config) SetPrivateConfig(v *PrivateConfig) {
-	x.PrivateConfig = v
+	x.xxx_hidden_PrivateConfig = v
 }
 
 func (x *Config) SetPlatformComponentConfig(v *PlatformComponentConfig) {
-	x.PlatformComponentConfig = v
+	x.xxx_hidden_PlatformComponentConfig = v
 }
 
 func (x *Config) HasPublicConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.PublicConfig != nil
+	return x.xxx_hidden_PublicConfig != nil
 }
 
 func (x *Config) HasPrivateConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.PrivateConfig != nil
+	return x.xxx_hidden_PrivateConfig != nil
 }
 
 func (x *Config) HasPlatformComponentConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.PlatformComponentConfig != nil
+	return x.xxx_hidden_PlatformComponentConfig != nil
 }
 
 func (x *Config) ClearPublicConfig() {
-	x.PublicConfig = nil
+	x.xxx_hidden_PublicConfig = nil
 }
 
 func (x *Config) ClearPrivateConfig() {
-	x.PrivateConfig = nil
+	x.xxx_hidden_PrivateConfig = nil
 }
 
 func (x *Config) ClearPlatformComponentConfig() {
-	x.PlatformComponentConfig = nil
+	x.xxx_hidden_PlatformComponentConfig = nil
 }
 
 type Config_builder struct {
@@ -1576,17 +1682,17 @@ func (b0 Config_builder) Build() *Config {
 	m0 := &Config{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PublicConfig = b.PublicConfig
-	x.PrivateConfig = b.PrivateConfig
-	x.PlatformComponentConfig = b.PlatformComponentConfig
+	x.xxx_hidden_PublicConfig = b.PublicConfig
+	x.xxx_hidden_PrivateConfig = b.PrivateConfig
+	x.xxx_hidden_PlatformComponentConfig = b.PlatformComponentConfig
 	return m0
 }
 
 type VulnerabilityExceptionConfig struct {
-	state         protoimpl.MessageState                      `protogen:"hybrid.v1"`
-	ExpiryOptions *VulnerabilityExceptionConfig_ExpiryOptions `protobuf:"bytes,1,opt,name=expiry_options,json=expiryOptions" json:"expiry_options,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState                      `protogen:"opaque.v1"`
+	xxx_hidden_ExpiryOptions *VulnerabilityExceptionConfig_ExpiryOptions `protobuf:"bytes,1,opt,name=expiry_options,json=expiryOptions"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *VulnerabilityExceptionConfig) Reset() {
@@ -1616,24 +1722,24 @@ func (x *VulnerabilityExceptionConfig) ProtoReflect() protoreflect.Message {
 
 func (x *VulnerabilityExceptionConfig) GetExpiryOptions() *VulnerabilityExceptionConfig_ExpiryOptions {
 	if x != nil {
-		return x.ExpiryOptions
+		return x.xxx_hidden_ExpiryOptions
 	}
 	return nil
 }
 
 func (x *VulnerabilityExceptionConfig) SetExpiryOptions(v *VulnerabilityExceptionConfig_ExpiryOptions) {
-	x.ExpiryOptions = v
+	x.xxx_hidden_ExpiryOptions = v
 }
 
 func (x *VulnerabilityExceptionConfig) HasExpiryOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.ExpiryOptions != nil
+	return x.xxx_hidden_ExpiryOptions != nil
 }
 
 func (x *VulnerabilityExceptionConfig) ClearExpiryOptions() {
-	x.ExpiryOptions = nil
+	x.xxx_hidden_ExpiryOptions = nil
 }
 
 type VulnerabilityExceptionConfig_builder struct {
@@ -1646,15 +1752,17 @@ func (b0 VulnerabilityExceptionConfig_builder) Build() *VulnerabilityExceptionCo
 	m0 := &VulnerabilityExceptionConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ExpiryOptions = b.ExpiryOptions
+	x.xxx_hidden_ExpiryOptions = b.ExpiryOptions
 	return m0
 }
 
 type AdministrationEventsConfig struct {
-	state                 protoimpl.MessageState `protogen:"hybrid.v1"`
-	RetentionDurationDays *uint32                `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays" json:"retention_duration_days,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RetentionDurationDays uint32                 `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays"`
+	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
+	XXX_presence                     [1]uint32
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *AdministrationEventsConfig) Reset() {
@@ -1683,25 +1791,27 @@ func (x *AdministrationEventsConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AdministrationEventsConfig) GetRetentionDurationDays() uint32 {
-	if x != nil && x.RetentionDurationDays != nil {
-		return *x.RetentionDurationDays
+	if x != nil {
+		return x.xxx_hidden_RetentionDurationDays
 	}
 	return 0
 }
 
 func (x *AdministrationEventsConfig) SetRetentionDurationDays(v uint32) {
-	x.RetentionDurationDays = &v
+	x.xxx_hidden_RetentionDurationDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *AdministrationEventsConfig) HasRetentionDurationDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.RetentionDurationDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AdministrationEventsConfig) ClearRetentionDurationDays() {
-	x.RetentionDurationDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_RetentionDurationDays = 0
 }
 
 type AdministrationEventsConfig_builder struct {
@@ -1714,16 +1824,21 @@ func (b0 AdministrationEventsConfig_builder) Build() *AdministrationEventsConfig
 	m0 := &AdministrationEventsConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RetentionDurationDays = b.RetentionDurationDays
+	if b.RetentionDurationDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_RetentionDurationDays = *b.RetentionDurationDays
+	}
 	return m0
 }
 
 type DayOption struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	NumDays       *uint32                `protobuf:"varint,1,opt,name=num_days,json=numDays" json:"num_days,omitempty"`
-	Enabled       *bool                  `protobuf:"varint,2,opt,name=enabled" json:"enabled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_NumDays     uint32                 `protobuf:"varint,1,opt,name=num_days,json=numDays"`
+	xxx_hidden_Enabled     bool                   `protobuf:"varint,2,opt,name=enabled"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DayOption) Reset() {
@@ -1752,47 +1867,51 @@ func (x *DayOption) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DayOption) GetNumDays() uint32 {
-	if x != nil && x.NumDays != nil {
-		return *x.NumDays
+	if x != nil {
+		return x.xxx_hidden_NumDays
 	}
 	return 0
 }
 
 func (x *DayOption) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
+	if x != nil {
+		return x.xxx_hidden_Enabled
 	}
 	return false
 }
 
 func (x *DayOption) SetNumDays(v uint32) {
-	x.NumDays = &v
+	x.xxx_hidden_NumDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *DayOption) SetEnabled(v bool) {
-	x.Enabled = &v
+	x.xxx_hidden_Enabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DayOption) HasNumDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.NumDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DayOption) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.Enabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DayOption) ClearNumDays() {
-	x.NumDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_NumDays = 0
 }
 
 func (x *DayOption) ClearEnabled() {
-	x.Enabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Enabled = false
 }
 
 type DayOption_builder struct {
@@ -1806,8 +1925,14 @@ func (b0 DayOption_builder) Build() *DayOption {
 	m0 := &DayOption{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.NumDays = b.NumDays
-	x.Enabled = b.Enabled
+	if b.NumDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_NumDays = *b.NumDays
+	}
+	if b.Enabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Enabled = *b.Enabled
+	}
 	return m0
 }
 
@@ -1815,13 +1940,13 @@ func (b0 DayOption_builder) Build() *DayOption {
 // aggregator. Metrics in a group may use different subsets of a complete list
 // of labels supported by the aggregator.
 type PrometheusMetrics_Group struct {
-	state                  protoimpl.MessageState `protogen:"hybrid.v1"`
-	GatheringPeriodMinutes *uint32                `protobuf:"varint,1,opt,name=gathering_period_minutes,json=gatheringPeriodMinutes" json:"gathering_period_minutes,omitempty"`
-	// Metric descriptors is a map of metric names to the list of allowed
-	// labels.
-	Descriptors   map[string]*PrometheusMetrics_Group_Labels `protobuf:"bytes,2,rep,name=descriptors" json:"descriptors,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                             protoimpl.MessageState                     `protogen:"opaque.v1"`
+	xxx_hidden_GatheringPeriodMinutes uint32                                     `protobuf:"varint,1,opt,name=gathering_period_minutes,json=gatheringPeriodMinutes"`
+	xxx_hidden_Descriptors            map[string]*PrometheusMetrics_Group_Labels `protobuf:"bytes,2,rep,name=descriptors" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
+	XXX_presence                      [1]uint32
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *PrometheusMetrics_Group) Reset() {
@@ -1850,36 +1975,38 @@ func (x *PrometheusMetrics_Group) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PrometheusMetrics_Group) GetGatheringPeriodMinutes() uint32 {
-	if x != nil && x.GatheringPeriodMinutes != nil {
-		return *x.GatheringPeriodMinutes
+	if x != nil {
+		return x.xxx_hidden_GatheringPeriodMinutes
 	}
 	return 0
 }
 
 func (x *PrometheusMetrics_Group) GetDescriptors() map[string]*PrometheusMetrics_Group_Labels {
 	if x != nil {
-		return x.Descriptors
+		return x.xxx_hidden_Descriptors
 	}
 	return nil
 }
 
 func (x *PrometheusMetrics_Group) SetGatheringPeriodMinutes(v uint32) {
-	x.GatheringPeriodMinutes = &v
+	x.xxx_hidden_GatheringPeriodMinutes = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *PrometheusMetrics_Group) SetDescriptors(v map[string]*PrometheusMetrics_Group_Labels) {
-	x.Descriptors = v
+	x.xxx_hidden_Descriptors = v
 }
 
 func (x *PrometheusMetrics_Group) HasGatheringPeriodMinutes() bool {
 	if x == nil {
 		return false
 	}
-	return x.GatheringPeriodMinutes != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PrometheusMetrics_Group) ClearGatheringPeriodMinutes() {
-	x.GatheringPeriodMinutes = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_GatheringPeriodMinutes = 0
 }
 
 type PrometheusMetrics_Group_builder struct {
@@ -1895,16 +2022,19 @@ func (b0 PrometheusMetrics_Group_builder) Build() *PrometheusMetrics_Group {
 	m0 := &PrometheusMetrics_Group{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.GatheringPeriodMinutes = b.GatheringPeriodMinutes
-	x.Descriptors = b.Descriptors
+	if b.GatheringPeriodMinutes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_GatheringPeriodMinutes = *b.GatheringPeriodMinutes
+	}
+	x.xxx_hidden_Descriptors = b.Descriptors
 	return m0
 }
 
 type PrometheusMetrics_Group_Labels struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Labels        []string               `protobuf:"bytes,1,rep,name=labels" json:"labels,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Labels []string               `protobuf:"bytes,1,rep,name=labels"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *PrometheusMetrics_Group_Labels) Reset() {
@@ -1934,13 +2064,13 @@ func (x *PrometheusMetrics_Group_Labels) ProtoReflect() protoreflect.Message {
 
 func (x *PrometheusMetrics_Group_Labels) GetLabels() []string {
 	if x != nil {
-		return x.Labels
+		return x.xxx_hidden_Labels
 	}
 	return nil
 }
 
 func (x *PrometheusMetrics_Group_Labels) SetLabels(v []string) {
-	x.Labels = v
+	x.xxx_hidden_Labels = v
 }
 
 type PrometheusMetrics_Group_Labels_builder struct {
@@ -1953,16 +2083,18 @@ func (b0 PrometheusMetrics_Group_Labels_builder) Build() *PrometheusMetrics_Grou
 	m0 := &PrometheusMetrics_Group_Labels{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Labels = b.Labels
+	x.xxx_hidden_Labels = b.Labels
 	return m0
 }
 
 type PlatformComponentConfig_Rule struct {
-	state         protoimpl.MessageState                      `protogen:"hybrid.v1"`
-	Name          *string                                     `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	NamespaceRule *PlatformComponentConfig_Rule_NamespaceRule `protobuf:"bytes,2,opt,name=namespace_rule,json=namespaceRule" json:"namespace_rule,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState                      `protogen:"opaque.v1"`
+	xxx_hidden_Name          *string                                     `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_NamespaceRule *PlatformComponentConfig_Rule_NamespaceRule `protobuf:"bytes,2,opt,name=namespace_rule,json=namespaceRule"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *PlatformComponentConfig_Rule) Reset() {
@@ -1991,47 +2123,52 @@ func (x *PlatformComponentConfig_Rule) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PlatformComponentConfig_Rule) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PlatformComponentConfig_Rule) GetNamespaceRule() *PlatformComponentConfig_Rule_NamespaceRule {
 	if x != nil {
-		return x.NamespaceRule
+		return x.xxx_hidden_NamespaceRule
 	}
 	return nil
 }
 
 func (x *PlatformComponentConfig_Rule) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *PlatformComponentConfig_Rule) SetNamespaceRule(v *PlatformComponentConfig_Rule_NamespaceRule) {
-	x.NamespaceRule = v
+	x.xxx_hidden_NamespaceRule = v
 }
 
 func (x *PlatformComponentConfig_Rule) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PlatformComponentConfig_Rule) HasNamespaceRule() bool {
 	if x == nil {
 		return false
 	}
-	return x.NamespaceRule != nil
+	return x.xxx_hidden_NamespaceRule != nil
 }
 
 func (x *PlatformComponentConfig_Rule) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *PlatformComponentConfig_Rule) ClearNamespaceRule() {
-	x.NamespaceRule = nil
+	x.xxx_hidden_NamespaceRule = nil
 }
 
 type PlatformComponentConfig_Rule_builder struct {
@@ -2045,16 +2182,21 @@ func (b0 PlatformComponentConfig_Rule_builder) Build() *PlatformComponentConfig_
 	m0 := &PlatformComponentConfig_Rule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.NamespaceRule = b.NamespaceRule
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Name = b.Name
+	}
+	x.xxx_hidden_NamespaceRule = b.NamespaceRule
 	return m0
 }
 
 type PlatformComponentConfig_Rule_NamespaceRule struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Regex         *string                `protobuf:"bytes,1,opt,name=regex" json:"regex,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Regex       *string                `protobuf:"bytes,1,opt,name=regex"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PlatformComponentConfig_Rule_NamespaceRule) Reset() {
@@ -2083,25 +2225,30 @@ func (x *PlatformComponentConfig_Rule_NamespaceRule) ProtoReflect() protoreflect
 }
 
 func (x *PlatformComponentConfig_Rule_NamespaceRule) GetRegex() string {
-	if x != nil && x.Regex != nil {
-		return *x.Regex
+	if x != nil {
+		if x.xxx_hidden_Regex != nil {
+			return *x.xxx_hidden_Regex
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PlatformComponentConfig_Rule_NamespaceRule) SetRegex(v string) {
-	x.Regex = &v
+	x.xxx_hidden_Regex = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *PlatformComponentConfig_Rule_NamespaceRule) HasRegex() bool {
 	if x == nil {
 		return false
 	}
-	return x.Regex != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PlatformComponentConfig_Rule_NamespaceRule) ClearRegex() {
-	x.Regex = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Regex = nil
 }
 
 type PlatformComponentConfig_Rule_NamespaceRule_builder struct {
@@ -2114,16 +2261,21 @@ func (b0 PlatformComponentConfig_Rule_NamespaceRule_builder) Build() *PlatformCo
 	m0 := &PlatformComponentConfig_Rule_NamespaceRule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Regex = b.Regex
+	if b.Regex != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Regex = b.Regex
+	}
 	return m0
 }
 
 type VulnerabilityExceptionConfig_FixableCVEOptions struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	AllFixable    *bool                  `protobuf:"varint,1,opt,name=all_fixable,json=allFixable" json:"all_fixable,omitempty"`
-	AnyFixable    *bool                  `protobuf:"varint,2,opt,name=any_fixable,json=anyFixable" json:"any_fixable,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AllFixable  bool                   `protobuf:"varint,1,opt,name=all_fixable,json=allFixable"`
+	xxx_hidden_AnyFixable  bool                   `protobuf:"varint,2,opt,name=any_fixable,json=anyFixable"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) Reset() {
@@ -2152,47 +2304,51 @@ func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ProtoReflect() protoref
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) GetAllFixable() bool {
-	if x != nil && x.AllFixable != nil {
-		return *x.AllFixable
+	if x != nil {
+		return x.xxx_hidden_AllFixable
 	}
 	return false
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) GetAnyFixable() bool {
-	if x != nil && x.AnyFixable != nil {
-		return *x.AnyFixable
+	if x != nil {
+		return x.xxx_hidden_AnyFixable
 	}
 	return false
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) SetAllFixable(v bool) {
-	x.AllFixable = &v
+	x.xxx_hidden_AllFixable = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) SetAnyFixable(v bool) {
-	x.AnyFixable = &v
+	x.xxx_hidden_AnyFixable = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) HasAllFixable() bool {
 	if x == nil {
 		return false
 	}
-	return x.AllFixable != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) HasAnyFixable() bool {
 	if x == nil {
 		return false
 	}
-	return x.AnyFixable != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ClearAllFixable() {
-	x.AllFixable = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_AllFixable = false
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ClearAnyFixable() {
-	x.AnyFixable = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_AnyFixable = false
 }
 
 type VulnerabilityExceptionConfig_FixableCVEOptions_builder struct {
@@ -2206,19 +2362,27 @@ func (b0 VulnerabilityExceptionConfig_FixableCVEOptions_builder) Build() *Vulner
 	m0 := &VulnerabilityExceptionConfig_FixableCVEOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AllFixable = b.AllFixable
-	x.AnyFixable = b.AnyFixable
+	if b.AllFixable != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_AllFixable = *b.AllFixable
+	}
+	if b.AnyFixable != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_AnyFixable = *b.AnyFixable
+	}
 	return m0
 }
 
 type VulnerabilityExceptionConfig_ExpiryOptions struct {
-	state             protoimpl.MessageState                          `protogen:"hybrid.v1"`
-	DayOptions        []*DayOption                                    `protobuf:"bytes,1,rep,name=day_options,json=dayOptions" json:"day_options,omitempty"`
-	FixableCveOptions *VulnerabilityExceptionConfig_FixableCVEOptions `protobuf:"bytes,2,opt,name=fixable_cve_options,json=fixableCveOptions" json:"fixable_cve_options,omitempty"`
-	CustomDate        *bool                                           `protobuf:"varint,3,opt,name=custom_date,json=customDate" json:"custom_date,omitempty"`
-	Indefinite        *bool                                           `protobuf:"varint,4,opt,name=indefinite" json:"indefinite,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState                          `protogen:"opaque.v1"`
+	xxx_hidden_DayOptions        *[]*DayOption                                   `protobuf:"bytes,1,rep,name=day_options,json=dayOptions"`
+	xxx_hidden_FixableCveOptions *VulnerabilityExceptionConfig_FixableCVEOptions `protobuf:"bytes,2,opt,name=fixable_cve_options,json=fixableCveOptions"`
+	xxx_hidden_CustomDate        bool                                            `protobuf:"varint,3,opt,name=custom_date,json=customDate"`
+	xxx_hidden_Indefinite        bool                                            `protobuf:"varint,4,opt,name=indefinite"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) Reset() {
@@ -2248,79 +2412,85 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) ProtoReflect() protoreflect
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetDayOptions() []*DayOption {
 	if x != nil {
-		return x.DayOptions
+		if x.xxx_hidden_DayOptions != nil {
+			return *x.xxx_hidden_DayOptions
+		}
 	}
 	return nil
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetFixableCveOptions() *VulnerabilityExceptionConfig_FixableCVEOptions {
 	if x != nil {
-		return x.FixableCveOptions
+		return x.xxx_hidden_FixableCveOptions
 	}
 	return nil
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetCustomDate() bool {
-	if x != nil && x.CustomDate != nil {
-		return *x.CustomDate
+	if x != nil {
+		return x.xxx_hidden_CustomDate
 	}
 	return false
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetIndefinite() bool {
-	if x != nil && x.Indefinite != nil {
-		return *x.Indefinite
+	if x != nil {
+		return x.xxx_hidden_Indefinite
 	}
 	return false
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) SetDayOptions(v []*DayOption) {
-	x.DayOptions = v
+	x.xxx_hidden_DayOptions = &v
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) SetFixableCveOptions(v *VulnerabilityExceptionConfig_FixableCVEOptions) {
-	x.FixableCveOptions = v
+	x.xxx_hidden_FixableCveOptions = v
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) SetCustomDate(v bool) {
-	x.CustomDate = &v
+	x.xxx_hidden_CustomDate = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) SetIndefinite(v bool) {
-	x.Indefinite = &v
+	x.xxx_hidden_Indefinite = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) HasFixableCveOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.FixableCveOptions != nil
+	return x.xxx_hidden_FixableCveOptions != nil
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) HasCustomDate() bool {
 	if x == nil {
 		return false
 	}
-	return x.CustomDate != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) HasIndefinite() bool {
 	if x == nil {
 		return false
 	}
-	return x.Indefinite != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) ClearFixableCveOptions() {
-	x.FixableCveOptions = nil
+	x.xxx_hidden_FixableCveOptions = nil
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) ClearCustomDate() {
-	x.CustomDate = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_CustomDate = false
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) ClearIndefinite() {
-	x.Indefinite = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Indefinite = false
 }
 
 type VulnerabilityExceptionConfig_ExpiryOptions_builder struct {
@@ -2336,10 +2506,16 @@ func (b0 VulnerabilityExceptionConfig_ExpiryOptions_builder) Build() *Vulnerabil
 	m0 := &VulnerabilityExceptionConfig_ExpiryOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DayOptions = b.DayOptions
-	x.FixableCveOptions = b.FixableCveOptions
-	x.CustomDate = b.CustomDate
-	x.Indefinite = b.Indefinite
+	x.xxx_hidden_DayOptions = &b.DayOptions
+	x.xxx_hidden_FixableCveOptions = b.FixableCveOptions
+	if b.CustomDate != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_CustomDate = *b.CustomDate
+	}
+	if b.Indefinite != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Indefinite = *b.Indefinite
+	}
 	return m0
 }
 
@@ -2443,7 +2619,7 @@ const file_storage_config_proto_rawDesc = "" +
 	"\tDayOption\x12\x19\n" +
 	"\bnum_days\x18\x01 \x01(\rR\anumDays\x12\x18\n" +
 	"\aenabled\x18\x02 \x01(\bR\aenabledB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_config_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_config_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
@@ -2515,8 +2691,8 @@ func file_storage_config_proto_init() {
 	}
 	file_storage_telemetry_proto_init()
 	file_storage_config_proto_msgTypes[7].OneofWrappers = []any{
-		(*PrivateConfig_DEPRECATEDAlertRetentionDurationDays)(nil),
-		(*PrivateConfig_AlertConfig)(nil),
+		(*privateConfig_DEPRECATEDAlertRetentionDurationDays)(nil),
+		(*privateConfig_AlertConfig)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

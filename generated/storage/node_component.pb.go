@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/node_component.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -24,19 +22,18 @@ const (
 )
 
 type NodeComponent struct {
-	state     protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id        *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`                                  // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
-	Name      *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Component,store"`                              // @gotags: search:"Component,store"
-	Version   *string                `protobuf:"bytes,3,opt,name=version" json:"version,omitempty" search:"Component Version,store"`                        // @gotags: search:"Component Version,store"
-	Priority  *int64                 `protobuf:"varint,5,opt,name=priority" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	RiskScore *float32               `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
-	// Types that are valid to be assigned to SetTopCvss:
-	//
-	//	*NodeComponent_TopCvss
-	SetTopCvss      isNodeComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	OperatingSystem *string                    `protobuf:"bytes,9,opt,name=operating_system,json=operatingSystem" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Id              *string                    `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name            *string                    `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Version         *string                    `protobuf:"bytes,3,opt,name=version"`
+	xxx_hidden_Priority        int64                      `protobuf:"varint,5,opt,name=priority"`
+	xxx_hidden_RiskScore       float32                    `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore"`
+	xxx_hidden_SetTopCvss      isNodeComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
+	xxx_hidden_OperatingSystem *string                    `protobuf:"bytes,9,opt,name=operating_system,json=operatingSystem"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *NodeComponent) Reset() {
@@ -65,143 +62,149 @@ func (x *NodeComponent) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NodeComponent) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NodeComponent) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NodeComponent) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NodeComponent) GetPriority() int64 {
-	if x != nil && x.Priority != nil {
-		return *x.Priority
+	if x != nil {
+		return x.xxx_hidden_Priority
 	}
 	return 0
 }
 
 func (x *NodeComponent) GetRiskScore() float32 {
-	if x != nil && x.RiskScore != nil {
-		return *x.RiskScore
+	if x != nil {
+		return x.xxx_hidden_RiskScore
 	}
 	return 0
 }
 
-func (x *NodeComponent) GetSetTopCvss() isNodeComponent_SetTopCvss {
+func (x *NodeComponent) GetTopCvss() float32 {
 	if x != nil {
-		return x.SetTopCvss
-	}
-	return nil
-}
-
-func (x *NodeComponent) Get_TopCvss() float32 {
-	if x != nil {
-		if x, ok := x.SetTopCvss.(*NodeComponent_TopCvss); ok {
+		if x, ok := x.xxx_hidden_SetTopCvss.(*nodeComponent_TopCvss); ok {
 			return x.TopCvss
 		}
 	}
 	return 0
 }
 
-// Deprecated: Use Get_TopCvss instead.
-func (x *NodeComponent) GetTopCvss() float32 {
-	return x.Get_TopCvss()
-}
-
 func (x *NodeComponent) GetOperatingSystem() string {
-	if x != nil && x.OperatingSystem != nil {
-		return *x.OperatingSystem
+	if x != nil {
+		if x.xxx_hidden_OperatingSystem != nil {
+			return *x.xxx_hidden_OperatingSystem
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NodeComponent) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *NodeComponent) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *NodeComponent) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *NodeComponent) SetPriority(v int64) {
-	x.Priority = &v
+	x.xxx_hidden_Priority = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *NodeComponent) SetRiskScore(v float32) {
-	x.RiskScore = &v
+	x.xxx_hidden_RiskScore = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
-func (x *NodeComponent) Set_TopCvss(v float32) {
-	x.SetTopCvss = &NodeComponent_TopCvss{v}
+func (x *NodeComponent) SetTopCvss(v float32) {
+	x.xxx_hidden_SetTopCvss = &nodeComponent_TopCvss{v}
 }
 
 func (x *NodeComponent) SetOperatingSystem(v string) {
-	x.OperatingSystem = &v
+	x.xxx_hidden_OperatingSystem = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *NodeComponent) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NodeComponent) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NodeComponent) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *NodeComponent) HasPriority() bool {
 	if x == nil {
 		return false
 	}
-	return x.Priority != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *NodeComponent) HasRiskScore() bool {
 	if x == nil {
 		return false
 	}
-	return x.RiskScore != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *NodeComponent) HasSetTopCvss() bool {
 	if x == nil {
 		return false
 	}
-	return x.SetTopCvss != nil
+	return x.xxx_hidden_SetTopCvss != nil
 }
 
-func (x *NodeComponent) Has_TopCvss() bool {
+func (x *NodeComponent) HasTopCvss() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.SetTopCvss.(*NodeComponent_TopCvss)
+	_, ok := x.xxx_hidden_SetTopCvss.(*nodeComponent_TopCvss)
 	return ok
 }
 
@@ -209,41 +212,47 @@ func (x *NodeComponent) HasOperatingSystem() bool {
 	if x == nil {
 		return false
 	}
-	return x.OperatingSystem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *NodeComponent) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *NodeComponent) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *NodeComponent) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Version = nil
 }
 
 func (x *NodeComponent) ClearPriority() {
-	x.Priority = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Priority = 0
 }
 
 func (x *NodeComponent) ClearRiskScore() {
-	x.RiskScore = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_RiskScore = 0
 }
 
 func (x *NodeComponent) ClearSetTopCvss() {
-	x.SetTopCvss = nil
+	x.xxx_hidden_SetTopCvss = nil
 }
 
-func (x *NodeComponent) Clear_TopCvss() {
-	if _, ok := x.SetTopCvss.(*NodeComponent_TopCvss); ok {
-		x.SetTopCvss = nil
+func (x *NodeComponent) ClearTopCvss() {
+	if _, ok := x.xxx_hidden_SetTopCvss.(*nodeComponent_TopCvss); ok {
+		x.xxx_hidden_SetTopCvss = nil
 	}
 }
 
 func (x *NodeComponent) ClearOperatingSystem() {
-	x.OperatingSystem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_OperatingSystem = nil
 }
 
 const NodeComponent_SetTopCvss_not_set_case case_NodeComponent_SetTopCvss = 0
@@ -253,8 +262,8 @@ func (x *NodeComponent) WhichSetTopCvss() case_NodeComponent_SetTopCvss {
 	if x == nil {
 		return NodeComponent_SetTopCvss_not_set_case
 	}
-	switch x.SetTopCvss.(type) {
-	case *NodeComponent_TopCvss:
+	switch x.xxx_hidden_SetTopCvss.(type) {
+	case *nodeComponent_TopCvss:
 		return NodeComponent_TopCvss_case
 	default:
 		return NodeComponent_SetTopCvss_not_set_case
@@ -269,9 +278,9 @@ type NodeComponent_builder struct {
 	Version   *string
 	Priority  *int64
 	RiskScore *float32
-	// Fields of oneof SetTopCvss:
+	// Fields of oneof xxx_hidden_SetTopCvss:
 	TopCvss *float32
-	// -- end of SetTopCvss
+	// -- end of xxx_hidden_SetTopCvss
 	OperatingSystem *string
 }
 
@@ -279,15 +288,33 @@ func (b0 NodeComponent_builder) Build() *NodeComponent {
 	m0 := &NodeComponent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Version = b.Version
-	x.Priority = b.Priority
-	x.RiskScore = b.RiskScore
-	if b.TopCvss != nil {
-		x.SetTopCvss = &NodeComponent_TopCvss{*b.TopCvss}
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Id = b.Id
 	}
-	x.OperatingSystem = b.OperatingSystem
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_Version = b.Version
+	}
+	if b.Priority != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_Priority = *b.Priority
+	}
+	if b.RiskScore != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_RiskScore = *b.RiskScore
+	}
+	if b.TopCvss != nil {
+		x.xxx_hidden_SetTopCvss = &nodeComponent_TopCvss{*b.TopCvss}
+	}
+	if b.OperatingSystem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_OperatingSystem = b.OperatingSystem
+	}
 	return m0
 }
 
@@ -305,11 +332,11 @@ type isNodeComponent_SetTopCvss interface {
 	isNodeComponent_SetTopCvss()
 }
 
-type NodeComponent_TopCvss struct {
+type nodeComponent_TopCvss struct {
 	TopCvss float32 `protobuf:"fixed32,8,opt,name=top_cvss,json=topCvss,oneof" search:"Component Top CVSS,store"` // @gotags: search:"Component Top CVSS,store"
 }
 
-func (*NodeComponent_TopCvss) isNodeComponent_SetTopCvss() {}
+func (*nodeComponent_TopCvss) isNodeComponent_SetTopCvss() {}
 
 var File_storage_node_component_proto protoreflect.FileDescriptor
 
@@ -326,7 +353,7 @@ const file_storage_node_component_proto_rawDesc = "" +
 	"\btop_cvss\x18\b \x01(\x02H\x00R\atopCvss\x12)\n" +
 	"\x10operating_system\x18\t \x01(\tR\x0foperatingSystemB\x0e\n" +
 	"\fset_top_cvssB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_node_component_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_node_component_proto_goTypes = []any{
@@ -346,7 +373,7 @@ func file_storage_node_component_proto_init() {
 		return
 	}
 	file_storage_node_component_proto_msgTypes[0].OneofWrappers = []any{
-		(*NodeComponent_TopCvss)(nil),
+		(*nodeComponent_TopCvss)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

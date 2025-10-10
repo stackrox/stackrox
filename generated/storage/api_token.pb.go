@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/api_token.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -25,17 +23,18 @@ const (
 )
 
 type TokenMetadata struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id         *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name       *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Roles      []string               `protobuf:"bytes,7,rep,name=roles" json:"roles,omitempty"`
-	IssuedAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt" json:"issued_at,omitempty"`
-	Expiration *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expiration" json:"expiration,omitempty" search:"Expiration,store"` // @gotags: search:"Expiration,store"
-	Revoked    *bool                  `protobuf:"varint,6,opt,name=revoked" json:"revoked,omitempty" search:"Revoked,store"`      // @gotags: search:"Revoked,store"
-	// Deprecated: Marked as deprecated in storage/api_token.proto.
-	Role          *string `protobuf:"bytes,3,opt,name=role" json:"role,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Roles       []string               `protobuf:"bytes,7,rep,name=roles"`
+	xxx_hidden_IssuedAt    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt"`
+	xxx_hidden_Expiration  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expiration"`
+	xxx_hidden_Revoked     bool                   `protobuf:"varint,6,opt,name=revoked"`
+	xxx_hidden_Role        *string                `protobuf:"bytes,3,opt,name=role"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TokenMetadata) Reset() {
@@ -64,117 +63,130 @@ func (x *TokenMetadata) ProtoReflect() protoreflect.Message {
 }
 
 func (x *TokenMetadata) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *TokenMetadata) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *TokenMetadata) GetRoles() []string {
 	if x != nil {
-		return x.Roles
+		return x.xxx_hidden_Roles
 	}
 	return nil
 }
 
 func (x *TokenMetadata) GetIssuedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.IssuedAt
+		return x.xxx_hidden_IssuedAt
 	}
 	return nil
 }
 
 func (x *TokenMetadata) GetExpiration() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Expiration
+		return x.xxx_hidden_Expiration
 	}
 	return nil
 }
 
 func (x *TokenMetadata) GetRevoked() bool {
-	if x != nil && x.Revoked != nil {
-		return *x.Revoked
+	if x != nil {
+		return x.xxx_hidden_Revoked
 	}
 	return false
 }
 
 // Deprecated: Marked as deprecated in storage/api_token.proto.
 func (x *TokenMetadata) GetRole() string {
-	if x != nil && x.Role != nil {
-		return *x.Role
+	if x != nil {
+		if x.xxx_hidden_Role != nil {
+			return *x.xxx_hidden_Role
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *TokenMetadata) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *TokenMetadata) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *TokenMetadata) SetRoles(v []string) {
-	x.Roles = v
+	x.xxx_hidden_Roles = v
 }
 
 func (x *TokenMetadata) SetIssuedAt(v *timestamppb.Timestamp) {
-	x.IssuedAt = v
+	x.xxx_hidden_IssuedAt = v
 }
 
 func (x *TokenMetadata) SetExpiration(v *timestamppb.Timestamp) {
-	x.Expiration = v
+	x.xxx_hidden_Expiration = v
 }
 
 func (x *TokenMetadata) SetRevoked(v bool) {
-	x.Revoked = &v
+	x.xxx_hidden_Revoked = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 // Deprecated: Marked as deprecated in storage/api_token.proto.
 func (x *TokenMetadata) SetRole(v string) {
-	x.Role = &v
+	x.xxx_hidden_Role = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *TokenMetadata) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *TokenMetadata) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *TokenMetadata) HasIssuedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.IssuedAt != nil
+	return x.xxx_hidden_IssuedAt != nil
 }
 
 func (x *TokenMetadata) HasExpiration() bool {
 	if x == nil {
 		return false
 	}
-	return x.Expiration != nil
+	return x.xxx_hidden_Expiration != nil
 }
 
 func (x *TokenMetadata) HasRevoked() bool {
 	if x == nil {
 		return false
 	}
-	return x.Revoked != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 // Deprecated: Marked as deprecated in storage/api_token.proto.
@@ -182,32 +194,36 @@ func (x *TokenMetadata) HasRole() bool {
 	if x == nil {
 		return false
 	}
-	return x.Role != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *TokenMetadata) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *TokenMetadata) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *TokenMetadata) ClearIssuedAt() {
-	x.IssuedAt = nil
+	x.xxx_hidden_IssuedAt = nil
 }
 
 func (x *TokenMetadata) ClearExpiration() {
-	x.Expiration = nil
+	x.xxx_hidden_Expiration = nil
 }
 
 func (x *TokenMetadata) ClearRevoked() {
-	x.Revoked = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Revoked = false
 }
 
 // Deprecated: Marked as deprecated in storage/api_token.proto.
 func (x *TokenMetadata) ClearRole() {
-	x.Role = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_Role = nil
 }
 
 type TokenMetadata_builder struct {
@@ -227,13 +243,25 @@ func (b0 TokenMetadata_builder) Build() *TokenMetadata {
 	m0 := &TokenMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Roles = b.Roles
-	x.IssuedAt = b.IssuedAt
-	x.Expiration = b.Expiration
-	x.Revoked = b.Revoked
-	x.Role = b.Role
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Name = b.Name
+	}
+	x.xxx_hidden_Roles = b.Roles
+	x.xxx_hidden_IssuedAt = b.IssuedAt
+	x.xxx_hidden_Expiration = b.Expiration
+	if b.Revoked != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_Revoked = *b.Revoked
+	}
+	if b.Role != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_Role = b.Role
+	}
 	return m0
 }
 
@@ -252,7 +280,7 @@ const file_storage_api_token_proto_rawDesc = "" +
 	"expiration\x12\x18\n" +
 	"\arevoked\x18\x06 \x01(\bR\arevoked\x12\x16\n" +
 	"\x04role\x18\x03 \x01(\tB\x02\x18\x01R\x04roleB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_api_token_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_api_token_proto_goTypes = []any{

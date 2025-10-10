@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/virtualmachine/v1/virtual_machine.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -69,17 +67,19 @@ func (x VirtualMachine_State) Number() protoreflect.EnumNumber {
 
 // VirtualMachine represents kube-virt k8s virtual machine resources.
 type VirtualMachine struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Namespace     *string                `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
-	Name          *string                `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	ClusterId     *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	Facts         map[string]string      `protobuf:"bytes,5,rep,name=facts" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	VsockCid      *int32                 `protobuf:"varint,6,opt,name=vsock_cid,json=vsockCid" json:"vsock_cid,omitempty"`
-	VsockCidSet   *bool                  `protobuf:"varint,7,opt,name=vsock_cid_set,json=vsockCidSet" json:"vsock_cid_set,omitempty"`
-	State         *VirtualMachine_State  `protobuf:"varint,8,opt,name=state,enum=virtualmachine.v1.VirtualMachine_State" json:"state,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Namespace   *string                `protobuf:"bytes,2,opt,name=namespace"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,3,opt,name=name"`
+	xxx_hidden_ClusterId   *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Facts       map[string]string      `protobuf:"bytes,5,rep,name=facts" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_VsockCid    int32                  `protobuf:"varint,6,opt,name=vsock_cid,json=vsockCid"`
+	xxx_hidden_VsockCidSet bool                   `protobuf:"varint,7,opt,name=vsock_cid_set,json=vsockCidSet"`
+	xxx_hidden_State       VirtualMachine_State   `protobuf:"varint,8,opt,name=state,enum=virtualmachine.v1.VirtualMachine_State"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VirtualMachine) Reset() {
@@ -108,168 +108,196 @@ func (x *VirtualMachine) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VirtualMachine) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetFacts() map[string]string {
 	if x != nil {
-		return x.Facts
+		return x.xxx_hidden_Facts
 	}
 	return nil
 }
 
 func (x *VirtualMachine) GetVsockCid() int32 {
-	if x != nil && x.VsockCid != nil {
-		return *x.VsockCid
+	if x != nil {
+		return x.xxx_hidden_VsockCid
 	}
 	return 0
 }
 
 func (x *VirtualMachine) GetVsockCidSet() bool {
-	if x != nil && x.VsockCidSet != nil {
-		return *x.VsockCidSet
+	if x != nil {
+		return x.xxx_hidden_VsockCidSet
 	}
 	return false
 }
 
 func (x *VirtualMachine) GetState() VirtualMachine_State {
-	if x != nil && x.State != nil {
-		return *x.State
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			return x.xxx_hidden_State
+		}
 	}
 	return VirtualMachine_UNKNOWN
 }
 
 func (x *VirtualMachine) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
 }
 
 func (x *VirtualMachine) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
 }
 
 func (x *VirtualMachine) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
 }
 
 func (x *VirtualMachine) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
 }
 
 func (x *VirtualMachine) SetFacts(v map[string]string) {
-	x.Facts = v
+	x.xxx_hidden_Facts = v
 }
 
 func (x *VirtualMachine) SetVsockCid(v int32) {
-	x.VsockCid = &v
+	x.xxx_hidden_VsockCid = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
 }
 
 func (x *VirtualMachine) SetVsockCidSet(v bool) {
-	x.VsockCidSet = &v
+	x.xxx_hidden_VsockCidSet = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
 }
 
 func (x *VirtualMachine) SetState(v VirtualMachine_State) {
-	x.State = &v
+	x.xxx_hidden_State = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
 }
 
 func (x *VirtualMachine) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VirtualMachine) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VirtualMachine) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *VirtualMachine) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *VirtualMachine) HasVsockCid() bool {
 	if x == nil {
 		return false
 	}
-	return x.VsockCid != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *VirtualMachine) HasVsockCidSet() bool {
 	if x == nil {
 		return false
 	}
-	return x.VsockCidSet != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *VirtualMachine) HasState() bool {
 	if x == nil {
 		return false
 	}
-	return x.State != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *VirtualMachine) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *VirtualMachine) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *VirtualMachine) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *VirtualMachine) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *VirtualMachine) ClearVsockCid() {
-	x.VsockCid = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_VsockCid = 0
 }
 
 func (x *VirtualMachine) ClearVsockCidSet() {
-	x.VsockCidSet = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_VsockCidSet = false
 }
 
 func (x *VirtualMachine) ClearState() {
-	x.State = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_State = VirtualMachine_UNKNOWN
 }
 
 type VirtualMachine_builder struct {
@@ -289,14 +317,35 @@ func (b0 VirtualMachine_builder) Build() *VirtualMachine {
 	m0 := &VirtualMachine{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Namespace = b.Namespace
-	x.Name = b.Name
-	x.ClusterId = b.ClusterId
-	x.Facts = b.Facts
-	x.VsockCid = b.VsockCid
-	x.VsockCidSet = b.VsockCidSet
-	x.State = b.State
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	x.xxx_hidden_Facts = b.Facts
+	if b.VsockCid != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_VsockCid = *b.VsockCid
+	}
+	if b.VsockCidSet != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_VsockCidSet = *b.VsockCidSet
+	}
+	if b.State != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_State = *b.State
+	}
 	return m0
 }
 
@@ -322,7 +371,7 @@ const file_internalapi_virtualmachine_v1_virtual_machine_proto_rawDesc = "" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTOPPED\x10\x01\x12\v\n" +
-	"\aRUNNING\x10\x02B,Z\"./internalapi/virtualmachine/v1;v1\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\aRUNNING\x10\x02B,Z\"./internalapi/virtualmachine/v1;v1\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_virtualmachine_v1_virtual_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_internalapi_virtualmachine_v1_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 2)

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v2/compliance_rule_service.proto
 
-//go:build !protoopaque
-
 package v2
 
 import (
@@ -25,11 +23,13 @@ const (
 )
 
 type RuleRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	RuleName      *string                `protobuf:"bytes,1,opt,name=rule_name,json=ruleName" json:"rule_name,omitempty"`
-	Query         *RawQuery              `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RuleName    *string                `protobuf:"bytes,1,opt,name=rule_name,json=ruleName"`
+	xxx_hidden_Query       *RawQuery              `protobuf:"bytes,2,opt,name=query"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *RuleRequest) Reset() {
@@ -58,47 +58,52 @@ func (x *RuleRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *RuleRequest) GetRuleName() string {
-	if x != nil && x.RuleName != nil {
-		return *x.RuleName
+	if x != nil {
+		if x.xxx_hidden_RuleName != nil {
+			return *x.xxx_hidden_RuleName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *RuleRequest) GetQuery() *RawQuery {
 	if x != nil {
-		return x.Query
+		return x.xxx_hidden_Query
 	}
 	return nil
 }
 
 func (x *RuleRequest) SetRuleName(v string) {
-	x.RuleName = &v
+	x.xxx_hidden_RuleName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *RuleRequest) SetQuery(v *RawQuery) {
-	x.Query = v
+	x.xxx_hidden_Query = v
 }
 
 func (x *RuleRequest) HasRuleName() bool {
 	if x == nil {
 		return false
 	}
-	return x.RuleName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *RuleRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return x.xxx_hidden_Query != nil
 }
 
 func (x *RuleRequest) ClearRuleName() {
-	x.RuleName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_RuleName = nil
 }
 
 func (x *RuleRequest) ClearQuery() {
-	x.Query = nil
+	x.xxx_hidden_Query = nil
 }
 
 type RuleRequest_builder struct {
@@ -112,8 +117,11 @@ func (b0 RuleRequest_builder) Build() *RuleRequest {
 	m0 := &RuleRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RuleName = b.RuleName
-	x.Query = b.Query
+	if b.RuleName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_RuleName = b.RuleName
+	}
+	x.xxx_hidden_Query = b.Query
 	return m0
 }
 
@@ -127,7 +135,7 @@ const file_api_v2_compliance_rule_service_proto_rawDesc = "" +
 	"\x05query\x18\x02 \x01(\v2\f.v2.RawQueryR\x05query2\x82\x01\n" +
 	"\x15ComplianceRuleService\x12i\n" +
 	"\x11GetComplianceRule\x12\x0f.v2.RuleRequest\x1a\x12.v2.ComplianceRule\"/\x82\xd3\xe4\x93\x02)\x12'/v2/compliance/rule/summary/{rule_name}B/\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v2_compliance_rule_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v2_compliance_rule_service_proto_goTypes = []any{

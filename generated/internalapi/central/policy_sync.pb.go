@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/policy_sync.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -25,10 +23,10 @@ const (
 )
 
 type PolicySync struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Policies      []*storage.Policy      `protobuf:"bytes,1,rep,name=policies" json:"policies,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Policies *[]*storage.Policy     `protobuf:"bytes,1,rep,name=policies"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *PolicySync) Reset() {
@@ -58,13 +56,15 @@ func (x *PolicySync) ProtoReflect() protoreflect.Message {
 
 func (x *PolicySync) GetPolicies() []*storage.Policy {
 	if x != nil {
-		return x.Policies
+		if x.xxx_hidden_Policies != nil {
+			return *x.xxx_hidden_Policies
+		}
 	}
 	return nil
 }
 
 func (x *PolicySync) SetPolicies(v []*storage.Policy) {
-	x.Policies = v
+	x.xxx_hidden_Policies = &v
 }
 
 type PolicySync_builder struct {
@@ -77,7 +77,7 @@ func (b0 PolicySync_builder) Build() *PolicySync {
 	m0 := &PolicySync{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Policies = b.Policies
+	x.xxx_hidden_Policies = &b.Policies
 	return m0
 }
 
@@ -88,7 +88,7 @@ const file_internalapi_central_policy_sync_proto_rawDesc = "" +
 	"%internalapi/central/policy_sync.proto\x12\acentral\x1a\x14storage/policy.proto\x1a!google/protobuf/go_features.proto\"9\n" +
 	"\n" +
 	"PolicySync\x12+\n" +
-	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpoliciesB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpoliciesB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_policy_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_central_policy_sync_proto_goTypes = []any{

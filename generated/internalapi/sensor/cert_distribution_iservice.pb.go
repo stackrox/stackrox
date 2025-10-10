@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/cert_distribution_iservice.proto
 
-//go:build !protoopaque
-
 package sensor
 
 import (
@@ -25,11 +23,13 @@ const (
 )
 
 type FetchCertificateRequest struct {
-	state               protoimpl.MessageState `protogen:"hybrid.v1"`
-	ServiceType         *storage.ServiceType   `protobuf:"varint,1,opt,name=service_type,json=serviceType,enum=storage.ServiceType" json:"service_type,omitempty"`
-	ServiceAccountToken *string                `protobuf:"bytes,2,opt,name=service_account_token,json=serviceAccountToken" json:"service_account_token,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ServiceType         storage.ServiceType    `protobuf:"varint,1,opt,name=service_type,json=serviceType,enum=storage.ServiceType"`
+	xxx_hidden_ServiceAccountToken *string                `protobuf:"bytes,2,opt,name=service_account_token,json=serviceAccountToken"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *FetchCertificateRequest) Reset() {
@@ -58,47 +58,56 @@ func (x *FetchCertificateRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *FetchCertificateRequest) GetServiceType() storage.ServiceType {
-	if x != nil && x.ServiceType != nil {
-		return *x.ServiceType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_ServiceType
+		}
 	}
 	return storage.ServiceType(0)
 }
 
 func (x *FetchCertificateRequest) GetServiceAccountToken() string {
-	if x != nil && x.ServiceAccountToken != nil {
-		return *x.ServiceAccountToken
+	if x != nil {
+		if x.xxx_hidden_ServiceAccountToken != nil {
+			return *x.xxx_hidden_ServiceAccountToken
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FetchCertificateRequest) SetServiceType(v storage.ServiceType) {
-	x.ServiceType = &v
+	x.xxx_hidden_ServiceType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *FetchCertificateRequest) SetServiceAccountToken(v string) {
-	x.ServiceAccountToken = &v
+	x.xxx_hidden_ServiceAccountToken = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *FetchCertificateRequest) HasServiceType() bool {
 	if x == nil {
 		return false
 	}
-	return x.ServiceType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *FetchCertificateRequest) HasServiceAccountToken() bool {
 	if x == nil {
 		return false
 	}
-	return x.ServiceAccountToken != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *FetchCertificateRequest) ClearServiceType() {
-	x.ServiceType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ServiceType = storage.ServiceType_UNKNOWN_SERVICE
 }
 
 func (x *FetchCertificateRequest) ClearServiceAccountToken() {
-	x.ServiceAccountToken = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ServiceAccountToken = nil
 }
 
 type FetchCertificateRequest_builder struct {
@@ -112,17 +121,25 @@ func (b0 FetchCertificateRequest_builder) Build() *FetchCertificateRequest {
 	m0 := &FetchCertificateRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ServiceType = b.ServiceType
-	x.ServiceAccountToken = b.ServiceAccountToken
+	if b.ServiceType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ServiceType = *b.ServiceType
+	}
+	if b.ServiceAccountToken != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_ServiceAccountToken = b.ServiceAccountToken
+	}
 	return m0
 }
 
 type FetchCertificateResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	PemCert       *string                `protobuf:"bytes,1,opt,name=pem_cert,json=pemCert" json:"pem_cert,omitempty"`
-	PemKey        *string                `protobuf:"bytes,2,opt,name=pem_key,json=pemKey" json:"pem_key,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PemCert     *string                `protobuf:"bytes,1,opt,name=pem_cert,json=pemCert"`
+	xxx_hidden_PemKey      *string                `protobuf:"bytes,2,opt,name=pem_key,json=pemKey"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *FetchCertificateResponse) Reset() {
@@ -151,47 +168,57 @@ func (x *FetchCertificateResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *FetchCertificateResponse) GetPemCert() string {
-	if x != nil && x.PemCert != nil {
-		return *x.PemCert
+	if x != nil {
+		if x.xxx_hidden_PemCert != nil {
+			return *x.xxx_hidden_PemCert
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FetchCertificateResponse) GetPemKey() string {
-	if x != nil && x.PemKey != nil {
-		return *x.PemKey
+	if x != nil {
+		if x.xxx_hidden_PemKey != nil {
+			return *x.xxx_hidden_PemKey
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FetchCertificateResponse) SetPemCert(v string) {
-	x.PemCert = &v
+	x.xxx_hidden_PemCert = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *FetchCertificateResponse) SetPemKey(v string) {
-	x.PemKey = &v
+	x.xxx_hidden_PemKey = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *FetchCertificateResponse) HasPemCert() bool {
 	if x == nil {
 		return false
 	}
-	return x.PemCert != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *FetchCertificateResponse) HasPemKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.PemKey != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *FetchCertificateResponse) ClearPemCert() {
-	x.PemCert = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_PemCert = nil
 }
 
 func (x *FetchCertificateResponse) ClearPemKey() {
-	x.PemKey = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_PemKey = nil
 }
 
 type FetchCertificateResponse_builder struct {
@@ -205,8 +232,14 @@ func (b0 FetchCertificateResponse_builder) Build() *FetchCertificateResponse {
 	m0 := &FetchCertificateResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PemCert = b.PemCert
-	x.PemKey = b.PemKey
+	if b.PemCert != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_PemCert = b.PemCert
+	}
+	if b.PemKey != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_PemKey = b.PemKey
+	}
 	return m0
 }
 
@@ -222,7 +255,7 @@ const file_internalapi_sensor_cert_distribution_iservice_proto_rawDesc = "" +
 	"\bpem_cert\x18\x01 \x01(\tR\apemCert\x12\x17\n" +
 	"\apem_key\x18\x02 \x01(\tR\x06pemKey2p\n" +
 	"\x17CertDistributionService\x12U\n" +
-	"\x10FetchCertificate\x12\x1f.sensor.FetchCertificateRequest\x1a .sensor.FetchCertificateResponseB%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x10FetchCertificate\x12\x1f.sensor.FetchCertificateRequest\x1a .sensor.FetchCertificateResponseB%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_cert_distribution_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_sensor_cert_distribution_iservice_proto_goTypes = []any{

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/rbac_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -28,10 +26,10 @@ const (
 // A list of k8s roles (free of scoped information)
 // Next Tag: 2
 type ListRolesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Roles         []*storage.K8SRole     `protobuf:"bytes,1,rep,name=roles" json:"roles,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Roles *[]*storage.K8SRole    `protobuf:"bytes,1,rep,name=roles"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ListRolesResponse) Reset() {
@@ -61,13 +59,15 @@ func (x *ListRolesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListRolesResponse) GetRoles() []*storage.K8SRole {
 	if x != nil {
-		return x.Roles
+		if x.xxx_hidden_Roles != nil {
+			return *x.xxx_hidden_Roles
+		}
 	}
 	return nil
 }
 
 func (x *ListRolesResponse) SetRoles(v []*storage.K8SRole) {
-	x.Roles = v
+	x.xxx_hidden_Roles = &v
 }
 
 type ListRolesResponse_builder struct {
@@ -80,15 +80,15 @@ func (b0 ListRolesResponse_builder) Build() *ListRolesResponse {
 	m0 := &ListRolesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Roles = b.Roles
+	x.xxx_hidden_Roles = &b.Roles
 	return m0
 }
 
 type GetRoleResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Role          *storage.K8SRole       `protobuf:"bytes,1,opt,name=role" json:"role,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Role *storage.K8SRole       `protobuf:"bytes,1,opt,name=role"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetRoleResponse) Reset() {
@@ -118,24 +118,24 @@ func (x *GetRoleResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRoleResponse) GetRole() *storage.K8SRole {
 	if x != nil {
-		return x.Role
+		return x.xxx_hidden_Role
 	}
 	return nil
 }
 
 func (x *GetRoleResponse) SetRole(v *storage.K8SRole) {
-	x.Role = v
+	x.xxx_hidden_Role = v
 }
 
 func (x *GetRoleResponse) HasRole() bool {
 	if x == nil {
 		return false
 	}
-	return x.Role != nil
+	return x.xxx_hidden_Role != nil
 }
 
 func (x *GetRoleResponse) ClearRole() {
-	x.Role = nil
+	x.xxx_hidden_Role = nil
 }
 
 type GetRoleResponse_builder struct {
@@ -148,17 +148,17 @@ func (b0 GetRoleResponse_builder) Build() *GetRoleResponse {
 	m0 := &GetRoleResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Role = b.Role
+	x.xxx_hidden_Role = b.Role
 	return m0
 }
 
 // A list of k8s role bindings (free of scoped information)
 // Next Tag: 2
 type ListRoleBindingsResponse struct {
-	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
-	Bindings      []*storage.K8SRoleBinding `protobuf:"bytes,1,rep,name=bindings" json:"bindings,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Bindings *[]*storage.K8SRoleBinding `protobuf:"bytes,1,rep,name=bindings"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ListRoleBindingsResponse) Reset() {
@@ -188,13 +188,15 @@ func (x *ListRoleBindingsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListRoleBindingsResponse) GetBindings() []*storage.K8SRoleBinding {
 	if x != nil {
-		return x.Bindings
+		if x.xxx_hidden_Bindings != nil {
+			return *x.xxx_hidden_Bindings
+		}
 	}
 	return nil
 }
 
 func (x *ListRoleBindingsResponse) SetBindings(v []*storage.K8SRoleBinding) {
-	x.Bindings = v
+	x.xxx_hidden_Bindings = &v
 }
 
 type ListRoleBindingsResponse_builder struct {
@@ -207,15 +209,15 @@ func (b0 ListRoleBindingsResponse_builder) Build() *ListRoleBindingsResponse {
 	m0 := &ListRoleBindingsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Bindings = b.Bindings
+	x.xxx_hidden_Bindings = &b.Bindings
 	return m0
 }
 
 type GetRoleBindingResponse struct {
-	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
-	Binding       *storage.K8SRoleBinding `protobuf:"bytes,1,opt,name=binding" json:"binding,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Binding *storage.K8SRoleBinding `protobuf:"bytes,1,opt,name=binding"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetRoleBindingResponse) Reset() {
@@ -245,24 +247,24 @@ func (x *GetRoleBindingResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRoleBindingResponse) GetBinding() *storage.K8SRoleBinding {
 	if x != nil {
-		return x.Binding
+		return x.xxx_hidden_Binding
 	}
 	return nil
 }
 
 func (x *GetRoleBindingResponse) SetBinding(v *storage.K8SRoleBinding) {
-	x.Binding = v
+	x.xxx_hidden_Binding = v
 }
 
 func (x *GetRoleBindingResponse) HasBinding() bool {
 	if x == nil {
 		return false
 	}
-	return x.Binding != nil
+	return x.xxx_hidden_Binding != nil
 }
 
 func (x *GetRoleBindingResponse) ClearBinding() {
-	x.Binding = nil
+	x.xxx_hidden_Binding = nil
 }
 
 type GetRoleBindingResponse_builder struct {
@@ -275,17 +277,17 @@ func (b0 GetRoleBindingResponse_builder) Build() *GetRoleBindingResponse {
 	m0 := &GetRoleBindingResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Binding = b.Binding
+	x.xxx_hidden_Binding = b.Binding
 	return m0
 }
 
 // A list of k8s subjects (users and groups only, for service accounts, try the service account service)
 // Next Tag: 2
 type ListSubjectsResponse struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	SubjectAndRoles []*SubjectAndRoles     `protobuf:"bytes,1,rep,name=subject_and_roles,json=subjectAndRoles" json:"subject_and_roles,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SubjectAndRoles *[]*SubjectAndRoles    `protobuf:"bytes,1,rep,name=subject_and_roles,json=subjectAndRoles"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *ListSubjectsResponse) Reset() {
@@ -315,13 +317,15 @@ func (x *ListSubjectsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListSubjectsResponse) GetSubjectAndRoles() []*SubjectAndRoles {
 	if x != nil {
-		return x.SubjectAndRoles
+		if x.xxx_hidden_SubjectAndRoles != nil {
+			return *x.xxx_hidden_SubjectAndRoles
+		}
 	}
 	return nil
 }
 
 func (x *ListSubjectsResponse) SetSubjectAndRoles(v []*SubjectAndRoles) {
-	x.SubjectAndRoles = v
+	x.xxx_hidden_SubjectAndRoles = &v
 }
 
 type ListSubjectsResponse_builder struct {
@@ -334,16 +338,16 @@ func (b0 ListSubjectsResponse_builder) Build() *ListSubjectsResponse {
 	m0 := &ListSubjectsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.SubjectAndRoles = b.SubjectAndRoles
+	x.xxx_hidden_SubjectAndRoles = &b.SubjectAndRoles
 	return m0
 }
 
 type SubjectAndRoles struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Subject       *storage.Subject       `protobuf:"bytes,1,opt,name=subject" json:"subject,omitempty"`
-	Roles         []*storage.K8SRole     `protobuf:"bytes,2,rep,name=roles" json:"roles,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Subject *storage.Subject       `protobuf:"bytes,1,opt,name=subject"`
+	xxx_hidden_Roles   *[]*storage.K8SRole    `protobuf:"bytes,2,rep,name=roles"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *SubjectAndRoles) Reset() {
@@ -373,35 +377,37 @@ func (x *SubjectAndRoles) ProtoReflect() protoreflect.Message {
 
 func (x *SubjectAndRoles) GetSubject() *storage.Subject {
 	if x != nil {
-		return x.Subject
+		return x.xxx_hidden_Subject
 	}
 	return nil
 }
 
 func (x *SubjectAndRoles) GetRoles() []*storage.K8SRole {
 	if x != nil {
-		return x.Roles
+		if x.xxx_hidden_Roles != nil {
+			return *x.xxx_hidden_Roles
+		}
 	}
 	return nil
 }
 
 func (x *SubjectAndRoles) SetSubject(v *storage.Subject) {
-	x.Subject = v
+	x.xxx_hidden_Subject = v
 }
 
 func (x *SubjectAndRoles) SetRoles(v []*storage.K8SRole) {
-	x.Roles = v
+	x.xxx_hidden_Roles = &v
 }
 
 func (x *SubjectAndRoles) HasSubject() bool {
 	if x == nil {
 		return false
 	}
-	return x.Subject != nil
+	return x.xxx_hidden_Subject != nil
 }
 
 func (x *SubjectAndRoles) ClearSubject() {
-	x.Subject = nil
+	x.xxx_hidden_Subject = nil
 }
 
 type SubjectAndRoles_builder struct {
@@ -415,18 +421,18 @@ func (b0 SubjectAndRoles_builder) Build() *SubjectAndRoles {
 	m0 := &SubjectAndRoles{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Subject = b.Subject
-	x.Roles = b.Roles
+	x.xxx_hidden_Subject = b.Subject
+	x.xxx_hidden_Roles = &b.Roles
 	return m0
 }
 
 type GetSubjectResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Subject       *storage.Subject       `protobuf:"bytes,1,opt,name=subject" json:"subject,omitempty"`
-	ClusterRoles  []*storage.K8SRole     `protobuf:"bytes,2,rep,name=cluster_roles,json=clusterRoles" json:"cluster_roles,omitempty"`
-	ScopedRoles   []*ScopedRoles         `protobuf:"bytes,3,rep,name=scoped_roles,json=scopedRoles" json:"scoped_roles,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Subject      *storage.Subject       `protobuf:"bytes,1,opt,name=subject"`
+	xxx_hidden_ClusterRoles *[]*storage.K8SRole    `protobuf:"bytes,2,rep,name=cluster_roles,json=clusterRoles"`
+	xxx_hidden_ScopedRoles  *[]*ScopedRoles        `protobuf:"bytes,3,rep,name=scoped_roles,json=scopedRoles"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetSubjectResponse) Reset() {
@@ -456,46 +462,50 @@ func (x *GetSubjectResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetSubjectResponse) GetSubject() *storage.Subject {
 	if x != nil {
-		return x.Subject
+		return x.xxx_hidden_Subject
 	}
 	return nil
 }
 
 func (x *GetSubjectResponse) GetClusterRoles() []*storage.K8SRole {
 	if x != nil {
-		return x.ClusterRoles
+		if x.xxx_hidden_ClusterRoles != nil {
+			return *x.xxx_hidden_ClusterRoles
+		}
 	}
 	return nil
 }
 
 func (x *GetSubjectResponse) GetScopedRoles() []*ScopedRoles {
 	if x != nil {
-		return x.ScopedRoles
+		if x.xxx_hidden_ScopedRoles != nil {
+			return *x.xxx_hidden_ScopedRoles
+		}
 	}
 	return nil
 }
 
 func (x *GetSubjectResponse) SetSubject(v *storage.Subject) {
-	x.Subject = v
+	x.xxx_hidden_Subject = v
 }
 
 func (x *GetSubjectResponse) SetClusterRoles(v []*storage.K8SRole) {
-	x.ClusterRoles = v
+	x.xxx_hidden_ClusterRoles = &v
 }
 
 func (x *GetSubjectResponse) SetScopedRoles(v []*ScopedRoles) {
-	x.ScopedRoles = v
+	x.xxx_hidden_ScopedRoles = &v
 }
 
 func (x *GetSubjectResponse) HasSubject() bool {
 	if x == nil {
 		return false
 	}
-	return x.Subject != nil
+	return x.xxx_hidden_Subject != nil
 }
 
 func (x *GetSubjectResponse) ClearSubject() {
-	x.Subject = nil
+	x.xxx_hidden_Subject = nil
 }
 
 type GetSubjectResponse_builder struct {
@@ -510,18 +520,20 @@ func (b0 GetSubjectResponse_builder) Build() *GetSubjectResponse {
 	m0 := &GetSubjectResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Subject = b.Subject
-	x.ClusterRoles = b.ClusterRoles
-	x.ScopedRoles = b.ScopedRoles
+	x.xxx_hidden_Subject = b.Subject
+	x.xxx_hidden_ClusterRoles = &b.ClusterRoles
+	x.xxx_hidden_ScopedRoles = &b.ScopedRoles
 	return m0
 }
 
 type ScopedRoles struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Namespace     *string                `protobuf:"bytes,1,opt,name=namespace" json:"namespace,omitempty"`
-	Roles         []*storage.K8SRole     `protobuf:"bytes,2,rep,name=roles" json:"roles,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Namespace   *string                `protobuf:"bytes,1,opt,name=namespace"`
+	xxx_hidden_Roles       *[]*storage.K8SRole    `protobuf:"bytes,2,rep,name=roles"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ScopedRoles) Reset() {
@@ -550,36 +562,43 @@ func (x *ScopedRoles) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ScopedRoles) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ScopedRoles) GetRoles() []*storage.K8SRole {
 	if x != nil {
-		return x.Roles
+		if x.xxx_hidden_Roles != nil {
+			return *x.xxx_hidden_Roles
+		}
 	}
 	return nil
 }
 
 func (x *ScopedRoles) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ScopedRoles) SetRoles(v []*storage.K8SRole) {
-	x.Roles = v
+	x.xxx_hidden_Roles = &v
 }
 
 func (x *ScopedRoles) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ScopedRoles) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Namespace = nil
 }
 
 type ScopedRoles_builder struct {
@@ -593,8 +612,11 @@ func (b0 ScopedRoles_builder) Build() *ScopedRoles {
 	m0 := &ScopedRoles{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Namespace = b.Namespace
-	x.Roles = b.Roles
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	x.xxx_hidden_Roles = &b.Roles
 	return m0
 }
 
@@ -631,7 +653,7 @@ const file_api_v1_rbac_service_proto_rawDesc = "" +
 	"\n" +
 	"GetSubject\x12\x10.v1.ResourceByID\x1a\x16.v1.GetSubjectResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/rbac/subject/{id}\x12Q\n" +
 	"\fListSubjects\x12\f.v1.RawQuery\x1a\x18.v1.ListSubjectsResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/rbac/subjectsB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_rbac_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_api_v1_rbac_service_proto_goTypes = []any{

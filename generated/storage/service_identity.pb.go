@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/service_identity.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -115,17 +113,16 @@ func (x ServiceType) Number() protoreflect.EnumNumber {
 }
 
 type ServiceIdentity struct {
-	state     protoimpl.MessageState `protogen:"hybrid.v1"`
-	SerialStr *string                `protobuf:"bytes,4,opt,name=serial_str,json=serialStr" json:"serial_str,omitempty" sql:"pk"` // The serial number in decimal representation. @gotags: sql:"pk"
-	// Types that are valid to be assigned to Srl:
-	//
-	//	*ServiceIdentity_Serial
-	Srl           isServiceIdentity_Srl `protobuf_oneof:"srl"`
-	Id            *string               `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"`
-	Type          *ServiceType          `protobuf:"varint,3,opt,name=type,enum=storage.ServiceType" json:"type,omitempty"`
-	InitBundleId  *string               `protobuf:"bytes,5,opt,name=init_bundle_id,json=initBundleId" json:"init_bundle_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SerialStr    *string                `protobuf:"bytes,4,opt,name=serial_str,json=serialStr"`
+	xxx_hidden_Srl          isServiceIdentity_Srl  `protobuf_oneof:"srl"`
+	xxx_hidden_Id           *string                `protobuf:"bytes,2,opt,name=id"`
+	xxx_hidden_Type         ServiceType            `protobuf:"varint,3,opt,name=type,enum=storage.ServiceType"`
+	xxx_hidden_InitBundleId *string                `protobuf:"bytes,5,opt,name=init_bundle_id,json=initBundleId"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ServiceIdentity) Reset() {
@@ -154,23 +151,19 @@ func (x *ServiceIdentity) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ServiceIdentity) GetSerialStr() string {
-	if x != nil && x.SerialStr != nil {
-		return *x.SerialStr
+	if x != nil {
+		if x.xxx_hidden_SerialStr != nil {
+			return *x.xxx_hidden_SerialStr
+		}
+		return ""
 	}
 	return ""
-}
-
-func (x *ServiceIdentity) GetSrl() isServiceIdentity_Srl {
-	if x != nil {
-		return x.Srl
-	}
-	return nil
 }
 
 // Deprecated: Marked as deprecated in storage/service_identity.proto.
 func (x *ServiceIdentity) GetSerial() int64 {
 	if x != nil {
-		if x, ok := x.Srl.(*ServiceIdentity_Serial); ok {
+		if x, ok := x.xxx_hidden_Srl.(*serviceIdentity_Serial); ok {
 			return x.Serial
 		}
 	}
@@ -178,59 +171,71 @@ func (x *ServiceIdentity) GetSerial() int64 {
 }
 
 func (x *ServiceIdentity) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ServiceIdentity) GetType() ServiceType {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return ServiceType_UNKNOWN_SERVICE
 }
 
 func (x *ServiceIdentity) GetInitBundleId() string {
-	if x != nil && x.InitBundleId != nil {
-		return *x.InitBundleId
+	if x != nil {
+		if x.xxx_hidden_InitBundleId != nil {
+			return *x.xxx_hidden_InitBundleId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ServiceIdentity) SetSerialStr(v string) {
-	x.SerialStr = &v
+	x.xxx_hidden_SerialStr = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 // Deprecated: Marked as deprecated in storage/service_identity.proto.
 func (x *ServiceIdentity) SetSerial(v int64) {
-	x.Srl = &ServiceIdentity_Serial{v}
+	x.xxx_hidden_Srl = &serviceIdentity_Serial{v}
 }
 
 func (x *ServiceIdentity) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *ServiceIdentity) SetType(v ServiceType) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *ServiceIdentity) SetInitBundleId(v string) {
-	x.InitBundleId = &v
+	x.xxx_hidden_InitBundleId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *ServiceIdentity) HasSerialStr() bool {
 	if x == nil {
 		return false
 	}
-	return x.SerialStr != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ServiceIdentity) HasSrl() bool {
 	if x == nil {
 		return false
 	}
-	return x.Srl != nil
+	return x.xxx_hidden_Srl != nil
 }
 
 // Deprecated: Marked as deprecated in storage/service_identity.proto.
@@ -238,7 +243,7 @@ func (x *ServiceIdentity) HasSerial() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Srl.(*ServiceIdentity_Serial)
+	_, ok := x.xxx_hidden_Srl.(*serviceIdentity_Serial)
 	return ok
 }
 
@@ -246,48 +251,52 @@ func (x *ServiceIdentity) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ServiceIdentity) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ServiceIdentity) HasInitBundleId() bool {
 	if x == nil {
 		return false
 	}
-	return x.InitBundleId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ServiceIdentity) ClearSerialStr() {
-	x.SerialStr = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_SerialStr = nil
 }
 
 func (x *ServiceIdentity) ClearSrl() {
-	x.Srl = nil
+	x.xxx_hidden_Srl = nil
 }
 
 // Deprecated: Marked as deprecated in storage/service_identity.proto.
 func (x *ServiceIdentity) ClearSerial() {
-	if _, ok := x.Srl.(*ServiceIdentity_Serial); ok {
-		x.Srl = nil
+	if _, ok := x.xxx_hidden_Srl.(*serviceIdentity_Serial); ok {
+		x.xxx_hidden_Srl = nil
 	}
 }
 
 func (x *ServiceIdentity) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ServiceIdentity) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Type = ServiceType_UNKNOWN_SERVICE
 }
 
 func (x *ServiceIdentity) ClearInitBundleId() {
-	x.InitBundleId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_InitBundleId = nil
 }
 
 const ServiceIdentity_Srl_not_set_case case_ServiceIdentity_Srl = 0
@@ -297,8 +306,8 @@ func (x *ServiceIdentity) WhichSrl() case_ServiceIdentity_Srl {
 	if x == nil {
 		return ServiceIdentity_Srl_not_set_case
 	}
-	switch x.Srl.(type) {
-	case *ServiceIdentity_Serial:
+	switch x.xxx_hidden_Srl.(type) {
+	case *serviceIdentity_Serial:
 		return ServiceIdentity_Serial_case
 	default:
 		return ServiceIdentity_Srl_not_set_case
@@ -309,10 +318,10 @@ type ServiceIdentity_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	SerialStr *string
-	// Fields of oneof Srl:
+	// Fields of oneof xxx_hidden_Srl:
 	// Deprecated: Marked as deprecated in storage/service_identity.proto.
 	Serial *int64
-	// -- end of Srl
+	// -- end of xxx_hidden_Srl
 	Id           *string
 	Type         *ServiceType
 	InitBundleId *string
@@ -322,13 +331,25 @@ func (b0 ServiceIdentity_builder) Build() *ServiceIdentity {
 	m0 := &ServiceIdentity{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.SerialStr = b.SerialStr
-	if b.Serial != nil {
-		x.Srl = &ServiceIdentity_Serial{*b.Serial}
+	if b.SerialStr != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_SerialStr = b.SerialStr
 	}
-	x.Id = b.Id
-	x.Type = b.Type
-	x.InitBundleId = b.InitBundleId
+	if b.Serial != nil {
+		x.xxx_hidden_Srl = &serviceIdentity_Serial{*b.Serial}
+	}
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_Type = *b.Type
+	}
+	if b.InitBundleId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_InitBundleId = b.InitBundleId
+	}
 	return m0
 }
 
@@ -346,19 +367,21 @@ type isServiceIdentity_Srl interface {
 	isServiceIdentity_Srl()
 }
 
-type ServiceIdentity_Serial struct {
+type serviceIdentity_Serial struct {
 	// Deprecated: Marked as deprecated in storage/service_identity.proto.
 	Serial int64 `protobuf:"varint,1,opt,name=serial,oneof"`
 }
 
-func (*ServiceIdentity_Serial) isServiceIdentity_Srl() {}
+func (*serviceIdentity_Serial) isServiceIdentity_Srl() {}
 
 type ServiceCertificate struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	CertPem       []byte                 `protobuf:"bytes,1,opt,name=cert_pem,json=certPem" json:"cert_pem,omitempty"`
-	KeyPem        []byte                 `protobuf:"bytes,2,opt,name=key_pem,json=keyPem" json:"key_pem,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CertPem     []byte                 `protobuf:"bytes,1,opt,name=cert_pem,json=certPem"`
+	xxx_hidden_KeyPem      []byte                 `protobuf:"bytes,2,opt,name=key_pem,json=keyPem"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ServiceCertificate) Reset() {
@@ -388,14 +411,14 @@ func (x *ServiceCertificate) ProtoReflect() protoreflect.Message {
 
 func (x *ServiceCertificate) GetCertPem() []byte {
 	if x != nil {
-		return x.CertPem
+		return x.xxx_hidden_CertPem
 	}
 	return nil
 }
 
 func (x *ServiceCertificate) GetKeyPem() []byte {
 	if x != nil {
-		return x.KeyPem
+		return x.xxx_hidden_KeyPem
 	}
 	return nil
 }
@@ -404,36 +427,40 @@ func (x *ServiceCertificate) SetCertPem(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.CertPem = v
+	x.xxx_hidden_CertPem = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ServiceCertificate) SetKeyPem(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.KeyPem = v
+	x.xxx_hidden_KeyPem = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ServiceCertificate) HasCertPem() bool {
 	if x == nil {
 		return false
 	}
-	return x.CertPem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ServiceCertificate) HasKeyPem() bool {
 	if x == nil {
 		return false
 	}
-	return x.KeyPem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ServiceCertificate) ClearCertPem() {
-	x.CertPem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_CertPem = nil
 }
 
 func (x *ServiceCertificate) ClearKeyPem() {
-	x.KeyPem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_KeyPem = nil
 }
 
 type ServiceCertificate_builder struct {
@@ -447,17 +474,25 @@ func (b0 ServiceCertificate_builder) Build() *ServiceCertificate {
 	m0 := &ServiceCertificate{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CertPem = b.CertPem
-	x.KeyPem = b.KeyPem
+	if b.CertPem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_CertPem = b.CertPem
+	}
+	if b.KeyPem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_KeyPem = b.KeyPem
+	}
 	return m0
 }
 
 type TypedServiceCertificate struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ServiceType   *ServiceType           `protobuf:"varint,1,opt,name=service_type,json=serviceType,enum=storage.ServiceType" json:"service_type,omitempty"`
-	Cert          *ServiceCertificate    `protobuf:"bytes,2,opt,name=cert" json:"cert,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ServiceType ServiceType            `protobuf:"varint,1,opt,name=service_type,json=serviceType,enum=storage.ServiceType"`
+	xxx_hidden_Cert        *ServiceCertificate    `protobuf:"bytes,2,opt,name=cert"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TypedServiceCertificate) Reset() {
@@ -486,47 +521,51 @@ func (x *TypedServiceCertificate) ProtoReflect() protoreflect.Message {
 }
 
 func (x *TypedServiceCertificate) GetServiceType() ServiceType {
-	if x != nil && x.ServiceType != nil {
-		return *x.ServiceType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_ServiceType
+		}
 	}
 	return ServiceType_UNKNOWN_SERVICE
 }
 
 func (x *TypedServiceCertificate) GetCert() *ServiceCertificate {
 	if x != nil {
-		return x.Cert
+		return x.xxx_hidden_Cert
 	}
 	return nil
 }
 
 func (x *TypedServiceCertificate) SetServiceType(v ServiceType) {
-	x.ServiceType = &v
+	x.xxx_hidden_ServiceType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *TypedServiceCertificate) SetCert(v *ServiceCertificate) {
-	x.Cert = v
+	x.xxx_hidden_Cert = v
 }
 
 func (x *TypedServiceCertificate) HasServiceType() bool {
 	if x == nil {
 		return false
 	}
-	return x.ServiceType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *TypedServiceCertificate) HasCert() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cert != nil
+	return x.xxx_hidden_Cert != nil
 }
 
 func (x *TypedServiceCertificate) ClearServiceType() {
-	x.ServiceType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ServiceType = ServiceType_UNKNOWN_SERVICE
 }
 
 func (x *TypedServiceCertificate) ClearCert() {
-	x.Cert = nil
+	x.xxx_hidden_Cert = nil
 }
 
 type TypedServiceCertificate_builder struct {
@@ -540,19 +579,23 @@ func (b0 TypedServiceCertificate_builder) Build() *TypedServiceCertificate {
 	m0 := &TypedServiceCertificate{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ServiceType = b.ServiceType
-	x.Cert = b.Cert
+	if b.ServiceType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ServiceType = *b.ServiceType
+	}
+	x.xxx_hidden_Cert = b.Cert
 	return m0
 }
 
 type TypedServiceCertificateSet struct {
-	state        protoimpl.MessageState     `protogen:"hybrid.v1"`
-	CaPem        []byte                     `protobuf:"bytes,1,opt,name=ca_pem,json=caPem" json:"ca_pem,omitempty"`
-	ServiceCerts []*TypedServiceCertificate `protobuf:"bytes,2,rep,name=service_certs,json=serviceCerts" json:"service_certs,omitempty"`
-	// Optional: all CA certificates that Central trusts (primary + secondary)
-	CaBundlePem   []byte `protobuf:"bytes,3,opt,name=ca_bundle_pem,json=caBundlePem" json:"ca_bundle_pem,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_CaPem        []byte                      `protobuf:"bytes,1,opt,name=ca_pem,json=caPem"`
+	xxx_hidden_ServiceCerts *[]*TypedServiceCertificate `protobuf:"bytes,2,rep,name=service_certs,json=serviceCerts"`
+	xxx_hidden_CaBundlePem  []byte                      `protobuf:"bytes,3,opt,name=ca_bundle_pem,json=caBundlePem"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *TypedServiceCertificateSet) Reset() {
@@ -582,21 +625,23 @@ func (x *TypedServiceCertificateSet) ProtoReflect() protoreflect.Message {
 
 func (x *TypedServiceCertificateSet) GetCaPem() []byte {
 	if x != nil {
-		return x.CaPem
+		return x.xxx_hidden_CaPem
 	}
 	return nil
 }
 
 func (x *TypedServiceCertificateSet) GetServiceCerts() []*TypedServiceCertificate {
 	if x != nil {
-		return x.ServiceCerts
+		if x.xxx_hidden_ServiceCerts != nil {
+			return *x.xxx_hidden_ServiceCerts
+		}
 	}
 	return nil
 }
 
 func (x *TypedServiceCertificateSet) GetCaBundlePem() []byte {
 	if x != nil {
-		return x.CaBundlePem
+		return x.xxx_hidden_CaBundlePem
 	}
 	return nil
 }
@@ -605,40 +650,44 @@ func (x *TypedServiceCertificateSet) SetCaPem(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.CaPem = v
+	x.xxx_hidden_CaPem = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *TypedServiceCertificateSet) SetServiceCerts(v []*TypedServiceCertificate) {
-	x.ServiceCerts = v
+	x.xxx_hidden_ServiceCerts = &v
 }
 
 func (x *TypedServiceCertificateSet) SetCaBundlePem(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.CaBundlePem = v
+	x.xxx_hidden_CaBundlePem = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *TypedServiceCertificateSet) HasCaPem() bool {
 	if x == nil {
 		return false
 	}
-	return x.CaPem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *TypedServiceCertificateSet) HasCaBundlePem() bool {
 	if x == nil {
 		return false
 	}
-	return x.CaBundlePem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *TypedServiceCertificateSet) ClearCaPem() {
-	x.CaPem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_CaPem = nil
 }
 
 func (x *TypedServiceCertificateSet) ClearCaBundlePem() {
-	x.CaBundlePem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_CaBundlePem = nil
 }
 
 type TypedServiceCertificateSet_builder struct {
@@ -654,9 +703,15 @@ func (b0 TypedServiceCertificateSet_builder) Build() *TypedServiceCertificateSet
 	m0 := &TypedServiceCertificateSet{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CaPem = b.CaPem
-	x.ServiceCerts = b.ServiceCerts
-	x.CaBundlePem = b.CaBundlePem
+	if b.CaPem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_CaPem = b.CaPem
+	}
+	x.xxx_hidden_ServiceCerts = &b.ServiceCerts
+	if b.CaBundlePem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_CaBundlePem = b.CaBundlePem
+	}
 	return m0
 }
 
@@ -703,7 +758,7 @@ const file_storage_service_identity_proto_rawDesc = "" +
 	"\x15SCANNER_V4_DB_SERVICE\x10\x0f\x12\x16\n" +
 	"\x12SCANNER_V4_SERVICE\x10\x10\x12\x16\n" +
 	"\x12REGISTRANT_SERVICE\x10\x11B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_service_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_service_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
@@ -732,7 +787,7 @@ func file_storage_service_identity_proto_init() {
 		return
 	}
 	file_storage_service_identity_proto_msgTypes[0].OneofWrappers = []any{
-		(*ServiceIdentity_Serial)(nil),
+		(*serviceIdentity_Serial)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

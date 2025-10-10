@@ -8,8 +8,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/scanner/v4/indexer_service.proto
 
-//go:build !protoopaque
-
 package v4
 
 import (
@@ -29,13 +27,15 @@ const (
 
 // Provide information to retrieve container images and their layers.
 type ContainerImageLocator struct {
-	state                 protoimpl.MessageState `protogen:"hybrid.v1"`
-	Url                   *string                `protobuf:"bytes,1,opt,name=url" json:"url,omitempty"`
-	Username              *string                `protobuf:"bytes,2,opt,name=username" json:"username,omitempty"`
-	Password              *string                `protobuf:"bytes,3,opt,name=password" json:"password,omitempty"`
-	InsecureSkipTlsVerify *bool                  `protobuf:"varint,4,opt,name=insecure_skip_tls_verify,json=insecureSkipTlsVerify" json:"insecure_skip_tls_verify,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Url                   *string                `protobuf:"bytes,1,opt,name=url"`
+	xxx_hidden_Username              *string                `protobuf:"bytes,2,opt,name=username"`
+	xxx_hidden_Password              *string                `protobuf:"bytes,3,opt,name=password"`
+	xxx_hidden_InsecureSkipTlsVerify bool                   `protobuf:"varint,4,opt,name=insecure_skip_tls_verify,json=insecureSkipTlsVerify"`
+	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
+	XXX_presence                     [1]uint32
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *ContainerImageLocator) Reset() {
@@ -64,91 +64,108 @@ func (x *ContainerImageLocator) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ContainerImageLocator) GetUrl() string {
-	if x != nil && x.Url != nil {
-		return *x.Url
+	if x != nil {
+		if x.xxx_hidden_Url != nil {
+			return *x.xxx_hidden_Url
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ContainerImageLocator) GetUsername() string {
-	if x != nil && x.Username != nil {
-		return *x.Username
+	if x != nil {
+		if x.xxx_hidden_Username != nil {
+			return *x.xxx_hidden_Username
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ContainerImageLocator) GetPassword() string {
-	if x != nil && x.Password != nil {
-		return *x.Password
+	if x != nil {
+		if x.xxx_hidden_Password != nil {
+			return *x.xxx_hidden_Password
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ContainerImageLocator) GetInsecureSkipTlsVerify() bool {
-	if x != nil && x.InsecureSkipTlsVerify != nil {
-		return *x.InsecureSkipTlsVerify
+	if x != nil {
+		return x.xxx_hidden_InsecureSkipTlsVerify
 	}
 	return false
 }
 
 func (x *ContainerImageLocator) SetUrl(v string) {
-	x.Url = &v
+	x.xxx_hidden_Url = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *ContainerImageLocator) SetUsername(v string) {
-	x.Username = &v
+	x.xxx_hidden_Username = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *ContainerImageLocator) SetPassword(v string) {
-	x.Password = &v
+	x.xxx_hidden_Password = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *ContainerImageLocator) SetInsecureSkipTlsVerify(v bool) {
-	x.InsecureSkipTlsVerify = &v
+	x.xxx_hidden_InsecureSkipTlsVerify = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *ContainerImageLocator) HasUrl() bool {
 	if x == nil {
 		return false
 	}
-	return x.Url != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ContainerImageLocator) HasUsername() bool {
 	if x == nil {
 		return false
 	}
-	return x.Username != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ContainerImageLocator) HasPassword() bool {
 	if x == nil {
 		return false
 	}
-	return x.Password != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ContainerImageLocator) HasInsecureSkipTlsVerify() bool {
 	if x == nil {
 		return false
 	}
-	return x.InsecureSkipTlsVerify != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ContainerImageLocator) ClearUrl() {
-	x.Url = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Url = nil
 }
 
 func (x *ContainerImageLocator) ClearUsername() {
-	x.Username = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Username = nil
 }
 
 func (x *ContainerImageLocator) ClearPassword() {
-	x.Password = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Password = nil
 }
 
 func (x *ContainerImageLocator) ClearInsecureSkipTlsVerify() {
-	x.InsecureSkipTlsVerify = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_InsecureSkipTlsVerify = false
 }
 
 type ContainerImageLocator_builder struct {
@@ -164,22 +181,33 @@ func (b0 ContainerImageLocator_builder) Build() *ContainerImageLocator {
 	m0 := &ContainerImageLocator{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Url = b.Url
-	x.Username = b.Username
-	x.Password = b.Password
-	x.InsecureSkipTlsVerify = b.InsecureSkipTlsVerify
+	if b.Url != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Url = b.Url
+	}
+	if b.Username != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Username = b.Username
+	}
+	if b.Password != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Password = b.Password
+	}
+	if b.InsecureSkipTlsVerify != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_InsecureSkipTlsVerify = *b.InsecureSkipTlsVerify
+	}
 	return m0
 }
 
 type CreateIndexReportRequest struct {
-	state  protoimpl.MessageState `protogen:"hybrid.v1"`
-	HashId *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId" json:"hash_id,omitempty"`
-	// Types that are valid to be assigned to ResourceLocator:
-	//
-	//	*CreateIndexReportRequest_ContainerImage
-	ResourceLocator isCreateIndexReportRequest_ResourceLocator `protobuf_oneof:"resource_locator"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState                     `protogen:"opaque.v1"`
+	xxx_hidden_HashId          *string                                    `protobuf:"bytes,1,opt,name=hash_id,json=hashId"`
+	xxx_hidden_ResourceLocator isCreateIndexReportRequest_ResourceLocator `protobuf_oneof:"resource_locator"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *CreateIndexReportRequest) Reset() {
@@ -208,22 +236,18 @@ func (x *CreateIndexReportRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CreateIndexReportRequest) GetHashId() string {
-	if x != nil && x.HashId != nil {
-		return *x.HashId
+	if x != nil {
+		if x.xxx_hidden_HashId != nil {
+			return *x.xxx_hidden_HashId
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *CreateIndexReportRequest) GetResourceLocator() isCreateIndexReportRequest_ResourceLocator {
-	if x != nil {
-		return x.ResourceLocator
-	}
-	return nil
-}
-
 func (x *CreateIndexReportRequest) GetContainerImage() *ContainerImageLocator {
 	if x != nil {
-		if x, ok := x.ResourceLocator.(*CreateIndexReportRequest_ContainerImage); ok {
+		if x, ok := x.xxx_hidden_ResourceLocator.(*createIndexReportRequest_ContainerImage); ok {
 			return x.ContainerImage
 		}
 	}
@@ -231,50 +255,52 @@ func (x *CreateIndexReportRequest) GetContainerImage() *ContainerImageLocator {
 }
 
 func (x *CreateIndexReportRequest) SetHashId(v string) {
-	x.HashId = &v
+	x.xxx_hidden_HashId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *CreateIndexReportRequest) SetContainerImage(v *ContainerImageLocator) {
 	if v == nil {
-		x.ResourceLocator = nil
+		x.xxx_hidden_ResourceLocator = nil
 		return
 	}
-	x.ResourceLocator = &CreateIndexReportRequest_ContainerImage{v}
+	x.xxx_hidden_ResourceLocator = &createIndexReportRequest_ContainerImage{v}
 }
 
 func (x *CreateIndexReportRequest) HasHashId() bool {
 	if x == nil {
 		return false
 	}
-	return x.HashId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CreateIndexReportRequest) HasResourceLocator() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResourceLocator != nil
+	return x.xxx_hidden_ResourceLocator != nil
 }
 
 func (x *CreateIndexReportRequest) HasContainerImage() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.ResourceLocator.(*CreateIndexReportRequest_ContainerImage)
+	_, ok := x.xxx_hidden_ResourceLocator.(*createIndexReportRequest_ContainerImage)
 	return ok
 }
 
 func (x *CreateIndexReportRequest) ClearHashId() {
-	x.HashId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HashId = nil
 }
 
 func (x *CreateIndexReportRequest) ClearResourceLocator() {
-	x.ResourceLocator = nil
+	x.xxx_hidden_ResourceLocator = nil
 }
 
 func (x *CreateIndexReportRequest) ClearContainerImage() {
-	if _, ok := x.ResourceLocator.(*CreateIndexReportRequest_ContainerImage); ok {
-		x.ResourceLocator = nil
+	if _, ok := x.xxx_hidden_ResourceLocator.(*createIndexReportRequest_ContainerImage); ok {
+		x.xxx_hidden_ResourceLocator = nil
 	}
 }
 
@@ -285,8 +311,8 @@ func (x *CreateIndexReportRequest) WhichResourceLocator() case_CreateIndexReport
 	if x == nil {
 		return CreateIndexReportRequest_ResourceLocator_not_set_case
 	}
-	switch x.ResourceLocator.(type) {
-	case *CreateIndexReportRequest_ContainerImage:
+	switch x.xxx_hidden_ResourceLocator.(type) {
+	case *createIndexReportRequest_ContainerImage:
 		return CreateIndexReportRequest_ContainerImage_case
 	default:
 		return CreateIndexReportRequest_ResourceLocator_not_set_case
@@ -297,18 +323,21 @@ type CreateIndexReportRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	HashId *string
-	// Fields of oneof ResourceLocator:
+	// Fields of oneof xxx_hidden_ResourceLocator:
 	ContainerImage *ContainerImageLocator
-	// -- end of ResourceLocator
+	// -- end of xxx_hidden_ResourceLocator
 }
 
 func (b0 CreateIndexReportRequest_builder) Build() *CreateIndexReportRequest {
 	m0 := &CreateIndexReportRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HashId = b.HashId
+	if b.HashId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_HashId = b.HashId
+	}
 	if b.ContainerImage != nil {
-		x.ResourceLocator = &CreateIndexReportRequest_ContainerImage{b.ContainerImage}
+		x.xxx_hidden_ResourceLocator = &createIndexReportRequest_ContainerImage{b.ContainerImage}
 	}
 	return m0
 }
@@ -327,18 +356,20 @@ type isCreateIndexReportRequest_ResourceLocator interface {
 	isCreateIndexReportRequest_ResourceLocator()
 }
 
-type CreateIndexReportRequest_ContainerImage struct {
+type createIndexReportRequest_ContainerImage struct {
 	ContainerImage *ContainerImageLocator `protobuf:"bytes,2,opt,name=container_image,json=containerImage,oneof"`
 }
 
-func (*CreateIndexReportRequest_ContainerImage) isCreateIndexReportRequest_ResourceLocator() {}
+func (*createIndexReportRequest_ContainerImage) isCreateIndexReportRequest_ResourceLocator() {}
 
 type GetIndexReportRequest struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	HashId          *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId" json:"hash_id,omitempty"`
-	IncludeExternal *bool                  `protobuf:"varint,2,opt,name=includeExternal" json:"includeExternal,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_HashId          *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId"`
+	xxx_hidden_IncludeExternal bool                   `protobuf:"varint,2,opt,name=includeExternal"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetIndexReportRequest) Reset() {
@@ -367,47 +398,54 @@ func (x *GetIndexReportRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GetIndexReportRequest) GetHashId() string {
-	if x != nil && x.HashId != nil {
-		return *x.HashId
+	if x != nil {
+		if x.xxx_hidden_HashId != nil {
+			return *x.xxx_hidden_HashId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetIndexReportRequest) GetIncludeExternal() bool {
-	if x != nil && x.IncludeExternal != nil {
-		return *x.IncludeExternal
+	if x != nil {
+		return x.xxx_hidden_IncludeExternal
 	}
 	return false
 }
 
 func (x *GetIndexReportRequest) SetHashId(v string) {
-	x.HashId = &v
+	x.xxx_hidden_HashId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetIndexReportRequest) SetIncludeExternal(v bool) {
-	x.IncludeExternal = &v
+	x.xxx_hidden_IncludeExternal = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetIndexReportRequest) HasHashId() bool {
 	if x == nil {
 		return false
 	}
-	return x.HashId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetIndexReportRequest) HasIncludeExternal() bool {
 	if x == nil {
 		return false
 	}
-	return x.IncludeExternal != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetIndexReportRequest) ClearHashId() {
-	x.HashId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HashId = nil
 }
 
 func (x *GetIndexReportRequest) ClearIncludeExternal() {
-	x.IncludeExternal = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_IncludeExternal = false
 }
 
 type GetIndexReportRequest_builder struct {
@@ -421,16 +459,24 @@ func (b0 GetIndexReportRequest_builder) Build() *GetIndexReportRequest {
 	m0 := &GetIndexReportRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HashId = b.HashId
-	x.IncludeExternal = b.IncludeExternal
+	if b.HashId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_HashId = b.HashId
+	}
+	if b.IncludeExternal != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_IncludeExternal = *b.IncludeExternal
+	}
 	return m0
 }
 
 type HasIndexReportRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	HashId        *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId" json:"hash_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_HashId      *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *HasIndexReportRequest) Reset() {
@@ -459,25 +505,30 @@ func (x *HasIndexReportRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *HasIndexReportRequest) GetHashId() string {
-	if x != nil && x.HashId != nil {
-		return *x.HashId
+	if x != nil {
+		if x.xxx_hidden_HashId != nil {
+			return *x.xxx_hidden_HashId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *HasIndexReportRequest) SetHashId(v string) {
-	x.HashId = &v
+	x.xxx_hidden_HashId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *HasIndexReportRequest) HasHashId() bool {
 	if x == nil {
 		return false
 	}
-	return x.HashId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *HasIndexReportRequest) ClearHashId() {
-	x.HashId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HashId = nil
 }
 
 type HasIndexReportRequest_builder struct {
@@ -490,15 +541,20 @@ func (b0 HasIndexReportRequest_builder) Build() *HasIndexReportRequest {
 	m0 := &HasIndexReportRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HashId = b.HashId
+	if b.HashId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_HashId = b.HashId
+	}
 	return m0
 }
 
 type HasIndexReportResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Exists        *bool                  `protobuf:"varint,1,opt,name=exists" json:"exists,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Exists      bool                   `protobuf:"varint,1,opt,name=exists"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *HasIndexReportResponse) Reset() {
@@ -527,25 +583,27 @@ func (x *HasIndexReportResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *HasIndexReportResponse) GetExists() bool {
-	if x != nil && x.Exists != nil {
-		return *x.Exists
+	if x != nil {
+		return x.xxx_hidden_Exists
 	}
 	return false
 }
 
 func (x *HasIndexReportResponse) SetExists(v bool) {
-	x.Exists = &v
+	x.xxx_hidden_Exists = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *HasIndexReportResponse) HasExists() bool {
 	if x == nil {
 		return false
 	}
-	return x.Exists != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *HasIndexReportResponse) ClearExists() {
-	x.Exists = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Exists = false
 }
 
 type HasIndexReportResponse_builder struct {
@@ -558,19 +616,21 @@ func (b0 HasIndexReportResponse_builder) Build() *HasIndexReportResponse {
 	m0 := &HasIndexReportResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Exists = b.Exists
+	if b.Exists != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Exists = *b.Exists
+	}
 	return m0
 }
 
 type GetOrCreateIndexReportRequest struct {
-	state  protoimpl.MessageState `protogen:"hybrid.v1"`
-	HashId *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId" json:"hash_id,omitempty"`
-	// Types that are valid to be assigned to ResourceLocator:
-	//
-	//	*GetOrCreateIndexReportRequest_ContainerImage
-	ResourceLocator isGetOrCreateIndexReportRequest_ResourceLocator `protobuf_oneof:"resource_locator"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState                          `protogen:"opaque.v1"`
+	xxx_hidden_HashId          *string                                         `protobuf:"bytes,1,opt,name=hash_id,json=hashId"`
+	xxx_hidden_ResourceLocator isGetOrCreateIndexReportRequest_ResourceLocator `protobuf_oneof:"resource_locator"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetOrCreateIndexReportRequest) Reset() {
@@ -599,22 +659,18 @@ func (x *GetOrCreateIndexReportRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GetOrCreateIndexReportRequest) GetHashId() string {
-	if x != nil && x.HashId != nil {
-		return *x.HashId
+	if x != nil {
+		if x.xxx_hidden_HashId != nil {
+			return *x.xxx_hidden_HashId
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *GetOrCreateIndexReportRequest) GetResourceLocator() isGetOrCreateIndexReportRequest_ResourceLocator {
-	if x != nil {
-		return x.ResourceLocator
-	}
-	return nil
-}
-
 func (x *GetOrCreateIndexReportRequest) GetContainerImage() *ContainerImageLocator {
 	if x != nil {
-		if x, ok := x.ResourceLocator.(*GetOrCreateIndexReportRequest_ContainerImage); ok {
+		if x, ok := x.xxx_hidden_ResourceLocator.(*getOrCreateIndexReportRequest_ContainerImage); ok {
 			return x.ContainerImage
 		}
 	}
@@ -622,50 +678,52 @@ func (x *GetOrCreateIndexReportRequest) GetContainerImage() *ContainerImageLocat
 }
 
 func (x *GetOrCreateIndexReportRequest) SetHashId(v string) {
-	x.HashId = &v
+	x.xxx_hidden_HashId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetOrCreateIndexReportRequest) SetContainerImage(v *ContainerImageLocator) {
 	if v == nil {
-		x.ResourceLocator = nil
+		x.xxx_hidden_ResourceLocator = nil
 		return
 	}
-	x.ResourceLocator = &GetOrCreateIndexReportRequest_ContainerImage{v}
+	x.xxx_hidden_ResourceLocator = &getOrCreateIndexReportRequest_ContainerImage{v}
 }
 
 func (x *GetOrCreateIndexReportRequest) HasHashId() bool {
 	if x == nil {
 		return false
 	}
-	return x.HashId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetOrCreateIndexReportRequest) HasResourceLocator() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResourceLocator != nil
+	return x.xxx_hidden_ResourceLocator != nil
 }
 
 func (x *GetOrCreateIndexReportRequest) HasContainerImage() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.ResourceLocator.(*GetOrCreateIndexReportRequest_ContainerImage)
+	_, ok := x.xxx_hidden_ResourceLocator.(*getOrCreateIndexReportRequest_ContainerImage)
 	return ok
 }
 
 func (x *GetOrCreateIndexReportRequest) ClearHashId() {
-	x.HashId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HashId = nil
 }
 
 func (x *GetOrCreateIndexReportRequest) ClearResourceLocator() {
-	x.ResourceLocator = nil
+	x.xxx_hidden_ResourceLocator = nil
 }
 
 func (x *GetOrCreateIndexReportRequest) ClearContainerImage() {
-	if _, ok := x.ResourceLocator.(*GetOrCreateIndexReportRequest_ContainerImage); ok {
-		x.ResourceLocator = nil
+	if _, ok := x.xxx_hidden_ResourceLocator.(*getOrCreateIndexReportRequest_ContainerImage); ok {
+		x.xxx_hidden_ResourceLocator = nil
 	}
 }
 
@@ -676,8 +734,8 @@ func (x *GetOrCreateIndexReportRequest) WhichResourceLocator() case_GetOrCreateI
 	if x == nil {
 		return GetOrCreateIndexReportRequest_ResourceLocator_not_set_case
 	}
-	switch x.ResourceLocator.(type) {
-	case *GetOrCreateIndexReportRequest_ContainerImage:
+	switch x.xxx_hidden_ResourceLocator.(type) {
+	case *getOrCreateIndexReportRequest_ContainerImage:
 		return GetOrCreateIndexReportRequest_ContainerImage_case
 	default:
 		return GetOrCreateIndexReportRequest_ResourceLocator_not_set_case
@@ -688,18 +746,21 @@ type GetOrCreateIndexReportRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	HashId *string
-	// Fields of oneof ResourceLocator:
+	// Fields of oneof xxx_hidden_ResourceLocator:
 	ContainerImage *ContainerImageLocator
-	// -- end of ResourceLocator
+	// -- end of xxx_hidden_ResourceLocator
 }
 
 func (b0 GetOrCreateIndexReportRequest_builder) Build() *GetOrCreateIndexReportRequest {
 	m0 := &GetOrCreateIndexReportRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HashId = b.HashId
+	if b.HashId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_HashId = b.HashId
+	}
 	if b.ContainerImage != nil {
-		x.ResourceLocator = &GetOrCreateIndexReportRequest_ContainerImage{b.ContainerImage}
+		x.xxx_hidden_ResourceLocator = &getOrCreateIndexReportRequest_ContainerImage{b.ContainerImage}
 	}
 	return m0
 }
@@ -718,20 +779,22 @@ type isGetOrCreateIndexReportRequest_ResourceLocator interface {
 	isGetOrCreateIndexReportRequest_ResourceLocator()
 }
 
-type GetOrCreateIndexReportRequest_ContainerImage struct {
+type getOrCreateIndexReportRequest_ContainerImage struct {
 	ContainerImage *ContainerImageLocator `protobuf:"bytes,2,opt,name=container_image,json=containerImage,oneof"`
 }
 
-func (*GetOrCreateIndexReportRequest_ContainerImage) isGetOrCreateIndexReportRequest_ResourceLocator() {
+func (*getOrCreateIndexReportRequest_ContainerImage) isGetOrCreateIndexReportRequest_ResourceLocator() {
 }
 
 type StoreIndexReportRequest struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	HashId         *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId" json:"hash_id,omitempty"`
-	IndexerVersion *string                `protobuf:"bytes,2,opt,name=indexer_version,json=indexerVersion" json:"indexer_version,omitempty"`
-	Contents       *Contents              `protobuf:"bytes,3,opt,name=contents" json:"contents,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_HashId         *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId"`
+	xxx_hidden_IndexerVersion *string                `protobuf:"bytes,2,opt,name=indexer_version,json=indexerVersion"`
+	xxx_hidden_Contents       *Contents              `protobuf:"bytes,3,opt,name=contents"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *StoreIndexReportRequest) Reset() {
@@ -760,69 +823,79 @@ func (x *StoreIndexReportRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *StoreIndexReportRequest) GetHashId() string {
-	if x != nil && x.HashId != nil {
-		return *x.HashId
+	if x != nil {
+		if x.xxx_hidden_HashId != nil {
+			return *x.xxx_hidden_HashId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *StoreIndexReportRequest) GetIndexerVersion() string {
-	if x != nil && x.IndexerVersion != nil {
-		return *x.IndexerVersion
+	if x != nil {
+		if x.xxx_hidden_IndexerVersion != nil {
+			return *x.xxx_hidden_IndexerVersion
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *StoreIndexReportRequest) GetContents() *Contents {
 	if x != nil {
-		return x.Contents
+		return x.xxx_hidden_Contents
 	}
 	return nil
 }
 
 func (x *StoreIndexReportRequest) SetHashId(v string) {
-	x.HashId = &v
+	x.xxx_hidden_HashId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *StoreIndexReportRequest) SetIndexerVersion(v string) {
-	x.IndexerVersion = &v
+	x.xxx_hidden_IndexerVersion = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *StoreIndexReportRequest) SetContents(v *Contents) {
-	x.Contents = v
+	x.xxx_hidden_Contents = v
 }
 
 func (x *StoreIndexReportRequest) HasHashId() bool {
 	if x == nil {
 		return false
 	}
-	return x.HashId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *StoreIndexReportRequest) HasIndexerVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.IndexerVersion != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *StoreIndexReportRequest) HasContents() bool {
 	if x == nil {
 		return false
 	}
-	return x.Contents != nil
+	return x.xxx_hidden_Contents != nil
 }
 
 func (x *StoreIndexReportRequest) ClearHashId() {
-	x.HashId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HashId = nil
 }
 
 func (x *StoreIndexReportRequest) ClearIndexerVersion() {
-	x.IndexerVersion = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_IndexerVersion = nil
 }
 
 func (x *StoreIndexReportRequest) ClearContents() {
-	x.Contents = nil
+	x.xxx_hidden_Contents = nil
 }
 
 type StoreIndexReportRequest_builder struct {
@@ -837,17 +910,25 @@ func (b0 StoreIndexReportRequest_builder) Build() *StoreIndexReportRequest {
 	m0 := &StoreIndexReportRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HashId = b.HashId
-	x.IndexerVersion = b.IndexerVersion
-	x.Contents = b.Contents
+	if b.HashId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_HashId = b.HashId
+	}
+	if b.IndexerVersion != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_IndexerVersion = b.IndexerVersion
+	}
+	x.xxx_hidden_Contents = b.Contents
 	return m0
 }
 
 type StoreIndexReportResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Status        *string                `protobuf:"bytes,1,opt,name=status" json:"status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Status      *string                `protobuf:"bytes,1,opt,name=status"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *StoreIndexReportResponse) Reset() {
@@ -876,25 +957,30 @@ func (x *StoreIndexReportResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *StoreIndexReportResponse) GetStatus() string {
-	if x != nil && x.Status != nil {
-		return *x.Status
+	if x != nil {
+		if x.xxx_hidden_Status != nil {
+			return *x.xxx_hidden_Status
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *StoreIndexReportResponse) SetStatus(v string) {
-	x.Status = &v
+	x.xxx_hidden_Status = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *StoreIndexReportResponse) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.Status != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *StoreIndexReportResponse) ClearStatus() {
-	x.Status = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Status = nil
 }
 
 type StoreIndexReportResponse_builder struct {
@@ -907,7 +993,10 @@ func (b0 StoreIndexReportResponse_builder) Build() *StoreIndexReportResponse {
 	m0 := &StoreIndexReportResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Status = b.Status
+	if b.Status != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Status = b.Status
+	}
 	return m0
 }
 
@@ -948,7 +1037,7 @@ const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
 	"\x0eGetIndexReport\x12!.scanner.v4.GetIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12\\\n" +
 	"\x16GetOrCreateIndexReport\x12).scanner.v4.GetOrCreateIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12W\n" +
 	"\x0eHasIndexReport\x12!.scanner.v4.HasIndexReportRequest\x1a\".scanner.v4.HasIndexReportResponse\x12]\n" +
-	"\x10StoreIndexReport\x12#.scanner.v4.StoreIndexReportRequest\x1a$.scanner.v4.StoreIndexReportResponseB%Z\x1b./internalapi/scanner/v4;v4\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x10StoreIndexReport\x12#.scanner.v4.StoreIndexReportRequest\x1a$.scanner.v4.StoreIndexReportResponseB%Z\x1b./internalapi/scanner/v4;v4\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_scanner_v4_indexer_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_internalapi_scanner_v4_indexer_service_proto_goTypes = []any{
@@ -992,10 +1081,10 @@ func file_internalapi_scanner_v4_indexer_service_proto_init() {
 	file_internalapi_scanner_v4_common_proto_init()
 	file_internalapi_scanner_v4_index_report_proto_init()
 	file_internalapi_scanner_v4_indexer_service_proto_msgTypes[1].OneofWrappers = []any{
-		(*CreateIndexReportRequest_ContainerImage)(nil),
+		(*createIndexReportRequest_ContainerImage)(nil),
 	}
 	file_internalapi_scanner_v4_indexer_service_proto_msgTypes[5].OneofWrappers = []any{
-		(*GetOrCreateIndexReportRequest_ContainerImage)(nil),
+		(*getOrCreateIndexReportRequest_ContainerImage)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

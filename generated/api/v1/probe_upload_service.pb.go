@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/probe_upload_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -25,10 +23,10 @@ const (
 )
 
 type ProbeUploadManifest struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Files         []*ProbeUploadManifest_File `protobuf:"bytes,1,rep,name=files" json:"files,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_Files *[]*ProbeUploadManifest_File `protobuf:"bytes,1,rep,name=files"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ProbeUploadManifest) Reset() {
@@ -58,13 +56,15 @@ func (x *ProbeUploadManifest) ProtoReflect() protoreflect.Message {
 
 func (x *ProbeUploadManifest) GetFiles() []*ProbeUploadManifest_File {
 	if x != nil {
-		return x.Files
+		if x.xxx_hidden_Files != nil {
+			return *x.xxx_hidden_Files
+		}
 	}
 	return nil
 }
 
 func (x *ProbeUploadManifest) SetFiles(v []*ProbeUploadManifest_File) {
-	x.Files = v
+	x.xxx_hidden_Files = &v
 }
 
 type ProbeUploadManifest_builder struct {
@@ -77,15 +77,15 @@ func (b0 ProbeUploadManifest_builder) Build() *ProbeUploadManifest {
 	m0 := &ProbeUploadManifest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Files = b.Files
+	x.xxx_hidden_Files = &b.Files
 	return m0
 }
 
 type GetExistingProbesRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	FilesToCheck  []string               `protobuf:"bytes,1,rep,name=files_to_check,json=filesToCheck" json:"files_to_check,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_FilesToCheck []string               `protobuf:"bytes,1,rep,name=files_to_check,json=filesToCheck"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetExistingProbesRequest) Reset() {
@@ -115,13 +115,13 @@ func (x *GetExistingProbesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetExistingProbesRequest) GetFilesToCheck() []string {
 	if x != nil {
-		return x.FilesToCheck
+		return x.xxx_hidden_FilesToCheck
 	}
 	return nil
 }
 
 func (x *GetExistingProbesRequest) SetFilesToCheck(v []string) {
-	x.FilesToCheck = v
+	x.xxx_hidden_FilesToCheck = v
 }
 
 type GetExistingProbesRequest_builder struct {
@@ -134,15 +134,15 @@ func (b0 GetExistingProbesRequest_builder) Build() *GetExistingProbesRequest {
 	m0 := &GetExistingProbesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.FilesToCheck = b.FilesToCheck
+	x.xxx_hidden_FilesToCheck = b.FilesToCheck
 	return m0
 }
 
 type GetExistingProbesResponse struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	ExistingFiles []*ProbeUploadManifest_File `protobuf:"bytes,1,rep,name=existing_files,json=existingFiles" json:"existing_files,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_ExistingFiles *[]*ProbeUploadManifest_File `protobuf:"bytes,1,rep,name=existing_files,json=existingFiles"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *GetExistingProbesResponse) Reset() {
@@ -172,13 +172,15 @@ func (x *GetExistingProbesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetExistingProbesResponse) GetExistingFiles() []*ProbeUploadManifest_File {
 	if x != nil {
-		return x.ExistingFiles
+		if x.xxx_hidden_ExistingFiles != nil {
+			return *x.xxx_hidden_ExistingFiles
+		}
 	}
 	return nil
 }
 
 func (x *GetExistingProbesResponse) SetExistingFiles(v []*ProbeUploadManifest_File) {
-	x.ExistingFiles = v
+	x.xxx_hidden_ExistingFiles = &v
 }
 
 type GetExistingProbesResponse_builder struct {
@@ -191,17 +193,19 @@ func (b0 GetExistingProbesResponse_builder) Build() *GetExistingProbesResponse {
 	m0 := &GetExistingProbesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ExistingFiles = b.ExistingFiles
+	x.xxx_hidden_ExistingFiles = &b.ExistingFiles
 	return m0
 }
 
 type ProbeUploadManifest_File struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Size          *int64                 `protobuf:"varint,2,opt,name=size" json:"size,omitempty"`
-	Crc32         *uint32                `protobuf:"varint,3,opt,name=crc32" json:"crc32,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Size        int64                  `protobuf:"varint,2,opt,name=size"`
+	xxx_hidden_Crc32       uint32                 `protobuf:"varint,3,opt,name=crc32"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProbeUploadManifest_File) Reset() {
@@ -230,69 +234,78 @@ func (x *ProbeUploadManifest_File) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ProbeUploadManifest_File) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProbeUploadManifest_File) GetSize() int64 {
-	if x != nil && x.Size != nil {
-		return *x.Size
+	if x != nil {
+		return x.xxx_hidden_Size
 	}
 	return 0
 }
 
 func (x *ProbeUploadManifest_File) GetCrc32() uint32 {
-	if x != nil && x.Crc32 != nil {
-		return *x.Crc32
+	if x != nil {
+		return x.xxx_hidden_Crc32
 	}
 	return 0
 }
 
 func (x *ProbeUploadManifest_File) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *ProbeUploadManifest_File) SetSize(v int64) {
-	x.Size = &v
+	x.xxx_hidden_Size = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ProbeUploadManifest_File) SetCrc32(v uint32) {
-	x.Crc32 = &v
+	x.xxx_hidden_Crc32 = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ProbeUploadManifest_File) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ProbeUploadManifest_File) HasSize() bool {
 	if x == nil {
 		return false
 	}
-	return x.Size != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ProbeUploadManifest_File) HasCrc32() bool {
 	if x == nil {
 		return false
 	}
-	return x.Crc32 != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ProbeUploadManifest_File) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ProbeUploadManifest_File) ClearSize() {
-	x.Size = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Size = 0
 }
 
 func (x *ProbeUploadManifest_File) ClearCrc32() {
-	x.Crc32 = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Crc32 = 0
 }
 
 type ProbeUploadManifest_File_builder struct {
@@ -307,9 +320,18 @@ func (b0 ProbeUploadManifest_File_builder) Build() *ProbeUploadManifest_File {
 	m0 := &ProbeUploadManifest_File{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Size = b.Size
-	x.Crc32 = b.Crc32
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Size != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Size = *b.Size
+	}
+	if b.Crc32 != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Crc32 = *b.Crc32
+	}
 	return m0
 }
 
@@ -330,7 +352,7 @@ const file_api_v1_probe_upload_service_proto_rawDesc = "" +
 	"\x0eexisting_files\x18\x01 \x03(\v2\x1c.v1.ProbeUploadManifest.FileR\rexistingFiles2\x8b\x01\n" +
 	"\x12ProbeUploadService\x12u\n" +
 	"\x11GetExistingProbes\x12\x1c.v1.GetExistingProbesRequest\x1a\x1d.v1.GetExistingProbesResponse\"#\x82\xd3\xe4\x93\x02\x1d\"\x1b/v1/probeupload/getexistingB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x00b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x00b\beditionsp\xe8\a"
 
 var file_api_v1_probe_upload_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_api_v1_probe_upload_service_proto_goTypes = []any{

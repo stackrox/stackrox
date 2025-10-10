@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/declarative_config_health.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -125,17 +123,18 @@ func (x DeclarativeConfigHealth_ResourceType) Number() protoreflect.EnumNumber {
 }
 
 type DeclarativeConfigHealth struct {
-	state        protoimpl.MessageState                `protogen:"hybrid.v1"`
-	Id           *string                               `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	Name         *string                               `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Status       *DeclarativeConfigHealth_Status       `protobuf:"varint,4,opt,name=status,enum=storage.DeclarativeConfigHealth_Status" json:"status,omitempty"`
-	ErrorMessage *string                               `protobuf:"bytes,5,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
-	ResourceName *string                               `protobuf:"bytes,6,opt,name=resource_name,json=resourceName" json:"resource_name,omitempty"`
-	ResourceType *DeclarativeConfigHealth_ResourceType `protobuf:"varint,7,opt,name=resource_type,json=resourceType,enum=storage.DeclarativeConfigHealth_ResourceType" json:"resource_type,omitempty"`
-	// Timestamp when the current status was set.
-	LastTimestamp *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_timestamp,json=lastTimestamp" json:"last_timestamp,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState               `protogen:"opaque.v1"`
+	xxx_hidden_Id            *string                              `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name          *string                              `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Status        DeclarativeConfigHealth_Status       `protobuf:"varint,4,opt,name=status,enum=storage.DeclarativeConfigHealth_Status"`
+	xxx_hidden_ErrorMessage  *string                              `protobuf:"bytes,5,opt,name=error_message,json=errorMessage"`
+	xxx_hidden_ResourceName  *string                              `protobuf:"bytes,6,opt,name=resource_name,json=resourceName"`
+	xxx_hidden_ResourceType  DeclarativeConfigHealth_ResourceType `protobuf:"varint,7,opt,name=resource_type,json=resourceType,enum=storage.DeclarativeConfigHealth_ResourceType"`
+	xxx_hidden_LastTimestamp *timestamppb.Timestamp               `protobuf:"bytes,8,opt,name=last_timestamp,json=lastTimestamp"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *DeclarativeConfigHealth) Reset() {
@@ -164,157 +163,185 @@ func (x *DeclarativeConfigHealth) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DeclarativeConfigHealth) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DeclarativeConfigHealth) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DeclarativeConfigHealth) GetStatus() DeclarativeConfigHealth_Status {
-	if x != nil && x.Status != nil {
-		return *x.Status
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Status
+		}
 	}
 	return DeclarativeConfigHealth_UNHEALTHY
 }
 
 func (x *DeclarativeConfigHealth) GetErrorMessage() string {
-	if x != nil && x.ErrorMessage != nil {
-		return *x.ErrorMessage
+	if x != nil {
+		if x.xxx_hidden_ErrorMessage != nil {
+			return *x.xxx_hidden_ErrorMessage
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DeclarativeConfigHealth) GetResourceName() string {
-	if x != nil && x.ResourceName != nil {
-		return *x.ResourceName
+	if x != nil {
+		if x.xxx_hidden_ResourceName != nil {
+			return *x.xxx_hidden_ResourceName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DeclarativeConfigHealth) GetResourceType() DeclarativeConfigHealth_ResourceType {
-	if x != nil && x.ResourceType != nil {
-		return *x.ResourceType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			return x.xxx_hidden_ResourceType
+		}
 	}
 	return DeclarativeConfigHealth_CONFIG_MAP
 }
 
 func (x *DeclarativeConfigHealth) GetLastTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastTimestamp
+		return x.xxx_hidden_LastTimestamp
 	}
 	return nil
 }
 
 func (x *DeclarativeConfigHealth) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *DeclarativeConfigHealth) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *DeclarativeConfigHealth) SetStatus(v DeclarativeConfigHealth_Status) {
-	x.Status = &v
+	x.xxx_hidden_Status = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *DeclarativeConfigHealth) SetErrorMessage(v string) {
-	x.ErrorMessage = &v
+	x.xxx_hidden_ErrorMessage = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *DeclarativeConfigHealth) SetResourceName(v string) {
-	x.ResourceName = &v
+	x.xxx_hidden_ResourceName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *DeclarativeConfigHealth) SetResourceType(v DeclarativeConfigHealth_ResourceType) {
-	x.ResourceType = &v
+	x.xxx_hidden_ResourceType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 func (x *DeclarativeConfigHealth) SetLastTimestamp(v *timestamppb.Timestamp) {
-	x.LastTimestamp = v
+	x.xxx_hidden_LastTimestamp = v
 }
 
 func (x *DeclarativeConfigHealth) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DeclarativeConfigHealth) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DeclarativeConfigHealth) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.Status != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DeclarativeConfigHealth) HasErrorMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.ErrorMessage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *DeclarativeConfigHealth) HasResourceName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResourceName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *DeclarativeConfigHealth) HasResourceType() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResourceType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *DeclarativeConfigHealth) HasLastTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastTimestamp != nil
+	return x.xxx_hidden_LastTimestamp != nil
 }
 
 func (x *DeclarativeConfigHealth) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *DeclarativeConfigHealth) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *DeclarativeConfigHealth) ClearStatus() {
-	x.Status = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Status = DeclarativeConfigHealth_UNHEALTHY
 }
 
 func (x *DeclarativeConfigHealth) ClearErrorMessage() {
-	x.ErrorMessage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ErrorMessage = nil
 }
 
 func (x *DeclarativeConfigHealth) ClearResourceName() {
-	x.ResourceName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_ResourceName = nil
 }
 
 func (x *DeclarativeConfigHealth) ClearResourceType() {
-	x.ResourceType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_ResourceType = DeclarativeConfigHealth_CONFIG_MAP
 }
 
 func (x *DeclarativeConfigHealth) ClearLastTimestamp() {
-	x.LastTimestamp = nil
+	x.xxx_hidden_LastTimestamp = nil
 }
 
 type DeclarativeConfigHealth_builder struct {
@@ -334,13 +361,31 @@ func (b0 DeclarativeConfigHealth_builder) Build() *DeclarativeConfigHealth {
 	m0 := &DeclarativeConfigHealth{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Status = b.Status
-	x.ErrorMessage = b.ErrorMessage
-	x.ResourceName = b.ResourceName
-	x.ResourceType = b.ResourceType
-	x.LastTimestamp = b.LastTimestamp
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Status != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_Status = *b.Status
+	}
+	if b.ErrorMessage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_ErrorMessage = b.ErrorMessage
+	}
+	if b.ResourceName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_ResourceName = b.ResourceName
+	}
+	if b.ResourceType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_ResourceType = *b.ResourceType
+	}
+	x.xxx_hidden_LastTimestamp = b.LastTimestamp
 	return m0
 }
 
@@ -370,7 +415,7 @@ const file_storage_declarative_config_health_proto_rawDesc = "" +
 	"\x05GROUP\x10\x05\x12\f\n" +
 	"\bNOTIFIER\x10\x06\x12\"\n" +
 	"\x1eAUTH_MACHINE_TO_MACHINE_CONFIG\x10\aB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_declarative_config_health_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_declarative_config_health_proto_msgTypes = make([]protoimpl.MessageInfo, 1)

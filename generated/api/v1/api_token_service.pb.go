@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/api_token_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -27,14 +25,15 @@ const (
 )
 
 type GenerateTokenRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name  *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	// Deprecated: Marked as deprecated in api/v1/api_token_service.proto.
-	Role          *string                `protobuf:"bytes,2,opt,name=role" json:"role,omitempty"`
-	Roles         []string               `protobuf:"bytes,3,rep,name=roles" json:"roles,omitempty"`
-	Expiration    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expiration" json:"expiration,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Role        *string                `protobuf:"bytes,2,opt,name=role"`
+	xxx_hidden_Roles       []string               `protobuf:"bytes,3,rep,name=roles"`
+	xxx_hidden_Expiration  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expiration"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GenerateTokenRequest) Reset() {
@@ -63,56 +62,64 @@ func (x *GenerateTokenRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GenerateTokenRequest) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in api/v1/api_token_service.proto.
 func (x *GenerateTokenRequest) GetRole() string {
-	if x != nil && x.Role != nil {
-		return *x.Role
+	if x != nil {
+		if x.xxx_hidden_Role != nil {
+			return *x.xxx_hidden_Role
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GenerateTokenRequest) GetRoles() []string {
 	if x != nil {
-		return x.Roles
+		return x.xxx_hidden_Roles
 	}
 	return nil
 }
 
 func (x *GenerateTokenRequest) GetExpiration() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Expiration
+		return x.xxx_hidden_Expiration
 	}
 	return nil
 }
 
 func (x *GenerateTokenRequest) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 // Deprecated: Marked as deprecated in api/v1/api_token_service.proto.
 func (x *GenerateTokenRequest) SetRole(v string) {
-	x.Role = &v
+	x.xxx_hidden_Role = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *GenerateTokenRequest) SetRoles(v []string) {
-	x.Roles = v
+	x.xxx_hidden_Roles = v
 }
 
 func (x *GenerateTokenRequest) SetExpiration(v *timestamppb.Timestamp) {
-	x.Expiration = v
+	x.xxx_hidden_Expiration = v
 }
 
 func (x *GenerateTokenRequest) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 // Deprecated: Marked as deprecated in api/v1/api_token_service.proto.
@@ -120,27 +127,29 @@ func (x *GenerateTokenRequest) HasRole() bool {
 	if x == nil {
 		return false
 	}
-	return x.Role != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GenerateTokenRequest) HasExpiration() bool {
 	if x == nil {
 		return false
 	}
-	return x.Expiration != nil
+	return x.xxx_hidden_Expiration != nil
 }
 
 func (x *GenerateTokenRequest) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 // Deprecated: Marked as deprecated in api/v1/api_token_service.proto.
 func (x *GenerateTokenRequest) ClearRole() {
-	x.Role = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Role = nil
 }
 
 func (x *GenerateTokenRequest) ClearExpiration() {
-	x.Expiration = nil
+	x.xxx_hidden_Expiration = nil
 }
 
 type GenerateTokenRequest_builder struct {
@@ -157,19 +166,27 @@ func (b0 GenerateTokenRequest_builder) Build() *GenerateTokenRequest {
 	m0 := &GenerateTokenRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Role = b.Role
-	x.Roles = b.Roles
-	x.Expiration = b.Expiration
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Role != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Role = b.Role
+	}
+	x.xxx_hidden_Roles = b.Roles
+	x.xxx_hidden_Expiration = b.Expiration
 	return m0
 }
 
 type GenerateTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Token         *string                `protobuf:"bytes,1,opt,name=token" json:"token,omitempty"`
-	Metadata      *storage.TokenMetadata `protobuf:"bytes,2,opt,name=metadata" json:"metadata,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Token       *string                `protobuf:"bytes,1,opt,name=token"`
+	xxx_hidden_Metadata    *storage.TokenMetadata `protobuf:"bytes,2,opt,name=metadata"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GenerateTokenResponse) Reset() {
@@ -198,47 +215,52 @@ func (x *GenerateTokenResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GenerateTokenResponse) GetToken() string {
-	if x != nil && x.Token != nil {
-		return *x.Token
+	if x != nil {
+		if x.xxx_hidden_Token != nil {
+			return *x.xxx_hidden_Token
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GenerateTokenResponse) GetMetadata() *storage.TokenMetadata {
 	if x != nil {
-		return x.Metadata
+		return x.xxx_hidden_Metadata
 	}
 	return nil
 }
 
 func (x *GenerateTokenResponse) SetToken(v string) {
-	x.Token = &v
+	x.xxx_hidden_Token = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GenerateTokenResponse) SetMetadata(v *storage.TokenMetadata) {
-	x.Metadata = v
+	x.xxx_hidden_Metadata = v
 }
 
 func (x *GenerateTokenResponse) HasToken() bool {
 	if x == nil {
 		return false
 	}
-	return x.Token != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GenerateTokenResponse) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.Metadata != nil
+	return x.xxx_hidden_Metadata != nil
 }
 
 func (x *GenerateTokenResponse) ClearToken() {
-	x.Token = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Token = nil
 }
 
 func (x *GenerateTokenResponse) ClearMetadata() {
-	x.Metadata = nil
+	x.xxx_hidden_Metadata = nil
 }
 
 type GenerateTokenResponse_builder struct {
@@ -252,19 +274,19 @@ func (b0 GenerateTokenResponse_builder) Build() *GenerateTokenResponse {
 	m0 := &GenerateTokenResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Token = b.Token
-	x.Metadata = b.Metadata
+	if b.Token != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Token = b.Token
+	}
+	x.xxx_hidden_Metadata = b.Metadata
 	return m0
 }
 
 type GetAPITokensRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to RevokedOneof:
-	//
-	//	*GetAPITokensRequest_Revoked
-	RevokedOneof  isGetAPITokensRequest_RevokedOneof `protobuf_oneof:"revoked_oneof"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_RevokedOneof isGetAPITokensRequest_RevokedOneof `protobuf_oneof:"revoked_oneof"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetAPITokensRequest) Reset() {
@@ -292,16 +314,9 @@ func (x *GetAPITokensRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *GetAPITokensRequest) GetRevokedOneof() isGetAPITokensRequest_RevokedOneof {
-	if x != nil {
-		return x.RevokedOneof
-	}
-	return nil
-}
-
 func (x *GetAPITokensRequest) GetRevoked() bool {
 	if x != nil {
-		if x, ok := x.RevokedOneof.(*GetAPITokensRequest_Revoked); ok {
+		if x, ok := x.xxx_hidden_RevokedOneof.(*getAPITokensRequest_Revoked); ok {
 			return x.Revoked
 		}
 	}
@@ -309,31 +324,31 @@ func (x *GetAPITokensRequest) GetRevoked() bool {
 }
 
 func (x *GetAPITokensRequest) SetRevoked(v bool) {
-	x.RevokedOneof = &GetAPITokensRequest_Revoked{v}
+	x.xxx_hidden_RevokedOneof = &getAPITokensRequest_Revoked{v}
 }
 
 func (x *GetAPITokensRequest) HasRevokedOneof() bool {
 	if x == nil {
 		return false
 	}
-	return x.RevokedOneof != nil
+	return x.xxx_hidden_RevokedOneof != nil
 }
 
 func (x *GetAPITokensRequest) HasRevoked() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RevokedOneof.(*GetAPITokensRequest_Revoked)
+	_, ok := x.xxx_hidden_RevokedOneof.(*getAPITokensRequest_Revoked)
 	return ok
 }
 
 func (x *GetAPITokensRequest) ClearRevokedOneof() {
-	x.RevokedOneof = nil
+	x.xxx_hidden_RevokedOneof = nil
 }
 
 func (x *GetAPITokensRequest) ClearRevoked() {
-	if _, ok := x.RevokedOneof.(*GetAPITokensRequest_Revoked); ok {
-		x.RevokedOneof = nil
+	if _, ok := x.xxx_hidden_RevokedOneof.(*getAPITokensRequest_Revoked); ok {
+		x.xxx_hidden_RevokedOneof = nil
 	}
 }
 
@@ -344,8 +359,8 @@ func (x *GetAPITokensRequest) WhichRevokedOneof() case_GetAPITokensRequest_Revok
 	if x == nil {
 		return GetAPITokensRequest_RevokedOneof_not_set_case
 	}
-	switch x.RevokedOneof.(type) {
-	case *GetAPITokensRequest_Revoked:
+	switch x.xxx_hidden_RevokedOneof.(type) {
+	case *getAPITokensRequest_Revoked:
 		return GetAPITokensRequest_Revoked_case
 	default:
 		return GetAPITokensRequest_RevokedOneof_not_set_case
@@ -355,9 +370,9 @@ func (x *GetAPITokensRequest) WhichRevokedOneof() case_GetAPITokensRequest_Revok
 type GetAPITokensRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof RevokedOneof:
+	// Fields of oneof xxx_hidden_RevokedOneof:
 	Revoked *bool
-	// -- end of RevokedOneof
+	// -- end of xxx_hidden_RevokedOneof
 }
 
 func (b0 GetAPITokensRequest_builder) Build() *GetAPITokensRequest {
@@ -365,7 +380,7 @@ func (b0 GetAPITokensRequest_builder) Build() *GetAPITokensRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Revoked != nil {
-		x.RevokedOneof = &GetAPITokensRequest_Revoked{*b.Revoked}
+		x.xxx_hidden_RevokedOneof = &getAPITokensRequest_Revoked{*b.Revoked}
 	}
 	return m0
 }
@@ -384,17 +399,17 @@ type isGetAPITokensRequest_RevokedOneof interface {
 	isGetAPITokensRequest_RevokedOneof()
 }
 
-type GetAPITokensRequest_Revoked struct {
+type getAPITokensRequest_Revoked struct {
 	Revoked bool `protobuf:"varint,1,opt,name=revoked,oneof"`
 }
 
-func (*GetAPITokensRequest_Revoked) isGetAPITokensRequest_RevokedOneof() {}
+func (*getAPITokensRequest_Revoked) isGetAPITokensRequest_RevokedOneof() {}
 
 type GetAPITokensResponse struct {
-	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
-	Tokens        []*storage.TokenMetadata `protobuf:"bytes,1,rep,name=tokens" json:"tokens,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_Tokens *[]*storage.TokenMetadata `protobuf:"bytes,1,rep,name=tokens"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetAPITokensResponse) Reset() {
@@ -424,13 +439,15 @@ func (x *GetAPITokensResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAPITokensResponse) GetTokens() []*storage.TokenMetadata {
 	if x != nil {
-		return x.Tokens
+		if x.xxx_hidden_Tokens != nil {
+			return *x.xxx_hidden_Tokens
+		}
 	}
 	return nil
 }
 
 func (x *GetAPITokensResponse) SetTokens(v []*storage.TokenMetadata) {
-	x.Tokens = v
+	x.xxx_hidden_Tokens = &v
 }
 
 type GetAPITokensResponse_builder struct {
@@ -443,15 +460,15 @@ func (b0 GetAPITokensResponse_builder) Build() *GetAPITokensResponse {
 	m0 := &GetAPITokensResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Tokens = b.Tokens
+	x.xxx_hidden_Tokens = &b.Tokens
 	return m0
 }
 
 type ListAllowedTokenRolesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	RoleNames     []string               `protobuf:"bytes,1,rep,name=roleNames" json:"roleNames,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RoleNames []string               `protobuf:"bytes,1,rep,name=roleNames"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListAllowedTokenRolesResponse) Reset() {
@@ -481,13 +498,13 @@ func (x *ListAllowedTokenRolesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListAllowedTokenRolesResponse) GetRoleNames() []string {
 	if x != nil {
-		return x.RoleNames
+		return x.xxx_hidden_RoleNames
 	}
 	return nil
 }
 
 func (x *ListAllowedTokenRolesResponse) SetRoleNames(v []string) {
-	x.RoleNames = v
+	x.xxx_hidden_RoleNames = v
 }
 
 type ListAllowedTokenRolesResponse_builder struct {
@@ -500,7 +517,7 @@ func (b0 ListAllowedTokenRolesResponse_builder) Build() *ListAllowedTokenRolesRe
 	m0 := &ListAllowedTokenRolesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RoleNames = b.RoleNames
+	x.xxx_hidden_RoleNames = b.RoleNames
 	return m0
 }
 
@@ -532,7 +549,7 @@ const file_api_v1_api_token_service_proto_rawDesc = "" +
 	"\rGenerateToken\x12\x18.v1.GenerateTokenRequest\x1a\x19.v1.GenerateTokenResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/apitokens/generate\x12M\n" +
 	"\vRevokeToken\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"!\x82\xd3\xe4\x93\x02\x1b2\x19/v1/apitokens/revoke/{id}\x12s\n" +
 	"\x15ListAllowedTokenRoles\x12\t.v1.Empty\x1a!.v1.ListAllowedTokenRolesResponse\",\x82\xd3\xe4\x93\x02&\x12$/v1/apitokens/generate/allowed-rolesB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_api_token_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_v1_api_token_service_proto_goTypes = []any{
@@ -575,7 +592,7 @@ func file_api_v1_api_token_service_proto_init() {
 	file_api_v1_common_proto_init()
 	file_api_v1_empty_proto_init()
 	file_api_v1_api_token_service_proto_msgTypes[2].OneofWrappers = []any{
-		(*GetAPITokensRequest_Revoked)(nil),
+		(*getAPITokensRequest_Revoked)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

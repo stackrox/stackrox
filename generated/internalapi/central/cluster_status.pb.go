@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/cluster_status.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -25,10 +23,10 @@ const (
 )
 
 type DeploymentEnvironmentUpdate struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Environments  []string               `protobuf:"bytes,1,rep,name=environments" json:"environments,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Environments []string               `protobuf:"bytes,1,rep,name=environments"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *DeploymentEnvironmentUpdate) Reset() {
@@ -58,13 +56,13 @@ func (x *DeploymentEnvironmentUpdate) ProtoReflect() protoreflect.Message {
 
 func (x *DeploymentEnvironmentUpdate) GetEnvironments() []string {
 	if x != nil {
-		return x.Environments
+		return x.xxx_hidden_Environments
 	}
 	return nil
 }
 
 func (x *DeploymentEnvironmentUpdate) SetEnvironments(v []string) {
-	x.Environments = v
+	x.xxx_hidden_Environments = v
 }
 
 type DeploymentEnvironmentUpdate_builder struct {
@@ -77,21 +75,15 @@ func (b0 DeploymentEnvironmentUpdate_builder) Build() *DeploymentEnvironmentUpda
 	m0 := &DeploymentEnvironmentUpdate{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Environments = b.Environments
+	x.xxx_hidden_Environments = b.Environments
 	return m0
 }
 
 type ClusterStatusUpdate struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Making it a oneof for future proofing.
-	//
-	// Types that are valid to be assigned to Msg:
-	//
-	//	*ClusterStatusUpdate_Status
-	//	*ClusterStatusUpdate_DeploymentEnvUpdate
-	Msg           isClusterStatusUpdate_Msg `protobuf_oneof:"msg"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_Msg isClusterStatusUpdate_Msg `protobuf_oneof:"msg"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ClusterStatusUpdate) Reset() {
@@ -119,16 +111,9 @@ func (x *ClusterStatusUpdate) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *ClusterStatusUpdate) GetMsg() isClusterStatusUpdate_Msg {
-	if x != nil {
-		return x.Msg
-	}
-	return nil
-}
-
 func (x *ClusterStatusUpdate) GetStatus() *storage.ClusterStatus {
 	if x != nil {
-		if x, ok := x.Msg.(*ClusterStatusUpdate_Status); ok {
+		if x, ok := x.xxx_hidden_Msg.(*clusterStatusUpdate_Status); ok {
 			return x.Status
 		}
 	}
@@ -137,7 +122,7 @@ func (x *ClusterStatusUpdate) GetStatus() *storage.ClusterStatus {
 
 func (x *ClusterStatusUpdate) GetDeploymentEnvUpdate() *DeploymentEnvironmentUpdate {
 	if x != nil {
-		if x, ok := x.Msg.(*ClusterStatusUpdate_DeploymentEnvUpdate); ok {
+		if x, ok := x.xxx_hidden_Msg.(*clusterStatusUpdate_DeploymentEnvUpdate); ok {
 			return x.DeploymentEnvUpdate
 		}
 	}
@@ -146,32 +131,32 @@ func (x *ClusterStatusUpdate) GetDeploymentEnvUpdate() *DeploymentEnvironmentUpd
 
 func (x *ClusterStatusUpdate) SetStatus(v *storage.ClusterStatus) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &ClusterStatusUpdate_Status{v}
+	x.xxx_hidden_Msg = &clusterStatusUpdate_Status{v}
 }
 
 func (x *ClusterStatusUpdate) SetDeploymentEnvUpdate(v *DeploymentEnvironmentUpdate) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &ClusterStatusUpdate_DeploymentEnvUpdate{v}
+	x.xxx_hidden_Msg = &clusterStatusUpdate_DeploymentEnvUpdate{v}
 }
 
 func (x *ClusterStatusUpdate) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.Msg != nil
+	return x.xxx_hidden_Msg != nil
 }
 
 func (x *ClusterStatusUpdate) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*ClusterStatusUpdate_Status)
+	_, ok := x.xxx_hidden_Msg.(*clusterStatusUpdate_Status)
 	return ok
 }
 
@@ -179,23 +164,23 @@ func (x *ClusterStatusUpdate) HasDeploymentEnvUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*ClusterStatusUpdate_DeploymentEnvUpdate)
+	_, ok := x.xxx_hidden_Msg.(*clusterStatusUpdate_DeploymentEnvUpdate)
 	return ok
 }
 
 func (x *ClusterStatusUpdate) ClearMsg() {
-	x.Msg = nil
+	x.xxx_hidden_Msg = nil
 }
 
 func (x *ClusterStatusUpdate) ClearStatus() {
-	if _, ok := x.Msg.(*ClusterStatusUpdate_Status); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*clusterStatusUpdate_Status); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *ClusterStatusUpdate) ClearDeploymentEnvUpdate() {
-	if _, ok := x.Msg.(*ClusterStatusUpdate_DeploymentEnvUpdate); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*clusterStatusUpdate_DeploymentEnvUpdate); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
@@ -207,10 +192,10 @@ func (x *ClusterStatusUpdate) WhichMsg() case_ClusterStatusUpdate_Msg {
 	if x == nil {
 		return ClusterStatusUpdate_Msg_not_set_case
 	}
-	switch x.Msg.(type) {
-	case *ClusterStatusUpdate_Status:
+	switch x.xxx_hidden_Msg.(type) {
+	case *clusterStatusUpdate_Status:
 		return ClusterStatusUpdate_Status_case
-	case *ClusterStatusUpdate_DeploymentEnvUpdate:
+	case *clusterStatusUpdate_DeploymentEnvUpdate:
 		return ClusterStatusUpdate_DeploymentEnvUpdate_case
 	default:
 		return ClusterStatusUpdate_Msg_not_set_case
@@ -222,10 +207,10 @@ type ClusterStatusUpdate_builder struct {
 
 	// Making it a oneof for future proofing.
 
-	// Fields of oneof Msg:
+	// Fields of oneof xxx_hidden_Msg:
 	Status              *storage.ClusterStatus
 	DeploymentEnvUpdate *DeploymentEnvironmentUpdate
-	// -- end of Msg
+	// -- end of xxx_hidden_Msg
 }
 
 func (b0 ClusterStatusUpdate_builder) Build() *ClusterStatusUpdate {
@@ -233,10 +218,10 @@ func (b0 ClusterStatusUpdate_builder) Build() *ClusterStatusUpdate {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Status != nil {
-		x.Msg = &ClusterStatusUpdate_Status{b.Status}
+		x.xxx_hidden_Msg = &clusterStatusUpdate_Status{b.Status}
 	}
 	if b.DeploymentEnvUpdate != nil {
-		x.Msg = &ClusterStatusUpdate_DeploymentEnvUpdate{b.DeploymentEnvUpdate}
+		x.xxx_hidden_Msg = &clusterStatusUpdate_DeploymentEnvUpdate{b.DeploymentEnvUpdate}
 	}
 	return m0
 }
@@ -255,25 +240,25 @@ type isClusterStatusUpdate_Msg interface {
 	isClusterStatusUpdate_Msg()
 }
 
-type ClusterStatusUpdate_Status struct {
+type clusterStatusUpdate_Status struct {
 	Status *storage.ClusterStatus `protobuf:"bytes,1,opt,name=status,oneof"`
 }
 
-type ClusterStatusUpdate_DeploymentEnvUpdate struct {
+type clusterStatusUpdate_DeploymentEnvUpdate struct {
 	DeploymentEnvUpdate *DeploymentEnvironmentUpdate `protobuf:"bytes,2,opt,name=deployment_env_update,json=deploymentEnvUpdate,oneof"`
 }
 
-func (*ClusterStatusUpdate_Status) isClusterStatusUpdate_Msg() {}
+func (*clusterStatusUpdate_Status) isClusterStatusUpdate_Msg() {}
 
-func (*ClusterStatusUpdate_DeploymentEnvUpdate) isClusterStatusUpdate_Msg() {}
+func (*clusterStatusUpdate_DeploymentEnvUpdate) isClusterStatusUpdate_Msg() {}
 
 type RawClusterHealthInfo struct {
-	state                      protoimpl.MessageState              `protogen:"hybrid.v1"`
-	CollectorHealthInfo        *storage.CollectorHealthInfo        `protobuf:"bytes,1,opt,name=collector_health_info,json=collectorHealthInfo" json:"collector_health_info,omitempty"`
-	AdmissionControlHealthInfo *storage.AdmissionControlHealthInfo `protobuf:"bytes,2,opt,name=admission_control_health_info,json=admissionControlHealthInfo" json:"admission_control_health_info,omitempty"`
-	ScannerHealthInfo          *storage.ScannerHealthInfo          `protobuf:"bytes,3,opt,name=scanner_health_info,json=scannerHealthInfo" json:"scanner_health_info,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state                                 protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_CollectorHealthInfo        *storage.CollectorHealthInfo        `protobuf:"bytes,1,opt,name=collector_health_info,json=collectorHealthInfo"`
+	xxx_hidden_AdmissionControlHealthInfo *storage.AdmissionControlHealthInfo `protobuf:"bytes,2,opt,name=admission_control_health_info,json=admissionControlHealthInfo"`
+	xxx_hidden_ScannerHealthInfo          *storage.ScannerHealthInfo          `protobuf:"bytes,3,opt,name=scanner_health_info,json=scannerHealthInfo"`
+	unknownFields                         protoimpl.UnknownFields
+	sizeCache                             protoimpl.SizeCache
 }
 
 func (x *RawClusterHealthInfo) Reset() {
@@ -303,68 +288,68 @@ func (x *RawClusterHealthInfo) ProtoReflect() protoreflect.Message {
 
 func (x *RawClusterHealthInfo) GetCollectorHealthInfo() *storage.CollectorHealthInfo {
 	if x != nil {
-		return x.CollectorHealthInfo
+		return x.xxx_hidden_CollectorHealthInfo
 	}
 	return nil
 }
 
 func (x *RawClusterHealthInfo) GetAdmissionControlHealthInfo() *storage.AdmissionControlHealthInfo {
 	if x != nil {
-		return x.AdmissionControlHealthInfo
+		return x.xxx_hidden_AdmissionControlHealthInfo
 	}
 	return nil
 }
 
 func (x *RawClusterHealthInfo) GetScannerHealthInfo() *storage.ScannerHealthInfo {
 	if x != nil {
-		return x.ScannerHealthInfo
+		return x.xxx_hidden_ScannerHealthInfo
 	}
 	return nil
 }
 
 func (x *RawClusterHealthInfo) SetCollectorHealthInfo(v *storage.CollectorHealthInfo) {
-	x.CollectorHealthInfo = v
+	x.xxx_hidden_CollectorHealthInfo = v
 }
 
 func (x *RawClusterHealthInfo) SetAdmissionControlHealthInfo(v *storage.AdmissionControlHealthInfo) {
-	x.AdmissionControlHealthInfo = v
+	x.xxx_hidden_AdmissionControlHealthInfo = v
 }
 
 func (x *RawClusterHealthInfo) SetScannerHealthInfo(v *storage.ScannerHealthInfo) {
-	x.ScannerHealthInfo = v
+	x.xxx_hidden_ScannerHealthInfo = v
 }
 
 func (x *RawClusterHealthInfo) HasCollectorHealthInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.CollectorHealthInfo != nil
+	return x.xxx_hidden_CollectorHealthInfo != nil
 }
 
 func (x *RawClusterHealthInfo) HasAdmissionControlHealthInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionControlHealthInfo != nil
+	return x.xxx_hidden_AdmissionControlHealthInfo != nil
 }
 
 func (x *RawClusterHealthInfo) HasScannerHealthInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.ScannerHealthInfo != nil
+	return x.xxx_hidden_ScannerHealthInfo != nil
 }
 
 func (x *RawClusterHealthInfo) ClearCollectorHealthInfo() {
-	x.CollectorHealthInfo = nil
+	x.xxx_hidden_CollectorHealthInfo = nil
 }
 
 func (x *RawClusterHealthInfo) ClearAdmissionControlHealthInfo() {
-	x.AdmissionControlHealthInfo = nil
+	x.xxx_hidden_AdmissionControlHealthInfo = nil
 }
 
 func (x *RawClusterHealthInfo) ClearScannerHealthInfo() {
-	x.ScannerHealthInfo = nil
+	x.xxx_hidden_ScannerHealthInfo = nil
 }
 
 type RawClusterHealthInfo_builder struct {
@@ -379,14 +364,14 @@ func (b0 RawClusterHealthInfo_builder) Build() *RawClusterHealthInfo {
 	m0 := &RawClusterHealthInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CollectorHealthInfo = b.CollectorHealthInfo
-	x.AdmissionControlHealthInfo = b.AdmissionControlHealthInfo
-	x.ScannerHealthInfo = b.ScannerHealthInfo
+	x.xxx_hidden_CollectorHealthInfo = b.CollectorHealthInfo
+	x.xxx_hidden_AdmissionControlHealthInfo = b.AdmissionControlHealthInfo
+	x.xxx_hidden_ScannerHealthInfo = b.ScannerHealthInfo
 	return m0
 }
 
 type ClusterHealthResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -443,7 +428,7 @@ const file_internalapi_central_cluster_status_proto_rawDesc = "" +
 	"\x15collector_health_info\x18\x01 \x01(\v2\x1c.storage.CollectorHealthInfoR\x13collectorHealthInfo\x12f\n" +
 	"\x1dadmission_control_health_info\x18\x02 \x01(\v2#.storage.AdmissionControlHealthInfoR\x1aadmissionControlHealthInfo\x12J\n" +
 	"\x13scanner_health_info\x18\x03 \x01(\v2\x1a.storage.ScannerHealthInfoR\x11scannerHealthInfo\"\x17\n" +
-	"\x15ClusterHealthResponseB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x15ClusterHealthResponseB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_cluster_status_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internalapi_central_cluster_status_proto_goTypes = []any{
@@ -475,8 +460,8 @@ func file_internalapi_central_cluster_status_proto_init() {
 		return
 	}
 	file_internalapi_central_cluster_status_proto_msgTypes[1].OneofWrappers = []any{
-		(*ClusterStatusUpdate_Status)(nil),
-		(*ClusterStatusUpdate_DeploymentEnvUpdate)(nil),
+		(*clusterStatusUpdate_Status)(nil),
+		(*clusterStatusUpdate_DeploymentEnvUpdate)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

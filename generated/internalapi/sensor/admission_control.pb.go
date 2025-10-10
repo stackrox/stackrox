@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/admission_control.proto
 
-//go:build !protoopaque
-
 package sensor
 
 import (
@@ -27,16 +25,18 @@ const (
 )
 
 type AdmissionControlSettings struct {
-	state                      protoimpl.MessageState        `protogen:"hybrid.v1"`
-	ClusterConfig              *storage.DynamicClusterConfig `protobuf:"bytes,1,opt,name=cluster_config,json=clusterConfig" json:"cluster_config,omitempty"`
-	EnforcedDeployTimePolicies *storage.PolicyList           `protobuf:"bytes,2,opt,name=enforced_deploy_time_policies,json=enforcedDeployTimePolicies" json:"enforced_deploy_time_policies,omitempty"`
-	Timestamp                  *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=timestamp" json:"timestamp,omitempty"`
-	CacheVersion               *string                       `protobuf:"bytes,4,opt,name=cache_version,json=cacheVersion" json:"cache_version,omitempty"`
-	CentralEndpoint            *string                       `protobuf:"bytes,5,opt,name=central_endpoint,json=centralEndpoint" json:"central_endpoint,omitempty"`
-	ClusterId                  *string                       `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	RuntimePolicies            *storage.PolicyList           `protobuf:"bytes,7,opt,name=runtime_policies,json=runtimePolicies" json:"runtime_policies,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state                                 protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_ClusterConfig              *storage.DynamicClusterConfig `protobuf:"bytes,1,opt,name=cluster_config,json=clusterConfig"`
+	xxx_hidden_EnforcedDeployTimePolicies *storage.PolicyList           `protobuf:"bytes,2,opt,name=enforced_deploy_time_policies,json=enforcedDeployTimePolicies"`
+	xxx_hidden_Timestamp                  *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=timestamp"`
+	xxx_hidden_CacheVersion               *string                       `protobuf:"bytes,4,opt,name=cache_version,json=cacheVersion"`
+	xxx_hidden_CentralEndpoint            *string                       `protobuf:"bytes,5,opt,name=central_endpoint,json=centralEndpoint"`
+	xxx_hidden_ClusterId                  *string                       `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_RuntimePolicies            *storage.PolicyList           `protobuf:"bytes,7,opt,name=runtime_policies,json=runtimePolicies"`
+	XXX_raceDetectHookData                protoimpl.RaceDetectHookData
+	XXX_presence                          [1]uint32
+	unknownFields                         protoimpl.UnknownFields
+	sizeCache                             protoimpl.SizeCache
 }
 
 func (x *AdmissionControlSettings) Reset() {
@@ -66,156 +66,171 @@ func (x *AdmissionControlSettings) ProtoReflect() protoreflect.Message {
 
 func (x *AdmissionControlSettings) GetClusterConfig() *storage.DynamicClusterConfig {
 	if x != nil {
-		return x.ClusterConfig
+		return x.xxx_hidden_ClusterConfig
 	}
 	return nil
 }
 
 func (x *AdmissionControlSettings) GetEnforcedDeployTimePolicies() *storage.PolicyList {
 	if x != nil {
-		return x.EnforcedDeployTimePolicies
+		return x.xxx_hidden_EnforcedDeployTimePolicies
 	}
 	return nil
 }
 
 func (x *AdmissionControlSettings) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Timestamp
+		return x.xxx_hidden_Timestamp
 	}
 	return nil
 }
 
 func (x *AdmissionControlSettings) GetCacheVersion() string {
-	if x != nil && x.CacheVersion != nil {
-		return *x.CacheVersion
+	if x != nil {
+		if x.xxx_hidden_CacheVersion != nil {
+			return *x.xxx_hidden_CacheVersion
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AdmissionControlSettings) GetCentralEndpoint() string {
-	if x != nil && x.CentralEndpoint != nil {
-		return *x.CentralEndpoint
+	if x != nil {
+		if x.xxx_hidden_CentralEndpoint != nil {
+			return *x.xxx_hidden_CentralEndpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AdmissionControlSettings) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AdmissionControlSettings) GetRuntimePolicies() *storage.PolicyList {
 	if x != nil {
-		return x.RuntimePolicies
+		return x.xxx_hidden_RuntimePolicies
 	}
 	return nil
 }
 
 func (x *AdmissionControlSettings) SetClusterConfig(v *storage.DynamicClusterConfig) {
-	x.ClusterConfig = v
+	x.xxx_hidden_ClusterConfig = v
 }
 
 func (x *AdmissionControlSettings) SetEnforcedDeployTimePolicies(v *storage.PolicyList) {
-	x.EnforcedDeployTimePolicies = v
+	x.xxx_hidden_EnforcedDeployTimePolicies = v
 }
 
 func (x *AdmissionControlSettings) SetTimestamp(v *timestamppb.Timestamp) {
-	x.Timestamp = v
+	x.xxx_hidden_Timestamp = v
 }
 
 func (x *AdmissionControlSettings) SetCacheVersion(v string) {
-	x.CacheVersion = &v
+	x.xxx_hidden_CacheVersion = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *AdmissionControlSettings) SetCentralEndpoint(v string) {
-	x.CentralEndpoint = &v
+	x.xxx_hidden_CentralEndpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *AdmissionControlSettings) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 func (x *AdmissionControlSettings) SetRuntimePolicies(v *storage.PolicyList) {
-	x.RuntimePolicies = v
+	x.xxx_hidden_RuntimePolicies = v
 }
 
 func (x *AdmissionControlSettings) HasClusterConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterConfig != nil
+	return x.xxx_hidden_ClusterConfig != nil
 }
 
 func (x *AdmissionControlSettings) HasEnforcedDeployTimePolicies() bool {
 	if x == nil {
 		return false
 	}
-	return x.EnforcedDeployTimePolicies != nil
+	return x.xxx_hidden_EnforcedDeployTimePolicies != nil
 }
 
 func (x *AdmissionControlSettings) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.Timestamp != nil
+	return x.xxx_hidden_Timestamp != nil
 }
 
 func (x *AdmissionControlSettings) HasCacheVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.CacheVersion != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *AdmissionControlSettings) HasCentralEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.CentralEndpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *AdmissionControlSettings) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *AdmissionControlSettings) HasRuntimePolicies() bool {
 	if x == nil {
 		return false
 	}
-	return x.RuntimePolicies != nil
+	return x.xxx_hidden_RuntimePolicies != nil
 }
 
 func (x *AdmissionControlSettings) ClearClusterConfig() {
-	x.ClusterConfig = nil
+	x.xxx_hidden_ClusterConfig = nil
 }
 
 func (x *AdmissionControlSettings) ClearEnforcedDeployTimePolicies() {
-	x.EnforcedDeployTimePolicies = nil
+	x.xxx_hidden_EnforcedDeployTimePolicies = nil
 }
 
 func (x *AdmissionControlSettings) ClearTimestamp() {
-	x.Timestamp = nil
+	x.xxx_hidden_Timestamp = nil
 }
 
 func (x *AdmissionControlSettings) ClearCacheVersion() {
-	x.CacheVersion = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_CacheVersion = nil
 }
 
 func (x *AdmissionControlSettings) ClearCentralEndpoint() {
-	x.CentralEndpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_CentralEndpoint = nil
 }
 
 func (x *AdmissionControlSettings) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *AdmissionControlSettings) ClearRuntimePolicies() {
-	x.RuntimePolicies = nil
+	x.xxx_hidden_RuntimePolicies = nil
 }
 
 type AdmissionControlSettings_builder struct {
@@ -234,21 +249,30 @@ func (b0 AdmissionControlSettings_builder) Build() *AdmissionControlSettings {
 	m0 := &AdmissionControlSettings{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterConfig = b.ClusterConfig
-	x.EnforcedDeployTimePolicies = b.EnforcedDeployTimePolicies
-	x.Timestamp = b.Timestamp
-	x.CacheVersion = b.CacheVersion
-	x.CentralEndpoint = b.CentralEndpoint
-	x.ClusterId = b.ClusterId
-	x.RuntimePolicies = b.RuntimePolicies
+	x.xxx_hidden_ClusterConfig = b.ClusterConfig
+	x.xxx_hidden_EnforcedDeployTimePolicies = b.EnforcedDeployTimePolicies
+	x.xxx_hidden_Timestamp = b.Timestamp
+	if b.CacheVersion != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_CacheVersion = b.CacheVersion
+	}
+	if b.CentralEndpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_CentralEndpoint = b.CentralEndpoint
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	x.xxx_hidden_RuntimePolicies = b.RuntimePolicies
 	return m0
 }
 
 type AdmissionControlAlerts struct {
-	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
-	AlertResults  []*central.AlertResults `protobuf:"bytes,1,rep,name=alert_results,json=alertResults" json:"alert_results,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_AlertResults *[]*central.AlertResults `protobuf:"bytes,1,rep,name=alert_results,json=alertResults"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *AdmissionControlAlerts) Reset() {
@@ -278,13 +302,15 @@ func (x *AdmissionControlAlerts) ProtoReflect() protoreflect.Message {
 
 func (x *AdmissionControlAlerts) GetAlertResults() []*central.AlertResults {
 	if x != nil {
-		return x.AlertResults
+		if x.xxx_hidden_AlertResults != nil {
+			return *x.xxx_hidden_AlertResults
+		}
 	}
 	return nil
 }
 
 func (x *AdmissionControlAlerts) SetAlertResults(v []*central.AlertResults) {
-	x.AlertResults = v
+	x.xxx_hidden_AlertResults = &v
 }
 
 type AdmissionControlAlerts_builder struct {
@@ -297,22 +323,18 @@ func (b0 AdmissionControlAlerts_builder) Build() *AdmissionControlAlerts {
 	m0 := &AdmissionControlAlerts{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AlertResults = b.AlertResults
+	x.xxx_hidden_AlertResults = &b.AlertResults
 	return m0
 }
 
 type AdmCtrlUpdateResourceRequest struct {
-	state  protoimpl.MessageState  `protogen:"hybrid.v1"`
-	Action *central.ResourceAction `protobuf:"varint,1,opt,name=action,enum=central.ResourceAction" json:"action,omitempty"`
-	// Types that are valid to be assigned to Resource:
-	//
-	//	*AdmCtrlUpdateResourceRequest_Deployment
-	//	*AdmCtrlUpdateResourceRequest_Pod
-	//	*AdmCtrlUpdateResourceRequest_Namespace
-	//	*AdmCtrlUpdateResourceRequest_Synced
-	Resource      isAdmCtrlUpdateResourceRequest_Resource `protobuf_oneof:"resource"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState                  `protogen:"opaque.v1"`
+	xxx_hidden_Action      central.ResourceAction                  `protobuf:"varint,1,opt,name=action,enum=central.ResourceAction"`
+	xxx_hidden_Resource    isAdmCtrlUpdateResourceRequest_Resource `protobuf_oneof:"resource"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AdmCtrlUpdateResourceRequest) Reset() {
@@ -341,22 +363,17 @@ func (x *AdmCtrlUpdateResourceRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AdmCtrlUpdateResourceRequest) GetAction() central.ResourceAction {
-	if x != nil && x.Action != nil {
-		return *x.Action
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Action
+		}
 	}
 	return central.ResourceAction(0)
 }
 
-func (x *AdmCtrlUpdateResourceRequest) GetResource() isAdmCtrlUpdateResourceRequest_Resource {
-	if x != nil {
-		return x.Resource
-	}
-	return nil
-}
-
 func (x *AdmCtrlUpdateResourceRequest) GetDeployment() *storage.Deployment {
 	if x != nil {
-		if x, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Deployment); ok {
+		if x, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Deployment); ok {
 			return x.Deployment
 		}
 	}
@@ -365,7 +382,7 @@ func (x *AdmCtrlUpdateResourceRequest) GetDeployment() *storage.Deployment {
 
 func (x *AdmCtrlUpdateResourceRequest) GetPod() *storage.Pod {
 	if x != nil {
-		if x, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Pod); ok {
+		if x, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Pod); ok {
 			return x.Pod
 		}
 	}
@@ -374,7 +391,7 @@ func (x *AdmCtrlUpdateResourceRequest) GetPod() *storage.Pod {
 
 func (x *AdmCtrlUpdateResourceRequest) GetNamespace() *storage.NamespaceMetadata {
 	if x != nil {
-		if x, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Namespace); ok {
+		if x, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Namespace); ok {
 			return x.Namespace
 		}
 	}
@@ -383,7 +400,7 @@ func (x *AdmCtrlUpdateResourceRequest) GetNamespace() *storage.NamespaceMetadata
 
 func (x *AdmCtrlUpdateResourceRequest) GetSynced() *AdmCtrlUpdateResourceRequest_ResourcesSynced {
 	if x != nil {
-		if x, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Synced); ok {
+		if x, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Synced); ok {
 			return x.Synced
 		}
 	}
@@ -391,60 +408,61 @@ func (x *AdmCtrlUpdateResourceRequest) GetSynced() *AdmCtrlUpdateResourceRequest
 }
 
 func (x *AdmCtrlUpdateResourceRequest) SetAction(v central.ResourceAction) {
-	x.Action = &v
+	x.xxx_hidden_Action = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *AdmCtrlUpdateResourceRequest) SetDeployment(v *storage.Deployment) {
 	if v == nil {
-		x.Resource = nil
+		x.xxx_hidden_Resource = nil
 		return
 	}
-	x.Resource = &AdmCtrlUpdateResourceRequest_Deployment{v}
+	x.xxx_hidden_Resource = &admCtrlUpdateResourceRequest_Deployment{v}
 }
 
 func (x *AdmCtrlUpdateResourceRequest) SetPod(v *storage.Pod) {
 	if v == nil {
-		x.Resource = nil
+		x.xxx_hidden_Resource = nil
 		return
 	}
-	x.Resource = &AdmCtrlUpdateResourceRequest_Pod{v}
+	x.xxx_hidden_Resource = &admCtrlUpdateResourceRequest_Pod{v}
 }
 
 func (x *AdmCtrlUpdateResourceRequest) SetNamespace(v *storage.NamespaceMetadata) {
 	if v == nil {
-		x.Resource = nil
+		x.xxx_hidden_Resource = nil
 		return
 	}
-	x.Resource = &AdmCtrlUpdateResourceRequest_Namespace{v}
+	x.xxx_hidden_Resource = &admCtrlUpdateResourceRequest_Namespace{v}
 }
 
 func (x *AdmCtrlUpdateResourceRequest) SetSynced(v *AdmCtrlUpdateResourceRequest_ResourcesSynced) {
 	if v == nil {
-		x.Resource = nil
+		x.xxx_hidden_Resource = nil
 		return
 	}
-	x.Resource = &AdmCtrlUpdateResourceRequest_Synced{v}
+	x.xxx_hidden_Resource = &admCtrlUpdateResourceRequest_Synced{v}
 }
 
 func (x *AdmCtrlUpdateResourceRequest) HasAction() bool {
 	if x == nil {
 		return false
 	}
-	return x.Action != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AdmCtrlUpdateResourceRequest) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	return x.Resource != nil
+	return x.xxx_hidden_Resource != nil
 }
 
 func (x *AdmCtrlUpdateResourceRequest) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Deployment)
+	_, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Deployment)
 	return ok
 }
 
@@ -452,7 +470,7 @@ func (x *AdmCtrlUpdateResourceRequest) HasPod() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Pod)
+	_, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Pod)
 	return ok
 }
 
@@ -460,7 +478,7 @@ func (x *AdmCtrlUpdateResourceRequest) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Namespace)
+	_, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Namespace)
 	return ok
 }
 
@@ -468,39 +486,40 @@ func (x *AdmCtrlUpdateResourceRequest) HasSynced() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Synced)
+	_, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Synced)
 	return ok
 }
 
 func (x *AdmCtrlUpdateResourceRequest) ClearAction() {
-	x.Action = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Action = central.ResourceAction_UNSET_ACTION_RESOURCE
 }
 
 func (x *AdmCtrlUpdateResourceRequest) ClearResource() {
-	x.Resource = nil
+	x.xxx_hidden_Resource = nil
 }
 
 func (x *AdmCtrlUpdateResourceRequest) ClearDeployment() {
-	if _, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Deployment); ok {
-		x.Resource = nil
+	if _, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Deployment); ok {
+		x.xxx_hidden_Resource = nil
 	}
 }
 
 func (x *AdmCtrlUpdateResourceRequest) ClearPod() {
-	if _, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Pod); ok {
-		x.Resource = nil
+	if _, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Pod); ok {
+		x.xxx_hidden_Resource = nil
 	}
 }
 
 func (x *AdmCtrlUpdateResourceRequest) ClearNamespace() {
-	if _, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Namespace); ok {
-		x.Resource = nil
+	if _, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Namespace); ok {
+		x.xxx_hidden_Resource = nil
 	}
 }
 
 func (x *AdmCtrlUpdateResourceRequest) ClearSynced() {
-	if _, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_Synced); ok {
-		x.Resource = nil
+	if _, ok := x.xxx_hidden_Resource.(*admCtrlUpdateResourceRequest_Synced); ok {
+		x.xxx_hidden_Resource = nil
 	}
 }
 
@@ -514,14 +533,14 @@ func (x *AdmCtrlUpdateResourceRequest) WhichResource() case_AdmCtrlUpdateResourc
 	if x == nil {
 		return AdmCtrlUpdateResourceRequest_Resource_not_set_case
 	}
-	switch x.Resource.(type) {
-	case *AdmCtrlUpdateResourceRequest_Deployment:
+	switch x.xxx_hidden_Resource.(type) {
+	case *admCtrlUpdateResourceRequest_Deployment:
 		return AdmCtrlUpdateResourceRequest_Deployment_case
-	case *AdmCtrlUpdateResourceRequest_Pod:
+	case *admCtrlUpdateResourceRequest_Pod:
 		return AdmCtrlUpdateResourceRequest_Pod_case
-	case *AdmCtrlUpdateResourceRequest_Namespace:
+	case *admCtrlUpdateResourceRequest_Namespace:
 		return AdmCtrlUpdateResourceRequest_Namespace_case
-	case *AdmCtrlUpdateResourceRequest_Synced:
+	case *admCtrlUpdateResourceRequest_Synced:
 		return AdmCtrlUpdateResourceRequest_Synced_case
 	default:
 		return AdmCtrlUpdateResourceRequest_Resource_not_set_case
@@ -532,30 +551,33 @@ type AdmCtrlUpdateResourceRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Action *central.ResourceAction
-	// Fields of oneof Resource:
+	// Fields of oneof xxx_hidden_Resource:
 	Deployment *storage.Deployment
 	Pod        *storage.Pod
 	Namespace  *storage.NamespaceMetadata
 	Synced     *AdmCtrlUpdateResourceRequest_ResourcesSynced
-	// -- end of Resource
+	// -- end of xxx_hidden_Resource
 }
 
 func (b0 AdmCtrlUpdateResourceRequest_builder) Build() *AdmCtrlUpdateResourceRequest {
 	m0 := &AdmCtrlUpdateResourceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Action = b.Action
+	if b.Action != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Action = *b.Action
+	}
 	if b.Deployment != nil {
-		x.Resource = &AdmCtrlUpdateResourceRequest_Deployment{b.Deployment}
+		x.xxx_hidden_Resource = &admCtrlUpdateResourceRequest_Deployment{b.Deployment}
 	}
 	if b.Pod != nil {
-		x.Resource = &AdmCtrlUpdateResourceRequest_Pod{b.Pod}
+		x.xxx_hidden_Resource = &admCtrlUpdateResourceRequest_Pod{b.Pod}
 	}
 	if b.Namespace != nil {
-		x.Resource = &AdmCtrlUpdateResourceRequest_Namespace{b.Namespace}
+		x.xxx_hidden_Resource = &admCtrlUpdateResourceRequest_Namespace{b.Namespace}
 	}
 	if b.Synced != nil {
-		x.Resource = &AdmCtrlUpdateResourceRequest_Synced{b.Synced}
+		x.xxx_hidden_Resource = &admCtrlUpdateResourceRequest_Synced{b.Synced}
 	}
 	return m0
 }
@@ -574,32 +596,32 @@ type isAdmCtrlUpdateResourceRequest_Resource interface {
 	isAdmCtrlUpdateResourceRequest_Resource()
 }
 
-type AdmCtrlUpdateResourceRequest_Deployment struct {
+type admCtrlUpdateResourceRequest_Deployment struct {
 	Deployment *storage.Deployment `protobuf:"bytes,2,opt,name=deployment,oneof"`
 }
 
-type AdmCtrlUpdateResourceRequest_Pod struct {
+type admCtrlUpdateResourceRequest_Pod struct {
 	Pod *storage.Pod `protobuf:"bytes,3,opt,name=pod,oneof"`
 }
 
-type AdmCtrlUpdateResourceRequest_Namespace struct {
+type admCtrlUpdateResourceRequest_Namespace struct {
 	Namespace *storage.NamespaceMetadata `protobuf:"bytes,4,opt,name=namespace,oneof"`
 }
 
-type AdmCtrlUpdateResourceRequest_Synced struct {
+type admCtrlUpdateResourceRequest_Synced struct {
 	Synced *AdmCtrlUpdateResourceRequest_ResourcesSynced `protobuf:"bytes,5,opt,name=synced,oneof"`
 }
 
-func (*AdmCtrlUpdateResourceRequest_Deployment) isAdmCtrlUpdateResourceRequest_Resource() {}
+func (*admCtrlUpdateResourceRequest_Deployment) isAdmCtrlUpdateResourceRequest_Resource() {}
 
-func (*AdmCtrlUpdateResourceRequest_Pod) isAdmCtrlUpdateResourceRequest_Resource() {}
+func (*admCtrlUpdateResourceRequest_Pod) isAdmCtrlUpdateResourceRequest_Resource() {}
 
-func (*AdmCtrlUpdateResourceRequest_Namespace) isAdmCtrlUpdateResourceRequest_Resource() {}
+func (*admCtrlUpdateResourceRequest_Namespace) isAdmCtrlUpdateResourceRequest_Resource() {}
 
-func (*AdmCtrlUpdateResourceRequest_Synced) isAdmCtrlUpdateResourceRequest_Resource() {}
+func (*admCtrlUpdateResourceRequest_Synced) isAdmCtrlUpdateResourceRequest_Resource() {}
 
 type AdmCtrlUpdateResourceRequest_ResourcesSynced struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -667,7 +689,7 @@ const file_internalapi_sensor_admission_control_proto_rawDesc = "" +
 	"\x06synced\x18\x05 \x01(\v24.sensor.AdmCtrlUpdateResourceRequest.ResourcesSyncedH\x00R\x06synced\x1a\x11\n" +
 	"\x0fResourcesSyncedB\n" +
 	"\n" +
-	"\bresourceB%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\bresourceB%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_admission_control_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internalapi_sensor_admission_control_proto_goTypes = []any{
@@ -708,10 +730,10 @@ func file_internalapi_sensor_admission_control_proto_init() {
 		return
 	}
 	file_internalapi_sensor_admission_control_proto_msgTypes[2].OneofWrappers = []any{
-		(*AdmCtrlUpdateResourceRequest_Deployment)(nil),
-		(*AdmCtrlUpdateResourceRequest_Pod)(nil),
-		(*AdmCtrlUpdateResourceRequest_Namespace)(nil),
-		(*AdmCtrlUpdateResourceRequest_Synced)(nil),
+		(*admCtrlUpdateResourceRequest_Deployment)(nil),
+		(*admCtrlUpdateResourceRequest_Pod)(nil),
+		(*admCtrlUpdateResourceRequest_Namespace)(nil),
+		(*admCtrlUpdateResourceRequest_Synced)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

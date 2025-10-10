@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/compliance_integration.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -67,17 +65,18 @@ func (x COStatus) Number() protoreflect.EnumNumber {
 
 // Next Tag: 8
 type ComplianceIntegration struct {
-	state               protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id                  *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Compliance Operator Integration ID,hidden,store" sql:"pk,type(uuid)"`                                // @gotags: search:"Compliance Operator Integration ID,hidden,store" sql:"pk,type(uuid)"
-	Version             *string                `protobuf:"bytes,2,opt,name=version" json:"version,omitempty" search:"Compliance Operator Version,hidden,store"`                      // @gotags: search:"Compliance Operator Version,hidden,store"
-	ClusterId           *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"` // @gotags: search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"
-	ComplianceNamespace *string                `protobuf:"bytes,4,opt,name=compliance_namespace,json=complianceNamespace" json:"compliance_namespace,omitempty"`
-	// Collection of errors that occurred while trying to obtain compliance health info.
-	StatusErrors      []string  `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors" json:"status_errors,omitempty"`
-	OperatorInstalled *bool     `protobuf:"varint,6,opt,name=operator_installed,json=operatorInstalled" json:"operator_installed,omitempty" search:"Compliance Operator Installed,hidden"`              // @gotags: search:"Compliance Operator Installed,hidden"
-	OperatorStatus    *COStatus `protobuf:"varint,7,opt,name=operator_status,json=operatorStatus,enum=storage.COStatus" json:"operator_status,omitempty" search:"Compliance Operator Status"` //@gotags: search:"Compliance Operator Status"
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id                  *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Version             *string                `protobuf:"bytes,2,opt,name=version"`
+	xxx_hidden_ClusterId           *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ComplianceNamespace *string                `protobuf:"bytes,4,opt,name=compliance_namespace,json=complianceNamespace"`
+	xxx_hidden_StatusErrors        []string               `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors"`
+	xxx_hidden_OperatorInstalled   bool                   `protobuf:"varint,6,opt,name=operator_installed,json=operatorInstalled"`
+	xxx_hidden_OperatorStatus      COStatus               `protobuf:"varint,7,opt,name=operator_status,json=operatorStatus,enum=storage.COStatus"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *ComplianceIntegration) Reset() {
@@ -106,146 +105,172 @@ func (x *ComplianceIntegration) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ComplianceIntegration) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ComplianceIntegration) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ComplianceIntegration) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ComplianceIntegration) GetComplianceNamespace() string {
-	if x != nil && x.ComplianceNamespace != nil {
-		return *x.ComplianceNamespace
+	if x != nil {
+		if x.xxx_hidden_ComplianceNamespace != nil {
+			return *x.xxx_hidden_ComplianceNamespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ComplianceIntegration) GetStatusErrors() []string {
 	if x != nil {
-		return x.StatusErrors
+		return x.xxx_hidden_StatusErrors
 	}
 	return nil
 }
 
 func (x *ComplianceIntegration) GetOperatorInstalled() bool {
-	if x != nil && x.OperatorInstalled != nil {
-		return *x.OperatorInstalled
+	if x != nil {
+		return x.xxx_hidden_OperatorInstalled
 	}
 	return false
 }
 
 func (x *ComplianceIntegration) GetOperatorStatus() COStatus {
-	if x != nil && x.OperatorStatus != nil {
-		return *x.OperatorStatus
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			return x.xxx_hidden_OperatorStatus
+		}
 	}
 	return COStatus_HEALTHY
 }
 
 func (x *ComplianceIntegration) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *ComplianceIntegration) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *ComplianceIntegration) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *ComplianceIntegration) SetComplianceNamespace(v string) {
-	x.ComplianceNamespace = &v
+	x.xxx_hidden_ComplianceNamespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *ComplianceIntegration) SetStatusErrors(v []string) {
-	x.StatusErrors = v
+	x.xxx_hidden_StatusErrors = v
 }
 
 func (x *ComplianceIntegration) SetOperatorInstalled(v bool) {
-	x.OperatorInstalled = &v
+	x.xxx_hidden_OperatorInstalled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 func (x *ComplianceIntegration) SetOperatorStatus(v COStatus) {
-	x.OperatorStatus = &v
+	x.xxx_hidden_OperatorStatus = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *ComplianceIntegration) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ComplianceIntegration) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ComplianceIntegration) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ComplianceIntegration) HasComplianceNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.ComplianceNamespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ComplianceIntegration) HasOperatorInstalled() bool {
 	if x == nil {
 		return false
 	}
-	return x.OperatorInstalled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *ComplianceIntegration) HasOperatorStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.OperatorStatus != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ComplianceIntegration) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ComplianceIntegration) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Version = nil
 }
 
 func (x *ComplianceIntegration) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *ComplianceIntegration) ClearComplianceNamespace() {
-	x.ComplianceNamespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ComplianceNamespace = nil
 }
 
 func (x *ComplianceIntegration) ClearOperatorInstalled() {
-	x.OperatorInstalled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_OperatorInstalled = false
 }
 
 func (x *ComplianceIntegration) ClearOperatorStatus() {
-	x.OperatorStatus = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_OperatorStatus = COStatus_HEALTHY
 }
 
 type ComplianceIntegration_builder struct {
@@ -265,13 +290,31 @@ func (b0 ComplianceIntegration_builder) Build() *ComplianceIntegration {
 	m0 := &ComplianceIntegration{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Version = b.Version
-	x.ClusterId = b.ClusterId
-	x.ComplianceNamespace = b.ComplianceNamespace
-	x.StatusErrors = b.StatusErrors
-	x.OperatorInstalled = b.OperatorInstalled
-	x.OperatorStatus = b.OperatorStatus
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Version = b.Version
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ComplianceNamespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_ComplianceNamespace = b.ComplianceNamespace
+	}
+	x.xxx_hidden_StatusErrors = b.StatusErrors
+	if b.OperatorInstalled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_OperatorInstalled = *b.OperatorInstalled
+	}
+	if b.OperatorStatus != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_OperatorStatus = *b.OperatorStatus
+	}
 	return m0
 }
 
@@ -292,7 +335,7 @@ const file_storage_compliance_integration_proto_rawDesc = "" +
 	"\bCOStatus\x12\v\n" +
 	"\aHEALTHY\x10\x00\x12\r\n" +
 	"\tUNHEALTHY\x10\x01B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_compliance_integration_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_compliance_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 1)

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/node_integration.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -25,17 +23,15 @@ const (
 
 // Next Tag: 6
 type NodeIntegration struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id    *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name  *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Type  *string                `protobuf:"bytes,3,opt,name=type" json:"type,omitempty"`
-	// Types that are valid to be assigned to IntegrationConfig:
-	//
-	//	*NodeIntegration_Clairify
-	//	*NodeIntegration_Scannerv4
-	IntegrationConfig isNodeIntegration_IntegrationConfig `protobuf_oneof:"IntegrationConfig"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_Id                *string                             `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name              *string                             `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Type              *string                             `protobuf:"bytes,3,opt,name=type"`
+	xxx_hidden_IntegrationConfig isNodeIntegration_IntegrationConfig `protobuf_oneof:"IntegrationConfig"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *NodeIntegration) Reset() {
@@ -64,36 +60,38 @@ func (x *NodeIntegration) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NodeIntegration) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NodeIntegration) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NodeIntegration) GetType() string {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if x.xxx_hidden_Type != nil {
+			return *x.xxx_hidden_Type
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *NodeIntegration) GetIntegrationConfig() isNodeIntegration_IntegrationConfig {
-	if x != nil {
-		return x.IntegrationConfig
-	}
-	return nil
-}
-
 func (x *NodeIntegration) GetClairify() *ClairifyConfig {
 	if x != nil {
-		if x, ok := x.IntegrationConfig.(*NodeIntegration_Clairify); ok {
+		if x, ok := x.xxx_hidden_IntegrationConfig.(*nodeIntegration_Clairify); ok {
 			return x.Clairify
 		}
 	}
@@ -102,7 +100,7 @@ func (x *NodeIntegration) GetClairify() *ClairifyConfig {
 
 func (x *NodeIntegration) GetScannerv4() *ScannerV4Config {
 	if x != nil {
-		if x, ok := x.IntegrationConfig.(*NodeIntegration_Scannerv4); ok {
+		if x, ok := x.xxx_hidden_IntegrationConfig.(*nodeIntegration_Scannerv4); ok {
 			return x.Scannerv4
 		}
 	}
@@ -110,66 +108,69 @@ func (x *NodeIntegration) GetScannerv4() *ScannerV4Config {
 }
 
 func (x *NodeIntegration) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *NodeIntegration) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *NodeIntegration) SetType(v string) {
-	x.Type = &v
+	x.xxx_hidden_Type = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *NodeIntegration) SetClairify(v *ClairifyConfig) {
 	if v == nil {
-		x.IntegrationConfig = nil
+		x.xxx_hidden_IntegrationConfig = nil
 		return
 	}
-	x.IntegrationConfig = &NodeIntegration_Clairify{v}
+	x.xxx_hidden_IntegrationConfig = &nodeIntegration_Clairify{v}
 }
 
 func (x *NodeIntegration) SetScannerv4(v *ScannerV4Config) {
 	if v == nil {
-		x.IntegrationConfig = nil
+		x.xxx_hidden_IntegrationConfig = nil
 		return
 	}
-	x.IntegrationConfig = &NodeIntegration_Scannerv4{v}
+	x.xxx_hidden_IntegrationConfig = &nodeIntegration_Scannerv4{v}
 }
 
 func (x *NodeIntegration) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NodeIntegration) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NodeIntegration) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *NodeIntegration) HasIntegrationConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.IntegrationConfig != nil
+	return x.xxx_hidden_IntegrationConfig != nil
 }
 
 func (x *NodeIntegration) HasClairify() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.IntegrationConfig.(*NodeIntegration_Clairify)
+	_, ok := x.xxx_hidden_IntegrationConfig.(*nodeIntegration_Clairify)
 	return ok
 }
 
@@ -177,35 +178,38 @@ func (x *NodeIntegration) HasScannerv4() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.IntegrationConfig.(*NodeIntegration_Scannerv4)
+	_, ok := x.xxx_hidden_IntegrationConfig.(*nodeIntegration_Scannerv4)
 	return ok
 }
 
 func (x *NodeIntegration) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *NodeIntegration) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *NodeIntegration) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Type = nil
 }
 
 func (x *NodeIntegration) ClearIntegrationConfig() {
-	x.IntegrationConfig = nil
+	x.xxx_hidden_IntegrationConfig = nil
 }
 
 func (x *NodeIntegration) ClearClairify() {
-	if _, ok := x.IntegrationConfig.(*NodeIntegration_Clairify); ok {
-		x.IntegrationConfig = nil
+	if _, ok := x.xxx_hidden_IntegrationConfig.(*nodeIntegration_Clairify); ok {
+		x.xxx_hidden_IntegrationConfig = nil
 	}
 }
 
 func (x *NodeIntegration) ClearScannerv4() {
-	if _, ok := x.IntegrationConfig.(*NodeIntegration_Scannerv4); ok {
-		x.IntegrationConfig = nil
+	if _, ok := x.xxx_hidden_IntegrationConfig.(*nodeIntegration_Scannerv4); ok {
+		x.xxx_hidden_IntegrationConfig = nil
 	}
 }
 
@@ -217,10 +221,10 @@ func (x *NodeIntegration) WhichIntegrationConfig() case_NodeIntegration_Integrat
 	if x == nil {
 		return NodeIntegration_IntegrationConfig_not_set_case
 	}
-	switch x.IntegrationConfig.(type) {
-	case *NodeIntegration_Clairify:
+	switch x.xxx_hidden_IntegrationConfig.(type) {
+	case *nodeIntegration_Clairify:
 		return NodeIntegration_Clairify_case
-	case *NodeIntegration_Scannerv4:
+	case *nodeIntegration_Scannerv4:
 		return NodeIntegration_Scannerv4_case
 	default:
 		return NodeIntegration_IntegrationConfig_not_set_case
@@ -233,24 +237,33 @@ type NodeIntegration_builder struct {
 	Id   *string
 	Name *string
 	Type *string
-	// Fields of oneof IntegrationConfig:
+	// Fields of oneof xxx_hidden_IntegrationConfig:
 	Clairify  *ClairifyConfig
 	Scannerv4 *ScannerV4Config
-	// -- end of IntegrationConfig
+	// -- end of xxx_hidden_IntegrationConfig
 }
 
 func (b0 NodeIntegration_builder) Build() *NodeIntegration {
 	m0 := &NodeIntegration{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Type = b.Type
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Type = b.Type
+	}
 	if b.Clairify != nil {
-		x.IntegrationConfig = &NodeIntegration_Clairify{b.Clairify}
+		x.xxx_hidden_IntegrationConfig = &nodeIntegration_Clairify{b.Clairify}
 	}
 	if b.Scannerv4 != nil {
-		x.IntegrationConfig = &NodeIntegration_Scannerv4{b.Scannerv4}
+		x.xxx_hidden_IntegrationConfig = &nodeIntegration_Scannerv4{b.Scannerv4}
 	}
 	return m0
 }
@@ -269,17 +282,17 @@ type isNodeIntegration_IntegrationConfig interface {
 	isNodeIntegration_IntegrationConfig()
 }
 
-type NodeIntegration_Clairify struct {
+type nodeIntegration_Clairify struct {
 	Clairify *ClairifyConfig `protobuf:"bytes,4,opt,name=clairify,oneof"`
 }
 
-type NodeIntegration_Scannerv4 struct {
+type nodeIntegration_Scannerv4 struct {
 	Scannerv4 *ScannerV4Config `protobuf:"bytes,5,opt,name=scannerv4,oneof"`
 }
 
-func (*NodeIntegration_Clairify) isNodeIntegration_IntegrationConfig() {}
+func (*nodeIntegration_Clairify) isNodeIntegration_IntegrationConfig() {}
 
-func (*NodeIntegration_Scannerv4) isNodeIntegration_IntegrationConfig() {}
+func (*nodeIntegration_Scannerv4) isNodeIntegration_IntegrationConfig() {}
 
 var File_storage_node_integration_proto protoreflect.FileDescriptor
 
@@ -293,7 +306,7 @@ const file_storage_node_integration_proto_rawDesc = "" +
 	"\bclairify\x18\x04 \x01(\v2\x17.storage.ClairifyConfigH\x00R\bclairify\x128\n" +
 	"\tscannerv4\x18\x05 \x01(\v2\x18.storage.ScannerV4ConfigH\x00R\tscannerv4B\x13\n" +
 	"\x11IntegrationConfigB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_node_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_node_integration_proto_goTypes = []any{
@@ -318,8 +331,8 @@ func file_storage_node_integration_proto_init() {
 	}
 	file_storage_image_integration_proto_init()
 	file_storage_node_integration_proto_msgTypes[0].OneofWrappers = []any{
-		(*NodeIntegration_Clairify)(nil),
-		(*NodeIntegration_Scannerv4)(nil),
+		(*nodeIntegration_Clairify)(nil),
+		(*nodeIntegration_Scannerv4)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

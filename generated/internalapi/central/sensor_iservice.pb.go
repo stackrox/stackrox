@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/sensor_iservice.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -108,31 +106,15 @@ func (x NodeInventoryACK_MessageType) Number() protoreflect.EnumNumber {
 
 // next available tag: 20
 type MsgFromSensor struct {
-	state             protoimpl.MessageState `protogen:"hybrid.v1"`
-	HashKey           *string                `protobuf:"bytes,7,opt,name=hash_key,json=hashKey" json:"hash_key,omitempty"`
-	DedupeKey         *string                `protobuf:"bytes,8,opt,name=dedupe_key,json=dedupeKey" json:"dedupe_key,omitempty"`
-	ProcessingAttempt *int32                 `protobuf:"varint,15,opt,name=processing_attempt,json=processingAttempt" json:"processing_attempt,omitempty"`
-	// Types that are valid to be assigned to Msg:
-	//
-	//	*MsgFromSensor_Event
-	//	*MsgFromSensor_NetworkFlowUpdate
-	//	*MsgFromSensor_ScrapeUpdate
-	//	*MsgFromSensor_NetworkPoliciesResponse
-	//	*MsgFromSensor_ClusterStatusUpdate
-	//	*MsgFromSensor_TelemetryDataResponse
-	//	*MsgFromSensor_ClusterHealthInfo
-	//	*MsgFromSensor_Hello
-	//	*MsgFromSensor_AuditLogStatusInfo
-	//	*MsgFromSensor_IssueLocalScannerCertsRequest
-	//	*MsgFromSensor_ClusterMetrics
-	//	*MsgFromSensor_ProcessListeningOnPortUpdate
-	//	*MsgFromSensor_ComplianceOperatorInfo
-	//	*MsgFromSensor_ComplianceResponse
-	//	*MsgFromSensor_DeploymentEnhancementResponse
-	//	*MsgFromSensor_IssueSecuredClusterCertsRequest
-	Msg           isMsgFromSensor_Msg `protobuf_oneof:"msg"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_HashKey           *string                `protobuf:"bytes,7,opt,name=hash_key,json=hashKey"`
+	xxx_hidden_DedupeKey         *string                `protobuf:"bytes,8,opt,name=dedupe_key,json=dedupeKey"`
+	xxx_hidden_ProcessingAttempt int32                  `protobuf:"varint,15,opt,name=processing_attempt,json=processingAttempt"`
+	xxx_hidden_Msg               isMsgFromSensor_Msg    `protobuf_oneof:"msg"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *MsgFromSensor) Reset() {
@@ -161,36 +143,35 @@ func (x *MsgFromSensor) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgFromSensor) GetHashKey() string {
-	if x != nil && x.HashKey != nil {
-		return *x.HashKey
+	if x != nil {
+		if x.xxx_hidden_HashKey != nil {
+			return *x.xxx_hidden_HashKey
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MsgFromSensor) GetDedupeKey() string {
-	if x != nil && x.DedupeKey != nil {
-		return *x.DedupeKey
+	if x != nil {
+		if x.xxx_hidden_DedupeKey != nil {
+			return *x.xxx_hidden_DedupeKey
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MsgFromSensor) GetProcessingAttempt() int32 {
-	if x != nil && x.ProcessingAttempt != nil {
-		return *x.ProcessingAttempt
+	if x != nil {
+		return x.xxx_hidden_ProcessingAttempt
 	}
 	return 0
 }
 
-func (x *MsgFromSensor) GetMsg() isMsgFromSensor_Msg {
-	if x != nil {
-		return x.Msg
-	}
-	return nil
-}
-
 func (x *MsgFromSensor) GetEvent() *SensorEvent {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_Event); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_Event); ok {
 			return x.Event
 		}
 	}
@@ -199,7 +180,7 @@ func (x *MsgFromSensor) GetEvent() *SensorEvent {
 
 func (x *MsgFromSensor) GetNetworkFlowUpdate() *NetworkFlowUpdate {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_NetworkFlowUpdate); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_NetworkFlowUpdate); ok {
 			return x.NetworkFlowUpdate
 		}
 	}
@@ -208,7 +189,7 @@ func (x *MsgFromSensor) GetNetworkFlowUpdate() *NetworkFlowUpdate {
 
 func (x *MsgFromSensor) GetScrapeUpdate() *ScrapeUpdate {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_ScrapeUpdate); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_ScrapeUpdate); ok {
 			return x.ScrapeUpdate
 		}
 	}
@@ -217,7 +198,7 @@ func (x *MsgFromSensor) GetScrapeUpdate() *ScrapeUpdate {
 
 func (x *MsgFromSensor) GetNetworkPoliciesResponse() *NetworkPoliciesResponse {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_NetworkPoliciesResponse); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_NetworkPoliciesResponse); ok {
 			return x.NetworkPoliciesResponse
 		}
 	}
@@ -226,7 +207,7 @@ func (x *MsgFromSensor) GetNetworkPoliciesResponse() *NetworkPoliciesResponse {
 
 func (x *MsgFromSensor) GetClusterStatusUpdate() *ClusterStatusUpdate {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_ClusterStatusUpdate); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_ClusterStatusUpdate); ok {
 			return x.ClusterStatusUpdate
 		}
 	}
@@ -235,7 +216,7 @@ func (x *MsgFromSensor) GetClusterStatusUpdate() *ClusterStatusUpdate {
 
 func (x *MsgFromSensor) GetTelemetryDataResponse() *PullTelemetryDataResponse {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_TelemetryDataResponse); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_TelemetryDataResponse); ok {
 			return x.TelemetryDataResponse
 		}
 	}
@@ -244,7 +225,7 @@ func (x *MsgFromSensor) GetTelemetryDataResponse() *PullTelemetryDataResponse {
 
 func (x *MsgFromSensor) GetClusterHealthInfo() *RawClusterHealthInfo {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_ClusterHealthInfo); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_ClusterHealthInfo); ok {
 			return x.ClusterHealthInfo
 		}
 	}
@@ -253,7 +234,7 @@ func (x *MsgFromSensor) GetClusterHealthInfo() *RawClusterHealthInfo {
 
 func (x *MsgFromSensor) GetHello() *SensorHello {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_Hello); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_Hello); ok {
 			return x.Hello
 		}
 	}
@@ -262,7 +243,7 @@ func (x *MsgFromSensor) GetHello() *SensorHello {
 
 func (x *MsgFromSensor) GetAuditLogStatusInfo() *AuditLogStatusInfo {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_AuditLogStatusInfo); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_AuditLogStatusInfo); ok {
 			return x.AuditLogStatusInfo
 		}
 	}
@@ -271,7 +252,7 @@ func (x *MsgFromSensor) GetAuditLogStatusInfo() *AuditLogStatusInfo {
 
 func (x *MsgFromSensor) GetIssueLocalScannerCertsRequest() *IssueLocalScannerCertsRequest {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_IssueLocalScannerCertsRequest); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_IssueLocalScannerCertsRequest); ok {
 			return x.IssueLocalScannerCertsRequest
 		}
 	}
@@ -280,7 +261,7 @@ func (x *MsgFromSensor) GetIssueLocalScannerCertsRequest() *IssueLocalScannerCer
 
 func (x *MsgFromSensor) GetClusterMetrics() *ClusterMetrics {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_ClusterMetrics); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_ClusterMetrics); ok {
 			return x.ClusterMetrics
 		}
 	}
@@ -289,7 +270,7 @@ func (x *MsgFromSensor) GetClusterMetrics() *ClusterMetrics {
 
 func (x *MsgFromSensor) GetProcessListeningOnPortUpdate() *ProcessListeningOnPortsUpdate {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_ProcessListeningOnPortUpdate); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_ProcessListeningOnPortUpdate); ok {
 			return x.ProcessListeningOnPortUpdate
 		}
 	}
@@ -298,7 +279,7 @@ func (x *MsgFromSensor) GetProcessListeningOnPortUpdate() *ProcessListeningOnPor
 
 func (x *MsgFromSensor) GetComplianceOperatorInfo() *ComplianceOperatorInfo {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_ComplianceOperatorInfo); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_ComplianceOperatorInfo); ok {
 			return x.ComplianceOperatorInfo
 		}
 	}
@@ -307,7 +288,7 @@ func (x *MsgFromSensor) GetComplianceOperatorInfo() *ComplianceOperatorInfo {
 
 func (x *MsgFromSensor) GetComplianceResponse() *ComplianceResponse {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_ComplianceResponse); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_ComplianceResponse); ok {
 			return x.ComplianceResponse
 		}
 	}
@@ -316,7 +297,7 @@ func (x *MsgFromSensor) GetComplianceResponse() *ComplianceResponse {
 
 func (x *MsgFromSensor) GetDeploymentEnhancementResponse() *DeploymentEnhancementResponse {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_DeploymentEnhancementResponse); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_DeploymentEnhancementResponse); ok {
 			return x.DeploymentEnhancementResponse
 		}
 	}
@@ -325,7 +306,7 @@ func (x *MsgFromSensor) GetDeploymentEnhancementResponse() *DeploymentEnhancemen
 
 func (x *MsgFromSensor) GetIssueSecuredClusterCertsRequest() *IssueSecuredClusterCertsRequest {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgFromSensor_IssueSecuredClusterCertsRequest); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgFromSensor_IssueSecuredClusterCertsRequest); ok {
 			return x.IssueSecuredClusterCertsRequest
 		}
 	}
@@ -333,178 +314,181 @@ func (x *MsgFromSensor) GetIssueSecuredClusterCertsRequest() *IssueSecuredCluste
 }
 
 func (x *MsgFromSensor) SetHashKey(v string) {
-	x.HashKey = &v
+	x.xxx_hidden_HashKey = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *MsgFromSensor) SetDedupeKey(v string) {
-	x.DedupeKey = &v
+	x.xxx_hidden_DedupeKey = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *MsgFromSensor) SetProcessingAttempt(v int32) {
-	x.ProcessingAttempt = &v
+	x.xxx_hidden_ProcessingAttempt = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *MsgFromSensor) SetEvent(v *SensorEvent) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_Event{v}
+	x.xxx_hidden_Msg = &msgFromSensor_Event{v}
 }
 
 func (x *MsgFromSensor) SetNetworkFlowUpdate(v *NetworkFlowUpdate) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_NetworkFlowUpdate{v}
+	x.xxx_hidden_Msg = &msgFromSensor_NetworkFlowUpdate{v}
 }
 
 func (x *MsgFromSensor) SetScrapeUpdate(v *ScrapeUpdate) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_ScrapeUpdate{v}
+	x.xxx_hidden_Msg = &msgFromSensor_ScrapeUpdate{v}
 }
 
 func (x *MsgFromSensor) SetNetworkPoliciesResponse(v *NetworkPoliciesResponse) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_NetworkPoliciesResponse{v}
+	x.xxx_hidden_Msg = &msgFromSensor_NetworkPoliciesResponse{v}
 }
 
 func (x *MsgFromSensor) SetClusterStatusUpdate(v *ClusterStatusUpdate) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_ClusterStatusUpdate{v}
+	x.xxx_hidden_Msg = &msgFromSensor_ClusterStatusUpdate{v}
 }
 
 func (x *MsgFromSensor) SetTelemetryDataResponse(v *PullTelemetryDataResponse) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_TelemetryDataResponse{v}
+	x.xxx_hidden_Msg = &msgFromSensor_TelemetryDataResponse{v}
 }
 
 func (x *MsgFromSensor) SetClusterHealthInfo(v *RawClusterHealthInfo) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_ClusterHealthInfo{v}
+	x.xxx_hidden_Msg = &msgFromSensor_ClusterHealthInfo{v}
 }
 
 func (x *MsgFromSensor) SetHello(v *SensorHello) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_Hello{v}
+	x.xxx_hidden_Msg = &msgFromSensor_Hello{v}
 }
 
 func (x *MsgFromSensor) SetAuditLogStatusInfo(v *AuditLogStatusInfo) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_AuditLogStatusInfo{v}
+	x.xxx_hidden_Msg = &msgFromSensor_AuditLogStatusInfo{v}
 }
 
 func (x *MsgFromSensor) SetIssueLocalScannerCertsRequest(v *IssueLocalScannerCertsRequest) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_IssueLocalScannerCertsRequest{v}
+	x.xxx_hidden_Msg = &msgFromSensor_IssueLocalScannerCertsRequest{v}
 }
 
 func (x *MsgFromSensor) SetClusterMetrics(v *ClusterMetrics) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_ClusterMetrics{v}
+	x.xxx_hidden_Msg = &msgFromSensor_ClusterMetrics{v}
 }
 
 func (x *MsgFromSensor) SetProcessListeningOnPortUpdate(v *ProcessListeningOnPortsUpdate) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_ProcessListeningOnPortUpdate{v}
+	x.xxx_hidden_Msg = &msgFromSensor_ProcessListeningOnPortUpdate{v}
 }
 
 func (x *MsgFromSensor) SetComplianceOperatorInfo(v *ComplianceOperatorInfo) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_ComplianceOperatorInfo{v}
+	x.xxx_hidden_Msg = &msgFromSensor_ComplianceOperatorInfo{v}
 }
 
 func (x *MsgFromSensor) SetComplianceResponse(v *ComplianceResponse) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_ComplianceResponse{v}
+	x.xxx_hidden_Msg = &msgFromSensor_ComplianceResponse{v}
 }
 
 func (x *MsgFromSensor) SetDeploymentEnhancementResponse(v *DeploymentEnhancementResponse) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_DeploymentEnhancementResponse{v}
+	x.xxx_hidden_Msg = &msgFromSensor_DeploymentEnhancementResponse{v}
 }
 
 func (x *MsgFromSensor) SetIssueSecuredClusterCertsRequest(v *IssueSecuredClusterCertsRequest) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgFromSensor_IssueSecuredClusterCertsRequest{v}
+	x.xxx_hidden_Msg = &msgFromSensor_IssueSecuredClusterCertsRequest{v}
 }
 
 func (x *MsgFromSensor) HasHashKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.HashKey != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *MsgFromSensor) HasDedupeKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.DedupeKey != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *MsgFromSensor) HasProcessingAttempt() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessingAttempt != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *MsgFromSensor) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.Msg != nil
+	return x.xxx_hidden_Msg != nil
 }
 
 func (x *MsgFromSensor) HasEvent() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_Event)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_Event)
 	return ok
 }
 
@@ -512,7 +496,7 @@ func (x *MsgFromSensor) HasNetworkFlowUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_NetworkFlowUpdate)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_NetworkFlowUpdate)
 	return ok
 }
 
@@ -520,7 +504,7 @@ func (x *MsgFromSensor) HasScrapeUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_ScrapeUpdate)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_ScrapeUpdate)
 	return ok
 }
 
@@ -528,7 +512,7 @@ func (x *MsgFromSensor) HasNetworkPoliciesResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_NetworkPoliciesResponse)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_NetworkPoliciesResponse)
 	return ok
 }
 
@@ -536,7 +520,7 @@ func (x *MsgFromSensor) HasClusterStatusUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_ClusterStatusUpdate)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_ClusterStatusUpdate)
 	return ok
 }
 
@@ -544,7 +528,7 @@ func (x *MsgFromSensor) HasTelemetryDataResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_TelemetryDataResponse)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_TelemetryDataResponse)
 	return ok
 }
 
@@ -552,7 +536,7 @@ func (x *MsgFromSensor) HasClusterHealthInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_ClusterHealthInfo)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_ClusterHealthInfo)
 	return ok
 }
 
@@ -560,7 +544,7 @@ func (x *MsgFromSensor) HasHello() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_Hello)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_Hello)
 	return ok
 }
 
@@ -568,7 +552,7 @@ func (x *MsgFromSensor) HasAuditLogStatusInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_AuditLogStatusInfo)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_AuditLogStatusInfo)
 	return ok
 }
 
@@ -576,7 +560,7 @@ func (x *MsgFromSensor) HasIssueLocalScannerCertsRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_IssueLocalScannerCertsRequest)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_IssueLocalScannerCertsRequest)
 	return ok
 }
 
@@ -584,7 +568,7 @@ func (x *MsgFromSensor) HasClusterMetrics() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_ClusterMetrics)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_ClusterMetrics)
 	return ok
 }
 
@@ -592,7 +576,7 @@ func (x *MsgFromSensor) HasProcessListeningOnPortUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_ProcessListeningOnPortUpdate)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_ProcessListeningOnPortUpdate)
 	return ok
 }
 
@@ -600,7 +584,7 @@ func (x *MsgFromSensor) HasComplianceOperatorInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_ComplianceOperatorInfo)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_ComplianceOperatorInfo)
 	return ok
 }
 
@@ -608,7 +592,7 @@ func (x *MsgFromSensor) HasComplianceResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_ComplianceResponse)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_ComplianceResponse)
 	return ok
 }
 
@@ -616,7 +600,7 @@ func (x *MsgFromSensor) HasDeploymentEnhancementResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_DeploymentEnhancementResponse)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_DeploymentEnhancementResponse)
 	return ok
 }
 
@@ -624,119 +608,122 @@ func (x *MsgFromSensor) HasIssueSecuredClusterCertsRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgFromSensor_IssueSecuredClusterCertsRequest)
+	_, ok := x.xxx_hidden_Msg.(*msgFromSensor_IssueSecuredClusterCertsRequest)
 	return ok
 }
 
 func (x *MsgFromSensor) ClearHashKey() {
-	x.HashKey = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HashKey = nil
 }
 
 func (x *MsgFromSensor) ClearDedupeKey() {
-	x.DedupeKey = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_DedupeKey = nil
 }
 
 func (x *MsgFromSensor) ClearProcessingAttempt() {
-	x.ProcessingAttempt = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ProcessingAttempt = 0
 }
 
 func (x *MsgFromSensor) ClearMsg() {
-	x.Msg = nil
+	x.xxx_hidden_Msg = nil
 }
 
 func (x *MsgFromSensor) ClearEvent() {
-	if _, ok := x.Msg.(*MsgFromSensor_Event); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_Event); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearNetworkFlowUpdate() {
-	if _, ok := x.Msg.(*MsgFromSensor_NetworkFlowUpdate); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_NetworkFlowUpdate); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearScrapeUpdate() {
-	if _, ok := x.Msg.(*MsgFromSensor_ScrapeUpdate); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_ScrapeUpdate); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearNetworkPoliciesResponse() {
-	if _, ok := x.Msg.(*MsgFromSensor_NetworkPoliciesResponse); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_NetworkPoliciesResponse); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearClusterStatusUpdate() {
-	if _, ok := x.Msg.(*MsgFromSensor_ClusterStatusUpdate); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_ClusterStatusUpdate); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearTelemetryDataResponse() {
-	if _, ok := x.Msg.(*MsgFromSensor_TelemetryDataResponse); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_TelemetryDataResponse); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearClusterHealthInfo() {
-	if _, ok := x.Msg.(*MsgFromSensor_ClusterHealthInfo); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_ClusterHealthInfo); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearHello() {
-	if _, ok := x.Msg.(*MsgFromSensor_Hello); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_Hello); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearAuditLogStatusInfo() {
-	if _, ok := x.Msg.(*MsgFromSensor_AuditLogStatusInfo); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_AuditLogStatusInfo); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearIssueLocalScannerCertsRequest() {
-	if _, ok := x.Msg.(*MsgFromSensor_IssueLocalScannerCertsRequest); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_IssueLocalScannerCertsRequest); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearClusterMetrics() {
-	if _, ok := x.Msg.(*MsgFromSensor_ClusterMetrics); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_ClusterMetrics); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearProcessListeningOnPortUpdate() {
-	if _, ok := x.Msg.(*MsgFromSensor_ProcessListeningOnPortUpdate); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_ProcessListeningOnPortUpdate); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearComplianceOperatorInfo() {
-	if _, ok := x.Msg.(*MsgFromSensor_ComplianceOperatorInfo); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_ComplianceOperatorInfo); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearComplianceResponse() {
-	if _, ok := x.Msg.(*MsgFromSensor_ComplianceResponse); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_ComplianceResponse); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearDeploymentEnhancementResponse() {
-	if _, ok := x.Msg.(*MsgFromSensor_DeploymentEnhancementResponse); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_DeploymentEnhancementResponse); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgFromSensor) ClearIssueSecuredClusterCertsRequest() {
-	if _, ok := x.Msg.(*MsgFromSensor_IssueSecuredClusterCertsRequest); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgFromSensor_IssueSecuredClusterCertsRequest); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
@@ -762,38 +749,38 @@ func (x *MsgFromSensor) WhichMsg() case_MsgFromSensor_Msg {
 	if x == nil {
 		return MsgFromSensor_Msg_not_set_case
 	}
-	switch x.Msg.(type) {
-	case *MsgFromSensor_Event:
+	switch x.xxx_hidden_Msg.(type) {
+	case *msgFromSensor_Event:
 		return MsgFromSensor_Event_case
-	case *MsgFromSensor_NetworkFlowUpdate:
+	case *msgFromSensor_NetworkFlowUpdate:
 		return MsgFromSensor_NetworkFlowUpdate_case
-	case *MsgFromSensor_ScrapeUpdate:
+	case *msgFromSensor_ScrapeUpdate:
 		return MsgFromSensor_ScrapeUpdate_case
-	case *MsgFromSensor_NetworkPoliciesResponse:
+	case *msgFromSensor_NetworkPoliciesResponse:
 		return MsgFromSensor_NetworkPoliciesResponse_case
-	case *MsgFromSensor_ClusterStatusUpdate:
+	case *msgFromSensor_ClusterStatusUpdate:
 		return MsgFromSensor_ClusterStatusUpdate_case
-	case *MsgFromSensor_TelemetryDataResponse:
+	case *msgFromSensor_TelemetryDataResponse:
 		return MsgFromSensor_TelemetryDataResponse_case
-	case *MsgFromSensor_ClusterHealthInfo:
+	case *msgFromSensor_ClusterHealthInfo:
 		return MsgFromSensor_ClusterHealthInfo_case
-	case *MsgFromSensor_Hello:
+	case *msgFromSensor_Hello:
 		return MsgFromSensor_Hello_case
-	case *MsgFromSensor_AuditLogStatusInfo:
+	case *msgFromSensor_AuditLogStatusInfo:
 		return MsgFromSensor_AuditLogStatusInfo_case
-	case *MsgFromSensor_IssueLocalScannerCertsRequest:
+	case *msgFromSensor_IssueLocalScannerCertsRequest:
 		return MsgFromSensor_IssueLocalScannerCertsRequest_case
-	case *MsgFromSensor_ClusterMetrics:
+	case *msgFromSensor_ClusterMetrics:
 		return MsgFromSensor_ClusterMetrics_case
-	case *MsgFromSensor_ProcessListeningOnPortUpdate:
+	case *msgFromSensor_ProcessListeningOnPortUpdate:
 		return MsgFromSensor_ProcessListeningOnPortUpdate_case
-	case *MsgFromSensor_ComplianceOperatorInfo:
+	case *msgFromSensor_ComplianceOperatorInfo:
 		return MsgFromSensor_ComplianceOperatorInfo_case
-	case *MsgFromSensor_ComplianceResponse:
+	case *msgFromSensor_ComplianceResponse:
 		return MsgFromSensor_ComplianceResponse_case
-	case *MsgFromSensor_DeploymentEnhancementResponse:
+	case *msgFromSensor_DeploymentEnhancementResponse:
 		return MsgFromSensor_DeploymentEnhancementResponse_case
-	case *MsgFromSensor_IssueSecuredClusterCertsRequest:
+	case *msgFromSensor_IssueSecuredClusterCertsRequest:
 		return MsgFromSensor_IssueSecuredClusterCertsRequest_case
 	default:
 		return MsgFromSensor_Msg_not_set_case
@@ -806,7 +793,7 @@ type MsgFromSensor_builder struct {
 	HashKey           *string
 	DedupeKey         *string
 	ProcessingAttempt *int32
-	// Fields of oneof Msg:
+	// Fields of oneof xxx_hidden_Msg:
 	Event                           *SensorEvent
 	NetworkFlowUpdate               *NetworkFlowUpdate
 	ScrapeUpdate                    *ScrapeUpdate
@@ -823,63 +810,72 @@ type MsgFromSensor_builder struct {
 	ComplianceResponse              *ComplianceResponse
 	DeploymentEnhancementResponse   *DeploymentEnhancementResponse
 	IssueSecuredClusterCertsRequest *IssueSecuredClusterCertsRequest
-	// -- end of Msg
+	// -- end of xxx_hidden_Msg
 }
 
 func (b0 MsgFromSensor_builder) Build() *MsgFromSensor {
 	m0 := &MsgFromSensor{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HashKey = b.HashKey
-	x.DedupeKey = b.DedupeKey
-	x.ProcessingAttempt = b.ProcessingAttempt
+	if b.HashKey != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_HashKey = b.HashKey
+	}
+	if b.DedupeKey != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_DedupeKey = b.DedupeKey
+	}
+	if b.ProcessingAttempt != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_ProcessingAttempt = *b.ProcessingAttempt
+	}
 	if b.Event != nil {
-		x.Msg = &MsgFromSensor_Event{b.Event}
+		x.xxx_hidden_Msg = &msgFromSensor_Event{b.Event}
 	}
 	if b.NetworkFlowUpdate != nil {
-		x.Msg = &MsgFromSensor_NetworkFlowUpdate{b.NetworkFlowUpdate}
+		x.xxx_hidden_Msg = &msgFromSensor_NetworkFlowUpdate{b.NetworkFlowUpdate}
 	}
 	if b.ScrapeUpdate != nil {
-		x.Msg = &MsgFromSensor_ScrapeUpdate{b.ScrapeUpdate}
+		x.xxx_hidden_Msg = &msgFromSensor_ScrapeUpdate{b.ScrapeUpdate}
 	}
 	if b.NetworkPoliciesResponse != nil {
-		x.Msg = &MsgFromSensor_NetworkPoliciesResponse{b.NetworkPoliciesResponse}
+		x.xxx_hidden_Msg = &msgFromSensor_NetworkPoliciesResponse{b.NetworkPoliciesResponse}
 	}
 	if b.ClusterStatusUpdate != nil {
-		x.Msg = &MsgFromSensor_ClusterStatusUpdate{b.ClusterStatusUpdate}
+		x.xxx_hidden_Msg = &msgFromSensor_ClusterStatusUpdate{b.ClusterStatusUpdate}
 	}
 	if b.TelemetryDataResponse != nil {
-		x.Msg = &MsgFromSensor_TelemetryDataResponse{b.TelemetryDataResponse}
+		x.xxx_hidden_Msg = &msgFromSensor_TelemetryDataResponse{b.TelemetryDataResponse}
 	}
 	if b.ClusterHealthInfo != nil {
-		x.Msg = &MsgFromSensor_ClusterHealthInfo{b.ClusterHealthInfo}
+		x.xxx_hidden_Msg = &msgFromSensor_ClusterHealthInfo{b.ClusterHealthInfo}
 	}
 	if b.Hello != nil {
-		x.Msg = &MsgFromSensor_Hello{b.Hello}
+		x.xxx_hidden_Msg = &msgFromSensor_Hello{b.Hello}
 	}
 	if b.AuditLogStatusInfo != nil {
-		x.Msg = &MsgFromSensor_AuditLogStatusInfo{b.AuditLogStatusInfo}
+		x.xxx_hidden_Msg = &msgFromSensor_AuditLogStatusInfo{b.AuditLogStatusInfo}
 	}
 	if b.IssueLocalScannerCertsRequest != nil {
-		x.Msg = &MsgFromSensor_IssueLocalScannerCertsRequest{b.IssueLocalScannerCertsRequest}
+		x.xxx_hidden_Msg = &msgFromSensor_IssueLocalScannerCertsRequest{b.IssueLocalScannerCertsRequest}
 	}
 	if b.ClusterMetrics != nil {
-		x.Msg = &MsgFromSensor_ClusterMetrics{b.ClusterMetrics}
+		x.xxx_hidden_Msg = &msgFromSensor_ClusterMetrics{b.ClusterMetrics}
 	}
 	if b.ProcessListeningOnPortUpdate != nil {
-		x.Msg = &MsgFromSensor_ProcessListeningOnPortUpdate{b.ProcessListeningOnPortUpdate}
+		x.xxx_hidden_Msg = &msgFromSensor_ProcessListeningOnPortUpdate{b.ProcessListeningOnPortUpdate}
 	}
 	if b.ComplianceOperatorInfo != nil {
-		x.Msg = &MsgFromSensor_ComplianceOperatorInfo{b.ComplianceOperatorInfo}
+		x.xxx_hidden_Msg = &msgFromSensor_ComplianceOperatorInfo{b.ComplianceOperatorInfo}
 	}
 	if b.ComplianceResponse != nil {
-		x.Msg = &MsgFromSensor_ComplianceResponse{b.ComplianceResponse}
+		x.xxx_hidden_Msg = &msgFromSensor_ComplianceResponse{b.ComplianceResponse}
 	}
 	if b.DeploymentEnhancementResponse != nil {
-		x.Msg = &MsgFromSensor_DeploymentEnhancementResponse{b.DeploymentEnhancementResponse}
+		x.xxx_hidden_Msg = &msgFromSensor_DeploymentEnhancementResponse{b.DeploymentEnhancementResponse}
 	}
 	if b.IssueSecuredClusterCertsRequest != nil {
-		x.Msg = &MsgFromSensor_IssueSecuredClusterCertsRequest{b.IssueSecuredClusterCertsRequest}
+		x.xxx_hidden_Msg = &msgFromSensor_IssueSecuredClusterCertsRequest{b.IssueSecuredClusterCertsRequest}
 	}
 	return m0
 }
@@ -898,104 +894,104 @@ type isMsgFromSensor_Msg interface {
 	isMsgFromSensor_Msg()
 }
 
-type MsgFromSensor_Event struct {
+type msgFromSensor_Event struct {
 	Event *SensorEvent `protobuf:"bytes,1,opt,name=event,oneof"`
 }
 
-type MsgFromSensor_NetworkFlowUpdate struct {
+type msgFromSensor_NetworkFlowUpdate struct {
 	NetworkFlowUpdate *NetworkFlowUpdate `protobuf:"bytes,2,opt,name=network_flow_update,json=networkFlowUpdate,oneof"`
 }
 
-type MsgFromSensor_ScrapeUpdate struct {
+type msgFromSensor_ScrapeUpdate struct {
 	ScrapeUpdate *ScrapeUpdate `protobuf:"bytes,3,opt,name=scrape_update,json=scrapeUpdate,oneof"`
 }
 
-type MsgFromSensor_NetworkPoliciesResponse struct {
+type msgFromSensor_NetworkPoliciesResponse struct {
 	NetworkPoliciesResponse *NetworkPoliciesResponse `protobuf:"bytes,4,opt,name=network_policies_response,json=networkPoliciesResponse,oneof"`
 }
 
-type MsgFromSensor_ClusterStatusUpdate struct {
+type msgFromSensor_ClusterStatusUpdate struct {
 	ClusterStatusUpdate *ClusterStatusUpdate `protobuf:"bytes,5,opt,name=cluster_status_update,json=clusterStatusUpdate,oneof"`
 }
 
-type MsgFromSensor_TelemetryDataResponse struct {
+type msgFromSensor_TelemetryDataResponse struct {
 	TelemetryDataResponse *PullTelemetryDataResponse `protobuf:"bytes,6,opt,name=telemetry_data_response,json=telemetryDataResponse,oneof"`
 }
 
-type MsgFromSensor_ClusterHealthInfo struct {
+type msgFromSensor_ClusterHealthInfo struct {
 	ClusterHealthInfo *RawClusterHealthInfo `protobuf:"bytes,9,opt,name=cluster_health_info,json=clusterHealthInfo,oneof"`
 }
 
-type MsgFromSensor_Hello struct {
+type msgFromSensor_Hello struct {
 	Hello *SensorHello `protobuf:"bytes,10,opt,name=hello,oneof"`
 }
 
-type MsgFromSensor_AuditLogStatusInfo struct {
+type msgFromSensor_AuditLogStatusInfo struct {
 	AuditLogStatusInfo *AuditLogStatusInfo `protobuf:"bytes,11,opt,name=audit_log_status_info,json=auditLogStatusInfo,oneof"`
 }
 
-type MsgFromSensor_IssueLocalScannerCertsRequest struct {
+type msgFromSensor_IssueLocalScannerCertsRequest struct {
 	IssueLocalScannerCertsRequest *IssueLocalScannerCertsRequest `protobuf:"bytes,12,opt,name=issue_local_scanner_certs_request,json=issueLocalScannerCertsRequest,oneof"`
 }
 
-type MsgFromSensor_ClusterMetrics struct {
+type msgFromSensor_ClusterMetrics struct {
 	ClusterMetrics *ClusterMetrics `protobuf:"bytes,13,opt,name=cluster_metrics,json=clusterMetrics,oneof"`
 }
 
-type MsgFromSensor_ProcessListeningOnPortUpdate struct {
+type msgFromSensor_ProcessListeningOnPortUpdate struct {
 	ProcessListeningOnPortUpdate *ProcessListeningOnPortsUpdate `protobuf:"bytes,14,opt,name=process_listening_on_port_update,json=processListeningOnPortUpdate,oneof"`
 }
 
-type MsgFromSensor_ComplianceOperatorInfo struct {
+type msgFromSensor_ComplianceOperatorInfo struct {
 	ComplianceOperatorInfo *ComplianceOperatorInfo `protobuf:"bytes,16,opt,name=compliance_operator_info,json=complianceOperatorInfo,oneof"`
 }
 
-type MsgFromSensor_ComplianceResponse struct {
+type msgFromSensor_ComplianceResponse struct {
 	ComplianceResponse *ComplianceResponse `protobuf:"bytes,17,opt,name=compliance_response,json=complianceResponse,oneof"`
 }
 
-type MsgFromSensor_DeploymentEnhancementResponse struct {
+type msgFromSensor_DeploymentEnhancementResponse struct {
 	DeploymentEnhancementResponse *DeploymentEnhancementResponse `protobuf:"bytes,18,opt,name=deployment_enhancement_response,json=deploymentEnhancementResponse,oneof"`
 }
 
-type MsgFromSensor_IssueSecuredClusterCertsRequest struct {
+type msgFromSensor_IssueSecuredClusterCertsRequest struct {
 	IssueSecuredClusterCertsRequest *IssueSecuredClusterCertsRequest `protobuf:"bytes,19,opt,name=issue_secured_cluster_certs_request,json=issueSecuredClusterCertsRequest,oneof"`
 }
 
-func (*MsgFromSensor_Event) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_Event) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_NetworkFlowUpdate) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_NetworkFlowUpdate) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_ScrapeUpdate) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_ScrapeUpdate) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_NetworkPoliciesResponse) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_NetworkPoliciesResponse) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_ClusterStatusUpdate) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_ClusterStatusUpdate) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_TelemetryDataResponse) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_TelemetryDataResponse) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_ClusterHealthInfo) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_ClusterHealthInfo) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_Hello) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_Hello) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_AuditLogStatusInfo) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_AuditLogStatusInfo) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_IssueLocalScannerCertsRequest) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_IssueLocalScannerCertsRequest) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_ClusterMetrics) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_ClusterMetrics) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_ProcessListeningOnPortUpdate) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_ProcessListeningOnPortUpdate) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_ComplianceOperatorInfo) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_ComplianceOperatorInfo) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_ComplianceResponse) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_ComplianceResponse) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_DeploymentEnhancementResponse) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_DeploymentEnhancementResponse) isMsgFromSensor_Msg() {}
 
-func (*MsgFromSensor_IssueSecuredClusterCertsRequest) isMsgFromSensor_Msg() {}
+func (*msgFromSensor_IssueSecuredClusterCertsRequest) isMsgFromSensor_Msg() {}
 
 type ReprocessDeployments struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1039,39 +1035,10 @@ func (b0 ReprocessDeployments_builder) Build() *ReprocessDeployments {
 
 // next available tag: 29
 type MsgToSensor struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Msg:
-	//
-	//	*MsgToSensor_Enforcement
-	//	*MsgToSensor_ScrapeCommand
-	//	*MsgToSensor_NetworkPoliciesCommand
-	//	*MsgToSensor_ClusterConfig
-	//	*MsgToSensor_SensorUpgradeTrigger
-	//	*MsgToSensor_TelemetryDataRequest
-	//	*MsgToSensor_PolicySync
-	//	*MsgToSensor_BaselineSync
-	//	*MsgToSensor_CancelPullTelemetryDataRequest
-	//	*MsgToSensor_PushNetworkEntitiesRequest
-	//	*MsgToSensor_Hello
-	//	*MsgToSensor_NetworkBaselineSync
-	//	*MsgToSensor_AuditLogSync
-	//	*MsgToSensor_ReprocessDeployment
-	//	*MsgToSensor_InvalidateImageCache
-	//	*MsgToSensor_IssueLocalScannerCertsResponse
-	//	*MsgToSensor_UpdatedImage
-	//	*MsgToSensor_ReprocessDeployments
-	//	*MsgToSensor_NodeInventoryAck
-	//	*MsgToSensor_DelegatedRegistryConfig
-	//	*MsgToSensor_ScanImage
-	//	*MsgToSensor_ImageIntegrations
-	//	*MsgToSensor_ComplianceRequest
-	//	*MsgToSensor_ClusterHealthResponse
-	//	*MsgToSensor_DeduperState
-	//	*MsgToSensor_DeploymentEnhancementRequest
-	//	*MsgToSensor_IssueSecuredClusterCertsResponse
-	Msg           isMsgToSensor_Msg `protobuf_oneof:"msg"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Msg isMsgToSensor_Msg      `protobuf_oneof:"msg"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *MsgToSensor) Reset() {
@@ -1099,16 +1066,9 @@ func (x *MsgToSensor) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *MsgToSensor) GetMsg() isMsgToSensor_Msg {
-	if x != nil {
-		return x.Msg
-	}
-	return nil
-}
-
 func (x *MsgToSensor) GetEnforcement() *SensorEnforcement {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_Enforcement); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_Enforcement); ok {
 			return x.Enforcement
 		}
 	}
@@ -1117,7 +1077,7 @@ func (x *MsgToSensor) GetEnforcement() *SensorEnforcement {
 
 func (x *MsgToSensor) GetScrapeCommand() *ScrapeCommand {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_ScrapeCommand); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_ScrapeCommand); ok {
 			return x.ScrapeCommand
 		}
 	}
@@ -1126,7 +1086,7 @@ func (x *MsgToSensor) GetScrapeCommand() *ScrapeCommand {
 
 func (x *MsgToSensor) GetNetworkPoliciesCommand() *NetworkPoliciesCommand {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_NetworkPoliciesCommand); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_NetworkPoliciesCommand); ok {
 			return x.NetworkPoliciesCommand
 		}
 	}
@@ -1135,7 +1095,7 @@ func (x *MsgToSensor) GetNetworkPoliciesCommand() *NetworkPoliciesCommand {
 
 func (x *MsgToSensor) GetClusterConfig() *ClusterConfig {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_ClusterConfig); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_ClusterConfig); ok {
 			return x.ClusterConfig
 		}
 	}
@@ -1144,7 +1104,7 @@ func (x *MsgToSensor) GetClusterConfig() *ClusterConfig {
 
 func (x *MsgToSensor) GetSensorUpgradeTrigger() *SensorUpgradeTrigger {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_SensorUpgradeTrigger); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_SensorUpgradeTrigger); ok {
 			return x.SensorUpgradeTrigger
 		}
 	}
@@ -1153,7 +1113,7 @@ func (x *MsgToSensor) GetSensorUpgradeTrigger() *SensorUpgradeTrigger {
 
 func (x *MsgToSensor) GetTelemetryDataRequest() *PullTelemetryDataRequest {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_TelemetryDataRequest); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_TelemetryDataRequest); ok {
 			return x.TelemetryDataRequest
 		}
 	}
@@ -1162,7 +1122,7 @@ func (x *MsgToSensor) GetTelemetryDataRequest() *PullTelemetryDataRequest {
 
 func (x *MsgToSensor) GetPolicySync() *PolicySync {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_PolicySync); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_PolicySync); ok {
 			return x.PolicySync
 		}
 	}
@@ -1171,7 +1131,7 @@ func (x *MsgToSensor) GetPolicySync() *PolicySync {
 
 func (x *MsgToSensor) GetBaselineSync() *BaselineSync {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_BaselineSync); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_BaselineSync); ok {
 			return x.BaselineSync
 		}
 	}
@@ -1180,7 +1140,7 @@ func (x *MsgToSensor) GetBaselineSync() *BaselineSync {
 
 func (x *MsgToSensor) GetCancelPullTelemetryDataRequest() *CancelPullTelemetryDataRequest {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_CancelPullTelemetryDataRequest); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_CancelPullTelemetryDataRequest); ok {
 			return x.CancelPullTelemetryDataRequest
 		}
 	}
@@ -1189,7 +1149,7 @@ func (x *MsgToSensor) GetCancelPullTelemetryDataRequest() *CancelPullTelemetryDa
 
 func (x *MsgToSensor) GetPushNetworkEntitiesRequest() *PushNetworkEntitiesRequest {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_PushNetworkEntitiesRequest); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_PushNetworkEntitiesRequest); ok {
 			return x.PushNetworkEntitiesRequest
 		}
 	}
@@ -1198,7 +1158,7 @@ func (x *MsgToSensor) GetPushNetworkEntitiesRequest() *PushNetworkEntitiesReques
 
 func (x *MsgToSensor) GetHello() *CentralHello {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_Hello); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_Hello); ok {
 			return x.Hello
 		}
 	}
@@ -1207,7 +1167,7 @@ func (x *MsgToSensor) GetHello() *CentralHello {
 
 func (x *MsgToSensor) GetNetworkBaselineSync() *NetworkBaselineSync {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_NetworkBaselineSync); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_NetworkBaselineSync); ok {
 			return x.NetworkBaselineSync
 		}
 	}
@@ -1216,7 +1176,7 @@ func (x *MsgToSensor) GetNetworkBaselineSync() *NetworkBaselineSync {
 
 func (x *MsgToSensor) GetAuditLogSync() *AuditLogSync {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_AuditLogSync); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_AuditLogSync); ok {
 			return x.AuditLogSync
 		}
 	}
@@ -1225,7 +1185,7 @@ func (x *MsgToSensor) GetAuditLogSync() *AuditLogSync {
 
 func (x *MsgToSensor) GetReprocessDeployment() *ReprocessDeployment {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_ReprocessDeployment); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_ReprocessDeployment); ok {
 			return x.ReprocessDeployment
 		}
 	}
@@ -1234,7 +1194,7 @@ func (x *MsgToSensor) GetReprocessDeployment() *ReprocessDeployment {
 
 func (x *MsgToSensor) GetInvalidateImageCache() *InvalidateImageCache {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_InvalidateImageCache); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_InvalidateImageCache); ok {
 			return x.InvalidateImageCache
 		}
 	}
@@ -1243,7 +1203,7 @@ func (x *MsgToSensor) GetInvalidateImageCache() *InvalidateImageCache {
 
 func (x *MsgToSensor) GetIssueLocalScannerCertsResponse() *IssueLocalScannerCertsResponse {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_IssueLocalScannerCertsResponse); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_IssueLocalScannerCertsResponse); ok {
 			return x.IssueLocalScannerCertsResponse
 		}
 	}
@@ -1252,7 +1212,7 @@ func (x *MsgToSensor) GetIssueLocalScannerCertsResponse() *IssueLocalScannerCert
 
 func (x *MsgToSensor) GetUpdatedImage() *storage.Image {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_UpdatedImage); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_UpdatedImage); ok {
 			return x.UpdatedImage
 		}
 	}
@@ -1261,7 +1221,7 @@ func (x *MsgToSensor) GetUpdatedImage() *storage.Image {
 
 func (x *MsgToSensor) GetReprocessDeployments() *ReprocessDeployments {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_ReprocessDeployments); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_ReprocessDeployments); ok {
 			return x.ReprocessDeployments
 		}
 	}
@@ -1270,7 +1230,7 @@ func (x *MsgToSensor) GetReprocessDeployments() *ReprocessDeployments {
 
 func (x *MsgToSensor) GetNodeInventoryAck() *NodeInventoryACK {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_NodeInventoryAck); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_NodeInventoryAck); ok {
 			return x.NodeInventoryAck
 		}
 	}
@@ -1279,7 +1239,7 @@ func (x *MsgToSensor) GetNodeInventoryAck() *NodeInventoryACK {
 
 func (x *MsgToSensor) GetDelegatedRegistryConfig() *DelegatedRegistryConfig {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_DelegatedRegistryConfig); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_DelegatedRegistryConfig); ok {
 			return x.DelegatedRegistryConfig
 		}
 	}
@@ -1288,7 +1248,7 @@ func (x *MsgToSensor) GetDelegatedRegistryConfig() *DelegatedRegistryConfig {
 
 func (x *MsgToSensor) GetScanImage() *ScanImage {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_ScanImage); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_ScanImage); ok {
 			return x.ScanImage
 		}
 	}
@@ -1297,7 +1257,7 @@ func (x *MsgToSensor) GetScanImage() *ScanImage {
 
 func (x *MsgToSensor) GetImageIntegrations() *ImageIntegrations {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_ImageIntegrations); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_ImageIntegrations); ok {
 			return x.ImageIntegrations
 		}
 	}
@@ -1306,7 +1266,7 @@ func (x *MsgToSensor) GetImageIntegrations() *ImageIntegrations {
 
 func (x *MsgToSensor) GetComplianceRequest() *ComplianceRequest {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_ComplianceRequest); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_ComplianceRequest); ok {
 			return x.ComplianceRequest
 		}
 	}
@@ -1315,7 +1275,7 @@ func (x *MsgToSensor) GetComplianceRequest() *ComplianceRequest {
 
 func (x *MsgToSensor) GetClusterHealthResponse() *ClusterHealthResponse {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_ClusterHealthResponse); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_ClusterHealthResponse); ok {
 			return x.ClusterHealthResponse
 		}
 	}
@@ -1324,7 +1284,7 @@ func (x *MsgToSensor) GetClusterHealthResponse() *ClusterHealthResponse {
 
 func (x *MsgToSensor) GetDeduperState() *DeduperState {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_DeduperState); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_DeduperState); ok {
 			return x.DeduperState
 		}
 	}
@@ -1333,7 +1293,7 @@ func (x *MsgToSensor) GetDeduperState() *DeduperState {
 
 func (x *MsgToSensor) GetDeploymentEnhancementRequest() *DeploymentEnhancementRequest {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_DeploymentEnhancementRequest); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_DeploymentEnhancementRequest); ok {
 			return x.DeploymentEnhancementRequest
 		}
 	}
@@ -1342,7 +1302,7 @@ func (x *MsgToSensor) GetDeploymentEnhancementRequest() *DeploymentEnhancementRe
 
 func (x *MsgToSensor) GetIssueSecuredClusterCertsResponse() *IssueSecuredClusterCertsResponse {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_IssueSecuredClusterCertsResponse); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToSensor_IssueSecuredClusterCertsResponse); ok {
 			return x.IssueSecuredClusterCertsResponse
 		}
 	}
@@ -1351,232 +1311,232 @@ func (x *MsgToSensor) GetIssueSecuredClusterCertsResponse() *IssueSecuredCluster
 
 func (x *MsgToSensor) SetEnforcement(v *SensorEnforcement) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_Enforcement{v}
+	x.xxx_hidden_Msg = &msgToSensor_Enforcement{v}
 }
 
 func (x *MsgToSensor) SetScrapeCommand(v *ScrapeCommand) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_ScrapeCommand{v}
+	x.xxx_hidden_Msg = &msgToSensor_ScrapeCommand{v}
 }
 
 func (x *MsgToSensor) SetNetworkPoliciesCommand(v *NetworkPoliciesCommand) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_NetworkPoliciesCommand{v}
+	x.xxx_hidden_Msg = &msgToSensor_NetworkPoliciesCommand{v}
 }
 
 func (x *MsgToSensor) SetClusterConfig(v *ClusterConfig) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_ClusterConfig{v}
+	x.xxx_hidden_Msg = &msgToSensor_ClusterConfig{v}
 }
 
 func (x *MsgToSensor) SetSensorUpgradeTrigger(v *SensorUpgradeTrigger) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_SensorUpgradeTrigger{v}
+	x.xxx_hidden_Msg = &msgToSensor_SensorUpgradeTrigger{v}
 }
 
 func (x *MsgToSensor) SetTelemetryDataRequest(v *PullTelemetryDataRequest) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_TelemetryDataRequest{v}
+	x.xxx_hidden_Msg = &msgToSensor_TelemetryDataRequest{v}
 }
 
 func (x *MsgToSensor) SetPolicySync(v *PolicySync) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_PolicySync{v}
+	x.xxx_hidden_Msg = &msgToSensor_PolicySync{v}
 }
 
 func (x *MsgToSensor) SetBaselineSync(v *BaselineSync) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_BaselineSync{v}
+	x.xxx_hidden_Msg = &msgToSensor_BaselineSync{v}
 }
 
 func (x *MsgToSensor) SetCancelPullTelemetryDataRequest(v *CancelPullTelemetryDataRequest) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_CancelPullTelemetryDataRequest{v}
+	x.xxx_hidden_Msg = &msgToSensor_CancelPullTelemetryDataRequest{v}
 }
 
 func (x *MsgToSensor) SetPushNetworkEntitiesRequest(v *PushNetworkEntitiesRequest) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_PushNetworkEntitiesRequest{v}
+	x.xxx_hidden_Msg = &msgToSensor_PushNetworkEntitiesRequest{v}
 }
 
 func (x *MsgToSensor) SetHello(v *CentralHello) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_Hello{v}
+	x.xxx_hidden_Msg = &msgToSensor_Hello{v}
 }
 
 func (x *MsgToSensor) SetNetworkBaselineSync(v *NetworkBaselineSync) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_NetworkBaselineSync{v}
+	x.xxx_hidden_Msg = &msgToSensor_NetworkBaselineSync{v}
 }
 
 func (x *MsgToSensor) SetAuditLogSync(v *AuditLogSync) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_AuditLogSync{v}
+	x.xxx_hidden_Msg = &msgToSensor_AuditLogSync{v}
 }
 
 func (x *MsgToSensor) SetReprocessDeployment(v *ReprocessDeployment) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_ReprocessDeployment{v}
+	x.xxx_hidden_Msg = &msgToSensor_ReprocessDeployment{v}
 }
 
 func (x *MsgToSensor) SetInvalidateImageCache(v *InvalidateImageCache) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_InvalidateImageCache{v}
+	x.xxx_hidden_Msg = &msgToSensor_InvalidateImageCache{v}
 }
 
 func (x *MsgToSensor) SetIssueLocalScannerCertsResponse(v *IssueLocalScannerCertsResponse) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_IssueLocalScannerCertsResponse{v}
+	x.xxx_hidden_Msg = &msgToSensor_IssueLocalScannerCertsResponse{v}
 }
 
 func (x *MsgToSensor) SetUpdatedImage(v *storage.Image) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_UpdatedImage{v}
+	x.xxx_hidden_Msg = &msgToSensor_UpdatedImage{v}
 }
 
 func (x *MsgToSensor) SetReprocessDeployments(v *ReprocessDeployments) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_ReprocessDeployments{v}
+	x.xxx_hidden_Msg = &msgToSensor_ReprocessDeployments{v}
 }
 
 func (x *MsgToSensor) SetNodeInventoryAck(v *NodeInventoryACK) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_NodeInventoryAck{v}
+	x.xxx_hidden_Msg = &msgToSensor_NodeInventoryAck{v}
 }
 
 func (x *MsgToSensor) SetDelegatedRegistryConfig(v *DelegatedRegistryConfig) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_DelegatedRegistryConfig{v}
+	x.xxx_hidden_Msg = &msgToSensor_DelegatedRegistryConfig{v}
 }
 
 func (x *MsgToSensor) SetScanImage(v *ScanImage) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_ScanImage{v}
+	x.xxx_hidden_Msg = &msgToSensor_ScanImage{v}
 }
 
 func (x *MsgToSensor) SetImageIntegrations(v *ImageIntegrations) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_ImageIntegrations{v}
+	x.xxx_hidden_Msg = &msgToSensor_ImageIntegrations{v}
 }
 
 func (x *MsgToSensor) SetComplianceRequest(v *ComplianceRequest) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_ComplianceRequest{v}
+	x.xxx_hidden_Msg = &msgToSensor_ComplianceRequest{v}
 }
 
 func (x *MsgToSensor) SetClusterHealthResponse(v *ClusterHealthResponse) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_ClusterHealthResponse{v}
+	x.xxx_hidden_Msg = &msgToSensor_ClusterHealthResponse{v}
 }
 
 func (x *MsgToSensor) SetDeduperState(v *DeduperState) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_DeduperState{v}
+	x.xxx_hidden_Msg = &msgToSensor_DeduperState{v}
 }
 
 func (x *MsgToSensor) SetDeploymentEnhancementRequest(v *DeploymentEnhancementRequest) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_DeploymentEnhancementRequest{v}
+	x.xxx_hidden_Msg = &msgToSensor_DeploymentEnhancementRequest{v}
 }
 
 func (x *MsgToSensor) SetIssueSecuredClusterCertsResponse(v *IssueSecuredClusterCertsResponse) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToSensor_IssueSecuredClusterCertsResponse{v}
+	x.xxx_hidden_Msg = &msgToSensor_IssueSecuredClusterCertsResponse{v}
 }
 
 func (x *MsgToSensor) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.Msg != nil
+	return x.xxx_hidden_Msg != nil
 }
 
 func (x *MsgToSensor) HasEnforcement() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_Enforcement)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_Enforcement)
 	return ok
 }
 
@@ -1584,7 +1544,7 @@ func (x *MsgToSensor) HasScrapeCommand() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_ScrapeCommand)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_ScrapeCommand)
 	return ok
 }
 
@@ -1592,7 +1552,7 @@ func (x *MsgToSensor) HasNetworkPoliciesCommand() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_NetworkPoliciesCommand)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_NetworkPoliciesCommand)
 	return ok
 }
 
@@ -1600,7 +1560,7 @@ func (x *MsgToSensor) HasClusterConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_ClusterConfig)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_ClusterConfig)
 	return ok
 }
 
@@ -1608,7 +1568,7 @@ func (x *MsgToSensor) HasSensorUpgradeTrigger() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_SensorUpgradeTrigger)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_SensorUpgradeTrigger)
 	return ok
 }
 
@@ -1616,7 +1576,7 @@ func (x *MsgToSensor) HasTelemetryDataRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_TelemetryDataRequest)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_TelemetryDataRequest)
 	return ok
 }
 
@@ -1624,7 +1584,7 @@ func (x *MsgToSensor) HasPolicySync() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_PolicySync)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_PolicySync)
 	return ok
 }
 
@@ -1632,7 +1592,7 @@ func (x *MsgToSensor) HasBaselineSync() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_BaselineSync)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_BaselineSync)
 	return ok
 }
 
@@ -1640,7 +1600,7 @@ func (x *MsgToSensor) HasCancelPullTelemetryDataRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_CancelPullTelemetryDataRequest)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_CancelPullTelemetryDataRequest)
 	return ok
 }
 
@@ -1648,7 +1608,7 @@ func (x *MsgToSensor) HasPushNetworkEntitiesRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_PushNetworkEntitiesRequest)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_PushNetworkEntitiesRequest)
 	return ok
 }
 
@@ -1656,7 +1616,7 @@ func (x *MsgToSensor) HasHello() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_Hello)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_Hello)
 	return ok
 }
 
@@ -1664,7 +1624,7 @@ func (x *MsgToSensor) HasNetworkBaselineSync() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_NetworkBaselineSync)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_NetworkBaselineSync)
 	return ok
 }
 
@@ -1672,7 +1632,7 @@ func (x *MsgToSensor) HasAuditLogSync() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_AuditLogSync)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_AuditLogSync)
 	return ok
 }
 
@@ -1680,7 +1640,7 @@ func (x *MsgToSensor) HasReprocessDeployment() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_ReprocessDeployment)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_ReprocessDeployment)
 	return ok
 }
 
@@ -1688,7 +1648,7 @@ func (x *MsgToSensor) HasInvalidateImageCache() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_InvalidateImageCache)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_InvalidateImageCache)
 	return ok
 }
 
@@ -1696,7 +1656,7 @@ func (x *MsgToSensor) HasIssueLocalScannerCertsResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_IssueLocalScannerCertsResponse)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_IssueLocalScannerCertsResponse)
 	return ok
 }
 
@@ -1704,7 +1664,7 @@ func (x *MsgToSensor) HasUpdatedImage() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_UpdatedImage)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_UpdatedImage)
 	return ok
 }
 
@@ -1712,7 +1672,7 @@ func (x *MsgToSensor) HasReprocessDeployments() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_ReprocessDeployments)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_ReprocessDeployments)
 	return ok
 }
 
@@ -1720,7 +1680,7 @@ func (x *MsgToSensor) HasNodeInventoryAck() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_NodeInventoryAck)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_NodeInventoryAck)
 	return ok
 }
 
@@ -1728,7 +1688,7 @@ func (x *MsgToSensor) HasDelegatedRegistryConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_DelegatedRegistryConfig)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_DelegatedRegistryConfig)
 	return ok
 }
 
@@ -1736,7 +1696,7 @@ func (x *MsgToSensor) HasScanImage() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_ScanImage)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_ScanImage)
 	return ok
 }
 
@@ -1744,7 +1704,7 @@ func (x *MsgToSensor) HasImageIntegrations() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_ImageIntegrations)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_ImageIntegrations)
 	return ok
 }
 
@@ -1752,7 +1712,7 @@ func (x *MsgToSensor) HasComplianceRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_ComplianceRequest)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_ComplianceRequest)
 	return ok
 }
 
@@ -1760,7 +1720,7 @@ func (x *MsgToSensor) HasClusterHealthResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_ClusterHealthResponse)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_ClusterHealthResponse)
 	return ok
 }
 
@@ -1768,7 +1728,7 @@ func (x *MsgToSensor) HasDeduperState() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_DeduperState)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_DeduperState)
 	return ok
 }
 
@@ -1776,7 +1736,7 @@ func (x *MsgToSensor) HasDeploymentEnhancementRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_DeploymentEnhancementRequest)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_DeploymentEnhancementRequest)
 	return ok
 }
 
@@ -1784,173 +1744,173 @@ func (x *MsgToSensor) HasIssueSecuredClusterCertsResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToSensor_IssueSecuredClusterCertsResponse)
+	_, ok := x.xxx_hidden_Msg.(*msgToSensor_IssueSecuredClusterCertsResponse)
 	return ok
 }
 
 func (x *MsgToSensor) ClearMsg() {
-	x.Msg = nil
+	x.xxx_hidden_Msg = nil
 }
 
 func (x *MsgToSensor) ClearEnforcement() {
-	if _, ok := x.Msg.(*MsgToSensor_Enforcement); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_Enforcement); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearScrapeCommand() {
-	if _, ok := x.Msg.(*MsgToSensor_ScrapeCommand); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_ScrapeCommand); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearNetworkPoliciesCommand() {
-	if _, ok := x.Msg.(*MsgToSensor_NetworkPoliciesCommand); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_NetworkPoliciesCommand); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearClusterConfig() {
-	if _, ok := x.Msg.(*MsgToSensor_ClusterConfig); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_ClusterConfig); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearSensorUpgradeTrigger() {
-	if _, ok := x.Msg.(*MsgToSensor_SensorUpgradeTrigger); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_SensorUpgradeTrigger); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearTelemetryDataRequest() {
-	if _, ok := x.Msg.(*MsgToSensor_TelemetryDataRequest); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_TelemetryDataRequest); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearPolicySync() {
-	if _, ok := x.Msg.(*MsgToSensor_PolicySync); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_PolicySync); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearBaselineSync() {
-	if _, ok := x.Msg.(*MsgToSensor_BaselineSync); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_BaselineSync); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearCancelPullTelemetryDataRequest() {
-	if _, ok := x.Msg.(*MsgToSensor_CancelPullTelemetryDataRequest); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_CancelPullTelemetryDataRequest); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearPushNetworkEntitiesRequest() {
-	if _, ok := x.Msg.(*MsgToSensor_PushNetworkEntitiesRequest); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_PushNetworkEntitiesRequest); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearHello() {
-	if _, ok := x.Msg.(*MsgToSensor_Hello); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_Hello); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearNetworkBaselineSync() {
-	if _, ok := x.Msg.(*MsgToSensor_NetworkBaselineSync); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_NetworkBaselineSync); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearAuditLogSync() {
-	if _, ok := x.Msg.(*MsgToSensor_AuditLogSync); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_AuditLogSync); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearReprocessDeployment() {
-	if _, ok := x.Msg.(*MsgToSensor_ReprocessDeployment); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_ReprocessDeployment); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearInvalidateImageCache() {
-	if _, ok := x.Msg.(*MsgToSensor_InvalidateImageCache); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_InvalidateImageCache); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearIssueLocalScannerCertsResponse() {
-	if _, ok := x.Msg.(*MsgToSensor_IssueLocalScannerCertsResponse); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_IssueLocalScannerCertsResponse); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearUpdatedImage() {
-	if _, ok := x.Msg.(*MsgToSensor_UpdatedImage); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_UpdatedImage); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearReprocessDeployments() {
-	if _, ok := x.Msg.(*MsgToSensor_ReprocessDeployments); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_ReprocessDeployments); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearNodeInventoryAck() {
-	if _, ok := x.Msg.(*MsgToSensor_NodeInventoryAck); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_NodeInventoryAck); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearDelegatedRegistryConfig() {
-	if _, ok := x.Msg.(*MsgToSensor_DelegatedRegistryConfig); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_DelegatedRegistryConfig); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearScanImage() {
-	if _, ok := x.Msg.(*MsgToSensor_ScanImage); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_ScanImage); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearImageIntegrations() {
-	if _, ok := x.Msg.(*MsgToSensor_ImageIntegrations); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_ImageIntegrations); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearComplianceRequest() {
-	if _, ok := x.Msg.(*MsgToSensor_ComplianceRequest); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_ComplianceRequest); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearClusterHealthResponse() {
-	if _, ok := x.Msg.(*MsgToSensor_ClusterHealthResponse); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_ClusterHealthResponse); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearDeduperState() {
-	if _, ok := x.Msg.(*MsgToSensor_DeduperState); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_DeduperState); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearDeploymentEnhancementRequest() {
-	if _, ok := x.Msg.(*MsgToSensor_DeploymentEnhancementRequest); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_DeploymentEnhancementRequest); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToSensor) ClearIssueSecuredClusterCertsResponse() {
-	if _, ok := x.Msg.(*MsgToSensor_IssueSecuredClusterCertsResponse); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToSensor_IssueSecuredClusterCertsResponse); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
@@ -1987,60 +1947,60 @@ func (x *MsgToSensor) WhichMsg() case_MsgToSensor_Msg {
 	if x == nil {
 		return MsgToSensor_Msg_not_set_case
 	}
-	switch x.Msg.(type) {
-	case *MsgToSensor_Enforcement:
+	switch x.xxx_hidden_Msg.(type) {
+	case *msgToSensor_Enforcement:
 		return MsgToSensor_Enforcement_case
-	case *MsgToSensor_ScrapeCommand:
+	case *msgToSensor_ScrapeCommand:
 		return MsgToSensor_ScrapeCommand_case
-	case *MsgToSensor_NetworkPoliciesCommand:
+	case *msgToSensor_NetworkPoliciesCommand:
 		return MsgToSensor_NetworkPoliciesCommand_case
-	case *MsgToSensor_ClusterConfig:
+	case *msgToSensor_ClusterConfig:
 		return MsgToSensor_ClusterConfig_case
-	case *MsgToSensor_SensorUpgradeTrigger:
+	case *msgToSensor_SensorUpgradeTrigger:
 		return MsgToSensor_SensorUpgradeTrigger_case
-	case *MsgToSensor_TelemetryDataRequest:
+	case *msgToSensor_TelemetryDataRequest:
 		return MsgToSensor_TelemetryDataRequest_case
-	case *MsgToSensor_PolicySync:
+	case *msgToSensor_PolicySync:
 		return MsgToSensor_PolicySync_case
-	case *MsgToSensor_BaselineSync:
+	case *msgToSensor_BaselineSync:
 		return MsgToSensor_BaselineSync_case
-	case *MsgToSensor_CancelPullTelemetryDataRequest:
+	case *msgToSensor_CancelPullTelemetryDataRequest:
 		return MsgToSensor_CancelPullTelemetryDataRequest_case
-	case *MsgToSensor_PushNetworkEntitiesRequest:
+	case *msgToSensor_PushNetworkEntitiesRequest:
 		return MsgToSensor_PushNetworkEntitiesRequest_case
-	case *MsgToSensor_Hello:
+	case *msgToSensor_Hello:
 		return MsgToSensor_Hello_case
-	case *MsgToSensor_NetworkBaselineSync:
+	case *msgToSensor_NetworkBaselineSync:
 		return MsgToSensor_NetworkBaselineSync_case
-	case *MsgToSensor_AuditLogSync:
+	case *msgToSensor_AuditLogSync:
 		return MsgToSensor_AuditLogSync_case
-	case *MsgToSensor_ReprocessDeployment:
+	case *msgToSensor_ReprocessDeployment:
 		return MsgToSensor_ReprocessDeployment_case
-	case *MsgToSensor_InvalidateImageCache:
+	case *msgToSensor_InvalidateImageCache:
 		return MsgToSensor_InvalidateImageCache_case
-	case *MsgToSensor_IssueLocalScannerCertsResponse:
+	case *msgToSensor_IssueLocalScannerCertsResponse:
 		return MsgToSensor_IssueLocalScannerCertsResponse_case
-	case *MsgToSensor_UpdatedImage:
+	case *msgToSensor_UpdatedImage:
 		return MsgToSensor_UpdatedImage_case
-	case *MsgToSensor_ReprocessDeployments:
+	case *msgToSensor_ReprocessDeployments:
 		return MsgToSensor_ReprocessDeployments_case
-	case *MsgToSensor_NodeInventoryAck:
+	case *msgToSensor_NodeInventoryAck:
 		return MsgToSensor_NodeInventoryAck_case
-	case *MsgToSensor_DelegatedRegistryConfig:
+	case *msgToSensor_DelegatedRegistryConfig:
 		return MsgToSensor_DelegatedRegistryConfig_case
-	case *MsgToSensor_ScanImage:
+	case *msgToSensor_ScanImage:
 		return MsgToSensor_ScanImage_case
-	case *MsgToSensor_ImageIntegrations:
+	case *msgToSensor_ImageIntegrations:
 		return MsgToSensor_ImageIntegrations_case
-	case *MsgToSensor_ComplianceRequest:
+	case *msgToSensor_ComplianceRequest:
 		return MsgToSensor_ComplianceRequest_case
-	case *MsgToSensor_ClusterHealthResponse:
+	case *msgToSensor_ClusterHealthResponse:
 		return MsgToSensor_ClusterHealthResponse_case
-	case *MsgToSensor_DeduperState:
+	case *msgToSensor_DeduperState:
 		return MsgToSensor_DeduperState_case
-	case *MsgToSensor_DeploymentEnhancementRequest:
+	case *msgToSensor_DeploymentEnhancementRequest:
 		return MsgToSensor_DeploymentEnhancementRequest_case
-	case *MsgToSensor_IssueSecuredClusterCertsResponse:
+	case *msgToSensor_IssueSecuredClusterCertsResponse:
 		return MsgToSensor_IssueSecuredClusterCertsResponse_case
 	default:
 		return MsgToSensor_Msg_not_set_case
@@ -2050,7 +2010,7 @@ func (x *MsgToSensor) WhichMsg() case_MsgToSensor_Msg {
 type MsgToSensor_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Msg:
+	// Fields of oneof xxx_hidden_Msg:
 	Enforcement            *SensorEnforcement
 	ScrapeCommand          *ScrapeCommand
 	NetworkPoliciesCommand *NetworkPoliciesCommand
@@ -2079,7 +2039,7 @@ type MsgToSensor_builder struct {
 	DeduperState                     *DeduperState
 	DeploymentEnhancementRequest     *DeploymentEnhancementRequest
 	IssueSecuredClusterCertsResponse *IssueSecuredClusterCertsResponse
-	// -- end of Msg
+	// -- end of xxx_hidden_Msg
 }
 
 func (b0 MsgToSensor_builder) Build() *MsgToSensor {
@@ -2087,85 +2047,85 @@ func (b0 MsgToSensor_builder) Build() *MsgToSensor {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Enforcement != nil {
-		x.Msg = &MsgToSensor_Enforcement{b.Enforcement}
+		x.xxx_hidden_Msg = &msgToSensor_Enforcement{b.Enforcement}
 	}
 	if b.ScrapeCommand != nil {
-		x.Msg = &MsgToSensor_ScrapeCommand{b.ScrapeCommand}
+		x.xxx_hidden_Msg = &msgToSensor_ScrapeCommand{b.ScrapeCommand}
 	}
 	if b.NetworkPoliciesCommand != nil {
-		x.Msg = &MsgToSensor_NetworkPoliciesCommand{b.NetworkPoliciesCommand}
+		x.xxx_hidden_Msg = &msgToSensor_NetworkPoliciesCommand{b.NetworkPoliciesCommand}
 	}
 	if b.ClusterConfig != nil {
-		x.Msg = &MsgToSensor_ClusterConfig{b.ClusterConfig}
+		x.xxx_hidden_Msg = &msgToSensor_ClusterConfig{b.ClusterConfig}
 	}
 	if b.SensorUpgradeTrigger != nil {
-		x.Msg = &MsgToSensor_SensorUpgradeTrigger{b.SensorUpgradeTrigger}
+		x.xxx_hidden_Msg = &msgToSensor_SensorUpgradeTrigger{b.SensorUpgradeTrigger}
 	}
 	if b.TelemetryDataRequest != nil {
-		x.Msg = &MsgToSensor_TelemetryDataRequest{b.TelemetryDataRequest}
+		x.xxx_hidden_Msg = &msgToSensor_TelemetryDataRequest{b.TelemetryDataRequest}
 	}
 	if b.PolicySync != nil {
-		x.Msg = &MsgToSensor_PolicySync{b.PolicySync}
+		x.xxx_hidden_Msg = &msgToSensor_PolicySync{b.PolicySync}
 	}
 	if b.BaselineSync != nil {
-		x.Msg = &MsgToSensor_BaselineSync{b.BaselineSync}
+		x.xxx_hidden_Msg = &msgToSensor_BaselineSync{b.BaselineSync}
 	}
 	if b.CancelPullTelemetryDataRequest != nil {
-		x.Msg = &MsgToSensor_CancelPullTelemetryDataRequest{b.CancelPullTelemetryDataRequest}
+		x.xxx_hidden_Msg = &msgToSensor_CancelPullTelemetryDataRequest{b.CancelPullTelemetryDataRequest}
 	}
 	if b.PushNetworkEntitiesRequest != nil {
-		x.Msg = &MsgToSensor_PushNetworkEntitiesRequest{b.PushNetworkEntitiesRequest}
+		x.xxx_hidden_Msg = &msgToSensor_PushNetworkEntitiesRequest{b.PushNetworkEntitiesRequest}
 	}
 	if b.Hello != nil {
-		x.Msg = &MsgToSensor_Hello{b.Hello}
+		x.xxx_hidden_Msg = &msgToSensor_Hello{b.Hello}
 	}
 	if b.NetworkBaselineSync != nil {
-		x.Msg = &MsgToSensor_NetworkBaselineSync{b.NetworkBaselineSync}
+		x.xxx_hidden_Msg = &msgToSensor_NetworkBaselineSync{b.NetworkBaselineSync}
 	}
 	if b.AuditLogSync != nil {
-		x.Msg = &MsgToSensor_AuditLogSync{b.AuditLogSync}
+		x.xxx_hidden_Msg = &msgToSensor_AuditLogSync{b.AuditLogSync}
 	}
 	if b.ReprocessDeployment != nil {
-		x.Msg = &MsgToSensor_ReprocessDeployment{b.ReprocessDeployment}
+		x.xxx_hidden_Msg = &msgToSensor_ReprocessDeployment{b.ReprocessDeployment}
 	}
 	if b.InvalidateImageCache != nil {
-		x.Msg = &MsgToSensor_InvalidateImageCache{b.InvalidateImageCache}
+		x.xxx_hidden_Msg = &msgToSensor_InvalidateImageCache{b.InvalidateImageCache}
 	}
 	if b.IssueLocalScannerCertsResponse != nil {
-		x.Msg = &MsgToSensor_IssueLocalScannerCertsResponse{b.IssueLocalScannerCertsResponse}
+		x.xxx_hidden_Msg = &msgToSensor_IssueLocalScannerCertsResponse{b.IssueLocalScannerCertsResponse}
 	}
 	if b.UpdatedImage != nil {
-		x.Msg = &MsgToSensor_UpdatedImage{b.UpdatedImage}
+		x.xxx_hidden_Msg = &msgToSensor_UpdatedImage{b.UpdatedImage}
 	}
 	if b.ReprocessDeployments != nil {
-		x.Msg = &MsgToSensor_ReprocessDeployments{b.ReprocessDeployments}
+		x.xxx_hidden_Msg = &msgToSensor_ReprocessDeployments{b.ReprocessDeployments}
 	}
 	if b.NodeInventoryAck != nil {
-		x.Msg = &MsgToSensor_NodeInventoryAck{b.NodeInventoryAck}
+		x.xxx_hidden_Msg = &msgToSensor_NodeInventoryAck{b.NodeInventoryAck}
 	}
 	if b.DelegatedRegistryConfig != nil {
-		x.Msg = &MsgToSensor_DelegatedRegistryConfig{b.DelegatedRegistryConfig}
+		x.xxx_hidden_Msg = &msgToSensor_DelegatedRegistryConfig{b.DelegatedRegistryConfig}
 	}
 	if b.ScanImage != nil {
-		x.Msg = &MsgToSensor_ScanImage{b.ScanImage}
+		x.xxx_hidden_Msg = &msgToSensor_ScanImage{b.ScanImage}
 	}
 	if b.ImageIntegrations != nil {
-		x.Msg = &MsgToSensor_ImageIntegrations{b.ImageIntegrations}
+		x.xxx_hidden_Msg = &msgToSensor_ImageIntegrations{b.ImageIntegrations}
 	}
 	if b.ComplianceRequest != nil {
-		x.Msg = &MsgToSensor_ComplianceRequest{b.ComplianceRequest}
+		x.xxx_hidden_Msg = &msgToSensor_ComplianceRequest{b.ComplianceRequest}
 	}
 	if b.ClusterHealthResponse != nil {
-		x.Msg = &MsgToSensor_ClusterHealthResponse{b.ClusterHealthResponse}
+		x.xxx_hidden_Msg = &msgToSensor_ClusterHealthResponse{b.ClusterHealthResponse}
 	}
 	if b.DeduperState != nil {
-		x.Msg = &MsgToSensor_DeduperState{b.DeduperState}
+		x.xxx_hidden_Msg = &msgToSensor_DeduperState{b.DeduperState}
 	}
 	if b.DeploymentEnhancementRequest != nil {
-		x.Msg = &MsgToSensor_DeploymentEnhancementRequest{b.DeploymentEnhancementRequest}
+		x.xxx_hidden_Msg = &msgToSensor_DeploymentEnhancementRequest{b.DeploymentEnhancementRequest}
 	}
 	if b.IssueSecuredClusterCertsResponse != nil {
-		x.Msg = &MsgToSensor_IssueSecuredClusterCertsResponse{b.IssueSecuredClusterCertsResponse}
+		x.xxx_hidden_Msg = &msgToSensor_IssueSecuredClusterCertsResponse{b.IssueSecuredClusterCertsResponse}
 	}
 	return m0
 }
@@ -2184,176 +2144,178 @@ type isMsgToSensor_Msg interface {
 	isMsgToSensor_Msg()
 }
 
-type MsgToSensor_Enforcement struct {
+type msgToSensor_Enforcement struct {
 	Enforcement *SensorEnforcement `protobuf:"bytes,1,opt,name=enforcement,oneof"`
 }
 
-type MsgToSensor_ScrapeCommand struct {
+type msgToSensor_ScrapeCommand struct {
 	ScrapeCommand *ScrapeCommand `protobuf:"bytes,2,opt,name=scrape_command,json=scrapeCommand,oneof"`
 }
 
-type MsgToSensor_NetworkPoliciesCommand struct {
+type msgToSensor_NetworkPoliciesCommand struct {
 	NetworkPoliciesCommand *NetworkPoliciesCommand `protobuf:"bytes,3,opt,name=network_policies_command,json=networkPoliciesCommand,oneof"`
 }
 
-type MsgToSensor_ClusterConfig struct {
+type msgToSensor_ClusterConfig struct {
 	ClusterConfig *ClusterConfig `protobuf:"bytes,4,opt,name=cluster_config,json=clusterConfig,oneof"`
 }
 
-type MsgToSensor_SensorUpgradeTrigger struct {
+type msgToSensor_SensorUpgradeTrigger struct {
 	SensorUpgradeTrigger *SensorUpgradeTrigger `protobuf:"bytes,5,opt,name=sensor_upgrade_trigger,json=sensorUpgradeTrigger,oneof"`
 }
 
-type MsgToSensor_TelemetryDataRequest struct {
+type msgToSensor_TelemetryDataRequest struct {
 	TelemetryDataRequest *PullTelemetryDataRequest `protobuf:"bytes,6,opt,name=telemetry_data_request,json=telemetryDataRequest,oneof"`
 }
 
-type MsgToSensor_PolicySync struct {
+type msgToSensor_PolicySync struct {
 	PolicySync *PolicySync `protobuf:"bytes,7,opt,name=policy_sync,json=policySync,oneof"`
 }
 
-type MsgToSensor_BaselineSync struct {
+type msgToSensor_BaselineSync struct {
 	// 8 was ReassessPolicies
 	BaselineSync *BaselineSync `protobuf:"bytes,9,opt,name=baseline_sync,json=baselineSync,oneof"`
 }
 
-type MsgToSensor_CancelPullTelemetryDataRequest struct {
+type msgToSensor_CancelPullTelemetryDataRequest struct {
 	CancelPullTelemetryDataRequest *CancelPullTelemetryDataRequest `protobuf:"bytes,10,opt,name=cancel_pull_telemetry_data_request,json=cancelPullTelemetryDataRequest,oneof"`
 }
 
-type MsgToSensor_PushNetworkEntitiesRequest struct {
+type msgToSensor_PushNetworkEntitiesRequest struct {
 	PushNetworkEntitiesRequest *PushNetworkEntitiesRequest `protobuf:"bytes,11,opt,name=push_network_entities_request,json=pushNetworkEntitiesRequest,oneof"`
 }
 
-type MsgToSensor_Hello struct {
+type msgToSensor_Hello struct {
 	Hello *CentralHello `protobuf:"bytes,12,opt,name=hello,oneof"`
 }
 
-type MsgToSensor_NetworkBaselineSync struct {
+type msgToSensor_NetworkBaselineSync struct {
 	NetworkBaselineSync *NetworkBaselineSync `protobuf:"bytes,13,opt,name=network_baseline_sync,json=networkBaselineSync,oneof"`
 }
 
-type MsgToSensor_AuditLogSync struct {
+type msgToSensor_AuditLogSync struct {
 	AuditLogSync *AuditLogSync `protobuf:"bytes,14,opt,name=audit_log_sync,json=auditLogSync,oneof"`
 }
 
-type MsgToSensor_ReprocessDeployment struct {
+type msgToSensor_ReprocessDeployment struct {
 	ReprocessDeployment *ReprocessDeployment `protobuf:"bytes,15,opt,name=reprocess_deployment,json=reprocessDeployment,oneof"`
 }
 
-type MsgToSensor_InvalidateImageCache struct {
+type msgToSensor_InvalidateImageCache struct {
 	InvalidateImageCache *InvalidateImageCache `protobuf:"bytes,16,opt,name=invalidate_image_cache,json=invalidateImageCache,oneof"`
 }
 
-type MsgToSensor_IssueLocalScannerCertsResponse struct {
+type msgToSensor_IssueLocalScannerCertsResponse struct {
 	IssueLocalScannerCertsResponse *IssueLocalScannerCertsResponse `protobuf:"bytes,17,opt,name=issue_local_scanner_certs_response,json=issueLocalScannerCertsResponse,oneof"`
 }
 
-type MsgToSensor_UpdatedImage struct {
+type msgToSensor_UpdatedImage struct {
 	UpdatedImage *storage.Image `protobuf:"bytes,18,opt,name=updated_image,json=updatedImage,oneof"`
 }
 
-type MsgToSensor_ReprocessDeployments struct {
+type msgToSensor_ReprocessDeployments struct {
 	ReprocessDeployments *ReprocessDeployments `protobuf:"bytes,19,opt,name=reprocess_deployments,json=reprocessDeployments,oneof"`
 }
 
-type MsgToSensor_NodeInventoryAck struct {
+type msgToSensor_NodeInventoryAck struct {
 	NodeInventoryAck *NodeInventoryACK `protobuf:"bytes,20,opt,name=node_inventory_ack,json=nodeInventoryAck,oneof"`
 }
 
-type MsgToSensor_DelegatedRegistryConfig struct {
+type msgToSensor_DelegatedRegistryConfig struct {
 	DelegatedRegistryConfig *DelegatedRegistryConfig `protobuf:"bytes,21,opt,name=delegated_registry_config,json=delegatedRegistryConfig,oneof"`
 }
 
-type MsgToSensor_ScanImage struct {
+type msgToSensor_ScanImage struct {
 	ScanImage *ScanImage `protobuf:"bytes,22,opt,name=scan_image,json=scanImage,oneof"`
 }
 
-type MsgToSensor_ImageIntegrations struct {
+type msgToSensor_ImageIntegrations struct {
 	ImageIntegrations *ImageIntegrations `protobuf:"bytes,23,opt,name=image_integrations,json=imageIntegrations,oneof"`
 }
 
-type MsgToSensor_ComplianceRequest struct {
+type msgToSensor_ComplianceRequest struct {
 	ComplianceRequest *ComplianceRequest `protobuf:"bytes,24,opt,name=compliance_request,json=complianceRequest,oneof"`
 }
 
-type MsgToSensor_ClusterHealthResponse struct {
+type msgToSensor_ClusterHealthResponse struct {
 	ClusterHealthResponse *ClusterHealthResponse `protobuf:"bytes,25,opt,name=cluster_health_response,json=clusterHealthResponse,oneof"`
 }
 
-type MsgToSensor_DeduperState struct {
+type msgToSensor_DeduperState struct {
 	DeduperState *DeduperState `protobuf:"bytes,26,opt,name=deduper_state,json=deduperState,oneof"`
 }
 
-type MsgToSensor_DeploymentEnhancementRequest struct {
+type msgToSensor_DeploymentEnhancementRequest struct {
 	DeploymentEnhancementRequest *DeploymentEnhancementRequest `protobuf:"bytes,27,opt,name=deployment_enhancement_request,json=deploymentEnhancementRequest,oneof"`
 }
 
-type MsgToSensor_IssueSecuredClusterCertsResponse struct {
+type msgToSensor_IssueSecuredClusterCertsResponse struct {
 	IssueSecuredClusterCertsResponse *IssueSecuredClusterCertsResponse `protobuf:"bytes,28,opt,name=issue_secured_cluster_certs_response,json=issueSecuredClusterCertsResponse,oneof"`
 }
 
-func (*MsgToSensor_Enforcement) isMsgToSensor_Msg() {}
+func (*msgToSensor_Enforcement) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_ScrapeCommand) isMsgToSensor_Msg() {}
+func (*msgToSensor_ScrapeCommand) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_NetworkPoliciesCommand) isMsgToSensor_Msg() {}
+func (*msgToSensor_NetworkPoliciesCommand) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_ClusterConfig) isMsgToSensor_Msg() {}
+func (*msgToSensor_ClusterConfig) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_SensorUpgradeTrigger) isMsgToSensor_Msg() {}
+func (*msgToSensor_SensorUpgradeTrigger) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_TelemetryDataRequest) isMsgToSensor_Msg() {}
+func (*msgToSensor_TelemetryDataRequest) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_PolicySync) isMsgToSensor_Msg() {}
+func (*msgToSensor_PolicySync) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_BaselineSync) isMsgToSensor_Msg() {}
+func (*msgToSensor_BaselineSync) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_CancelPullTelemetryDataRequest) isMsgToSensor_Msg() {}
+func (*msgToSensor_CancelPullTelemetryDataRequest) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_PushNetworkEntitiesRequest) isMsgToSensor_Msg() {}
+func (*msgToSensor_PushNetworkEntitiesRequest) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_Hello) isMsgToSensor_Msg() {}
+func (*msgToSensor_Hello) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_NetworkBaselineSync) isMsgToSensor_Msg() {}
+func (*msgToSensor_NetworkBaselineSync) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_AuditLogSync) isMsgToSensor_Msg() {}
+func (*msgToSensor_AuditLogSync) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_ReprocessDeployment) isMsgToSensor_Msg() {}
+func (*msgToSensor_ReprocessDeployment) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_InvalidateImageCache) isMsgToSensor_Msg() {}
+func (*msgToSensor_InvalidateImageCache) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_IssueLocalScannerCertsResponse) isMsgToSensor_Msg() {}
+func (*msgToSensor_IssueLocalScannerCertsResponse) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_UpdatedImage) isMsgToSensor_Msg() {}
+func (*msgToSensor_UpdatedImage) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_ReprocessDeployments) isMsgToSensor_Msg() {}
+func (*msgToSensor_ReprocessDeployments) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_NodeInventoryAck) isMsgToSensor_Msg() {}
+func (*msgToSensor_NodeInventoryAck) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_DelegatedRegistryConfig) isMsgToSensor_Msg() {}
+func (*msgToSensor_DelegatedRegistryConfig) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_ScanImage) isMsgToSensor_Msg() {}
+func (*msgToSensor_ScanImage) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_ImageIntegrations) isMsgToSensor_Msg() {}
+func (*msgToSensor_ImageIntegrations) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_ComplianceRequest) isMsgToSensor_Msg() {}
+func (*msgToSensor_ComplianceRequest) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_ClusterHealthResponse) isMsgToSensor_Msg() {}
+func (*msgToSensor_ClusterHealthResponse) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_DeduperState) isMsgToSensor_Msg() {}
+func (*msgToSensor_DeduperState) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_DeploymentEnhancementRequest) isMsgToSensor_Msg() {}
+func (*msgToSensor_DeploymentEnhancementRequest) isMsgToSensor_Msg() {}
 
-func (*MsgToSensor_IssueSecuredClusterCertsResponse) isMsgToSensor_Msg() {}
+func (*msgToSensor_IssueSecuredClusterCertsResponse) isMsgToSensor_Msg() {}
 
 type DeduperState struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	ResourceHashes map[string]uint64      `protobuf:"bytes,1,rep,name=resource_hashes,json=resourceHashes" json:"resource_hashes,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	Current        *int32                 `protobuf:"varint,2,opt,name=current" json:"current,omitempty"`
-	Total          *int32                 `protobuf:"varint,3,opt,name=total" json:"total,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ResourceHashes map[string]uint64      `protobuf:"bytes,1,rep,name=resource_hashes,json=resourceHashes" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	xxx_hidden_Current        int32                  `protobuf:"varint,2,opt,name=current"`
+	xxx_hidden_Total          int32                  `protobuf:"varint,3,opt,name=total"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *DeduperState) Reset() {
@@ -2383,57 +2345,61 @@ func (x *DeduperState) ProtoReflect() protoreflect.Message {
 
 func (x *DeduperState) GetResourceHashes() map[string]uint64 {
 	if x != nil {
-		return x.ResourceHashes
+		return x.xxx_hidden_ResourceHashes
 	}
 	return nil
 }
 
 func (x *DeduperState) GetCurrent() int32 {
-	if x != nil && x.Current != nil {
-		return *x.Current
+	if x != nil {
+		return x.xxx_hidden_Current
 	}
 	return 0
 }
 
 func (x *DeduperState) GetTotal() int32 {
-	if x != nil && x.Total != nil {
-		return *x.Total
+	if x != nil {
+		return x.xxx_hidden_Total
 	}
 	return 0
 }
 
 func (x *DeduperState) SetResourceHashes(v map[string]uint64) {
-	x.ResourceHashes = v
+	x.xxx_hidden_ResourceHashes = v
 }
 
 func (x *DeduperState) SetCurrent(v int32) {
-	x.Current = &v
+	x.xxx_hidden_Current = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *DeduperState) SetTotal(v int32) {
-	x.Total = &v
+	x.xxx_hidden_Total = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *DeduperState) HasCurrent() bool {
 	if x == nil {
 		return false
 	}
-	return x.Current != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DeduperState) HasTotal() bool {
 	if x == nil {
 		return false
 	}
-	return x.Total != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DeduperState) ClearCurrent() {
-	x.Current = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Current = 0
 }
 
 func (x *DeduperState) ClearTotal() {
-	x.Total = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Total = 0
 }
 
 type DeduperState_builder struct {
@@ -2448,24 +2414,28 @@ func (b0 DeduperState_builder) Build() *DeduperState {
 	m0 := &DeduperState{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ResourceHashes = b.ResourceHashes
-	x.Current = b.Current
-	x.Total = b.Total
+	x.xxx_hidden_ResourceHashes = b.ResourceHashes
+	if b.Current != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Current = *b.Current
+	}
+	if b.Total != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Total = *b.Total
+	}
 	return m0
 }
 
 type NodeInventoryACK struct {
-	state     protoimpl.MessageState   `protogen:"hybrid.v1"`
-	ClusterId *string                  `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	NodeName  *string                  `protobuf:"bytes,2,opt,name=node_name,json=nodeName" json:"node_name,omitempty"`
-	Action    *NodeInventoryACK_Action `protobuf:"varint,3,opt,name=action,enum=central.NodeInventoryACK_Action" json:"action,omitempty"`
-	// MessageType determines the type of message being acknowledged.
-	// It is a generic way of determining to which component this message is directed to.
-	// In version 4.6 and earlier, the messageType field was missing, because there was only one type and it
-	// was the node-inventory.
-	MessageType   *NodeInventoryACK_MessageType `protobuf:"varint,4,opt,name=messageType,enum=central.NodeInventoryACK_MessageType" json:"messageType,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId   *string                      `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_NodeName    *string                      `protobuf:"bytes,2,opt,name=node_name,json=nodeName"`
+	xxx_hidden_Action      NodeInventoryACK_Action      `protobuf:"varint,3,opt,name=action,enum=central.NodeInventoryACK_Action"`
+	xxx_hidden_MessageType NodeInventoryACK_MessageType `protobuf:"varint,4,opt,name=messageType,enum=central.NodeInventoryACK_MessageType"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NodeInventoryACK) Reset() {
@@ -2494,91 +2464,109 @@ func (x *NodeInventoryACK) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NodeInventoryACK) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NodeInventoryACK) GetNodeName() string {
-	if x != nil && x.NodeName != nil {
-		return *x.NodeName
+	if x != nil {
+		if x.xxx_hidden_NodeName != nil {
+			return *x.xxx_hidden_NodeName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NodeInventoryACK) GetAction() NodeInventoryACK_Action {
-	if x != nil && x.Action != nil {
-		return *x.Action
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Action
+		}
 	}
 	return NodeInventoryACK_ACK
 }
 
 func (x *NodeInventoryACK) GetMessageType() NodeInventoryACK_MessageType {
-	if x != nil && x.MessageType != nil {
-		return *x.MessageType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			return x.xxx_hidden_MessageType
+		}
 	}
 	return NodeInventoryACK_NodeInventory
 }
 
 func (x *NodeInventoryACK) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *NodeInventoryACK) SetNodeName(v string) {
-	x.NodeName = &v
+	x.xxx_hidden_NodeName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *NodeInventoryACK) SetAction(v NodeInventoryACK_Action) {
-	x.Action = &v
+	x.xxx_hidden_Action = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *NodeInventoryACK) SetMessageType(v NodeInventoryACK_MessageType) {
-	x.MessageType = &v
+	x.xxx_hidden_MessageType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *NodeInventoryACK) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NodeInventoryACK) HasNodeName() bool {
 	if x == nil {
 		return false
 	}
-	return x.NodeName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NodeInventoryACK) HasAction() bool {
 	if x == nil {
 		return false
 	}
-	return x.Action != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *NodeInventoryACK) HasMessageType() bool {
 	if x == nil {
 		return false
 	}
-	return x.MessageType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *NodeInventoryACK) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *NodeInventoryACK) ClearNodeName() {
-	x.NodeName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_NodeName = nil
 }
 
 func (x *NodeInventoryACK) ClearAction() {
-	x.Action = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Action = NodeInventoryACK_ACK
 }
 
 func (x *NodeInventoryACK) ClearMessageType() {
-	x.MessageType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_MessageType = NodeInventoryACK_NodeInventory
 }
 
 type NodeInventoryACK_builder struct {
@@ -2598,18 +2586,30 @@ func (b0 NodeInventoryACK_builder) Build() *NodeInventoryACK {
 	m0 := &NodeInventoryACK{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.NodeName = b.NodeName
-	x.Action = b.Action
-	x.MessageType = b.MessageType
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.NodeName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_NodeName = b.NodeName
+	}
+	if b.Action != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Action = *b.Action
+	}
+	if b.MessageType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_MessageType = *b.MessageType
+	}
 	return m0
 }
 
 type AuditLogSync struct {
-	state                  protoimpl.MessageState                `protogen:"hybrid.v1"`
-	NodeAuditLogFileStates map[string]*storage.AuditLogFileState `protobuf:"bytes,1,rep,name=node_audit_log_file_states,json=nodeAuditLogFileStates" json:"node_audit_log_file_states,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                             protoimpl.MessageState                `protogen:"opaque.v1"`
+	xxx_hidden_NodeAuditLogFileStates map[string]*storage.AuditLogFileState `protobuf:"bytes,1,rep,name=node_audit_log_file_states,json=nodeAuditLogFileStates" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *AuditLogSync) Reset() {
@@ -2639,13 +2639,13 @@ func (x *AuditLogSync) ProtoReflect() protoreflect.Message {
 
 func (x *AuditLogSync) GetNodeAuditLogFileStates() map[string]*storage.AuditLogFileState {
 	if x != nil {
-		return x.NodeAuditLogFileStates
+		return x.xxx_hidden_NodeAuditLogFileStates
 	}
 	return nil
 }
 
 func (x *AuditLogSync) SetNodeAuditLogFileStates(v map[string]*storage.AuditLogFileState) {
-	x.NodeAuditLogFileStates = v
+	x.xxx_hidden_NodeAuditLogFileStates = v
 }
 
 type AuditLogSync_builder struct {
@@ -2658,15 +2658,15 @@ func (b0 AuditLogSync_builder) Build() *AuditLogSync {
 	m0 := &AuditLogSync{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.NodeAuditLogFileStates = b.NodeAuditLogFileStates
+	x.xxx_hidden_NodeAuditLogFileStates = b.NodeAuditLogFileStates
 	return m0
 }
 
 type AuditLogStatusInfo struct {
-	state                  protoimpl.MessageState                `protogen:"hybrid.v1"`
-	NodeAuditLogFileStates map[string]*storage.AuditLogFileState `protobuf:"bytes,1,rep,name=node_audit_log_file_states,json=nodeAuditLogFileStates" json:"node_audit_log_file_states,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                             protoimpl.MessageState                `protogen:"opaque.v1"`
+	xxx_hidden_NodeAuditLogFileStates map[string]*storage.AuditLogFileState `protobuf:"bytes,1,rep,name=node_audit_log_file_states,json=nodeAuditLogFileStates" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *AuditLogStatusInfo) Reset() {
@@ -2696,13 +2696,13 @@ func (x *AuditLogStatusInfo) ProtoReflect() protoreflect.Message {
 
 func (x *AuditLogStatusInfo) GetNodeAuditLogFileStates() map[string]*storage.AuditLogFileState {
 	if x != nil {
-		return x.NodeAuditLogFileStates
+		return x.xxx_hidden_NodeAuditLogFileStates
 	}
 	return nil
 }
 
 func (x *AuditLogStatusInfo) SetNodeAuditLogFileStates(v map[string]*storage.AuditLogFileState) {
-	x.NodeAuditLogFileStates = v
+	x.xxx_hidden_NodeAuditLogFileStates = v
 }
 
 type AuditLogStatusInfo_builder struct {
@@ -2715,15 +2715,15 @@ func (b0 AuditLogStatusInfo_builder) Build() *AuditLogStatusInfo {
 	m0 := &AuditLogStatusInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.NodeAuditLogFileStates = b.NodeAuditLogFileStates
+	x.xxx_hidden_NodeAuditLogFileStates = b.NodeAuditLogFileStates
 	return m0
 }
 
 type ReprocessDeployment struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	DeploymentIds []string               `protobuf:"bytes,1,rep,name=deployment_ids,json=deploymentIds" json:"deployment_ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_DeploymentIds []string               `protobuf:"bytes,1,rep,name=deployment_ids,json=deploymentIds"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ReprocessDeployment) Reset() {
@@ -2753,13 +2753,13 @@ func (x *ReprocessDeployment) ProtoReflect() protoreflect.Message {
 
 func (x *ReprocessDeployment) GetDeploymentIds() []string {
 	if x != nil {
-		return x.DeploymentIds
+		return x.xxx_hidden_DeploymentIds
 	}
 	return nil
 }
 
 func (x *ReprocessDeployment) SetDeploymentIds(v []string) {
-	x.DeploymentIds = v
+	x.xxx_hidden_DeploymentIds = v
 }
 
 type ReprocessDeployment_builder struct {
@@ -2772,15 +2772,15 @@ func (b0 ReprocessDeployment_builder) Build() *ReprocessDeployment {
 	m0 := &ReprocessDeployment{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DeploymentIds = b.DeploymentIds
+	x.xxx_hidden_DeploymentIds = b.DeploymentIds
 	return m0
 }
 
 type InvalidateImageCache struct {
-	state         protoimpl.MessageState           `protogen:"hybrid.v1"`
-	ImageKeys     []*InvalidateImageCache_ImageKey `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys" json:"image_keys,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState            `protogen:"opaque.v1"`
+	xxx_hidden_ImageKeys *[]*InvalidateImageCache_ImageKey `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *InvalidateImageCache) Reset() {
@@ -2810,13 +2810,15 @@ func (x *InvalidateImageCache) ProtoReflect() protoreflect.Message {
 
 func (x *InvalidateImageCache) GetImageKeys() []*InvalidateImageCache_ImageKey {
 	if x != nil {
-		return x.ImageKeys
+		if x.xxx_hidden_ImageKeys != nil {
+			return *x.xxx_hidden_ImageKeys
+		}
 	}
 	return nil
 }
 
 func (x *InvalidateImageCache) SetImageKeys(v []*InvalidateImageCache_ImageKey) {
-	x.ImageKeys = v
+	x.xxx_hidden_ImageKeys = &v
 }
 
 type InvalidateImageCache_builder struct {
@@ -2829,16 +2831,18 @@ func (b0 InvalidateImageCache_builder) Build() *InvalidateImageCache {
 	m0 := &InvalidateImageCache{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ImageKeys = b.ImageKeys
+	x.xxx_hidden_ImageKeys = &b.ImageKeys
 	return m0
 }
 
 type InvalidateImageCache_ImageKey struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ImageId       *string                `protobuf:"bytes,1,opt,name=image_id,json=imageId" json:"image_id,omitempty"`
-	ImageFullName *string                `protobuf:"bytes,2,opt,name=image_full_name,json=imageFullName" json:"image_full_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ImageId       *string                `protobuf:"bytes,1,opt,name=image_id,json=imageId"`
+	xxx_hidden_ImageFullName *string                `protobuf:"bytes,2,opt,name=image_full_name,json=imageFullName"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *InvalidateImageCache_ImageKey) Reset() {
@@ -2867,47 +2871,57 @@ func (x *InvalidateImageCache_ImageKey) ProtoReflect() protoreflect.Message {
 }
 
 func (x *InvalidateImageCache_ImageKey) GetImageId() string {
-	if x != nil && x.ImageId != nil {
-		return *x.ImageId
+	if x != nil {
+		if x.xxx_hidden_ImageId != nil {
+			return *x.xxx_hidden_ImageId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InvalidateImageCache_ImageKey) GetImageFullName() string {
-	if x != nil && x.ImageFullName != nil {
-		return *x.ImageFullName
+	if x != nil {
+		if x.xxx_hidden_ImageFullName != nil {
+			return *x.xxx_hidden_ImageFullName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InvalidateImageCache_ImageKey) SetImageId(v string) {
-	x.ImageId = &v
+	x.xxx_hidden_ImageId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *InvalidateImageCache_ImageKey) SetImageFullName(v string) {
-	x.ImageFullName = &v
+	x.xxx_hidden_ImageFullName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *InvalidateImageCache_ImageKey) HasImageId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ImageId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *InvalidateImageCache_ImageKey) HasImageFullName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ImageFullName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *InvalidateImageCache_ImageKey) ClearImageId() {
-	x.ImageId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ImageId = nil
 }
 
 func (x *InvalidateImageCache_ImageKey) ClearImageFullName() {
-	x.ImageFullName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ImageFullName = nil
 }
 
 type InvalidateImageCache_ImageKey_builder struct {
@@ -2921,8 +2935,14 @@ func (b0 InvalidateImageCache_ImageKey_builder) Build() *InvalidateImageCache_Im
 	m0 := &InvalidateImageCache_ImageKey{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ImageId = b.ImageId
-	x.ImageFullName = b.ImageFullName
+	if b.ImageId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ImageId = b.ImageId
+	}
+	if b.ImageFullName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_ImageFullName = b.ImageFullName
+	}
 	return m0
 }
 
@@ -3025,7 +3045,7 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\bimage_id\x18\x01 \x01(\tR\aimageId\x12&\n" +
 	"\x0fimage_full_name\x18\x02 \x01(\tR\rimageFullName2P\n" +
 	"\rSensorService\x12?\n" +
-	"\vCommunicate\x12\x16.central.MsgFromSensor\x1a\x14.central.MsgToSensor(\x010\x01B'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\vCommunicate\x12\x16.central.MsgFromSensor\x1a\x14.central.MsgToSensor(\x010\x01B'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_sensor_iservice_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_internalapi_central_sensor_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
@@ -3168,51 +3188,51 @@ func file_internalapi_central_sensor_iservice_proto_init() {
 	file_internalapi_central_sensor_upgrade_proto_init()
 	file_internalapi_central_telemetry_proto_init()
 	file_internalapi_central_sensor_iservice_proto_msgTypes[0].OneofWrappers = []any{
-		(*MsgFromSensor_Event)(nil),
-		(*MsgFromSensor_NetworkFlowUpdate)(nil),
-		(*MsgFromSensor_ScrapeUpdate)(nil),
-		(*MsgFromSensor_NetworkPoliciesResponse)(nil),
-		(*MsgFromSensor_ClusterStatusUpdate)(nil),
-		(*MsgFromSensor_TelemetryDataResponse)(nil),
-		(*MsgFromSensor_ClusterHealthInfo)(nil),
-		(*MsgFromSensor_Hello)(nil),
-		(*MsgFromSensor_AuditLogStatusInfo)(nil),
-		(*MsgFromSensor_IssueLocalScannerCertsRequest)(nil),
-		(*MsgFromSensor_ClusterMetrics)(nil),
-		(*MsgFromSensor_ProcessListeningOnPortUpdate)(nil),
-		(*MsgFromSensor_ComplianceOperatorInfo)(nil),
-		(*MsgFromSensor_ComplianceResponse)(nil),
-		(*MsgFromSensor_DeploymentEnhancementResponse)(nil),
-		(*MsgFromSensor_IssueSecuredClusterCertsRequest)(nil),
+		(*msgFromSensor_Event)(nil),
+		(*msgFromSensor_NetworkFlowUpdate)(nil),
+		(*msgFromSensor_ScrapeUpdate)(nil),
+		(*msgFromSensor_NetworkPoliciesResponse)(nil),
+		(*msgFromSensor_ClusterStatusUpdate)(nil),
+		(*msgFromSensor_TelemetryDataResponse)(nil),
+		(*msgFromSensor_ClusterHealthInfo)(nil),
+		(*msgFromSensor_Hello)(nil),
+		(*msgFromSensor_AuditLogStatusInfo)(nil),
+		(*msgFromSensor_IssueLocalScannerCertsRequest)(nil),
+		(*msgFromSensor_ClusterMetrics)(nil),
+		(*msgFromSensor_ProcessListeningOnPortUpdate)(nil),
+		(*msgFromSensor_ComplianceOperatorInfo)(nil),
+		(*msgFromSensor_ComplianceResponse)(nil),
+		(*msgFromSensor_DeploymentEnhancementResponse)(nil),
+		(*msgFromSensor_IssueSecuredClusterCertsRequest)(nil),
 	}
 	file_internalapi_central_sensor_iservice_proto_msgTypes[2].OneofWrappers = []any{
-		(*MsgToSensor_Enforcement)(nil),
-		(*MsgToSensor_ScrapeCommand)(nil),
-		(*MsgToSensor_NetworkPoliciesCommand)(nil),
-		(*MsgToSensor_ClusterConfig)(nil),
-		(*MsgToSensor_SensorUpgradeTrigger)(nil),
-		(*MsgToSensor_TelemetryDataRequest)(nil),
-		(*MsgToSensor_PolicySync)(nil),
-		(*MsgToSensor_BaselineSync)(nil),
-		(*MsgToSensor_CancelPullTelemetryDataRequest)(nil),
-		(*MsgToSensor_PushNetworkEntitiesRequest)(nil),
-		(*MsgToSensor_Hello)(nil),
-		(*MsgToSensor_NetworkBaselineSync)(nil),
-		(*MsgToSensor_AuditLogSync)(nil),
-		(*MsgToSensor_ReprocessDeployment)(nil),
-		(*MsgToSensor_InvalidateImageCache)(nil),
-		(*MsgToSensor_IssueLocalScannerCertsResponse)(nil),
-		(*MsgToSensor_UpdatedImage)(nil),
-		(*MsgToSensor_ReprocessDeployments)(nil),
-		(*MsgToSensor_NodeInventoryAck)(nil),
-		(*MsgToSensor_DelegatedRegistryConfig)(nil),
-		(*MsgToSensor_ScanImage)(nil),
-		(*MsgToSensor_ImageIntegrations)(nil),
-		(*MsgToSensor_ComplianceRequest)(nil),
-		(*MsgToSensor_ClusterHealthResponse)(nil),
-		(*MsgToSensor_DeduperState)(nil),
-		(*MsgToSensor_DeploymentEnhancementRequest)(nil),
-		(*MsgToSensor_IssueSecuredClusterCertsResponse)(nil),
+		(*msgToSensor_Enforcement)(nil),
+		(*msgToSensor_ScrapeCommand)(nil),
+		(*msgToSensor_NetworkPoliciesCommand)(nil),
+		(*msgToSensor_ClusterConfig)(nil),
+		(*msgToSensor_SensorUpgradeTrigger)(nil),
+		(*msgToSensor_TelemetryDataRequest)(nil),
+		(*msgToSensor_PolicySync)(nil),
+		(*msgToSensor_BaselineSync)(nil),
+		(*msgToSensor_CancelPullTelemetryDataRequest)(nil),
+		(*msgToSensor_PushNetworkEntitiesRequest)(nil),
+		(*msgToSensor_Hello)(nil),
+		(*msgToSensor_NetworkBaselineSync)(nil),
+		(*msgToSensor_AuditLogSync)(nil),
+		(*msgToSensor_ReprocessDeployment)(nil),
+		(*msgToSensor_InvalidateImageCache)(nil),
+		(*msgToSensor_IssueLocalScannerCertsResponse)(nil),
+		(*msgToSensor_UpdatedImage)(nil),
+		(*msgToSensor_ReprocessDeployments)(nil),
+		(*msgToSensor_NodeInventoryAck)(nil),
+		(*msgToSensor_DelegatedRegistryConfig)(nil),
+		(*msgToSensor_ScanImage)(nil),
+		(*msgToSensor_ImageIntegrations)(nil),
+		(*msgToSensor_ComplianceRequest)(nil),
+		(*msgToSensor_ClusterHealthResponse)(nil),
+		(*msgToSensor_DeduperState)(nil),
+		(*msgToSensor_DeploymentEnhancementRequest)(nil),
+		(*msgToSensor_IssueSecuredClusterCertsResponse)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

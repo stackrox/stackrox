@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/scope.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -24,12 +22,14 @@ const (
 )
 
 type Scope struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Cluster       *string                `protobuf:"bytes,1,opt,name=cluster" json:"cluster,omitempty" crYaml:",omitempty"`     // @gotags: crYaml:",omitempty"`
-	Namespace     *string                `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
-	Label         *Scope_Label           `protobuf:"bytes,3,opt,name=label" json:"label,omitempty" crYaml:",omitempty"`         // @gotags: crYaml:",omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Cluster     *string                `protobuf:"bytes,1,opt,name=cluster"`
+	xxx_hidden_Namespace   *string                `protobuf:"bytes,2,opt,name=namespace"`
+	xxx_hidden_Label       *Scope_Label           `protobuf:"bytes,3,opt,name=label"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Scope) Reset() {
@@ -58,69 +58,79 @@ func (x *Scope) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Scope) GetCluster() string {
-	if x != nil && x.Cluster != nil {
-		return *x.Cluster
+	if x != nil {
+		if x.xxx_hidden_Cluster != nil {
+			return *x.xxx_hidden_Cluster
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Scope) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Scope) GetLabel() *Scope_Label {
 	if x != nil {
-		return x.Label
+		return x.xxx_hidden_Label
 	}
 	return nil
 }
 
 func (x *Scope) SetCluster(v string) {
-	x.Cluster = &v
+	x.xxx_hidden_Cluster = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *Scope) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *Scope) SetLabel(v *Scope_Label) {
-	x.Label = v
+	x.xxx_hidden_Label = v
 }
 
 func (x *Scope) HasCluster() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cluster != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Scope) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Scope) HasLabel() bool {
 	if x == nil {
 		return false
 	}
-	return x.Label != nil
+	return x.xxx_hidden_Label != nil
 }
 
 func (x *Scope) ClearCluster() {
-	x.Cluster = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Cluster = nil
 }
 
 func (x *Scope) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *Scope) ClearLabel() {
-	x.Label = nil
+	x.xxx_hidden_Label = nil
 }
 
 type Scope_builder struct {
@@ -135,18 +145,26 @@ func (b0 Scope_builder) Build() *Scope {
 	m0 := &Scope{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Cluster = b.Cluster
-	x.Namespace = b.Namespace
-	x.Label = b.Label
+	if b.Cluster != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Cluster = b.Cluster
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	x.xxx_hidden_Label = b.Label
 	return m0
 }
 
 type Scope_Label struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Key           *string                `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	Value         *string                `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Key         *string                `protobuf:"bytes,1,opt,name=key"`
+	xxx_hidden_Value       *string                `protobuf:"bytes,2,opt,name=value"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Scope_Label) Reset() {
@@ -175,47 +193,57 @@ func (x *Scope_Label) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Scope_Label) GetKey() string {
-	if x != nil && x.Key != nil {
-		return *x.Key
+	if x != nil {
+		if x.xxx_hidden_Key != nil {
+			return *x.xxx_hidden_Key
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Scope_Label) GetValue() string {
-	if x != nil && x.Value != nil {
-		return *x.Value
+	if x != nil {
+		if x.xxx_hidden_Value != nil {
+			return *x.xxx_hidden_Value
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Scope_Label) SetKey(v string) {
-	x.Key = &v
+	x.xxx_hidden_Key = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *Scope_Label) SetValue(v string) {
-	x.Value = &v
+	x.xxx_hidden_Value = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *Scope_Label) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.Key != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Scope_Label) HasValue() bool {
 	if x == nil {
 		return false
 	}
-	return x.Value != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Scope_Label) ClearKey() {
-	x.Key = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Key = nil
 }
 
 func (x *Scope_Label) ClearValue() {
-	x.Value = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Value = nil
 }
 
 type Scope_Label_builder struct {
@@ -229,8 +257,14 @@ func (b0 Scope_Label_builder) Build() *Scope_Label {
 	m0 := &Scope_Label{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Key = b.Key
-	x.Value = b.Value
+	if b.Key != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Key = b.Key
+	}
+	if b.Value != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Value = b.Value
+	}
 	return m0
 }
 
@@ -246,7 +280,7 @@ const file_storage_scope_proto_rawDesc = "" +
 	"\x05Label\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05valueB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_scope_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_scope_proto_goTypes = []any{

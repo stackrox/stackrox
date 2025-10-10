@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/wrapper/splunk_alert.proto
 
-//go:build !protoopaque
-
 package wrapper
 
 import (
@@ -27,12 +25,14 @@ const (
 // Splunk notification needs the source of data
 // and the type of data.
 type SplunkEvent struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Event         *anypb.Any             `protobuf:"bytes,1,opt,name=event" json:"event,omitempty"`
-	Source        *string                `protobuf:"bytes,2,opt,name=source" json:"source,omitempty"`
-	Sourcetype    *string                `protobuf:"bytes,3,opt,name=sourcetype" json:"sourcetype,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Event       *anypb.Any             `protobuf:"bytes,1,opt,name=event"`
+	xxx_hidden_Source      *string                `protobuf:"bytes,2,opt,name=source"`
+	xxx_hidden_Sourcetype  *string                `protobuf:"bytes,3,opt,name=sourcetype"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SplunkEvent) Reset() {
@@ -62,68 +62,78 @@ func (x *SplunkEvent) ProtoReflect() protoreflect.Message {
 
 func (x *SplunkEvent) GetEvent() *anypb.Any {
 	if x != nil {
-		return x.Event
+		return x.xxx_hidden_Event
 	}
 	return nil
 }
 
 func (x *SplunkEvent) GetSource() string {
-	if x != nil && x.Source != nil {
-		return *x.Source
+	if x != nil {
+		if x.xxx_hidden_Source != nil {
+			return *x.xxx_hidden_Source
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkEvent) GetSourcetype() string {
-	if x != nil && x.Sourcetype != nil {
-		return *x.Sourcetype
+	if x != nil {
+		if x.xxx_hidden_Sourcetype != nil {
+			return *x.xxx_hidden_Sourcetype
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkEvent) SetEvent(v *anypb.Any) {
-	x.Event = v
+	x.xxx_hidden_Event = v
 }
 
 func (x *SplunkEvent) SetSource(v string) {
-	x.Source = &v
+	x.xxx_hidden_Source = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *SplunkEvent) SetSourcetype(v string) {
-	x.Sourcetype = &v
+	x.xxx_hidden_Sourcetype = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *SplunkEvent) HasEvent() bool {
 	if x == nil {
 		return false
 	}
-	return x.Event != nil
+	return x.xxx_hidden_Event != nil
 }
 
 func (x *SplunkEvent) HasSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.Source != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SplunkEvent) HasSourcetype() bool {
 	if x == nil {
 		return false
 	}
-	return x.Sourcetype != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *SplunkEvent) ClearEvent() {
-	x.Event = nil
+	x.xxx_hidden_Event = nil
 }
 
 func (x *SplunkEvent) ClearSource() {
-	x.Source = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Source = nil
 }
 
 func (x *SplunkEvent) ClearSourcetype() {
-	x.Sourcetype = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Sourcetype = nil
 }
 
 type SplunkEvent_builder struct {
@@ -138,9 +148,15 @@ func (b0 SplunkEvent_builder) Build() *SplunkEvent {
 	m0 := &SplunkEvent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Event = b.Event
-	x.Source = b.Source
-	x.Sourcetype = b.Sourcetype
+	x.xxx_hidden_Event = b.Event
+	if b.Source != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Source = b.Source
+	}
+	if b.Sourcetype != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Sourcetype = b.Sourcetype
+	}
 	return m0
 }
 
@@ -154,7 +170,7 @@ const file_internalapi_wrapper_splunk_alert_proto_rawDesc = "" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x1e\n" +
 	"\n" +
 	"sourcetype\x18\x03 \x01(\tR\n" +
-	"sourcetypeB'Z\x1d./internalapi/wrapper;wrapper\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"sourcetypeB'Z\x1d./internalapi/wrapper;wrapper\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_wrapper_splunk_alert_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_wrapper_splunk_alert_proto_goTypes = []any{

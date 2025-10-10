@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/mitre.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -24,12 +22,14 @@ const (
 )
 
 type MitreTactic struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Description   *string                `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Description *string                `protobuf:"bytes,3,opt,name=description"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MitreTactic) Reset() {
@@ -58,69 +58,84 @@ func (x *MitreTactic) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MitreTactic) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MitreTactic) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MitreTactic) GetDescription() string {
-	if x != nil && x.Description != nil {
-		return *x.Description
+	if x != nil {
+		if x.xxx_hidden_Description != nil {
+			return *x.xxx_hidden_Description
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MitreTactic) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *MitreTactic) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *MitreTactic) SetDescription(v string) {
-	x.Description = &v
+	x.xxx_hidden_Description = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *MitreTactic) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *MitreTactic) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *MitreTactic) HasDescription() bool {
 	if x == nil {
 		return false
 	}
-	return x.Description != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *MitreTactic) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *MitreTactic) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *MitreTactic) ClearDescription() {
-	x.Description = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Description = nil
 }
 
 type MitreTactic_builder struct {
@@ -135,19 +150,30 @@ func (b0 MitreTactic_builder) Build() *MitreTactic {
 	m0 := &MitreTactic{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Description = b.Description
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Description != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Description = b.Description
+	}
 	return m0
 }
 
 type MitreTechnique struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Description   *string                `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Description *string                `protobuf:"bytes,3,opt,name=description"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MitreTechnique) Reset() {
@@ -176,69 +202,84 @@ func (x *MitreTechnique) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MitreTechnique) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MitreTechnique) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MitreTechnique) GetDescription() string {
-	if x != nil && x.Description != nil {
-		return *x.Description
+	if x != nil {
+		if x.xxx_hidden_Description != nil {
+			return *x.xxx_hidden_Description
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MitreTechnique) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *MitreTechnique) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *MitreTechnique) SetDescription(v string) {
-	x.Description = &v
+	x.xxx_hidden_Description = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *MitreTechnique) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *MitreTechnique) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *MitreTechnique) HasDescription() bool {
 	if x == nil {
 		return false
 	}
-	return x.Description != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *MitreTechnique) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *MitreTechnique) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *MitreTechnique) ClearDescription() {
-	x.Description = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Description = nil
 }
 
 type MitreTechnique_builder struct {
@@ -253,18 +294,27 @@ func (b0 MitreTechnique_builder) Build() *MitreTechnique {
 	m0 := &MitreTechnique{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Description = b.Description
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Description != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Description = b.Description
+	}
 	return m0
 }
 
 type MitreAttackVector struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Tactic        *MitreTactic           `protobuf:"bytes,1,opt,name=tactic" json:"tactic,omitempty"`
-	Techniques    []*MitreTechnique      `protobuf:"bytes,2,rep,name=techniques" json:"techniques,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Tactic     *MitreTactic           `protobuf:"bytes,1,opt,name=tactic"`
+	xxx_hidden_Techniques *[]*MitreTechnique     `protobuf:"bytes,2,rep,name=techniques"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *MitreAttackVector) Reset() {
@@ -294,35 +344,37 @@ func (x *MitreAttackVector) ProtoReflect() protoreflect.Message {
 
 func (x *MitreAttackVector) GetTactic() *MitreTactic {
 	if x != nil {
-		return x.Tactic
+		return x.xxx_hidden_Tactic
 	}
 	return nil
 }
 
 func (x *MitreAttackVector) GetTechniques() []*MitreTechnique {
 	if x != nil {
-		return x.Techniques
+		if x.xxx_hidden_Techniques != nil {
+			return *x.xxx_hidden_Techniques
+		}
 	}
 	return nil
 }
 
 func (x *MitreAttackVector) SetTactic(v *MitreTactic) {
-	x.Tactic = v
+	x.xxx_hidden_Tactic = v
 }
 
 func (x *MitreAttackVector) SetTechniques(v []*MitreTechnique) {
-	x.Techniques = v
+	x.xxx_hidden_Techniques = &v
 }
 
 func (x *MitreAttackVector) HasTactic() bool {
 	if x == nil {
 		return false
 	}
-	return x.Tactic != nil
+	return x.xxx_hidden_Tactic != nil
 }
 
 func (x *MitreAttackVector) ClearTactic() {
-	x.Tactic = nil
+	x.xxx_hidden_Tactic = nil
 }
 
 type MitreAttackVector_builder struct {
@@ -336,17 +388,17 @@ func (b0 MitreAttackVector_builder) Build() *MitreAttackVector {
 	m0 := &MitreAttackVector{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Tactic = b.Tactic
-	x.Techniques = b.Techniques
+	x.xxx_hidden_Tactic = b.Tactic
+	x.xxx_hidden_Techniques = &b.Techniques
 	return m0
 }
 
 type MitreAttackMatrix struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	MatrixInfo    *MitreAttackMatrix_MatrixInfo `protobuf:"bytes,1,opt,name=matrix_info,json=matrixInfo" json:"matrix_info,omitempty"`
-	Vectors       []*MitreAttackVector          `protobuf:"bytes,2,rep,name=vectors" json:"vectors,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_MatrixInfo *MitreAttackMatrix_MatrixInfo `protobuf:"bytes,1,opt,name=matrix_info,json=matrixInfo"`
+	xxx_hidden_Vectors    *[]*MitreAttackVector         `protobuf:"bytes,2,rep,name=vectors"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *MitreAttackMatrix) Reset() {
@@ -376,35 +428,37 @@ func (x *MitreAttackMatrix) ProtoReflect() protoreflect.Message {
 
 func (x *MitreAttackMatrix) GetMatrixInfo() *MitreAttackMatrix_MatrixInfo {
 	if x != nil {
-		return x.MatrixInfo
+		return x.xxx_hidden_MatrixInfo
 	}
 	return nil
 }
 
 func (x *MitreAttackMatrix) GetVectors() []*MitreAttackVector {
 	if x != nil {
-		return x.Vectors
+		if x.xxx_hidden_Vectors != nil {
+			return *x.xxx_hidden_Vectors
+		}
 	}
 	return nil
 }
 
 func (x *MitreAttackMatrix) SetMatrixInfo(v *MitreAttackMatrix_MatrixInfo) {
-	x.MatrixInfo = v
+	x.xxx_hidden_MatrixInfo = v
 }
 
 func (x *MitreAttackMatrix) SetVectors(v []*MitreAttackVector) {
-	x.Vectors = v
+	x.xxx_hidden_Vectors = &v
 }
 
 func (x *MitreAttackMatrix) HasMatrixInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.MatrixInfo != nil
+	return x.xxx_hidden_MatrixInfo != nil
 }
 
 func (x *MitreAttackMatrix) ClearMatrixInfo() {
-	x.MatrixInfo = nil
+	x.xxx_hidden_MatrixInfo = nil
 }
 
 type MitreAttackMatrix_builder struct {
@@ -418,17 +472,19 @@ func (b0 MitreAttackMatrix_builder) Build() *MitreAttackMatrix {
 	m0 := &MitreAttackMatrix{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.MatrixInfo = b.MatrixInfo
-	x.Vectors = b.Vectors
+	x.xxx_hidden_MatrixInfo = b.MatrixInfo
+	x.xxx_hidden_Vectors = &b.Vectors
 	return m0
 }
 
 type MitreAttackBundle struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Version       *string                `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
-	Matrices      []*MitreAttackMatrix   `protobuf:"bytes,2,rep,name=matrices" json:"matrices,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version     *string                `protobuf:"bytes,1,opt,name=version"`
+	xxx_hidden_Matrices    *[]*MitreAttackMatrix  `protobuf:"bytes,2,rep,name=matrices"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MitreAttackBundle) Reset() {
@@ -457,36 +513,43 @@ func (x *MitreAttackBundle) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MitreAttackBundle) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MitreAttackBundle) GetMatrices() []*MitreAttackMatrix {
 	if x != nil {
-		return x.Matrices
+		if x.xxx_hidden_Matrices != nil {
+			return *x.xxx_hidden_Matrices
+		}
 	}
 	return nil
 }
 
 func (x *MitreAttackBundle) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *MitreAttackBundle) SetMatrices(v []*MitreAttackMatrix) {
-	x.Matrices = v
+	x.xxx_hidden_Matrices = &v
 }
 
 func (x *MitreAttackBundle) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *MitreAttackBundle) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Version = nil
 }
 
 type MitreAttackBundle_builder struct {
@@ -500,17 +563,22 @@ func (b0 MitreAttackBundle_builder) Build() *MitreAttackBundle {
 	m0 := &MitreAttackBundle{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
-	x.Matrices = b.Matrices
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Version = b.Version
+	}
+	x.xxx_hidden_Matrices = &b.Matrices
 	return m0
 }
 
 type MitreAttackMatrix_MatrixInfo struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Domain        *string                `protobuf:"bytes,1,opt,name=domain" json:"domain,omitempty"`
-	Platform      *string                `protobuf:"bytes,2,opt,name=platform" json:"platform,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Domain      *string                `protobuf:"bytes,1,opt,name=domain"`
+	xxx_hidden_Platform    *string                `protobuf:"bytes,2,opt,name=platform"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MitreAttackMatrix_MatrixInfo) Reset() {
@@ -539,47 +607,57 @@ func (x *MitreAttackMatrix_MatrixInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MitreAttackMatrix_MatrixInfo) GetDomain() string {
-	if x != nil && x.Domain != nil {
-		return *x.Domain
+	if x != nil {
+		if x.xxx_hidden_Domain != nil {
+			return *x.xxx_hidden_Domain
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MitreAttackMatrix_MatrixInfo) GetPlatform() string {
-	if x != nil && x.Platform != nil {
-		return *x.Platform
+	if x != nil {
+		if x.xxx_hidden_Platform != nil {
+			return *x.xxx_hidden_Platform
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *MitreAttackMatrix_MatrixInfo) SetDomain(v string) {
-	x.Domain = &v
+	x.xxx_hidden_Domain = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *MitreAttackMatrix_MatrixInfo) SetPlatform(v string) {
-	x.Platform = &v
+	x.xxx_hidden_Platform = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *MitreAttackMatrix_MatrixInfo) HasDomain() bool {
 	if x == nil {
 		return false
 	}
-	return x.Domain != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *MitreAttackMatrix_MatrixInfo) HasPlatform() bool {
 	if x == nil {
 		return false
 	}
-	return x.Platform != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *MitreAttackMatrix_MatrixInfo) ClearDomain() {
-	x.Domain = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Domain = nil
 }
 
 func (x *MitreAttackMatrix_MatrixInfo) ClearPlatform() {
-	x.Platform = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Platform = nil
 }
 
 type MitreAttackMatrix_MatrixInfo_builder struct {
@@ -593,8 +671,14 @@ func (b0 MitreAttackMatrix_MatrixInfo_builder) Build() *MitreAttackMatrix_Matrix
 	m0 := &MitreAttackMatrix_MatrixInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Domain = b.Domain
-	x.Platform = b.Platform
+	if b.Domain != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Domain = b.Domain
+	}
+	if b.Platform != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Platform = b.Platform
+	}
 	return m0
 }
 
@@ -627,7 +711,7 @@ const file_storage_mitre_proto_rawDesc = "" +
 	"\x11MitreAttackBundle\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x126\n" +
 	"\bmatrices\x18\x02 \x03(\v2\x1a.storage.MitreAttackMatrixR\bmatricesB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_mitre_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_storage_mitre_proto_goTypes = []any{

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/notifier_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,7 +24,7 @@ const (
 )
 
 type GetNotifiersRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -69,10 +67,10 @@ func (b0 GetNotifiersRequest_builder) Build() *GetNotifiersRequest {
 }
 
 type GetNotifiersResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Notifiers     []*storage.Notifier    `protobuf:"bytes,1,rep,name=notifiers" json:"notifiers,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Notifiers *[]*storage.Notifier   `protobuf:"bytes,1,rep,name=notifiers"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *GetNotifiersResponse) Reset() {
@@ -102,13 +100,15 @@ func (x *GetNotifiersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetNotifiersResponse) GetNotifiers() []*storage.Notifier {
 	if x != nil {
-		return x.Notifiers
+		if x.xxx_hidden_Notifiers != nil {
+			return *x.xxx_hidden_Notifiers
+		}
 	}
 	return nil
 }
 
 func (x *GetNotifiersResponse) SetNotifiers(v []*storage.Notifier) {
-	x.Notifiers = v
+	x.xxx_hidden_Notifiers = &v
 }
 
 type GetNotifiersResponse_builder struct {
@@ -121,16 +121,18 @@ func (b0 GetNotifiersResponse_builder) Build() *GetNotifiersResponse {
 	m0 := &GetNotifiersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Notifiers = b.Notifiers
+	x.xxx_hidden_Notifiers = &b.Notifiers
 	return m0
 }
 
 type DeleteNotifierRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Force         *bool                  `protobuf:"varint,2,opt,name=force" json:"force,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Force       bool                   `protobuf:"varint,2,opt,name=force"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeleteNotifierRequest) Reset() {
@@ -159,47 +161,54 @@ func (x *DeleteNotifierRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DeleteNotifierRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DeleteNotifierRequest) GetForce() bool {
-	if x != nil && x.Force != nil {
-		return *x.Force
+	if x != nil {
+		return x.xxx_hidden_Force
 	}
 	return false
 }
 
 func (x *DeleteNotifierRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *DeleteNotifierRequest) SetForce(v bool) {
-	x.Force = &v
+	x.xxx_hidden_Force = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DeleteNotifierRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DeleteNotifierRequest) HasForce() bool {
 	if x == nil {
 		return false
 	}
-	return x.Force != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DeleteNotifierRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *DeleteNotifierRequest) ClearForce() {
-	x.Force = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Force = false
 }
 
 type DeleteNotifierRequest_builder struct {
@@ -213,18 +222,25 @@ func (b0 DeleteNotifierRequest_builder) Build() *DeleteNotifierRequest {
 	m0 := &DeleteNotifierRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Force = b.Force
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Force != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Force = *b.Force
+	}
 	return m0
 }
 
 type UpdateNotifierRequest struct {
-	state    protoimpl.MessageState `protogen:"hybrid.v1"`
-	Notifier *storage.Notifier      `protobuf:"bytes,1,opt,name=notifier" json:"notifier,omitempty"`
-	// When false, use the stored credentials of an existing notifier configuration given its ID.
-	UpdatePassword *bool `protobuf:"varint,2,opt,name=update_password,json=updatePassword" json:"update_password,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Notifier       *storage.Notifier      `protobuf:"bytes,1,opt,name=notifier"`
+	xxx_hidden_UpdatePassword bool                   `protobuf:"varint,2,opt,name=update_password,json=updatePassword"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *UpdateNotifierRequest) Reset() {
@@ -254,46 +270,48 @@ func (x *UpdateNotifierRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateNotifierRequest) GetNotifier() *storage.Notifier {
 	if x != nil {
-		return x.Notifier
+		return x.xxx_hidden_Notifier
 	}
 	return nil
 }
 
 func (x *UpdateNotifierRequest) GetUpdatePassword() bool {
-	if x != nil && x.UpdatePassword != nil {
-		return *x.UpdatePassword
+	if x != nil {
+		return x.xxx_hidden_UpdatePassword
 	}
 	return false
 }
 
 func (x *UpdateNotifierRequest) SetNotifier(v *storage.Notifier) {
-	x.Notifier = v
+	x.xxx_hidden_Notifier = v
 }
 
 func (x *UpdateNotifierRequest) SetUpdatePassword(v bool) {
-	x.UpdatePassword = &v
+	x.xxx_hidden_UpdatePassword = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *UpdateNotifierRequest) HasNotifier() bool {
 	if x == nil {
 		return false
 	}
-	return x.Notifier != nil
+	return x.xxx_hidden_Notifier != nil
 }
 
 func (x *UpdateNotifierRequest) HasUpdatePassword() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpdatePassword != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UpdateNotifierRequest) ClearNotifier() {
-	x.Notifier = nil
+	x.xxx_hidden_Notifier = nil
 }
 
 func (x *UpdateNotifierRequest) ClearUpdatePassword() {
-	x.UpdatePassword = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_UpdatePassword = false
 }
 
 type UpdateNotifierRequest_builder struct {
@@ -308,8 +326,11 @@ func (b0 UpdateNotifierRequest_builder) Build() *UpdateNotifierRequest {
 	m0 := &UpdateNotifierRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Notifier = b.Notifier
-	x.UpdatePassword = b.UpdatePassword
+	x.xxx_hidden_Notifier = b.Notifier
+	if b.UpdatePassword != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_UpdatePassword = *b.UpdatePassword
+	}
 	return m0
 }
 
@@ -336,7 +357,7 @@ const file_api_v1_notifier_service_proto_rawDesc = "" +
 	"\x0eDeleteNotifier\x12\x19.v1.DeleteNotifierRequest\x1a\t.v1.Empty\"\x1a\x82\xd3\xe4\x93\x02\x14*\x12/v1/notifiers/{id}\x12^\n" +
 	"\x0eUpdateNotifier\x12\x19.v1.UpdateNotifierRequest\x1a\t.v1.Empty\"&\x82\xd3\xe4\x93\x02 :\x01*2\x1b/v1/notifiers/{notifier.id}\x12b\n" +
 	"\x13TestUpdatedNotifier\x12\x19.v1.UpdateNotifierRequest\x1a\t.v1.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v1/notifiers/test/updatedB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_notifier_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_api_v1_notifier_service_proto_goTypes = []any{

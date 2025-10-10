@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/notification_schedule.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -25,10 +23,10 @@ const (
 )
 
 type NotificationSchedule struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	LastRun       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_run,json=lastRun" json:"last_run,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_LastRun *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_run,json=lastRun"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *NotificationSchedule) Reset() {
@@ -58,24 +56,24 @@ func (x *NotificationSchedule) ProtoReflect() protoreflect.Message {
 
 func (x *NotificationSchedule) GetLastRun() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastRun
+		return x.xxx_hidden_LastRun
 	}
 	return nil
 }
 
 func (x *NotificationSchedule) SetLastRun(v *timestamppb.Timestamp) {
-	x.LastRun = v
+	x.xxx_hidden_LastRun = v
 }
 
 func (x *NotificationSchedule) HasLastRun() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastRun != nil
+	return x.xxx_hidden_LastRun != nil
 }
 
 func (x *NotificationSchedule) ClearLastRun() {
-	x.LastRun = nil
+	x.xxx_hidden_LastRun = nil
 }
 
 type NotificationSchedule_builder struct {
@@ -88,7 +86,7 @@ func (b0 NotificationSchedule_builder) Build() *NotificationSchedule {
 	m0 := &NotificationSchedule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LastRun = b.LastRun
+	x.xxx_hidden_LastRun = b.LastRun
 	return m0
 }
 
@@ -99,7 +97,7 @@ const file_storage_notification_schedule_proto_rawDesc = "" +
 	"#storage/notification_schedule.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"S\n" +
 	"\x14NotificationSchedule\x125\n" +
 	"\blast_run\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\alastRunJ\x04\b\x01\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_notification_schedule_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_notification_schedule_proto_goTypes = []any{

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/helm_cluster.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -24,10 +22,10 @@ const (
 )
 
 type HelmCluster struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Cluster       *Cluster               `protobuf:"bytes,1,opt,name=cluster" json:"cluster,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Cluster *Cluster               `protobuf:"bytes,1,opt,name=cluster"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *HelmCluster) Reset() {
@@ -57,24 +55,24 @@ func (x *HelmCluster) ProtoReflect() protoreflect.Message {
 
 func (x *HelmCluster) GetCluster() *Cluster {
 	if x != nil {
-		return x.Cluster
+		return x.xxx_hidden_Cluster
 	}
 	return nil
 }
 
 func (x *HelmCluster) SetCluster(v *Cluster) {
-	x.Cluster = v
+	x.xxx_hidden_Cluster = v
 }
 
 func (x *HelmCluster) HasCluster() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cluster != nil
+	return x.xxx_hidden_Cluster != nil
 }
 
 func (x *HelmCluster) ClearCluster() {
-	x.Cluster = nil
+	x.xxx_hidden_Cluster = nil
 }
 
 type HelmCluster_builder struct {
@@ -87,7 +85,7 @@ func (b0 HelmCluster_builder) Build() *HelmCluster {
 	m0 := &HelmCluster{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Cluster = b.Cluster
+	x.xxx_hidden_Cluster = b.Cluster
 	return m0
 }
 
@@ -98,7 +96,7 @@ const file_storage_helm_cluster_proto_rawDesc = "" +
 	"\x1astorage/helm_cluster.proto\x12\astorage\x1a\x15storage/cluster.proto\x1a!google/protobuf/go_features.proto\"9\n" +
 	"\vHelmCluster\x12*\n" +
 	"\acluster\x18\x01 \x01(\v2\x10.storage.ClusterR\aclusterB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_helm_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_helm_cluster_proto_goTypes = []any{

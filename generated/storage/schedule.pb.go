@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/schedule.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -71,18 +69,15 @@ func (x Schedule_IntervalType) Number() protoreflect.EnumNumber {
 }
 
 type Schedule struct {
-	state        protoimpl.MessageState `protogen:"hybrid.v1"`
-	IntervalType *Schedule_IntervalType `protobuf:"varint,1,opt,name=interval_type,json=intervalType,enum=storage.Schedule_IntervalType" json:"interval_type,omitempty"`
-	Hour         *int32                 `protobuf:"varint,2,opt,name=hour" json:"hour,omitempty"`
-	Minute       *int32                 `protobuf:"varint,3,opt,name=minute" json:"minute,omitempty"`
-	// Types that are valid to be assigned to Interval:
-	//
-	//	*Schedule_Weekly
-	//	*Schedule_DaysOfWeek_
-	//	*Schedule_DaysOfMonth_
-	Interval      isSchedule_Interval `protobuf_oneof:"Interval"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_IntervalType Schedule_IntervalType  `protobuf:"varint,1,opt,name=interval_type,json=intervalType,enum=storage.Schedule_IntervalType"`
+	xxx_hidden_Hour         int32                  `protobuf:"varint,2,opt,name=hour"`
+	xxx_hidden_Minute       int32                  `protobuf:"varint,3,opt,name=minute"`
+	xxx_hidden_Interval     isSchedule_Interval    `protobuf_oneof:"Interval"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Schedule) Reset() {
@@ -111,36 +106,31 @@ func (x *Schedule) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Schedule) GetIntervalType() Schedule_IntervalType {
-	if x != nil && x.IntervalType != nil {
-		return *x.IntervalType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_IntervalType
+		}
 	}
 	return Schedule_UNSET
 }
 
 func (x *Schedule) GetHour() int32 {
-	if x != nil && x.Hour != nil {
-		return *x.Hour
+	if x != nil {
+		return x.xxx_hidden_Hour
 	}
 	return 0
 }
 
 func (x *Schedule) GetMinute() int32 {
-	if x != nil && x.Minute != nil {
-		return *x.Minute
+	if x != nil {
+		return x.xxx_hidden_Minute
 	}
 	return 0
 }
 
-func (x *Schedule) GetInterval() isSchedule_Interval {
-	if x != nil {
-		return x.Interval
-	}
-	return nil
-}
-
 func (x *Schedule) GetWeekly() *Schedule_WeeklyInterval {
 	if x != nil {
-		if x, ok := x.Interval.(*Schedule_Weekly); ok {
+		if x, ok := x.xxx_hidden_Interval.(*schedule_Weekly); ok {
 			return x.Weekly
 		}
 	}
@@ -149,7 +139,7 @@ func (x *Schedule) GetWeekly() *Schedule_WeeklyInterval {
 
 func (x *Schedule) GetDaysOfWeek() *Schedule_DaysOfWeek {
 	if x != nil {
-		if x, ok := x.Interval.(*Schedule_DaysOfWeek_); ok {
+		if x, ok := x.xxx_hidden_Interval.(*schedule_DaysOfWeek_); ok {
 			return x.DaysOfWeek
 		}
 	}
@@ -158,7 +148,7 @@ func (x *Schedule) GetDaysOfWeek() *Schedule_DaysOfWeek {
 
 func (x *Schedule) GetDaysOfMonth() *Schedule_DaysOfMonth {
 	if x != nil {
-		if x, ok := x.Interval.(*Schedule_DaysOfMonth_); ok {
+		if x, ok := x.xxx_hidden_Interval.(*schedule_DaysOfMonth_); ok {
 			return x.DaysOfMonth
 		}
 	}
@@ -166,74 +156,77 @@ func (x *Schedule) GetDaysOfMonth() *Schedule_DaysOfMonth {
 }
 
 func (x *Schedule) SetIntervalType(v Schedule_IntervalType) {
-	x.IntervalType = &v
+	x.xxx_hidden_IntervalType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *Schedule) SetHour(v int32) {
-	x.Hour = &v
+	x.xxx_hidden_Hour = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *Schedule) SetMinute(v int32) {
-	x.Minute = &v
+	x.xxx_hidden_Minute = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *Schedule) SetWeekly(v *Schedule_WeeklyInterval) {
 	if v == nil {
-		x.Interval = nil
+		x.xxx_hidden_Interval = nil
 		return
 	}
-	x.Interval = &Schedule_Weekly{v}
+	x.xxx_hidden_Interval = &schedule_Weekly{v}
 }
 
 func (x *Schedule) SetDaysOfWeek(v *Schedule_DaysOfWeek) {
 	if v == nil {
-		x.Interval = nil
+		x.xxx_hidden_Interval = nil
 		return
 	}
-	x.Interval = &Schedule_DaysOfWeek_{v}
+	x.xxx_hidden_Interval = &schedule_DaysOfWeek_{v}
 }
 
 func (x *Schedule) SetDaysOfMonth(v *Schedule_DaysOfMonth) {
 	if v == nil {
-		x.Interval = nil
+		x.xxx_hidden_Interval = nil
 		return
 	}
-	x.Interval = &Schedule_DaysOfMonth_{v}
+	x.xxx_hidden_Interval = &schedule_DaysOfMonth_{v}
 }
 
 func (x *Schedule) HasIntervalType() bool {
 	if x == nil {
 		return false
 	}
-	return x.IntervalType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Schedule) HasHour() bool {
 	if x == nil {
 		return false
 	}
-	return x.Hour != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Schedule) HasMinute() bool {
 	if x == nil {
 		return false
 	}
-	return x.Minute != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Schedule) HasInterval() bool {
 	if x == nil {
 		return false
 	}
-	return x.Interval != nil
+	return x.xxx_hidden_Interval != nil
 }
 
 func (x *Schedule) HasWeekly() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Interval.(*Schedule_Weekly)
+	_, ok := x.xxx_hidden_Interval.(*schedule_Weekly)
 	return ok
 }
 
@@ -241,7 +234,7 @@ func (x *Schedule) HasDaysOfWeek() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Interval.(*Schedule_DaysOfWeek_)
+	_, ok := x.xxx_hidden_Interval.(*schedule_DaysOfWeek_)
 	return ok
 }
 
@@ -249,41 +242,44 @@ func (x *Schedule) HasDaysOfMonth() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Interval.(*Schedule_DaysOfMonth_)
+	_, ok := x.xxx_hidden_Interval.(*schedule_DaysOfMonth_)
 	return ok
 }
 
 func (x *Schedule) ClearIntervalType() {
-	x.IntervalType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_IntervalType = Schedule_UNSET
 }
 
 func (x *Schedule) ClearHour() {
-	x.Hour = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Hour = 0
 }
 
 func (x *Schedule) ClearMinute() {
-	x.Minute = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Minute = 0
 }
 
 func (x *Schedule) ClearInterval() {
-	x.Interval = nil
+	x.xxx_hidden_Interval = nil
 }
 
 func (x *Schedule) ClearWeekly() {
-	if _, ok := x.Interval.(*Schedule_Weekly); ok {
-		x.Interval = nil
+	if _, ok := x.xxx_hidden_Interval.(*schedule_Weekly); ok {
+		x.xxx_hidden_Interval = nil
 	}
 }
 
 func (x *Schedule) ClearDaysOfWeek() {
-	if _, ok := x.Interval.(*Schedule_DaysOfWeek_); ok {
-		x.Interval = nil
+	if _, ok := x.xxx_hidden_Interval.(*schedule_DaysOfWeek_); ok {
+		x.xxx_hidden_Interval = nil
 	}
 }
 
 func (x *Schedule) ClearDaysOfMonth() {
-	if _, ok := x.Interval.(*Schedule_DaysOfMonth_); ok {
-		x.Interval = nil
+	if _, ok := x.xxx_hidden_Interval.(*schedule_DaysOfMonth_); ok {
+		x.xxx_hidden_Interval = nil
 	}
 }
 
@@ -296,12 +292,12 @@ func (x *Schedule) WhichInterval() case_Schedule_Interval {
 	if x == nil {
 		return Schedule_Interval_not_set_case
 	}
-	switch x.Interval.(type) {
-	case *Schedule_Weekly:
+	switch x.xxx_hidden_Interval.(type) {
+	case *schedule_Weekly:
 		return Schedule_Weekly_case
-	case *Schedule_DaysOfWeek_:
+	case *schedule_DaysOfWeek_:
 		return Schedule_DaysOfWeek_case
-	case *Schedule_DaysOfMonth_:
+	case *schedule_DaysOfMonth_:
 		return Schedule_DaysOfMonth_case
 	default:
 		return Schedule_Interval_not_set_case
@@ -314,28 +310,37 @@ type Schedule_builder struct {
 	IntervalType *Schedule_IntervalType
 	Hour         *int32
 	Minute       *int32
-	// Fields of oneof Interval:
+	// Fields of oneof xxx_hidden_Interval:
 	Weekly      *Schedule_WeeklyInterval
 	DaysOfWeek  *Schedule_DaysOfWeek
 	DaysOfMonth *Schedule_DaysOfMonth
-	// -- end of Interval
+	// -- end of xxx_hidden_Interval
 }
 
 func (b0 Schedule_builder) Build() *Schedule {
 	m0 := &Schedule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.IntervalType = b.IntervalType
-	x.Hour = b.Hour
-	x.Minute = b.Minute
+	if b.IntervalType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_IntervalType = *b.IntervalType
+	}
+	if b.Hour != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Hour = *b.Hour
+	}
+	if b.Minute != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Minute = *b.Minute
+	}
 	if b.Weekly != nil {
-		x.Interval = &Schedule_Weekly{b.Weekly}
+		x.xxx_hidden_Interval = &schedule_Weekly{b.Weekly}
 	}
 	if b.DaysOfWeek != nil {
-		x.Interval = &Schedule_DaysOfWeek_{b.DaysOfWeek}
+		x.xxx_hidden_Interval = &schedule_DaysOfWeek_{b.DaysOfWeek}
 	}
 	if b.DaysOfMonth != nil {
-		x.Interval = &Schedule_DaysOfMonth_{b.DaysOfMonth}
+		x.xxx_hidden_Interval = &schedule_DaysOfMonth_{b.DaysOfMonth}
 	}
 	return m0
 }
@@ -354,29 +359,31 @@ type isSchedule_Interval interface {
 	isSchedule_Interval()
 }
 
-type Schedule_Weekly struct {
+type schedule_Weekly struct {
 	Weekly *Schedule_WeeklyInterval `protobuf:"bytes,4,opt,name=weekly,oneof"`
 }
 
-type Schedule_DaysOfWeek_ struct {
+type schedule_DaysOfWeek_ struct {
 	DaysOfWeek *Schedule_DaysOfWeek `protobuf:"bytes,5,opt,name=days_of_week,json=daysOfWeek,oneof"`
 }
 
-type Schedule_DaysOfMonth_ struct {
+type schedule_DaysOfMonth_ struct {
 	DaysOfMonth *Schedule_DaysOfMonth `protobuf:"bytes,6,opt,name=days_of_month,json=daysOfMonth,oneof"`
 }
 
-func (*Schedule_Weekly) isSchedule_Interval() {}
+func (*schedule_Weekly) isSchedule_Interval() {}
 
-func (*Schedule_DaysOfWeek_) isSchedule_Interval() {}
+func (*schedule_DaysOfWeek_) isSchedule_Interval() {}
 
-func (*Schedule_DaysOfMonth_) isSchedule_Interval() {}
+func (*schedule_DaysOfMonth_) isSchedule_Interval() {}
 
 type Schedule_WeeklyInterval struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Day           *int32                 `protobuf:"varint,1,opt,name=day" json:"day,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Day         int32                  `protobuf:"varint,1,opt,name=day"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Schedule_WeeklyInterval) Reset() {
@@ -405,25 +412,27 @@ func (x *Schedule_WeeklyInterval) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Schedule_WeeklyInterval) GetDay() int32 {
-	if x != nil && x.Day != nil {
-		return *x.Day
+	if x != nil {
+		return x.xxx_hidden_Day
 	}
 	return 0
 }
 
 func (x *Schedule_WeeklyInterval) SetDay(v int32) {
-	x.Day = &v
+	x.xxx_hidden_Day = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *Schedule_WeeklyInterval) HasDay() bool {
 	if x == nil {
 		return false
 	}
-	return x.Day != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Schedule_WeeklyInterval) ClearDay() {
-	x.Day = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Day = 0
 }
 
 type Schedule_WeeklyInterval_builder struct {
@@ -436,16 +445,19 @@ func (b0 Schedule_WeeklyInterval_builder) Build() *Schedule_WeeklyInterval {
 	m0 := &Schedule_WeeklyInterval{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Day = b.Day
+	if b.Day != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Day = *b.Day
+	}
 	return m0
 }
 
 // Sunday = 0, Monday = 1, .... Saturday =  6
 type Schedule_DaysOfWeek struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Days          []int32                `protobuf:"varint,1,rep,packed,name=days" json:"days,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Days []int32                `protobuf:"varint,1,rep,packed,name=days"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Schedule_DaysOfWeek) Reset() {
@@ -475,13 +487,13 @@ func (x *Schedule_DaysOfWeek) ProtoReflect() protoreflect.Message {
 
 func (x *Schedule_DaysOfWeek) GetDays() []int32 {
 	if x != nil {
-		return x.Days
+		return x.xxx_hidden_Days
 	}
 	return nil
 }
 
 func (x *Schedule_DaysOfWeek) SetDays(v []int32) {
-	x.Days = v
+	x.xxx_hidden_Days = v
 }
 
 type Schedule_DaysOfWeek_builder struct {
@@ -494,16 +506,16 @@ func (b0 Schedule_DaysOfWeek_builder) Build() *Schedule_DaysOfWeek {
 	m0 := &Schedule_DaysOfWeek{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Days = b.Days
+	x.xxx_hidden_Days = b.Days
 	return m0
 }
 
 // 1 for 1st, 2 for 2nd .... 31 for 31st
 type Schedule_DaysOfMonth struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Days          []int32                `protobuf:"varint,1,rep,packed,name=days" json:"days,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Days []int32                `protobuf:"varint,1,rep,packed,name=days"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Schedule_DaysOfMonth) Reset() {
@@ -533,13 +545,13 @@ func (x *Schedule_DaysOfMonth) ProtoReflect() protoreflect.Message {
 
 func (x *Schedule_DaysOfMonth) GetDays() []int32 {
 	if x != nil {
-		return x.Days
+		return x.xxx_hidden_Days
 	}
 	return nil
 }
 
 func (x *Schedule_DaysOfMonth) SetDays(v []int32) {
-	x.Days = v
+	x.xxx_hidden_Days = v
 }
 
 type Schedule_DaysOfMonth_builder struct {
@@ -552,7 +564,7 @@ func (b0 Schedule_DaysOfMonth_builder) Build() *Schedule_DaysOfMonth {
 	m0 := &Schedule_DaysOfMonth{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Days = b.Days
+	x.xxx_hidden_Days = b.Days
 	return m0
 }
 
@@ -584,7 +596,7 @@ const file_storage_schedule_proto_rawDesc = "" +
 	"\aMONTHLY\x10\x03B\n" +
 	"\n" +
 	"\bIntervalB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_schedule_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_schedule_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
@@ -613,9 +625,9 @@ func file_storage_schedule_proto_init() {
 		return
 	}
 	file_storage_schedule_proto_msgTypes[0].OneofWrappers = []any{
-		(*Schedule_Weekly)(nil),
-		(*Schedule_DaysOfWeek_)(nil),
-		(*Schedule_DaysOfMonth_)(nil),
+		(*schedule_Weekly)(nil),
+		(*schedule_DaysOfWeek_)(nil),
+		(*schedule_DaysOfMonth_)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/virtual_machine.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -202,20 +200,22 @@ func (x EmbeddedVirtualMachineScanComponent_Note) Number() protoreflect.EnumNumb
 
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 type VirtualMachine struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,type(uuid)" search:"Virtual Machine ID,store"`                                      // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID,store"
-	Namespace     *string                `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,store"`                        // @gotags: search:"Namespace,store"
-	Name          *string                `protobuf:"bytes,3,opt,name=name" json:"name,omitempty" search:"Virtual Machine Name,store"`                                  // @gotags: search:"Virtual Machine Name,store"
-	ClusterId     *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
-	ClusterName   *string                `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty" search:"Cluster,store"` // @gotags: search:"Cluster,store"
-	Facts         map[string]string      `protobuf:"bytes,6,rep,name=facts" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty"`
-	Notes         []VirtualMachine_Note  `protobuf:"varint,8,rep,packed,name=notes,enum=storage.VirtualMachine_Note" json:"notes,omitempty"`
-	VsockCid      *int32                 `protobuf:"varint,9,opt,name=vsock_cid,json=vsockCid" json:"vsock_cid,omitempty"`
-	State         *VirtualMachine_State  `protobuf:"varint,10,opt,name=state,enum=storage.VirtualMachine_State" json:"state,omitempty"`
-	Scan          *VirtualMachineScan    `protobuf:"bytes,11,opt,name=scan" json:"scan,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Namespace   *string                `protobuf:"bytes,2,opt,name=namespace"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,3,opt,name=name"`
+	xxx_hidden_ClusterId   *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ClusterName *string                `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_Facts       map[string]string      `protobuf:"bytes,6,rep,name=facts" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_LastUpdated *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_updated,json=lastUpdated"`
+	xxx_hidden_Notes       []VirtualMachine_Note  `protobuf:"varint,8,rep,packed,name=notes,enum=storage.VirtualMachine_Note"`
+	xxx_hidden_VsockCid    int32                  `protobuf:"varint,9,opt,name=vsock_cid,json=vsockCid"`
+	xxx_hidden_State       VirtualMachine_State   `protobuf:"varint,10,opt,name=state,enum=storage.VirtualMachine_State"`
+	xxx_hidden_Scan        *VirtualMachineScan    `protobuf:"bytes,11,opt,name=scan"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VirtualMachine) Reset() {
@@ -244,223 +244,254 @@ func (x *VirtualMachine) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VirtualMachine) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetFacts() map[string]string {
 	if x != nil {
-		return x.Facts
+		return x.xxx_hidden_Facts
 	}
 	return nil
 }
 
 func (x *VirtualMachine) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastUpdated
+		return x.xxx_hidden_LastUpdated
 	}
 	return nil
 }
 
 func (x *VirtualMachine) GetNotes() []VirtualMachine_Note {
 	if x != nil {
-		return x.Notes
+		return x.xxx_hidden_Notes
 	}
 	return nil
 }
 
 func (x *VirtualMachine) GetVsockCid() int32 {
-	if x != nil && x.VsockCid != nil {
-		return *x.VsockCid
+	if x != nil {
+		return x.xxx_hidden_VsockCid
 	}
 	return 0
 }
 
 func (x *VirtualMachine) GetState() VirtualMachine_State {
-	if x != nil && x.State != nil {
-		return *x.State
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
+			return x.xxx_hidden_State
+		}
 	}
 	return VirtualMachine_UNKNOWN
 }
 
 func (x *VirtualMachine) GetScan() *VirtualMachineScan {
 	if x != nil {
-		return x.Scan
+		return x.xxx_hidden_Scan
 	}
 	return nil
 }
 
 func (x *VirtualMachine) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
 }
 
 func (x *VirtualMachine) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
 }
 
 func (x *VirtualMachine) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
 }
 
 func (x *VirtualMachine) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
 }
 
 func (x *VirtualMachine) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
 }
 
 func (x *VirtualMachine) SetFacts(v map[string]string) {
-	x.Facts = v
+	x.xxx_hidden_Facts = v
 }
 
 func (x *VirtualMachine) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.LastUpdated = v
+	x.xxx_hidden_LastUpdated = v
 }
 
 func (x *VirtualMachine) SetNotes(v []VirtualMachine_Note) {
-	x.Notes = v
+	x.xxx_hidden_Notes = v
 }
 
 func (x *VirtualMachine) SetVsockCid(v int32) {
-	x.VsockCid = &v
+	x.xxx_hidden_VsockCid = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
 }
 
 func (x *VirtualMachine) SetState(v VirtualMachine_State) {
-	x.State = &v
+	x.xxx_hidden_State = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
 }
 
 func (x *VirtualMachine) SetScan(v *VirtualMachineScan) {
-	x.Scan = v
+	x.xxx_hidden_Scan = v
 }
 
 func (x *VirtualMachine) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VirtualMachine) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VirtualMachine) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *VirtualMachine) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *VirtualMachine) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *VirtualMachine) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastUpdated != nil
+	return x.xxx_hidden_LastUpdated != nil
 }
 
 func (x *VirtualMachine) HasVsockCid() bool {
 	if x == nil {
 		return false
 	}
-	return x.VsockCid != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *VirtualMachine) HasState() bool {
 	if x == nil {
 		return false
 	}
-	return x.State != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *VirtualMachine) HasScan() bool {
 	if x == nil {
 		return false
 	}
-	return x.Scan != nil
+	return x.xxx_hidden_Scan != nil
 }
 
 func (x *VirtualMachine) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *VirtualMachine) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *VirtualMachine) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *VirtualMachine) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *VirtualMachine) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *VirtualMachine) ClearLastUpdated() {
-	x.LastUpdated = nil
+	x.xxx_hidden_LastUpdated = nil
 }
 
 func (x *VirtualMachine) ClearVsockCid() {
-	x.VsockCid = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_VsockCid = 0
 }
 
 func (x *VirtualMachine) ClearState() {
-	x.State = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_State = VirtualMachine_UNKNOWN
 }
 
 func (x *VirtualMachine) ClearScan() {
-	x.Scan = nil
+	x.xxx_hidden_Scan = nil
 }
 
 type VirtualMachine_builder struct {
@@ -483,28 +514,51 @@ func (b0 VirtualMachine_builder) Build() *VirtualMachine {
 	m0 := &VirtualMachine{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Namespace = b.Namespace
-	x.Name = b.Name
-	x.ClusterId = b.ClusterId
-	x.ClusterName = b.ClusterName
-	x.Facts = b.Facts
-	x.LastUpdated = b.LastUpdated
-	x.Notes = b.Notes
-	x.VsockCid = b.VsockCid
-	x.State = b.State
-	x.Scan = b.Scan
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	x.xxx_hidden_Facts = b.Facts
+	x.xxx_hidden_LastUpdated = b.LastUpdated
+	x.xxx_hidden_Notes = b.Notes
+	if b.VsockCid != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
+		x.xxx_hidden_VsockCid = *b.VsockCid
+	}
+	if b.State != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
+		x.xxx_hidden_State = *b.State
+	}
+	x.xxx_hidden_Scan = b.Scan
 	return m0
 }
 
 type VirtualMachineScan struct {
-	state           protoimpl.MessageState                 `protogen:"hybrid.v1"`
-	ScanTime        *timestamppb.Timestamp                 `protobuf:"bytes,1,opt,name=scan_time,json=scanTime" json:"scan_time,omitempty"`
-	OperatingSystem *string                                `protobuf:"bytes,2,opt,name=operating_system,json=operatingSystem" json:"operating_system,omitempty"`
-	Notes           []VirtualMachineScan_Note              `protobuf:"varint,3,rep,packed,name=notes,enum=storage.VirtualMachineScan_Note" json:"notes,omitempty"`
-	Components      []*EmbeddedVirtualMachineScanComponent `protobuf:"bytes,4,rep,name=components" json:"components,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState                  `protogen:"opaque.v1"`
+	xxx_hidden_ScanTime        *timestamppb.Timestamp                  `protobuf:"bytes,1,opt,name=scan_time,json=scanTime"`
+	xxx_hidden_OperatingSystem *string                                 `protobuf:"bytes,2,opt,name=operating_system,json=operatingSystem"`
+	xxx_hidden_Notes           []VirtualMachineScan_Note               `protobuf:"varint,3,rep,packed,name=notes,enum=storage.VirtualMachineScan_Note"`
+	xxx_hidden_Components      *[]*EmbeddedVirtualMachineScanComponent `protobuf:"bytes,4,rep,name=components"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *VirtualMachineScan) Reset() {
@@ -534,68 +588,75 @@ func (x *VirtualMachineScan) ProtoReflect() protoreflect.Message {
 
 func (x *VirtualMachineScan) GetScanTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ScanTime
+		return x.xxx_hidden_ScanTime
 	}
 	return nil
 }
 
 func (x *VirtualMachineScan) GetOperatingSystem() string {
-	if x != nil && x.OperatingSystem != nil {
-		return *x.OperatingSystem
+	if x != nil {
+		if x.xxx_hidden_OperatingSystem != nil {
+			return *x.xxx_hidden_OperatingSystem
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachineScan) GetNotes() []VirtualMachineScan_Note {
 	if x != nil {
-		return x.Notes
+		return x.xxx_hidden_Notes
 	}
 	return nil
 }
 
 func (x *VirtualMachineScan) GetComponents() []*EmbeddedVirtualMachineScanComponent {
 	if x != nil {
-		return x.Components
+		if x.xxx_hidden_Components != nil {
+			return *x.xxx_hidden_Components
+		}
 	}
 	return nil
 }
 
 func (x *VirtualMachineScan) SetScanTime(v *timestamppb.Timestamp) {
-	x.ScanTime = v
+	x.xxx_hidden_ScanTime = v
 }
 
 func (x *VirtualMachineScan) SetOperatingSystem(v string) {
-	x.OperatingSystem = &v
+	x.xxx_hidden_OperatingSystem = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *VirtualMachineScan) SetNotes(v []VirtualMachineScan_Note) {
-	x.Notes = v
+	x.xxx_hidden_Notes = v
 }
 
 func (x *VirtualMachineScan) SetComponents(v []*EmbeddedVirtualMachineScanComponent) {
-	x.Components = v
+	x.xxx_hidden_Components = &v
 }
 
 func (x *VirtualMachineScan) HasScanTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.ScanTime != nil
+	return x.xxx_hidden_ScanTime != nil
 }
 
 func (x *VirtualMachineScan) HasOperatingSystem() bool {
 	if x == nil {
 		return false
 	}
-	return x.OperatingSystem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VirtualMachineScan) ClearScanTime() {
-	x.ScanTime = nil
+	x.xxx_hidden_ScanTime = nil
 }
 
 func (x *VirtualMachineScan) ClearOperatingSystem() {
-	x.OperatingSystem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_OperatingSystem = nil
 }
 
 type VirtualMachineScan_builder struct {
@@ -611,27 +672,29 @@ func (b0 VirtualMachineScan_builder) Build() *VirtualMachineScan {
 	m0 := &VirtualMachineScan{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ScanTime = b.ScanTime
-	x.OperatingSystem = b.OperatingSystem
-	x.Notes = b.Notes
-	x.Components = b.Components
+	x.xxx_hidden_ScanTime = b.ScanTime
+	if b.OperatingSystem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_OperatingSystem = b.OperatingSystem
+	}
+	x.xxx_hidden_Notes = b.Notes
+	x.xxx_hidden_Components = &b.Components
 	return m0
 }
 
 type EmbeddedVirtualMachineScanComponent struct {
-	state   protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name    *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Version *string                `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
-	// Types that are valid to be assigned to SetTopCvss:
-	//
-	//	*EmbeddedVirtualMachineScanComponent_TopCvss
-	SetTopCvss      isEmbeddedVirtualMachineScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	RiskScore       *float32                                         `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore" json:"risk_score,omitempty"`
-	Vulnerabilities []*VirtualMachineVulnerability                   `protobuf:"bytes,5,rep,name=vulnerabilities" json:"vulnerabilities,omitempty"`
-	Source          *SourceType                                      `protobuf:"varint,6,opt,name=source,enum=storage.SourceType" json:"source,omitempty"`
-	Notes           []EmbeddedVirtualMachineScanComponent_Note       `protobuf:"varint,7,rep,packed,name=notes,enum=storage.EmbeddedVirtualMachineScanComponent_Note" json:"notes,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState                           `protogen:"opaque.v1"`
+	xxx_hidden_Name            *string                                          `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Version         *string                                          `protobuf:"bytes,2,opt,name=version"`
+	xxx_hidden_SetTopCvss      isEmbeddedVirtualMachineScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
+	xxx_hidden_RiskScore       float32                                          `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore"`
+	xxx_hidden_Vulnerabilities *[]*VirtualMachineVulnerability                  `protobuf:"bytes,5,rep,name=vulnerabilities"`
+	xxx_hidden_Source          SourceType                                       `protobuf:"varint,6,opt,name=source,enum=storage.SourceType"`
+	xxx_hidden_Notes           []EmbeddedVirtualMachineScanComponent_Note       `protobuf:"varint,7,rep,packed,name=notes,enum=storage.EmbeddedVirtualMachineScanComponent_Note"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) Reset() {
@@ -660,122 +723,124 @@ func (x *EmbeddedVirtualMachineScanComponent) ProtoReflect() protoreflect.Messag
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *EmbeddedVirtualMachineScanComponent) GetSetTopCvss() isEmbeddedVirtualMachineScanComponent_SetTopCvss {
+func (x *EmbeddedVirtualMachineScanComponent) GetTopCvss() float32 {
 	if x != nil {
-		return x.SetTopCvss
-	}
-	return nil
-}
-
-func (x *EmbeddedVirtualMachineScanComponent) Get_TopCvss() float32 {
-	if x != nil {
-		if x, ok := x.SetTopCvss.(*EmbeddedVirtualMachineScanComponent_TopCvss); ok {
+		if x, ok := x.xxx_hidden_SetTopCvss.(*embeddedVirtualMachineScanComponent_TopCvss); ok {
 			return x.TopCvss
 		}
 	}
 	return 0
 }
 
-// Deprecated: Use Get_TopCvss instead.
-func (x *EmbeddedVirtualMachineScanComponent) GetTopCvss() float32 {
-	return x.Get_TopCvss()
-}
-
 func (x *EmbeddedVirtualMachineScanComponent) GetRiskScore() float32 {
-	if x != nil && x.RiskScore != nil {
-		return *x.RiskScore
+	if x != nil {
+		return x.xxx_hidden_RiskScore
 	}
 	return 0
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) GetVulnerabilities() []*VirtualMachineVulnerability {
 	if x != nil {
-		return x.Vulnerabilities
+		if x.xxx_hidden_Vulnerabilities != nil {
+			return *x.xxx_hidden_Vulnerabilities
+		}
 	}
 	return nil
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) GetSource() SourceType {
-	if x != nil && x.Source != nil {
-		return *x.Source
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			return x.xxx_hidden_Source
+		}
 	}
 	return SourceType_OS
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) GetNotes() []EmbeddedVirtualMachineScanComponent_Note {
 	if x != nil {
-		return x.Notes
+		return x.xxx_hidden_Notes
 	}
 	return nil
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
-func (x *EmbeddedVirtualMachineScanComponent) Set_TopCvss(v float32) {
-	x.SetTopCvss = &EmbeddedVirtualMachineScanComponent_TopCvss{v}
+func (x *EmbeddedVirtualMachineScanComponent) SetTopCvss(v float32) {
+	x.xxx_hidden_SetTopCvss = &embeddedVirtualMachineScanComponent_TopCvss{v}
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) SetRiskScore(v float32) {
-	x.RiskScore = &v
+	x.xxx_hidden_RiskScore = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) SetVulnerabilities(v []*VirtualMachineVulnerability) {
-	x.Vulnerabilities = v
+	x.xxx_hidden_Vulnerabilities = &v
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) SetSource(v SourceType) {
-	x.Source = &v
+	x.xxx_hidden_Source = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) SetNotes(v []EmbeddedVirtualMachineScanComponent_Note) {
-	x.Notes = v
+	x.xxx_hidden_Notes = v
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) HasSetTopCvss() bool {
 	if x == nil {
 		return false
 	}
-	return x.SetTopCvss != nil
+	return x.xxx_hidden_SetTopCvss != nil
 }
 
-func (x *EmbeddedVirtualMachineScanComponent) Has_TopCvss() bool {
+func (x *EmbeddedVirtualMachineScanComponent) HasTopCvss() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.SetTopCvss.(*EmbeddedVirtualMachineScanComponent_TopCvss)
+	_, ok := x.xxx_hidden_SetTopCvss.(*embeddedVirtualMachineScanComponent_TopCvss)
 	return ok
 }
 
@@ -783,40 +848,44 @@ func (x *EmbeddedVirtualMachineScanComponent) HasRiskScore() bool {
 	if x == nil {
 		return false
 	}
-	return x.RiskScore != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) HasSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.Source != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Version = nil
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) ClearSetTopCvss() {
-	x.SetTopCvss = nil
+	x.xxx_hidden_SetTopCvss = nil
 }
 
-func (x *EmbeddedVirtualMachineScanComponent) Clear_TopCvss() {
-	if _, ok := x.SetTopCvss.(*EmbeddedVirtualMachineScanComponent_TopCvss); ok {
-		x.SetTopCvss = nil
+func (x *EmbeddedVirtualMachineScanComponent) ClearTopCvss() {
+	if _, ok := x.xxx_hidden_SetTopCvss.(*embeddedVirtualMachineScanComponent_TopCvss); ok {
+		x.xxx_hidden_SetTopCvss = nil
 	}
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) ClearRiskScore() {
-	x.RiskScore = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_RiskScore = 0
 }
 
 func (x *EmbeddedVirtualMachineScanComponent) ClearSource() {
-	x.Source = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Source = SourceType_OS
 }
 
 const EmbeddedVirtualMachineScanComponent_SetTopCvss_not_set_case case_EmbeddedVirtualMachineScanComponent_SetTopCvss = 0
@@ -826,8 +895,8 @@ func (x *EmbeddedVirtualMachineScanComponent) WhichSetTopCvss() case_EmbeddedVir
 	if x == nil {
 		return EmbeddedVirtualMachineScanComponent_SetTopCvss_not_set_case
 	}
-	switch x.SetTopCvss.(type) {
-	case *EmbeddedVirtualMachineScanComponent_TopCvss:
+	switch x.xxx_hidden_SetTopCvss.(type) {
+	case *embeddedVirtualMachineScanComponent_TopCvss:
 		return EmbeddedVirtualMachineScanComponent_TopCvss_case
 	default:
 		return EmbeddedVirtualMachineScanComponent_SetTopCvss_not_set_case
@@ -839,9 +908,9 @@ type EmbeddedVirtualMachineScanComponent_builder struct {
 
 	Name    *string
 	Version *string
-	// Fields of oneof SetTopCvss:
+	// Fields of oneof xxx_hidden_SetTopCvss:
 	TopCvss *float32
-	// -- end of SetTopCvss
+	// -- end of xxx_hidden_SetTopCvss
 	RiskScore       *float32
 	Vulnerabilities []*VirtualMachineVulnerability
 	Source          *SourceType
@@ -852,15 +921,27 @@ func (b0 EmbeddedVirtualMachineScanComponent_builder) Build() *EmbeddedVirtualMa
 	m0 := &EmbeddedVirtualMachineScanComponent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Version = b.Version
-	if b.TopCvss != nil {
-		x.SetTopCvss = &EmbeddedVirtualMachineScanComponent_TopCvss{*b.TopCvss}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Name = b.Name
 	}
-	x.RiskScore = b.RiskScore
-	x.Vulnerabilities = b.Vulnerabilities
-	x.Source = b.Source
-	x.Notes = b.Notes
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Version = b.Version
+	}
+	if b.TopCvss != nil {
+		x.xxx_hidden_SetTopCvss = &embeddedVirtualMachineScanComponent_TopCvss{*b.TopCvss}
+	}
+	if b.RiskScore != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_RiskScore = *b.RiskScore
+	}
+	x.xxx_hidden_Vulnerabilities = &b.Vulnerabilities
+	if b.Source != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_Source = *b.Source
+	}
+	x.xxx_hidden_Notes = b.Notes
 	return m0
 }
 
@@ -878,23 +959,22 @@ type isEmbeddedVirtualMachineScanComponent_SetTopCvss interface {
 	isEmbeddedVirtualMachineScanComponent_SetTopCvss()
 }
 
-type EmbeddedVirtualMachineScanComponent_TopCvss struct {
+type embeddedVirtualMachineScanComponent_TopCvss struct {
 	TopCvss float32 `protobuf:"fixed32,3,opt,name=top_cvss,json=topCvss,oneof"`
 }
 
-func (*EmbeddedVirtualMachineScanComponent_TopCvss) isEmbeddedVirtualMachineScanComponent_SetTopCvss() {
+func (*embeddedVirtualMachineScanComponent_TopCvss) isEmbeddedVirtualMachineScanComponent_SetTopCvss() {
 }
 
 type VirtualMachineVulnerability struct {
-	state       protoimpl.MessageState `protogen:"hybrid.v1"`
-	CveBaseInfo *VirtualMachineCVEInfo `protobuf:"bytes,1,opt,name=cve_base_info,json=cveBaseInfo" json:"cve_base_info,omitempty"`
-	Severity    *VulnerabilitySeverity `protobuf:"varint,2,opt,name=severity,enum=storage.VulnerabilitySeverity" json:"severity,omitempty"`
-	// Types that are valid to be assigned to SetFixedBy:
-	//
-	//	*VirtualMachineVulnerability_FixedBy
-	SetFixedBy    isVirtualMachineVulnerability_SetFixedBy `protobuf_oneof:"set_fixed_by"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState                   `protogen:"opaque.v1"`
+	xxx_hidden_CveBaseInfo *VirtualMachineCVEInfo                   `protobuf:"bytes,1,opt,name=cve_base_info,json=cveBaseInfo"`
+	xxx_hidden_Severity    VulnerabilitySeverity                    `protobuf:"varint,2,opt,name=severity,enum=storage.VulnerabilitySeverity"`
+	xxx_hidden_SetFixedBy  isVirtualMachineVulnerability_SetFixedBy `protobuf_oneof:"set_fixed_by"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VirtualMachineVulnerability) Reset() {
@@ -924,95 +1004,87 @@ func (x *VirtualMachineVulnerability) ProtoReflect() protoreflect.Message {
 
 func (x *VirtualMachineVulnerability) GetCveBaseInfo() *VirtualMachineCVEInfo {
 	if x != nil {
-		return x.CveBaseInfo
+		return x.xxx_hidden_CveBaseInfo
 	}
 	return nil
 }
 
 func (x *VirtualMachineVulnerability) GetSeverity() VulnerabilitySeverity {
-	if x != nil && x.Severity != nil {
-		return *x.Severity
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Severity
+		}
 	}
 	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 }
 
-func (x *VirtualMachineVulnerability) GetSetFixedBy() isVirtualMachineVulnerability_SetFixedBy {
+func (x *VirtualMachineVulnerability) GetFixedBy() string {
 	if x != nil {
-		return x.SetFixedBy
-	}
-	return nil
-}
-
-func (x *VirtualMachineVulnerability) Get_FixedBy() string {
-	if x != nil {
-		if x, ok := x.SetFixedBy.(*VirtualMachineVulnerability_FixedBy); ok {
+		if x, ok := x.xxx_hidden_SetFixedBy.(*virtualMachineVulnerability_FixedBy); ok {
 			return x.FixedBy
 		}
 	}
 	return ""
 }
 
-// Deprecated: Use Get_FixedBy instead.
-func (x *VirtualMachineVulnerability) GetFixedBy() string {
-	return x.Get_FixedBy()
-}
-
 func (x *VirtualMachineVulnerability) SetCveBaseInfo(v *VirtualMachineCVEInfo) {
-	x.CveBaseInfo = v
+	x.xxx_hidden_CveBaseInfo = v
 }
 
 func (x *VirtualMachineVulnerability) SetSeverity(v VulnerabilitySeverity) {
-	x.Severity = &v
+	x.xxx_hidden_Severity = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
-func (x *VirtualMachineVulnerability) Set_FixedBy(v string) {
-	x.SetFixedBy = &VirtualMachineVulnerability_FixedBy{v}
+func (x *VirtualMachineVulnerability) SetFixedBy(v string) {
+	x.xxx_hidden_SetFixedBy = &virtualMachineVulnerability_FixedBy{v}
 }
 
 func (x *VirtualMachineVulnerability) HasCveBaseInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.CveBaseInfo != nil
+	return x.xxx_hidden_CveBaseInfo != nil
 }
 
 func (x *VirtualMachineVulnerability) HasSeverity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Severity != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VirtualMachineVulnerability) HasSetFixedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.SetFixedBy != nil
+	return x.xxx_hidden_SetFixedBy != nil
 }
 
-func (x *VirtualMachineVulnerability) Has_FixedBy() bool {
+func (x *VirtualMachineVulnerability) HasFixedBy() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.SetFixedBy.(*VirtualMachineVulnerability_FixedBy)
+	_, ok := x.xxx_hidden_SetFixedBy.(*virtualMachineVulnerability_FixedBy)
 	return ok
 }
 
 func (x *VirtualMachineVulnerability) ClearCveBaseInfo() {
-	x.CveBaseInfo = nil
+	x.xxx_hidden_CveBaseInfo = nil
 }
 
 func (x *VirtualMachineVulnerability) ClearSeverity() {
-	x.Severity = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Severity = VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 }
 
 func (x *VirtualMachineVulnerability) ClearSetFixedBy() {
-	x.SetFixedBy = nil
+	x.xxx_hidden_SetFixedBy = nil
 }
 
-func (x *VirtualMachineVulnerability) Clear_FixedBy() {
-	if _, ok := x.SetFixedBy.(*VirtualMachineVulnerability_FixedBy); ok {
-		x.SetFixedBy = nil
+func (x *VirtualMachineVulnerability) ClearFixedBy() {
+	if _, ok := x.xxx_hidden_SetFixedBy.(*virtualMachineVulnerability_FixedBy); ok {
+		x.xxx_hidden_SetFixedBy = nil
 	}
 }
 
@@ -1023,8 +1095,8 @@ func (x *VirtualMachineVulnerability) WhichSetFixedBy() case_VirtualMachineVulne
 	if x == nil {
 		return VirtualMachineVulnerability_SetFixedBy_not_set_case
 	}
-	switch x.SetFixedBy.(type) {
-	case *VirtualMachineVulnerability_FixedBy:
+	switch x.xxx_hidden_SetFixedBy.(type) {
+	case *virtualMachineVulnerability_FixedBy:
 		return VirtualMachineVulnerability_FixedBy_case
 	default:
 		return VirtualMachineVulnerability_SetFixedBy_not_set_case
@@ -1036,19 +1108,22 @@ type VirtualMachineVulnerability_builder struct {
 
 	CveBaseInfo *VirtualMachineCVEInfo
 	Severity    *VulnerabilitySeverity
-	// Fields of oneof SetFixedBy:
+	// Fields of oneof xxx_hidden_SetFixedBy:
 	FixedBy *string
-	// -- end of SetFixedBy
+	// -- end of xxx_hidden_SetFixedBy
 }
 
 func (b0 VirtualMachineVulnerability_builder) Build() *VirtualMachineVulnerability {
 	m0 := &VirtualMachineVulnerability{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CveBaseInfo = b.CveBaseInfo
-	x.Severity = b.Severity
+	x.xxx_hidden_CveBaseInfo = b.CveBaseInfo
+	if b.Severity != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Severity = *b.Severity
+	}
 	if b.FixedBy != nil {
-		x.SetFixedBy = &VirtualMachineVulnerability_FixedBy{*b.FixedBy}
+		x.xxx_hidden_SetFixedBy = &virtualMachineVulnerability_FixedBy{*b.FixedBy}
 	}
 	return m0
 }
@@ -1067,30 +1142,29 @@ type isVirtualMachineVulnerability_SetFixedBy interface {
 	isVirtualMachineVulnerability_SetFixedBy()
 }
 
-type VirtualMachineVulnerability_FixedBy struct {
+type virtualMachineVulnerability_FixedBy struct {
 	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,oneof"`
 }
 
-func (*VirtualMachineVulnerability_FixedBy) isVirtualMachineVulnerability_SetFixedBy() {}
+func (*virtualMachineVulnerability_FixedBy) isVirtualMachineVulnerability_SetFixedBy() {}
 
 // VirtualMachineCVEInfo is a clone of the CVEInfo message from cve.proto, stripped from its search tags
 type VirtualMachineCVEInfo struct {
-	state   protoimpl.MessageState `protogen:"hybrid.v1"`
-	Cve     *string                `protobuf:"bytes,1,opt,name=cve" json:"cve,omitempty"`
-	Summary *string                `protobuf:"bytes,2,opt,name=summary" json:"summary,omitempty"`
-	Link    *string                `protobuf:"bytes,3,opt,name=link" json:"link,omitempty"`
-	// This indicates the timestamp when the cve was first published in the cve feeds.
-	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=published_on,json=publishedOn" json:"published_on,omitempty"`
-	// Time when the CVE was first seen in the system.
-	CreatedAt    *timestamppb.Timestamp             `protobuf:"bytes,5,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
-	LastModified *timestamppb.Timestamp             `protobuf:"bytes,6,opt,name=last_modified,json=lastModified" json:"last_modified,omitempty"`
-	References   []*VirtualMachineCVEInfo_Reference `protobuf:"bytes,7,rep,name=references" json:"references,omitempty"`
-	// cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
-	CvssMetrics   []*CVSSScore            `protobuf:"bytes,8,rep,name=cvss_metrics,json=cvssMetrics" json:"cvss_metrics,omitempty"`
-	Epss          *VirtualMachineEPSS     `protobuf:"bytes,9,opt,name=epss" json:"epss,omitempty"`
-	Advisory      *VirtualMachineAdvisory `protobuf:"bytes,10,opt,name=advisory" json:"advisory,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_Cve          *string                             `protobuf:"bytes,1,opt,name=cve"`
+	xxx_hidden_Summary      *string                             `protobuf:"bytes,2,opt,name=summary"`
+	xxx_hidden_Link         *string                             `protobuf:"bytes,3,opt,name=link"`
+	xxx_hidden_PublishedOn  *timestamppb.Timestamp              `protobuf:"bytes,4,opt,name=published_on,json=publishedOn"`
+	xxx_hidden_CreatedAt    *timestamppb.Timestamp              `protobuf:"bytes,5,opt,name=created_at,json=createdAt"`
+	xxx_hidden_LastModified *timestamppb.Timestamp              `protobuf:"bytes,6,opt,name=last_modified,json=lastModified"`
+	xxx_hidden_References   *[]*VirtualMachineCVEInfo_Reference `protobuf:"bytes,7,rep,name=references"`
+	xxx_hidden_CvssMetrics  *[]*CVSSScore                       `protobuf:"bytes,8,rep,name=cvss_metrics,json=cvssMetrics"`
+	xxx_hidden_Epss         *VirtualMachineEPSS                 `protobuf:"bytes,9,opt,name=epss"`
+	xxx_hidden_Advisory     *VirtualMachineAdvisory             `protobuf:"bytes,10,opt,name=advisory"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *VirtualMachineCVEInfo) Reset() {
@@ -1119,201 +1193,220 @@ func (x *VirtualMachineCVEInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VirtualMachineCVEInfo) GetCve() string {
-	if x != nil && x.Cve != nil {
-		return *x.Cve
+	if x != nil {
+		if x.xxx_hidden_Cve != nil {
+			return *x.xxx_hidden_Cve
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachineCVEInfo) GetSummary() string {
-	if x != nil && x.Summary != nil {
-		return *x.Summary
+	if x != nil {
+		if x.xxx_hidden_Summary != nil {
+			return *x.xxx_hidden_Summary
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachineCVEInfo) GetLink() string {
-	if x != nil && x.Link != nil {
-		return *x.Link
+	if x != nil {
+		if x.xxx_hidden_Link != nil {
+			return *x.xxx_hidden_Link
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachineCVEInfo) GetPublishedOn() *timestamppb.Timestamp {
 	if x != nil {
-		return x.PublishedOn
+		return x.xxx_hidden_PublishedOn
 	}
 	return nil
 }
 
 func (x *VirtualMachineCVEInfo) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return nil
 }
 
 func (x *VirtualMachineCVEInfo) GetLastModified() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastModified
+		return x.xxx_hidden_LastModified
 	}
 	return nil
 }
 
 func (x *VirtualMachineCVEInfo) GetReferences() []*VirtualMachineCVEInfo_Reference {
 	if x != nil {
-		return x.References
+		if x.xxx_hidden_References != nil {
+			return *x.xxx_hidden_References
+		}
 	}
 	return nil
 }
 
 func (x *VirtualMachineCVEInfo) GetCvssMetrics() []*CVSSScore {
 	if x != nil {
-		return x.CvssMetrics
+		if x.xxx_hidden_CvssMetrics != nil {
+			return *x.xxx_hidden_CvssMetrics
+		}
 	}
 	return nil
 }
 
 func (x *VirtualMachineCVEInfo) GetEpss() *VirtualMachineEPSS {
 	if x != nil {
-		return x.Epss
+		return x.xxx_hidden_Epss
 	}
 	return nil
 }
 
 func (x *VirtualMachineCVEInfo) GetAdvisory() *VirtualMachineAdvisory {
 	if x != nil {
-		return x.Advisory
+		return x.xxx_hidden_Advisory
 	}
 	return nil
 }
 
 func (x *VirtualMachineCVEInfo) SetCve(v string) {
-	x.Cve = &v
+	x.xxx_hidden_Cve = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 10)
 }
 
 func (x *VirtualMachineCVEInfo) SetSummary(v string) {
-	x.Summary = &v
+	x.xxx_hidden_Summary = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
 }
 
 func (x *VirtualMachineCVEInfo) SetLink(v string) {
-	x.Link = &v
+	x.xxx_hidden_Link = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 10)
 }
 
 func (x *VirtualMachineCVEInfo) SetPublishedOn(v *timestamppb.Timestamp) {
-	x.PublishedOn = v
+	x.xxx_hidden_PublishedOn = v
 }
 
 func (x *VirtualMachineCVEInfo) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.CreatedAt = v
+	x.xxx_hidden_CreatedAt = v
 }
 
 func (x *VirtualMachineCVEInfo) SetLastModified(v *timestamppb.Timestamp) {
-	x.LastModified = v
+	x.xxx_hidden_LastModified = v
 }
 
 func (x *VirtualMachineCVEInfo) SetReferences(v []*VirtualMachineCVEInfo_Reference) {
-	x.References = v
+	x.xxx_hidden_References = &v
 }
 
 func (x *VirtualMachineCVEInfo) SetCvssMetrics(v []*CVSSScore) {
-	x.CvssMetrics = v
+	x.xxx_hidden_CvssMetrics = &v
 }
 
 func (x *VirtualMachineCVEInfo) SetEpss(v *VirtualMachineEPSS) {
-	x.Epss = v
+	x.xxx_hidden_Epss = v
 }
 
 func (x *VirtualMachineCVEInfo) SetAdvisory(v *VirtualMachineAdvisory) {
-	x.Advisory = v
+	x.xxx_hidden_Advisory = v
 }
 
 func (x *VirtualMachineCVEInfo) HasCve() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cve != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VirtualMachineCVEInfo) HasSummary() bool {
 	if x == nil {
 		return false
 	}
-	return x.Summary != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VirtualMachineCVEInfo) HasLink() bool {
 	if x == nil {
 		return false
 	}
-	return x.Link != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *VirtualMachineCVEInfo) HasPublishedOn() bool {
 	if x == nil {
 		return false
 	}
-	return x.PublishedOn != nil
+	return x.xxx_hidden_PublishedOn != nil
 }
 
 func (x *VirtualMachineCVEInfo) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedAt != nil
+	return x.xxx_hidden_CreatedAt != nil
 }
 
 func (x *VirtualMachineCVEInfo) HasLastModified() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastModified != nil
+	return x.xxx_hidden_LastModified != nil
 }
 
 func (x *VirtualMachineCVEInfo) HasEpss() bool {
 	if x == nil {
 		return false
 	}
-	return x.Epss != nil
+	return x.xxx_hidden_Epss != nil
 }
 
 func (x *VirtualMachineCVEInfo) HasAdvisory() bool {
 	if x == nil {
 		return false
 	}
-	return x.Advisory != nil
+	return x.xxx_hidden_Advisory != nil
 }
 
 func (x *VirtualMachineCVEInfo) ClearCve() {
-	x.Cve = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Cve = nil
 }
 
 func (x *VirtualMachineCVEInfo) ClearSummary() {
-	x.Summary = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Summary = nil
 }
 
 func (x *VirtualMachineCVEInfo) ClearLink() {
-	x.Link = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Link = nil
 }
 
 func (x *VirtualMachineCVEInfo) ClearPublishedOn() {
-	x.PublishedOn = nil
+	x.xxx_hidden_PublishedOn = nil
 }
 
 func (x *VirtualMachineCVEInfo) ClearCreatedAt() {
-	x.CreatedAt = nil
+	x.xxx_hidden_CreatedAt = nil
 }
 
 func (x *VirtualMachineCVEInfo) ClearLastModified() {
-	x.LastModified = nil
+	x.xxx_hidden_LastModified = nil
 }
 
 func (x *VirtualMachineCVEInfo) ClearEpss() {
-	x.Epss = nil
+	x.xxx_hidden_Epss = nil
 }
 
 func (x *VirtualMachineCVEInfo) ClearAdvisory() {
-	x.Advisory = nil
+	x.xxx_hidden_Advisory = nil
 }
 
 type VirtualMachineCVEInfo_builder struct {
@@ -1338,27 +1431,38 @@ func (b0 VirtualMachineCVEInfo_builder) Build() *VirtualMachineCVEInfo {
 	m0 := &VirtualMachineCVEInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Cve = b.Cve
-	x.Summary = b.Summary
-	x.Link = b.Link
-	x.PublishedOn = b.PublishedOn
-	x.CreatedAt = b.CreatedAt
-	x.LastModified = b.LastModified
-	x.References = b.References
-	x.CvssMetrics = b.CvssMetrics
-	x.Epss = b.Epss
-	x.Advisory = b.Advisory
+	if b.Cve != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 10)
+		x.xxx_hidden_Cve = b.Cve
+	}
+	if b.Summary != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
+		x.xxx_hidden_Summary = b.Summary
+	}
+	if b.Link != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 10)
+		x.xxx_hidden_Link = b.Link
+	}
+	x.xxx_hidden_PublishedOn = b.PublishedOn
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_LastModified = b.LastModified
+	x.xxx_hidden_References = &b.References
+	x.xxx_hidden_CvssMetrics = &b.CvssMetrics
+	x.xxx_hidden_Epss = b.Epss
+	x.xxx_hidden_Advisory = b.Advisory
 	return m0
 }
 
 // VirtualMachineEPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
 // This structure is a clone of the EPSS message from cve.proto, stripped from its search tags.
 type VirtualMachineEPSS struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	EpssProbability *float32               `protobuf:"fixed32,1,opt,name=epss_probability,json=epssProbability" json:"epss_probability,omitempty"`
-	EpssPercentile  *float32               `protobuf:"fixed32,2,opt,name=epss_percentile,json=epssPercentile" json:"epss_percentile,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_EpssProbability float32                `protobuf:"fixed32,1,opt,name=epss_probability,json=epssProbability"`
+	xxx_hidden_EpssPercentile  float32                `protobuf:"fixed32,2,opt,name=epss_percentile,json=epssPercentile"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *VirtualMachineEPSS) Reset() {
@@ -1387,47 +1491,51 @@ func (x *VirtualMachineEPSS) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VirtualMachineEPSS) GetEpssProbability() float32 {
-	if x != nil && x.EpssProbability != nil {
-		return *x.EpssProbability
+	if x != nil {
+		return x.xxx_hidden_EpssProbability
 	}
 	return 0
 }
 
 func (x *VirtualMachineEPSS) GetEpssPercentile() float32 {
-	if x != nil && x.EpssPercentile != nil {
-		return *x.EpssPercentile
+	if x != nil {
+		return x.xxx_hidden_EpssPercentile
 	}
 	return 0
 }
 
 func (x *VirtualMachineEPSS) SetEpssProbability(v float32) {
-	x.EpssProbability = &v
+	x.xxx_hidden_EpssProbability = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *VirtualMachineEPSS) SetEpssPercentile(v float32) {
-	x.EpssPercentile = &v
+	x.xxx_hidden_EpssPercentile = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *VirtualMachineEPSS) HasEpssProbability() bool {
 	if x == nil {
 		return false
 	}
-	return x.EpssProbability != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VirtualMachineEPSS) HasEpssPercentile() bool {
 	if x == nil {
 		return false
 	}
-	return x.EpssPercentile != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VirtualMachineEPSS) ClearEpssProbability() {
-	x.EpssProbability = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_EpssProbability = 0
 }
 
 func (x *VirtualMachineEPSS) ClearEpssPercentile() {
-	x.EpssPercentile = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_EpssPercentile = 0
 }
 
 type VirtualMachineEPSS_builder struct {
@@ -1441,17 +1549,25 @@ func (b0 VirtualMachineEPSS_builder) Build() *VirtualMachineEPSS {
 	m0 := &VirtualMachineEPSS{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.EpssProbability = b.EpssProbability
-	x.EpssPercentile = b.EpssPercentile
+	if b.EpssProbability != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_EpssProbability = *b.EpssProbability
+	}
+	if b.EpssPercentile != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_EpssPercentile = *b.EpssPercentile
+	}
 	return m0
 }
 
 type VirtualMachineAdvisory struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Link          *string                `protobuf:"bytes,2,opt,name=link" json:"link,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Link        *string                `protobuf:"bytes,2,opt,name=link"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VirtualMachineAdvisory) Reset() {
@@ -1480,47 +1596,57 @@ func (x *VirtualMachineAdvisory) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VirtualMachineAdvisory) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachineAdvisory) GetLink() string {
-	if x != nil && x.Link != nil {
-		return *x.Link
+	if x != nil {
+		if x.xxx_hidden_Link != nil {
+			return *x.xxx_hidden_Link
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachineAdvisory) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *VirtualMachineAdvisory) SetLink(v string) {
-	x.Link = &v
+	x.xxx_hidden_Link = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *VirtualMachineAdvisory) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VirtualMachineAdvisory) HasLink() bool {
 	if x == nil {
 		return false
 	}
-	return x.Link != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VirtualMachineAdvisory) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *VirtualMachineAdvisory) ClearLink() {
-	x.Link = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Link = nil
 }
 
 type VirtualMachineAdvisory_builder struct {
@@ -1534,17 +1660,25 @@ func (b0 VirtualMachineAdvisory_builder) Build() *VirtualMachineAdvisory {
 	m0 := &VirtualMachineAdvisory{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Link = b.Link
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Link != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Link = b.Link
+	}
 	return m0
 }
 
 type VirtualMachineCVEInfo_Reference struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	URI           *string                `protobuf:"bytes,1,opt,name=URI" json:"URI,omitempty"`
-	Tags          []string               `protobuf:"bytes,2,rep,name=tags" json:"tags,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_URI         *string                `protobuf:"bytes,1,opt,name=URI"`
+	xxx_hidden_Tags        []string               `protobuf:"bytes,2,rep,name=tags"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VirtualMachineCVEInfo_Reference) Reset() {
@@ -1573,36 +1707,41 @@ func (x *VirtualMachineCVEInfo_Reference) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VirtualMachineCVEInfo_Reference) GetURI() string {
-	if x != nil && x.URI != nil {
-		return *x.URI
+	if x != nil {
+		if x.xxx_hidden_URI != nil {
+			return *x.xxx_hidden_URI
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachineCVEInfo_Reference) GetTags() []string {
 	if x != nil {
-		return x.Tags
+		return x.xxx_hidden_Tags
 	}
 	return nil
 }
 
 func (x *VirtualMachineCVEInfo_Reference) SetURI(v string) {
-	x.URI = &v
+	x.xxx_hidden_URI = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *VirtualMachineCVEInfo_Reference) SetTags(v []string) {
-	x.Tags = v
+	x.xxx_hidden_Tags = v
 }
 
 func (x *VirtualMachineCVEInfo_Reference) HasURI() bool {
 	if x == nil {
 		return false
 	}
-	return x.URI != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VirtualMachineCVEInfo_Reference) ClearURI() {
-	x.URI = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_URI = nil
 }
 
 type VirtualMachineCVEInfo_Reference_builder struct {
@@ -1616,8 +1755,11 @@ func (b0 VirtualMachineCVEInfo_Reference_builder) Build() *VirtualMachineCVEInfo
 	m0 := &VirtualMachineCVEInfo_Reference{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.URI = b.URI
-	x.Tags = b.Tags
+	if b.URI != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_URI = b.URI
+	}
+	x.xxx_hidden_Tags = b.Tags
 	return m0
 }
 
@@ -1706,7 +1848,7 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\x0fepss_percentile\x18\x02 \x01(\x02R\x0eepssPercentile\"@\n" +
 	"\x16VirtualMachineAdvisory\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
-	"\x04link\x18\x02 \x01(\tR\x04linkB\b\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x04link\x18\x02 \x01(\tR\x04linkB\b\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_virtual_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_storage_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
@@ -1765,10 +1907,10 @@ func file_storage_virtual_machine_proto_init() {
 	file_storage_cve_proto_init()
 	file_storage_image_proto_init()
 	file_storage_virtual_machine_proto_msgTypes[2].OneofWrappers = []any{
-		(*EmbeddedVirtualMachineScanComponent_TopCvss)(nil),
+		(*embeddedVirtualMachineScanComponent_TopCvss)(nil),
 	}
 	file_storage_virtual_machine_proto_msgTypes[3].OneofWrappers = []any{
-		(*VirtualMachineVulnerability_FixedBy)(nil),
+		(*virtualMachineVulnerability_FixedBy)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/vuln_mgmt_req_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -27,10 +25,10 @@ const (
 )
 
 type GetVulnerabilityRequestResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo" json:"request_info,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetVulnerabilityRequestResponse) Reset() {
@@ -60,24 +58,24 @@ func (x *GetVulnerabilityRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetVulnerabilityRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.RequestInfo
+		return x.xxx_hidden_RequestInfo
 	}
 	return nil
 }
 
 func (x *GetVulnerabilityRequestResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.RequestInfo = v
+	x.xxx_hidden_RequestInfo = v
 }
 
 func (x *GetVulnerabilityRequestResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestInfo != nil
+	return x.xxx_hidden_RequestInfo != nil
 }
 
 func (x *GetVulnerabilityRequestResponse) ClearRequestInfo() {
-	x.RequestInfo = nil
+	x.xxx_hidden_RequestInfo = nil
 }
 
 type GetVulnerabilityRequestResponse_builder struct {
@@ -90,15 +88,15 @@ func (b0 GetVulnerabilityRequestResponse_builder) Build() *GetVulnerabilityReque
 	m0 := &GetVulnerabilityRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestInfo = b.RequestInfo
+	x.xxx_hidden_RequestInfo = b.RequestInfo
 	return m0
 }
 
 type ListVulnerabilityRequestsResponse struct {
-	state         protoimpl.MessageState          `protogen:"hybrid.v1"`
-	RequestInfos  []*storage.VulnerabilityRequest `protobuf:"bytes,1,rep,name=request_infos,json=requestInfos" json:"request_infos,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_RequestInfos *[]*storage.VulnerabilityRequest `protobuf:"bytes,1,rep,name=request_infos,json=requestInfos"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ListVulnerabilityRequestsResponse) Reset() {
@@ -128,13 +126,15 @@ func (x *ListVulnerabilityRequestsResponse) ProtoReflect() protoreflect.Message 
 
 func (x *ListVulnerabilityRequestsResponse) GetRequestInfos() []*storage.VulnerabilityRequest {
 	if x != nil {
-		return x.RequestInfos
+		if x.xxx_hidden_RequestInfos != nil {
+			return *x.xxx_hidden_RequestInfos
+		}
 	}
 	return nil
 }
 
 func (x *ListVulnerabilityRequestsResponse) SetRequestInfos(v []*storage.VulnerabilityRequest) {
-	x.RequestInfos = v
+	x.xxx_hidden_RequestInfos = &v
 }
 
 type ListVulnerabilityRequestsResponse_builder struct {
@@ -147,24 +147,21 @@ func (b0 ListVulnerabilityRequestsResponse_builder) Build() *ListVulnerabilityRe
 	m0 := &ListVulnerabilityRequestsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestInfos = b.RequestInfos
+	x.xxx_hidden_RequestInfos = &b.RequestInfos
 	return m0
 }
 
 // next available tag: 6
 type DeferVulnRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// This field indicates the CVEs requested to be deferred.
-	Cve     *string                             `protobuf:"bytes,1,opt,name=cve" json:"cve,omitempty"`
-	Comment *string                             `protobuf:"bytes,2,opt,name=comment" json:"comment,omitempty"`
-	Scope   *storage.VulnerabilityRequest_Scope `protobuf:"bytes,3,opt,name=scope" json:"scope,omitempty"`
-	// Types that are valid to be assigned to Expiry:
-	//
-	//	*DeferVulnRequest_ExpiresWhenFixed
-	//	*DeferVulnRequest_ExpiresOn
-	Expiry        isDeferVulnRequest_Expiry `protobuf_oneof:"expiry"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_Cve         *string                             `protobuf:"bytes,1,opt,name=cve"`
+	xxx_hidden_Comment     *string                             `protobuf:"bytes,2,opt,name=comment"`
+	xxx_hidden_Scope       *storage.VulnerabilityRequest_Scope `protobuf:"bytes,3,opt,name=scope"`
+	xxx_hidden_Expiry      isDeferVulnRequest_Expiry           `protobuf_oneof:"expiry"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeferVulnRequest) Reset() {
@@ -193,36 +190,35 @@ func (x *DeferVulnRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DeferVulnRequest) GetCve() string {
-	if x != nil && x.Cve != nil {
-		return *x.Cve
+	if x != nil {
+		if x.xxx_hidden_Cve != nil {
+			return *x.xxx_hidden_Cve
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DeferVulnRequest) GetComment() string {
-	if x != nil && x.Comment != nil {
-		return *x.Comment
+	if x != nil {
+		if x.xxx_hidden_Comment != nil {
+			return *x.xxx_hidden_Comment
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DeferVulnRequest) GetScope() *storage.VulnerabilityRequest_Scope {
 	if x != nil {
-		return x.Scope
-	}
-	return nil
-}
-
-func (x *DeferVulnRequest) GetExpiry() isDeferVulnRequest_Expiry {
-	if x != nil {
-		return x.Expiry
+		return x.xxx_hidden_Scope
 	}
 	return nil
 }
 
 func (x *DeferVulnRequest) GetExpiresWhenFixed() bool {
 	if x != nil {
-		if x, ok := x.Expiry.(*DeferVulnRequest_ExpiresWhenFixed); ok {
+		if x, ok := x.xxx_hidden_Expiry.(*deferVulnRequest_ExpiresWhenFixed); ok {
 			return x.ExpiresWhenFixed
 		}
 	}
@@ -231,7 +227,7 @@ func (x *DeferVulnRequest) GetExpiresWhenFixed() bool {
 
 func (x *DeferVulnRequest) GetExpiresOn() *timestamppb.Timestamp {
 	if x != nil {
-		if x, ok := x.Expiry.(*DeferVulnRequest_ExpiresOn); ok {
+		if x, ok := x.xxx_hidden_Expiry.(*deferVulnRequest_ExpiresOn); ok {
 			return x.ExpiresOn
 		}
 	}
@@ -239,62 +235,64 @@ func (x *DeferVulnRequest) GetExpiresOn() *timestamppb.Timestamp {
 }
 
 func (x *DeferVulnRequest) SetCve(v string) {
-	x.Cve = &v
+	x.xxx_hidden_Cve = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *DeferVulnRequest) SetComment(v string) {
-	x.Comment = &v
+	x.xxx_hidden_Comment = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *DeferVulnRequest) SetScope(v *storage.VulnerabilityRequest_Scope) {
-	x.Scope = v
+	x.xxx_hidden_Scope = v
 }
 
 func (x *DeferVulnRequest) SetExpiresWhenFixed(v bool) {
-	x.Expiry = &DeferVulnRequest_ExpiresWhenFixed{v}
+	x.xxx_hidden_Expiry = &deferVulnRequest_ExpiresWhenFixed{v}
 }
 
 func (x *DeferVulnRequest) SetExpiresOn(v *timestamppb.Timestamp) {
 	if v == nil {
-		x.Expiry = nil
+		x.xxx_hidden_Expiry = nil
 		return
 	}
-	x.Expiry = &DeferVulnRequest_ExpiresOn{v}
+	x.xxx_hidden_Expiry = &deferVulnRequest_ExpiresOn{v}
 }
 
 func (x *DeferVulnRequest) HasCve() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cve != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DeferVulnRequest) HasComment() bool {
 	if x == nil {
 		return false
 	}
-	return x.Comment != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DeferVulnRequest) HasScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.Scope != nil
+	return x.xxx_hidden_Scope != nil
 }
 
 func (x *DeferVulnRequest) HasExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.Expiry != nil
+	return x.xxx_hidden_Expiry != nil
 }
 
 func (x *DeferVulnRequest) HasExpiresWhenFixed() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Expiry.(*DeferVulnRequest_ExpiresWhenFixed)
+	_, ok := x.xxx_hidden_Expiry.(*deferVulnRequest_ExpiresWhenFixed)
 	return ok
 }
 
@@ -302,35 +300,37 @@ func (x *DeferVulnRequest) HasExpiresOn() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Expiry.(*DeferVulnRequest_ExpiresOn)
+	_, ok := x.xxx_hidden_Expiry.(*deferVulnRequest_ExpiresOn)
 	return ok
 }
 
 func (x *DeferVulnRequest) ClearCve() {
-	x.Cve = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Cve = nil
 }
 
 func (x *DeferVulnRequest) ClearComment() {
-	x.Comment = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Comment = nil
 }
 
 func (x *DeferVulnRequest) ClearScope() {
-	x.Scope = nil
+	x.xxx_hidden_Scope = nil
 }
 
 func (x *DeferVulnRequest) ClearExpiry() {
-	x.Expiry = nil
+	x.xxx_hidden_Expiry = nil
 }
 
 func (x *DeferVulnRequest) ClearExpiresWhenFixed() {
-	if _, ok := x.Expiry.(*DeferVulnRequest_ExpiresWhenFixed); ok {
-		x.Expiry = nil
+	if _, ok := x.xxx_hidden_Expiry.(*deferVulnRequest_ExpiresWhenFixed); ok {
+		x.xxx_hidden_Expiry = nil
 	}
 }
 
 func (x *DeferVulnRequest) ClearExpiresOn() {
-	if _, ok := x.Expiry.(*DeferVulnRequest_ExpiresOn); ok {
-		x.Expiry = nil
+	if _, ok := x.xxx_hidden_Expiry.(*deferVulnRequest_ExpiresOn); ok {
+		x.xxx_hidden_Expiry = nil
 	}
 }
 
@@ -342,10 +342,10 @@ func (x *DeferVulnRequest) WhichExpiry() case_DeferVulnRequest_Expiry {
 	if x == nil {
 		return DeferVulnRequest_Expiry_not_set_case
 	}
-	switch x.Expiry.(type) {
-	case *DeferVulnRequest_ExpiresWhenFixed:
+	switch x.xxx_hidden_Expiry.(type) {
+	case *deferVulnRequest_ExpiresWhenFixed:
 		return DeferVulnRequest_ExpiresWhenFixed_case
-	case *DeferVulnRequest_ExpiresOn:
+	case *deferVulnRequest_ExpiresOn:
 		return DeferVulnRequest_ExpiresOn_case
 	default:
 		return DeferVulnRequest_Expiry_not_set_case
@@ -359,24 +359,30 @@ type DeferVulnRequest_builder struct {
 	Cve     *string
 	Comment *string
 	Scope   *storage.VulnerabilityRequest_Scope
-	// Fields of oneof Expiry:
+	// Fields of oneof xxx_hidden_Expiry:
 	ExpiresWhenFixed *bool
 	ExpiresOn        *timestamppb.Timestamp
-	// -- end of Expiry
+	// -- end of xxx_hidden_Expiry
 }
 
 func (b0 DeferVulnRequest_builder) Build() *DeferVulnRequest {
 	m0 := &DeferVulnRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Cve = b.Cve
-	x.Comment = b.Comment
-	x.Scope = b.Scope
+	if b.Cve != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Cve = b.Cve
+	}
+	if b.Comment != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Comment = b.Comment
+	}
+	x.xxx_hidden_Scope = b.Scope
 	if b.ExpiresWhenFixed != nil {
-		x.Expiry = &DeferVulnRequest_ExpiresWhenFixed{*b.ExpiresWhenFixed}
+		x.xxx_hidden_Expiry = &deferVulnRequest_ExpiresWhenFixed{*b.ExpiresWhenFixed}
 	}
 	if b.ExpiresOn != nil {
-		x.Expiry = &DeferVulnRequest_ExpiresOn{b.ExpiresOn}
+		x.xxx_hidden_Expiry = &deferVulnRequest_ExpiresOn{b.ExpiresOn}
 	}
 	return m0
 }
@@ -395,23 +401,23 @@ type isDeferVulnRequest_Expiry interface {
 	isDeferVulnRequest_Expiry()
 }
 
-type DeferVulnRequest_ExpiresWhenFixed struct {
+type deferVulnRequest_ExpiresWhenFixed struct {
 	ExpiresWhenFixed bool `protobuf:"varint,4,opt,name=expires_when_fixed,json=expiresWhenFixed,oneof"`
 }
 
-type DeferVulnRequest_ExpiresOn struct {
+type deferVulnRequest_ExpiresOn struct {
 	ExpiresOn *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_on,json=expiresOn,oneof"`
 }
 
-func (*DeferVulnRequest_ExpiresWhenFixed) isDeferVulnRequest_Expiry() {}
+func (*deferVulnRequest_ExpiresWhenFixed) isDeferVulnRequest_Expiry() {}
 
-func (*DeferVulnRequest_ExpiresOn) isDeferVulnRequest_Expiry() {}
+func (*deferVulnRequest_ExpiresOn) isDeferVulnRequest_Expiry() {}
 
 type DeferVulnResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo" json:"request_info,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeferVulnResponse) Reset() {
@@ -441,24 +447,24 @@ func (x *DeferVulnResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DeferVulnResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.RequestInfo
+		return x.xxx_hidden_RequestInfo
 	}
 	return nil
 }
 
 func (x *DeferVulnResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.RequestInfo = v
+	x.xxx_hidden_RequestInfo = v
 }
 
 func (x *DeferVulnResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestInfo != nil
+	return x.xxx_hidden_RequestInfo != nil
 }
 
 func (x *DeferVulnResponse) ClearRequestInfo() {
-	x.RequestInfo = nil
+	x.xxx_hidden_RequestInfo = nil
 }
 
 type DeferVulnResponse_builder struct {
@@ -471,18 +477,19 @@ func (b0 DeferVulnResponse_builder) Build() *DeferVulnResponse {
 	m0 := &DeferVulnResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestInfo = b.RequestInfo
+	x.xxx_hidden_RequestInfo = b.RequestInfo
 	return m0
 }
 
 type FalsePositiveVulnRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// This field indicates the CVE requested to be marked as false-positive.
-	Cve           *string                             `protobuf:"bytes,1,opt,name=cve" json:"cve,omitempty"`
-	Scope         *storage.VulnerabilityRequest_Scope `protobuf:"bytes,2,opt,name=scope" json:"scope,omitempty"`
-	Comment       *string                             `protobuf:"bytes,3,opt,name=comment" json:"comment,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_Cve         *string                             `protobuf:"bytes,1,opt,name=cve"`
+	xxx_hidden_Scope       *storage.VulnerabilityRequest_Scope `protobuf:"bytes,2,opt,name=scope"`
+	xxx_hidden_Comment     *string                             `protobuf:"bytes,3,opt,name=comment"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *FalsePositiveVulnRequest) Reset() {
@@ -511,69 +518,79 @@ func (x *FalsePositiveVulnRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *FalsePositiveVulnRequest) GetCve() string {
-	if x != nil && x.Cve != nil {
-		return *x.Cve
+	if x != nil {
+		if x.xxx_hidden_Cve != nil {
+			return *x.xxx_hidden_Cve
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FalsePositiveVulnRequest) GetScope() *storage.VulnerabilityRequest_Scope {
 	if x != nil {
-		return x.Scope
+		return x.xxx_hidden_Scope
 	}
 	return nil
 }
 
 func (x *FalsePositiveVulnRequest) GetComment() string {
-	if x != nil && x.Comment != nil {
-		return *x.Comment
+	if x != nil {
+		if x.xxx_hidden_Comment != nil {
+			return *x.xxx_hidden_Comment
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FalsePositiveVulnRequest) SetCve(v string) {
-	x.Cve = &v
+	x.xxx_hidden_Cve = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *FalsePositiveVulnRequest) SetScope(v *storage.VulnerabilityRequest_Scope) {
-	x.Scope = v
+	x.xxx_hidden_Scope = v
 }
 
 func (x *FalsePositiveVulnRequest) SetComment(v string) {
-	x.Comment = &v
+	x.xxx_hidden_Comment = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *FalsePositiveVulnRequest) HasCve() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cve != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *FalsePositiveVulnRequest) HasScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.Scope != nil
+	return x.xxx_hidden_Scope != nil
 }
 
 func (x *FalsePositiveVulnRequest) HasComment() bool {
 	if x == nil {
 		return false
 	}
-	return x.Comment != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *FalsePositiveVulnRequest) ClearCve() {
-	x.Cve = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Cve = nil
 }
 
 func (x *FalsePositiveVulnRequest) ClearScope() {
-	x.Scope = nil
+	x.xxx_hidden_Scope = nil
 }
 
 func (x *FalsePositiveVulnRequest) ClearComment() {
-	x.Comment = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Comment = nil
 }
 
 type FalsePositiveVulnRequest_builder struct {
@@ -589,17 +606,23 @@ func (b0 FalsePositiveVulnRequest_builder) Build() *FalsePositiveVulnRequest {
 	m0 := &FalsePositiveVulnRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Cve = b.Cve
-	x.Scope = b.Scope
-	x.Comment = b.Comment
+	if b.Cve != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Cve = b.Cve
+	}
+	x.xxx_hidden_Scope = b.Scope
+	if b.Comment != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Comment = b.Comment
+	}
 	return m0
 }
 
 type FalsePositiveVulnResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo" json:"request_info,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *FalsePositiveVulnResponse) Reset() {
@@ -629,24 +652,24 @@ func (x *FalsePositiveVulnResponse) ProtoReflect() protoreflect.Message {
 
 func (x *FalsePositiveVulnResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.RequestInfo
+		return x.xxx_hidden_RequestInfo
 	}
 	return nil
 }
 
 func (x *FalsePositiveVulnResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.RequestInfo = v
+	x.xxx_hidden_RequestInfo = v
 }
 
 func (x *FalsePositiveVulnResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestInfo != nil
+	return x.xxx_hidden_RequestInfo != nil
 }
 
 func (x *FalsePositiveVulnResponse) ClearRequestInfo() {
-	x.RequestInfo = nil
+	x.xxx_hidden_RequestInfo = nil
 }
 
 type FalsePositiveVulnResponse_builder struct {
@@ -659,16 +682,18 @@ func (b0 FalsePositiveVulnResponse_builder) Build() *FalsePositiveVulnResponse {
 	m0 := &FalsePositiveVulnResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestInfo = b.RequestInfo
+	x.xxx_hidden_RequestInfo = b.RequestInfo
 	return m0
 }
 
 type ApproveVulnRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Comment       *string                `protobuf:"bytes,2,opt,name=comment" json:"comment,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Comment     *string                `protobuf:"bytes,2,opt,name=comment"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ApproveVulnRequest) Reset() {
@@ -697,47 +722,57 @@ func (x *ApproveVulnRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ApproveVulnRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ApproveVulnRequest) GetComment() string {
-	if x != nil && x.Comment != nil {
-		return *x.Comment
+	if x != nil {
+		if x.xxx_hidden_Comment != nil {
+			return *x.xxx_hidden_Comment
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ApproveVulnRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ApproveVulnRequest) SetComment(v string) {
-	x.Comment = &v
+	x.xxx_hidden_Comment = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ApproveVulnRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ApproveVulnRequest) HasComment() bool {
 	if x == nil {
 		return false
 	}
-	return x.Comment != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ApproveVulnRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ApproveVulnRequest) ClearComment() {
-	x.Comment = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Comment = nil
 }
 
 type ApproveVulnRequest_builder struct {
@@ -751,16 +786,22 @@ func (b0 ApproveVulnRequest_builder) Build() *ApproveVulnRequest {
 	m0 := &ApproveVulnRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Comment = b.Comment
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Comment != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Comment = b.Comment
+	}
 	return m0
 }
 
 type ApproveVulnRequestResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo" json:"request_info,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ApproveVulnRequestResponse) Reset() {
@@ -790,24 +831,24 @@ func (x *ApproveVulnRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ApproveVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.RequestInfo
+		return x.xxx_hidden_RequestInfo
 	}
 	return nil
 }
 
 func (x *ApproveVulnRequestResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.RequestInfo = v
+	x.xxx_hidden_RequestInfo = v
 }
 
 func (x *ApproveVulnRequestResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestInfo != nil
+	return x.xxx_hidden_RequestInfo != nil
 }
 
 func (x *ApproveVulnRequestResponse) ClearRequestInfo() {
-	x.RequestInfo = nil
+	x.xxx_hidden_RequestInfo = nil
 }
 
 type ApproveVulnRequestResponse_builder struct {
@@ -820,16 +861,18 @@ func (b0 ApproveVulnRequestResponse_builder) Build() *ApproveVulnRequestResponse
 	m0 := &ApproveVulnRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestInfo = b.RequestInfo
+	x.xxx_hidden_RequestInfo = b.RequestInfo
 	return m0
 }
 
 type DenyVulnRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Comment       *string                `protobuf:"bytes,2,opt,name=comment" json:"comment,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Comment     *string                `protobuf:"bytes,2,opt,name=comment"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DenyVulnRequest) Reset() {
@@ -858,47 +901,57 @@ func (x *DenyVulnRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DenyVulnRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DenyVulnRequest) GetComment() string {
-	if x != nil && x.Comment != nil {
-		return *x.Comment
+	if x != nil {
+		if x.xxx_hidden_Comment != nil {
+			return *x.xxx_hidden_Comment
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DenyVulnRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *DenyVulnRequest) SetComment(v string) {
-	x.Comment = &v
+	x.xxx_hidden_Comment = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DenyVulnRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DenyVulnRequest) HasComment() bool {
 	if x == nil {
 		return false
 	}
-	return x.Comment != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DenyVulnRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *DenyVulnRequest) ClearComment() {
-	x.Comment = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Comment = nil
 }
 
 type DenyVulnRequest_builder struct {
@@ -912,16 +965,22 @@ func (b0 DenyVulnRequest_builder) Build() *DenyVulnRequest {
 	m0 := &DenyVulnRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Comment = b.Comment
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Comment != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Comment = b.Comment
+	}
 	return m0
 }
 
 type DenyVulnRequestResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo" json:"request_info,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DenyVulnRequestResponse) Reset() {
@@ -951,24 +1010,24 @@ func (x *DenyVulnRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DenyVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.RequestInfo
+		return x.xxx_hidden_RequestInfo
 	}
 	return nil
 }
 
 func (x *DenyVulnRequestResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.RequestInfo = v
+	x.xxx_hidden_RequestInfo = v
 }
 
 func (x *DenyVulnRequestResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestInfo != nil
+	return x.xxx_hidden_RequestInfo != nil
 }
 
 func (x *DenyVulnRequestResponse) ClearRequestInfo() {
-	x.RequestInfo = nil
+	x.xxx_hidden_RequestInfo = nil
 }
 
 type DenyVulnRequestResponse_builder struct {
@@ -981,17 +1040,19 @@ func (b0 DenyVulnRequestResponse_builder) Build() *DenyVulnRequestResponse {
 	m0 := &DenyVulnRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestInfo = b.RequestInfo
+	x.xxx_hidden_RequestInfo = b.RequestInfo
 	return m0
 }
 
 type UpdateVulnRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Comment       *string                `protobuf:"bytes,2,opt,name=comment" json:"comment,omitempty"`
-	Expiry        *storage.RequestExpiry `protobuf:"bytes,3,opt,name=expiry" json:"expiry,omitempty"` // Currently, only expiry can be updated
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Comment     *string                `protobuf:"bytes,2,opt,name=comment"`
+	xxx_hidden_Expiry      *storage.RequestExpiry `protobuf:"bytes,3,opt,name=expiry"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpdateVulnRequest) Reset() {
@@ -1020,69 +1081,79 @@ func (x *UpdateVulnRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *UpdateVulnRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpdateVulnRequest) GetComment() string {
-	if x != nil && x.Comment != nil {
-		return *x.Comment
+	if x != nil {
+		if x.xxx_hidden_Comment != nil {
+			return *x.xxx_hidden_Comment
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpdateVulnRequest) GetExpiry() *storage.RequestExpiry {
 	if x != nil {
-		return x.Expiry
+		return x.xxx_hidden_Expiry
 	}
 	return nil
 }
 
 func (x *UpdateVulnRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *UpdateVulnRequest) SetComment(v string) {
-	x.Comment = &v
+	x.xxx_hidden_Comment = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *UpdateVulnRequest) SetExpiry(v *storage.RequestExpiry) {
-	x.Expiry = v
+	x.xxx_hidden_Expiry = v
 }
 
 func (x *UpdateVulnRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpdateVulnRequest) HasComment() bool {
 	if x == nil {
 		return false
 	}
-	return x.Comment != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UpdateVulnRequest) HasExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.Expiry != nil
+	return x.xxx_hidden_Expiry != nil
 }
 
 func (x *UpdateVulnRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *UpdateVulnRequest) ClearComment() {
-	x.Comment = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Comment = nil
 }
 
 func (x *UpdateVulnRequest) ClearExpiry() {
-	x.Expiry = nil
+	x.xxx_hidden_Expiry = nil
 }
 
 type UpdateVulnRequest_builder struct {
@@ -1097,17 +1168,23 @@ func (b0 UpdateVulnRequest_builder) Build() *UpdateVulnRequest {
 	m0 := &UpdateVulnRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Comment = b.Comment
-	x.Expiry = b.Expiry
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Comment != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Comment = b.Comment
+	}
+	x.xxx_hidden_Expiry = b.Expiry
 	return m0
 }
 
 type UpdateVulnRequestResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo" json:"request_info,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpdateVulnRequestResponse) Reset() {
@@ -1137,24 +1214,24 @@ func (x *UpdateVulnRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.RequestInfo
+		return x.xxx_hidden_RequestInfo
 	}
 	return nil
 }
 
 func (x *UpdateVulnRequestResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.RequestInfo = v
+	x.xxx_hidden_RequestInfo = v
 }
 
 func (x *UpdateVulnRequestResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestInfo != nil
+	return x.xxx_hidden_RequestInfo != nil
 }
 
 func (x *UpdateVulnRequestResponse) ClearRequestInfo() {
-	x.RequestInfo = nil
+	x.xxx_hidden_RequestInfo = nil
 }
 
 type UpdateVulnRequestResponse_builder struct {
@@ -1167,15 +1244,15 @@ func (b0 UpdateVulnRequestResponse_builder) Build() *UpdateVulnRequestResponse {
 	m0 := &UpdateVulnRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestInfo = b.RequestInfo
+	x.xxx_hidden_RequestInfo = b.RequestInfo
 	return m0
 }
 
 type UndoVulnRequestResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo" json:"request_info,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_RequestInfo *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UndoVulnRequestResponse) Reset() {
@@ -1205,24 +1282,24 @@ func (x *UndoVulnRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UndoVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	if x != nil {
-		return x.RequestInfo
+		return x.xxx_hidden_RequestInfo
 	}
 	return nil
 }
 
 func (x *UndoVulnRequestResponse) SetRequestInfo(v *storage.VulnerabilityRequest) {
-	x.RequestInfo = v
+	x.xxx_hidden_RequestInfo = v
 }
 
 func (x *UndoVulnRequestResponse) HasRequestInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestInfo != nil
+	return x.xxx_hidden_RequestInfo != nil
 }
 
 func (x *UndoVulnRequestResponse) ClearRequestInfo() {
-	x.RequestInfo = nil
+	x.xxx_hidden_RequestInfo = nil
 }
 
 type UndoVulnRequestResponse_builder struct {
@@ -1235,7 +1312,7 @@ func (b0 UndoVulnRequestResponse_builder) Build() *UndoVulnRequestResponse {
 	m0 := &UndoVulnRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestInfo = b.RequestInfo
+	x.xxx_hidden_RequestInfo = b.RequestInfo
 	return m0
 }
 
@@ -1292,7 +1369,7 @@ const file_api_v1_vuln_mgmt_req_service_proto_rawDesc = "" +
 	"\x1aUpdateVulnerabilityRequest\x12\x15.v1.UpdateVulnRequest\x1a\x1d.v1.UpdateVulnRequestResponse\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/v1/cve/requests/{id}/update\x12m\n" +
 	"\x18UndoVulnerabilityRequest\x12\x10.v1.ResourceByID\x1a\x1b.v1.UndoVulnRequestResponse\"\"\x82\xd3\xe4\x93\x02\x1c\"\x1a/v1/cve/requests/{id}/undo\x12X\n" +
 	"\x1aDeleteVulnerabilityRequest\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x1d\x82\xd3\xe4\x93\x02\x17*\x15/v1/cve/requests/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x03b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x03b\beditionsp\xe8\a"
 
 var file_api_v1_vuln_mgmt_req_service_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_api_v1_vuln_mgmt_req_service_proto_goTypes = []any{
@@ -1364,8 +1441,8 @@ func file_api_v1_vuln_mgmt_req_service_proto_init() {
 	file_api_v1_empty_proto_init()
 	file_api_v1_search_service_proto_init()
 	file_api_v1_vuln_mgmt_req_service_proto_msgTypes[2].OneofWrappers = []any{
-		(*DeferVulnRequest_ExpiresWhenFixed)(nil),
-		(*DeferVulnRequest_ExpiresOn)(nil),
+		(*deferVulnRequest_ExpiresWhenFixed)(nil),
+		(*deferVulnRequest_ExpiresOn)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

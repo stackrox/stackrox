@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/alert_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -111,10 +109,12 @@ func (x GetAlertsCountsRequest_RequestGroup) Number() protoreflect.EnumNumber {
 }
 
 type CountAlertsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Count         *int32                 `protobuf:"varint,1,opt,name=count" json:"count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Count       int32                  `protobuf:"varint,1,opt,name=count"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CountAlertsResponse) Reset() {
@@ -143,25 +143,27 @@ func (x *CountAlertsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CountAlertsResponse) GetCount() int32 {
-	if x != nil && x.Count != nil {
-		return *x.Count
+	if x != nil {
+		return x.xxx_hidden_Count
 	}
 	return 0
 }
 
 func (x *CountAlertsResponse) SetCount(v int32) {
-	x.Count = &v
+	x.xxx_hidden_Count = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *CountAlertsResponse) HasCount() bool {
 	if x == nil {
 		return false
 	}
-	return x.Count != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CountAlertsResponse) ClearCount() {
-	x.Count = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Count = 0
 }
 
 type CountAlertsResponse_builder struct {
@@ -174,16 +176,21 @@ func (b0 CountAlertsResponse_builder) Build() *CountAlertsResponse {
 	m0 := &CountAlertsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Count = b.Count
+	if b.Count != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Count = *b.Count
+	}
 	return m0
 }
 
 type ListAlertsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Query         *string                `protobuf:"bytes,10,opt,name=query" json:"query,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,11,opt,name=pagination" json:"pagination,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,10,opt,name=query"`
+	xxx_hidden_Pagination  *Pagination            `protobuf:"bytes,11,opt,name=pagination"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListAlertsRequest) Reset() {
@@ -212,47 +219,52 @@ func (x *ListAlertsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ListAlertsRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlertsRequest) GetPagination() *Pagination {
 	if x != nil {
-		return x.Pagination
+		return x.xxx_hidden_Pagination
 	}
 	return nil
 }
 
 func (x *ListAlertsRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ListAlertsRequest) SetPagination(v *Pagination) {
-	x.Pagination = v
+	x.xxx_hidden_Pagination = v
 }
 
 func (x *ListAlertsRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ListAlertsRequest) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pagination != nil
+	return x.xxx_hidden_Pagination != nil
 }
 
 func (x *ListAlertsRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Query = nil
 }
 
 func (x *ListAlertsRequest) ClearPagination() {
-	x.Pagination = nil
+	x.xxx_hidden_Pagination = nil
 }
 
 type ListAlertsRequest_builder struct {
@@ -266,19 +278,23 @@ func (b0 ListAlertsRequest_builder) Build() *ListAlertsRequest {
 	m0 := &ListAlertsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Query = b.Query
-	x.Pagination = b.Pagination
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Query = b.Query
+	}
+	x.xxx_hidden_Pagination = b.Pagination
 	return m0
 }
 
 type ResolveAlertRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id    *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	// Deprecated: Marked as deprecated in api/v1/alert_service.proto.
-	Whitelist     *bool `protobuf:"varint,2,opt,name=whitelist" json:"whitelist,omitempty"`
-	AddToBaseline *bool `protobuf:"varint,3,opt,name=add_to_baseline,json=addToBaseline" json:"add_to_baseline,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id            *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Whitelist     bool                   `protobuf:"varint,2,opt,name=whitelist"`
+	xxx_hidden_AddToBaseline bool                   `protobuf:"varint,3,opt,name=add_to_baseline,json=addToBaseline"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ResolveAlertRequest) Reset() {
@@ -307,45 +323,51 @@ func (x *ResolveAlertRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ResolveAlertRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in api/v1/alert_service.proto.
 func (x *ResolveAlertRequest) GetWhitelist() bool {
-	if x != nil && x.Whitelist != nil {
-		return *x.Whitelist
+	if x != nil {
+		return x.xxx_hidden_Whitelist
 	}
 	return false
 }
 
 func (x *ResolveAlertRequest) GetAddToBaseline() bool {
-	if x != nil && x.AddToBaseline != nil {
-		return *x.AddToBaseline
+	if x != nil {
+		return x.xxx_hidden_AddToBaseline
 	}
 	return false
 }
 
 func (x *ResolveAlertRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 // Deprecated: Marked as deprecated in api/v1/alert_service.proto.
 func (x *ResolveAlertRequest) SetWhitelist(v bool) {
-	x.Whitelist = &v
+	x.xxx_hidden_Whitelist = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ResolveAlertRequest) SetAddToBaseline(v bool) {
-	x.AddToBaseline = &v
+	x.xxx_hidden_AddToBaseline = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ResolveAlertRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 // Deprecated: Marked as deprecated in api/v1/alert_service.proto.
@@ -353,27 +375,30 @@ func (x *ResolveAlertRequest) HasWhitelist() bool {
 	if x == nil {
 		return false
 	}
-	return x.Whitelist != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ResolveAlertRequest) HasAddToBaseline() bool {
 	if x == nil {
 		return false
 	}
-	return x.AddToBaseline != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ResolveAlertRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 // Deprecated: Marked as deprecated in api/v1/alert_service.proto.
 func (x *ResolveAlertRequest) ClearWhitelist() {
-	x.Whitelist = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Whitelist = false
 }
 
 func (x *ResolveAlertRequest) ClearAddToBaseline() {
-	x.AddToBaseline = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_AddToBaseline = false
 }
 
 type ResolveAlertRequest_builder struct {
@@ -389,17 +414,28 @@ func (b0 ResolveAlertRequest_builder) Build() *ResolveAlertRequest {
 	m0 := &ResolveAlertRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Whitelist = b.Whitelist
-	x.AddToBaseline = b.AddToBaseline
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Whitelist != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Whitelist = *b.Whitelist
+	}
+	if b.AddToBaseline != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_AddToBaseline = *b.AddToBaseline
+	}
 	return m0
 }
 
 type ResolveAlertsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Query         *string                `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,1,opt,name=query"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ResolveAlertsRequest) Reset() {
@@ -428,25 +464,30 @@ func (x *ResolveAlertsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ResolveAlertsRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ResolveAlertsRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *ResolveAlertsRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ResolveAlertsRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Query = nil
 }
 
 type ResolveAlertsRequest_builder struct {
@@ -459,15 +500,18 @@ func (b0 ResolveAlertsRequest_builder) Build() *ResolveAlertsRequest {
 	m0 := &ResolveAlertsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Query = b.Query
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Query = b.Query
+	}
 	return m0
 }
 
 type ListAlertsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Alerts        []*storage.ListAlert   `protobuf:"bytes,1,rep,name=alerts" json:"alerts,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Alerts *[]*storage.ListAlert  `protobuf:"bytes,1,rep,name=alerts"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ListAlertsResponse) Reset() {
@@ -497,13 +541,15 @@ func (x *ListAlertsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListAlertsResponse) GetAlerts() []*storage.ListAlert {
 	if x != nil {
-		return x.Alerts
+		if x.xxx_hidden_Alerts != nil {
+			return *x.xxx_hidden_Alerts
+		}
 	}
 	return nil
 }
 
 func (x *ListAlertsResponse) SetAlerts(v []*storage.ListAlert) {
-	x.Alerts = v
+	x.xxx_hidden_Alerts = &v
 }
 
 type ListAlertsResponse_builder struct {
@@ -516,16 +562,18 @@ func (b0 ListAlertsResponse_builder) Build() *ListAlertsResponse {
 	m0 := &ListAlertsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Alerts = b.Alerts
+	x.xxx_hidden_Alerts = &b.Alerts
 	return m0
 }
 
 type DeleteAlertsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
-	Confirm       *bool                  `protobuf:"varint,2,opt,name=confirm" json:"confirm,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query       *RawQuery              `protobuf:"bytes,1,opt,name=query"`
+	xxx_hidden_Confirm     bool                   `protobuf:"varint,2,opt,name=confirm"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeleteAlertsRequest) Reset() {
@@ -555,46 +603,48 @@ func (x *DeleteAlertsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteAlertsRequest) GetQuery() *RawQuery {
 	if x != nil {
-		return x.Query
+		return x.xxx_hidden_Query
 	}
 	return nil
 }
 
 func (x *DeleteAlertsRequest) GetConfirm() bool {
-	if x != nil && x.Confirm != nil {
-		return *x.Confirm
+	if x != nil {
+		return x.xxx_hidden_Confirm
 	}
 	return false
 }
 
 func (x *DeleteAlertsRequest) SetQuery(v *RawQuery) {
-	x.Query = v
+	x.xxx_hidden_Query = v
 }
 
 func (x *DeleteAlertsRequest) SetConfirm(v bool) {
-	x.Confirm = &v
+	x.xxx_hidden_Confirm = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DeleteAlertsRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return x.xxx_hidden_Query != nil
 }
 
 func (x *DeleteAlertsRequest) HasConfirm() bool {
 	if x == nil {
 		return false
 	}
-	return x.Confirm != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DeleteAlertsRequest) ClearQuery() {
-	x.Query = nil
+	x.xxx_hidden_Query = nil
 }
 
 func (x *DeleteAlertsRequest) ClearConfirm() {
-	x.Confirm = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Confirm = false
 }
 
 type DeleteAlertsRequest_builder struct {
@@ -608,17 +658,22 @@ func (b0 DeleteAlertsRequest_builder) Build() *DeleteAlertsRequest {
 	m0 := &DeleteAlertsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Query = b.Query
-	x.Confirm = b.Confirm
+	x.xxx_hidden_Query = b.Query
+	if b.Confirm != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Confirm = *b.Confirm
+	}
 	return m0
 }
 
 type DeleteAlertsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	NumDeleted    *uint32                `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted" json:"num_deleted,omitempty"`
-	DryRun        *bool                  `protobuf:"varint,2,opt,name=dry_run,json=dryRun" json:"dry_run,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_NumDeleted  uint32                 `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted"`
+	xxx_hidden_DryRun      bool                   `protobuf:"varint,2,opt,name=dry_run,json=dryRun"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeleteAlertsResponse) Reset() {
@@ -647,47 +702,51 @@ func (x *DeleteAlertsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DeleteAlertsResponse) GetNumDeleted() uint32 {
-	if x != nil && x.NumDeleted != nil {
-		return *x.NumDeleted
+	if x != nil {
+		return x.xxx_hidden_NumDeleted
 	}
 	return 0
 }
 
 func (x *DeleteAlertsResponse) GetDryRun() bool {
-	if x != nil && x.DryRun != nil {
-		return *x.DryRun
+	if x != nil {
+		return x.xxx_hidden_DryRun
 	}
 	return false
 }
 
 func (x *DeleteAlertsResponse) SetNumDeleted(v uint32) {
-	x.NumDeleted = &v
+	x.xxx_hidden_NumDeleted = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *DeleteAlertsResponse) SetDryRun(v bool) {
-	x.DryRun = &v
+	x.xxx_hidden_DryRun = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DeleteAlertsResponse) HasNumDeleted() bool {
 	if x == nil {
 		return false
 	}
-	return x.NumDeleted != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DeleteAlertsResponse) HasDryRun() bool {
 	if x == nil {
 		return false
 	}
-	return x.DryRun != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DeleteAlertsResponse) ClearNumDeleted() {
-	x.NumDeleted = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_NumDeleted = 0
 }
 
 func (x *DeleteAlertsResponse) ClearDryRun() {
-	x.DryRun = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_DryRun = false
 }
 
 type DeleteAlertsResponse_builder struct {
@@ -701,16 +760,22 @@ func (b0 DeleteAlertsResponse_builder) Build() *DeleteAlertsResponse {
 	m0 := &DeleteAlertsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.NumDeleted = b.NumDeleted
-	x.DryRun = b.DryRun
+	if b.NumDeleted != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_NumDeleted = *b.NumDeleted
+	}
+	if b.DryRun != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_DryRun = *b.DryRun
+	}
 	return m0
 }
 
 type GetAlertsGroupResponse struct {
-	state            protoimpl.MessageState                `protogen:"hybrid.v1"`
-	AlertsByPolicies []*GetAlertsGroupResponse_PolicyGroup `protobuf:"bytes,1,rep,name=alerts_by_policies,json=alertsByPolicies" json:"alerts_by_policies,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState                 `protogen:"opaque.v1"`
+	xxx_hidden_AlertsByPolicies *[]*GetAlertsGroupResponse_PolicyGroup `protobuf:"bytes,1,rep,name=alerts_by_policies,json=alertsByPolicies"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *GetAlertsGroupResponse) Reset() {
@@ -740,13 +805,15 @@ func (x *GetAlertsGroupResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAlertsGroupResponse) GetAlertsByPolicies() []*GetAlertsGroupResponse_PolicyGroup {
 	if x != nil {
-		return x.AlertsByPolicies
+		if x.xxx_hidden_AlertsByPolicies != nil {
+			return *x.xxx_hidden_AlertsByPolicies
+		}
 	}
 	return nil
 }
 
 func (x *GetAlertsGroupResponse) SetAlertsByPolicies(v []*GetAlertsGroupResponse_PolicyGroup) {
-	x.AlertsByPolicies = v
+	x.xxx_hidden_AlertsByPolicies = &v
 }
 
 type GetAlertsGroupResponse_builder struct {
@@ -759,16 +826,18 @@ func (b0 GetAlertsGroupResponse_builder) Build() *GetAlertsGroupResponse {
 	m0 := &GetAlertsGroupResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AlertsByPolicies = b.AlertsByPolicies
+	x.xxx_hidden_AlertsByPolicies = &b.AlertsByPolicies
 	return m0
 }
 
 type GetAlertsCountsRequest struct {
-	state         protoimpl.MessageState               `protogen:"hybrid.v1"`
-	Request       *ListAlertsRequest                   `protobuf:"bytes,1,opt,name=request" json:"request,omitempty"`
-	GroupBy       *GetAlertsCountsRequest_RequestGroup `protobuf:"varint,2,opt,name=group_by,json=groupBy,enum=v1.GetAlertsCountsRequest_RequestGroup" json:"group_by,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_Request     *ListAlertsRequest                  `protobuf:"bytes,1,opt,name=request"`
+	xxx_hidden_GroupBy     GetAlertsCountsRequest_RequestGroup `protobuf:"varint,2,opt,name=group_by,json=groupBy,enum=v1.GetAlertsCountsRequest_RequestGroup"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAlertsCountsRequest) Reset() {
@@ -798,46 +867,50 @@ func (x *GetAlertsCountsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetAlertsCountsRequest) GetRequest() *ListAlertsRequest {
 	if x != nil {
-		return x.Request
+		return x.xxx_hidden_Request
 	}
 	return nil
 }
 
 func (x *GetAlertsCountsRequest) GetGroupBy() GetAlertsCountsRequest_RequestGroup {
-	if x != nil && x.GroupBy != nil {
-		return *x.GroupBy
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_GroupBy
+		}
 	}
 	return GetAlertsCountsRequest_UNSET
 }
 
 func (x *GetAlertsCountsRequest) SetRequest(v *ListAlertsRequest) {
-	x.Request = v
+	x.xxx_hidden_Request = v
 }
 
 func (x *GetAlertsCountsRequest) SetGroupBy(v GetAlertsCountsRequest_RequestGroup) {
-	x.GroupBy = &v
+	x.xxx_hidden_GroupBy = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetAlertsCountsRequest) HasRequest() bool {
 	if x == nil {
 		return false
 	}
-	return x.Request != nil
+	return x.xxx_hidden_Request != nil
 }
 
 func (x *GetAlertsCountsRequest) HasGroupBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.GroupBy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetAlertsCountsRequest) ClearRequest() {
-	x.Request = nil
+	x.xxx_hidden_Request = nil
 }
 
 func (x *GetAlertsCountsRequest) ClearGroupBy() {
-	x.GroupBy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_GroupBy = GetAlertsCountsRequest_UNSET
 }
 
 type GetAlertsCountsRequest_builder struct {
@@ -851,16 +924,19 @@ func (b0 GetAlertsCountsRequest_builder) Build() *GetAlertsCountsRequest {
 	m0 := &GetAlertsCountsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Request = b.Request
-	x.GroupBy = b.GroupBy
+	x.xxx_hidden_Request = b.Request
+	if b.GroupBy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_GroupBy = *b.GroupBy
+	}
 	return m0
 }
 
 type GetAlertsCountsResponse struct {
-	state         protoimpl.MessageState                `protogen:"hybrid.v1"`
-	Groups        []*GetAlertsCountsResponse_AlertGroup `protobuf:"bytes,1,rep,name=groups" json:"groups,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState                 `protogen:"opaque.v1"`
+	xxx_hidden_Groups *[]*GetAlertsCountsResponse_AlertGroup `protobuf:"bytes,1,rep,name=groups"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetAlertsCountsResponse) Reset() {
@@ -890,13 +966,15 @@ func (x *GetAlertsCountsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAlertsCountsResponse) GetGroups() []*GetAlertsCountsResponse_AlertGroup {
 	if x != nil {
-		return x.Groups
+		if x.xxx_hidden_Groups != nil {
+			return *x.xxx_hidden_Groups
+		}
 	}
 	return nil
 }
 
 func (x *GetAlertsCountsResponse) SetGroups(v []*GetAlertsCountsResponse_AlertGroup) {
-	x.Groups = v
+	x.xxx_hidden_Groups = &v
 }
 
 type GetAlertsCountsResponse_builder struct {
@@ -909,17 +987,19 @@ func (b0 GetAlertsCountsResponse_builder) Build() *GetAlertsCountsResponse {
 	m0 := &GetAlertsCountsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Groups = b.Groups
+	x.xxx_hidden_Groups = &b.Groups
 	return m0
 }
 
 type AlertEvent struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Time          *int64                 `protobuf:"varint,1,opt,name=time" json:"time,omitempty"`
-	Type          *Type                  `protobuf:"varint,2,opt,name=type,enum=v1.Type" json:"type,omitempty"`
-	Id            *string                `protobuf:"bytes,3,opt,name=id" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Time        int64                  `protobuf:"varint,1,opt,name=time"`
+	xxx_hidden_Type        Type                   `protobuf:"varint,2,opt,name=type,enum=v1.Type"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,3,opt,name=id"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AlertEvent) Reset() {
@@ -948,69 +1028,80 @@ func (x *AlertEvent) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AlertEvent) GetTime() int64 {
-	if x != nil && x.Time != nil {
-		return *x.Time
+	if x != nil {
+		return x.xxx_hidden_Time
 	}
 	return 0
 }
 
 func (x *AlertEvent) GetType() Type {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return Type_CREATED
 }
 
 func (x *AlertEvent) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AlertEvent) SetTime(v int64) {
-	x.Time = &v
+	x.xxx_hidden_Time = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *AlertEvent) SetType(v Type) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *AlertEvent) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *AlertEvent) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.Time != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AlertEvent) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *AlertEvent) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *AlertEvent) ClearTime() {
-	x.Time = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Time = 0
 }
 
 func (x *AlertEvent) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Type = Type_CREATED
 }
 
 func (x *AlertEvent) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Id = nil
 }
 
 type AlertEvent_builder struct {
@@ -1025,17 +1116,26 @@ func (b0 AlertEvent_builder) Build() *AlertEvent {
 	m0 := &AlertEvent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Time = b.Time
-	x.Type = b.Type
-	x.Id = b.Id
+	if b.Time != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Time = *b.Time
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Type = *b.Type
+	}
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Id = b.Id
+	}
 	return m0
 }
 
 type GetAlertTimeseriesResponse struct {
-	state         protoimpl.MessageState                      `protogen:"hybrid.v1"`
-	Clusters      []*GetAlertTimeseriesResponse_ClusterAlerts `protobuf:"bytes,1,rep,name=clusters" json:"clusters,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState                       `protogen:"opaque.v1"`
+	xxx_hidden_Clusters *[]*GetAlertTimeseriesResponse_ClusterAlerts `protobuf:"bytes,1,rep,name=clusters"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *GetAlertTimeseriesResponse) Reset() {
@@ -1065,13 +1165,15 @@ func (x *GetAlertTimeseriesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAlertTimeseriesResponse) GetClusters() []*GetAlertTimeseriesResponse_ClusterAlerts {
 	if x != nil {
-		return x.Clusters
+		if x.xxx_hidden_Clusters != nil {
+			return *x.xxx_hidden_Clusters
+		}
 	}
 	return nil
 }
 
 func (x *GetAlertTimeseriesResponse) SetClusters(v []*GetAlertTimeseriesResponse_ClusterAlerts) {
-	x.Clusters = v
+	x.xxx_hidden_Clusters = &v
 }
 
 type GetAlertTimeseriesResponse_builder struct {
@@ -1084,16 +1186,18 @@ func (b0 GetAlertTimeseriesResponse_builder) Build() *GetAlertTimeseriesResponse
 	m0 := &GetAlertTimeseriesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Clusters = b.Clusters
+	x.xxx_hidden_Clusters = &b.Clusters
 	return m0
 }
 
 type GetAlertsGroupResponse_PolicyGroup struct {
-	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
-	Policy        *storage.ListAlertPolicy `protobuf:"bytes,1,opt,name=policy" json:"policy,omitempty"`
-	NumAlerts     *int64                   `protobuf:"varint,2,opt,name=num_alerts,json=numAlerts" json:"num_alerts,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_Policy      *storage.ListAlertPolicy `protobuf:"bytes,1,opt,name=policy"`
+	xxx_hidden_NumAlerts   int64                    `protobuf:"varint,2,opt,name=num_alerts,json=numAlerts"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) Reset() {
@@ -1123,46 +1227,48 @@ func (x *GetAlertsGroupResponse_PolicyGroup) ProtoReflect() protoreflect.Message
 
 func (x *GetAlertsGroupResponse_PolicyGroup) GetPolicy() *storage.ListAlertPolicy {
 	if x != nil {
-		return x.Policy
+		return x.xxx_hidden_Policy
 	}
 	return nil
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) GetNumAlerts() int64 {
-	if x != nil && x.NumAlerts != nil {
-		return *x.NumAlerts
+	if x != nil {
+		return x.xxx_hidden_NumAlerts
 	}
 	return 0
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) SetPolicy(v *storage.ListAlertPolicy) {
-	x.Policy = v
+	x.xxx_hidden_Policy = v
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) SetNumAlerts(v int64) {
-	x.NumAlerts = &v
+	x.xxx_hidden_NumAlerts = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.Policy != nil
+	return x.xxx_hidden_Policy != nil
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) HasNumAlerts() bool {
 	if x == nil {
 		return false
 	}
-	return x.NumAlerts != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) ClearPolicy() {
-	x.Policy = nil
+	x.xxx_hidden_Policy = nil
 }
 
 func (x *GetAlertsGroupResponse_PolicyGroup) ClearNumAlerts() {
-	x.NumAlerts = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_NumAlerts = 0
 }
 
 type GetAlertsGroupResponse_PolicyGroup_builder struct {
@@ -1176,17 +1282,22 @@ func (b0 GetAlertsGroupResponse_PolicyGroup_builder) Build() *GetAlertsGroupResp
 	m0 := &GetAlertsGroupResponse_PolicyGroup{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Policy = b.Policy
-	x.NumAlerts = b.NumAlerts
+	x.xxx_hidden_Policy = b.Policy
+	if b.NumAlerts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_NumAlerts = *b.NumAlerts
+	}
 	return m0
 }
 
 type GetAlertsCountsResponse_AlertGroup struct {
-	state         protoimpl.MessageState                            `protogen:"hybrid.v1"`
-	Group         *string                                           `protobuf:"bytes,1,opt,name=group" json:"group,omitempty"`
-	Counts        []*GetAlertsCountsResponse_AlertGroup_AlertCounts `protobuf:"bytes,2,rep,name=counts" json:"counts,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState                             `protogen:"opaque.v1"`
+	xxx_hidden_Group       *string                                            `protobuf:"bytes,1,opt,name=group"`
+	xxx_hidden_Counts      *[]*GetAlertsCountsResponse_AlertGroup_AlertCounts `protobuf:"bytes,2,rep,name=counts"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup) Reset() {
@@ -1215,36 +1326,43 @@ func (x *GetAlertsCountsResponse_AlertGroup) ProtoReflect() protoreflect.Message
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup) GetGroup() string {
-	if x != nil && x.Group != nil {
-		return *x.Group
+	if x != nil {
+		if x.xxx_hidden_Group != nil {
+			return *x.xxx_hidden_Group
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup) GetCounts() []*GetAlertsCountsResponse_AlertGroup_AlertCounts {
 	if x != nil {
-		return x.Counts
+		if x.xxx_hidden_Counts != nil {
+			return *x.xxx_hidden_Counts
+		}
 	}
 	return nil
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup) SetGroup(v string) {
-	x.Group = &v
+	x.xxx_hidden_Group = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup) SetCounts(v []*GetAlertsCountsResponse_AlertGroup_AlertCounts) {
-	x.Counts = v
+	x.xxx_hidden_Counts = &v
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup) HasGroup() bool {
 	if x == nil {
 		return false
 	}
-	return x.Group != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup) ClearGroup() {
-	x.Group = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Group = nil
 }
 
 type GetAlertsCountsResponse_AlertGroup_builder struct {
@@ -1258,17 +1376,22 @@ func (b0 GetAlertsCountsResponse_AlertGroup_builder) Build() *GetAlertsCountsRes
 	m0 := &GetAlertsCountsResponse_AlertGroup{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Group = b.Group
-	x.Counts = b.Counts
+	if b.Group != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Group = b.Group
+	}
+	x.xxx_hidden_Counts = &b.Counts
 	return m0
 }
 
 type GetAlertsCountsResponse_AlertGroup_AlertCounts struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Severity      *storage.Severity      `protobuf:"varint,1,opt,name=severity,enum=storage.Severity" json:"severity,omitempty"`
-	Count         *int64                 `protobuf:"varint,2,opt,name=count" json:"count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Severity    storage.Severity       `protobuf:"varint,1,opt,name=severity,enum=storage.Severity"`
+	xxx_hidden_Count       int64                  `protobuf:"varint,2,opt,name=count"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) Reset() {
@@ -1297,47 +1420,53 @@ func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) ProtoReflect() protoref
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) GetSeverity() storage.Severity {
-	if x != nil && x.Severity != nil {
-		return *x.Severity
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Severity
+		}
 	}
 	return storage.Severity(0)
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) GetCount() int64 {
-	if x != nil && x.Count != nil {
-		return *x.Count
+	if x != nil {
+		return x.xxx_hidden_Count
 	}
 	return 0
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) SetSeverity(v storage.Severity) {
-	x.Severity = &v
+	x.xxx_hidden_Severity = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) SetCount(v int64) {
-	x.Count = &v
+	x.xxx_hidden_Count = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) HasSeverity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Severity != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) HasCount() bool {
 	if x == nil {
 		return false
 	}
-	return x.Count != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) ClearSeverity() {
-	x.Severity = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Severity = storage.Severity_UNSET_SEVERITY
 }
 
 func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) ClearCount() {
-	x.Count = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Count = 0
 }
 
 type GetAlertsCountsResponse_AlertGroup_AlertCounts_builder struct {
@@ -1351,17 +1480,25 @@ func (b0 GetAlertsCountsResponse_AlertGroup_AlertCounts_builder) Build() *GetAle
 	m0 := &GetAlertsCountsResponse_AlertGroup_AlertCounts{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Severity = b.Severity
-	x.Count = b.Count
+	if b.Severity != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Severity = *b.Severity
+	}
+	if b.Count != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Count = *b.Count
+	}
 	return m0
 }
 
 type GetAlertTimeseriesResponse_ClusterAlerts struct {
-	state         protoimpl.MessageState                                  `protogen:"hybrid.v1"`
-	Cluster       *string                                                 `protobuf:"bytes,1,opt,name=cluster" json:"cluster,omitempty"`
-	Severities    []*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents `protobuf:"bytes,2,rep,name=severities" json:"severities,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState                                   `protogen:"opaque.v1"`
+	xxx_hidden_Cluster     *string                                                  `protobuf:"bytes,1,opt,name=cluster"`
+	xxx_hidden_Severities  *[]*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents `protobuf:"bytes,2,rep,name=severities"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) Reset() {
@@ -1390,36 +1527,43 @@ func (x *GetAlertTimeseriesResponse_ClusterAlerts) ProtoReflect() protoreflect.M
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) GetCluster() string {
-	if x != nil && x.Cluster != nil {
-		return *x.Cluster
+	if x != nil {
+		if x.xxx_hidden_Cluster != nil {
+			return *x.xxx_hidden_Cluster
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) GetSeverities() []*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents {
 	if x != nil {
-		return x.Severities
+		if x.xxx_hidden_Severities != nil {
+			return *x.xxx_hidden_Severities
+		}
 	}
 	return nil
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) SetCluster(v string) {
-	x.Cluster = &v
+	x.xxx_hidden_Cluster = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) SetSeverities(v []*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) {
-	x.Severities = v
+	x.xxx_hidden_Severities = &v
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) HasCluster() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cluster != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) ClearCluster() {
-	x.Cluster = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Cluster = nil
 }
 
 type GetAlertTimeseriesResponse_ClusterAlerts_builder struct {
@@ -1433,17 +1577,22 @@ func (b0 GetAlertTimeseriesResponse_ClusterAlerts_builder) Build() *GetAlertTime
 	m0 := &GetAlertTimeseriesResponse_ClusterAlerts{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Cluster = b.Cluster
-	x.Severities = b.Severities
+	if b.Cluster != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Cluster = b.Cluster
+	}
+	x.xxx_hidden_Severities = &b.Severities
 	return m0
 }
 
 type GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Severity      *storage.Severity      `protobuf:"varint,1,opt,name=severity,enum=storage.Severity" json:"severity,omitempty"`
-	Events        []*AlertEvent          `protobuf:"bytes,2,rep,name=events" json:"events,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Severity    storage.Severity       `protobuf:"varint,1,opt,name=severity,enum=storage.Severity"`
+	xxx_hidden_Events      *[]*AlertEvent         `protobuf:"bytes,2,rep,name=events"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) Reset() {
@@ -1472,36 +1621,42 @@ func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) ProtoReflect() pr
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) GetSeverity() storage.Severity {
-	if x != nil && x.Severity != nil {
-		return *x.Severity
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Severity
+		}
 	}
 	return storage.Severity(0)
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) GetEvents() []*AlertEvent {
 	if x != nil {
-		return x.Events
+		if x.xxx_hidden_Events != nil {
+			return *x.xxx_hidden_Events
+		}
 	}
 	return nil
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) SetSeverity(v storage.Severity) {
-	x.Severity = &v
+	x.xxx_hidden_Severity = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) SetEvents(v []*AlertEvent) {
-	x.Events = v
+	x.xxx_hidden_Events = &v
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) HasSeverity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Severity != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) ClearSeverity() {
-	x.Severity = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Severity = storage.Severity_UNSET_SEVERITY
 }
 
 type GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents_builder struct {
@@ -1515,8 +1670,11 @@ func (b0 GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents_builder) Build() *
 	m0 := &GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Severity = b.Severity
-	x.Events = b.Events
+	if b.Severity != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Severity = *b.Severity
+	}
+	x.xxx_hidden_Events = &b.Events
 	return m0
 }
 
@@ -1602,7 +1760,7 @@ const file_api_v1_alert_service_proto_rawDesc = "" +
 	"\rResolveAlerts\x12\x18.v1.ResolveAlertsRequest\x1a\t.v1.Empty\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*2\x12/v1/alerts/resolve\x12U\n" +
 	"\fDeleteAlerts\x12\x17.v1.DeleteAlertsRequest\x1a\x18.v1.DeleteAlertsResponse\"\x12\x82\xd3\xe4\x93\x02\f*\n" +
 	"/v1/alertsB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x04b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x04b\beditionsp\xe8\a"
 
 var file_api_v1_alert_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v1_alert_service_proto_msgTypes = make([]protoimpl.MessageInfo, 17)

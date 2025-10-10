@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/network_flow.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -26,13 +24,12 @@ const (
 )
 
 type NetworkFlowUpdate struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Network flows that were added or removed from the last time state was sent to Central.
-	Updated          []*storage.NetworkFlow     `protobuf:"bytes,1,rep,name=updated" json:"updated,omitempty"`
-	UpdatedEndpoints []*storage.NetworkEndpoint `protobuf:"bytes,3,rep,name=updated_endpoints,json=updatedEndpoints" json:"updated_endpoints,omitempty"`
-	Time             *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=time" json:"time,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Updated          *[]*storage.NetworkFlow     `protobuf:"bytes,1,rep,name=updated"`
+	xxx_hidden_UpdatedEndpoints *[]*storage.NetworkEndpoint `protobuf:"bytes,3,rep,name=updated_endpoints,json=updatedEndpoints"`
+	xxx_hidden_Time             *timestamppb.Timestamp      `protobuf:"bytes,2,opt,name=time"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *NetworkFlowUpdate) Reset() {
@@ -62,46 +59,50 @@ func (x *NetworkFlowUpdate) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkFlowUpdate) GetUpdated() []*storage.NetworkFlow {
 	if x != nil {
-		return x.Updated
+		if x.xxx_hidden_Updated != nil {
+			return *x.xxx_hidden_Updated
+		}
 	}
 	return nil
 }
 
 func (x *NetworkFlowUpdate) GetUpdatedEndpoints() []*storage.NetworkEndpoint {
 	if x != nil {
-		return x.UpdatedEndpoints
+		if x.xxx_hidden_UpdatedEndpoints != nil {
+			return *x.xxx_hidden_UpdatedEndpoints
+		}
 	}
 	return nil
 }
 
 func (x *NetworkFlowUpdate) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Time
+		return x.xxx_hidden_Time
 	}
 	return nil
 }
 
 func (x *NetworkFlowUpdate) SetUpdated(v []*storage.NetworkFlow) {
-	x.Updated = v
+	x.xxx_hidden_Updated = &v
 }
 
 func (x *NetworkFlowUpdate) SetUpdatedEndpoints(v []*storage.NetworkEndpoint) {
-	x.UpdatedEndpoints = v
+	x.xxx_hidden_UpdatedEndpoints = &v
 }
 
 func (x *NetworkFlowUpdate) SetTime(v *timestamppb.Timestamp) {
-	x.Time = v
+	x.xxx_hidden_Time = v
 }
 
 func (x *NetworkFlowUpdate) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.Time != nil
+	return x.xxx_hidden_Time != nil
 }
 
 func (x *NetworkFlowUpdate) ClearTime() {
-	x.Time = nil
+	x.xxx_hidden_Time = nil
 }
 
 type NetworkFlowUpdate_builder struct {
@@ -117,18 +118,20 @@ func (b0 NetworkFlowUpdate_builder) Build() *NetworkFlowUpdate {
 	m0 := &NetworkFlowUpdate{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Updated = b.Updated
-	x.UpdatedEndpoints = b.UpdatedEndpoints
-	x.Time = b.Time
+	x.xxx_hidden_Updated = &b.Updated
+	x.xxx_hidden_UpdatedEndpoints = &b.UpdatedEndpoints
+	x.xxx_hidden_Time = b.Time
 	return m0
 }
 
 type PushNetworkEntitiesRequest struct {
-	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
-	Entities      []*storage.NetworkEntityInfo `protobuf:"bytes,1,rep,name=entities" json:"entities,omitempty"`
-	SeqID         *int64                       `protobuf:"varint,2,opt,name=seqID" json:"seqID,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Entities    *[]*storage.NetworkEntityInfo `protobuf:"bytes,1,rep,name=entities"`
+	xxx_hidden_SeqID       int64                         `protobuf:"varint,2,opt,name=seqID"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PushNetworkEntitiesRequest) Reset() {
@@ -158,35 +161,39 @@ func (x *PushNetworkEntitiesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PushNetworkEntitiesRequest) GetEntities() []*storage.NetworkEntityInfo {
 	if x != nil {
-		return x.Entities
+		if x.xxx_hidden_Entities != nil {
+			return *x.xxx_hidden_Entities
+		}
 	}
 	return nil
 }
 
 func (x *PushNetworkEntitiesRequest) GetSeqID() int64 {
-	if x != nil && x.SeqID != nil {
-		return *x.SeqID
+	if x != nil {
+		return x.xxx_hidden_SeqID
 	}
 	return 0
 }
 
 func (x *PushNetworkEntitiesRequest) SetEntities(v []*storage.NetworkEntityInfo) {
-	x.Entities = v
+	x.xxx_hidden_Entities = &v
 }
 
 func (x *PushNetworkEntitiesRequest) SetSeqID(v int64) {
-	x.SeqID = &v
+	x.xxx_hidden_SeqID = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *PushNetworkEntitiesRequest) HasSeqID() bool {
 	if x == nil {
 		return false
 	}
-	return x.SeqID != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *PushNetworkEntitiesRequest) ClearSeqID() {
-	x.SeqID = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_SeqID = 0
 }
 
 type PushNetworkEntitiesRequest_builder struct {
@@ -200,8 +207,11 @@ func (b0 PushNetworkEntitiesRequest_builder) Build() *PushNetworkEntitiesRequest
 	m0 := &PushNetworkEntitiesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entities = b.Entities
-	x.SeqID = b.SeqID
+	x.xxx_hidden_Entities = &b.Entities
+	if b.SeqID != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_SeqID = *b.SeqID
+	}
 	return m0
 }
 
@@ -216,7 +226,7 @@ const file_internalapi_central_network_flow_proto_rawDesc = "" +
 	"\x04time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\"j\n" +
 	"\x1aPushNetworkEntitiesRequest\x126\n" +
 	"\bentities\x18\x01 \x03(\v2\x1a.storage.NetworkEntityInfoR\bentities\x12\x14\n" +
-	"\x05seqID\x18\x02 \x01(\x03R\x05seqIDB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x05seqID\x18\x02 \x01(\x03R\x05seqIDB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_network_flow_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_central_network_flow_proto_goTypes = []any{

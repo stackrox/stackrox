@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/auth_provider.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -26,103 +24,25 @@ const (
 
 // Next Tag: 15.
 type AuthProvider struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id         *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name       *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" sql:"unique" search:"AuthProvider Name,store,hidden"` // @gotags: sql:"unique" search:"AuthProvider Name,store,hidden"
-	Type       *string                `protobuf:"bytes,3,opt,name=type" json:"type,omitempty"`
-	UiEndpoint *string                `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint" json:"ui_endpoint,omitempty"`
-	Enabled    *bool                  `protobuf:"varint,5,opt,name=enabled" json:"enabled,omitempty"`
-	// Config holds auth provider specific configuration. Each configuration options
-	// are different based on the given auth provider type.
-	// OIDC:
-	//   - "issuer": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.
-	//   - "client_id": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.
-	//   - "client_secret": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.
-	//   - "do_not_use_client_secret": set to "true" if you want to create a configuration with only
-	//     a client ID and no client secret.
-	//   - "mode": the OIDC callback mode, choosing from "fragment", "post", or "query".
-	//   - "disable_offline_access_scope": set to "true" if no offline tokens shall be issued.
-	//   - "extra_scopes": a space-delimited string of additional scopes to request in addition to "openid profile email"
-	//     according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.
-	//
-	// OpenShift Auth: supports no extra configuration options.
-	//
-	// User PKI:
-	// - "keys": the trusted certificates PEM encoded.
-	//
-	// SAML:
-	// - "sp_issuer": the service provider issuer according to https://datatracker.ietf.org/doc/html/rfc7522#section-3.
-	// - "idp_metadata_url": the metadata URL according to https://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf.
-	// - "idp_issuer": the IdP issuer.
-	// - "idp_cert_pem": the cert PEM encoded for the IdP endpoint.
-	// - "idp_sso_url": the IdP SSO URL.
-	// - "idp_nameid_format": the IdP name ID format.
-	//
-	// IAP:
-	// - "audience": the audience to use.
-	Config map[string]string `protobuf:"bytes,6,rep,name=config" json:"config,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" scrub:"map-values"` // @gotags: scrub:"map-values"
-	// The login URL will be provided by the backend, and may not be specified in a request.
-	LoginUrl *string `protobuf:"bytes,7,opt,name=login_url,json=loginUrl" json:"login_url,omitempty"`
-	// Deprecated: Marked as deprecated in storage/auth_provider.proto.
-	Validated *bool `protobuf:"varint,8,opt,name=validated" json:"validated,omitempty"`
-	// UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request
-	// is coming from any of these, the auth request will use these for the callback URL,
-	// not ui_endpoint.
-	ExtraUiEndpoints   []string                          `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints" json:"extra_ui_endpoints,omitempty"`
-	Active             *bool                             `protobuf:"varint,10,opt,name=active" json:"active,omitempty"`
-	RequiredAttributes []*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes" json:"required_attributes,omitempty"`
-	Traits             *Traits                           `protobuf:"bytes,12,opt,name=traits" json:"traits,omitempty"`
-	// Specifies claims from IdP token that will be copied to Rox token attributes.
-	//
-	// Each key in this map contains a path in IdP token we want to map. Path is separated by "." symbol.
-	// For example, if IdP token payload looks like:
-	//
-	// {
-	//
-	//	"a": {
-	//
-	//	    "b" : "c",
-	//
-	//	    "d": true,
-	//
-	//	    "e": [ "val1", "val2", "val3" ],
-	//
-	//	    "f": [ true, false, false ],
-	//
-	//	    "g": 123.0,
-	//
-	//	    "h": [ 1, 2, 3]
-	//
-	//	}
-	//
-	// }
-	//
-	// then "a.b" would be a valid key and "a.z" is not.
-	//
-	// We support the following types of claims:
-	// * string(path "a.b")
-	// * bool(path "a.d")
-	// * string array(path "a.e")
-	// * bool array (path "a.f.")
-	//
-	// We do NOT support the following types of claims:
-	// * complex claims(path "a")
-	// * float/integer claims(path "a.g")
-	// * float/integer array claims(path "a.h")
-	//
-	// Each value in this map contains a Rox token attribute name we want to add claim to.
-	// If, for example, value is "groups", claim would be found in "external_user.Attributes.groups" in token.
-	//
-	// Note: we only support this feature for OIDC auth provider.
-	ClaimMappings map[string]string `protobuf:"bytes,13,rep,name=claim_mappings,json=claimMappings" json:"claim_mappings,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Last updated indicates the last time the auth provider has been updated.
-	//
-	// In case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered
-	// invalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional
-	// login attempt).
-	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                         protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Id                 *string                            `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name               *string                            `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Type               *string                            `protobuf:"bytes,3,opt,name=type"`
+	xxx_hidden_UiEndpoint         *string                            `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint"`
+	xxx_hidden_Enabled            bool                               `protobuf:"varint,5,opt,name=enabled"`
+	xxx_hidden_Config             map[string]string                  `protobuf:"bytes,6,rep,name=config" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_LoginUrl           *string                            `protobuf:"bytes,7,opt,name=login_url,json=loginUrl"`
+	xxx_hidden_Validated          bool                               `protobuf:"varint,8,opt,name=validated"`
+	xxx_hidden_ExtraUiEndpoints   []string                           `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints"`
+	xxx_hidden_Active             bool                               `protobuf:"varint,10,opt,name=active"`
+	xxx_hidden_RequiredAttributes *[]*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes"`
+	xxx_hidden_Traits             *Traits                            `protobuf:"bytes,12,opt,name=traits"`
+	xxx_hidden_ClaimMappings      map[string]string                  `protobuf:"bytes,13,rep,name=claim_mappings,json=claimMappings" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_LastUpdated        *timestamppb.Timestamp             `protobuf:"bytes,14,opt,name=last_updated,json=lastUpdated"`
+	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
+	XXX_presence                  [1]uint32
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *AuthProvider) Reset() {
@@ -151,201 +71,226 @@ func (x *AuthProvider) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AuthProvider) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthProvider) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthProvider) GetType() string {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if x.xxx_hidden_Type != nil {
+			return *x.xxx_hidden_Type
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthProvider) GetUiEndpoint() string {
-	if x != nil && x.UiEndpoint != nil {
-		return *x.UiEndpoint
+	if x != nil {
+		if x.xxx_hidden_UiEndpoint != nil {
+			return *x.xxx_hidden_UiEndpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthProvider) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
+	if x != nil {
+		return x.xxx_hidden_Enabled
 	}
 	return false
 }
 
 func (x *AuthProvider) GetConfig() map[string]string {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *AuthProvider) GetLoginUrl() string {
-	if x != nil && x.LoginUrl != nil {
-		return *x.LoginUrl
+	if x != nil {
+		if x.xxx_hidden_LoginUrl != nil {
+			return *x.xxx_hidden_LoginUrl
+		}
+		return ""
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in storage/auth_provider.proto.
 func (x *AuthProvider) GetValidated() bool {
-	if x != nil && x.Validated != nil {
-		return *x.Validated
+	if x != nil {
+		return x.xxx_hidden_Validated
 	}
 	return false
 }
 
 func (x *AuthProvider) GetExtraUiEndpoints() []string {
 	if x != nil {
-		return x.ExtraUiEndpoints
+		return x.xxx_hidden_ExtraUiEndpoints
 	}
 	return nil
 }
 
 func (x *AuthProvider) GetActive() bool {
-	if x != nil && x.Active != nil {
-		return *x.Active
+	if x != nil {
+		return x.xxx_hidden_Active
 	}
 	return false
 }
 
 func (x *AuthProvider) GetRequiredAttributes() []*AuthProvider_RequiredAttribute {
 	if x != nil {
-		return x.RequiredAttributes
+		if x.xxx_hidden_RequiredAttributes != nil {
+			return *x.xxx_hidden_RequiredAttributes
+		}
 	}
 	return nil
 }
 
 func (x *AuthProvider) GetTraits() *Traits {
 	if x != nil {
-		return x.Traits
+		return x.xxx_hidden_Traits
 	}
 	return nil
 }
 
 func (x *AuthProvider) GetClaimMappings() map[string]string {
 	if x != nil {
-		return x.ClaimMappings
+		return x.xxx_hidden_ClaimMappings
 	}
 	return nil
 }
 
 func (x *AuthProvider) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastUpdated
+		return x.xxx_hidden_LastUpdated
 	}
 	return nil
 }
 
 func (x *AuthProvider) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 14)
 }
 
 func (x *AuthProvider) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 14)
 }
 
 func (x *AuthProvider) SetType(v string) {
-	x.Type = &v
+	x.xxx_hidden_Type = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 14)
 }
 
 func (x *AuthProvider) SetUiEndpoint(v string) {
-	x.UiEndpoint = &v
+	x.xxx_hidden_UiEndpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 14)
 }
 
 func (x *AuthProvider) SetEnabled(v bool) {
-	x.Enabled = &v
+	x.xxx_hidden_Enabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 14)
 }
 
 func (x *AuthProvider) SetConfig(v map[string]string) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *AuthProvider) SetLoginUrl(v string) {
-	x.LoginUrl = &v
+	x.xxx_hidden_LoginUrl = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 14)
 }
 
 // Deprecated: Marked as deprecated in storage/auth_provider.proto.
 func (x *AuthProvider) SetValidated(v bool) {
-	x.Validated = &v
+	x.xxx_hidden_Validated = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 14)
 }
 
 func (x *AuthProvider) SetExtraUiEndpoints(v []string) {
-	x.ExtraUiEndpoints = v
+	x.xxx_hidden_ExtraUiEndpoints = v
 }
 
 func (x *AuthProvider) SetActive(v bool) {
-	x.Active = &v
+	x.xxx_hidden_Active = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 14)
 }
 
 func (x *AuthProvider) SetRequiredAttributes(v []*AuthProvider_RequiredAttribute) {
-	x.RequiredAttributes = v
+	x.xxx_hidden_RequiredAttributes = &v
 }
 
 func (x *AuthProvider) SetTraits(v *Traits) {
-	x.Traits = v
+	x.xxx_hidden_Traits = v
 }
 
 func (x *AuthProvider) SetClaimMappings(v map[string]string) {
-	x.ClaimMappings = v
+	x.xxx_hidden_ClaimMappings = v
 }
 
 func (x *AuthProvider) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.LastUpdated = v
+	x.xxx_hidden_LastUpdated = v
 }
 
 func (x *AuthProvider) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AuthProvider) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *AuthProvider) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *AuthProvider) HasUiEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.UiEndpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *AuthProvider) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.Enabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *AuthProvider) HasLoginUrl() bool {
 	if x == nil {
 		return false
 	}
-	return x.LoginUrl != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 // Deprecated: Marked as deprecated in storage/auth_provider.proto.
@@ -353,69 +298,77 @@ func (x *AuthProvider) HasValidated() bool {
 	if x == nil {
 		return false
 	}
-	return x.Validated != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *AuthProvider) HasActive() bool {
 	if x == nil {
 		return false
 	}
-	return x.Active != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *AuthProvider) HasTraits() bool {
 	if x == nil {
 		return false
 	}
-	return x.Traits != nil
+	return x.xxx_hidden_Traits != nil
 }
 
 func (x *AuthProvider) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastUpdated != nil
+	return x.xxx_hidden_LastUpdated != nil
 }
 
 func (x *AuthProvider) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *AuthProvider) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *AuthProvider) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Type = nil
 }
 
 func (x *AuthProvider) ClearUiEndpoint() {
-	x.UiEndpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_UiEndpoint = nil
 }
 
 func (x *AuthProvider) ClearEnabled() {
-	x.Enabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Enabled = false
 }
 
 func (x *AuthProvider) ClearLoginUrl() {
-	x.LoginUrl = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_LoginUrl = nil
 }
 
 // Deprecated: Marked as deprecated in storage/auth_provider.proto.
 func (x *AuthProvider) ClearValidated() {
-	x.Validated = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_Validated = false
 }
 
 func (x *AuthProvider) ClearActive() {
-	x.Active = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_Active = false
 }
 
 func (x *AuthProvider) ClearTraits() {
-	x.Traits = nil
+	x.xxx_hidden_Traits = nil
 }
 
 func (x *AuthProvider) ClearLastUpdated() {
-	x.LastUpdated = nil
+	x.xxx_hidden_LastUpdated = nil
 }
 
 type AuthProvider_builder struct {
@@ -521,20 +474,44 @@ func (b0 AuthProvider_builder) Build() *AuthProvider {
 	m0 := &AuthProvider{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Type = b.Type
-	x.UiEndpoint = b.UiEndpoint
-	x.Enabled = b.Enabled
-	x.Config = b.Config
-	x.LoginUrl = b.LoginUrl
-	x.Validated = b.Validated
-	x.ExtraUiEndpoints = b.ExtraUiEndpoints
-	x.Active = b.Active
-	x.RequiredAttributes = b.RequiredAttributes
-	x.Traits = b.Traits
-	x.ClaimMappings = b.ClaimMappings
-	x.LastUpdated = b.LastUpdated
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 14)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 14)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 14)
+		x.xxx_hidden_Type = b.Type
+	}
+	if b.UiEndpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 14)
+		x.xxx_hidden_UiEndpoint = b.UiEndpoint
+	}
+	if b.Enabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 14)
+		x.xxx_hidden_Enabled = *b.Enabled
+	}
+	x.xxx_hidden_Config = b.Config
+	if b.LoginUrl != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 14)
+		x.xxx_hidden_LoginUrl = b.LoginUrl
+	}
+	if b.Validated != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 14)
+		x.xxx_hidden_Validated = *b.Validated
+	}
+	x.xxx_hidden_ExtraUiEndpoints = b.ExtraUiEndpoints
+	if b.Active != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 14)
+		x.xxx_hidden_Active = *b.Active
+	}
+	x.xxx_hidden_RequiredAttributes = &b.RequiredAttributes
+	x.xxx_hidden_Traits = b.Traits
+	x.xxx_hidden_ClaimMappings = b.ClaimMappings
+	x.xxx_hidden_LastUpdated = b.LastUpdated
 	return m0
 }
 
@@ -543,11 +520,13 @@ func (b0 AuthProvider_builder) Build() *AuthProvider {
 // If any attribute is missing within the external claims of the token issued by Central, the
 // authentication request to this IdP is considered failed.
 type AuthProvider_RequiredAttribute struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	AttributeKey   *string                `protobuf:"bytes,1,opt,name=attribute_key,json=attributeKey" json:"attribute_key,omitempty"`
-	AttributeValue *string                `protobuf:"bytes,2,opt,name=attribute_value,json=attributeValue" json:"attribute_value,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AttributeKey   *string                `protobuf:"bytes,1,opt,name=attribute_key,json=attributeKey"`
+	xxx_hidden_AttributeValue *string                `protobuf:"bytes,2,opt,name=attribute_value,json=attributeValue"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *AuthProvider_RequiredAttribute) Reset() {
@@ -576,47 +555,57 @@ func (x *AuthProvider_RequiredAttribute) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AuthProvider_RequiredAttribute) GetAttributeKey() string {
-	if x != nil && x.AttributeKey != nil {
-		return *x.AttributeKey
+	if x != nil {
+		if x.xxx_hidden_AttributeKey != nil {
+			return *x.xxx_hidden_AttributeKey
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthProvider_RequiredAttribute) GetAttributeValue() string {
-	if x != nil && x.AttributeValue != nil {
-		return *x.AttributeValue
+	if x != nil {
+		if x.xxx_hidden_AttributeValue != nil {
+			return *x.xxx_hidden_AttributeValue
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthProvider_RequiredAttribute) SetAttributeKey(v string) {
-	x.AttributeKey = &v
+	x.xxx_hidden_AttributeKey = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *AuthProvider_RequiredAttribute) SetAttributeValue(v string) {
-	x.AttributeValue = &v
+	x.xxx_hidden_AttributeValue = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *AuthProvider_RequiredAttribute) HasAttributeKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.AttributeKey != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AuthProvider_RequiredAttribute) HasAttributeValue() bool {
 	if x == nil {
 		return false
 	}
-	return x.AttributeValue != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *AuthProvider_RequiredAttribute) ClearAttributeKey() {
-	x.AttributeKey = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_AttributeKey = nil
 }
 
 func (x *AuthProvider_RequiredAttribute) ClearAttributeValue() {
-	x.AttributeValue = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_AttributeValue = nil
 }
 
 type AuthProvider_RequiredAttribute_builder struct {
@@ -630,8 +619,14 @@ func (b0 AuthProvider_RequiredAttribute_builder) Build() *AuthProvider_RequiredA
 	m0 := &AuthProvider_RequiredAttribute{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AttributeKey = b.AttributeKey
-	x.AttributeValue = b.AttributeValue
+	if b.AttributeKey != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_AttributeKey = b.AttributeKey
+	}
+	if b.AttributeValue != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_AttributeValue = b.AttributeValue
+	}
 	return m0
 }
 
@@ -666,7 +661,7 @@ const file_storage_auth_provider_proto_rawDesc = "" +
 	"\x12ClaimMappingsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_auth_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_storage_auth_provider_proto_goTypes = []any{

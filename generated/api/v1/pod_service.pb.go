@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/pod_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,10 +24,10 @@ const (
 )
 
 type PodsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Pods          []*storage.Pod         `protobuf:"bytes,1,rep,name=pods" json:"pods,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Pods *[]*storage.Pod        `protobuf:"bytes,1,rep,name=pods"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PodsResponse) Reset() {
@@ -59,13 +57,15 @@ func (x *PodsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *PodsResponse) GetPods() []*storage.Pod {
 	if x != nil {
-		return x.Pods
+		if x.xxx_hidden_Pods != nil {
+			return *x.xxx_hidden_Pods
+		}
 	}
 	return nil
 }
 
 func (x *PodsResponse) SetPods(v []*storage.Pod) {
-	x.Pods = v
+	x.xxx_hidden_Pods = &v
 }
 
 type PodsResponse_builder struct {
@@ -78,16 +78,18 @@ func (b0 PodsResponse_builder) Build() *PodsResponse {
 	m0 := &PodsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Pods = b.Pods
+	x.xxx_hidden_Pods = &b.Pods
 	return m0
 }
 
 type ExportPodRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Timeout       *int32                 `protobuf:"varint,1,opt,name=timeout" json:"timeout,omitempty"`
-	Query         *string                `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Timeout     int32                  `protobuf:"varint,1,opt,name=timeout"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,2,opt,name=query"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ExportPodRequest) Reset() {
@@ -116,47 +118,54 @@ func (x *ExportPodRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ExportPodRequest) GetTimeout() int32 {
-	if x != nil && x.Timeout != nil {
-		return *x.Timeout
+	if x != nil {
+		return x.xxx_hidden_Timeout
 	}
 	return 0
 }
 
 func (x *ExportPodRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ExportPodRequest) SetTimeout(v int32) {
-	x.Timeout = &v
+	x.xxx_hidden_Timeout = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ExportPodRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ExportPodRequest) HasTimeout() bool {
 	if x == nil {
 		return false
 	}
-	return x.Timeout != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ExportPodRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ExportPodRequest) ClearTimeout() {
-	x.Timeout = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Timeout = 0
 }
 
 func (x *ExportPodRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Query = nil
 }
 
 type ExportPodRequest_builder struct {
@@ -170,16 +179,22 @@ func (b0 ExportPodRequest_builder) Build() *ExportPodRequest {
 	m0 := &ExportPodRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Timeout = b.Timeout
-	x.Query = b.Query
+	if b.Timeout != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Timeout = *b.Timeout
+	}
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Query = b.Query
+	}
 	return m0
 }
 
 type ExportPodResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Pod           *storage.Pod           `protobuf:"bytes,1,opt,name=pod" json:"pod,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Pod *storage.Pod           `protobuf:"bytes,1,opt,name=pod"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ExportPodResponse) Reset() {
@@ -209,24 +224,24 @@ func (x *ExportPodResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ExportPodResponse) GetPod() *storage.Pod {
 	if x != nil {
-		return x.Pod
+		return x.xxx_hidden_Pod
 	}
 	return nil
 }
 
 func (x *ExportPodResponse) SetPod(v *storage.Pod) {
-	x.Pod = v
+	x.xxx_hidden_Pod = v
 }
 
 func (x *ExportPodResponse) HasPod() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pod != nil
+	return x.xxx_hidden_Pod != nil
 }
 
 func (x *ExportPodResponse) ClearPod() {
-	x.Pod = nil
+	x.xxx_hidden_Pod = nil
 }
 
 type ExportPodResponse_builder struct {
@@ -239,7 +254,7 @@ func (b0 ExportPodResponse_builder) Build() *ExportPodResponse {
 	m0 := &ExportPodResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Pod = b.Pod
+	x.xxx_hidden_Pod = b.Pod
 	return m0
 }
 
@@ -261,7 +276,7 @@ const file_api_v1_pod_service_proto_rawDesc = "" +
 	"\x12\b/v1/pods\x12T\n" +
 	"\n" +
 	"ExportPods\x12\x14.v1.ExportPodRequest\x1a\x15.v1.ExportPodResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/export/pods0\x01B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x01b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_pod_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_api_v1_pod_service_proto_goTypes = []any{

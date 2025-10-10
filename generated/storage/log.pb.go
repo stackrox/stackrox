@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/log.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -25,12 +23,14 @@ const (
 )
 
 type LogImbue struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"`               // @gotags: sql:"pk"
-	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp" json:"timestamp,omitempty" search:"Log Imbue Creation Time,hidden"` // @gotags: search:"Log Imbue Creation Time,hidden"
-	Log           []byte                 `protobuf:"bytes,3,opt,name=log" json:"log,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Timestamp   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp"`
+	xxx_hidden_Log         []byte                 `protobuf:"bytes,3,opt,name=log"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *LogImbue) Reset() {
@@ -59,72 +59,79 @@ func (x *LogImbue) ProtoReflect() protoreflect.Message {
 }
 
 func (x *LogImbue) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *LogImbue) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Timestamp
+		return x.xxx_hidden_Timestamp
 	}
 	return nil
 }
 
 func (x *LogImbue) GetLog() []byte {
 	if x != nil {
-		return x.Log
+		return x.xxx_hidden_Log
 	}
 	return nil
 }
 
 func (x *LogImbue) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *LogImbue) SetTimestamp(v *timestamppb.Timestamp) {
-	x.Timestamp = v
+	x.xxx_hidden_Timestamp = v
 }
 
 func (x *LogImbue) SetLog(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Log = v
+	x.xxx_hidden_Log = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *LogImbue) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *LogImbue) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.Timestamp != nil
+	return x.xxx_hidden_Timestamp != nil
 }
 
 func (x *LogImbue) HasLog() bool {
 	if x == nil {
 		return false
 	}
-	return x.Log != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *LogImbue) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *LogImbue) ClearTimestamp() {
-	x.Timestamp = nil
+	x.xxx_hidden_Timestamp = nil
 }
 
 func (x *LogImbue) ClearLog() {
-	x.Log = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Log = nil
 }
 
 type LogImbue_builder struct {
@@ -139,9 +146,15 @@ func (b0 LogImbue_builder) Build() *LogImbue {
 	m0 := &LogImbue{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Timestamp = b.Timestamp
-	x.Log = b.Log
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Id = b.Id
+	}
+	x.xxx_hidden_Timestamp = b.Timestamp
+	if b.Log != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Log = b.Log
+	}
 	return m0
 }
 
@@ -154,7 +167,7 @@ const file_storage_log_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x10\n" +
 	"\x03log\x18\x03 \x01(\fR\x03logB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_log_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_log_proto_goTypes = []any{

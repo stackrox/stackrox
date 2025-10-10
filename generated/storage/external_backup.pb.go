@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/external_backup.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -69,24 +67,18 @@ func (x S3URLStyle) Number() protoreflect.EnumNumber {
 
 // Next available tag: 10
 type ExternalBackup struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Type          *string                `protobuf:"bytes,3,opt,name=type" json:"type,omitempty"`
-	Schedule      *Schedule              `protobuf:"bytes,4,opt,name=schedule" json:"schedule,omitempty"`
-	BackupsToKeep *int32                 `protobuf:"varint,5,opt,name=backups_to_keep,json=backupsToKeep" json:"backups_to_keep,omitempty"`
-	// Types that are valid to be assigned to Config:
-	//
-	//	*ExternalBackup_S3
-	//	*ExternalBackup_Gcs
-	//	*ExternalBackup_S3Compatible
-	Config isExternalBackup_Config `protobuf_oneof:"Config"`
-	// Types that are valid to be assigned to IncludeCertificatesOpt:
-	//
-	//	*ExternalBackup_IncludeCertificates
-	IncludeCertificatesOpt isExternalBackup_IncludeCertificatesOpt `protobuf_oneof:"include_certificates_opt"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                             protoimpl.MessageState                  `protogen:"opaque.v1"`
+	xxx_hidden_Id                     *string                                 `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name                   *string                                 `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Type                   *string                                 `protobuf:"bytes,3,opt,name=type"`
+	xxx_hidden_Schedule               *Schedule                               `protobuf:"bytes,4,opt,name=schedule"`
+	xxx_hidden_BackupsToKeep          int32                                   `protobuf:"varint,5,opt,name=backups_to_keep,json=backupsToKeep"`
+	xxx_hidden_Config                 isExternalBackup_Config                 `protobuf_oneof:"Config"`
+	xxx_hidden_IncludeCertificatesOpt isExternalBackup_IncludeCertificatesOpt `protobuf_oneof:"include_certificates_opt"`
+	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
+	XXX_presence                      [1]uint32
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *ExternalBackup) Reset() {
@@ -115,50 +107,52 @@ func (x *ExternalBackup) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ExternalBackup) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ExternalBackup) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ExternalBackup) GetType() string {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if x.xxx_hidden_Type != nil {
+			return *x.xxx_hidden_Type
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ExternalBackup) GetSchedule() *Schedule {
 	if x != nil {
-		return x.Schedule
+		return x.xxx_hidden_Schedule
 	}
 	return nil
 }
 
 func (x *ExternalBackup) GetBackupsToKeep() int32 {
-	if x != nil && x.BackupsToKeep != nil {
-		return *x.BackupsToKeep
+	if x != nil {
+		return x.xxx_hidden_BackupsToKeep
 	}
 	return 0
 }
 
-func (x *ExternalBackup) GetConfig() isExternalBackup_Config {
-	if x != nil {
-		return x.Config
-	}
-	return nil
-}
-
 func (x *ExternalBackup) GetS3() *S3Config {
 	if x != nil {
-		if x, ok := x.Config.(*ExternalBackup_S3); ok {
+		if x, ok := x.xxx_hidden_Config.(*externalBackup_S3); ok {
 			return x.S3
 		}
 	}
@@ -167,7 +161,7 @@ func (x *ExternalBackup) GetS3() *S3Config {
 
 func (x *ExternalBackup) GetGcs() *GCSConfig {
 	if x != nil {
-		if x, ok := x.Config.(*ExternalBackup_Gcs); ok {
+		if x, ok := x.xxx_hidden_Config.(*externalBackup_Gcs); ok {
 			return x.Gcs
 		}
 	}
@@ -176,16 +170,9 @@ func (x *ExternalBackup) GetGcs() *GCSConfig {
 
 func (x *ExternalBackup) GetS3Compatible() *S3Compatible {
 	if x != nil {
-		if x, ok := x.Config.(*ExternalBackup_S3Compatible); ok {
+		if x, ok := x.xxx_hidden_Config.(*externalBackup_S3Compatible); ok {
 			return x.S3Compatible
 		}
-	}
-	return nil
-}
-
-func (x *ExternalBackup) GetIncludeCertificatesOpt() isExternalBackup_IncludeCertificatesOpt {
-	if x != nil {
-		return x.IncludeCertificatesOpt
 	}
 	return nil
 }
@@ -193,7 +180,7 @@ func (x *ExternalBackup) GetIncludeCertificatesOpt() isExternalBackup_IncludeCer
 // Deprecated: Marked as deprecated in storage/external_backup.proto.
 func (x *ExternalBackup) GetIncludeCertificates() bool {
 	if x != nil {
-		if x, ok := x.IncludeCertificatesOpt.(*ExternalBackup_IncludeCertificates); ok {
+		if x, ok := x.xxx_hidden_IncludeCertificatesOpt.(*externalBackup_IncludeCertificates); ok {
 			return x.IncludeCertificates
 		}
 	}
@@ -201,101 +188,105 @@ func (x *ExternalBackup) GetIncludeCertificates() bool {
 }
 
 func (x *ExternalBackup) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *ExternalBackup) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *ExternalBackup) SetType(v string) {
-	x.Type = &v
+	x.xxx_hidden_Type = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *ExternalBackup) SetSchedule(v *Schedule) {
-	x.Schedule = v
+	x.xxx_hidden_Schedule = v
 }
 
 func (x *ExternalBackup) SetBackupsToKeep(v int32) {
-	x.BackupsToKeep = &v
+	x.xxx_hidden_BackupsToKeep = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *ExternalBackup) SetS3(v *S3Config) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &ExternalBackup_S3{v}
+	x.xxx_hidden_Config = &externalBackup_S3{v}
 }
 
 func (x *ExternalBackup) SetGcs(v *GCSConfig) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &ExternalBackup_Gcs{v}
+	x.xxx_hidden_Config = &externalBackup_Gcs{v}
 }
 
 func (x *ExternalBackup) SetS3Compatible(v *S3Compatible) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &ExternalBackup_S3Compatible{v}
+	x.xxx_hidden_Config = &externalBackup_S3Compatible{v}
 }
 
 // Deprecated: Marked as deprecated in storage/external_backup.proto.
 func (x *ExternalBackup) SetIncludeCertificates(v bool) {
-	x.IncludeCertificatesOpt = &ExternalBackup_IncludeCertificates{v}
+	x.xxx_hidden_IncludeCertificatesOpt = &externalBackup_IncludeCertificates{v}
 }
 
 func (x *ExternalBackup) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ExternalBackup) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ExternalBackup) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ExternalBackup) HasSchedule() bool {
 	if x == nil {
 		return false
 	}
-	return x.Schedule != nil
+	return x.xxx_hidden_Schedule != nil
 }
 
 func (x *ExternalBackup) HasBackupsToKeep() bool {
 	if x == nil {
 		return false
 	}
-	return x.BackupsToKeep != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ExternalBackup) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *ExternalBackup) HasS3() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*ExternalBackup_S3)
+	_, ok := x.xxx_hidden_Config.(*externalBackup_S3)
 	return ok
 }
 
@@ -303,7 +294,7 @@ func (x *ExternalBackup) HasGcs() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*ExternalBackup_Gcs)
+	_, ok := x.xxx_hidden_Config.(*externalBackup_Gcs)
 	return ok
 }
 
@@ -311,7 +302,7 @@ func (x *ExternalBackup) HasS3Compatible() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*ExternalBackup_S3Compatible)
+	_, ok := x.xxx_hidden_Config.(*externalBackup_S3Compatible)
 	return ok
 }
 
@@ -319,7 +310,7 @@ func (x *ExternalBackup) HasIncludeCertificatesOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.IncludeCertificatesOpt != nil
+	return x.xxx_hidden_IncludeCertificatesOpt != nil
 }
 
 // Deprecated: Marked as deprecated in storage/external_backup.proto.
@@ -327,60 +318,64 @@ func (x *ExternalBackup) HasIncludeCertificates() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.IncludeCertificatesOpt.(*ExternalBackup_IncludeCertificates)
+	_, ok := x.xxx_hidden_IncludeCertificatesOpt.(*externalBackup_IncludeCertificates)
 	return ok
 }
 
 func (x *ExternalBackup) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ExternalBackup) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ExternalBackup) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Type = nil
 }
 
 func (x *ExternalBackup) ClearSchedule() {
-	x.Schedule = nil
+	x.xxx_hidden_Schedule = nil
 }
 
 func (x *ExternalBackup) ClearBackupsToKeep() {
-	x.BackupsToKeep = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_BackupsToKeep = 0
 }
 
 func (x *ExternalBackup) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 func (x *ExternalBackup) ClearS3() {
-	if _, ok := x.Config.(*ExternalBackup_S3); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*externalBackup_S3); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *ExternalBackup) ClearGcs() {
-	if _, ok := x.Config.(*ExternalBackup_Gcs); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*externalBackup_Gcs); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *ExternalBackup) ClearS3Compatible() {
-	if _, ok := x.Config.(*ExternalBackup_S3Compatible); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*externalBackup_S3Compatible); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *ExternalBackup) ClearIncludeCertificatesOpt() {
-	x.IncludeCertificatesOpt = nil
+	x.xxx_hidden_IncludeCertificatesOpt = nil
 }
 
 // Deprecated: Marked as deprecated in storage/external_backup.proto.
 func (x *ExternalBackup) ClearIncludeCertificates() {
-	if _, ok := x.IncludeCertificatesOpt.(*ExternalBackup_IncludeCertificates); ok {
-		x.IncludeCertificatesOpt = nil
+	if _, ok := x.xxx_hidden_IncludeCertificatesOpt.(*externalBackup_IncludeCertificates); ok {
+		x.xxx_hidden_IncludeCertificatesOpt = nil
 	}
 }
 
@@ -393,12 +388,12 @@ func (x *ExternalBackup) WhichConfig() case_ExternalBackup_Config {
 	if x == nil {
 		return ExternalBackup_Config_not_set_case
 	}
-	switch x.Config.(type) {
-	case *ExternalBackup_S3:
+	switch x.xxx_hidden_Config.(type) {
+	case *externalBackup_S3:
 		return ExternalBackup_S3_case
-	case *ExternalBackup_Gcs:
+	case *externalBackup_Gcs:
 		return ExternalBackup_Gcs_case
-	case *ExternalBackup_S3Compatible:
+	case *externalBackup_S3Compatible:
 		return ExternalBackup_S3Compatible_case
 	default:
 		return ExternalBackup_Config_not_set_case
@@ -412,8 +407,8 @@ func (x *ExternalBackup) WhichIncludeCertificatesOpt() case_ExternalBackup_Inclu
 	if x == nil {
 		return ExternalBackup_IncludeCertificatesOpt_not_set_case
 	}
-	switch x.IncludeCertificatesOpt.(type) {
-	case *ExternalBackup_IncludeCertificates:
+	switch x.xxx_hidden_IncludeCertificatesOpt.(type) {
+	case *externalBackup_IncludeCertificates:
 		return ExternalBackup_IncludeCertificates_case
 	default:
 		return ExternalBackup_IncludeCertificatesOpt_not_set_case
@@ -428,37 +423,49 @@ type ExternalBackup_builder struct {
 	Type          *string
 	Schedule      *Schedule
 	BackupsToKeep *int32
-	// Fields of oneof Config:
+	// Fields of oneof xxx_hidden_Config:
 	S3           *S3Config
 	Gcs          *GCSConfig
 	S3Compatible *S3Compatible
-	// -- end of Config
-	// Fields of oneof IncludeCertificatesOpt:
+	// -- end of xxx_hidden_Config
+	// Fields of oneof xxx_hidden_IncludeCertificatesOpt:
 	// Deprecated: Marked as deprecated in storage/external_backup.proto.
 	IncludeCertificates *bool
-	// -- end of IncludeCertificatesOpt
+	// -- end of xxx_hidden_IncludeCertificatesOpt
 }
 
 func (b0 ExternalBackup_builder) Build() *ExternalBackup {
 	m0 := &ExternalBackup{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Type = b.Type
-	x.Schedule = b.Schedule
-	x.BackupsToKeep = b.BackupsToKeep
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_Type = b.Type
+	}
+	x.xxx_hidden_Schedule = b.Schedule
+	if b.BackupsToKeep != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_BackupsToKeep = *b.BackupsToKeep
+	}
 	if b.S3 != nil {
-		x.Config = &ExternalBackup_S3{b.S3}
+		x.xxx_hidden_Config = &externalBackup_S3{b.S3}
 	}
 	if b.Gcs != nil {
-		x.Config = &ExternalBackup_Gcs{b.Gcs}
+		x.xxx_hidden_Config = &externalBackup_Gcs{b.Gcs}
 	}
 	if b.S3Compatible != nil {
-		x.Config = &ExternalBackup_S3Compatible{b.S3Compatible}
+		x.xxx_hidden_Config = &externalBackup_S3Compatible{b.S3Compatible}
 	}
 	if b.IncludeCertificates != nil {
-		x.IncludeCertificatesOpt = &ExternalBackup_IncludeCertificates{*b.IncludeCertificates}
+		x.xxx_hidden_IncludeCertificatesOpt = &externalBackup_IncludeCertificates{*b.IncludeCertificates}
 	}
 	return m0
 }
@@ -487,49 +494,49 @@ type isExternalBackup_Config interface {
 	isExternalBackup_Config()
 }
 
-type ExternalBackup_S3 struct {
+type externalBackup_S3 struct {
 	S3 *S3Config `protobuf:"bytes,6,opt,name=s3,oneof"`
 }
 
-type ExternalBackup_Gcs struct {
+type externalBackup_Gcs struct {
 	Gcs *GCSConfig `protobuf:"bytes,7,opt,name=gcs,oneof"`
 }
 
-type ExternalBackup_S3Compatible struct {
+type externalBackup_S3Compatible struct {
 	S3Compatible *S3Compatible `protobuf:"bytes,9,opt,name=s3compatible,oneof"`
 }
 
-func (*ExternalBackup_S3) isExternalBackup_Config() {}
+func (*externalBackup_S3) isExternalBackup_Config() {}
 
-func (*ExternalBackup_Gcs) isExternalBackup_Config() {}
+func (*externalBackup_Gcs) isExternalBackup_Config() {}
 
-func (*ExternalBackup_S3Compatible) isExternalBackup_Config() {}
+func (*externalBackup_S3Compatible) isExternalBackup_Config() {}
 
 type isExternalBackup_IncludeCertificatesOpt interface {
 	isExternalBackup_IncludeCertificatesOpt()
 }
 
-type ExternalBackup_IncludeCertificates struct {
+type externalBackup_IncludeCertificates struct {
 	// Deprecated: Marked as deprecated in storage/external_backup.proto.
 	IncludeCertificates bool `protobuf:"varint,8,opt,name=include_certificates,json=includeCertificates,oneof"`
 }
 
-func (*ExternalBackup_IncludeCertificates) isExternalBackup_IncludeCertificatesOpt() {}
+func (*externalBackup_IncludeCertificates) isExternalBackup_IncludeCertificatesOpt() {}
 
 // S3Config configures the backup integration with AWS S3.
 type S3Config struct {
-	state  protoimpl.MessageState `protogen:"hybrid.v1"`
-	Bucket *string                `protobuf:"bytes,1,opt,name=bucket" json:"bucket,omitempty"`
-	UseIam *bool                  `protobuf:"varint,2,opt,name=use_iam,json=useIam" json:"use_iam,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	// The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.
-	AccessKeyId *string `protobuf:"bytes,3,opt,name=access_key_id,json=accessKeyId" json:"access_key_id,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	// The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.
-	SecretAccessKey *string `protobuf:"bytes,4,opt,name=secret_access_key,json=secretAccessKey" json:"secret_access_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	Region          *string `protobuf:"bytes,5,opt,name=region" json:"region,omitempty"`
-	ObjectPrefix    *string `protobuf:"bytes,6,opt,name=object_prefix,json=objectPrefix" json:"object_prefix,omitempty"`
-	Endpoint        *string `protobuf:"bytes,7,opt,name=endpoint" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Bucket          *string                `protobuf:"bytes,1,opt,name=bucket"`
+	xxx_hidden_UseIam          bool                   `protobuf:"varint,2,opt,name=use_iam,json=useIam"`
+	xxx_hidden_AccessKeyId     *string                `protobuf:"bytes,3,opt,name=access_key_id,json=accessKeyId"`
+	xxx_hidden_SecretAccessKey *string                `protobuf:"bytes,4,opt,name=secret_access_key,json=secretAccessKey"`
+	xxx_hidden_Region          *string                `protobuf:"bytes,5,opt,name=region"`
+	xxx_hidden_ObjectPrefix    *string                `protobuf:"bytes,6,opt,name=object_prefix,json=objectPrefix"`
+	xxx_hidden_Endpoint        *string                `protobuf:"bytes,7,opt,name=endpoint"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *S3Config) Reset() {
@@ -558,157 +565,189 @@ func (x *S3Config) ProtoReflect() protoreflect.Message {
 }
 
 func (x *S3Config) GetBucket() string {
-	if x != nil && x.Bucket != nil {
-		return *x.Bucket
+	if x != nil {
+		if x.xxx_hidden_Bucket != nil {
+			return *x.xxx_hidden_Bucket
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Config) GetUseIam() bool {
-	if x != nil && x.UseIam != nil {
-		return *x.UseIam
+	if x != nil {
+		return x.xxx_hidden_UseIam
 	}
 	return false
 }
 
 func (x *S3Config) GetAccessKeyId() string {
-	if x != nil && x.AccessKeyId != nil {
-		return *x.AccessKeyId
+	if x != nil {
+		if x.xxx_hidden_AccessKeyId != nil {
+			return *x.xxx_hidden_AccessKeyId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Config) GetSecretAccessKey() string {
-	if x != nil && x.SecretAccessKey != nil {
-		return *x.SecretAccessKey
+	if x != nil {
+		if x.xxx_hidden_SecretAccessKey != nil {
+			return *x.xxx_hidden_SecretAccessKey
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Config) GetRegion() string {
-	if x != nil && x.Region != nil {
-		return *x.Region
+	if x != nil {
+		if x.xxx_hidden_Region != nil {
+			return *x.xxx_hidden_Region
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Config) GetObjectPrefix() string {
-	if x != nil && x.ObjectPrefix != nil {
-		return *x.ObjectPrefix
+	if x != nil {
+		if x.xxx_hidden_ObjectPrefix != nil {
+			return *x.xxx_hidden_ObjectPrefix
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Config) GetEndpoint() string {
-	if x != nil && x.Endpoint != nil {
-		return *x.Endpoint
+	if x != nil {
+		if x.xxx_hidden_Endpoint != nil {
+			return *x.xxx_hidden_Endpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Config) SetBucket(v string) {
-	x.Bucket = &v
+	x.xxx_hidden_Bucket = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *S3Config) SetUseIam(v bool) {
-	x.UseIam = &v
+	x.xxx_hidden_UseIam = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *S3Config) SetAccessKeyId(v string) {
-	x.AccessKeyId = &v
+	x.xxx_hidden_AccessKeyId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *S3Config) SetSecretAccessKey(v string) {
-	x.SecretAccessKey = &v
+	x.xxx_hidden_SecretAccessKey = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *S3Config) SetRegion(v string) {
-	x.Region = &v
+	x.xxx_hidden_Region = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *S3Config) SetObjectPrefix(v string) {
-	x.ObjectPrefix = &v
+	x.xxx_hidden_ObjectPrefix = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 func (x *S3Config) SetEndpoint(v string) {
-	x.Endpoint = &v
+	x.xxx_hidden_Endpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *S3Config) HasBucket() bool {
 	if x == nil {
 		return false
 	}
-	return x.Bucket != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *S3Config) HasUseIam() bool {
 	if x == nil {
 		return false
 	}
-	return x.UseIam != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *S3Config) HasAccessKeyId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AccessKeyId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *S3Config) HasSecretAccessKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.SecretAccessKey != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *S3Config) HasRegion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Region != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *S3Config) HasObjectPrefix() bool {
 	if x == nil {
 		return false
 	}
-	return x.ObjectPrefix != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *S3Config) HasEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.Endpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *S3Config) ClearBucket() {
-	x.Bucket = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Bucket = nil
 }
 
 func (x *S3Config) ClearUseIam() {
-	x.UseIam = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_UseIam = false
 }
 
 func (x *S3Config) ClearAccessKeyId() {
-	x.AccessKeyId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_AccessKeyId = nil
 }
 
 func (x *S3Config) ClearSecretAccessKey() {
-	x.SecretAccessKey = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_SecretAccessKey = nil
 }
 
 func (x *S3Config) ClearRegion() {
-	x.Region = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Region = nil
 }
 
 func (x *S3Config) ClearObjectPrefix() {
-	x.ObjectPrefix = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_ObjectPrefix = nil
 }
 
 func (x *S3Config) ClearEndpoint() {
-	x.Endpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_Endpoint = nil
 }
 
 type S3Config_builder struct {
@@ -729,34 +768,52 @@ func (b0 S3Config_builder) Build() *S3Config {
 	m0 := &S3Config{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Bucket = b.Bucket
-	x.UseIam = b.UseIam
-	x.AccessKeyId = b.AccessKeyId
-	x.SecretAccessKey = b.SecretAccessKey
-	x.Region = b.Region
-	x.ObjectPrefix = b.ObjectPrefix
-	x.Endpoint = b.Endpoint
+	if b.Bucket != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Bucket = b.Bucket
+	}
+	if b.UseIam != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_UseIam = *b.UseIam
+	}
+	if b.AccessKeyId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_AccessKeyId = b.AccessKeyId
+	}
+	if b.SecretAccessKey != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_SecretAccessKey = b.SecretAccessKey
+	}
+	if b.Region != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_Region = b.Region
+	}
+	if b.ObjectPrefix != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_ObjectPrefix = b.ObjectPrefix
+	}
+	if b.Endpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_Endpoint = b.Endpoint
+	}
 	return m0
 }
 
 // S3Compatible configures the backup integration with an S3 compatible storage provider.
 // S3 compatible is intended for non-AWS providers. For AWS S3 use S3Config.
 type S3Compatible struct {
-	state  protoimpl.MessageState `protogen:"hybrid.v1"`
-	Bucket *string                `protobuf:"bytes,1,opt,name=bucket" json:"bucket,omitempty"`
-	// The access key ID to use. The server will mask the value of this credential in responses and logs.
-	AccessKeyId *string `protobuf:"bytes,2,opt,name=access_key_id,json=accessKeyId" json:"access_key_id,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	// The secret access key to use. The server will mask the value of this credential in responses and logs.
-	SecretAccessKey *string `protobuf:"bytes,3,opt,name=secret_access_key,json=secretAccessKey" json:"secret_access_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	Region          *string `protobuf:"bytes,4,opt,name=region" json:"region,omitempty"`
-	ObjectPrefix    *string `protobuf:"bytes,5,opt,name=object_prefix,json=objectPrefix" json:"object_prefix,omitempty"`
-	Endpoint        *string `protobuf:"bytes,6,opt,name=endpoint" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	// The URL style defines the bucket URL addressing.
-	// Virtual-hosted-style buckets are addressed as `https://<bucket>.<endpoint>'
-	// while path-style buckets are addressed as `https://<endpoint>/<bucket>`.
-	UrlStyle      *S3URLStyle `protobuf:"varint,7,opt,name=url_style,json=urlStyle,enum=storage.S3URLStyle" json:"url_style,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Bucket          *string                `protobuf:"bytes,1,opt,name=bucket"`
+	xxx_hidden_AccessKeyId     *string                `protobuf:"bytes,2,opt,name=access_key_id,json=accessKeyId"`
+	xxx_hidden_SecretAccessKey *string                `protobuf:"bytes,3,opt,name=secret_access_key,json=secretAccessKey"`
+	xxx_hidden_Region          *string                `protobuf:"bytes,4,opt,name=region"`
+	xxx_hidden_ObjectPrefix    *string                `protobuf:"bytes,5,opt,name=object_prefix,json=objectPrefix"`
+	xxx_hidden_Endpoint        *string                `protobuf:"bytes,6,opt,name=endpoint"`
+	xxx_hidden_UrlStyle        S3URLStyle             `protobuf:"varint,7,opt,name=url_style,json=urlStyle,enum=storage.S3URLStyle"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *S3Compatible) Reset() {
@@ -785,157 +842,191 @@ func (x *S3Compatible) ProtoReflect() protoreflect.Message {
 }
 
 func (x *S3Compatible) GetBucket() string {
-	if x != nil && x.Bucket != nil {
-		return *x.Bucket
+	if x != nil {
+		if x.xxx_hidden_Bucket != nil {
+			return *x.xxx_hidden_Bucket
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Compatible) GetAccessKeyId() string {
-	if x != nil && x.AccessKeyId != nil {
-		return *x.AccessKeyId
+	if x != nil {
+		if x.xxx_hidden_AccessKeyId != nil {
+			return *x.xxx_hidden_AccessKeyId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Compatible) GetSecretAccessKey() string {
-	if x != nil && x.SecretAccessKey != nil {
-		return *x.SecretAccessKey
+	if x != nil {
+		if x.xxx_hidden_SecretAccessKey != nil {
+			return *x.xxx_hidden_SecretAccessKey
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Compatible) GetRegion() string {
-	if x != nil && x.Region != nil {
-		return *x.Region
+	if x != nil {
+		if x.xxx_hidden_Region != nil {
+			return *x.xxx_hidden_Region
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Compatible) GetObjectPrefix() string {
-	if x != nil && x.ObjectPrefix != nil {
-		return *x.ObjectPrefix
+	if x != nil {
+		if x.xxx_hidden_ObjectPrefix != nil {
+			return *x.xxx_hidden_ObjectPrefix
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Compatible) GetEndpoint() string {
-	if x != nil && x.Endpoint != nil {
-		return *x.Endpoint
+	if x != nil {
+		if x.xxx_hidden_Endpoint != nil {
+			return *x.xxx_hidden_Endpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *S3Compatible) GetUrlStyle() S3URLStyle {
-	if x != nil && x.UrlStyle != nil {
-		return *x.UrlStyle
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			return x.xxx_hidden_UrlStyle
+		}
 	}
 	return S3URLStyle_S3_URL_STYLE_UNSPECIFIED
 }
 
 func (x *S3Compatible) SetBucket(v string) {
-	x.Bucket = &v
+	x.xxx_hidden_Bucket = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *S3Compatible) SetAccessKeyId(v string) {
-	x.AccessKeyId = &v
+	x.xxx_hidden_AccessKeyId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *S3Compatible) SetSecretAccessKey(v string) {
-	x.SecretAccessKey = &v
+	x.xxx_hidden_SecretAccessKey = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *S3Compatible) SetRegion(v string) {
-	x.Region = &v
+	x.xxx_hidden_Region = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *S3Compatible) SetObjectPrefix(v string) {
-	x.ObjectPrefix = &v
+	x.xxx_hidden_ObjectPrefix = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *S3Compatible) SetEndpoint(v string) {
-	x.Endpoint = &v
+	x.xxx_hidden_Endpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 func (x *S3Compatible) SetUrlStyle(v S3URLStyle) {
-	x.UrlStyle = &v
+	x.xxx_hidden_UrlStyle = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *S3Compatible) HasBucket() bool {
 	if x == nil {
 		return false
 	}
-	return x.Bucket != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *S3Compatible) HasAccessKeyId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AccessKeyId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *S3Compatible) HasSecretAccessKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.SecretAccessKey != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *S3Compatible) HasRegion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Region != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *S3Compatible) HasObjectPrefix() bool {
 	if x == nil {
 		return false
 	}
-	return x.ObjectPrefix != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *S3Compatible) HasEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.Endpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *S3Compatible) HasUrlStyle() bool {
 	if x == nil {
 		return false
 	}
-	return x.UrlStyle != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *S3Compatible) ClearBucket() {
-	x.Bucket = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Bucket = nil
 }
 
 func (x *S3Compatible) ClearAccessKeyId() {
-	x.AccessKeyId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_AccessKeyId = nil
 }
 
 func (x *S3Compatible) ClearSecretAccessKey() {
-	x.SecretAccessKey = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_SecretAccessKey = nil
 }
 
 func (x *S3Compatible) ClearRegion() {
-	x.Region = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Region = nil
 }
 
 func (x *S3Compatible) ClearObjectPrefix() {
-	x.ObjectPrefix = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_ObjectPrefix = nil
 }
 
 func (x *S3Compatible) ClearEndpoint() {
-	x.Endpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Endpoint = nil
 }
 
 func (x *S3Compatible) ClearUrlStyle() {
-	x.UrlStyle = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_UrlStyle = S3URLStyle_S3_URL_STYLE_UNSPECIFIED
 }
 
 type S3Compatible_builder struct {
@@ -959,25 +1050,47 @@ func (b0 S3Compatible_builder) Build() *S3Compatible {
 	m0 := &S3Compatible{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Bucket = b.Bucket
-	x.AccessKeyId = b.AccessKeyId
-	x.SecretAccessKey = b.SecretAccessKey
-	x.Region = b.Region
-	x.ObjectPrefix = b.ObjectPrefix
-	x.Endpoint = b.Endpoint
-	x.UrlStyle = b.UrlStyle
+	if b.Bucket != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Bucket = b.Bucket
+	}
+	if b.AccessKeyId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_AccessKeyId = b.AccessKeyId
+	}
+	if b.SecretAccessKey != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_SecretAccessKey = b.SecretAccessKey
+	}
+	if b.Region != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_Region = b.Region
+	}
+	if b.ObjectPrefix != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_ObjectPrefix = b.ObjectPrefix
+	}
+	if b.Endpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_Endpoint = b.Endpoint
+	}
+	if b.UrlStyle != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_UrlStyle = *b.UrlStyle
+	}
 	return m0
 }
 
 type GCSConfig struct {
-	state  protoimpl.MessageState `protogen:"hybrid.v1"`
-	Bucket *string                `protobuf:"bytes,1,opt,name=bucket" json:"bucket,omitempty"`
-	// The service account for the storage integration. The server will mask the value of this credential in responses and logs.
-	ServiceAccount *string `protobuf:"bytes,2,opt,name=service_account,json=serviceAccount" json:"service_account,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	ObjectPrefix   *string `protobuf:"bytes,3,opt,name=object_prefix,json=objectPrefix" json:"object_prefix,omitempty"`
-	UseWorkloadId  *bool   `protobuf:"varint,4,opt,name=use_workload_id,json=useWorkloadId" json:"use_workload_id,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Bucket         *string                `protobuf:"bytes,1,opt,name=bucket"`
+	xxx_hidden_ServiceAccount *string                `protobuf:"bytes,2,opt,name=service_account,json=serviceAccount"`
+	xxx_hidden_ObjectPrefix   *string                `protobuf:"bytes,3,opt,name=object_prefix,json=objectPrefix"`
+	xxx_hidden_UseWorkloadId  bool                   `protobuf:"varint,4,opt,name=use_workload_id,json=useWorkloadId"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *GCSConfig) Reset() {
@@ -1006,91 +1119,108 @@ func (x *GCSConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GCSConfig) GetBucket() string {
-	if x != nil && x.Bucket != nil {
-		return *x.Bucket
+	if x != nil {
+		if x.xxx_hidden_Bucket != nil {
+			return *x.xxx_hidden_Bucket
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GCSConfig) GetServiceAccount() string {
-	if x != nil && x.ServiceAccount != nil {
-		return *x.ServiceAccount
+	if x != nil {
+		if x.xxx_hidden_ServiceAccount != nil {
+			return *x.xxx_hidden_ServiceAccount
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GCSConfig) GetObjectPrefix() string {
-	if x != nil && x.ObjectPrefix != nil {
-		return *x.ObjectPrefix
+	if x != nil {
+		if x.xxx_hidden_ObjectPrefix != nil {
+			return *x.xxx_hidden_ObjectPrefix
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GCSConfig) GetUseWorkloadId() bool {
-	if x != nil && x.UseWorkloadId != nil {
-		return *x.UseWorkloadId
+	if x != nil {
+		return x.xxx_hidden_UseWorkloadId
 	}
 	return false
 }
 
 func (x *GCSConfig) SetBucket(v string) {
-	x.Bucket = &v
+	x.xxx_hidden_Bucket = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *GCSConfig) SetServiceAccount(v string) {
-	x.ServiceAccount = &v
+	x.xxx_hidden_ServiceAccount = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *GCSConfig) SetObjectPrefix(v string) {
-	x.ObjectPrefix = &v
+	x.xxx_hidden_ObjectPrefix = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *GCSConfig) SetUseWorkloadId(v bool) {
-	x.UseWorkloadId = &v
+	x.xxx_hidden_UseWorkloadId = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *GCSConfig) HasBucket() bool {
 	if x == nil {
 		return false
 	}
-	return x.Bucket != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GCSConfig) HasServiceAccount() bool {
 	if x == nil {
 		return false
 	}
-	return x.ServiceAccount != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GCSConfig) HasObjectPrefix() bool {
 	if x == nil {
 		return false
 	}
-	return x.ObjectPrefix != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *GCSConfig) HasUseWorkloadId() bool {
 	if x == nil {
 		return false
 	}
-	return x.UseWorkloadId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *GCSConfig) ClearBucket() {
-	x.Bucket = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Bucket = nil
 }
 
 func (x *GCSConfig) ClearServiceAccount() {
-	x.ServiceAccount = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ServiceAccount = nil
 }
 
 func (x *GCSConfig) ClearObjectPrefix() {
-	x.ObjectPrefix = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ObjectPrefix = nil
 }
 
 func (x *GCSConfig) ClearUseWorkloadId() {
-	x.UseWorkloadId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_UseWorkloadId = false
 }
 
 type GCSConfig_builder struct {
@@ -1107,10 +1237,22 @@ func (b0 GCSConfig_builder) Build() *GCSConfig {
 	m0 := &GCSConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Bucket = b.Bucket
-	x.ServiceAccount = b.ServiceAccount
-	x.ObjectPrefix = b.ObjectPrefix
-	x.UseWorkloadId = b.UseWorkloadId
+	if b.Bucket != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Bucket = b.Bucket
+	}
+	if b.ServiceAccount != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_ServiceAccount = b.ServiceAccount
+	}
+	if b.ObjectPrefix != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_ObjectPrefix = b.ObjectPrefix
+	}
+	if b.UseWorkloadId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_UseWorkloadId = *b.UseWorkloadId
+	}
 	return m0
 }
 
@@ -1157,7 +1299,7 @@ const file_storage_external_backup_proto_rawDesc = "" +
 	"\x18S3_URL_STYLE_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bS3_URL_STYLE_VIRTUAL_HOSTED\x10\x01\x12\x15\n" +
 	"\x11S3_URL_STYLE_PATH\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_external_backup_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_external_backup_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
@@ -1189,10 +1331,10 @@ func file_storage_external_backup_proto_init() {
 	}
 	file_storage_schedule_proto_init()
 	file_storage_external_backup_proto_msgTypes[0].OneofWrappers = []any{
-		(*ExternalBackup_S3)(nil),
-		(*ExternalBackup_Gcs)(nil),
-		(*ExternalBackup_S3Compatible)(nil),
-		(*ExternalBackup_IncludeCertificates)(nil),
+		(*externalBackup_S3)(nil),
+		(*externalBackup_Gcs)(nil),
+		(*externalBackup_S3Compatible)(nil),
+		(*externalBackup_IncludeCertificates)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

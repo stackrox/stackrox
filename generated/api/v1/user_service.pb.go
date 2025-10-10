@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/user_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -27,10 +25,10 @@ const (
 
 // Next Tag: 2
 type GetUsersResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Users         []*storage.User        `protobuf:"bytes,1,rep,name=users" json:"users,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Users *[]*storage.User       `protobuf:"bytes,1,rep,name=users"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GetUsersResponse) Reset() {
@@ -60,13 +58,15 @@ func (x *GetUsersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUsersResponse) GetUsers() []*storage.User {
 	if x != nil {
-		return x.Users
+		if x.xxx_hidden_Users != nil {
+			return *x.xxx_hidden_Users
+		}
 	}
 	return nil
 }
 
 func (x *GetUsersResponse) SetUsers(v []*storage.User) {
-	x.Users = v
+	x.xxx_hidden_Users = &v
 }
 
 type GetUsersResponse_builder struct {
@@ -79,19 +79,21 @@ func (b0 GetUsersResponse_builder) Build() *GetUsersResponse {
 	m0 := &GetUsersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Users = b.Users
+	x.xxx_hidden_Users = &b.Users
 	return m0
 }
 
 // UserAttributeTuple descript the auth:key:value tuple that decides group membership.
 // Next Tag: 4
 type UserAttributeTuple struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	AuthProviderId *string                `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId" json:"auth_provider_id,omitempty"`
-	Key            *string                `protobuf:"bytes,2,opt,name=key" json:"key,omitempty"`
-	Value          *string                `protobuf:"bytes,3,opt,name=value" json:"value,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AuthProviderId *string                `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId"`
+	xxx_hidden_Key            *string                `protobuf:"bytes,2,opt,name=key"`
+	xxx_hidden_Value          *string                `protobuf:"bytes,3,opt,name=value"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *UserAttributeTuple) Reset() {
@@ -120,69 +122,84 @@ func (x *UserAttributeTuple) ProtoReflect() protoreflect.Message {
 }
 
 func (x *UserAttributeTuple) GetAuthProviderId() string {
-	if x != nil && x.AuthProviderId != nil {
-		return *x.AuthProviderId
+	if x != nil {
+		if x.xxx_hidden_AuthProviderId != nil {
+			return *x.xxx_hidden_AuthProviderId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UserAttributeTuple) GetKey() string {
-	if x != nil && x.Key != nil {
-		return *x.Key
+	if x != nil {
+		if x.xxx_hidden_Key != nil {
+			return *x.xxx_hidden_Key
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UserAttributeTuple) GetValue() string {
-	if x != nil && x.Value != nil {
-		return *x.Value
+	if x != nil {
+		if x.xxx_hidden_Value != nil {
+			return *x.xxx_hidden_Value
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UserAttributeTuple) SetAuthProviderId(v string) {
-	x.AuthProviderId = &v
+	x.xxx_hidden_AuthProviderId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *UserAttributeTuple) SetKey(v string) {
-	x.Key = &v
+	x.xxx_hidden_Key = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *UserAttributeTuple) SetValue(v string) {
-	x.Value = &v
+	x.xxx_hidden_Value = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *UserAttributeTuple) HasAuthProviderId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AuthProviderId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UserAttributeTuple) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.Key != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UserAttributeTuple) HasValue() bool {
 	if x == nil {
 		return false
 	}
-	return x.Value != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *UserAttributeTuple) ClearAuthProviderId() {
-	x.AuthProviderId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_AuthProviderId = nil
 }
 
 func (x *UserAttributeTuple) ClearKey() {
-	x.Key = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Key = nil
 }
 
 func (x *UserAttributeTuple) ClearValue() {
-	x.Value = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Value = nil
 }
 
 type UserAttributeTuple_builder struct {
@@ -197,18 +214,27 @@ func (b0 UserAttributeTuple_builder) Build() *UserAttributeTuple {
 	m0 := &UserAttributeTuple{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AuthProviderId = b.AuthProviderId
-	x.Key = b.Key
-	x.Value = b.Value
+	if b.AuthProviderId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_AuthProviderId = b.AuthProviderId
+	}
+	if b.Key != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Key = b.Key
+	}
+	if b.Value != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Value = b.Value
+	}
 	return m0
 }
 
 // Next Tag: 2
 type GetUsersAttributesResponse struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	UsersAttributes []*UserAttributeTuple  `protobuf:"bytes,1,rep,name=users_attributes,json=usersAttributes" json:"users_attributes,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UsersAttributes *[]*UserAttributeTuple `protobuf:"bytes,1,rep,name=users_attributes,json=usersAttributes"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetUsersAttributesResponse) Reset() {
@@ -238,13 +264,15 @@ func (x *GetUsersAttributesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUsersAttributesResponse) GetUsersAttributes() []*UserAttributeTuple {
 	if x != nil {
-		return x.UsersAttributes
+		if x.xxx_hidden_UsersAttributes != nil {
+			return *x.xxx_hidden_UsersAttributes
+		}
 	}
 	return nil
 }
 
 func (x *GetUsersAttributesResponse) SetUsersAttributes(v []*UserAttributeTuple) {
-	x.UsersAttributes = v
+	x.xxx_hidden_UsersAttributes = &v
 }
 
 type GetUsersAttributesResponse_builder struct {
@@ -257,7 +285,7 @@ func (b0 GetUsersAttributesResponse_builder) Build() *GetUsersAttributesResponse
 	m0 := &GetUsersAttributesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.UsersAttributes = b.UsersAttributes
+	x.xxx_hidden_UsersAttributes = &b.UsersAttributes
 	return m0
 }
 
@@ -278,7 +306,7 @@ const file_api_v1_user_service_proto_rawDesc = "" +
 	"\bGetUsers\x12\t.v1.Empty\x1a\x14.v1.GetUsersResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/users\x12B\n" +
 	"\aGetUser\x12\x10.v1.ResourceByID\x1a\r.storage.User\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/users/{id}\x12\\\n" +
 	"\x12GetUsersAttributes\x12\t.v1.Empty\x1a\x1e.v1.GetUsersAttributesResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/usersattributesB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_user_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_api_v1_user_service_proto_goTypes = []any{

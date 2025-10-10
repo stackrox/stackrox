@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v2/search_query.proto
 
-//go:build !protoopaque
-
 package v2
 
 import (
@@ -30,11 +28,13 @@ const (
 // "Deployment:central,sensor+Namespace:stackrox"
 // RawQuery is used in ListAPIs to search for a particular object.
 type RawQuery struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Query         *string                `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,2,opt,name=pagination" json:"pagination,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,1,opt,name=query"`
+	xxx_hidden_Pagination  *Pagination            `protobuf:"bytes,2,opt,name=pagination"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *RawQuery) Reset() {
@@ -63,47 +63,52 @@ func (x *RawQuery) ProtoReflect() protoreflect.Message {
 }
 
 func (x *RawQuery) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *RawQuery) GetPagination() *Pagination {
 	if x != nil {
-		return x.Pagination
+		return x.xxx_hidden_Pagination
 	}
 	return nil
 }
 
 func (x *RawQuery) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *RawQuery) SetPagination(v *Pagination) {
-	x.Pagination = v
+	x.xxx_hidden_Pagination = v
 }
 
 func (x *RawQuery) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *RawQuery) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pagination != nil
+	return x.xxx_hidden_Pagination != nil
 }
 
 func (x *RawQuery) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Query = nil
 }
 
 func (x *RawQuery) ClearPagination() {
-	x.Pagination = nil
+	x.xxx_hidden_Pagination = nil
 }
 
 type RawQuery_builder struct {
@@ -117,8 +122,11 @@ func (b0 RawQuery_builder) Build() *RawQuery {
 	m0 := &RawQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Query = b.Query
-	x.Pagination = b.Pagination
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Query = b.Query
+	}
+	x.xxx_hidden_Pagination = b.Pagination
 	return m0
 }
 
@@ -132,7 +140,7 @@ const file_api_v2_search_query_proto_rawDesc = "" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2\x0e.v2.PaginationR\n" +
 	"paginationB/\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_api_v2_search_query_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v2_search_query_proto_goTypes = []any{

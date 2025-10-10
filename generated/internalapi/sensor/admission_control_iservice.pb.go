@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/admission_control_iservice.proto
 
-//go:build !protoopaque
-
 package sensor
 
 import (
@@ -25,7 +23,7 @@ const (
 )
 
 type MsgFromAdmissionControl struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -68,14 +66,10 @@ func (b0 MsgFromAdmissionControl_builder) Build() *MsgFromAdmissionControl {
 }
 
 type MsgToAdmissionControl struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Msg:
-	//
-	//	*MsgToAdmissionControl_SettingsPush
-	//	*MsgToAdmissionControl_UpdateResourceRequest
-	Msg           isMsgToAdmissionControl_Msg `protobuf_oneof:"msg"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Msg isMsgToAdmissionControl_Msg `protobuf_oneof:"msg"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *MsgToAdmissionControl) Reset() {
@@ -103,16 +97,9 @@ func (x *MsgToAdmissionControl) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *MsgToAdmissionControl) GetMsg() isMsgToAdmissionControl_Msg {
-	if x != nil {
-		return x.Msg
-	}
-	return nil
-}
-
 func (x *MsgToAdmissionControl) GetSettingsPush() *AdmissionControlSettings {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToAdmissionControl_SettingsPush); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToAdmissionControl_SettingsPush); ok {
 			return x.SettingsPush
 		}
 	}
@@ -121,7 +108,7 @@ func (x *MsgToAdmissionControl) GetSettingsPush() *AdmissionControlSettings {
 
 func (x *MsgToAdmissionControl) GetUpdateResourceRequest() *AdmCtrlUpdateResourceRequest {
 	if x != nil {
-		if x, ok := x.Msg.(*MsgToAdmissionControl_UpdateResourceRequest); ok {
+		if x, ok := x.xxx_hidden_Msg.(*msgToAdmissionControl_UpdateResourceRequest); ok {
 			return x.UpdateResourceRequest
 		}
 	}
@@ -130,32 +117,32 @@ func (x *MsgToAdmissionControl) GetUpdateResourceRequest() *AdmCtrlUpdateResourc
 
 func (x *MsgToAdmissionControl) SetSettingsPush(v *AdmissionControlSettings) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToAdmissionControl_SettingsPush{v}
+	x.xxx_hidden_Msg = &msgToAdmissionControl_SettingsPush{v}
 }
 
 func (x *MsgToAdmissionControl) SetUpdateResourceRequest(v *AdmCtrlUpdateResourceRequest) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &MsgToAdmissionControl_UpdateResourceRequest{v}
+	x.xxx_hidden_Msg = &msgToAdmissionControl_UpdateResourceRequest{v}
 }
 
 func (x *MsgToAdmissionControl) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.Msg != nil
+	return x.xxx_hidden_Msg != nil
 }
 
 func (x *MsgToAdmissionControl) HasSettingsPush() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToAdmissionControl_SettingsPush)
+	_, ok := x.xxx_hidden_Msg.(*msgToAdmissionControl_SettingsPush)
 	return ok
 }
 
@@ -163,23 +150,23 @@ func (x *MsgToAdmissionControl) HasUpdateResourceRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*MsgToAdmissionControl_UpdateResourceRequest)
+	_, ok := x.xxx_hidden_Msg.(*msgToAdmissionControl_UpdateResourceRequest)
 	return ok
 }
 
 func (x *MsgToAdmissionControl) ClearMsg() {
-	x.Msg = nil
+	x.xxx_hidden_Msg = nil
 }
 
 func (x *MsgToAdmissionControl) ClearSettingsPush() {
-	if _, ok := x.Msg.(*MsgToAdmissionControl_SettingsPush); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToAdmissionControl_SettingsPush); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *MsgToAdmissionControl) ClearUpdateResourceRequest() {
-	if _, ok := x.Msg.(*MsgToAdmissionControl_UpdateResourceRequest); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*msgToAdmissionControl_UpdateResourceRequest); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
@@ -191,10 +178,10 @@ func (x *MsgToAdmissionControl) WhichMsg() case_MsgToAdmissionControl_Msg {
 	if x == nil {
 		return MsgToAdmissionControl_Msg_not_set_case
 	}
-	switch x.Msg.(type) {
-	case *MsgToAdmissionControl_SettingsPush:
+	switch x.xxx_hidden_Msg.(type) {
+	case *msgToAdmissionControl_SettingsPush:
 		return MsgToAdmissionControl_SettingsPush_case
-	case *MsgToAdmissionControl_UpdateResourceRequest:
+	case *msgToAdmissionControl_UpdateResourceRequest:
 		return MsgToAdmissionControl_UpdateResourceRequest_case
 	default:
 		return MsgToAdmissionControl_Msg_not_set_case
@@ -204,10 +191,10 @@ func (x *MsgToAdmissionControl) WhichMsg() case_MsgToAdmissionControl_Msg {
 type MsgToAdmissionControl_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Msg:
+	// Fields of oneof xxx_hidden_Msg:
 	SettingsPush          *AdmissionControlSettings
 	UpdateResourceRequest *AdmCtrlUpdateResourceRequest
-	// -- end of Msg
+	// -- end of xxx_hidden_Msg
 }
 
 func (b0 MsgToAdmissionControl_builder) Build() *MsgToAdmissionControl {
@@ -215,10 +202,10 @@ func (b0 MsgToAdmissionControl_builder) Build() *MsgToAdmissionControl {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.SettingsPush != nil {
-		x.Msg = &MsgToAdmissionControl_SettingsPush{b.SettingsPush}
+		x.xxx_hidden_Msg = &msgToAdmissionControl_SettingsPush{b.SettingsPush}
 	}
 	if b.UpdateResourceRequest != nil {
-		x.Msg = &MsgToAdmissionControl_UpdateResourceRequest{b.UpdateResourceRequest}
+		x.xxx_hidden_Msg = &msgToAdmissionControl_UpdateResourceRequest{b.UpdateResourceRequest}
 	}
 	return m0
 }
@@ -237,17 +224,17 @@ type isMsgToAdmissionControl_Msg interface {
 	isMsgToAdmissionControl_Msg()
 }
 
-type MsgToAdmissionControl_SettingsPush struct {
+type msgToAdmissionControl_SettingsPush struct {
 	SettingsPush *AdmissionControlSettings `protobuf:"bytes,1,opt,name=settings_push,json=settingsPush,oneof"`
 }
 
-type MsgToAdmissionControl_UpdateResourceRequest struct {
+type msgToAdmissionControl_UpdateResourceRequest struct {
 	UpdateResourceRequest *AdmCtrlUpdateResourceRequest `protobuf:"bytes,2,opt,name=update_resource_request,json=updateResourceRequest,oneof"`
 }
 
-func (*MsgToAdmissionControl_SettingsPush) isMsgToAdmissionControl_Msg() {}
+func (*msgToAdmissionControl_SettingsPush) isMsgToAdmissionControl_Msg() {}
 
-func (*MsgToAdmissionControl_UpdateResourceRequest) isMsgToAdmissionControl_Msg() {}
+func (*msgToAdmissionControl_UpdateResourceRequest) isMsgToAdmissionControl_Msg() {}
 
 var File_internalapi_sensor_admission_control_iservice_proto protoreflect.FileDescriptor
 
@@ -261,7 +248,7 @@ const file_internalapi_sensor_admission_control_iservice_proto_rawDesc = "" +
 	"\x03msg2\xbe\x01\n" +
 	"!AdmissionControlManagementService\x12Q\n" +
 	"\vCommunicate\x12\x1f.sensor.MsgFromAdmissionControl\x1a\x1d.sensor.MsgToAdmissionControl(\x010\x01\x12F\n" +
-	"\fPolicyAlerts\x12\x1e.sensor.AdmissionControlAlerts\x1a\x16.google.protobuf.EmptyB%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\fPolicyAlerts\x12\x1e.sensor.AdmissionControlAlerts\x1a\x16.google.protobuf.EmptyB%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_admission_control_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_sensor_admission_control_iservice_proto_goTypes = []any{
@@ -293,8 +280,8 @@ func file_internalapi_sensor_admission_control_iservice_proto_init() {
 	}
 	file_internalapi_sensor_admission_control_proto_init()
 	file_internalapi_sensor_admission_control_iservice_proto_msgTypes[1].OneofWrappers = []any{
-		(*MsgToAdmissionControl_SettingsPush)(nil),
-		(*MsgToAdmissionControl_UpdateResourceRequest)(nil),
+		(*msgToAdmissionControl_SettingsPush)(nil),
+		(*msgToAdmissionControl_UpdateResourceRequest)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

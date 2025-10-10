@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/role_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -70,11 +68,13 @@ func (x ComputeEffectiveAccessScopeRequest_Detail) Number() protoreflect.EnumNum
 }
 
 type Permission struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Resource      *string                `protobuf:"bytes,1,opt,name=resource" json:"resource,omitempty"`
-	Access        *storage.Access        `protobuf:"varint,2,opt,name=access,enum=storage.Access" json:"access,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Resource    *string                `protobuf:"bytes,1,opt,name=resource"`
+	xxx_hidden_Access      storage.Access         `protobuf:"varint,2,opt,name=access,enum=storage.Access"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Permission) Reset() {
@@ -103,47 +103,56 @@ func (x *Permission) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Permission) GetResource() string {
-	if x != nil && x.Resource != nil {
-		return *x.Resource
+	if x != nil {
+		if x.xxx_hidden_Resource != nil {
+			return *x.xxx_hidden_Resource
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Permission) GetAccess() storage.Access {
-	if x != nil && x.Access != nil {
-		return *x.Access
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Access
+		}
 	}
 	return storage.Access(0)
 }
 
 func (x *Permission) SetResource(v string) {
-	x.Resource = &v
+	x.xxx_hidden_Resource = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *Permission) SetAccess(v storage.Access) {
-	x.Access = &v
+	x.xxx_hidden_Access = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *Permission) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	return x.Resource != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Permission) HasAccess() bool {
 	if x == nil {
 		return false
 	}
-	return x.Access != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Permission) ClearResource() {
-	x.Resource = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Resource = nil
 }
 
 func (x *Permission) ClearAccess() {
-	x.Access = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Access = storage.Access_NO_ACCESS
 }
 
 type Permission_builder struct {
@@ -157,16 +166,22 @@ func (b0 Permission_builder) Build() *Permission {
 	m0 := &Permission{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Resource = b.Resource
-	x.Access = b.Access
+	if b.Resource != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Resource = b.Resource
+	}
+	if b.Access != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Access = *b.Access
+	}
 	return m0
 }
 
 type GetRolesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Roles         []*storage.Role        `protobuf:"bytes,1,rep,name=roles" json:"roles,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Roles *[]*storage.Role       `protobuf:"bytes,1,rep,name=roles"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GetRolesResponse) Reset() {
@@ -196,13 +211,15 @@ func (x *GetRolesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRolesResponse) GetRoles() []*storage.Role {
 	if x != nil {
-		return x.Roles
+		if x.xxx_hidden_Roles != nil {
+			return *x.xxx_hidden_Roles
+		}
 	}
 	return nil
 }
 
 func (x *GetRolesResponse) SetRoles(v []*storage.Role) {
-	x.Roles = v
+	x.xxx_hidden_Roles = &v
 }
 
 type GetRolesResponse_builder struct {
@@ -215,17 +232,17 @@ func (b0 GetRolesResponse_builder) Build() *GetRolesResponse {
 	m0 := &GetRolesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Roles = b.Roles
+	x.xxx_hidden_Roles = &b.Roles
 	return m0
 }
 
 // GetPermissionsResponse is wire-compatible with the old format of the Role
 // message and represents a collection of aggregated permissions.
 type GetPermissionsResponse struct {
-	state            protoimpl.MessageState    `protogen:"hybrid.v1"`
-	ResourceToAccess map[string]storage.Access `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_ResourceToAccess map[string]storage.Access `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *GetPermissionsResponse) Reset() {
@@ -255,13 +272,13 @@ func (x *GetPermissionsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetPermissionsResponse) GetResourceToAccess() map[string]storage.Access {
 	if x != nil {
-		return x.ResourceToAccess
+		return x.xxx_hidden_ResourceToAccess
 	}
 	return nil
 }
 
 func (x *GetPermissionsResponse) SetResourceToAccess(v map[string]storage.Access) {
-	x.ResourceToAccess = v
+	x.xxx_hidden_ResourceToAccess = v
 }
 
 type GetPermissionsResponse_builder struct {
@@ -274,15 +291,15 @@ func (b0 GetPermissionsResponse_builder) Build() *GetPermissionsResponse {
 	m0 := &GetPermissionsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ResourceToAccess = b.ResourceToAccess
+	x.xxx_hidden_ResourceToAccess = b.ResourceToAccess
 	return m0
 }
 
 type GetResourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Resources     []string               `protobuf:"bytes,1,rep,name=resources" json:"resources,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Resources []string               `protobuf:"bytes,1,rep,name=resources"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *GetResourcesResponse) Reset() {
@@ -312,13 +329,13 @@ func (x *GetResourcesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetResourcesResponse) GetResources() []string {
 	if x != nil {
-		return x.Resources
+		return x.xxx_hidden_Resources
 	}
 	return nil
 }
 
 func (x *GetResourcesResponse) SetResources(v []string) {
-	x.Resources = v
+	x.xxx_hidden_Resources = v
 }
 
 type GetResourcesResponse_builder struct {
@@ -331,15 +348,15 @@ func (b0 GetResourcesResponse_builder) Build() *GetResourcesResponse {
 	m0 := &GetResourcesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Resources = b.Resources
+	x.xxx_hidden_Resources = b.Resources
 	return m0
 }
 
 type ListPermissionSetsResponse struct {
-	state          protoimpl.MessageState   `protogen:"hybrid.v1"`
-	PermissionSets []*storage.PermissionSet `protobuf:"bytes,1,rep,name=permission_sets,json=permissionSets" json:"permission_sets,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_PermissionSets *[]*storage.PermissionSet `protobuf:"bytes,1,rep,name=permission_sets,json=permissionSets"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *ListPermissionSetsResponse) Reset() {
@@ -369,13 +386,15 @@ func (x *ListPermissionSetsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListPermissionSetsResponse) GetPermissionSets() []*storage.PermissionSet {
 	if x != nil {
-		return x.PermissionSets
+		if x.xxx_hidden_PermissionSets != nil {
+			return *x.xxx_hidden_PermissionSets
+		}
 	}
 	return nil
 }
 
 func (x *ListPermissionSetsResponse) SetPermissionSets(v []*storage.PermissionSet) {
-	x.PermissionSets = v
+	x.xxx_hidden_PermissionSets = &v
 }
 
 type ListPermissionSetsResponse_builder struct {
@@ -388,15 +407,15 @@ func (b0 ListPermissionSetsResponse_builder) Build() *ListPermissionSetsResponse
 	m0 := &ListPermissionSetsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PermissionSets = b.PermissionSets
+	x.xxx_hidden_PermissionSets = &b.PermissionSets
 	return m0
 }
 
 type ListSimpleAccessScopesResponse struct {
-	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
-	AccessScopes  []*storage.SimpleAccessScope `protobuf:"bytes,1,rep,name=access_scopes,json=accessScopes" json:"access_scopes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_AccessScopes *[]*storage.SimpleAccessScope `protobuf:"bytes,1,rep,name=access_scopes,json=accessScopes"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ListSimpleAccessScopesResponse) Reset() {
@@ -426,13 +445,15 @@ func (x *ListSimpleAccessScopesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListSimpleAccessScopesResponse) GetAccessScopes() []*storage.SimpleAccessScope {
 	if x != nil {
-		return x.AccessScopes
+		if x.xxx_hidden_AccessScopes != nil {
+			return *x.xxx_hidden_AccessScopes
+		}
 	}
 	return nil
 }
 
 func (x *ListSimpleAccessScopesResponse) SetAccessScopes(v []*storage.SimpleAccessScope) {
-	x.AccessScopes = v
+	x.xxx_hidden_AccessScopes = &v
 }
 
 type ListSimpleAccessScopesResponse_builder struct {
@@ -445,18 +466,20 @@ func (b0 ListSimpleAccessScopesResponse_builder) Build() *ListSimpleAccessScopes
 	m0 := &ListSimpleAccessScopesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AccessScopes = b.AccessScopes
+	x.xxx_hidden_AccessScopes = &b.AccessScopes
 	return m0
 }
 
 // ScopeObject represents an ID, name pair, which can apply to any
 // entity that takes part in an access scope (so far Cluster and Namespace).
 type ScopeObject struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ScopeObject) Reset() {
@@ -485,47 +508,57 @@ func (x *ScopeObject) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ScopeObject) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ScopeObject) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ScopeObject) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ScopeObject) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ScopeObject) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ScopeObject) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ScopeObject) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ScopeObject) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 type ScopeObject_builder struct {
@@ -539,16 +572,22 @@ func (b0 ScopeObject_builder) Build() *ScopeObject {
 	m0 := &ScopeObject{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Name = b.Name
+	}
 	return m0
 }
 
 type GetClustersForPermissionsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Clusters      []*ScopeObject         `protobuf:"bytes,1,rep,name=clusters" json:"clusters,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Clusters *[]*ScopeObject        `protobuf:"bytes,1,rep,name=clusters"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *GetClustersForPermissionsResponse) Reset() {
@@ -578,13 +617,15 @@ func (x *GetClustersForPermissionsResponse) ProtoReflect() protoreflect.Message 
 
 func (x *GetClustersForPermissionsResponse) GetClusters() []*ScopeObject {
 	if x != nil {
-		return x.Clusters
+		if x.xxx_hidden_Clusters != nil {
+			return *x.xxx_hidden_Clusters
+		}
 	}
 	return nil
 }
 
 func (x *GetClustersForPermissionsResponse) SetClusters(v []*ScopeObject) {
-	x.Clusters = v
+	x.xxx_hidden_Clusters = &v
 }
 
 type GetClustersForPermissionsResponse_builder struct {
@@ -597,15 +638,15 @@ func (b0 GetClustersForPermissionsResponse_builder) Build() *GetClustersForPermi
 	m0 := &GetClustersForPermissionsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Clusters = b.Clusters
+	x.xxx_hidden_Clusters = &b.Clusters
 	return m0
 }
 
 type GetNamespacesForClusterAndPermissionsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Namespaces    []*ScopeObject         `protobuf:"bytes,1,rep,name=namespaces" json:"namespaces,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Namespaces *[]*ScopeObject        `protobuf:"bytes,1,rep,name=namespaces"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *GetNamespacesForClusterAndPermissionsResponse) Reset() {
@@ -635,13 +676,15 @@ func (x *GetNamespacesForClusterAndPermissionsResponse) ProtoReflect() protorefl
 
 func (x *GetNamespacesForClusterAndPermissionsResponse) GetNamespaces() []*ScopeObject {
 	if x != nil {
-		return x.Namespaces
+		if x.xxx_hidden_Namespaces != nil {
+			return *x.xxx_hidden_Namespaces
+		}
 	}
 	return nil
 }
 
 func (x *GetNamespacesForClusterAndPermissionsResponse) SetNamespaces(v []*ScopeObject) {
-	x.Namespaces = v
+	x.xxx_hidden_Namespaces = &v
 }
 
 type GetNamespacesForClusterAndPermissionsResponse_builder struct {
@@ -654,16 +697,18 @@ func (b0 GetNamespacesForClusterAndPermissionsResponse_builder) Build() *GetName
 	m0 := &GetNamespacesForClusterAndPermissionsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Namespaces = b.Namespaces
+	x.xxx_hidden_Namespaces = &b.Namespaces
 	return m0
 }
 
 type ComputeEffectiveAccessScopeRequest struct {
-	state         protoimpl.MessageState                      `protogen:"hybrid.v1"`
-	Detail        *ComputeEffectiveAccessScopeRequest_Detail  `protobuf:"varint,1,opt,name=detail,enum=v1.ComputeEffectiveAccessScopeRequest_Detail" json:"detail,omitempty"`
-	AccessScope   *ComputeEffectiveAccessScopeRequest_Payload `protobuf:"bytes,2,opt,name=access_scope,json=accessScope" json:"access_scope,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState                      `protogen:"opaque.v1"`
+	xxx_hidden_Detail      ComputeEffectiveAccessScopeRequest_Detail   `protobuf:"varint,1,opt,name=detail,enum=v1.ComputeEffectiveAccessScopeRequest_Detail"`
+	xxx_hidden_AccessScope *ComputeEffectiveAccessScopeRequest_Payload `protobuf:"bytes,2,opt,name=access_scope,json=accessScope"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) Reset() {
@@ -692,47 +737,51 @@ func (x *ComputeEffectiveAccessScopeRequest) ProtoReflect() protoreflect.Message
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) GetDetail() ComputeEffectiveAccessScopeRequest_Detail {
-	if x != nil && x.Detail != nil {
-		return *x.Detail
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Detail
+		}
 	}
 	return ComputeEffectiveAccessScopeRequest_STANDARD
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) GetAccessScope() *ComputeEffectiveAccessScopeRequest_Payload {
 	if x != nil {
-		return x.AccessScope
+		return x.xxx_hidden_AccessScope
 	}
 	return nil
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) SetDetail(v ComputeEffectiveAccessScopeRequest_Detail) {
-	x.Detail = &v
+	x.xxx_hidden_Detail = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) SetAccessScope(v *ComputeEffectiveAccessScopeRequest_Payload) {
-	x.AccessScope = v
+	x.xxx_hidden_AccessScope = v
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) HasDetail() bool {
 	if x == nil {
 		return false
 	}
-	return x.Detail != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) HasAccessScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.AccessScope != nil
+	return x.xxx_hidden_AccessScope != nil
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) ClearDetail() {
-	x.Detail = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Detail = ComputeEffectiveAccessScopeRequest_STANDARD
 }
 
 func (x *ComputeEffectiveAccessScopeRequest) ClearAccessScope() {
-	x.AccessScope = nil
+	x.xxx_hidden_AccessScope = nil
 }
 
 type ComputeEffectiveAccessScopeRequest_builder struct {
@@ -746,19 +795,24 @@ func (b0 ComputeEffectiveAccessScopeRequest_builder) Build() *ComputeEffectiveAc
 	m0 := &ComputeEffectiveAccessScopeRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Detail = b.Detail
-	x.AccessScope = b.AccessScope
+	if b.Detail != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Detail = *b.Detail
+	}
+	x.xxx_hidden_AccessScope = b.AccessScope
 	return m0
 }
 
 // CreateRoleRequest unites name we take from the URL path and role body in the same structure.
 // This way we can verify that name in the path and name in the body are identical.
 type CreateRoleRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Role          *storage.Role          `protobuf:"bytes,2,opt,name=role" json:"role,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Role        *storage.Role          `protobuf:"bytes,2,opt,name=role"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CreateRoleRequest) Reset() {
@@ -787,47 +841,52 @@ func (x *CreateRoleRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CreateRoleRequest) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CreateRoleRequest) GetRole() *storage.Role {
 	if x != nil {
-		return x.Role
+		return x.xxx_hidden_Role
 	}
 	return nil
 }
 
 func (x *CreateRoleRequest) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *CreateRoleRequest) SetRole(v *storage.Role) {
-	x.Role = v
+	x.xxx_hidden_Role = v
 }
 
 func (x *CreateRoleRequest) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CreateRoleRequest) HasRole() bool {
 	if x == nil {
 		return false
 	}
-	return x.Role != nil
+	return x.xxx_hidden_Role != nil
 }
 
 func (x *CreateRoleRequest) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *CreateRoleRequest) ClearRole() {
-	x.Role = nil
+	x.xxx_hidden_Role = nil
 }
 
 type CreateRoleRequest_builder struct {
@@ -841,17 +900,20 @@ func (b0 CreateRoleRequest_builder) Build() *CreateRoleRequest {
 	m0 := &CreateRoleRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Role = b.Role
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Name = b.Name
+	}
+	x.xxx_hidden_Role = b.Role
 	return m0
 }
 
 type GetClustersForPermissionsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Pagination    *Pagination            `protobuf:"bytes,1,opt,name=pagination" json:"pagination,omitempty"`
-	Permissions   []string               `protobuf:"bytes,2,rep,name=permissions" json:"permissions,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Pagination  *Pagination            `protobuf:"bytes,1,opt,name=pagination"`
+	xxx_hidden_Permissions []string               `protobuf:"bytes,2,rep,name=permissions"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetClustersForPermissionsRequest) Reset() {
@@ -881,35 +943,35 @@ func (x *GetClustersForPermissionsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetClustersForPermissionsRequest) GetPagination() *Pagination {
 	if x != nil {
-		return x.Pagination
+		return x.xxx_hidden_Pagination
 	}
 	return nil
 }
 
 func (x *GetClustersForPermissionsRequest) GetPermissions() []string {
 	if x != nil {
-		return x.Permissions
+		return x.xxx_hidden_Permissions
 	}
 	return nil
 }
 
 func (x *GetClustersForPermissionsRequest) SetPagination(v *Pagination) {
-	x.Pagination = v
+	x.xxx_hidden_Pagination = v
 }
 
 func (x *GetClustersForPermissionsRequest) SetPermissions(v []string) {
-	x.Permissions = v
+	x.xxx_hidden_Permissions = v
 }
 
 func (x *GetClustersForPermissionsRequest) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pagination != nil
+	return x.xxx_hidden_Pagination != nil
 }
 
 func (x *GetClustersForPermissionsRequest) ClearPagination() {
-	x.Pagination = nil
+	x.xxx_hidden_Pagination = nil
 }
 
 type GetClustersForPermissionsRequest_builder struct {
@@ -923,17 +985,19 @@ func (b0 GetClustersForPermissionsRequest_builder) Build() *GetClustersForPermis
 	m0 := &GetClustersForPermissionsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Pagination = b.Pagination
-	x.Permissions = b.Permissions
+	x.xxx_hidden_Pagination = b.Pagination
+	x.xxx_hidden_Permissions = b.Permissions
 	return m0
 }
 
 type GetNamespaceForClusterAndPermissionsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ClusterId     *string                `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	Permissions   []string               `protobuf:"bytes,3,rep,name=permissions" json:"permissions,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId   *string                `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Permissions []string               `protobuf:"bytes,3,rep,name=permissions"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetNamespaceForClusterAndPermissionsRequest) Reset() {
@@ -962,36 +1026,41 @@ func (x *GetNamespaceForClusterAndPermissionsRequest) ProtoReflect() protoreflec
 }
 
 func (x *GetNamespaceForClusterAndPermissionsRequest) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetNamespaceForClusterAndPermissionsRequest) GetPermissions() []string {
 	if x != nil {
-		return x.Permissions
+		return x.xxx_hidden_Permissions
 	}
 	return nil
 }
 
 func (x *GetNamespaceForClusterAndPermissionsRequest) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetNamespaceForClusterAndPermissionsRequest) SetPermissions(v []string) {
-	x.Permissions = v
+	x.xxx_hidden_Permissions = v
 }
 
 func (x *GetNamespaceForClusterAndPermissionsRequest) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetNamespaceForClusterAndPermissionsRequest) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 type GetNamespaceForClusterAndPermissionsRequest_builder struct {
@@ -1005,22 +1074,19 @@ func (b0 GetNamespaceForClusterAndPermissionsRequest_builder) Build() *GetNamesp
 	m0 := &GetNamespaceForClusterAndPermissionsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.Permissions = b.Permissions
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	x.xxx_hidden_Permissions = b.Permissions
 	return m0
 }
 
 type ComputeEffectiveAccessScopeRequest_Payload struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Other definitions of access scope rules is science fiction for now;
-	// however, prepare for that possible future.
-	//
-	// Types that are valid to be assigned to RulesOpt:
-	//
-	//	*ComputeEffectiveAccessScopeRequest_Payload_SimpleRules
-	RulesOpt      isComputeEffectiveAccessScopeRequest_Payload_RulesOpt `protobuf_oneof:"rules_opt"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState                                `protogen:"opaque.v1"`
+	xxx_hidden_RulesOpt isComputeEffectiveAccessScopeRequest_Payload_RulesOpt `protobuf_oneof:"rules_opt"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ComputeEffectiveAccessScopeRequest_Payload) Reset() {
@@ -1048,16 +1114,9 @@ func (x *ComputeEffectiveAccessScopeRequest_Payload) ProtoReflect() protoreflect
 	return mi.MessageOf(x)
 }
 
-func (x *ComputeEffectiveAccessScopeRequest_Payload) GetRulesOpt() isComputeEffectiveAccessScopeRequest_Payload_RulesOpt {
-	if x != nil {
-		return x.RulesOpt
-	}
-	return nil
-}
-
 func (x *ComputeEffectiveAccessScopeRequest_Payload) GetSimpleRules() *storage.SimpleAccessScope_Rules {
 	if x != nil {
-		if x, ok := x.RulesOpt.(*ComputeEffectiveAccessScopeRequest_Payload_SimpleRules); ok {
+		if x, ok := x.xxx_hidden_RulesOpt.(*computeEffectiveAccessScopeRequest_Payload_SimpleRules); ok {
 			return x.SimpleRules
 		}
 	}
@@ -1066,34 +1125,34 @@ func (x *ComputeEffectiveAccessScopeRequest_Payload) GetSimpleRules() *storage.S
 
 func (x *ComputeEffectiveAccessScopeRequest_Payload) SetSimpleRules(v *storage.SimpleAccessScope_Rules) {
 	if v == nil {
-		x.RulesOpt = nil
+		x.xxx_hidden_RulesOpt = nil
 		return
 	}
-	x.RulesOpt = &ComputeEffectiveAccessScopeRequest_Payload_SimpleRules{v}
+	x.xxx_hidden_RulesOpt = &computeEffectiveAccessScopeRequest_Payload_SimpleRules{v}
 }
 
 func (x *ComputeEffectiveAccessScopeRequest_Payload) HasRulesOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.RulesOpt != nil
+	return x.xxx_hidden_RulesOpt != nil
 }
 
 func (x *ComputeEffectiveAccessScopeRequest_Payload) HasSimpleRules() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RulesOpt.(*ComputeEffectiveAccessScopeRequest_Payload_SimpleRules)
+	_, ok := x.xxx_hidden_RulesOpt.(*computeEffectiveAccessScopeRequest_Payload_SimpleRules)
 	return ok
 }
 
 func (x *ComputeEffectiveAccessScopeRequest_Payload) ClearRulesOpt() {
-	x.RulesOpt = nil
+	x.xxx_hidden_RulesOpt = nil
 }
 
 func (x *ComputeEffectiveAccessScopeRequest_Payload) ClearSimpleRules() {
-	if _, ok := x.RulesOpt.(*ComputeEffectiveAccessScopeRequest_Payload_SimpleRules); ok {
-		x.RulesOpt = nil
+	if _, ok := x.xxx_hidden_RulesOpt.(*computeEffectiveAccessScopeRequest_Payload_SimpleRules); ok {
+		x.xxx_hidden_RulesOpt = nil
 	}
 }
 
@@ -1104,8 +1163,8 @@ func (x *ComputeEffectiveAccessScopeRequest_Payload) WhichRulesOpt() case_Comput
 	if x == nil {
 		return ComputeEffectiveAccessScopeRequest_Payload_RulesOpt_not_set_case
 	}
-	switch x.RulesOpt.(type) {
-	case *ComputeEffectiveAccessScopeRequest_Payload_SimpleRules:
+	switch x.xxx_hidden_RulesOpt.(type) {
+	case *computeEffectiveAccessScopeRequest_Payload_SimpleRules:
 		return ComputeEffectiveAccessScopeRequest_Payload_SimpleRules_case
 	default:
 		return ComputeEffectiveAccessScopeRequest_Payload_RulesOpt_not_set_case
@@ -1118,9 +1177,9 @@ type ComputeEffectiveAccessScopeRequest_Payload_builder struct {
 	// Other definitions of access scope rules is science fiction for now;
 	// however, prepare for that possible future.
 
-	// Fields of oneof RulesOpt:
+	// Fields of oneof xxx_hidden_RulesOpt:
 	SimpleRules *storage.SimpleAccessScope_Rules
-	// -- end of RulesOpt
+	// -- end of xxx_hidden_RulesOpt
 }
 
 func (b0 ComputeEffectiveAccessScopeRequest_Payload_builder) Build() *ComputeEffectiveAccessScopeRequest_Payload {
@@ -1128,7 +1187,7 @@ func (b0 ComputeEffectiveAccessScopeRequest_Payload_builder) Build() *ComputeEff
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.SimpleRules != nil {
-		x.RulesOpt = &ComputeEffectiveAccessScopeRequest_Payload_SimpleRules{b.SimpleRules}
+		x.xxx_hidden_RulesOpt = &computeEffectiveAccessScopeRequest_Payload_SimpleRules{b.SimpleRules}
 	}
 	return m0
 }
@@ -1147,11 +1206,11 @@ type isComputeEffectiveAccessScopeRequest_Payload_RulesOpt interface {
 	isComputeEffectiveAccessScopeRequest_Payload_RulesOpt()
 }
 
-type ComputeEffectiveAccessScopeRequest_Payload_SimpleRules struct {
+type computeEffectiveAccessScopeRequest_Payload_SimpleRules struct {
 	SimpleRules *storage.SimpleAccessScope_Rules `protobuf:"bytes,1,opt,name=simple_rules,json=simpleRules,oneof"`
 }
 
-func (*ComputeEffectiveAccessScopeRequest_Payload_SimpleRules) isComputeEffectiveAccessScopeRequest_Payload_RulesOpt() {
+func (*computeEffectiveAccessScopeRequest_Payload_SimpleRules) isComputeEffectiveAccessScopeRequest_Payload_RulesOpt() {
 }
 
 var File_api_v1_role_service_proto protoreflect.FileDescriptor
@@ -1231,7 +1290,7 @@ const file_api_v1_role_service_proto_rawDesc = "" +
 	"\x1bComputeEffectiveAccessScope\x12&.v1.ComputeEffectiveAccessScopeRequest\x1a\x1d.storage.EffectiveAccessScope\"5\x82\xd3\xe4\x93\x02/:\faccess_scope\"\x1f/v1/computeeffectiveaccessscope\x12\x82\x01\n" +
 	"\x19GetClustersForPermissions\x12$.v1.GetClustersForPermissionsRequest\x1a%.v1.GetClustersForPermissionsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/sac/clusters\x12\xbd\x01\n" +
 	"%GetNamespacesForClusterAndPermissions\x12/.v1.GetNamespaceForClusterAndPermissionsRequest\x1a1.v1.GetNamespacesForClusterAndPermissionsResponse\"0\x82\xd3\xe4\x93\x02*\x12(/v1/sac/clusters/{cluster_id}/namespacesB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x03b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x03b\beditionsp\xe8\a"
 
 var file_api_v1_role_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v1_role_service_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
@@ -1332,7 +1391,7 @@ func file_api_v1_role_service_proto_init() {
 	file_api_v1_empty_proto_init()
 	file_api_v1_pagination_proto_init()
 	file_api_v1_role_service_proto_msgTypes[14].OneofWrappers = []any{
-		(*ComputeEffectiveAccessScopeRequest_Payload_SimpleRules)(nil),
+		(*computeEffectiveAccessScopeRequest_Payload_SimpleRules)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

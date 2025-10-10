@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/cloud_source_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -71,19 +69,17 @@ func (x CloudSource_Type) Number() protoreflect.EnumNumber {
 // CloudSource is an integration which provides a source for discovered
 // clusters.
 type CloudSource struct {
-	state               protoimpl.MessageState   `protogen:"hybrid.v1"`
-	Id                  *string                  `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name                *string                  `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Type                *CloudSource_Type        `protobuf:"varint,3,opt,name=type,enum=v1.CloudSource_Type" json:"type,omitempty"`
-	Credentials         *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials" json:"credentials,omitempty"`
-	SkipTestIntegration *bool                    `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration" json:"skip_test_integration,omitempty"`
-	// Types that are valid to be assigned to Config:
-	//
-	//	*CloudSource_PaladinCloud
-	//	*CloudSource_Ocm
-	Config        isCloudSource_Config `protobuf_oneof:"Config"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                          protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_Id                  *string                  `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name                *string                  `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Type                CloudSource_Type         `protobuf:"varint,3,opt,name=type,enum=v1.CloudSource_Type"`
+	xxx_hidden_Credentials         *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials"`
+	xxx_hidden_SkipTestIntegration bool                     `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration"`
+	xxx_hidden_Config              isCloudSource_Config     `protobuf_oneof:"Config"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *CloudSource) Reset() {
@@ -112,50 +108,51 @@ func (x *CloudSource) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CloudSource) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CloudSource) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CloudSource) GetType() CloudSource_Type {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return CloudSource_TYPE_UNSPECIFIED
 }
 
 func (x *CloudSource) GetCredentials() *CloudSource_Credentials {
 	if x != nil {
-		return x.Credentials
+		return x.xxx_hidden_Credentials
 	}
 	return nil
 }
 
 func (x *CloudSource) GetSkipTestIntegration() bool {
-	if x != nil && x.SkipTestIntegration != nil {
-		return *x.SkipTestIntegration
+	if x != nil {
+		return x.xxx_hidden_SkipTestIntegration
 	}
 	return false
 }
 
-func (x *CloudSource) GetConfig() isCloudSource_Config {
-	if x != nil {
-		return x.Config
-	}
-	return nil
-}
-
 func (x *CloudSource) GetPaladinCloud() *PaladinCloudConfig {
 	if x != nil {
-		if x, ok := x.Config.(*CloudSource_PaladinCloud); ok {
+		if x, ok := x.xxx_hidden_Config.(*cloudSource_PaladinCloud); ok {
 			return x.PaladinCloud
 		}
 	}
@@ -164,7 +161,7 @@ func (x *CloudSource) GetPaladinCloud() *PaladinCloudConfig {
 
 func (x *CloudSource) GetOcm() *OCMConfig {
 	if x != nil {
-		if x, ok := x.Config.(*CloudSource_Ocm); ok {
+		if x, ok := x.xxx_hidden_Config.(*cloudSource_Ocm); ok {
 			return x.Ocm
 		}
 	}
@@ -172,88 +169,92 @@ func (x *CloudSource) GetOcm() *OCMConfig {
 }
 
 func (x *CloudSource) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *CloudSource) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *CloudSource) SetType(v CloudSource_Type) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *CloudSource) SetCredentials(v *CloudSource_Credentials) {
-	x.Credentials = v
+	x.xxx_hidden_Credentials = v
 }
 
 func (x *CloudSource) SetSkipTestIntegration(v bool) {
-	x.SkipTestIntegration = &v
+	x.xxx_hidden_SkipTestIntegration = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
 }
 
 func (x *CloudSource) SetPaladinCloud(v *PaladinCloudConfig) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &CloudSource_PaladinCloud{v}
+	x.xxx_hidden_Config = &cloudSource_PaladinCloud{v}
 }
 
 func (x *CloudSource) SetOcm(v *OCMConfig) {
 	if v == nil {
-		x.Config = nil
+		x.xxx_hidden_Config = nil
 		return
 	}
-	x.Config = &CloudSource_Ocm{v}
+	x.xxx_hidden_Config = &cloudSource_Ocm{v}
 }
 
 func (x *CloudSource) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CloudSource) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CloudSource) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *CloudSource) HasCredentials() bool {
 	if x == nil {
 		return false
 	}
-	return x.Credentials != nil
+	return x.xxx_hidden_Credentials != nil
 }
 
 func (x *CloudSource) HasSkipTestIntegration() bool {
 	if x == nil {
 		return false
 	}
-	return x.SkipTestIntegration != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *CloudSource) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *CloudSource) HasPaladinCloud() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*CloudSource_PaladinCloud)
+	_, ok := x.xxx_hidden_Config.(*cloudSource_PaladinCloud)
 	return ok
 }
 
@@ -261,43 +262,47 @@ func (x *CloudSource) HasOcm() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Config.(*CloudSource_Ocm)
+	_, ok := x.xxx_hidden_Config.(*cloudSource_Ocm)
 	return ok
 }
 
 func (x *CloudSource) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *CloudSource) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *CloudSource) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Type = CloudSource_TYPE_UNSPECIFIED
 }
 
 func (x *CloudSource) ClearCredentials() {
-	x.Credentials = nil
+	x.xxx_hidden_Credentials = nil
 }
 
 func (x *CloudSource) ClearSkipTestIntegration() {
-	x.SkipTestIntegration = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_SkipTestIntegration = false
 }
 
 func (x *CloudSource) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 func (x *CloudSource) ClearPaladinCloud() {
-	if _, ok := x.Config.(*CloudSource_PaladinCloud); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*cloudSource_PaladinCloud); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
 func (x *CloudSource) ClearOcm() {
-	if _, ok := x.Config.(*CloudSource_Ocm); ok {
-		x.Config = nil
+	if _, ok := x.xxx_hidden_Config.(*cloudSource_Ocm); ok {
+		x.xxx_hidden_Config = nil
 	}
 }
 
@@ -309,10 +314,10 @@ func (x *CloudSource) WhichConfig() case_CloudSource_Config {
 	if x == nil {
 		return CloudSource_Config_not_set_case
 	}
-	switch x.Config.(type) {
-	case *CloudSource_PaladinCloud:
+	switch x.xxx_hidden_Config.(type) {
+	case *cloudSource_PaladinCloud:
 		return CloudSource_PaladinCloud_case
-	case *CloudSource_Ocm:
+	case *cloudSource_Ocm:
 		return CloudSource_Ocm_case
 	default:
 		return CloudSource_Config_not_set_case
@@ -327,26 +332,38 @@ type CloudSource_builder struct {
 	Type                *CloudSource_Type
 	Credentials         *CloudSource_Credentials
 	SkipTestIntegration *bool
-	// Fields of oneof Config:
+	// Fields of oneof xxx_hidden_Config:
 	PaladinCloud *PaladinCloudConfig
 	Ocm          *OCMConfig
-	// -- end of Config
+	// -- end of xxx_hidden_Config
 }
 
 func (b0 CloudSource_builder) Build() *CloudSource {
 	m0 := &CloudSource{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Type = b.Type
-	x.Credentials = b.Credentials
-	x.SkipTestIntegration = b.SkipTestIntegration
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_Type = *b.Type
+	}
+	x.xxx_hidden_Credentials = b.Credentials
+	if b.SkipTestIntegration != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_SkipTestIntegration = *b.SkipTestIntegration
+	}
 	if b.PaladinCloud != nil {
-		x.Config = &CloudSource_PaladinCloud{b.PaladinCloud}
+		x.xxx_hidden_Config = &cloudSource_PaladinCloud{b.PaladinCloud}
 	}
 	if b.Ocm != nil {
-		x.Config = &CloudSource_Ocm{b.Ocm}
+		x.xxx_hidden_Config = &cloudSource_Ocm{b.Ocm}
 	}
 	return m0
 }
@@ -365,27 +382,27 @@ type isCloudSource_Config interface {
 	isCloudSource_Config()
 }
 
-type CloudSource_PaladinCloud struct {
+type cloudSource_PaladinCloud struct {
 	PaladinCloud *PaladinCloudConfig `protobuf:"bytes,6,opt,name=paladin_cloud,json=paladinCloud,oneof"`
 }
 
-type CloudSource_Ocm struct {
+type cloudSource_Ocm struct {
 	Ocm *OCMConfig `protobuf:"bytes,7,opt,name=ocm,oneof"`
 }
 
-func (*CloudSource_PaladinCloud) isCloudSource_Config() {}
+func (*cloudSource_PaladinCloud) isCloudSource_Config() {}
 
-func (*CloudSource_Ocm) isCloudSource_Config() {}
+func (*cloudSource_Ocm) isCloudSource_Config() {}
 
 // PaladinCloudConfig provides information required to fetch discovered
 // clusters from Paladin Cloud.
 type PaladinCloudConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Endpoint to the Paladin Cloud API server. Https is assumed if no
-	// protocol is specified. Example: https://apiqa.paladincloud.io
-	Endpoint      *string `protobuf:"bytes,1,opt,name=endpoint" json:"endpoint,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Endpoint    *string                `protobuf:"bytes,1,opt,name=endpoint"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PaladinCloudConfig) Reset() {
@@ -414,25 +431,30 @@ func (x *PaladinCloudConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PaladinCloudConfig) GetEndpoint() string {
-	if x != nil && x.Endpoint != nil {
-		return *x.Endpoint
+	if x != nil {
+		if x.xxx_hidden_Endpoint != nil {
+			return *x.xxx_hidden_Endpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PaladinCloudConfig) SetEndpoint(v string) {
-	x.Endpoint = &v
+	x.xxx_hidden_Endpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *PaladinCloudConfig) HasEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.Endpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PaladinCloudConfig) ClearEndpoint() {
-	x.Endpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Endpoint = nil
 }
 
 type PaladinCloudConfig_builder struct {
@@ -447,19 +469,22 @@ func (b0 PaladinCloudConfig_builder) Build() *PaladinCloudConfig {
 	m0 := &PaladinCloudConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Endpoint = b.Endpoint
+	if b.Endpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Endpoint = b.Endpoint
+	}
 	return m0
 }
 
 // OCMConfig provides information required to fetch discovered clusters from
 // the OpenShift cluster manager.
 type OCMConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Endpoint to the OpenShift API server. Https is assumed if no
-	// protocol is specified. Example: https://api.openshift.com
-	Endpoint      *string `protobuf:"bytes,1,opt,name=endpoint" json:"endpoint,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Endpoint    *string                `protobuf:"bytes,1,opt,name=endpoint"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *OCMConfig) Reset() {
@@ -488,25 +513,30 @@ func (x *OCMConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *OCMConfig) GetEndpoint() string {
-	if x != nil && x.Endpoint != nil {
-		return *x.Endpoint
+	if x != nil {
+		if x.xxx_hidden_Endpoint != nil {
+			return *x.xxx_hidden_Endpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *OCMConfig) SetEndpoint(v string) {
-	x.Endpoint = &v
+	x.xxx_hidden_Endpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *OCMConfig) HasEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.Endpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *OCMConfig) ClearEndpoint() {
-	x.Endpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Endpoint = nil
 }
 
 type OCMConfig_builder struct {
@@ -521,18 +551,19 @@ func (b0 OCMConfig_builder) Build() *OCMConfig {
 	m0 := &OCMConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Endpoint = b.Endpoint
+	if b.Endpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Endpoint = b.Endpoint
+	}
 	return m0
 }
 
 type CloudSourcesFilter struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Matches cloud sources based on their name.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
-	// Matches cloud sources based on their type.
-	Types         []CloudSource_Type `protobuf:"varint,2,rep,packed,name=types,enum=v1.CloudSource_Type" json:"types,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Names []string               `protobuf:"bytes,1,rep,name=names"`
+	xxx_hidden_Types []CloudSource_Type     `protobuf:"varint,2,rep,packed,name=types,enum=v1.CloudSource_Type"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CloudSourcesFilter) Reset() {
@@ -562,24 +593,24 @@ func (x *CloudSourcesFilter) ProtoReflect() protoreflect.Message {
 
 func (x *CloudSourcesFilter) GetNames() []string {
 	if x != nil {
-		return x.Names
+		return x.xxx_hidden_Names
 	}
 	return nil
 }
 
 func (x *CloudSourcesFilter) GetTypes() []CloudSource_Type {
 	if x != nil {
-		return x.Types
+		return x.xxx_hidden_Types
 	}
 	return nil
 }
 
 func (x *CloudSourcesFilter) SetNames(v []string) {
-	x.Names = v
+	x.xxx_hidden_Names = v
 }
 
 func (x *CloudSourcesFilter) SetTypes(v []CloudSource_Type) {
-	x.Types = v
+	x.xxx_hidden_Types = v
 }
 
 type CloudSourcesFilter_builder struct {
@@ -595,17 +626,16 @@ func (b0 CloudSourcesFilter_builder) Build() *CloudSourcesFilter {
 	m0 := &CloudSourcesFilter{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Names = b.Names
-	x.Types = b.Types
+	x.xxx_hidden_Names = b.Names
+	x.xxx_hidden_Types = b.Types
 	return m0
 }
 
 type CountCloudSourcesRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Filters cloud sources based on the requested fields.
-	Filter        *CloudSourcesFilter `protobuf:"bytes,1,opt,name=filter" json:"filter,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Filter *CloudSourcesFilter    `protobuf:"bytes,1,opt,name=filter"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *CountCloudSourcesRequest) Reset() {
@@ -635,24 +665,24 @@ func (x *CountCloudSourcesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CountCloudSourcesRequest) GetFilter() *CloudSourcesFilter {
 	if x != nil {
-		return x.Filter
+		return x.xxx_hidden_Filter
 	}
 	return nil
 }
 
 func (x *CountCloudSourcesRequest) SetFilter(v *CloudSourcesFilter) {
-	x.Filter = v
+	x.xxx_hidden_Filter = v
 }
 
 func (x *CountCloudSourcesRequest) HasFilter() bool {
 	if x == nil {
 		return false
 	}
-	return x.Filter != nil
+	return x.xxx_hidden_Filter != nil
 }
 
 func (x *CountCloudSourcesRequest) ClearFilter() {
-	x.Filter = nil
+	x.xxx_hidden_Filter = nil
 }
 
 type CountCloudSourcesRequest_builder struct {
@@ -666,15 +696,17 @@ func (b0 CountCloudSourcesRequest_builder) Build() *CountCloudSourcesRequest {
 	m0 := &CountCloudSourcesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Filter = b.Filter
+	x.xxx_hidden_Filter = b.Filter
 	return m0
 }
 
 type CountCloudSourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Count         *int32                 `protobuf:"varint,1,opt,name=count" json:"count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Count       int32                  `protobuf:"varint,1,opt,name=count"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CountCloudSourcesResponse) Reset() {
@@ -703,25 +735,27 @@ func (x *CountCloudSourcesResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CountCloudSourcesResponse) GetCount() int32 {
-	if x != nil && x.Count != nil {
-		return *x.Count
+	if x != nil {
+		return x.xxx_hidden_Count
 	}
 	return 0
 }
 
 func (x *CountCloudSourcesResponse) SetCount(v int32) {
-	x.Count = &v
+	x.xxx_hidden_Count = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *CountCloudSourcesResponse) HasCount() bool {
 	if x == nil {
 		return false
 	}
-	return x.Count != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CountCloudSourcesResponse) ClearCount() {
-	x.Count = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Count = 0
 }
 
 type CountCloudSourcesResponse_builder struct {
@@ -734,15 +768,20 @@ func (b0 CountCloudSourcesResponse_builder) Build() *CountCloudSourcesResponse {
 	m0 := &CountCloudSourcesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Count = b.Count
+	if b.Count != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Count = *b.Count
+	}
 	return m0
 }
 
 type GetCloudSourceRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetCloudSourceRequest) Reset() {
@@ -771,25 +810,30 @@ func (x *GetCloudSourceRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GetCloudSourceRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetCloudSourceRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *GetCloudSourceRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetCloudSourceRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 type GetCloudSourceRequest_builder struct {
@@ -802,15 +846,18 @@ func (b0 GetCloudSourceRequest_builder) Build() *GetCloudSourceRequest {
 	m0 := &GetCloudSourceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Id = b.Id
+	}
 	return m0
 }
 
 type GetCloudSourceResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	CloudSource   *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource" json:"cloud_source,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CloudSource *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetCloudSourceResponse) Reset() {
@@ -840,24 +887,24 @@ func (x *GetCloudSourceResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetCloudSourceResponse) GetCloudSource() *CloudSource {
 	if x != nil {
-		return x.CloudSource
+		return x.xxx_hidden_CloudSource
 	}
 	return nil
 }
 
 func (x *GetCloudSourceResponse) SetCloudSource(v *CloudSource) {
-	x.CloudSource = v
+	x.xxx_hidden_CloudSource = v
 }
 
 func (x *GetCloudSourceResponse) HasCloudSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.CloudSource != nil
+	return x.xxx_hidden_CloudSource != nil
 }
 
 func (x *GetCloudSourceResponse) ClearCloudSource() {
-	x.CloudSource = nil
+	x.xxx_hidden_CloudSource = nil
 }
 
 type GetCloudSourceResponse_builder struct {
@@ -870,18 +917,16 @@ func (b0 GetCloudSourceResponse_builder) Build() *GetCloudSourceResponse {
 	m0 := &GetCloudSourceResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CloudSource = b.CloudSource
+	x.xxx_hidden_CloudSource = b.CloudSource
 	return m0
 }
 
 type ListCloudSourcesRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Divides the response into chunks.
-	Pagination *Pagination `protobuf:"bytes,1,opt,name=pagination" json:"pagination,omitempty"`
-	// Filters cloud sources based on the requested fields.
-	Filter        *CloudSourcesFilter `protobuf:"bytes,2,opt,name=filter" json:"filter,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Pagination *Pagination            `protobuf:"bytes,1,opt,name=pagination"`
+	xxx_hidden_Filter     *CloudSourcesFilter    `protobuf:"bytes,2,opt,name=filter"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ListCloudSourcesRequest) Reset() {
@@ -911,46 +956,46 @@ func (x *ListCloudSourcesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListCloudSourcesRequest) GetPagination() *Pagination {
 	if x != nil {
-		return x.Pagination
+		return x.xxx_hidden_Pagination
 	}
 	return nil
 }
 
 func (x *ListCloudSourcesRequest) GetFilter() *CloudSourcesFilter {
 	if x != nil {
-		return x.Filter
+		return x.xxx_hidden_Filter
 	}
 	return nil
 }
 
 func (x *ListCloudSourcesRequest) SetPagination(v *Pagination) {
-	x.Pagination = v
+	x.xxx_hidden_Pagination = v
 }
 
 func (x *ListCloudSourcesRequest) SetFilter(v *CloudSourcesFilter) {
-	x.Filter = v
+	x.xxx_hidden_Filter = v
 }
 
 func (x *ListCloudSourcesRequest) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pagination != nil
+	return x.xxx_hidden_Pagination != nil
 }
 
 func (x *ListCloudSourcesRequest) HasFilter() bool {
 	if x == nil {
 		return false
 	}
-	return x.Filter != nil
+	return x.xxx_hidden_Filter != nil
 }
 
 func (x *ListCloudSourcesRequest) ClearPagination() {
-	x.Pagination = nil
+	x.xxx_hidden_Pagination = nil
 }
 
 func (x *ListCloudSourcesRequest) ClearFilter() {
-	x.Filter = nil
+	x.xxx_hidden_Filter = nil
 }
 
 type ListCloudSourcesRequest_builder struct {
@@ -966,16 +1011,16 @@ func (b0 ListCloudSourcesRequest_builder) Build() *ListCloudSourcesRequest {
 	m0 := &ListCloudSourcesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Pagination = b.Pagination
-	x.Filter = b.Filter
+	x.xxx_hidden_Pagination = b.Pagination
+	x.xxx_hidden_Filter = b.Filter
 	return m0
 }
 
 type ListCloudSourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	CloudSources  []*CloudSource         `protobuf:"bytes,1,rep,name=cloud_sources,json=cloudSources" json:"cloud_sources,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CloudSources *[]*CloudSource        `protobuf:"bytes,1,rep,name=cloud_sources,json=cloudSources"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ListCloudSourcesResponse) Reset() {
@@ -1005,13 +1050,15 @@ func (x *ListCloudSourcesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListCloudSourcesResponse) GetCloudSources() []*CloudSource {
 	if x != nil {
-		return x.CloudSources
+		if x.xxx_hidden_CloudSources != nil {
+			return *x.xxx_hidden_CloudSources
+		}
 	}
 	return nil
 }
 
 func (x *ListCloudSourcesResponse) SetCloudSources(v []*CloudSource) {
-	x.CloudSources = v
+	x.xxx_hidden_CloudSources = &v
 }
 
 type ListCloudSourcesResponse_builder struct {
@@ -1024,15 +1071,15 @@ func (b0 ListCloudSourcesResponse_builder) Build() *ListCloudSourcesResponse {
 	m0 := &ListCloudSourcesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CloudSources = b.CloudSources
+	x.xxx_hidden_CloudSources = &b.CloudSources
 	return m0
 }
 
 type CreateCloudSourceRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	CloudSource   *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource" json:"cloud_source,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CloudSource *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CreateCloudSourceRequest) Reset() {
@@ -1062,24 +1109,24 @@ func (x *CreateCloudSourceRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateCloudSourceRequest) GetCloudSource() *CloudSource {
 	if x != nil {
-		return x.CloudSource
+		return x.xxx_hidden_CloudSource
 	}
 	return nil
 }
 
 func (x *CreateCloudSourceRequest) SetCloudSource(v *CloudSource) {
-	x.CloudSource = v
+	x.xxx_hidden_CloudSource = v
 }
 
 func (x *CreateCloudSourceRequest) HasCloudSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.CloudSource != nil
+	return x.xxx_hidden_CloudSource != nil
 }
 
 func (x *CreateCloudSourceRequest) ClearCloudSource() {
-	x.CloudSource = nil
+	x.xxx_hidden_CloudSource = nil
 }
 
 type CreateCloudSourceRequest_builder struct {
@@ -1092,15 +1139,15 @@ func (b0 CreateCloudSourceRequest_builder) Build() *CreateCloudSourceRequest {
 	m0 := &CreateCloudSourceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CloudSource = b.CloudSource
+	x.xxx_hidden_CloudSource = b.CloudSource
 	return m0
 }
 
 type CreateCloudSourceResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	CloudSource   *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource" json:"cloud_source,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CloudSource *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CreateCloudSourceResponse) Reset() {
@@ -1130,24 +1177,24 @@ func (x *CreateCloudSourceResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateCloudSourceResponse) GetCloudSource() *CloudSource {
 	if x != nil {
-		return x.CloudSource
+		return x.xxx_hidden_CloudSource
 	}
 	return nil
 }
 
 func (x *CreateCloudSourceResponse) SetCloudSource(v *CloudSource) {
-	x.CloudSource = v
+	x.xxx_hidden_CloudSource = v
 }
 
 func (x *CreateCloudSourceResponse) HasCloudSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.CloudSource != nil
+	return x.xxx_hidden_CloudSource != nil
 }
 
 func (x *CreateCloudSourceResponse) ClearCloudSource() {
-	x.CloudSource = nil
+	x.xxx_hidden_CloudSource = nil
 }
 
 type CreateCloudSourceResponse_builder struct {
@@ -1160,19 +1207,18 @@ func (b0 CreateCloudSourceResponse_builder) Build() *CreateCloudSourceResponse {
 	m0 := &CreateCloudSourceResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CloudSource = b.CloudSource
+	x.xxx_hidden_CloudSource = b.CloudSource
 	return m0
 }
 
 type UpdateCloudSourceRequest struct {
-	state       protoimpl.MessageState `protogen:"hybrid.v1"`
-	CloudSource *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource" json:"cloud_source,omitempty"`
-	// If true, cloud_source must include valid credentials.
-	// If false, the resource must already exist and
-	// credentials in cloud_source are ignored.
-	UpdateCredentials *bool `protobuf:"varint,2,opt,name=update_credentials,json=updateCredentials" json:"update_credentials,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CloudSource       *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource"`
+	xxx_hidden_UpdateCredentials bool                   `protobuf:"varint,2,opt,name=update_credentials,json=updateCredentials"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *UpdateCloudSourceRequest) Reset() {
@@ -1202,46 +1248,48 @@ func (x *UpdateCloudSourceRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateCloudSourceRequest) GetCloudSource() *CloudSource {
 	if x != nil {
-		return x.CloudSource
+		return x.xxx_hidden_CloudSource
 	}
 	return nil
 }
 
 func (x *UpdateCloudSourceRequest) GetUpdateCredentials() bool {
-	if x != nil && x.UpdateCredentials != nil {
-		return *x.UpdateCredentials
+	if x != nil {
+		return x.xxx_hidden_UpdateCredentials
 	}
 	return false
 }
 
 func (x *UpdateCloudSourceRequest) SetCloudSource(v *CloudSource) {
-	x.CloudSource = v
+	x.xxx_hidden_CloudSource = v
 }
 
 func (x *UpdateCloudSourceRequest) SetUpdateCredentials(v bool) {
-	x.UpdateCredentials = &v
+	x.xxx_hidden_UpdateCredentials = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *UpdateCloudSourceRequest) HasCloudSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.CloudSource != nil
+	return x.xxx_hidden_CloudSource != nil
 }
 
 func (x *UpdateCloudSourceRequest) HasUpdateCredentials() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpdateCredentials != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UpdateCloudSourceRequest) ClearCloudSource() {
-	x.CloudSource = nil
+	x.xxx_hidden_CloudSource = nil
 }
 
 func (x *UpdateCloudSourceRequest) ClearUpdateCredentials() {
-	x.UpdateCredentials = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_UpdateCredentials = false
 }
 
 type UpdateCloudSourceRequest_builder struct {
@@ -1258,16 +1306,21 @@ func (b0 UpdateCloudSourceRequest_builder) Build() *UpdateCloudSourceRequest {
 	m0 := &UpdateCloudSourceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CloudSource = b.CloudSource
-	x.UpdateCredentials = b.UpdateCredentials
+	x.xxx_hidden_CloudSource = b.CloudSource
+	if b.UpdateCredentials != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_UpdateCredentials = *b.UpdateCredentials
+	}
 	return m0
 }
 
 type DeleteCloudSourceRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeleteCloudSourceRequest) Reset() {
@@ -1296,25 +1349,30 @@ func (x *DeleteCloudSourceRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DeleteCloudSourceRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DeleteCloudSourceRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *DeleteCloudSourceRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DeleteCloudSourceRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 type DeleteCloudSourceRequest_builder struct {
@@ -1327,19 +1385,21 @@ func (b0 DeleteCloudSourceRequest_builder) Build() *DeleteCloudSourceRequest {
 	m0 := &DeleteCloudSourceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Id = b.Id
+	}
 	return m0
 }
 
 type TestCloudSourceRequest struct {
-	state       protoimpl.MessageState `protogen:"hybrid.v1"`
-	CloudSource *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource" json:"cloud_source,omitempty"`
-	// If true, cloud_source must include valid credentials.
-	// If false, the resource must already exist and
-	// credentials in cloud_source are ignored.
-	UpdateCredentials *bool `protobuf:"varint,2,opt,name=update_credentials,json=updateCredentials" json:"update_credentials,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CloudSource       *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource"`
+	xxx_hidden_UpdateCredentials bool                   `protobuf:"varint,2,opt,name=update_credentials,json=updateCredentials"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *TestCloudSourceRequest) Reset() {
@@ -1369,46 +1429,48 @@ func (x *TestCloudSourceRequest) ProtoReflect() protoreflect.Message {
 
 func (x *TestCloudSourceRequest) GetCloudSource() *CloudSource {
 	if x != nil {
-		return x.CloudSource
+		return x.xxx_hidden_CloudSource
 	}
 	return nil
 }
 
 func (x *TestCloudSourceRequest) GetUpdateCredentials() bool {
-	if x != nil && x.UpdateCredentials != nil {
-		return *x.UpdateCredentials
+	if x != nil {
+		return x.xxx_hidden_UpdateCredentials
 	}
 	return false
 }
 
 func (x *TestCloudSourceRequest) SetCloudSource(v *CloudSource) {
-	x.CloudSource = v
+	x.xxx_hidden_CloudSource = v
 }
 
 func (x *TestCloudSourceRequest) SetUpdateCredentials(v bool) {
-	x.UpdateCredentials = &v
+	x.xxx_hidden_UpdateCredentials = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *TestCloudSourceRequest) HasCloudSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.CloudSource != nil
+	return x.xxx_hidden_CloudSource != nil
 }
 
 func (x *TestCloudSourceRequest) HasUpdateCredentials() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpdateCredentials != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *TestCloudSourceRequest) ClearCloudSource() {
-	x.CloudSource = nil
+	x.xxx_hidden_CloudSource = nil
 }
 
 func (x *TestCloudSourceRequest) ClearUpdateCredentials() {
-	x.UpdateCredentials = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_UpdateCredentials = false
 }
 
 type TestCloudSourceRequest_builder struct {
@@ -1425,21 +1487,23 @@ func (b0 TestCloudSourceRequest_builder) Build() *TestCloudSourceRequest {
 	m0 := &TestCloudSourceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CloudSource = b.CloudSource
-	x.UpdateCredentials = b.UpdateCredentials
+	x.xxx_hidden_CloudSource = b.CloudSource
+	if b.UpdateCredentials != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_UpdateCredentials = *b.UpdateCredentials
+	}
 	return m0
 }
 
 type CloudSource_Credentials struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Used for single-valued authentication via long-lived tokens.
-	Secret *string `protobuf:"bytes,1,opt,name=secret" json:"secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	// Used for client authentication in combination with client_secret.
-	ClientId *string `protobuf:"bytes,2,opt,name=client_id,json=clientId" json:"client_id,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	// Used for client authentication in combination with client_id.
-	ClientSecret  *string `protobuf:"bytes,3,opt,name=client_secret,json=clientSecret" json:"client_secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Secret       *string                `protobuf:"bytes,1,opt,name=secret"`
+	xxx_hidden_ClientId     *string                `protobuf:"bytes,2,opt,name=client_id,json=clientId"`
+	xxx_hidden_ClientSecret *string                `protobuf:"bytes,3,opt,name=client_secret,json=clientSecret"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *CloudSource_Credentials) Reset() {
@@ -1468,69 +1532,84 @@ func (x *CloudSource_Credentials) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CloudSource_Credentials) GetSecret() string {
-	if x != nil && x.Secret != nil {
-		return *x.Secret
+	if x != nil {
+		if x.xxx_hidden_Secret != nil {
+			return *x.xxx_hidden_Secret
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CloudSource_Credentials) GetClientId() string {
-	if x != nil && x.ClientId != nil {
-		return *x.ClientId
+	if x != nil {
+		if x.xxx_hidden_ClientId != nil {
+			return *x.xxx_hidden_ClientId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CloudSource_Credentials) GetClientSecret() string {
-	if x != nil && x.ClientSecret != nil {
-		return *x.ClientSecret
+	if x != nil {
+		if x.xxx_hidden_ClientSecret != nil {
+			return *x.xxx_hidden_ClientSecret
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CloudSource_Credentials) SetSecret(v string) {
-	x.Secret = &v
+	x.xxx_hidden_Secret = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *CloudSource_Credentials) SetClientId(v string) {
-	x.ClientId = &v
+	x.xxx_hidden_ClientId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *CloudSource_Credentials) SetClientSecret(v string) {
-	x.ClientSecret = &v
+	x.xxx_hidden_ClientSecret = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *CloudSource_Credentials) HasSecret() bool {
 	if x == nil {
 		return false
 	}
-	return x.Secret != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CloudSource_Credentials) HasClientId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClientId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CloudSource_Credentials) HasClientSecret() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClientSecret != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *CloudSource_Credentials) ClearSecret() {
-	x.Secret = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Secret = nil
 }
 
 func (x *CloudSource_Credentials) ClearClientId() {
-	x.ClientId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ClientId = nil
 }
 
 func (x *CloudSource_Credentials) ClearClientSecret() {
-	x.ClientSecret = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ClientSecret = nil
 }
 
 type CloudSource_Credentials_builder struct {
@@ -1548,9 +1627,18 @@ func (b0 CloudSource_Credentials_builder) Build() *CloudSource_Credentials {
 	m0 := &CloudSource_Credentials{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Secret = b.Secret
-	x.ClientId = b.ClientId
-	x.ClientSecret = b.ClientSecret
+	if b.Secret != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Secret = b.Secret
+	}
+	if b.ClientId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_ClientId = b.ClientId
+	}
+	if b.ClientSecret != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_ClientSecret = b.ClientSecret
+	}
 	return m0
 }
 
@@ -1618,7 +1706,7 @@ const file_api_v1_cloud_source_service_proto_rawDesc = "" +
 	"\x11UpdateCloudSource\x12\x1c.v1.UpdateCloudSourceRequest\x1a\t.v1.Empty\".\x82\xd3\xe4\x93\x02(:\x01*\x1a#/v1/cloud-sources/{cloud_source.id}\x12\\\n" +
 	"\x11DeleteCloudSource\x12\x1c.v1.DeleteCloudSourceRequest\x1a\t.v1.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18*\x16/v1/cloud-sources/{id}\x12[\n" +
 	"\x0fTestCloudSource\x12\x1a.v1.TestCloudSourceRequest\x1a\t.v1.Empty\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/cloud-sources/testB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_cloud_source_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v1_cloud_source_service_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
@@ -1687,8 +1775,8 @@ func file_api_v1_cloud_source_service_proto_init() {
 	file_api_v1_empty_proto_init()
 	file_api_v1_pagination_proto_init()
 	file_api_v1_cloud_source_service_proto_msgTypes[0].OneofWrappers = []any{
-		(*CloudSource_PaladinCloud)(nil),
-		(*CloudSource_Ocm)(nil),
+		(*cloudSource_PaladinCloud)(nil),
+		(*cloudSource_Ocm)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

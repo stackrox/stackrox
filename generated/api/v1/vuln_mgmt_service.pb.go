@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/vuln_mgmt_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,18 +24,13 @@ const (
 )
 
 type VulnMgmtExportWorkloadsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Request timeout in seconds.
-	Timeout *int32 `protobuf:"varint,1,opt,name=timeout" json:"timeout,omitempty"`
-	// Query to constrain the deployments for which vulnerability data is returned.
-	// The queries contain pairs of `Search Option:Value` separated by `+` signs.
-	// For HTTP requests the query should be quoted. For example
-	// > curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox"
-	// queries vulnerability data for all scanner deployments in the stackrox namespace.
-	// See https://docs.openshift.com/acs/operating/search-filter.html for more information.
-	Query         *string `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Timeout     int32                  `protobuf:"varint,1,opt,name=timeout"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,2,opt,name=query"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VulnMgmtExportWorkloadsRequest) Reset() {
@@ -66,47 +59,54 @@ func (x *VulnMgmtExportWorkloadsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VulnMgmtExportWorkloadsRequest) GetTimeout() int32 {
-	if x != nil && x.Timeout != nil {
-		return *x.Timeout
+	if x != nil {
+		return x.xxx_hidden_Timeout
 	}
 	return 0
 }
 
 func (x *VulnMgmtExportWorkloadsRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VulnMgmtExportWorkloadsRequest) SetTimeout(v int32) {
-	x.Timeout = &v
+	x.xxx_hidden_Timeout = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *VulnMgmtExportWorkloadsRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *VulnMgmtExportWorkloadsRequest) HasTimeout() bool {
 	if x == nil {
 		return false
 	}
-	return x.Timeout != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VulnMgmtExportWorkloadsRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VulnMgmtExportWorkloadsRequest) ClearTimeout() {
-	x.Timeout = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Timeout = 0
 }
 
 func (x *VulnMgmtExportWorkloadsRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Query = nil
 }
 
 type VulnMgmtExportWorkloadsRequest_builder struct {
@@ -127,20 +127,28 @@ func (b0 VulnMgmtExportWorkloadsRequest_builder) Build() *VulnMgmtExportWorkload
 	m0 := &VulnMgmtExportWorkloadsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Timeout = b.Timeout
-	x.Query = b.Query
+	if b.Timeout != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Timeout = *b.Timeout
+	}
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Query = b.Query
+	}
 	return m0
 }
 
 // The workloads response contains the full image details including the
 // vulnerability data.
 type VulnMgmtExportWorkloadsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Deployment    *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment" json:"deployment,omitempty"`
-	Images        []*storage.Image       `protobuf:"bytes,2,rep,name=images" json:"images,omitempty"`
-	LivePods      *int32                 `protobuf:"varint,3,opt,name=live_pods,json=livePods" json:"live_pods,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Deployment  *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment"`
+	xxx_hidden_Images      *[]*storage.Image      `protobuf:"bytes,2,rep,name=images"`
+	xxx_hidden_LivePods    int32                  `protobuf:"varint,3,opt,name=live_pods,json=livePods"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) Reset() {
@@ -170,57 +178,61 @@ func (x *VulnMgmtExportWorkloadsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *VulnMgmtExportWorkloadsResponse) GetDeployment() *storage.Deployment {
 	if x != nil {
-		return x.Deployment
+		return x.xxx_hidden_Deployment
 	}
 	return nil
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) GetImages() []*storage.Image {
 	if x != nil {
-		return x.Images
+		if x.xxx_hidden_Images != nil {
+			return *x.xxx_hidden_Images
+		}
 	}
 	return nil
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) GetLivePods() int32 {
-	if x != nil && x.LivePods != nil {
-		return *x.LivePods
+	if x != nil {
+		return x.xxx_hidden_LivePods
 	}
 	return 0
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) SetDeployment(v *storage.Deployment) {
-	x.Deployment = v
+	x.xxx_hidden_Deployment = v
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) SetImages(v []*storage.Image) {
-	x.Images = v
+	x.xxx_hidden_Images = &v
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) SetLivePods(v int32) {
-	x.LivePods = &v
+	x.xxx_hidden_LivePods = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	return x.Deployment != nil
+	return x.xxx_hidden_Deployment != nil
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) HasLivePods() bool {
 	if x == nil {
 		return false
 	}
-	return x.LivePods != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) ClearDeployment() {
-	x.Deployment = nil
+	x.xxx_hidden_Deployment = nil
 }
 
 func (x *VulnMgmtExportWorkloadsResponse) ClearLivePods() {
-	x.LivePods = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_LivePods = 0
 }
 
 type VulnMgmtExportWorkloadsResponse_builder struct {
@@ -235,9 +247,12 @@ func (b0 VulnMgmtExportWorkloadsResponse_builder) Build() *VulnMgmtExportWorkloa
 	m0 := &VulnMgmtExportWorkloadsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Deployment = b.Deployment
-	x.Images = b.Images
-	x.LivePods = b.LivePods
+	x.xxx_hidden_Deployment = b.Deployment
+	x.xxx_hidden_Images = &b.Images
+	if b.LivePods != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_LivePods = *b.LivePods
+	}
 	return m0
 }
 
@@ -257,7 +272,7 @@ const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
 	"\tlive_pods\x18\x03 \x01(\x05R\blivePods2\xa0\x01\n" +
 	"\x0fVulnMgmtService\x12\x8c\x01\n" +
 	"\x17VulnMgmtExportWorkloads\x12\".v1.VulnMgmtExportWorkloadsRequest\x1a#.v1.VulnMgmtExportWorkloadsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/export/vuln-mgmt/workloads0\x01B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x00b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x00b\beditionsp\xe8\a"
 
 var file_api_v1_vuln_mgmt_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_v1_vuln_mgmt_service_proto_goTypes = []any{

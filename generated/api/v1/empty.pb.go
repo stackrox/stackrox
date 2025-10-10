@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/empty.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -24,7 +22,7 @@ const (
 )
 
 type Empty struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -72,7 +70,7 @@ const file_api_v1_empty_proto_rawDesc = "" +
 	"\n" +
 	"\x12api/v1/empty.proto\x12\x02v1\x1a!google/protobuf/go_features.proto\"\a\n" +
 	"\x05EmptyB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_api_v1_empty_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v1_empty_proto_goTypes = []any{

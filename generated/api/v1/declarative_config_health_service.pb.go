@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/declarative_config_health_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,10 +24,10 @@ const (
 )
 
 type GetDeclarativeConfigHealthsResponse struct {
-	state         protoimpl.MessageState             `protogen:"hybrid.v1"`
-	Healths       []*storage.DeclarativeConfigHealth `protobuf:"bytes,1,rep,name=healths" json:"healths,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_Healths *[]*storage.DeclarativeConfigHealth `protobuf:"bytes,1,rep,name=healths"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetDeclarativeConfigHealthsResponse) Reset() {
@@ -59,13 +57,15 @@ func (x *GetDeclarativeConfigHealthsResponse) ProtoReflect() protoreflect.Messag
 
 func (x *GetDeclarativeConfigHealthsResponse) GetHealths() []*storage.DeclarativeConfigHealth {
 	if x != nil {
-		return x.Healths
+		if x.xxx_hidden_Healths != nil {
+			return *x.xxx_hidden_Healths
+		}
 	}
 	return nil
 }
 
 func (x *GetDeclarativeConfigHealthsResponse) SetHealths(v []*storage.DeclarativeConfigHealth) {
-	x.Healths = v
+	x.xxx_hidden_Healths = &v
 }
 
 type GetDeclarativeConfigHealthsResponse_builder struct {
@@ -78,7 +78,7 @@ func (b0 GetDeclarativeConfigHealthsResponse_builder) Build() *GetDeclarativeCon
 	m0 := &GetDeclarativeConfigHealthsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Healths = b.Healths
+	x.xxx_hidden_Healths = &b.Healths
 	return m0
 }
 
@@ -91,7 +91,7 @@ const file_api_v1_declarative_config_health_service_proto_rawDesc = "" +
 	"\ahealths\x18\x01 \x03(\v2 .storage.DeclarativeConfigHealthR\ahealths2\x9a\x01\n" +
 	"\x1eDeclarativeConfigHealthService\x12x\n" +
 	"\x1bGetDeclarativeConfigHealths\x12\t.v1.Empty\x1a'.v1.GetDeclarativeConfigHealthsResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/v1/declarative-config/healthB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x01b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_declarative_config_health_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v1_declarative_config_health_service_proto_goTypes = []any{

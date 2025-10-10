@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/auth_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -74,11 +72,13 @@ func (x AuthMachineToMachineConfig_Type) Number() protoreflect.EnumNumber {
 }
 
 type UserAttribute struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Key           *string                `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	Values        []string               `protobuf:"bytes,2,rep,name=values" json:"values,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Key         *string                `protobuf:"bytes,1,opt,name=key"`
+	xxx_hidden_Values      []string               `protobuf:"bytes,2,rep,name=values"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UserAttribute) Reset() {
@@ -107,36 +107,41 @@ func (x *UserAttribute) ProtoReflect() protoreflect.Message {
 }
 
 func (x *UserAttribute) GetKey() string {
-	if x != nil && x.Key != nil {
-		return *x.Key
+	if x != nil {
+		if x.xxx_hidden_Key != nil {
+			return *x.xxx_hidden_Key
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UserAttribute) GetValues() []string {
 	if x != nil {
-		return x.Values
+		return x.xxx_hidden_Values
 	}
 	return nil
 }
 
 func (x *UserAttribute) SetKey(v string) {
-	x.Key = &v
+	x.xxx_hidden_Key = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *UserAttribute) SetValues(v []string) {
-	x.Values = v
+	x.xxx_hidden_Values = v
 }
 
 func (x *UserAttribute) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.Key != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UserAttribute) ClearKey() {
-	x.Key = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Key = nil
 }
 
 type UserAttribute_builder struct {
@@ -150,28 +155,27 @@ func (b0 UserAttribute_builder) Build() *UserAttribute {
 	m0 := &UserAttribute{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Key = b.Key
-	x.Values = b.Values
+	if b.Key != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Key = b.Key
+	}
+	x.xxx_hidden_Values = b.Values
 	return m0
 }
 
 type AuthStatus struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Id:
-	//
-	//	*AuthStatus_UserId
-	//	*AuthStatus_ServiceId
-	Id             isAuthStatus_Id        `protobuf_oneof:"id"`
-	Expires        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires" json:"expires,omitempty"`
-	RefreshUrl     *string                `protobuf:"bytes,4,opt,name=refresh_url,json=refreshUrl" json:"refresh_url,omitempty"`
-	AuthProvider   *storage.AuthProvider  `protobuf:"bytes,5,opt,name=auth_provider,json=authProvider" json:"auth_provider,omitempty"`
-	UserInfo       *storage.UserInfo      `protobuf:"bytes,6,opt,name=user_info,json=userInfo" json:"user_info,omitempty"`
-	UserAttributes []*UserAttribute       `protobuf:"bytes,7,rep,name=user_attributes,json=userAttributes" json:"user_attributes,omitempty"`
-	// Token returned to ACS by the underlying identity provider. This field is set only in a few,
-	// specific contexts. Do not rely on this field being present in the response.
-	IdpToken      *string `protobuf:"bytes,8,opt,name=idp_token,json=idpToken" json:"idp_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id             isAuthStatus_Id        `protobuf_oneof:"id"`
+	xxx_hidden_Expires        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires"`
+	xxx_hidden_RefreshUrl     *string                `protobuf:"bytes,4,opt,name=refresh_url,json=refreshUrl"`
+	xxx_hidden_AuthProvider   *storage.AuthProvider  `protobuf:"bytes,5,opt,name=auth_provider,json=authProvider"`
+	xxx_hidden_UserInfo       *storage.UserInfo      `protobuf:"bytes,6,opt,name=user_info,json=userInfo"`
+	xxx_hidden_UserAttributes *[]*UserAttribute      `protobuf:"bytes,7,rep,name=user_attributes,json=userAttributes"`
+	xxx_hidden_IdpToken       *string                `protobuf:"bytes,8,opt,name=idp_token,json=idpToken"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *AuthStatus) Reset() {
@@ -199,16 +203,9 @@ func (x *AuthStatus) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *AuthStatus) GetId() isAuthStatus_Id {
-	if x != nil {
-		return x.Id
-	}
-	return nil
-}
-
 func (x *AuthStatus) GetUserId() string {
 	if x != nil {
-		if x, ok := x.Id.(*AuthStatus_UserId); ok {
+		if x, ok := x.xxx_hidden_Id.(*authStatus_UserId); ok {
 			return x.UserId
 		}
 	}
@@ -217,7 +214,7 @@ func (x *AuthStatus) GetUserId() string {
 
 func (x *AuthStatus) GetServiceId() *storage.ServiceIdentity {
 	if x != nil {
-		if x, ok := x.Id.(*AuthStatus_ServiceId); ok {
+		if x, ok := x.xxx_hidden_Id.(*authStatus_ServiceId); ok {
 			return x.ServiceId
 		}
 	}
@@ -226,94 +223,104 @@ func (x *AuthStatus) GetServiceId() *storage.ServiceIdentity {
 
 func (x *AuthStatus) GetExpires() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Expires
+		return x.xxx_hidden_Expires
 	}
 	return nil
 }
 
 func (x *AuthStatus) GetRefreshUrl() string {
-	if x != nil && x.RefreshUrl != nil {
-		return *x.RefreshUrl
+	if x != nil {
+		if x.xxx_hidden_RefreshUrl != nil {
+			return *x.xxx_hidden_RefreshUrl
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthStatus) GetAuthProvider() *storage.AuthProvider {
 	if x != nil {
-		return x.AuthProvider
+		return x.xxx_hidden_AuthProvider
 	}
 	return nil
 }
 
 func (x *AuthStatus) GetUserInfo() *storage.UserInfo {
 	if x != nil {
-		return x.UserInfo
+		return x.xxx_hidden_UserInfo
 	}
 	return nil
 }
 
 func (x *AuthStatus) GetUserAttributes() []*UserAttribute {
 	if x != nil {
-		return x.UserAttributes
+		if x.xxx_hidden_UserAttributes != nil {
+			return *x.xxx_hidden_UserAttributes
+		}
 	}
 	return nil
 }
 
 func (x *AuthStatus) GetIdpToken() string {
-	if x != nil && x.IdpToken != nil {
-		return *x.IdpToken
+	if x != nil {
+		if x.xxx_hidden_IdpToken != nil {
+			return *x.xxx_hidden_IdpToken
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthStatus) SetUserId(v string) {
-	x.Id = &AuthStatus_UserId{v}
+	x.xxx_hidden_Id = &authStatus_UserId{v}
 }
 
 func (x *AuthStatus) SetServiceId(v *storage.ServiceIdentity) {
 	if v == nil {
-		x.Id = nil
+		x.xxx_hidden_Id = nil
 		return
 	}
-	x.Id = &AuthStatus_ServiceId{v}
+	x.xxx_hidden_Id = &authStatus_ServiceId{v}
 }
 
 func (x *AuthStatus) SetExpires(v *timestamppb.Timestamp) {
-	x.Expires = v
+	x.xxx_hidden_Expires = v
 }
 
 func (x *AuthStatus) SetRefreshUrl(v string) {
-	x.RefreshUrl = &v
+	x.xxx_hidden_RefreshUrl = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *AuthStatus) SetAuthProvider(v *storage.AuthProvider) {
-	x.AuthProvider = v
+	x.xxx_hidden_AuthProvider = v
 }
 
 func (x *AuthStatus) SetUserInfo(v *storage.UserInfo) {
-	x.UserInfo = v
+	x.xxx_hidden_UserInfo = v
 }
 
 func (x *AuthStatus) SetUserAttributes(v []*UserAttribute) {
-	x.UserAttributes = v
+	x.xxx_hidden_UserAttributes = &v
 }
 
 func (x *AuthStatus) SetIdpToken(v string) {
-	x.IdpToken = &v
+	x.xxx_hidden_IdpToken = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *AuthStatus) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return x.xxx_hidden_Id != nil
 }
 
 func (x *AuthStatus) HasUserId() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Id.(*AuthStatus_UserId)
+	_, ok := x.xxx_hidden_Id.(*authStatus_UserId)
 	return ok
 }
 
@@ -321,7 +328,7 @@ func (x *AuthStatus) HasServiceId() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Id.(*AuthStatus_ServiceId)
+	_, ok := x.xxx_hidden_Id.(*authStatus_ServiceId)
 	return ok
 }
 
@@ -329,71 +336,73 @@ func (x *AuthStatus) HasExpires() bool {
 	if x == nil {
 		return false
 	}
-	return x.Expires != nil
+	return x.xxx_hidden_Expires != nil
 }
 
 func (x *AuthStatus) HasRefreshUrl() bool {
 	if x == nil {
 		return false
 	}
-	return x.RefreshUrl != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *AuthStatus) HasAuthProvider() bool {
 	if x == nil {
 		return false
 	}
-	return x.AuthProvider != nil
+	return x.xxx_hidden_AuthProvider != nil
 }
 
 func (x *AuthStatus) HasUserInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.UserInfo != nil
+	return x.xxx_hidden_UserInfo != nil
 }
 
 func (x *AuthStatus) HasIdpToken() bool {
 	if x == nil {
 		return false
 	}
-	return x.IdpToken != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *AuthStatus) ClearId() {
-	x.Id = nil
+	x.xxx_hidden_Id = nil
 }
 
 func (x *AuthStatus) ClearUserId() {
-	if _, ok := x.Id.(*AuthStatus_UserId); ok {
-		x.Id = nil
+	if _, ok := x.xxx_hidden_Id.(*authStatus_UserId); ok {
+		x.xxx_hidden_Id = nil
 	}
 }
 
 func (x *AuthStatus) ClearServiceId() {
-	if _, ok := x.Id.(*AuthStatus_ServiceId); ok {
-		x.Id = nil
+	if _, ok := x.xxx_hidden_Id.(*authStatus_ServiceId); ok {
+		x.xxx_hidden_Id = nil
 	}
 }
 
 func (x *AuthStatus) ClearExpires() {
-	x.Expires = nil
+	x.xxx_hidden_Expires = nil
 }
 
 func (x *AuthStatus) ClearRefreshUrl() {
-	x.RefreshUrl = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_RefreshUrl = nil
 }
 
 func (x *AuthStatus) ClearAuthProvider() {
-	x.AuthProvider = nil
+	x.xxx_hidden_AuthProvider = nil
 }
 
 func (x *AuthStatus) ClearUserInfo() {
-	x.UserInfo = nil
+	x.xxx_hidden_UserInfo = nil
 }
 
 func (x *AuthStatus) ClearIdpToken() {
-	x.IdpToken = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_IdpToken = nil
 }
 
 const AuthStatus_Id_not_set_case case_AuthStatus_Id = 0
@@ -404,10 +413,10 @@ func (x *AuthStatus) WhichId() case_AuthStatus_Id {
 	if x == nil {
 		return AuthStatus_Id_not_set_case
 	}
-	switch x.Id.(type) {
-	case *AuthStatus_UserId:
+	switch x.xxx_hidden_Id.(type) {
+	case *authStatus_UserId:
 		return AuthStatus_UserId_case
-	case *AuthStatus_ServiceId:
+	case *authStatus_ServiceId:
 		return AuthStatus_ServiceId_case
 	default:
 		return AuthStatus_Id_not_set_case
@@ -417,10 +426,10 @@ func (x *AuthStatus) WhichId() case_AuthStatus_Id {
 type AuthStatus_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Id:
+	// Fields of oneof xxx_hidden_Id:
 	UserId    *string
 	ServiceId *storage.ServiceIdentity
-	// -- end of Id
+	// -- end of xxx_hidden_Id
 	Expires        *timestamppb.Timestamp
 	RefreshUrl     *string
 	AuthProvider   *storage.AuthProvider
@@ -436,17 +445,23 @@ func (b0 AuthStatus_builder) Build() *AuthStatus {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.UserId != nil {
-		x.Id = &AuthStatus_UserId{*b.UserId}
+		x.xxx_hidden_Id = &authStatus_UserId{*b.UserId}
 	}
 	if b.ServiceId != nil {
-		x.Id = &AuthStatus_ServiceId{b.ServiceId}
+		x.xxx_hidden_Id = &authStatus_ServiceId{b.ServiceId}
 	}
-	x.Expires = b.Expires
-	x.RefreshUrl = b.RefreshUrl
-	x.AuthProvider = b.AuthProvider
-	x.UserInfo = b.UserInfo
-	x.UserAttributes = b.UserAttributes
-	x.IdpToken = b.IdpToken
+	x.xxx_hidden_Expires = b.Expires
+	if b.RefreshUrl != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_RefreshUrl = b.RefreshUrl
+	}
+	x.xxx_hidden_AuthProvider = b.AuthProvider
+	x.xxx_hidden_UserInfo = b.UserInfo
+	x.xxx_hidden_UserAttributes = &b.UserAttributes
+	if b.IdpToken != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_IdpToken = b.IdpToken
+	}
 	return m0
 }
 
@@ -464,47 +479,33 @@ type isAuthStatus_Id interface {
 	isAuthStatus_Id()
 }
 
-type AuthStatus_UserId struct {
+type authStatus_UserId struct {
 	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,oneof"`
 }
 
-type AuthStatus_ServiceId struct {
+type authStatus_ServiceId struct {
 	ServiceId *storage.ServiceIdentity `protobuf:"bytes,2,opt,name=service_id,json=serviceId,oneof"`
 }
 
-func (*AuthStatus_UserId) isAuthStatus_Id() {}
+func (*authStatus_UserId) isAuthStatus_Id() {}
 
-func (*AuthStatus_ServiceId) isAuthStatus_Id() {}
+func (*authStatus_ServiceId) isAuthStatus_Id() {}
 
 // AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with
 // a Central access token. The M2M stands for machine to machine, as this is the intended use-case
 // for the config.
 type AuthMachineToMachineConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// UUID of the config.
-	// Note that when adding a machine to machine config, this field should not be set.
-	Id   *string                          `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Type *AuthMachineToMachineConfig_Type `protobuf:"varint,2,opt,name=type,enum=v1.AuthMachineToMachineConfig_Type" json:"type,omitempty"`
-	// Sets the expiration of the token returned from the ExchangeAuthMachineToMachineToken API call.
-	// Possible valid time units are: s, m, h.
-	// The maximum allowed expiration duration is 24h.
-	// As an example: 2h45m.
-	// For additional information on the validation of the duration, see:
-	// https://pkg.go.dev/time#ParseDuration.
-	TokenExpirationDuration *string `protobuf:"bytes,3,opt,name=token_expiration_duration,json=tokenExpirationDuration" json:"token_expiration_duration,omitempty"`
-	// At least one mapping is required to resolve to a valid role for the access token to be successfully generated.
-	Mappings []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings" json:"mappings,omitempty"`
-	// The issuer of the related OIDC provider issuing the ID tokens to exchange.
-	//
-	// Must be non-empty string containing URL when type is GENERIC.
-	// In case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.
-	//
-	// Issuer is a unique key, therefore there may be at most one GITHUB_ACTIONS config, and each
-	// GENERIC config must have a distinct issuer.
-	Issuer        *string `protobuf:"bytes,5,opt,name=issuer" json:"issuer,omitempty"`
-	Traits        *Traits `protobuf:"bytes,6,opt,name=traits" json:"traits,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                              protoimpl.MessageState                 `protogen:"opaque.v1"`
+	xxx_hidden_Id                      *string                                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Type                    AuthMachineToMachineConfig_Type        `protobuf:"varint,2,opt,name=type,enum=v1.AuthMachineToMachineConfig_Type"`
+	xxx_hidden_TokenExpirationDuration *string                                `protobuf:"bytes,3,opt,name=token_expiration_duration,json=tokenExpirationDuration"`
+	xxx_hidden_Mappings                *[]*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings"`
+	xxx_hidden_Issuer                  *string                                `protobuf:"bytes,5,opt,name=issuer"`
+	xxx_hidden_Traits                  *Traits                                `protobuf:"bytes,6,opt,name=traits"`
+	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
+	XXX_presence                       [1]uint32
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *AuthMachineToMachineConfig) Reset() {
@@ -533,124 +534,145 @@ func (x *AuthMachineToMachineConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AuthMachineToMachineConfig) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig) GetType() AuthMachineToMachineConfig_Type {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return AuthMachineToMachineConfig_GENERIC
 }
 
 func (x *AuthMachineToMachineConfig) GetTokenExpirationDuration() string {
-	if x != nil && x.TokenExpirationDuration != nil {
-		return *x.TokenExpirationDuration
+	if x != nil {
+		if x.xxx_hidden_TokenExpirationDuration != nil {
+			return *x.xxx_hidden_TokenExpirationDuration
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig) GetMappings() []*AuthMachineToMachineConfig_Mapping {
 	if x != nil {
-		return x.Mappings
+		if x.xxx_hidden_Mappings != nil {
+			return *x.xxx_hidden_Mappings
+		}
 	}
 	return nil
 }
 
 func (x *AuthMachineToMachineConfig) GetIssuer() string {
-	if x != nil && x.Issuer != nil {
-		return *x.Issuer
+	if x != nil {
+		if x.xxx_hidden_Issuer != nil {
+			return *x.xxx_hidden_Issuer
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig) GetTraits() *Traits {
 	if x != nil {
-		return x.Traits
+		return x.xxx_hidden_Traits
 	}
 	return nil
 }
 
 func (x *AuthMachineToMachineConfig) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *AuthMachineToMachineConfig) SetType(v AuthMachineToMachineConfig_Type) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *AuthMachineToMachineConfig) SetTokenExpirationDuration(v string) {
-	x.TokenExpirationDuration = &v
+	x.xxx_hidden_TokenExpirationDuration = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *AuthMachineToMachineConfig) SetMappings(v []*AuthMachineToMachineConfig_Mapping) {
-	x.Mappings = v
+	x.xxx_hidden_Mappings = &v
 }
 
 func (x *AuthMachineToMachineConfig) SetIssuer(v string) {
-	x.Issuer = &v
+	x.xxx_hidden_Issuer = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
 }
 
 func (x *AuthMachineToMachineConfig) SetTraits(v *Traits) {
-	x.Traits = v
+	x.xxx_hidden_Traits = v
 }
 
 func (x *AuthMachineToMachineConfig) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AuthMachineToMachineConfig) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *AuthMachineToMachineConfig) HasTokenExpirationDuration() bool {
 	if x == nil {
 		return false
 	}
-	return x.TokenExpirationDuration != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *AuthMachineToMachineConfig) HasIssuer() bool {
 	if x == nil {
 		return false
 	}
-	return x.Issuer != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *AuthMachineToMachineConfig) HasTraits() bool {
 	if x == nil {
 		return false
 	}
-	return x.Traits != nil
+	return x.xxx_hidden_Traits != nil
 }
 
 func (x *AuthMachineToMachineConfig) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *AuthMachineToMachineConfig) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Type = AuthMachineToMachineConfig_GENERIC
 }
 
 func (x *AuthMachineToMachineConfig) ClearTokenExpirationDuration() {
-	x.TokenExpirationDuration = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_TokenExpirationDuration = nil
 }
 
 func (x *AuthMachineToMachineConfig) ClearIssuer() {
-	x.Issuer = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Issuer = nil
 }
 
 func (x *AuthMachineToMachineConfig) ClearTraits() {
-	x.Traits = nil
+	x.xxx_hidden_Traits = nil
 }
 
 type AuthMachineToMachineConfig_builder struct {
@@ -684,20 +706,32 @@ func (b0 AuthMachineToMachineConfig_builder) Build() *AuthMachineToMachineConfig
 	m0 := &AuthMachineToMachineConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Type = b.Type
-	x.TokenExpirationDuration = b.TokenExpirationDuration
-	x.Mappings = b.Mappings
-	x.Issuer = b.Issuer
-	x.Traits = b.Traits
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_Type = *b.Type
+	}
+	if b.TokenExpirationDuration != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_TokenExpirationDuration = b.TokenExpirationDuration
+	}
+	x.xxx_hidden_Mappings = &b.Mappings
+	if b.Issuer != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_Issuer = b.Issuer
+	}
+	x.xxx_hidden_Traits = b.Traits
 	return m0
 }
 
 type ListAuthMachineToMachineConfigResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	Configs       []*AuthMachineToMachineConfig `protobuf:"bytes,1,rep,name=configs" json:"configs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_Configs *[]*AuthMachineToMachineConfig `protobuf:"bytes,1,rep,name=configs"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ListAuthMachineToMachineConfigResponse) Reset() {
@@ -727,13 +761,15 @@ func (x *ListAuthMachineToMachineConfigResponse) ProtoReflect() protoreflect.Mes
 
 func (x *ListAuthMachineToMachineConfigResponse) GetConfigs() []*AuthMachineToMachineConfig {
 	if x != nil {
-		return x.Configs
+		if x.xxx_hidden_Configs != nil {
+			return *x.xxx_hidden_Configs
+		}
 	}
 	return nil
 }
 
 func (x *ListAuthMachineToMachineConfigResponse) SetConfigs(v []*AuthMachineToMachineConfig) {
-	x.Configs = v
+	x.xxx_hidden_Configs = &v
 }
 
 type ListAuthMachineToMachineConfigResponse_builder struct {
@@ -746,15 +782,15 @@ func (b0 ListAuthMachineToMachineConfigResponse_builder) Build() *ListAuthMachin
 	m0 := &ListAuthMachineToMachineConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Configs = b.Configs
+	x.xxx_hidden_Configs = &b.Configs
 	return m0
 }
 
 type GetAuthMachineToMachineConfigResponse struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Config        *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Config *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetAuthMachineToMachineConfigResponse) Reset() {
@@ -784,24 +820,24 @@ func (x *GetAuthMachineToMachineConfigResponse) ProtoReflect() protoreflect.Mess
 
 func (x *GetAuthMachineToMachineConfigResponse) GetConfig() *AuthMachineToMachineConfig {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *GetAuthMachineToMachineConfigResponse) SetConfig(v *AuthMachineToMachineConfig) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *GetAuthMachineToMachineConfigResponse) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *GetAuthMachineToMachineConfigResponse) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 type GetAuthMachineToMachineConfigResponse_builder struct {
@@ -814,15 +850,15 @@ func (b0 GetAuthMachineToMachineConfigResponse_builder) Build() *GetAuthMachineT
 	m0 := &GetAuthMachineToMachineConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
+	x.xxx_hidden_Config = b.Config
 	return m0
 }
 
 type AddAuthMachineToMachineConfigRequest struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Config        *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Config *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *AddAuthMachineToMachineConfigRequest) Reset() {
@@ -852,24 +888,24 @@ func (x *AddAuthMachineToMachineConfigRequest) ProtoReflect() protoreflect.Messa
 
 func (x *AddAuthMachineToMachineConfigRequest) GetConfig() *AuthMachineToMachineConfig {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *AddAuthMachineToMachineConfigRequest) SetConfig(v *AuthMachineToMachineConfig) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *AddAuthMachineToMachineConfigRequest) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *AddAuthMachineToMachineConfigRequest) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 type AddAuthMachineToMachineConfigRequest_builder struct {
@@ -882,15 +918,15 @@ func (b0 AddAuthMachineToMachineConfigRequest_builder) Build() *AddAuthMachineTo
 	m0 := &AddAuthMachineToMachineConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
+	x.xxx_hidden_Config = b.Config
 	return m0
 }
 
 type AddAuthMachineToMachineConfigResponse struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Config        *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Config *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *AddAuthMachineToMachineConfigResponse) Reset() {
@@ -920,24 +956,24 @@ func (x *AddAuthMachineToMachineConfigResponse) ProtoReflect() protoreflect.Mess
 
 func (x *AddAuthMachineToMachineConfigResponse) GetConfig() *AuthMachineToMachineConfig {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *AddAuthMachineToMachineConfigResponse) SetConfig(v *AuthMachineToMachineConfig) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *AddAuthMachineToMachineConfigResponse) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *AddAuthMachineToMachineConfigResponse) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 type AddAuthMachineToMachineConfigResponse_builder struct {
@@ -950,15 +986,15 @@ func (b0 AddAuthMachineToMachineConfigResponse_builder) Build() *AddAuthMachineT
 	m0 := &AddAuthMachineToMachineConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
+	x.xxx_hidden_Config = b.Config
 	return m0
 }
 
 type UpdateAuthMachineToMachineConfigRequest struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Config        *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Config *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *UpdateAuthMachineToMachineConfigRequest) Reset() {
@@ -988,24 +1024,24 @@ func (x *UpdateAuthMachineToMachineConfigRequest) ProtoReflect() protoreflect.Me
 
 func (x *UpdateAuthMachineToMachineConfigRequest) GetConfig() *AuthMachineToMachineConfig {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *UpdateAuthMachineToMachineConfigRequest) SetConfig(v *AuthMachineToMachineConfig) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *UpdateAuthMachineToMachineConfigRequest) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *UpdateAuthMachineToMachineConfigRequest) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 type UpdateAuthMachineToMachineConfigRequest_builder struct {
@@ -1018,16 +1054,17 @@ func (b0 UpdateAuthMachineToMachineConfigRequest_builder) Build() *UpdateAuthMac
 	m0 := &UpdateAuthMachineToMachineConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
+	x.xxx_hidden_Config = b.Config
 	return m0
 }
 
 type ExchangeAuthMachineToMachineTokenRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Identity token that is supposed to be exchanged.
-	IdToken       *string `protobuf:"bytes,1,opt,name=id_token,json=idToken" json:"id_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_IdToken     *string                `protobuf:"bytes,1,opt,name=id_token,json=idToken"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ExchangeAuthMachineToMachineTokenRequest) Reset() {
@@ -1056,25 +1093,30 @@ func (x *ExchangeAuthMachineToMachineTokenRequest) ProtoReflect() protoreflect.M
 }
 
 func (x *ExchangeAuthMachineToMachineTokenRequest) GetIdToken() string {
-	if x != nil && x.IdToken != nil {
-		return *x.IdToken
+	if x != nil {
+		if x.xxx_hidden_IdToken != nil {
+			return *x.xxx_hidden_IdToken
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ExchangeAuthMachineToMachineTokenRequest) SetIdToken(v string) {
-	x.IdToken = &v
+	x.xxx_hidden_IdToken = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *ExchangeAuthMachineToMachineTokenRequest) HasIdToken() bool {
 	if x == nil {
 		return false
 	}
-	return x.IdToken != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ExchangeAuthMachineToMachineTokenRequest) ClearIdToken() {
-	x.IdToken = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_IdToken = nil
 }
 
 type ExchangeAuthMachineToMachineTokenRequest_builder struct {
@@ -1088,16 +1130,20 @@ func (b0 ExchangeAuthMachineToMachineTokenRequest_builder) Build() *ExchangeAuth
 	m0 := &ExchangeAuthMachineToMachineTokenRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.IdToken = b.IdToken
+	if b.IdToken != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_IdToken = b.IdToken
+	}
 	return m0
 }
 
 type ExchangeAuthMachineToMachineTokenResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The exchanged access token.
-	AccessToken   *string `protobuf:"bytes,1,opt,name=access_token,json=accessToken" json:"access_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AccessToken *string                `protobuf:"bytes,1,opt,name=access_token,json=accessToken"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ExchangeAuthMachineToMachineTokenResponse) Reset() {
@@ -1126,25 +1172,30 @@ func (x *ExchangeAuthMachineToMachineTokenResponse) ProtoReflect() protoreflect.
 }
 
 func (x *ExchangeAuthMachineToMachineTokenResponse) GetAccessToken() string {
-	if x != nil && x.AccessToken != nil {
-		return *x.AccessToken
+	if x != nil {
+		if x.xxx_hidden_AccessToken != nil {
+			return *x.xxx_hidden_AccessToken
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ExchangeAuthMachineToMachineTokenResponse) SetAccessToken(v string) {
-	x.AccessToken = &v
+	x.xxx_hidden_AccessToken = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *ExchangeAuthMachineToMachineTokenResponse) HasAccessToken() bool {
 	if x == nil {
 		return false
 	}
-	return x.AccessToken != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ExchangeAuthMachineToMachineTokenResponse) ClearAccessToken() {
-	x.AccessToken = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_AccessToken = nil
 }
 
 type ExchangeAuthMachineToMachineTokenResponse_builder struct {
@@ -1158,24 +1209,23 @@ func (b0 ExchangeAuthMachineToMachineTokenResponse_builder) Build() *ExchangeAut
 	m0 := &ExchangeAuthMachineToMachineTokenResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AccessToken = b.AccessToken
+	if b.AccessToken != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_AccessToken = b.AccessToken
+	}
 	return m0
 }
 
 // Mappings map an identity token's claim values to a specific role within Central.
 type AuthMachineToMachineConfig_Mapping struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// A key within the identity token's claim value to use.
-	Key *string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	// A regular expression that will be evaluated against values of the identity token claim
-	// identified by the specified key.
-	// This regular expressions is in RE2 format, see more here:
-	// https://github.com/google/re2/wiki/Syntax.
-	ValueExpression *string `protobuf:"bytes,2,opt,name=value_expression,json=valueExpression" json:"value_expression,omitempty"`
-	// The role which should be issued when the key and value match for a particular identity token.
-	Role          *string `protobuf:"bytes,3,opt,name=role" json:"role,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Key             *string                `protobuf:"bytes,1,opt,name=key"`
+	xxx_hidden_ValueExpression *string                `protobuf:"bytes,2,opt,name=value_expression,json=valueExpression"`
+	xxx_hidden_Role            *string                `protobuf:"bytes,3,opt,name=role"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) Reset() {
@@ -1204,69 +1254,84 @@ func (x *AuthMachineToMachineConfig_Mapping) ProtoReflect() protoreflect.Message
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) GetKey() string {
-	if x != nil && x.Key != nil {
-		return *x.Key
+	if x != nil {
+		if x.xxx_hidden_Key != nil {
+			return *x.xxx_hidden_Key
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) GetValueExpression() string {
-	if x != nil && x.ValueExpression != nil {
-		return *x.ValueExpression
+	if x != nil {
+		if x.xxx_hidden_ValueExpression != nil {
+			return *x.xxx_hidden_ValueExpression
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) GetRole() string {
-	if x != nil && x.Role != nil {
-		return *x.Role
+	if x != nil {
+		if x.xxx_hidden_Role != nil {
+			return *x.xxx_hidden_Role
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) SetKey(v string) {
-	x.Key = &v
+	x.xxx_hidden_Key = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) SetValueExpression(v string) {
-	x.ValueExpression = &v
+	x.xxx_hidden_ValueExpression = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) SetRole(v string) {
-	x.Role = &v
+	x.xxx_hidden_Role = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.Key != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) HasValueExpression() bool {
 	if x == nil {
 		return false
 	}
-	return x.ValueExpression != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) HasRole() bool {
 	if x == nil {
 		return false
 	}
-	return x.Role != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) ClearKey() {
-	x.Key = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Key = nil
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) ClearValueExpression() {
-	x.ValueExpression = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ValueExpression = nil
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) ClearRole() {
-	x.Role = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Role = nil
 }
 
 type AuthMachineToMachineConfig_Mapping_builder struct {
@@ -1287,9 +1352,18 @@ func (b0 AuthMachineToMachineConfig_Mapping_builder) Build() *AuthMachineToMachi
 	m0 := &AuthMachineToMachineConfig_Mapping{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Key = b.Key
-	x.ValueExpression = b.ValueExpression
-	x.Role = b.Role
+	if b.Key != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Key = b.Key
+	}
+	if b.ValueExpression != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_ValueExpression = b.ValueExpression
+	}
+	if b.Role != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Role = b.Role
+	}
 	return m0
 }
 
@@ -1352,7 +1426,7 @@ const file_api_v1_auth_service_proto_rawDesc = "" +
 	" UpdateAuthMachineToMachineConfig\x12+.v1.UpdateAuthMachineToMachineConfigRequest\x1a\t.v1.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\x1a\x18/v1/auth/m2m/{config.id}\x12Z\n" +
 	" DeleteAuthMachineToMachineConfig\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/auth/m2m/{id}\x12\xa2\x01\n" +
 	"!ExchangeAuthMachineToMachineToken\x12,.v1.ExchangeAuthMachineToMachineTokenRequest\x1a-.v1.ExchangeAuthMachineToMachineTokenResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/v1/auth/m2m/exchangeB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x03b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x03b\beditionsp\xe8\a"
 
 var file_api_v1_auth_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v1_auth_service_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
@@ -1421,8 +1495,8 @@ func file_api_v1_auth_service_proto_init() {
 	file_api_v1_empty_proto_init()
 	file_api_v1_traits_proto_init()
 	file_api_v1_auth_service_proto_msgTypes[1].OneofWrappers = []any{
-		(*AuthStatus_UserId)(nil),
-		(*AuthStatus_ServiceId)(nil),
+		(*authStatus_UserId)(nil),
+		(*authStatus_ServiceId)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

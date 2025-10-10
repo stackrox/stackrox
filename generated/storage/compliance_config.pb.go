@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/compliance_config.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -24,11 +22,13 @@ const (
 )
 
 type ComplianceConfig struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	StandardId      *string                `protobuf:"bytes,1,opt,name=standard_id,json=standardId" json:"standard_id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	HideScanResults *bool                  `protobuf:"varint,2,opt,name=hideScanResults" json:"hideScanResults,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_StandardId      *string                `protobuf:"bytes,1,opt,name=standard_id,json=standardId"`
+	xxx_hidden_HideScanResults bool                   `protobuf:"varint,2,opt,name=hideScanResults"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *ComplianceConfig) Reset() {
@@ -57,47 +57,54 @@ func (x *ComplianceConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ComplianceConfig) GetStandardId() string {
-	if x != nil && x.StandardId != nil {
-		return *x.StandardId
+	if x != nil {
+		if x.xxx_hidden_StandardId != nil {
+			return *x.xxx_hidden_StandardId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ComplianceConfig) GetHideScanResults() bool {
-	if x != nil && x.HideScanResults != nil {
-		return *x.HideScanResults
+	if x != nil {
+		return x.xxx_hidden_HideScanResults
 	}
 	return false
 }
 
 func (x *ComplianceConfig) SetStandardId(v string) {
-	x.StandardId = &v
+	x.xxx_hidden_StandardId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ComplianceConfig) SetHideScanResults(v bool) {
-	x.HideScanResults = &v
+	x.xxx_hidden_HideScanResults = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ComplianceConfig) HasStandardId() bool {
 	if x == nil {
 		return false
 	}
-	return x.StandardId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ComplianceConfig) HasHideScanResults() bool {
 	if x == nil {
 		return false
 	}
-	return x.HideScanResults != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ComplianceConfig) ClearStandardId() {
-	x.StandardId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_StandardId = nil
 }
 
 func (x *ComplianceConfig) ClearHideScanResults() {
-	x.HideScanResults = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_HideScanResults = false
 }
 
 type ComplianceConfig_builder struct {
@@ -111,8 +118,14 @@ func (b0 ComplianceConfig_builder) Build() *ComplianceConfig {
 	m0 := &ComplianceConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.StandardId = b.StandardId
-	x.HideScanResults = b.HideScanResults
+	if b.StandardId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_StandardId = b.StandardId
+	}
+	if b.HideScanResults != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_HideScanResults = *b.HideScanResults
+	}
 	return m0
 }
 
@@ -125,7 +138,7 @@ const file_storage_compliance_config_proto_rawDesc = "" +
 	"\vstandard_id\x18\x01 \x01(\tR\n" +
 	"standardId\x12(\n" +
 	"\x0fhideScanResults\x18\x02 \x01(\bR\x0fhideScanResultsB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_compliance_config_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_compliance_config_proto_goTypes = []any{

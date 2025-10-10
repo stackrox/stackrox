@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/network_graph_config.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -24,11 +22,13 @@ const (
 )
 
 type NetworkGraphConfig struct {
-	state                   protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id                      *string                `protobuf:"bytes,2,opt,name=id" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	HideDefaultExternalSrcs *bool                  `protobuf:"varint,1,opt,name=hide_default_external_srcs,json=hideDefaultExternalSrcs" json:"hide_default_external_srcs,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id                      *string                `protobuf:"bytes,2,opt,name=id"`
+	xxx_hidden_HideDefaultExternalSrcs bool                   `protobuf:"varint,1,opt,name=hide_default_external_srcs,json=hideDefaultExternalSrcs"`
+	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
+	XXX_presence                       [1]uint32
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *NetworkGraphConfig) Reset() {
@@ -57,47 +57,54 @@ func (x *NetworkGraphConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NetworkGraphConfig) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkGraphConfig) GetHideDefaultExternalSrcs() bool {
-	if x != nil && x.HideDefaultExternalSrcs != nil {
-		return *x.HideDefaultExternalSrcs
+	if x != nil {
+		return x.xxx_hidden_HideDefaultExternalSrcs
 	}
 	return false
 }
 
 func (x *NetworkGraphConfig) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *NetworkGraphConfig) SetHideDefaultExternalSrcs(v bool) {
-	x.HideDefaultExternalSrcs = &v
+	x.xxx_hidden_HideDefaultExternalSrcs = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *NetworkGraphConfig) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NetworkGraphConfig) HasHideDefaultExternalSrcs() bool {
 	if x == nil {
 		return false
 	}
-	return x.HideDefaultExternalSrcs != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkGraphConfig) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *NetworkGraphConfig) ClearHideDefaultExternalSrcs() {
-	x.HideDefaultExternalSrcs = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_HideDefaultExternalSrcs = false
 }
 
 type NetworkGraphConfig_builder struct {
@@ -111,8 +118,14 @@ func (b0 NetworkGraphConfig_builder) Build() *NetworkGraphConfig {
 	m0 := &NetworkGraphConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.HideDefaultExternalSrcs = b.HideDefaultExternalSrcs
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.HideDefaultExternalSrcs != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_HideDefaultExternalSrcs = *b.HideDefaultExternalSrcs
+	}
 	return m0
 }
 
@@ -124,7 +137,7 @@ const file_storage_network_graph_config_proto_rawDesc = "" +
 	"\x12NetworkGraphConfig\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12;\n" +
 	"\x1ahide_default_external_srcs\x18\x01 \x01(\bR\x17hideDefaultExternalSrcsB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_network_graph_config_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_network_graph_config_proto_goTypes = []any{

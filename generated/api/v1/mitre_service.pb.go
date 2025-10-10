@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/mitre_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,10 +24,10 @@ const (
 )
 
 type ListMitreAttackVectorsResponse struct {
-	state              protoimpl.MessageState       `protogen:"hybrid.v1"`
-	MitreAttackVectors []*storage.MitreAttackVector `protobuf:"bytes,1,rep,name=mitre_attack_vectors,json=mitreAttackVectors" json:"mitre_attack_vectors,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                         protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_MitreAttackVectors *[]*storage.MitreAttackVector `protobuf:"bytes,1,rep,name=mitre_attack_vectors,json=mitreAttackVectors"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *ListMitreAttackVectorsResponse) Reset() {
@@ -59,13 +57,15 @@ func (x *ListMitreAttackVectorsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListMitreAttackVectorsResponse) GetMitreAttackVectors() []*storage.MitreAttackVector {
 	if x != nil {
-		return x.MitreAttackVectors
+		if x.xxx_hidden_MitreAttackVectors != nil {
+			return *x.xxx_hidden_MitreAttackVectors
+		}
 	}
 	return nil
 }
 
 func (x *ListMitreAttackVectorsResponse) SetMitreAttackVectors(v []*storage.MitreAttackVector) {
-	x.MitreAttackVectors = v
+	x.xxx_hidden_MitreAttackVectors = &v
 }
 
 type ListMitreAttackVectorsResponse_builder struct {
@@ -78,15 +78,15 @@ func (b0 ListMitreAttackVectorsResponse_builder) Build() *ListMitreAttackVectors
 	m0 := &ListMitreAttackVectorsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.MitreAttackVectors = b.MitreAttackVectors
+	x.xxx_hidden_MitreAttackVectors = &b.MitreAttackVectors
 	return m0
 }
 
 type GetMitreVectorResponse struct {
-	state             protoimpl.MessageState     `protogen:"hybrid.v1"`
-	MitreAttackVector *storage.MitreAttackVector `protobuf:"bytes,1,opt,name=mitre_attack_vector,json=mitreAttackVector" json:"mitre_attack_vector,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_MitreAttackVector *storage.MitreAttackVector `protobuf:"bytes,1,opt,name=mitre_attack_vector,json=mitreAttackVector"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *GetMitreVectorResponse) Reset() {
@@ -116,24 +116,24 @@ func (x *GetMitreVectorResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetMitreVectorResponse) GetMitreAttackVector() *storage.MitreAttackVector {
 	if x != nil {
-		return x.MitreAttackVector
+		return x.xxx_hidden_MitreAttackVector
 	}
 	return nil
 }
 
 func (x *GetMitreVectorResponse) SetMitreAttackVector(v *storage.MitreAttackVector) {
-	x.MitreAttackVector = v
+	x.xxx_hidden_MitreAttackVector = v
 }
 
 func (x *GetMitreVectorResponse) HasMitreAttackVector() bool {
 	if x == nil {
 		return false
 	}
-	return x.MitreAttackVector != nil
+	return x.xxx_hidden_MitreAttackVector != nil
 }
 
 func (x *GetMitreVectorResponse) ClearMitreAttackVector() {
-	x.MitreAttackVector = nil
+	x.xxx_hidden_MitreAttackVector = nil
 }
 
 type GetMitreVectorResponse_builder struct {
@@ -146,7 +146,7 @@ func (b0 GetMitreVectorResponse_builder) Build() *GetMitreVectorResponse {
 	m0 := &GetMitreVectorResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.MitreAttackVector = b.MitreAttackVector
+	x.xxx_hidden_MitreAttackVector = b.MitreAttackVector
 	return m0
 }
 
@@ -162,7 +162,7 @@ const file_api_v1_mitre_service_proto_rawDesc = "" +
 	"\x12MitreAttackService\x12g\n" +
 	"\x16ListMitreAttackVectors\x12\t.v1.Empty\x1a\".v1.ListMitreAttackVectorsResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/mitreattackvectors\x12i\n" +
 	"\x14GetMitreAttackVector\x12\x10.v1.ResourceByID\x1a\x1a.v1.GetMitreVectorResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/mitreattackvectors/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_mitre_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_v1_mitre_service_proto_goTypes = []any{

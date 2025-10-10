@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/process_listening_on_port_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,11 +24,13 @@ const (
 )
 
 type GetProcessesListeningOnPortsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	DeploymentId  *string                `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,2,opt,name=pagination" json:"pagination,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_DeploymentId *string                `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
+	xxx_hidden_Pagination   *Pagination            `protobuf:"bytes,2,opt,name=pagination"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetProcessesListeningOnPortsRequest) Reset() {
@@ -59,47 +59,52 @@ func (x *GetProcessesListeningOnPortsRequest) ProtoReflect() protoreflect.Messag
 }
 
 func (x *GetProcessesListeningOnPortsRequest) GetDeploymentId() string {
-	if x != nil && x.DeploymentId != nil {
-		return *x.DeploymentId
+	if x != nil {
+		if x.xxx_hidden_DeploymentId != nil {
+			return *x.xxx_hidden_DeploymentId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetProcessesListeningOnPortsRequest) GetPagination() *Pagination {
 	if x != nil {
-		return x.Pagination
+		return x.xxx_hidden_Pagination
 	}
 	return nil
 }
 
 func (x *GetProcessesListeningOnPortsRequest) SetDeploymentId(v string) {
-	x.DeploymentId = &v
+	x.xxx_hidden_DeploymentId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetProcessesListeningOnPortsRequest) SetPagination(v *Pagination) {
-	x.Pagination = v
+	x.xxx_hidden_Pagination = v
 }
 
 func (x *GetProcessesListeningOnPortsRequest) HasDeploymentId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetProcessesListeningOnPortsRequest) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pagination != nil
+	return x.xxx_hidden_Pagination != nil
 }
 
 func (x *GetProcessesListeningOnPortsRequest) ClearDeploymentId() {
-	x.DeploymentId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_DeploymentId = nil
 }
 
 func (x *GetProcessesListeningOnPortsRequest) ClearPagination() {
-	x.Pagination = nil
+	x.xxx_hidden_Pagination = nil
 }
 
 type GetProcessesListeningOnPortsRequest_builder struct {
@@ -113,17 +118,22 @@ func (b0 GetProcessesListeningOnPortsRequest_builder) Build() *GetProcessesListe
 	m0 := &GetProcessesListeningOnPortsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DeploymentId = b.DeploymentId
-	x.Pagination = b.Pagination
+	if b.DeploymentId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_DeploymentId = b.DeploymentId
+	}
+	x.xxx_hidden_Pagination = b.Pagination
 	return m0
 }
 
 type GetProcessesListeningOnPortsResponse struct {
-	state                   protoimpl.MessageState            `protogen:"hybrid.v1"`
-	ListeningEndpoints      []*storage.ProcessListeningOnPort `protobuf:"bytes,1,rep,name=listening_endpoints,json=listeningEndpoints" json:"listening_endpoints,omitempty"`
-	TotalListeningEndpoints *int32                            `protobuf:"varint,2,opt,name=total_listening_endpoints,json=totalListeningEndpoints" json:"total_listening_endpoints,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                              protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_ListeningEndpoints      *[]*storage.ProcessListeningOnPort `protobuf:"bytes,1,rep,name=listening_endpoints,json=listeningEndpoints"`
+	xxx_hidden_TotalListeningEndpoints int32                              `protobuf:"varint,2,opt,name=total_listening_endpoints,json=totalListeningEndpoints"`
+	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
+	XXX_presence                       [1]uint32
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *GetProcessesListeningOnPortsResponse) Reset() {
@@ -153,35 +163,39 @@ func (x *GetProcessesListeningOnPortsResponse) ProtoReflect() protoreflect.Messa
 
 func (x *GetProcessesListeningOnPortsResponse) GetListeningEndpoints() []*storage.ProcessListeningOnPort {
 	if x != nil {
-		return x.ListeningEndpoints
+		if x.xxx_hidden_ListeningEndpoints != nil {
+			return *x.xxx_hidden_ListeningEndpoints
+		}
 	}
 	return nil
 }
 
 func (x *GetProcessesListeningOnPortsResponse) GetTotalListeningEndpoints() int32 {
-	if x != nil && x.TotalListeningEndpoints != nil {
-		return *x.TotalListeningEndpoints
+	if x != nil {
+		return x.xxx_hidden_TotalListeningEndpoints
 	}
 	return 0
 }
 
 func (x *GetProcessesListeningOnPortsResponse) SetListeningEndpoints(v []*storage.ProcessListeningOnPort) {
-	x.ListeningEndpoints = v
+	x.xxx_hidden_ListeningEndpoints = &v
 }
 
 func (x *GetProcessesListeningOnPortsResponse) SetTotalListeningEndpoints(v int32) {
-	x.TotalListeningEndpoints = &v
+	x.xxx_hidden_TotalListeningEndpoints = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetProcessesListeningOnPortsResponse) HasTotalListeningEndpoints() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalListeningEndpoints != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetProcessesListeningOnPortsResponse) ClearTotalListeningEndpoints() {
-	x.TotalListeningEndpoints = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_TotalListeningEndpoints = 0
 }
 
 type GetProcessesListeningOnPortsResponse_builder struct {
@@ -195,8 +209,11 @@ func (b0 GetProcessesListeningOnPortsResponse_builder) Build() *GetProcessesList
 	m0 := &GetProcessesListeningOnPortsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ListeningEndpoints = b.ListeningEndpoints
-	x.TotalListeningEndpoints = b.TotalListeningEndpoints
+	x.xxx_hidden_ListeningEndpoints = &b.ListeningEndpoints
+	if b.TotalListeningEndpoints != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_TotalListeningEndpoints = *b.TotalListeningEndpoints
+	}
 	return m0
 }
 
@@ -215,7 +232,7 @@ const file_api_v1_process_listening_on_port_service_proto_rawDesc = "" +
 	"\x19total_listening_endpoints\x18\x02 \x01(\x05R\x17totalListeningEndpoints2\xc4\x01\n" +
 	"\x19ListeningEndpointsService\x12\xa6\x01\n" +
 	"\x15GetListeningEndpoints\x12'.v1.GetProcessesListeningOnPortsRequest\x1a(.v1.GetProcessesListeningOnPortsResponse\":\x82\xd3\xe4\x93\x024\x122/v1/listening_endpoints/deployment/{deployment_id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x01b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_process_listening_on_port_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_v1_process_listening_on_port_service_proto_goTypes = []any{

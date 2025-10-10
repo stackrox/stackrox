@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/backup_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,10 +24,10 @@ const (
 )
 
 type GetExternalBackupsResponse struct {
-	state           protoimpl.MessageState    `protogen:"hybrid.v1"`
-	ExternalBackups []*storage.ExternalBackup `protobuf:"bytes,1,rep,name=external_backups,json=externalBackups" json:"external_backups,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_ExternalBackups *[]*storage.ExternalBackup `protobuf:"bytes,1,rep,name=external_backups,json=externalBackups"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetExternalBackupsResponse) Reset() {
@@ -59,13 +57,15 @@ func (x *GetExternalBackupsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetExternalBackupsResponse) GetExternalBackups() []*storage.ExternalBackup {
 	if x != nil {
-		return x.ExternalBackups
+		if x.xxx_hidden_ExternalBackups != nil {
+			return *x.xxx_hidden_ExternalBackups
+		}
 	}
 	return nil
 }
 
 func (x *GetExternalBackupsResponse) SetExternalBackups(v []*storage.ExternalBackup) {
-	x.ExternalBackups = v
+	x.xxx_hidden_ExternalBackups = &v
 }
 
 type GetExternalBackupsResponse_builder struct {
@@ -78,17 +78,18 @@ func (b0 GetExternalBackupsResponse_builder) Build() *GetExternalBackupsResponse
 	m0 := &GetExternalBackupsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ExternalBackups = b.ExternalBackups
+	x.xxx_hidden_ExternalBackups = &b.ExternalBackups
 	return m0
 }
 
 type UpdateExternalBackupRequest struct {
-	state          protoimpl.MessageState  `protogen:"hybrid.v1"`
-	ExternalBackup *storage.ExternalBackup `protobuf:"bytes,1,opt,name=external_backup,json=externalBackup" json:"external_backup,omitempty"`
-	// When false, use the stored credentials of an existing external backup configuration given its ID.
-	UpdatePassword *bool `protobuf:"varint,2,opt,name=update_password,json=updatePassword" json:"update_password,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_ExternalBackup *storage.ExternalBackup `protobuf:"bytes,1,opt,name=external_backup,json=externalBackup"`
+	xxx_hidden_UpdatePassword bool                    `protobuf:"varint,2,opt,name=update_password,json=updatePassword"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *UpdateExternalBackupRequest) Reset() {
@@ -118,46 +119,48 @@ func (x *UpdateExternalBackupRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateExternalBackupRequest) GetExternalBackup() *storage.ExternalBackup {
 	if x != nil {
-		return x.ExternalBackup
+		return x.xxx_hidden_ExternalBackup
 	}
 	return nil
 }
 
 func (x *UpdateExternalBackupRequest) GetUpdatePassword() bool {
-	if x != nil && x.UpdatePassword != nil {
-		return *x.UpdatePassword
+	if x != nil {
+		return x.xxx_hidden_UpdatePassword
 	}
 	return false
 }
 
 func (x *UpdateExternalBackupRequest) SetExternalBackup(v *storage.ExternalBackup) {
-	x.ExternalBackup = v
+	x.xxx_hidden_ExternalBackup = v
 }
 
 func (x *UpdateExternalBackupRequest) SetUpdatePassword(v bool) {
-	x.UpdatePassword = &v
+	x.xxx_hidden_UpdatePassword = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *UpdateExternalBackupRequest) HasExternalBackup() bool {
 	if x == nil {
 		return false
 	}
-	return x.ExternalBackup != nil
+	return x.xxx_hidden_ExternalBackup != nil
 }
 
 func (x *UpdateExternalBackupRequest) HasUpdatePassword() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpdatePassword != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UpdateExternalBackupRequest) ClearExternalBackup() {
-	x.ExternalBackup = nil
+	x.xxx_hidden_ExternalBackup = nil
 }
 
 func (x *UpdateExternalBackupRequest) ClearUpdatePassword() {
-	x.UpdatePassword = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_UpdatePassword = false
 }
 
 type UpdateExternalBackupRequest_builder struct {
@@ -172,8 +175,11 @@ func (b0 UpdateExternalBackupRequest_builder) Build() *UpdateExternalBackupReque
 	m0 := &UpdateExternalBackupRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ExternalBackup = b.ExternalBackup
-	x.UpdatePassword = b.UpdatePassword
+	x.xxx_hidden_ExternalBackup = b.ExternalBackup
+	if b.UpdatePassword != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_UpdatePassword = *b.UpdatePassword
+	}
 	return m0
 }
 
@@ -197,7 +203,7 @@ const file_api_v1_backup_service_proto_rawDesc = "" +
 	"\x15TriggerExternalBackup\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\" \x82\xd3\xe4\x93\x02\x1a\"\x18/v1/externalbackups/{id}\x12\x85\x01\n" +
 	"\x14UpdateExternalBackup\x12\x1f.v1.UpdateExternalBackupRequest\x1a\x17.storage.ExternalBackup\"3\x82\xd3\xe4\x93\x02-:\x01*2(/v1/externalbackups/{external_backup.id}\x12t\n" +
 	"\x19TestUpdatedExternalBackup\x12\x1f.v1.UpdateExternalBackupRequest\x1a\t.v1.Empty\"+\x82\xd3\xe4\x93\x02%:\x01*\" /v1/externalbackups/test/updatedB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_backup_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_v1_backup_service_proto_goTypes = []any{

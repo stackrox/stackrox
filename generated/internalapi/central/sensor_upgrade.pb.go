@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/sensor_upgrade.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -24,14 +22,15 @@ const (
 )
 
 type SensorUpgradeTrigger struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// A UUID that identifies this specific upgrade process.
-	UpgradeProcessId *string                           `protobuf:"bytes,1,opt,name=upgrade_process_id,json=upgradeProcessId" json:"upgrade_process_id,omitempty"`
-	Image            *string                           `protobuf:"bytes,2,opt,name=image" json:"image,omitempty"`
-	Command          []string                          `protobuf:"bytes,3,rep,name=command" json:"command,omitempty"`
-	EnvVars          []*SensorUpgradeTrigger_EnvVarDef `protobuf:"bytes,4,rep,name=env_vars,json=envVars" json:"env_vars,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_UpgradeProcessId *string                            `protobuf:"bytes,1,opt,name=upgrade_process_id,json=upgradeProcessId"`
+	xxx_hidden_Image            *string                            `protobuf:"bytes,2,opt,name=image"`
+	xxx_hidden_Command          []string                           `protobuf:"bytes,3,rep,name=command"`
+	xxx_hidden_EnvVars          *[]*SensorUpgradeTrigger_EnvVarDef `protobuf:"bytes,4,rep,name=env_vars,json=envVars"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *SensorUpgradeTrigger) Reset() {
@@ -60,69 +59,81 @@ func (x *SensorUpgradeTrigger) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SensorUpgradeTrigger) GetUpgradeProcessId() string {
-	if x != nil && x.UpgradeProcessId != nil {
-		return *x.UpgradeProcessId
+	if x != nil {
+		if x.xxx_hidden_UpgradeProcessId != nil {
+			return *x.xxx_hidden_UpgradeProcessId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorUpgradeTrigger) GetImage() string {
-	if x != nil && x.Image != nil {
-		return *x.Image
+	if x != nil {
+		if x.xxx_hidden_Image != nil {
+			return *x.xxx_hidden_Image
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorUpgradeTrigger) GetCommand() []string {
 	if x != nil {
-		return x.Command
+		return x.xxx_hidden_Command
 	}
 	return nil
 }
 
 func (x *SensorUpgradeTrigger) GetEnvVars() []*SensorUpgradeTrigger_EnvVarDef {
 	if x != nil {
-		return x.EnvVars
+		if x.xxx_hidden_EnvVars != nil {
+			return *x.xxx_hidden_EnvVars
+		}
 	}
 	return nil
 }
 
 func (x *SensorUpgradeTrigger) SetUpgradeProcessId(v string) {
-	x.UpgradeProcessId = &v
+	x.xxx_hidden_UpgradeProcessId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *SensorUpgradeTrigger) SetImage(v string) {
-	x.Image = &v
+	x.xxx_hidden_Image = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *SensorUpgradeTrigger) SetCommand(v []string) {
-	x.Command = v
+	x.xxx_hidden_Command = v
 }
 
 func (x *SensorUpgradeTrigger) SetEnvVars(v []*SensorUpgradeTrigger_EnvVarDef) {
-	x.EnvVars = v
+	x.xxx_hidden_EnvVars = &v
 }
 
 func (x *SensorUpgradeTrigger) HasUpgradeProcessId() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpgradeProcessId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SensorUpgradeTrigger) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Image != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SensorUpgradeTrigger) ClearUpgradeProcessId() {
-	x.UpgradeProcessId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_UpgradeProcessId = nil
 }
 
 func (x *SensorUpgradeTrigger) ClearImage() {
-	x.Image = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Image = nil
 }
 
 type SensorUpgradeTrigger_builder struct {
@@ -139,20 +150,28 @@ func (b0 SensorUpgradeTrigger_builder) Build() *SensorUpgradeTrigger {
 	m0 := &SensorUpgradeTrigger{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.UpgradeProcessId = b.UpgradeProcessId
-	x.Image = b.Image
-	x.Command = b.Command
-	x.EnvVars = b.EnvVars
+	if b.UpgradeProcessId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_UpgradeProcessId = b.UpgradeProcessId
+	}
+	if b.Image != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Image = b.Image
+	}
+	x.xxx_hidden_Command = b.Command
+	x.xxx_hidden_EnvVars = &b.EnvVars
 	return m0
 }
 
 type SensorUpgradeTrigger_EnvVarDef struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	SourceEnvVar  *string                `protobuf:"bytes,2,opt,name=source_env_var,json=sourceEnvVar" json:"source_env_var,omitempty"`
-	DefaultValue  *string                `protobuf:"bytes,3,opt,name=default_value,json=defaultValue" json:"default_value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name         *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_SourceEnvVar *string                `protobuf:"bytes,2,opt,name=source_env_var,json=sourceEnvVar"`
+	xxx_hidden_DefaultValue *string                `protobuf:"bytes,3,opt,name=default_value,json=defaultValue"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) Reset() {
@@ -181,69 +200,84 @@ func (x *SensorUpgradeTrigger_EnvVarDef) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) GetSourceEnvVar() string {
-	if x != nil && x.SourceEnvVar != nil {
-		return *x.SourceEnvVar
+	if x != nil {
+		if x.xxx_hidden_SourceEnvVar != nil {
+			return *x.xxx_hidden_SourceEnvVar
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) GetDefaultValue() string {
-	if x != nil && x.DefaultValue != nil {
-		return *x.DefaultValue
+	if x != nil {
+		if x.xxx_hidden_DefaultValue != nil {
+			return *x.xxx_hidden_DefaultValue
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) SetSourceEnvVar(v string) {
-	x.SourceEnvVar = &v
+	x.xxx_hidden_SourceEnvVar = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) SetDefaultValue(v string) {
-	x.DefaultValue = &v
+	x.xxx_hidden_DefaultValue = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) HasSourceEnvVar() bool {
 	if x == nil {
 		return false
 	}
-	return x.SourceEnvVar != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) HasDefaultValue() bool {
 	if x == nil {
 		return false
 	}
-	return x.DefaultValue != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) ClearSourceEnvVar() {
-	x.SourceEnvVar = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_SourceEnvVar = nil
 }
 
 func (x *SensorUpgradeTrigger_EnvVarDef) ClearDefaultValue() {
-	x.DefaultValue = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_DefaultValue = nil
 }
 
 type SensorUpgradeTrigger_EnvVarDef_builder struct {
@@ -258,9 +292,18 @@ func (b0 SensorUpgradeTrigger_EnvVarDef_builder) Build() *SensorUpgradeTrigger_E
 	m0 := &SensorUpgradeTrigger_EnvVarDef{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.SourceEnvVar = b.SourceEnvVar
-	x.DefaultValue = b.DefaultValue
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.SourceEnvVar != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_SourceEnvVar = b.SourceEnvVar
+	}
+	if b.DefaultValue != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_DefaultValue = b.DefaultValue
+	}
 	return m0
 }
 
@@ -277,7 +320,7 @@ const file_internalapi_central_sensor_upgrade_proto_rawDesc = "" +
 	"\tEnvVarDef\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12$\n" +
 	"\x0esource_env_var\x18\x02 \x01(\tR\fsourceEnvVar\x12#\n" +
-	"\rdefault_value\x18\x03 \x01(\tR\fdefaultValueB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\rdefault_value\x18\x03 \x01(\tR\fdefaultValueB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_sensor_upgrade_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_central_sensor_upgrade_proto_goTypes = []any{

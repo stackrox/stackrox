@@ -7,8 +7,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/scanner/v4/index_report.proto
 
-//go:build !protoopaque
-
 package v4
 
 import (
@@ -27,14 +25,16 @@ const (
 )
 
 type IndexReport struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	HashId        *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId" json:"hash_id,omitempty"`
-	State         *string                `protobuf:"bytes,2,opt,name=state" json:"state,omitempty"`
-	Success       *bool                  `protobuf:"varint,3,opt,name=success" json:"success,omitempty"`
-	Err           *string                `protobuf:"bytes,4,opt,name=err" json:"err,omitempty"`
-	Contents      *Contents              `protobuf:"bytes,5,opt,name=contents" json:"contents,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_HashId      *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId"`
+	xxx_hidden_State       *string                `protobuf:"bytes,2,opt,name=state"`
+	xxx_hidden_Success     bool                   `protobuf:"varint,3,opt,name=success"`
+	xxx_hidden_Err         *string                `protobuf:"bytes,4,opt,name=err"`
+	xxx_hidden_Contents    *Contents              `protobuf:"bytes,5,opt,name=contents"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *IndexReport) Reset() {
@@ -63,113 +63,130 @@ func (x *IndexReport) ProtoReflect() protoreflect.Message {
 }
 
 func (x *IndexReport) GetHashId() string {
-	if x != nil && x.HashId != nil {
-		return *x.HashId
+	if x != nil {
+		if x.xxx_hidden_HashId != nil {
+			return *x.xxx_hidden_HashId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *IndexReport) GetState() string {
-	if x != nil && x.State != nil {
-		return *x.State
+	if x != nil {
+		if x.xxx_hidden_State != nil {
+			return *x.xxx_hidden_State
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *IndexReport) GetSuccess() bool {
-	if x != nil && x.Success != nil {
-		return *x.Success
+	if x != nil {
+		return x.xxx_hidden_Success
 	}
 	return false
 }
 
 func (x *IndexReport) GetErr() string {
-	if x != nil && x.Err != nil {
-		return *x.Err
+	if x != nil {
+		if x.xxx_hidden_Err != nil {
+			return *x.xxx_hidden_Err
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *IndexReport) GetContents() *Contents {
 	if x != nil {
-		return x.Contents
+		return x.xxx_hidden_Contents
 	}
 	return nil
 }
 
 func (x *IndexReport) SetHashId(v string) {
-	x.HashId = &v
+	x.xxx_hidden_HashId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *IndexReport) SetState(v string) {
-	x.State = &v
+	x.xxx_hidden_State = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *IndexReport) SetSuccess(v bool) {
-	x.Success = &v
+	x.xxx_hidden_Success = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *IndexReport) SetErr(v string) {
-	x.Err = &v
+	x.xxx_hidden_Err = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *IndexReport) SetContents(v *Contents) {
-	x.Contents = v
+	x.xxx_hidden_Contents = v
 }
 
 func (x *IndexReport) HasHashId() bool {
 	if x == nil {
 		return false
 	}
-	return x.HashId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *IndexReport) HasState() bool {
 	if x == nil {
 		return false
 	}
-	return x.State != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *IndexReport) HasSuccess() bool {
 	if x == nil {
 		return false
 	}
-	return x.Success != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *IndexReport) HasErr() bool {
 	if x == nil {
 		return false
 	}
-	return x.Err != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *IndexReport) HasContents() bool {
 	if x == nil {
 		return false
 	}
-	return x.Contents != nil
+	return x.xxx_hidden_Contents != nil
 }
 
 func (x *IndexReport) ClearHashId() {
-	x.HashId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HashId = nil
 }
 
 func (x *IndexReport) ClearState() {
-	x.State = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_State = nil
 }
 
 func (x *IndexReport) ClearSuccess() {
-	x.Success = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Success = false
 }
 
 func (x *IndexReport) ClearErr() {
-	x.Err = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Err = nil
 }
 
 func (x *IndexReport) ClearContents() {
-	x.Contents = nil
+	x.xxx_hidden_Contents = nil
 }
 
 type IndexReport_builder struct {
@@ -186,11 +203,23 @@ func (b0 IndexReport_builder) Build() *IndexReport {
 	m0 := &IndexReport{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HashId = b.HashId
-	x.State = b.State
-	x.Success = b.Success
-	x.Err = b.Err
-	x.Contents = b.Contents
+	if b.HashId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_HashId = b.HashId
+	}
+	if b.State != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_State = b.State
+	}
+	if b.Success != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Success = *b.Success
+	}
+	if b.Err != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_Err = b.Err
+	}
+	x.xxx_hidden_Contents = b.Contents
 	return m0
 }
 
@@ -205,7 +234,7 @@ const file_internalapi_scanner_v4_index_report_proto_rawDesc = "" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x18\n" +
 	"\asuccess\x18\x03 \x01(\bR\asuccess\x12\x10\n" +
 	"\x03err\x18\x04 \x01(\tR\x03err\x120\n" +
-	"\bcontents\x18\x05 \x01(\v2\x14.scanner.v4.ContentsR\bcontentsB%Z\x1b./internalapi/scanner/v4;v4\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\bcontents\x18\x05 \x01(\v2\x14.scanner.v4.ContentsR\bcontentsB%Z\x1b./internalapi/scanner/v4;v4\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_scanner_v4_index_report_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_scanner_v4_index_report_proto_goTypes = []any{

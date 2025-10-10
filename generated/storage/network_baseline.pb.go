@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/network_baseline.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -27,15 +25,14 @@ const (
 // NetworkBaselineConnectionProperties represents information about a baseline connection
 // next available tag: 4
 type NetworkBaselineConnectionProperties struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Whether this connection is an ingress/egress, from the PoV
-	// of the deployment whose baseline this is in
-	Ingress *bool `protobuf:"varint,1,opt,name=ingress" json:"ingress,omitempty"`
-	// May be 0 if not applicable (e.g., icmp), and denotes the destination port
-	Port          *uint32     `protobuf:"varint,2,opt,name=port" json:"port,omitempty"`
-	Protocol      *L4Protocol `protobuf:"varint,3,opt,name=protocol,enum=storage.L4Protocol" json:"protocol,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Ingress     bool                   `protobuf:"varint,1,opt,name=ingress"`
+	xxx_hidden_Port        uint32                 `protobuf:"varint,2,opt,name=port"`
+	xxx_hidden_Protocol    L4Protocol             `protobuf:"varint,3,opt,name=protocol,enum=storage.L4Protocol"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkBaselineConnectionProperties) Reset() {
@@ -64,69 +61,77 @@ func (x *NetworkBaselineConnectionProperties) ProtoReflect() protoreflect.Messag
 }
 
 func (x *NetworkBaselineConnectionProperties) GetIngress() bool {
-	if x != nil && x.Ingress != nil {
-		return *x.Ingress
+	if x != nil {
+		return x.xxx_hidden_Ingress
 	}
 	return false
 }
 
 func (x *NetworkBaselineConnectionProperties) GetPort() uint32 {
-	if x != nil && x.Port != nil {
-		return *x.Port
+	if x != nil {
+		return x.xxx_hidden_Port
 	}
 	return 0
 }
 
 func (x *NetworkBaselineConnectionProperties) GetProtocol() L4Protocol {
-	if x != nil && x.Protocol != nil {
-		return *x.Protocol
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Protocol
+		}
 	}
 	return L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
 func (x *NetworkBaselineConnectionProperties) SetIngress(v bool) {
-	x.Ingress = &v
+	x.xxx_hidden_Ingress = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *NetworkBaselineConnectionProperties) SetPort(v uint32) {
-	x.Port = &v
+	x.xxx_hidden_Port = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *NetworkBaselineConnectionProperties) SetProtocol(v L4Protocol) {
-	x.Protocol = &v
+	x.xxx_hidden_Protocol = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *NetworkBaselineConnectionProperties) HasIngress() bool {
 	if x == nil {
 		return false
 	}
-	return x.Ingress != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NetworkBaselineConnectionProperties) HasPort() bool {
 	if x == nil {
 		return false
 	}
-	return x.Port != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkBaselineConnectionProperties) HasProtocol() bool {
 	if x == nil {
 		return false
 	}
-	return x.Protocol != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *NetworkBaselineConnectionProperties) ClearIngress() {
-	x.Ingress = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Ingress = false
 }
 
 func (x *NetworkBaselineConnectionProperties) ClearPort() {
-	x.Port = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Port = 0
 }
 
 func (x *NetworkBaselineConnectionProperties) ClearProtocol() {
-	x.Protocol = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Protocol = L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
 type NetworkBaselineConnectionProperties_builder struct {
@@ -144,21 +149,29 @@ func (b0 NetworkBaselineConnectionProperties_builder) Build() *NetworkBaselineCo
 	m0 := &NetworkBaselineConnectionProperties{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Ingress = b.Ingress
-	x.Port = b.Port
-	x.Protocol = b.Protocol
+	if b.Ingress != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Ingress = *b.Ingress
+	}
+	if b.Port != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Port = *b.Port
+	}
+	if b.Protocol != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Protocol = *b.Protocol
+	}
 	return m0
 }
 
 // NetworkBaselinePeer represents a baseline peer.
 // next available tag: 3
 type NetworkBaselinePeer struct {
-	state  protoimpl.MessageState `protogen:"hybrid.v1"`
-	Entity *NetworkEntity         `protobuf:"bytes,1,opt,name=entity" json:"entity,omitempty"`
-	// Will always have at least one element
-	Properties    []*NetworkBaselineConnectionProperties `protobuf:"bytes,2,rep,name=properties" json:"properties,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState                  `protogen:"opaque.v1"`
+	xxx_hidden_Entity     *NetworkEntity                          `protobuf:"bytes,1,opt,name=entity"`
+	xxx_hidden_Properties *[]*NetworkBaselineConnectionProperties `protobuf:"bytes,2,rep,name=properties"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *NetworkBaselinePeer) Reset() {
@@ -188,35 +201,37 @@ func (x *NetworkBaselinePeer) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkBaselinePeer) GetEntity() *NetworkEntity {
 	if x != nil {
-		return x.Entity
+		return x.xxx_hidden_Entity
 	}
 	return nil
 }
 
 func (x *NetworkBaselinePeer) GetProperties() []*NetworkBaselineConnectionProperties {
 	if x != nil {
-		return x.Properties
+		if x.xxx_hidden_Properties != nil {
+			return *x.xxx_hidden_Properties
+		}
 	}
 	return nil
 }
 
 func (x *NetworkBaselinePeer) SetEntity(v *NetworkEntity) {
-	x.Entity = v
+	x.xxx_hidden_Entity = v
 }
 
 func (x *NetworkBaselinePeer) SetProperties(v []*NetworkBaselineConnectionProperties) {
-	x.Properties = v
+	x.xxx_hidden_Properties = &v
 }
 
 func (x *NetworkBaselinePeer) HasEntity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Entity != nil
+	return x.xxx_hidden_Entity != nil
 }
 
 func (x *NetworkBaselinePeer) ClearEntity() {
-	x.Entity = nil
+	x.xxx_hidden_Entity = nil
 }
 
 type NetworkBaselinePeer_builder struct {
@@ -231,8 +246,8 @@ func (b0 NetworkBaselinePeer_builder) Build() *NetworkBaselinePeer {
 	m0 := &NetworkBaselinePeer{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entity = b.Entity
-	x.Properties = b.Properties
+	x.xxx_hidden_Entity = b.Entity
+	x.xxx_hidden_Properties = &b.Properties
 	return m0
 }
 
@@ -240,27 +255,19 @@ func (b0 NetworkBaselinePeer_builder) Build() *NetworkBaselinePeer {
 // the baseline peers and their respective connections.
 // next available tag: 8
 type NetworkBaseline struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// This is the ID of the baseline.
-	DeploymentId *string                `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	ClusterId    *string                `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`          // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-	Namespace    *string                `protobuf:"bytes,3,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,hidden,store"`                           // @gotags: search:"Namespace,hidden,store"
-	Peers        []*NetworkBaselinePeer `protobuf:"bytes,4,rep,name=peers" json:"peers,omitempty" search:"-"`                                   // @gotags: search:"-"
-	// A list of peers that will never be added to the baseline.
-	// For now, this contains peers that the user has manually removed.
-	// This is used to ensure we don't add it back in the event
-	// we see the flow again.
-	ForbiddenPeers       []*NetworkBaselinePeer `protobuf:"bytes,5,rep,name=forbidden_peers,json=forbiddenPeers" json:"forbidden_peers,omitempty" search:"-"` // @gotags: search:"-"
-	ObservationPeriodEnd *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=observation_period_end,json=observationPeriodEnd" json:"observation_period_end,omitempty"`
-	// Indicates if this baseline has been locked by user.
-	// Here locking means:
-	//
-	//	1: Do not let system automatically add any allowed peer to baseline
-	//	2: Start reporting violations on flows that are not in the baseline
-	Locked         *bool   `protobuf:"varint,7,opt,name=locked" json:"locked,omitempty"`
-	DeploymentName *string `protobuf:"bytes,8,opt,name=deployment_name,json=deploymentName" json:"deployment_name,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                           protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_DeploymentId         *string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
+	xxx_hidden_ClusterId            *string                 `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Namespace            *string                 `protobuf:"bytes,3,opt,name=namespace"`
+	xxx_hidden_Peers                *[]*NetworkBaselinePeer `protobuf:"bytes,4,rep,name=peers"`
+	xxx_hidden_ForbiddenPeers       *[]*NetworkBaselinePeer `protobuf:"bytes,5,rep,name=forbidden_peers,json=forbiddenPeers"`
+	xxx_hidden_ObservationPeriodEnd *timestamppb.Timestamp  `protobuf:"bytes,6,opt,name=observation_period_end,json=observationPeriodEnd"`
+	xxx_hidden_Locked               bool                    `protobuf:"varint,7,opt,name=locked"`
+	xxx_hidden_DeploymentName       *string                 `protobuf:"bytes,8,opt,name=deployment_name,json=deploymentName"`
+	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
+	XXX_presence                    [1]uint32
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *NetworkBaseline) Reset() {
@@ -289,157 +296,183 @@ func (x *NetworkBaseline) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NetworkBaseline) GetDeploymentId() string {
-	if x != nil && x.DeploymentId != nil {
-		return *x.DeploymentId
+	if x != nil {
+		if x.xxx_hidden_DeploymentId != nil {
+			return *x.xxx_hidden_DeploymentId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkBaseline) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkBaseline) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkBaseline) GetPeers() []*NetworkBaselinePeer {
 	if x != nil {
-		return x.Peers
+		if x.xxx_hidden_Peers != nil {
+			return *x.xxx_hidden_Peers
+		}
 	}
 	return nil
 }
 
 func (x *NetworkBaseline) GetForbiddenPeers() []*NetworkBaselinePeer {
 	if x != nil {
-		return x.ForbiddenPeers
+		if x.xxx_hidden_ForbiddenPeers != nil {
+			return *x.xxx_hidden_ForbiddenPeers
+		}
 	}
 	return nil
 }
 
 func (x *NetworkBaseline) GetObservationPeriodEnd() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ObservationPeriodEnd
+		return x.xxx_hidden_ObservationPeriodEnd
 	}
 	return nil
 }
 
 func (x *NetworkBaseline) GetLocked() bool {
-	if x != nil && x.Locked != nil {
-		return *x.Locked
+	if x != nil {
+		return x.xxx_hidden_Locked
 	}
 	return false
 }
 
 func (x *NetworkBaseline) GetDeploymentName() string {
-	if x != nil && x.DeploymentName != nil {
-		return *x.DeploymentName
+	if x != nil {
+		if x.xxx_hidden_DeploymentName != nil {
+			return *x.xxx_hidden_DeploymentName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkBaseline) SetDeploymentId(v string) {
-	x.DeploymentId = &v
+	x.xxx_hidden_DeploymentId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
 }
 
 func (x *NetworkBaseline) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
 }
 
 func (x *NetworkBaseline) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
 }
 
 func (x *NetworkBaseline) SetPeers(v []*NetworkBaselinePeer) {
-	x.Peers = v
+	x.xxx_hidden_Peers = &v
 }
 
 func (x *NetworkBaseline) SetForbiddenPeers(v []*NetworkBaselinePeer) {
-	x.ForbiddenPeers = v
+	x.xxx_hidden_ForbiddenPeers = &v
 }
 
 func (x *NetworkBaseline) SetObservationPeriodEnd(v *timestamppb.Timestamp) {
-	x.ObservationPeriodEnd = v
+	x.xxx_hidden_ObservationPeriodEnd = v
 }
 
 func (x *NetworkBaseline) SetLocked(v bool) {
-	x.Locked = &v
+	x.xxx_hidden_Locked = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
 }
 
 func (x *NetworkBaseline) SetDeploymentName(v string) {
-	x.DeploymentName = &v
+	x.xxx_hidden_DeploymentName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
 }
 
 func (x *NetworkBaseline) HasDeploymentId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NetworkBaseline) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkBaseline) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *NetworkBaseline) HasObservationPeriodEnd() bool {
 	if x == nil {
 		return false
 	}
-	return x.ObservationPeriodEnd != nil
+	return x.xxx_hidden_ObservationPeriodEnd != nil
 }
 
 func (x *NetworkBaseline) HasLocked() bool {
 	if x == nil {
 		return false
 	}
-	return x.Locked != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *NetworkBaseline) HasDeploymentName() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *NetworkBaseline) ClearDeploymentId() {
-	x.DeploymentId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_DeploymentId = nil
 }
 
 func (x *NetworkBaseline) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *NetworkBaseline) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *NetworkBaseline) ClearObservationPeriodEnd() {
-	x.ObservationPeriodEnd = nil
+	x.xxx_hidden_ObservationPeriodEnd = nil
 }
 
 func (x *NetworkBaseline) ClearLocked() {
-	x.Locked = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_Locked = false
 }
 
 func (x *NetworkBaseline) ClearDeploymentName() {
-	x.DeploymentName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_DeploymentName = nil
 }
 
 type NetworkBaseline_builder struct {
@@ -469,14 +502,29 @@ func (b0 NetworkBaseline_builder) Build() *NetworkBaseline {
 	m0 := &NetworkBaseline{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DeploymentId = b.DeploymentId
-	x.ClusterId = b.ClusterId
-	x.Namespace = b.Namespace
-	x.Peers = b.Peers
-	x.ForbiddenPeers = b.ForbiddenPeers
-	x.ObservationPeriodEnd = b.ObservationPeriodEnd
-	x.Locked = b.Locked
-	x.DeploymentName = b.DeploymentName
+	if b.DeploymentId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
+		x.xxx_hidden_DeploymentId = b.DeploymentId
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	x.xxx_hidden_Peers = &b.Peers
+	x.xxx_hidden_ForbiddenPeers = &b.ForbiddenPeers
+	x.xxx_hidden_ObservationPeriodEnd = b.ObservationPeriodEnd
+	if b.Locked != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_Locked = *b.Locked
+	}
+	if b.DeploymentName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_DeploymentName = b.DeploymentName
+	}
 	return m0
 }
 
@@ -504,7 +552,7 @@ const file_storage_network_baseline_proto_rawDesc = "" +
 	"\x16observation_period_end\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x14observationPeriodEnd\x12\x16\n" +
 	"\x06locked\x18\a \x01(\bR\x06locked\x12'\n" +
 	"\x0fdeployment_name\x18\b \x01(\tR\x0edeploymentNameB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_network_baseline_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_storage_network_baseline_proto_goTypes = []any{

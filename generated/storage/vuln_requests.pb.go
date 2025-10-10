@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/vuln_requests.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -122,13 +120,15 @@ func (x RequestExpiry_ExpiryType) Number() protoreflect.EnumNumber {
 }
 
 type RequestComment struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Message       *string                `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
-	User          *SlimUser              `protobuf:"bytes,3,opt,name=user" json:"user,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Message     *string                `protobuf:"bytes,2,opt,name=message"`
+	xxx_hidden_User        *SlimUser              `protobuf:"bytes,3,opt,name=user"`
+	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *RequestComment) Reset() {
@@ -157,91 +157,101 @@ func (x *RequestComment) ProtoReflect() protoreflect.Message {
 }
 
 func (x *RequestComment) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *RequestComment) GetMessage() string {
-	if x != nil && x.Message != nil {
-		return *x.Message
+	if x != nil {
+		if x.xxx_hidden_Message != nil {
+			return *x.xxx_hidden_Message
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *RequestComment) GetUser() *SlimUser {
 	if x != nil {
-		return x.User
+		return x.xxx_hidden_User
 	}
 	return nil
 }
 
 func (x *RequestComment) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return nil
 }
 
 func (x *RequestComment) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *RequestComment) SetMessage(v string) {
-	x.Message = &v
+	x.xxx_hidden_Message = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *RequestComment) SetUser(v *SlimUser) {
-	x.User = v
+	x.xxx_hidden_User = v
 }
 
 func (x *RequestComment) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.CreatedAt = v
+	x.xxx_hidden_CreatedAt = v
 }
 
 func (x *RequestComment) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *RequestComment) HasMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Message != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *RequestComment) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.User != nil
+	return x.xxx_hidden_User != nil
 }
 
 func (x *RequestComment) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedAt != nil
+	return x.xxx_hidden_CreatedAt != nil
 }
 
 func (x *RequestComment) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *RequestComment) ClearMessage() {
-	x.Message = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Message = nil
 }
 
 func (x *RequestComment) ClearUser() {
-	x.User = nil
+	x.xxx_hidden_User = nil
 }
 
 func (x *RequestComment) ClearCreatedAt() {
-	x.CreatedAt = nil
+	x.xxx_hidden_CreatedAt = nil
 }
 
 type RequestComment_builder struct {
@@ -257,29 +267,27 @@ func (b0 RequestComment_builder) Build() *RequestComment {
 	m0 := &RequestComment{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Message = b.Message
-	x.User = b.User
-	x.CreatedAt = b.CreatedAt
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Message != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Message = b.Message
+	}
+	x.xxx_hidden_User = b.User
+	x.xxx_hidden_CreatedAt = b.CreatedAt
 	return m0
 }
 
 type RequestExpiry struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Expiry:
-	//
-	//	*RequestExpiry_ExpiresWhenFixed
-	//	*RequestExpiry_ExpiresOn
-	Expiry isRequestExpiry_Expiry `protobuf_oneof:"expiry"`
-	// This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.
-	// This field can be used only for deferral requests.
-	// This field indicates the type of expiry set for the request.
-	// `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
-	// `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
-	// `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
-	ExpiryType    *RequestExpiry_ExpiryType `protobuf:"varint,3,opt,name=expiry_type,json=expiryType,enum=storage.RequestExpiry_ExpiryType" json:"expiry_type,omitempty" search:"Expiry Type"` // @gotags: search:"Expiry Type"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_Expiry      isRequestExpiry_Expiry   `protobuf_oneof:"expiry"`
+	xxx_hidden_ExpiryType  RequestExpiry_ExpiryType `protobuf:"varint,3,opt,name=expiry_type,json=expiryType,enum=storage.RequestExpiry_ExpiryType"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *RequestExpiry) Reset() {
@@ -307,16 +315,9 @@ func (x *RequestExpiry) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *RequestExpiry) GetExpiry() isRequestExpiry_Expiry {
-	if x != nil {
-		return x.Expiry
-	}
-	return nil
-}
-
 func (x *RequestExpiry) GetExpiresWhenFixed() bool {
 	if x != nil {
-		if x, ok := x.Expiry.(*RequestExpiry_ExpiresWhenFixed); ok {
+		if x, ok := x.xxx_hidden_Expiry.(*requestExpiry_ExpiresWhenFixed); ok {
 			return x.ExpiresWhenFixed
 		}
 	}
@@ -325,7 +326,7 @@ func (x *RequestExpiry) GetExpiresWhenFixed() bool {
 
 func (x *RequestExpiry) GetExpiresOn() *timestamppb.Timestamp {
 	if x != nil {
-		if x, ok := x.Expiry.(*RequestExpiry_ExpiresOn); ok {
+		if x, ok := x.xxx_hidden_Expiry.(*requestExpiry_ExpiresOn); ok {
 			return x.ExpiresOn
 		}
 	}
@@ -333,40 +334,43 @@ func (x *RequestExpiry) GetExpiresOn() *timestamppb.Timestamp {
 }
 
 func (x *RequestExpiry) GetExpiryType() RequestExpiry_ExpiryType {
-	if x != nil && x.ExpiryType != nil {
-		return *x.ExpiryType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_ExpiryType
+		}
 	}
 	return RequestExpiry_TIME
 }
 
 func (x *RequestExpiry) SetExpiresWhenFixed(v bool) {
-	x.Expiry = &RequestExpiry_ExpiresWhenFixed{v}
+	x.xxx_hidden_Expiry = &requestExpiry_ExpiresWhenFixed{v}
 }
 
 func (x *RequestExpiry) SetExpiresOn(v *timestamppb.Timestamp) {
 	if v == nil {
-		x.Expiry = nil
+		x.xxx_hidden_Expiry = nil
 		return
 	}
-	x.Expiry = &RequestExpiry_ExpiresOn{v}
+	x.xxx_hidden_Expiry = &requestExpiry_ExpiresOn{v}
 }
 
 func (x *RequestExpiry) SetExpiryType(v RequestExpiry_ExpiryType) {
-	x.ExpiryType = &v
+	x.xxx_hidden_ExpiryType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *RequestExpiry) HasExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.Expiry != nil
+	return x.xxx_hidden_Expiry != nil
 }
 
 func (x *RequestExpiry) HasExpiresWhenFixed() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Expiry.(*RequestExpiry_ExpiresWhenFixed)
+	_, ok := x.xxx_hidden_Expiry.(*requestExpiry_ExpiresWhenFixed)
 	return ok
 }
 
@@ -374,7 +378,7 @@ func (x *RequestExpiry) HasExpiresOn() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Expiry.(*RequestExpiry_ExpiresOn)
+	_, ok := x.xxx_hidden_Expiry.(*requestExpiry_ExpiresOn)
 	return ok
 }
 
@@ -382,27 +386,28 @@ func (x *RequestExpiry) HasExpiryType() bool {
 	if x == nil {
 		return false
 	}
-	return x.ExpiryType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *RequestExpiry) ClearExpiry() {
-	x.Expiry = nil
+	x.xxx_hidden_Expiry = nil
 }
 
 func (x *RequestExpiry) ClearExpiresWhenFixed() {
-	if _, ok := x.Expiry.(*RequestExpiry_ExpiresWhenFixed); ok {
-		x.Expiry = nil
+	if _, ok := x.xxx_hidden_Expiry.(*requestExpiry_ExpiresWhenFixed); ok {
+		x.xxx_hidden_Expiry = nil
 	}
 }
 
 func (x *RequestExpiry) ClearExpiresOn() {
-	if _, ok := x.Expiry.(*RequestExpiry_ExpiresOn); ok {
-		x.Expiry = nil
+	if _, ok := x.xxx_hidden_Expiry.(*requestExpiry_ExpiresOn); ok {
+		x.xxx_hidden_Expiry = nil
 	}
 }
 
 func (x *RequestExpiry) ClearExpiryType() {
-	x.ExpiryType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ExpiryType = RequestExpiry_TIME
 }
 
 const RequestExpiry_Expiry_not_set_case case_RequestExpiry_Expiry = 0
@@ -413,10 +418,10 @@ func (x *RequestExpiry) WhichExpiry() case_RequestExpiry_Expiry {
 	if x == nil {
 		return RequestExpiry_Expiry_not_set_case
 	}
-	switch x.Expiry.(type) {
-	case *RequestExpiry_ExpiresWhenFixed:
+	switch x.xxx_hidden_Expiry.(type) {
+	case *requestExpiry_ExpiresWhenFixed:
 		return RequestExpiry_ExpiresWhenFixed_case
-	case *RequestExpiry_ExpiresOn:
+	case *requestExpiry_ExpiresOn:
 		return RequestExpiry_ExpiresOn_case
 	default:
 		return RequestExpiry_Expiry_not_set_case
@@ -426,12 +431,12 @@ func (x *RequestExpiry) WhichExpiry() case_RequestExpiry_Expiry {
 type RequestExpiry_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Expiry:
+	// Fields of oneof xxx_hidden_Expiry:
 	// Indicates that this request expires when the associated vulnerability is fixed.
 	ExpiresWhenFixed *bool
 	// Indicates the timestamp when this request expires.
 	ExpiresOn *timestamppb.Timestamp
-	// -- end of Expiry
+	// -- end of xxx_hidden_Expiry
 	// This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.
 	// This field can be used only for deferral requests.
 	// This field indicates the type of expiry set for the request.
@@ -446,12 +451,15 @@ func (b0 RequestExpiry_builder) Build() *RequestExpiry {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.ExpiresWhenFixed != nil {
-		x.Expiry = &RequestExpiry_ExpiresWhenFixed{*b.ExpiresWhenFixed}
+		x.xxx_hidden_Expiry = &requestExpiry_ExpiresWhenFixed{*b.ExpiresWhenFixed}
 	}
 	if b.ExpiresOn != nil {
-		x.Expiry = &RequestExpiry_ExpiresOn{b.ExpiresOn}
+		x.xxx_hidden_Expiry = &requestExpiry_ExpiresOn{b.ExpiresOn}
 	}
-	x.ExpiryType = b.ExpiryType
+	if b.ExpiryType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_ExpiryType = *b.ExpiryType
+	}
 	return m0
 }
 
@@ -469,25 +477,25 @@ type isRequestExpiry_Expiry interface {
 	isRequestExpiry_Expiry()
 }
 
-type RequestExpiry_ExpiresWhenFixed struct {
+type requestExpiry_ExpiresWhenFixed struct {
 	// Indicates that this request expires when the associated vulnerability is fixed.
 	ExpiresWhenFixed bool `protobuf:"varint,1,opt,name=expires_when_fixed,json=expiresWhenFixed,oneof" search:"Request Expires When Fixed"` // @gotags: search:"Request Expires When Fixed"
 }
 
-type RequestExpiry_ExpiresOn struct {
+type requestExpiry_ExpiresOn struct {
 	// Indicates the timestamp when this request expires.
 	ExpiresOn *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_on,json=expiresOn,oneof" search:"Request Expiry Time"` // @gotags: search:"Request Expiry Time"
 }
 
-func (*RequestExpiry_ExpiresWhenFixed) isRequestExpiry_Expiry() {}
+func (*requestExpiry_ExpiresWhenFixed) isRequestExpiry_Expiry() {}
 
-func (*RequestExpiry_ExpiresOn) isRequestExpiry_Expiry() {}
+func (*requestExpiry_ExpiresOn) isRequestExpiry_Expiry() {}
 
 type DeferralRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Expiry        *RequestExpiry         `protobuf:"bytes,1,opt,name=expiry" json:"expiry,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Expiry *RequestExpiry         `protobuf:"bytes,1,opt,name=expiry"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *DeferralRequest) Reset() {
@@ -517,24 +525,24 @@ func (x *DeferralRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeferralRequest) GetExpiry() *RequestExpiry {
 	if x != nil {
-		return x.Expiry
+		return x.xxx_hidden_Expiry
 	}
 	return nil
 }
 
 func (x *DeferralRequest) SetExpiry(v *RequestExpiry) {
-	x.Expiry = v
+	x.xxx_hidden_Expiry = v
 }
 
 func (x *DeferralRequest) HasExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.Expiry != nil
+	return x.xxx_hidden_Expiry != nil
 }
 
 func (x *DeferralRequest) ClearExpiry() {
-	x.Expiry = nil
+	x.xxx_hidden_Expiry = nil
 }
 
 type DeferralRequest_builder struct {
@@ -547,12 +555,12 @@ func (b0 DeferralRequest_builder) Build() *DeferralRequest {
 	m0 := &DeferralRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Expiry = b.Expiry
+	x.xxx_hidden_Expiry = b.Expiry
 	return m0
 }
 
 type FalsePositiveRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -595,11 +603,11 @@ func (b0 FalsePositiveRequest_builder) Build() *FalsePositiveRequest {
 }
 
 type DeferralUpdate struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	CVEs          []string               `protobuf:"bytes,1,rep,name=CVEs" json:"CVEs,omitempty" search:"Deferral Update CVEs"`     // @gotags: search:"Deferral Update CVEs"
-	Expiry        *RequestExpiry         `protobuf:"bytes,2,opt,name=expiry" json:"expiry,omitempty" search:"-"` // @gotags: search:"-"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CVEs   []string               `protobuf:"bytes,1,rep,name=CVEs"`
+	xxx_hidden_Expiry *RequestExpiry         `protobuf:"bytes,2,opt,name=expiry"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *DeferralUpdate) Reset() {
@@ -629,35 +637,35 @@ func (x *DeferralUpdate) ProtoReflect() protoreflect.Message {
 
 func (x *DeferralUpdate) GetCVEs() []string {
 	if x != nil {
-		return x.CVEs
+		return x.xxx_hidden_CVEs
 	}
 	return nil
 }
 
 func (x *DeferralUpdate) GetExpiry() *RequestExpiry {
 	if x != nil {
-		return x.Expiry
+		return x.xxx_hidden_Expiry
 	}
 	return nil
 }
 
 func (x *DeferralUpdate) SetCVEs(v []string) {
-	x.CVEs = v
+	x.xxx_hidden_CVEs = v
 }
 
 func (x *DeferralUpdate) SetExpiry(v *RequestExpiry) {
-	x.Expiry = v
+	x.xxx_hidden_Expiry = v
 }
 
 func (x *DeferralUpdate) HasExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.Expiry != nil
+	return x.xxx_hidden_Expiry != nil
 }
 
 func (x *DeferralUpdate) ClearExpiry() {
-	x.Expiry = nil
+	x.xxx_hidden_Expiry = nil
 }
 
 type DeferralUpdate_builder struct {
@@ -671,16 +679,16 @@ func (b0 DeferralUpdate_builder) Build() *DeferralUpdate {
 	m0 := &DeferralUpdate{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CVEs = b.CVEs
-	x.Expiry = b.Expiry
+	x.xxx_hidden_CVEs = b.CVEs
+	x.xxx_hidden_Expiry = b.Expiry
 	return m0
 }
 
 type FalsePositiveUpdate struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	CVEs          []string               `protobuf:"bytes,1,rep,name=CVEs" json:"CVEs,omitempty" search:"False Positive Update CVEs"` // @gotags: search:"False Positive Update CVEs"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CVEs []string               `protobuf:"bytes,1,rep,name=CVEs"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *FalsePositiveUpdate) Reset() {
@@ -710,13 +718,13 @@ func (x *FalsePositiveUpdate) ProtoReflect() protoreflect.Message {
 
 func (x *FalsePositiveUpdate) GetCVEs() []string {
 	if x != nil {
-		return x.CVEs
+		return x.xxx_hidden_CVEs
 	}
 	return nil
 }
 
 func (x *FalsePositiveUpdate) SetCVEs(v []string) {
-	x.CVEs = v
+	x.xxx_hidden_CVEs = v
 }
 
 type FalsePositiveUpdate_builder struct {
@@ -729,16 +737,18 @@ func (b0 FalsePositiveUpdate_builder) Build() *FalsePositiveUpdate {
 	m0 := &FalsePositiveUpdate{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CVEs = b.CVEs
+	x.xxx_hidden_CVEs = b.CVEs
 	return m0
 }
 
 type Requester struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Requester User ID"`     // @gotags: search:"Requester User ID"
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Requester User Name"` // @gotags: search:"Requester User Name"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Requester) Reset() {
@@ -767,47 +777,57 @@ func (x *Requester) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Requester) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Requester) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Requester) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *Requester) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *Requester) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Requester) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Requester) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Requester) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 type Requester_builder struct {
@@ -821,17 +841,25 @@ func (b0 Requester_builder) Build() *Requester {
 	m0 := &Requester{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Name = b.Name
+	}
 	return m0
 }
 
 type Approver struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Approver User ID"`     // @gotags: search:"Approver User ID"
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Approver User Name"` // @gotags: search:"Approver User Name"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Approver) Reset() {
@@ -860,47 +888,57 @@ func (x *Approver) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Approver) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Approver) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Approver) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *Approver) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *Approver) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Approver) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Approver) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Approver) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 type Approver_builder struct {
@@ -914,57 +952,41 @@ func (b0 Approver_builder) Build() *Approver {
 	m0 := &Approver{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Name = b.Name
+	}
 	return m0
 }
 
 // Next available tag: 30
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 type VulnerabilityRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id    *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"`      // @gotags: sql:"pk"
-	Name  *string                `protobuf:"bytes,26,opt,name=name" json:"name,omitempty" search:"Request Name" sql:"unique"` // @gotags: search:"Request Name" sql:"unique"
-	// Indicates the state the vulnerabilities will move to once the request is complete.
-	TargetState *VulnerabilityState `protobuf:"varint,2,opt,name=target_state,json=targetState,enum=storage.VulnerabilityState" json:"target_state,omitempty" search:"Requested Vulnerability State"` // @gotags: search:"Requested Vulnerability State"
-	// Indicates the status of a request.
-	Status *RequestStatus `protobuf:"varint,3,opt,name=status,enum=storage.RequestStatus" json:"status,omitempty" search:"Request Status"` // @gotags: search:"Request Status"
-	// Indicates if this request is a historical request that is no longer in effect
-	// due to deferral expiry, cancellation, or restarting cve observation.
-	Expired *bool `protobuf:"varint,4,opt,name=expired" json:"expired,omitempty" search:"Expired Request"` // @gotags: search:"Expired Request"
-	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
-	Requestor *SlimUser `protobuf:"bytes,5,opt,name=requestor" json:"requestor,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
-	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
-	Approvers   []*SlimUser                 `protobuf:"bytes,6,rep,name=approvers" json:"approvers,omitempty" sql:"ignore_labels(User ID)"`                        // @gotags: sql:"ignore_labels(User ID)"
-	CreatedAt   *timestamppb.Timestamp      `protobuf:"bytes,7,opt,name=created_at,json=createdAt" json:"created_at,omitempty" search:"Created Time"`       // @gotags: search:"Created Time"
-	LastUpdated *timestamppb.Timestamp      `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty" search:"Last Updated"` // @gotags: search:"Last Updated"
-	Comments    []*RequestComment           `protobuf:"bytes,9,rep,name=comments" json:"comments,omitempty"`
-	Scope       *VulnerabilityRequest_Scope `protobuf:"bytes,10,opt,name=scope" json:"scope,omitempty"`
-	RequesterV2 *Requester                  `protobuf:"bytes,28,opt,name=requester_v2,json=requesterV2" json:"requester_v2,omitempty"`
-	ApproversV2 []*Approver                 `protobuf:"bytes,29,rep,name=approvers_v2,json=approversV2" json:"approvers_v2,omitempty"`
-	// 11 to 15 reserved for the request type oneof.
-	//
-	// Types that are valid to be assigned to Req:
-	//
-	//	*VulnerabilityRequest_DeferralReq
-	//	*VulnerabilityRequest_FpRequest
-	Req isVulnerabilityRequest_Req `protobuf_oneof:"req"`
-	// 16 to 20 reserved for entities oneof.
-	//
-	// Types that are valid to be assigned to Entities:
-	//
-	//	*VulnerabilityRequest_Cves
-	Entities isVulnerabilityRequest_Entities `protobuf_oneof:"entities"`
-	// 21 to 25 reserved for the updated request type oneof.
-	//
-	// Types that are valid to be assigned to UpdatedReq:
-	//
-	//	*VulnerabilityRequest_UpdatedDeferralReq
-	//	*VulnerabilityRequest_DeferralUpdate
-	//	*VulnerabilityRequest_FalsePositiveUpdate
-	UpdatedReq    isVulnerabilityRequest_UpdatedReq `protobuf_oneof:"updated_req"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState            `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                           `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                           `protobuf:"bytes,26,opt,name=name"`
+	xxx_hidden_TargetState VulnerabilityState                `protobuf:"varint,2,opt,name=target_state,json=targetState,enum=storage.VulnerabilityState"`
+	xxx_hidden_Status      RequestStatus                     `protobuf:"varint,3,opt,name=status,enum=storage.RequestStatus"`
+	xxx_hidden_Expired     bool                              `protobuf:"varint,4,opt,name=expired"`
+	xxx_hidden_Requestor   *SlimUser                         `protobuf:"bytes,5,opt,name=requestor"`
+	xxx_hidden_Approvers   *[]*SlimUser                      `protobuf:"bytes,6,rep,name=approvers"`
+	xxx_hidden_CreatedAt   *timestamppb.Timestamp            `protobuf:"bytes,7,opt,name=created_at,json=createdAt"`
+	xxx_hidden_LastUpdated *timestamppb.Timestamp            `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated"`
+	xxx_hidden_Comments    *[]*RequestComment                `protobuf:"bytes,9,rep,name=comments"`
+	xxx_hidden_Scope       *VulnerabilityRequest_Scope       `protobuf:"bytes,10,opt,name=scope"`
+	xxx_hidden_RequesterV2 *Requester                        `protobuf:"bytes,28,opt,name=requester_v2,json=requesterV2"`
+	xxx_hidden_ApproversV2 *[]*Approver                      `protobuf:"bytes,29,rep,name=approvers_v2,json=approversV2"`
+	xxx_hidden_Req         isVulnerabilityRequest_Req        `protobuf_oneof:"req"`
+	xxx_hidden_Entities    isVulnerabilityRequest_Entities   `protobuf_oneof:"entities"`
+	xxx_hidden_UpdatedReq  isVulnerabilityRequest_UpdatedReq `protobuf_oneof:"updated_req"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VulnerabilityRequest) Reset() {
@@ -993,36 +1015,46 @@ func (x *VulnerabilityRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VulnerabilityRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VulnerabilityRequest) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VulnerabilityRequest) GetTargetState() VulnerabilityState {
-	if x != nil && x.TargetState != nil {
-		return *x.TargetState
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_TargetState
+		}
 	}
 	return VulnerabilityState_OBSERVED
 }
 
 func (x *VulnerabilityRequest) GetStatus() RequestStatus {
-	if x != nil && x.Status != nil {
-		return *x.Status
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			return x.xxx_hidden_Status
+		}
 	}
 	return RequestStatus_PENDING
 }
 
 func (x *VulnerabilityRequest) GetExpired() bool {
-	if x != nil && x.Expired != nil {
-		return *x.Expired
+	if x != nil {
+		return x.xxx_hidden_Expired
 	}
 	return false
 }
@@ -1030,7 +1062,7 @@ func (x *VulnerabilityRequest) GetExpired() bool {
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest) GetRequestor() *SlimUser {
 	if x != nil {
-		return x.Requestor
+		return x.xxx_hidden_Requestor
 	}
 	return nil
 }
@@ -1038,63 +1070,62 @@ func (x *VulnerabilityRequest) GetRequestor() *SlimUser {
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest) GetApprovers() []*SlimUser {
 	if x != nil {
-		return x.Approvers
+		if x.xxx_hidden_Approvers != nil {
+			return *x.xxx_hidden_Approvers
+		}
 	}
 	return nil
 }
 
 func (x *VulnerabilityRequest) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return nil
 }
 
 func (x *VulnerabilityRequest) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastUpdated
+		return x.xxx_hidden_LastUpdated
 	}
 	return nil
 }
 
 func (x *VulnerabilityRequest) GetComments() []*RequestComment {
 	if x != nil {
-		return x.Comments
+		if x.xxx_hidden_Comments != nil {
+			return *x.xxx_hidden_Comments
+		}
 	}
 	return nil
 }
 
 func (x *VulnerabilityRequest) GetScope() *VulnerabilityRequest_Scope {
 	if x != nil {
-		return x.Scope
+		return x.xxx_hidden_Scope
 	}
 	return nil
 }
 
 func (x *VulnerabilityRequest) GetRequesterV2() *Requester {
 	if x != nil {
-		return x.RequesterV2
+		return x.xxx_hidden_RequesterV2
 	}
 	return nil
 }
 
 func (x *VulnerabilityRequest) GetApproversV2() []*Approver {
 	if x != nil {
-		return x.ApproversV2
-	}
-	return nil
-}
-
-func (x *VulnerabilityRequest) GetReq() isVulnerabilityRequest_Req {
-	if x != nil {
-		return x.Req
+		if x.xxx_hidden_ApproversV2 != nil {
+			return *x.xxx_hidden_ApproversV2
+		}
 	}
 	return nil
 }
 
 func (x *VulnerabilityRequest) GetDeferralReq() *DeferralRequest {
 	if x != nil {
-		if x, ok := x.Req.(*VulnerabilityRequest_DeferralReq); ok {
+		if x, ok := x.xxx_hidden_Req.(*vulnerabilityRequest_DeferralReq); ok {
 			return x.DeferralReq
 		}
 	}
@@ -1103,32 +1134,18 @@ func (x *VulnerabilityRequest) GetDeferralReq() *DeferralRequest {
 
 func (x *VulnerabilityRequest) GetFpRequest() *FalsePositiveRequest {
 	if x != nil {
-		if x, ok := x.Req.(*VulnerabilityRequest_FpRequest); ok {
+		if x, ok := x.xxx_hidden_Req.(*vulnerabilityRequest_FpRequest); ok {
 			return x.FpRequest
 		}
 	}
 	return nil
 }
 
-func (x *VulnerabilityRequest) GetEntities() isVulnerabilityRequest_Entities {
-	if x != nil {
-		return x.Entities
-	}
-	return nil
-}
-
 func (x *VulnerabilityRequest) GetCves() *VulnerabilityRequest_CVEs {
 	if x != nil {
-		if x, ok := x.Entities.(*VulnerabilityRequest_Cves); ok {
+		if x, ok := x.xxx_hidden_Entities.(*vulnerabilityRequest_Cves); ok {
 			return x.Cves
 		}
-	}
-	return nil
-}
-
-func (x *VulnerabilityRequest) GetUpdatedReq() isVulnerabilityRequest_UpdatedReq {
-	if x != nil {
-		return x.UpdatedReq
 	}
 	return nil
 }
@@ -1136,7 +1153,7 @@ func (x *VulnerabilityRequest) GetUpdatedReq() isVulnerabilityRequest_UpdatedReq
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest) GetUpdatedDeferralReq() *DeferralRequest {
 	if x != nil {
-		if x, ok := x.UpdatedReq.(*VulnerabilityRequest_UpdatedDeferralReq); ok {
+		if x, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityRequest_UpdatedDeferralReq); ok {
 			return x.UpdatedDeferralReq
 		}
 	}
@@ -1145,7 +1162,7 @@ func (x *VulnerabilityRequest) GetUpdatedDeferralReq() *DeferralRequest {
 
 func (x *VulnerabilityRequest) GetDeferralUpdate() *DeferralUpdate {
 	if x != nil {
-		if x, ok := x.UpdatedReq.(*VulnerabilityRequest_DeferralUpdate); ok {
+		if x, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityRequest_DeferralUpdate); ok {
 			return x.DeferralUpdate
 		}
 	}
@@ -1154,7 +1171,7 @@ func (x *VulnerabilityRequest) GetDeferralUpdate() *DeferralUpdate {
 
 func (x *VulnerabilityRequest) GetFalsePositiveUpdate() *FalsePositiveUpdate {
 	if x != nil {
-		if x, ok := x.UpdatedReq.(*VulnerabilityRequest_FalsePositiveUpdate); ok {
+		if x, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityRequest_FalsePositiveUpdate); ok {
 			return x.FalsePositiveUpdate
 		}
 	}
@@ -1162,141 +1179,146 @@ func (x *VulnerabilityRequest) GetFalsePositiveUpdate() *FalsePositiveUpdate {
 }
 
 func (x *VulnerabilityRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 16)
 }
 
 func (x *VulnerabilityRequest) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 16)
 }
 
 func (x *VulnerabilityRequest) SetTargetState(v VulnerabilityState) {
-	x.TargetState = &v
+	x.xxx_hidden_TargetState = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 16)
 }
 
 func (x *VulnerabilityRequest) SetStatus(v RequestStatus) {
-	x.Status = &v
+	x.xxx_hidden_Status = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 16)
 }
 
 func (x *VulnerabilityRequest) SetExpired(v bool) {
-	x.Expired = &v
+	x.xxx_hidden_Expired = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 16)
 }
 
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest) SetRequestor(v *SlimUser) {
-	x.Requestor = v
+	x.xxx_hidden_Requestor = v
 }
 
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest) SetApprovers(v []*SlimUser) {
-	x.Approvers = v
+	x.xxx_hidden_Approvers = &v
 }
 
 func (x *VulnerabilityRequest) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.CreatedAt = v
+	x.xxx_hidden_CreatedAt = v
 }
 
 func (x *VulnerabilityRequest) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.LastUpdated = v
+	x.xxx_hidden_LastUpdated = v
 }
 
 func (x *VulnerabilityRequest) SetComments(v []*RequestComment) {
-	x.Comments = v
+	x.xxx_hidden_Comments = &v
 }
 
 func (x *VulnerabilityRequest) SetScope(v *VulnerabilityRequest_Scope) {
-	x.Scope = v
+	x.xxx_hidden_Scope = v
 }
 
 func (x *VulnerabilityRequest) SetRequesterV2(v *Requester) {
-	x.RequesterV2 = v
+	x.xxx_hidden_RequesterV2 = v
 }
 
 func (x *VulnerabilityRequest) SetApproversV2(v []*Approver) {
-	x.ApproversV2 = v
+	x.xxx_hidden_ApproversV2 = &v
 }
 
 func (x *VulnerabilityRequest) SetDeferralReq(v *DeferralRequest) {
 	if v == nil {
-		x.Req = nil
+		x.xxx_hidden_Req = nil
 		return
 	}
-	x.Req = &VulnerabilityRequest_DeferralReq{v}
+	x.xxx_hidden_Req = &vulnerabilityRequest_DeferralReq{v}
 }
 
 func (x *VulnerabilityRequest) SetFpRequest(v *FalsePositiveRequest) {
 	if v == nil {
-		x.Req = nil
+		x.xxx_hidden_Req = nil
 		return
 	}
-	x.Req = &VulnerabilityRequest_FpRequest{v}
+	x.xxx_hidden_Req = &vulnerabilityRequest_FpRequest{v}
 }
 
 func (x *VulnerabilityRequest) SetCves(v *VulnerabilityRequest_CVEs) {
 	if v == nil {
-		x.Entities = nil
+		x.xxx_hidden_Entities = nil
 		return
 	}
-	x.Entities = &VulnerabilityRequest_Cves{v}
+	x.xxx_hidden_Entities = &vulnerabilityRequest_Cves{v}
 }
 
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest) SetUpdatedDeferralReq(v *DeferralRequest) {
 	if v == nil {
-		x.UpdatedReq = nil
+		x.xxx_hidden_UpdatedReq = nil
 		return
 	}
-	x.UpdatedReq = &VulnerabilityRequest_UpdatedDeferralReq{v}
+	x.xxx_hidden_UpdatedReq = &vulnerabilityRequest_UpdatedDeferralReq{v}
 }
 
 func (x *VulnerabilityRequest) SetDeferralUpdate(v *DeferralUpdate) {
 	if v == nil {
-		x.UpdatedReq = nil
+		x.xxx_hidden_UpdatedReq = nil
 		return
 	}
-	x.UpdatedReq = &VulnerabilityRequest_DeferralUpdate{v}
+	x.xxx_hidden_UpdatedReq = &vulnerabilityRequest_DeferralUpdate{v}
 }
 
 func (x *VulnerabilityRequest) SetFalsePositiveUpdate(v *FalsePositiveUpdate) {
 	if v == nil {
-		x.UpdatedReq = nil
+		x.xxx_hidden_UpdatedReq = nil
 		return
 	}
-	x.UpdatedReq = &VulnerabilityRequest_FalsePositiveUpdate{v}
+	x.xxx_hidden_UpdatedReq = &vulnerabilityRequest_FalsePositiveUpdate{v}
 }
 
 func (x *VulnerabilityRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VulnerabilityRequest) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VulnerabilityRequest) HasTargetState() bool {
 	if x == nil {
 		return false
 	}
-	return x.TargetState != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *VulnerabilityRequest) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.Status != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *VulnerabilityRequest) HasExpired() bool {
 	if x == nil {
 		return false
 	}
-	return x.Expired != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
@@ -1304,49 +1326,49 @@ func (x *VulnerabilityRequest) HasRequestor() bool {
 	if x == nil {
 		return false
 	}
-	return x.Requestor != nil
+	return x.xxx_hidden_Requestor != nil
 }
 
 func (x *VulnerabilityRequest) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedAt != nil
+	return x.xxx_hidden_CreatedAt != nil
 }
 
 func (x *VulnerabilityRequest) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastUpdated != nil
+	return x.xxx_hidden_LastUpdated != nil
 }
 
 func (x *VulnerabilityRequest) HasScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.Scope != nil
+	return x.xxx_hidden_Scope != nil
 }
 
 func (x *VulnerabilityRequest) HasRequesterV2() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequesterV2 != nil
+	return x.xxx_hidden_RequesterV2 != nil
 }
 
 func (x *VulnerabilityRequest) HasReq() bool {
 	if x == nil {
 		return false
 	}
-	return x.Req != nil
+	return x.xxx_hidden_Req != nil
 }
 
 func (x *VulnerabilityRequest) HasDeferralReq() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Req.(*VulnerabilityRequest_DeferralReq)
+	_, ok := x.xxx_hidden_Req.(*vulnerabilityRequest_DeferralReq)
 	return ok
 }
 
@@ -1354,7 +1376,7 @@ func (x *VulnerabilityRequest) HasFpRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Req.(*VulnerabilityRequest_FpRequest)
+	_, ok := x.xxx_hidden_Req.(*vulnerabilityRequest_FpRequest)
 	return ok
 }
 
@@ -1362,14 +1384,14 @@ func (x *VulnerabilityRequest) HasEntities() bool {
 	if x == nil {
 		return false
 	}
-	return x.Entities != nil
+	return x.xxx_hidden_Entities != nil
 }
 
 func (x *VulnerabilityRequest) HasCves() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Entities.(*VulnerabilityRequest_Cves)
+	_, ok := x.xxx_hidden_Entities.(*vulnerabilityRequest_Cves)
 	return ok
 }
 
@@ -1377,7 +1399,7 @@ func (x *VulnerabilityRequest) HasUpdatedReq() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpdatedReq != nil
+	return x.xxx_hidden_UpdatedReq != nil
 }
 
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
@@ -1385,7 +1407,7 @@ func (x *VulnerabilityRequest) HasUpdatedDeferralReq() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.UpdatedReq.(*VulnerabilityRequest_UpdatedDeferralReq)
+	_, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityRequest_UpdatedDeferralReq)
 	return ok
 }
 
@@ -1393,7 +1415,7 @@ func (x *VulnerabilityRequest) HasDeferralUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.UpdatedReq.(*VulnerabilityRequest_DeferralUpdate)
+	_, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityRequest_DeferralUpdate)
 	return ok
 }
 
@@ -1401,97 +1423,102 @@ func (x *VulnerabilityRequest) HasFalsePositiveUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.UpdatedReq.(*VulnerabilityRequest_FalsePositiveUpdate)
+	_, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityRequest_FalsePositiveUpdate)
 	return ok
 }
 
 func (x *VulnerabilityRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *VulnerabilityRequest) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *VulnerabilityRequest) ClearTargetState() {
-	x.TargetState = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_TargetState = VulnerabilityState_OBSERVED
 }
 
 func (x *VulnerabilityRequest) ClearStatus() {
-	x.Status = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Status = RequestStatus_PENDING
 }
 
 func (x *VulnerabilityRequest) ClearExpired() {
-	x.Expired = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Expired = false
 }
 
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest) ClearRequestor() {
-	x.Requestor = nil
+	x.xxx_hidden_Requestor = nil
 }
 
 func (x *VulnerabilityRequest) ClearCreatedAt() {
-	x.CreatedAt = nil
+	x.xxx_hidden_CreatedAt = nil
 }
 
 func (x *VulnerabilityRequest) ClearLastUpdated() {
-	x.LastUpdated = nil
+	x.xxx_hidden_LastUpdated = nil
 }
 
 func (x *VulnerabilityRequest) ClearScope() {
-	x.Scope = nil
+	x.xxx_hidden_Scope = nil
 }
 
 func (x *VulnerabilityRequest) ClearRequesterV2() {
-	x.RequesterV2 = nil
+	x.xxx_hidden_RequesterV2 = nil
 }
 
 func (x *VulnerabilityRequest) ClearReq() {
-	x.Req = nil
+	x.xxx_hidden_Req = nil
 }
 
 func (x *VulnerabilityRequest) ClearDeferralReq() {
-	if _, ok := x.Req.(*VulnerabilityRequest_DeferralReq); ok {
-		x.Req = nil
+	if _, ok := x.xxx_hidden_Req.(*vulnerabilityRequest_DeferralReq); ok {
+		x.xxx_hidden_Req = nil
 	}
 }
 
 func (x *VulnerabilityRequest) ClearFpRequest() {
-	if _, ok := x.Req.(*VulnerabilityRequest_FpRequest); ok {
-		x.Req = nil
+	if _, ok := x.xxx_hidden_Req.(*vulnerabilityRequest_FpRequest); ok {
+		x.xxx_hidden_Req = nil
 	}
 }
 
 func (x *VulnerabilityRequest) ClearEntities() {
-	x.Entities = nil
+	x.xxx_hidden_Entities = nil
 }
 
 func (x *VulnerabilityRequest) ClearCves() {
-	if _, ok := x.Entities.(*VulnerabilityRequest_Cves); ok {
-		x.Entities = nil
+	if _, ok := x.xxx_hidden_Entities.(*vulnerabilityRequest_Cves); ok {
+		x.xxx_hidden_Entities = nil
 	}
 }
 
 func (x *VulnerabilityRequest) ClearUpdatedReq() {
-	x.UpdatedReq = nil
+	x.xxx_hidden_UpdatedReq = nil
 }
 
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest) ClearUpdatedDeferralReq() {
-	if _, ok := x.UpdatedReq.(*VulnerabilityRequest_UpdatedDeferralReq); ok {
-		x.UpdatedReq = nil
+	if _, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityRequest_UpdatedDeferralReq); ok {
+		x.xxx_hidden_UpdatedReq = nil
 	}
 }
 
 func (x *VulnerabilityRequest) ClearDeferralUpdate() {
-	if _, ok := x.UpdatedReq.(*VulnerabilityRequest_DeferralUpdate); ok {
-		x.UpdatedReq = nil
+	if _, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityRequest_DeferralUpdate); ok {
+		x.xxx_hidden_UpdatedReq = nil
 	}
 }
 
 func (x *VulnerabilityRequest) ClearFalsePositiveUpdate() {
-	if _, ok := x.UpdatedReq.(*VulnerabilityRequest_FalsePositiveUpdate); ok {
-		x.UpdatedReq = nil
+	if _, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityRequest_FalsePositiveUpdate); ok {
+		x.xxx_hidden_UpdatedReq = nil
 	}
 }
 
@@ -1503,10 +1530,10 @@ func (x *VulnerabilityRequest) WhichReq() case_VulnerabilityRequest_Req {
 	if x == nil {
 		return VulnerabilityRequest_Req_not_set_case
 	}
-	switch x.Req.(type) {
-	case *VulnerabilityRequest_DeferralReq:
+	switch x.xxx_hidden_Req.(type) {
+	case *vulnerabilityRequest_DeferralReq:
 		return VulnerabilityRequest_DeferralReq_case
-	case *VulnerabilityRequest_FpRequest:
+	case *vulnerabilityRequest_FpRequest:
 		return VulnerabilityRequest_FpRequest_case
 	default:
 		return VulnerabilityRequest_Req_not_set_case
@@ -1520,8 +1547,8 @@ func (x *VulnerabilityRequest) WhichEntities() case_VulnerabilityRequest_Entitie
 	if x == nil {
 		return VulnerabilityRequest_Entities_not_set_case
 	}
-	switch x.Entities.(type) {
-	case *VulnerabilityRequest_Cves:
+	switch x.xxx_hidden_Entities.(type) {
+	case *vulnerabilityRequest_Cves:
 		return VulnerabilityRequest_Cves_case
 	default:
 		return VulnerabilityRequest_Entities_not_set_case
@@ -1537,12 +1564,12 @@ func (x *VulnerabilityRequest) WhichUpdatedReq() case_VulnerabilityRequest_Updat
 	if x == nil {
 		return VulnerabilityRequest_UpdatedReq_not_set_case
 	}
-	switch x.UpdatedReq.(type) {
-	case *VulnerabilityRequest_UpdatedDeferralReq:
+	switch x.xxx_hidden_UpdatedReq.(type) {
+	case *vulnerabilityRequest_UpdatedDeferralReq:
 		return VulnerabilityRequest_UpdatedDeferralReq_case
-	case *VulnerabilityRequest_DeferralUpdate:
+	case *vulnerabilityRequest_DeferralUpdate:
 		return VulnerabilityRequest_DeferralUpdate_case
-	case *VulnerabilityRequest_FalsePositiveUpdate:
+	case *vulnerabilityRequest_FalsePositiveUpdate:
 		return VulnerabilityRequest_FalsePositiveUpdate_case
 	default:
 		return VulnerabilityRequest_UpdatedReq_not_set_case
@@ -1573,59 +1600,74 @@ type VulnerabilityRequest_builder struct {
 	ApproversV2 []*Approver
 	// 11 to 15 reserved for the request type oneof.
 
-	// Fields of oneof Req:
+	// Fields of oneof xxx_hidden_Req:
 	DeferralReq *DeferralRequest
 	FpRequest   *FalsePositiveRequest
-	// -- end of Req
+	// -- end of xxx_hidden_Req
 	// 16 to 20 reserved for entities oneof.
 
-	// Fields of oneof Entities:
+	// Fields of oneof xxx_hidden_Entities:
 	Cves *VulnerabilityRequest_CVEs
-	// -- end of Entities
+	// -- end of xxx_hidden_Entities
 	// 21 to 25 reserved for the updated request type oneof.
 
-	// Fields of oneof UpdatedReq:
+	// Fields of oneof xxx_hidden_UpdatedReq:
 	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 	UpdatedDeferralReq  *DeferralRequest
 	DeferralUpdate      *DeferralUpdate
 	FalsePositiveUpdate *FalsePositiveUpdate
-	// -- end of UpdatedReq
+	// -- end of xxx_hidden_UpdatedReq
 }
 
 func (b0 VulnerabilityRequest_builder) Build() *VulnerabilityRequest {
 	m0 := &VulnerabilityRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.TargetState = b.TargetState
-	x.Status = b.Status
-	x.Expired = b.Expired
-	x.Requestor = b.Requestor
-	x.Approvers = b.Approvers
-	x.CreatedAt = b.CreatedAt
-	x.LastUpdated = b.LastUpdated
-	x.Comments = b.Comments
-	x.Scope = b.Scope
-	x.RequesterV2 = b.RequesterV2
-	x.ApproversV2 = b.ApproversV2
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 16)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 16)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.TargetState != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 16)
+		x.xxx_hidden_TargetState = *b.TargetState
+	}
+	if b.Status != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 16)
+		x.xxx_hidden_Status = *b.Status
+	}
+	if b.Expired != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 16)
+		x.xxx_hidden_Expired = *b.Expired
+	}
+	x.xxx_hidden_Requestor = b.Requestor
+	x.xxx_hidden_Approvers = &b.Approvers
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_LastUpdated = b.LastUpdated
+	x.xxx_hidden_Comments = &b.Comments
+	x.xxx_hidden_Scope = b.Scope
+	x.xxx_hidden_RequesterV2 = b.RequesterV2
+	x.xxx_hidden_ApproversV2 = &b.ApproversV2
 	if b.DeferralReq != nil {
-		x.Req = &VulnerabilityRequest_DeferralReq{b.DeferralReq}
+		x.xxx_hidden_Req = &vulnerabilityRequest_DeferralReq{b.DeferralReq}
 	}
 	if b.FpRequest != nil {
-		x.Req = &VulnerabilityRequest_FpRequest{b.FpRequest}
+		x.xxx_hidden_Req = &vulnerabilityRequest_FpRequest{b.FpRequest}
 	}
 	if b.Cves != nil {
-		x.Entities = &VulnerabilityRequest_Cves{b.Cves}
+		x.xxx_hidden_Entities = &vulnerabilityRequest_Cves{b.Cves}
 	}
 	if b.UpdatedDeferralReq != nil {
-		x.UpdatedReq = &VulnerabilityRequest_UpdatedDeferralReq{b.UpdatedDeferralReq}
+		x.xxx_hidden_UpdatedReq = &vulnerabilityRequest_UpdatedDeferralReq{b.UpdatedDeferralReq}
 	}
 	if b.DeferralUpdate != nil {
-		x.UpdatedReq = &VulnerabilityRequest_DeferralUpdate{b.DeferralUpdate}
+		x.xxx_hidden_UpdatedReq = &vulnerabilityRequest_DeferralUpdate{b.DeferralUpdate}
 	}
 	if b.FalsePositiveUpdate != nil {
-		x.UpdatedReq = &VulnerabilityRequest_FalsePositiveUpdate{b.FalsePositiveUpdate}
+		x.xxx_hidden_UpdatedReq = &vulnerabilityRequest_FalsePositiveUpdate{b.FalsePositiveUpdate}
 	}
 	return m0
 }
@@ -1664,58 +1706,56 @@ type isVulnerabilityRequest_Req interface {
 	isVulnerabilityRequest_Req()
 }
 
-type VulnerabilityRequest_DeferralReq struct {
+type vulnerabilityRequest_DeferralReq struct {
 	DeferralReq *DeferralRequest `protobuf:"bytes,11,opt,name=deferral_req,json=deferralReq,oneof"`
 }
 
-type VulnerabilityRequest_FpRequest struct {
+type vulnerabilityRequest_FpRequest struct {
 	FpRequest *FalsePositiveRequest `protobuf:"bytes,12,opt,name=fp_request,json=fpRequest,oneof"`
 }
 
-func (*VulnerabilityRequest_DeferralReq) isVulnerabilityRequest_Req() {}
+func (*vulnerabilityRequest_DeferralReq) isVulnerabilityRequest_Req() {}
 
-func (*VulnerabilityRequest_FpRequest) isVulnerabilityRequest_Req() {}
+func (*vulnerabilityRequest_FpRequest) isVulnerabilityRequest_Req() {}
 
 type isVulnerabilityRequest_Entities interface {
 	isVulnerabilityRequest_Entities()
 }
 
-type VulnerabilityRequest_Cves struct {
+type vulnerabilityRequest_Cves struct {
 	Cves *VulnerabilityRequest_CVEs `protobuf:"bytes,16,opt,name=cves,oneof"`
 }
 
-func (*VulnerabilityRequest_Cves) isVulnerabilityRequest_Entities() {}
+func (*vulnerabilityRequest_Cves) isVulnerabilityRequest_Entities() {}
 
 type isVulnerabilityRequest_UpdatedReq interface {
 	isVulnerabilityRequest_UpdatedReq()
 }
 
-type VulnerabilityRequest_UpdatedDeferralReq struct {
+type vulnerabilityRequest_UpdatedDeferralReq struct {
 	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 	UpdatedDeferralReq *DeferralRequest `protobuf:"bytes,21,opt,name=updated_deferral_req,json=updatedDeferralReq,oneof" search:"-"` // @gotags: search:"-"
 }
 
-type VulnerabilityRequest_DeferralUpdate struct {
+type vulnerabilityRequest_DeferralUpdate struct {
 	DeferralUpdate *DeferralUpdate `protobuf:"bytes,22,opt,name=deferral_update,json=deferralUpdate,oneof"`
 }
 
-type VulnerabilityRequest_FalsePositiveUpdate struct {
+type vulnerabilityRequest_FalsePositiveUpdate struct {
 	FalsePositiveUpdate *FalsePositiveUpdate `protobuf:"bytes,23,opt,name=false_positive_update,json=falsePositiveUpdate,oneof"`
 }
 
-func (*VulnerabilityRequest_UpdatedDeferralReq) isVulnerabilityRequest_UpdatedReq() {}
+func (*vulnerabilityRequest_UpdatedDeferralReq) isVulnerabilityRequest_UpdatedReq() {}
 
-func (*VulnerabilityRequest_DeferralUpdate) isVulnerabilityRequest_UpdatedReq() {}
+func (*vulnerabilityRequest_DeferralUpdate) isVulnerabilityRequest_UpdatedReq() {}
 
-func (*VulnerabilityRequest_FalsePositiveUpdate) isVulnerabilityRequest_UpdatedReq() {}
+func (*vulnerabilityRequest_FalsePositiveUpdate) isVulnerabilityRequest_UpdatedReq() {}
 
 type VulnerabilityRequest_CVEs struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
-	// For example, CVE-2021-44832.
-	Cves          []string `protobuf:"bytes,1,rep,name=cves" json:"cves,omitempty" search:"CVE"` // @gotags: search:"CVE"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Cves []string               `protobuf:"bytes,1,rep,name=cves"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *VulnerabilityRequest_CVEs) Reset() {
@@ -1745,13 +1785,13 @@ func (x *VulnerabilityRequest_CVEs) ProtoReflect() protoreflect.Message {
 
 func (x *VulnerabilityRequest_CVEs) GetCves() []string {
 	if x != nil {
-		return x.Cves
+		return x.xxx_hidden_Cves
 	}
 	return nil
 }
 
 func (x *VulnerabilityRequest_CVEs) SetCves(v []string) {
-	x.Cves = v
+	x.xxx_hidden_Cves = v
 }
 
 type VulnerabilityRequest_CVEs_builder struct {
@@ -1766,19 +1806,15 @@ func (b0 VulnerabilityRequest_CVEs_builder) Build() *VulnerabilityRequest_CVEs {
 	m0 := &VulnerabilityRequest_CVEs{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Cves = b.Cves
+	x.xxx_hidden_Cves = b.Cves
 	return m0
 }
 
 type VulnerabilityRequest_Scope struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Info:
-	//
-	//	*VulnerabilityRequest_Scope_ImageScope
-	//	*VulnerabilityRequest_Scope_GlobalScope
-	Info          isVulnerabilityRequest_Scope_Info `protobuf_oneof:"info"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState            `protogen:"opaque.v1"`
+	xxx_hidden_Info isVulnerabilityRequest_Scope_Info `protobuf_oneof:"info"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *VulnerabilityRequest_Scope) Reset() {
@@ -1806,16 +1842,9 @@ func (x *VulnerabilityRequest_Scope) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *VulnerabilityRequest_Scope) GetInfo() isVulnerabilityRequest_Scope_Info {
-	if x != nil {
-		return x.Info
-	}
-	return nil
-}
-
 func (x *VulnerabilityRequest_Scope) GetImageScope() *VulnerabilityRequest_Scope_Image {
 	if x != nil {
-		if x, ok := x.Info.(*VulnerabilityRequest_Scope_ImageScope); ok {
+		if x, ok := x.xxx_hidden_Info.(*vulnerabilityRequest_Scope_ImageScope); ok {
 			return x.ImageScope
 		}
 	}
@@ -1825,7 +1854,7 @@ func (x *VulnerabilityRequest_Scope) GetImageScope() *VulnerabilityRequest_Scope
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest_Scope) GetGlobalScope() *VulnerabilityRequest_Scope_Global {
 	if x != nil {
-		if x, ok := x.Info.(*VulnerabilityRequest_Scope_GlobalScope); ok {
+		if x, ok := x.xxx_hidden_Info.(*vulnerabilityRequest_Scope_GlobalScope); ok {
 			return x.GlobalScope
 		}
 	}
@@ -1834,33 +1863,33 @@ func (x *VulnerabilityRequest_Scope) GetGlobalScope() *VulnerabilityRequest_Scop
 
 func (x *VulnerabilityRequest_Scope) SetImageScope(v *VulnerabilityRequest_Scope_Image) {
 	if v == nil {
-		x.Info = nil
+		x.xxx_hidden_Info = nil
 		return
 	}
-	x.Info = &VulnerabilityRequest_Scope_ImageScope{v}
+	x.xxx_hidden_Info = &vulnerabilityRequest_Scope_ImageScope{v}
 }
 
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest_Scope) SetGlobalScope(v *VulnerabilityRequest_Scope_Global) {
 	if v == nil {
-		x.Info = nil
+		x.xxx_hidden_Info = nil
 		return
 	}
-	x.Info = &VulnerabilityRequest_Scope_GlobalScope{v}
+	x.xxx_hidden_Info = &vulnerabilityRequest_Scope_GlobalScope{v}
 }
 
 func (x *VulnerabilityRequest_Scope) HasInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.Info != nil
+	return x.xxx_hidden_Info != nil
 }
 
 func (x *VulnerabilityRequest_Scope) HasImageScope() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Info.(*VulnerabilityRequest_Scope_ImageScope)
+	_, ok := x.xxx_hidden_Info.(*vulnerabilityRequest_Scope_ImageScope)
 	return ok
 }
 
@@ -1869,24 +1898,24 @@ func (x *VulnerabilityRequest_Scope) HasGlobalScope() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Info.(*VulnerabilityRequest_Scope_GlobalScope)
+	_, ok := x.xxx_hidden_Info.(*vulnerabilityRequest_Scope_GlobalScope)
 	return ok
 }
 
 func (x *VulnerabilityRequest_Scope) ClearInfo() {
-	x.Info = nil
+	x.xxx_hidden_Info = nil
 }
 
 func (x *VulnerabilityRequest_Scope) ClearImageScope() {
-	if _, ok := x.Info.(*VulnerabilityRequest_Scope_ImageScope); ok {
-		x.Info = nil
+	if _, ok := x.xxx_hidden_Info.(*vulnerabilityRequest_Scope_ImageScope); ok {
+		x.xxx_hidden_Info = nil
 	}
 }
 
 // Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 func (x *VulnerabilityRequest_Scope) ClearGlobalScope() {
-	if _, ok := x.Info.(*VulnerabilityRequest_Scope_GlobalScope); ok {
-		x.Info = nil
+	if _, ok := x.xxx_hidden_Info.(*vulnerabilityRequest_Scope_GlobalScope); ok {
+		x.xxx_hidden_Info = nil
 	}
 }
 
@@ -1898,10 +1927,10 @@ func (x *VulnerabilityRequest_Scope) WhichInfo() case_VulnerabilityRequest_Scope
 	if x == nil {
 		return VulnerabilityRequest_Scope_Info_not_set_case
 	}
-	switch x.Info.(type) {
-	case *VulnerabilityRequest_Scope_ImageScope:
+	switch x.xxx_hidden_Info.(type) {
+	case *vulnerabilityRequest_Scope_ImageScope:
 		return VulnerabilityRequest_Scope_ImageScope_case
-	case *VulnerabilityRequest_Scope_GlobalScope:
+	case *vulnerabilityRequest_Scope_GlobalScope:
 		return VulnerabilityRequest_Scope_GlobalScope_case
 	default:
 		return VulnerabilityRequest_Scope_Info_not_set_case
@@ -1911,14 +1940,14 @@ func (x *VulnerabilityRequest_Scope) WhichInfo() case_VulnerabilityRequest_Scope
 type VulnerabilityRequest_Scope_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Info:
+	// Fields of oneof xxx_hidden_Info:
 	// This field can be used to apply the request to selected images.
 	ImageScope *VulnerabilityRequest_Scope_Image
 	// If set, the scope of this request is system-wide.
 	//
 	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 	GlobalScope *VulnerabilityRequest_Scope_Global
-	// -- end of Info
+	// -- end of xxx_hidden_Info
 }
 
 func (b0 VulnerabilityRequest_Scope_builder) Build() *VulnerabilityRequest_Scope {
@@ -1926,10 +1955,10 @@ func (b0 VulnerabilityRequest_Scope_builder) Build() *VulnerabilityRequest_Scope
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.ImageScope != nil {
-		x.Info = &VulnerabilityRequest_Scope_ImageScope{b.ImageScope}
+		x.xxx_hidden_Info = &vulnerabilityRequest_Scope_ImageScope{b.ImageScope}
 	}
 	if b.GlobalScope != nil {
-		x.Info = &VulnerabilityRequest_Scope_GlobalScope{b.GlobalScope}
+		x.xxx_hidden_Info = &vulnerabilityRequest_Scope_GlobalScope{b.GlobalScope}
 	}
 	return m0
 }
@@ -1948,29 +1977,31 @@ type isVulnerabilityRequest_Scope_Info interface {
 	isVulnerabilityRequest_Scope_Info()
 }
 
-type VulnerabilityRequest_Scope_ImageScope struct {
+type vulnerabilityRequest_Scope_ImageScope struct {
 	// This field can be used to apply the request to selected images.
 	ImageScope *VulnerabilityRequest_Scope_Image `protobuf:"bytes,1,opt,name=image_scope,json=imageScope,oneof"`
 }
 
-type VulnerabilityRequest_Scope_GlobalScope struct {
+type vulnerabilityRequest_Scope_GlobalScope struct {
 	// If set, the scope of this request is system-wide.
 	//
 	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 	GlobalScope *VulnerabilityRequest_Scope_Global `protobuf:"bytes,2,opt,name=global_scope,json=globalScope,oneof"`
 }
 
-func (*VulnerabilityRequest_Scope_ImageScope) isVulnerabilityRequest_Scope_Info() {}
+func (*vulnerabilityRequest_Scope_ImageScope) isVulnerabilityRequest_Scope_Info() {}
 
-func (*VulnerabilityRequest_Scope_GlobalScope) isVulnerabilityRequest_Scope_Info() {}
+func (*vulnerabilityRequest_Scope_GlobalScope) isVulnerabilityRequest_Scope_Info() {}
 
 type VulnerabilityRequest_Scope_Image struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Registry      *string                `protobuf:"bytes,1,opt,name=registry" json:"registry,omitempty" search:"Image Registry Scope"` // @gotags: search:"Image Registry Scope"
-	Remote        *string                `protobuf:"bytes,2,opt,name=remote" json:"remote,omitempty" search:"Image Remote Scope"`     // @gotags: search:"Image Remote Scope"
-	Tag           *string                `protobuf:"bytes,3,opt,name=tag" json:"tag,omitempty" search:"Image Tag Scope"`           // @gotags: search:"Image Tag Scope"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Registry    *string                `protobuf:"bytes,1,opt,name=registry"`
+	xxx_hidden_Remote      *string                `protobuf:"bytes,2,opt,name=remote"`
+	xxx_hidden_Tag         *string                `protobuf:"bytes,3,opt,name=tag"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VulnerabilityRequest_Scope_Image) Reset() {
@@ -1999,69 +2030,84 @@ func (x *VulnerabilityRequest_Scope_Image) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VulnerabilityRequest_Scope_Image) GetRegistry() string {
-	if x != nil && x.Registry != nil {
-		return *x.Registry
+	if x != nil {
+		if x.xxx_hidden_Registry != nil {
+			return *x.xxx_hidden_Registry
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VulnerabilityRequest_Scope_Image) GetRemote() string {
-	if x != nil && x.Remote != nil {
-		return *x.Remote
+	if x != nil {
+		if x.xxx_hidden_Remote != nil {
+			return *x.xxx_hidden_Remote
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VulnerabilityRequest_Scope_Image) GetTag() string {
-	if x != nil && x.Tag != nil {
-		return *x.Tag
+	if x != nil {
+		if x.xxx_hidden_Tag != nil {
+			return *x.xxx_hidden_Tag
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VulnerabilityRequest_Scope_Image) SetRegistry(v string) {
-	x.Registry = &v
+	x.xxx_hidden_Registry = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *VulnerabilityRequest_Scope_Image) SetRemote(v string) {
-	x.Remote = &v
+	x.xxx_hidden_Remote = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *VulnerabilityRequest_Scope_Image) SetTag(v string) {
-	x.Tag = &v
+	x.xxx_hidden_Tag = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *VulnerabilityRequest_Scope_Image) HasRegistry() bool {
 	if x == nil {
 		return false
 	}
-	return x.Registry != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VulnerabilityRequest_Scope_Image) HasRemote() bool {
 	if x == nil {
 		return false
 	}
-	return x.Remote != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VulnerabilityRequest_Scope_Image) HasTag() bool {
 	if x == nil {
 		return false
 	}
-	return x.Tag != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *VulnerabilityRequest_Scope_Image) ClearRegistry() {
-	x.Registry = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Registry = nil
 }
 
 func (x *VulnerabilityRequest_Scope_Image) ClearRemote() {
-	x.Remote = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Remote = nil
 }
 
 func (x *VulnerabilityRequest_Scope_Image) ClearTag() {
-	x.Tag = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Tag = nil
 }
 
 type VulnerabilityRequest_Scope_Image_builder struct {
@@ -2076,14 +2122,23 @@ func (b0 VulnerabilityRequest_Scope_Image_builder) Build() *VulnerabilityRequest
 	m0 := &VulnerabilityRequest_Scope_Image{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Registry = b.Registry
-	x.Remote = b.Remote
-	x.Tag = b.Tag
+	if b.Registry != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Registry = b.Registry
+	}
+	if b.Remote != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Remote = b.Remote
+	}
+	if b.Tag != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Tag = b.Tag
+	}
 	return m0
 }
 
 type VulnerabilityRequest_Scope_Global struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2208,7 +2263,7 @@ const file_storage_vuln_requests_proto_rawDesc = "" +
 	"\n" +
 	"\x06DENIED\x10\x02\x12\x1b\n" +
 	"\x17APPROVED_PENDING_UPDATE\x10\x03B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_vuln_requests_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_vuln_requests_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
@@ -2272,20 +2327,20 @@ func file_storage_vuln_requests_proto_init() {
 	file_storage_cve_proto_init()
 	file_storage_user_proto_init()
 	file_storage_vuln_requests_proto_msgTypes[1].OneofWrappers = []any{
-		(*RequestExpiry_ExpiresWhenFixed)(nil),
-		(*RequestExpiry_ExpiresOn)(nil),
+		(*requestExpiry_ExpiresWhenFixed)(nil),
+		(*requestExpiry_ExpiresOn)(nil),
 	}
 	file_storage_vuln_requests_proto_msgTypes[8].OneofWrappers = []any{
-		(*VulnerabilityRequest_DeferralReq)(nil),
-		(*VulnerabilityRequest_FpRequest)(nil),
-		(*VulnerabilityRequest_Cves)(nil),
-		(*VulnerabilityRequest_UpdatedDeferralReq)(nil),
-		(*VulnerabilityRequest_DeferralUpdate)(nil),
-		(*VulnerabilityRequest_FalsePositiveUpdate)(nil),
+		(*vulnerabilityRequest_DeferralReq)(nil),
+		(*vulnerabilityRequest_FpRequest)(nil),
+		(*vulnerabilityRequest_Cves)(nil),
+		(*vulnerabilityRequest_UpdatedDeferralReq)(nil),
+		(*vulnerabilityRequest_DeferralUpdate)(nil),
+		(*vulnerabilityRequest_FalsePositiveUpdate)(nil),
 	}
 	file_storage_vuln_requests_proto_msgTypes[10].OneofWrappers = []any{
-		(*VulnerabilityRequest_Scope_ImageScope)(nil),
-		(*VulnerabilityRequest_Scope_GlobalScope)(nil),
+		(*vulnerabilityRequest_Scope_ImageScope)(nil),
+		(*vulnerabilityRequest_Scope_GlobalScope)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

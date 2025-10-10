@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/cluster_init_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -28,15 +26,17 @@ const (
 )
 
 type InitBundleMeta struct {
-	state            protoimpl.MessageState            `protogen:"hybrid.v1"`
-	Id               *string                           `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name             *string                           `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	ImpactedClusters []*InitBundleMeta_ImpactedCluster `protobuf:"bytes,6,rep,name=impacted_clusters,json=impactedClusters" json:"impacted_clusters,omitempty"`
-	CreatedAt        *timestamppb.Timestamp            `protobuf:"bytes,3,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
-	CreatedBy        *storage.User                     `protobuf:"bytes,4,opt,name=created_by,json=createdBy" json:"created_by,omitempty"`
-	ExpiresAt        *timestamppb.Timestamp            `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt" json:"expires_at,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Id               *string                            `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name             *string                            `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_ImpactedClusters *[]*InitBundleMeta_ImpactedCluster `protobuf:"bytes,6,rep,name=impacted_clusters,json=impactedClusters"`
+	xxx_hidden_CreatedAt        *timestamppb.Timestamp             `protobuf:"bytes,3,opt,name=created_at,json=createdAt"`
+	xxx_hidden_CreatedBy        *storage.User                      `protobuf:"bytes,4,opt,name=created_by,json=createdBy"`
+	xxx_hidden_ExpiresAt        *timestamppb.Timestamp             `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *InitBundleMeta) Reset() {
@@ -65,124 +65,136 @@ func (x *InitBundleMeta) ProtoReflect() protoreflect.Message {
 }
 
 func (x *InitBundleMeta) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InitBundleMeta) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InitBundleMeta) GetImpactedClusters() []*InitBundleMeta_ImpactedCluster {
 	if x != nil {
-		return x.ImpactedClusters
+		if x.xxx_hidden_ImpactedClusters != nil {
+			return *x.xxx_hidden_ImpactedClusters
+		}
 	}
 	return nil
 }
 
 func (x *InitBundleMeta) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return nil
 }
 
 func (x *InitBundleMeta) GetCreatedBy() *storage.User {
 	if x != nil {
-		return x.CreatedBy
+		return x.xxx_hidden_CreatedBy
 	}
 	return nil
 }
 
 func (x *InitBundleMeta) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ExpiresAt
+		return x.xxx_hidden_ExpiresAt
 	}
 	return nil
 }
 
 func (x *InitBundleMeta) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *InitBundleMeta) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *InitBundleMeta) SetImpactedClusters(v []*InitBundleMeta_ImpactedCluster) {
-	x.ImpactedClusters = v
+	x.xxx_hidden_ImpactedClusters = &v
 }
 
 func (x *InitBundleMeta) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.CreatedAt = v
+	x.xxx_hidden_CreatedAt = v
 }
 
 func (x *InitBundleMeta) SetCreatedBy(v *storage.User) {
-	x.CreatedBy = v
+	x.xxx_hidden_CreatedBy = v
 }
 
 func (x *InitBundleMeta) SetExpiresAt(v *timestamppb.Timestamp) {
-	x.ExpiresAt = v
+	x.xxx_hidden_ExpiresAt = v
 }
 
 func (x *InitBundleMeta) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *InitBundleMeta) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *InitBundleMeta) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedAt != nil
+	return x.xxx_hidden_CreatedAt != nil
 }
 
 func (x *InitBundleMeta) HasCreatedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedBy != nil
+	return x.xxx_hidden_CreatedBy != nil
 }
 
 func (x *InitBundleMeta) HasExpiresAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.ExpiresAt != nil
+	return x.xxx_hidden_ExpiresAt != nil
 }
 
 func (x *InitBundleMeta) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *InitBundleMeta) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *InitBundleMeta) ClearCreatedAt() {
-	x.CreatedAt = nil
+	x.xxx_hidden_CreatedAt = nil
 }
 
 func (x *InitBundleMeta) ClearCreatedBy() {
-	x.CreatedBy = nil
+	x.xxx_hidden_CreatedBy = nil
 }
 
 func (x *InitBundleMeta) ClearExpiresAt() {
-	x.ExpiresAt = nil
+	x.xxx_hidden_ExpiresAt = nil
 }
 
 type InitBundleMeta_builder struct {
@@ -200,24 +212,32 @@ func (b0 InitBundleMeta_builder) Build() *InitBundleMeta {
 	m0 := &InitBundleMeta{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.ImpactedClusters = b.ImpactedClusters
-	x.CreatedAt = b.CreatedAt
-	x.CreatedBy = b.CreatedBy
-	x.ExpiresAt = b.ExpiresAt
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_Name = b.Name
+	}
+	x.xxx_hidden_ImpactedClusters = &b.ImpactedClusters
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_CreatedBy = b.CreatedBy
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
 	return m0
 }
 
 type CRSMeta struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
-	CreatedBy     *storage.User          `protobuf:"bytes,4,opt,name=created_by,json=createdBy" json:"created_by,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt" json:"expires_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt"`
+	xxx_hidden_CreatedBy   *storage.User          `protobuf:"bytes,4,opt,name=created_by,json=createdBy"`
+	xxx_hidden_ExpiresAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CRSMeta) Reset() {
@@ -246,113 +266,123 @@ func (x *CRSMeta) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CRSMeta) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CRSMeta) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CRSMeta) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return nil
 }
 
 func (x *CRSMeta) GetCreatedBy() *storage.User {
 	if x != nil {
-		return x.CreatedBy
+		return x.xxx_hidden_CreatedBy
 	}
 	return nil
 }
 
 func (x *CRSMeta) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ExpiresAt
+		return x.xxx_hidden_ExpiresAt
 	}
 	return nil
 }
 
 func (x *CRSMeta) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *CRSMeta) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *CRSMeta) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.CreatedAt = v
+	x.xxx_hidden_CreatedAt = v
 }
 
 func (x *CRSMeta) SetCreatedBy(v *storage.User) {
-	x.CreatedBy = v
+	x.xxx_hidden_CreatedBy = v
 }
 
 func (x *CRSMeta) SetExpiresAt(v *timestamppb.Timestamp) {
-	x.ExpiresAt = v
+	x.xxx_hidden_ExpiresAt = v
 }
 
 func (x *CRSMeta) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CRSMeta) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CRSMeta) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedAt != nil
+	return x.xxx_hidden_CreatedAt != nil
 }
 
 func (x *CRSMeta) HasCreatedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedBy != nil
+	return x.xxx_hidden_CreatedBy != nil
 }
 
 func (x *CRSMeta) HasExpiresAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.ExpiresAt != nil
+	return x.xxx_hidden_ExpiresAt != nil
 }
 
 func (x *CRSMeta) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *CRSMeta) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *CRSMeta) ClearCreatedAt() {
-	x.CreatedAt = nil
+	x.xxx_hidden_CreatedAt = nil
 }
 
 func (x *CRSMeta) ClearCreatedBy() {
-	x.CreatedBy = nil
+	x.xxx_hidden_CreatedBy = nil
 }
 
 func (x *CRSMeta) ClearExpiresAt() {
-	x.ExpiresAt = nil
+	x.xxx_hidden_ExpiresAt = nil
 }
 
 type CRSMeta_builder struct {
@@ -369,21 +399,29 @@ func (b0 CRSMeta_builder) Build() *CRSMeta {
 	m0 := &CRSMeta{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.CreatedAt = b.CreatedAt
-	x.CreatedBy = b.CreatedBy
-	x.ExpiresAt = b.ExpiresAt
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Name = b.Name
+	}
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_CreatedBy = b.CreatedBy
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
 	return m0
 }
 
 type InitBundleGenResponse struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	Meta             *InitBundleMeta        `protobuf:"bytes,1,opt,name=meta" json:"meta,omitempty"`
-	HelmValuesBundle []byte                 `protobuf:"bytes,2,opt,name=helm_values_bundle,json=helmValuesBundle" json:"helm_values_bundle,omitempty"`
-	KubectlBundle    []byte                 `protobuf:"bytes,3,opt,name=kubectl_bundle,json=kubectlBundle" json:"kubectl_bundle,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Meta             *InitBundleMeta        `protobuf:"bytes,1,opt,name=meta"`
+	xxx_hidden_HelmValuesBundle []byte                 `protobuf:"bytes,2,opt,name=helm_values_bundle,json=helmValuesBundle"`
+	xxx_hidden_KubectlBundle    []byte                 `protobuf:"bytes,3,opt,name=kubectl_bundle,json=kubectlBundle"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *InitBundleGenResponse) Reset() {
@@ -413,74 +451,78 @@ func (x *InitBundleGenResponse) ProtoReflect() protoreflect.Message {
 
 func (x *InitBundleGenResponse) GetMeta() *InitBundleMeta {
 	if x != nil {
-		return x.Meta
+		return x.xxx_hidden_Meta
 	}
 	return nil
 }
 
 func (x *InitBundleGenResponse) GetHelmValuesBundle() []byte {
 	if x != nil {
-		return x.HelmValuesBundle
+		return x.xxx_hidden_HelmValuesBundle
 	}
 	return nil
 }
 
 func (x *InitBundleGenResponse) GetKubectlBundle() []byte {
 	if x != nil {
-		return x.KubectlBundle
+		return x.xxx_hidden_KubectlBundle
 	}
 	return nil
 }
 
 func (x *InitBundleGenResponse) SetMeta(v *InitBundleMeta) {
-	x.Meta = v
+	x.xxx_hidden_Meta = v
 }
 
 func (x *InitBundleGenResponse) SetHelmValuesBundle(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.HelmValuesBundle = v
+	x.xxx_hidden_HelmValuesBundle = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *InitBundleGenResponse) SetKubectlBundle(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.KubectlBundle = v
+	x.xxx_hidden_KubectlBundle = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *InitBundleGenResponse) HasMeta() bool {
 	if x == nil {
 		return false
 	}
-	return x.Meta != nil
+	return x.xxx_hidden_Meta != nil
 }
 
 func (x *InitBundleGenResponse) HasHelmValuesBundle() bool {
 	if x == nil {
 		return false
 	}
-	return x.HelmValuesBundle != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *InitBundleGenResponse) HasKubectlBundle() bool {
 	if x == nil {
 		return false
 	}
-	return x.KubectlBundle != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *InitBundleGenResponse) ClearMeta() {
-	x.Meta = nil
+	x.xxx_hidden_Meta = nil
 }
 
 func (x *InitBundleGenResponse) ClearHelmValuesBundle() {
-	x.HelmValuesBundle = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_HelmValuesBundle = nil
 }
 
 func (x *InitBundleGenResponse) ClearKubectlBundle() {
-	x.KubectlBundle = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_KubectlBundle = nil
 }
 
 type InitBundleGenResponse_builder struct {
@@ -495,18 +537,26 @@ func (b0 InitBundleGenResponse_builder) Build() *InitBundleGenResponse {
 	m0 := &InitBundleGenResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Meta = b.Meta
-	x.HelmValuesBundle = b.HelmValuesBundle
-	x.KubectlBundle = b.KubectlBundle
+	x.xxx_hidden_Meta = b.Meta
+	if b.HelmValuesBundle != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_HelmValuesBundle = b.HelmValuesBundle
+	}
+	if b.KubectlBundle != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_KubectlBundle = b.KubectlBundle
+	}
 	return m0
 }
 
 type CRSGenResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Meta          *CRSMeta               `protobuf:"bytes,1,opt,name=meta" json:"meta,omitempty"`
-	Crs           []byte                 `protobuf:"bytes,2,opt,name=crs" json:"crs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Meta        *CRSMeta               `protobuf:"bytes,1,opt,name=meta"`
+	xxx_hidden_Crs         []byte                 `protobuf:"bytes,2,opt,name=crs"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CRSGenResponse) Reset() {
@@ -536,49 +586,51 @@ func (x *CRSGenResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CRSGenResponse) GetMeta() *CRSMeta {
 	if x != nil {
-		return x.Meta
+		return x.xxx_hidden_Meta
 	}
 	return nil
 }
 
 func (x *CRSGenResponse) GetCrs() []byte {
 	if x != nil {
-		return x.Crs
+		return x.xxx_hidden_Crs
 	}
 	return nil
 }
 
 func (x *CRSGenResponse) SetMeta(v *CRSMeta) {
-	x.Meta = v
+	x.xxx_hidden_Meta = v
 }
 
 func (x *CRSGenResponse) SetCrs(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Crs = v
+	x.xxx_hidden_Crs = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *CRSGenResponse) HasMeta() bool {
 	if x == nil {
 		return false
 	}
-	return x.Meta != nil
+	return x.xxx_hidden_Meta != nil
 }
 
 func (x *CRSGenResponse) HasCrs() bool {
 	if x == nil {
 		return false
 	}
-	return x.Crs != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CRSGenResponse) ClearMeta() {
-	x.Meta = nil
+	x.xxx_hidden_Meta = nil
 }
 
 func (x *CRSGenResponse) ClearCrs() {
-	x.Crs = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Crs = nil
 }
 
 type CRSGenResponse_builder struct {
@@ -592,16 +644,21 @@ func (b0 CRSGenResponse_builder) Build() *CRSGenResponse {
 	m0 := &CRSGenResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Meta = b.Meta
-	x.Crs = b.Crs
+	x.xxx_hidden_Meta = b.Meta
+	if b.Crs != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Crs = b.Crs
+	}
 	return m0
 }
 
 type GetCAConfigResponse struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	HelmValuesBundle []byte                 `protobuf:"bytes,1,opt,name=helm_values_bundle,json=helmValuesBundle" json:"helm_values_bundle,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_HelmValuesBundle []byte                 `protobuf:"bytes,1,opt,name=helm_values_bundle,json=helmValuesBundle"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *GetCAConfigResponse) Reset() {
@@ -631,7 +688,7 @@ func (x *GetCAConfigResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetCAConfigResponse) GetHelmValuesBundle() []byte {
 	if x != nil {
-		return x.HelmValuesBundle
+		return x.xxx_hidden_HelmValuesBundle
 	}
 	return nil
 }
@@ -640,18 +697,20 @@ func (x *GetCAConfigResponse) SetHelmValuesBundle(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.HelmValuesBundle = v
+	x.xxx_hidden_HelmValuesBundle = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *GetCAConfigResponse) HasHelmValuesBundle() bool {
 	if x == nil {
 		return false
 	}
-	return x.HelmValuesBundle != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetCAConfigResponse) ClearHelmValuesBundle() {
-	x.HelmValuesBundle = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_HelmValuesBundle = nil
 }
 
 type GetCAConfigResponse_builder struct {
@@ -664,15 +723,18 @@ func (b0 GetCAConfigResponse_builder) Build() *GetCAConfigResponse {
 	m0 := &GetCAConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.HelmValuesBundle = b.HelmValuesBundle
+	if b.HelmValuesBundle != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_HelmValuesBundle = b.HelmValuesBundle
+	}
 	return m0
 }
 
 type InitBundleMetasResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Items         []*InitBundleMeta      `protobuf:"bytes,1,rep,name=items" json:"items,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Items *[]*InitBundleMeta     `protobuf:"bytes,1,rep,name=items"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *InitBundleMetasResponse) Reset() {
@@ -702,13 +764,15 @@ func (x *InitBundleMetasResponse) ProtoReflect() protoreflect.Message {
 
 func (x *InitBundleMetasResponse) GetItems() []*InitBundleMeta {
 	if x != nil {
-		return x.Items
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
 	}
 	return nil
 }
 
 func (x *InitBundleMetasResponse) SetItems(v []*InitBundleMeta) {
-	x.Items = v
+	x.xxx_hidden_Items = &v
 }
 
 type InitBundleMetasResponse_builder struct {
@@ -721,15 +785,15 @@ func (b0 InitBundleMetasResponse_builder) Build() *InitBundleMetasResponse {
 	m0 := &InitBundleMetasResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Items = b.Items
+	x.xxx_hidden_Items = &b.Items
 	return m0
 }
 
 type CRSMetasResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Items         []*CRSMeta             `protobuf:"bytes,1,rep,name=items" json:"items,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Items *[]*CRSMeta            `protobuf:"bytes,1,rep,name=items"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CRSMetasResponse) Reset() {
@@ -759,13 +823,15 @@ func (x *CRSMetasResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CRSMetasResponse) GetItems() []*CRSMeta {
 	if x != nil {
-		return x.Items
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
 	}
 	return nil
 }
 
 func (x *CRSMetasResponse) SetItems(v []*CRSMeta) {
-	x.Items = v
+	x.xxx_hidden_Items = &v
 }
 
 type CRSMetasResponse_builder struct {
@@ -778,15 +844,17 @@ func (b0 CRSMetasResponse_builder) Build() *CRSMetasResponse {
 	m0 := &CRSMetasResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Items = b.Items
+	x.xxx_hidden_Items = &b.Items
 	return m0
 }
 
 type InitBundleGenRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *InitBundleGenRequest) Reset() {
@@ -815,25 +883,30 @@ func (x *InitBundleGenRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *InitBundleGenRequest) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InitBundleGenRequest) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *InitBundleGenRequest) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *InitBundleGenRequest) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 type InitBundleGenRequest_builder struct {
@@ -846,15 +919,20 @@ func (b0 InitBundleGenRequest_builder) Build() *InitBundleGenRequest {
 	m0 := &InitBundleGenRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Name = b.Name
+	}
 	return m0
 }
 
 type CRSGenRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CRSGenRequest) Reset() {
@@ -883,25 +961,30 @@ func (x *CRSGenRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CRSGenRequest) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CRSGenRequest) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *CRSGenRequest) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CRSGenRequest) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 type CRSGenRequest_builder struct {
@@ -914,18 +997,23 @@ func (b0 CRSGenRequest_builder) Build() *CRSGenRequest {
 	m0 := &CRSGenRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Name = b.Name
+	}
 	return m0
 }
 
 type CRSGenRequestExtended struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name             *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	ValidUntil       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=valid_until,json=validUntil" json:"valid_until,omitempty"`
-	ValidFor         *durationpb.Duration   `protobuf:"bytes,3,opt,name=valid_for,json=validFor" json:"valid_for,omitempty"`
-	MaxRegistrations *int32                 `protobuf:"varint,4,opt,name=max_registrations,json=maxRegistrations" json:"max_registrations,omitempty"` // Support for this is to be implemented in ROX-26769.
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name             *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_ValidUntil       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=valid_until,json=validUntil"`
+	xxx_hidden_ValidFor         *durationpb.Duration   `protobuf:"bytes,3,opt,name=valid_for,json=validFor"`
+	xxx_hidden_MaxRegistrations int32                  `protobuf:"varint,4,opt,name=max_registrations,json=maxRegistrations"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *CRSGenRequestExtended) Reset() {
@@ -954,91 +1042,98 @@ func (x *CRSGenRequestExtended) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CRSGenRequestExtended) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CRSGenRequestExtended) GetValidUntil() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ValidUntil
+		return x.xxx_hidden_ValidUntil
 	}
 	return nil
 }
 
 func (x *CRSGenRequestExtended) GetValidFor() *durationpb.Duration {
 	if x != nil {
-		return x.ValidFor
+		return x.xxx_hidden_ValidFor
 	}
 	return nil
 }
 
 func (x *CRSGenRequestExtended) GetMaxRegistrations() int32 {
-	if x != nil && x.MaxRegistrations != nil {
-		return *x.MaxRegistrations
+	if x != nil {
+		return x.xxx_hidden_MaxRegistrations
 	}
 	return 0
 }
 
 func (x *CRSGenRequestExtended) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *CRSGenRequestExtended) SetValidUntil(v *timestamppb.Timestamp) {
-	x.ValidUntil = v
+	x.xxx_hidden_ValidUntil = v
 }
 
 func (x *CRSGenRequestExtended) SetValidFor(v *durationpb.Duration) {
-	x.ValidFor = v
+	x.xxx_hidden_ValidFor = v
 }
 
 func (x *CRSGenRequestExtended) SetMaxRegistrations(v int32) {
-	x.MaxRegistrations = &v
+	x.xxx_hidden_MaxRegistrations = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *CRSGenRequestExtended) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CRSGenRequestExtended) HasValidUntil() bool {
 	if x == nil {
 		return false
 	}
-	return x.ValidUntil != nil
+	return x.xxx_hidden_ValidUntil != nil
 }
 
 func (x *CRSGenRequestExtended) HasValidFor() bool {
 	if x == nil {
 		return false
 	}
-	return x.ValidFor != nil
+	return x.xxx_hidden_ValidFor != nil
 }
 
 func (x *CRSGenRequestExtended) HasMaxRegistrations() bool {
 	if x == nil {
 		return false
 	}
-	return x.MaxRegistrations != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *CRSGenRequestExtended) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *CRSGenRequestExtended) ClearValidUntil() {
-	x.ValidUntil = nil
+	x.xxx_hidden_ValidUntil = nil
 }
 
 func (x *CRSGenRequestExtended) ClearValidFor() {
-	x.ValidFor = nil
+	x.xxx_hidden_ValidFor = nil
 }
 
 func (x *CRSGenRequestExtended) ClearMaxRegistrations() {
-	x.MaxRegistrations = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_MaxRegistrations = 0
 }
 
 type CRSGenRequestExtended_builder struct {
@@ -1054,19 +1149,25 @@ func (b0 CRSGenRequestExtended_builder) Build() *CRSGenRequestExtended {
 	m0 := &CRSGenRequestExtended{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.ValidUntil = b.ValidUntil
-	x.ValidFor = b.ValidFor
-	x.MaxRegistrations = b.MaxRegistrations
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Name = b.Name
+	}
+	x.xxx_hidden_ValidUntil = b.ValidUntil
+	x.xxx_hidden_ValidFor = b.ValidFor
+	if b.MaxRegistrations != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_MaxRegistrations = *b.MaxRegistrations
+	}
 	return m0
 }
 
 type InitBundleRevokeRequest struct {
-	state                      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Ids                        []string               `protobuf:"bytes,1,rep,name=ids" json:"ids,omitempty"`
-	ConfirmImpactedClustersIds []string               `protobuf:"bytes,2,rep,name=confirm_impacted_clusters_ids,json=confirmImpactedClustersIds" json:"confirm_impacted_clusters_ids,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state                                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Ids                        []string               `protobuf:"bytes,1,rep,name=ids"`
+	xxx_hidden_ConfirmImpactedClustersIds []string               `protobuf:"bytes,2,rep,name=confirm_impacted_clusters_ids,json=confirmImpactedClustersIds"`
+	unknownFields                         protoimpl.UnknownFields
+	sizeCache                             protoimpl.SizeCache
 }
 
 func (x *InitBundleRevokeRequest) Reset() {
@@ -1096,24 +1197,24 @@ func (x *InitBundleRevokeRequest) ProtoReflect() protoreflect.Message {
 
 func (x *InitBundleRevokeRequest) GetIds() []string {
 	if x != nil {
-		return x.Ids
+		return x.xxx_hidden_Ids
 	}
 	return nil
 }
 
 func (x *InitBundleRevokeRequest) GetConfirmImpactedClustersIds() []string {
 	if x != nil {
-		return x.ConfirmImpactedClustersIds
+		return x.xxx_hidden_ConfirmImpactedClustersIds
 	}
 	return nil
 }
 
 func (x *InitBundleRevokeRequest) SetIds(v []string) {
-	x.Ids = v
+	x.xxx_hidden_Ids = v
 }
 
 func (x *InitBundleRevokeRequest) SetConfirmImpactedClustersIds(v []string) {
-	x.ConfirmImpactedClustersIds = v
+	x.xxx_hidden_ConfirmImpactedClustersIds = v
 }
 
 type InitBundleRevokeRequest_builder struct {
@@ -1127,16 +1228,16 @@ func (b0 InitBundleRevokeRequest_builder) Build() *InitBundleRevokeRequest {
 	m0 := &InitBundleRevokeRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Ids = b.Ids
-	x.ConfirmImpactedClustersIds = b.ConfirmImpactedClustersIds
+	x.xxx_hidden_Ids = b.Ids
+	x.xxx_hidden_ConfirmImpactedClustersIds = b.ConfirmImpactedClustersIds
 	return m0
 }
 
 type CRSRevokeRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Ids           []string               `protobuf:"bytes,1,rep,name=ids" json:"ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Ids []string               `protobuf:"bytes,1,rep,name=ids"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CRSRevokeRequest) Reset() {
@@ -1166,13 +1267,13 @@ func (x *CRSRevokeRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CRSRevokeRequest) GetIds() []string {
 	if x != nil {
-		return x.Ids
+		return x.xxx_hidden_Ids
 	}
 	return nil
 }
 
 func (x *CRSRevokeRequest) SetIds(v []string) {
-	x.Ids = v
+	x.xxx_hidden_Ids = v
 }
 
 type CRSRevokeRequest_builder struct {
@@ -1185,16 +1286,16 @@ func (b0 CRSRevokeRequest_builder) Build() *CRSRevokeRequest {
 	m0 := &CRSRevokeRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Ids = b.Ids
+	x.xxx_hidden_Ids = b.Ids
 	return m0
 }
 
 type InitBundleRevokeResponse struct {
-	state                      protoimpl.MessageState                                `protogen:"hybrid.v1"`
-	InitBundleRevocationErrors []*InitBundleRevokeResponse_InitBundleRevocationError `protobuf:"bytes,2,rep,name=init_bundle_revocation_errors,json=initBundleRevocationErrors" json:"init_bundle_revocation_errors,omitempty"`
-	InitBundleRevokedIds       []string                                              `protobuf:"bytes,3,rep,name=init_bundle_revoked_ids,json=initBundleRevokedIds" json:"init_bundle_revoked_ids,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state                                 protoimpl.MessageState                                 `protogen:"opaque.v1"`
+	xxx_hidden_InitBundleRevocationErrors *[]*InitBundleRevokeResponse_InitBundleRevocationError `protobuf:"bytes,2,rep,name=init_bundle_revocation_errors,json=initBundleRevocationErrors"`
+	xxx_hidden_InitBundleRevokedIds       []string                                               `protobuf:"bytes,3,rep,name=init_bundle_revoked_ids,json=initBundleRevokedIds"`
+	unknownFields                         protoimpl.UnknownFields
+	sizeCache                             protoimpl.SizeCache
 }
 
 func (x *InitBundleRevokeResponse) Reset() {
@@ -1224,24 +1325,26 @@ func (x *InitBundleRevokeResponse) ProtoReflect() protoreflect.Message {
 
 func (x *InitBundleRevokeResponse) GetInitBundleRevocationErrors() []*InitBundleRevokeResponse_InitBundleRevocationError {
 	if x != nil {
-		return x.InitBundleRevocationErrors
+		if x.xxx_hidden_InitBundleRevocationErrors != nil {
+			return *x.xxx_hidden_InitBundleRevocationErrors
+		}
 	}
 	return nil
 }
 
 func (x *InitBundleRevokeResponse) GetInitBundleRevokedIds() []string {
 	if x != nil {
-		return x.InitBundleRevokedIds
+		return x.xxx_hidden_InitBundleRevokedIds
 	}
 	return nil
 }
 
 func (x *InitBundleRevokeResponse) SetInitBundleRevocationErrors(v []*InitBundleRevokeResponse_InitBundleRevocationError) {
-	x.InitBundleRevocationErrors = v
+	x.xxx_hidden_InitBundleRevocationErrors = &v
 }
 
 func (x *InitBundleRevokeResponse) SetInitBundleRevokedIds(v []string) {
-	x.InitBundleRevokedIds = v
+	x.xxx_hidden_InitBundleRevokedIds = v
 }
 
 type InitBundleRevokeResponse_builder struct {
@@ -1255,17 +1358,17 @@ func (b0 InitBundleRevokeResponse_builder) Build() *InitBundleRevokeResponse {
 	m0 := &InitBundleRevokeResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.InitBundleRevocationErrors = b.InitBundleRevocationErrors
-	x.InitBundleRevokedIds = b.InitBundleRevokedIds
+	x.xxx_hidden_InitBundleRevocationErrors = &b.InitBundleRevocationErrors
+	x.xxx_hidden_InitBundleRevokedIds = b.InitBundleRevokedIds
 	return m0
 }
 
 type CRSRevokeResponse struct {
-	state               protoimpl.MessageState                  `protogen:"hybrid.v1"`
-	CrsRevocationErrors []*CRSRevokeResponse_CRSRevocationError `protobuf:"bytes,2,rep,name=crs_revocation_errors,json=crsRevocationErrors" json:"crs_revocation_errors,omitempty"`
-	RevokedIds          []string                                `protobuf:"bytes,3,rep,name=revoked_ids,json=revokedIds" json:"revoked_ids,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState                   `protogen:"opaque.v1"`
+	xxx_hidden_CrsRevocationErrors *[]*CRSRevokeResponse_CRSRevocationError `protobuf:"bytes,2,rep,name=crs_revocation_errors,json=crsRevocationErrors"`
+	xxx_hidden_RevokedIds          []string                                 `protobuf:"bytes,3,rep,name=revoked_ids,json=revokedIds"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *CRSRevokeResponse) Reset() {
@@ -1295,24 +1398,26 @@ func (x *CRSRevokeResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CRSRevokeResponse) GetCrsRevocationErrors() []*CRSRevokeResponse_CRSRevocationError {
 	if x != nil {
-		return x.CrsRevocationErrors
+		if x.xxx_hidden_CrsRevocationErrors != nil {
+			return *x.xxx_hidden_CrsRevocationErrors
+		}
 	}
 	return nil
 }
 
 func (x *CRSRevokeResponse) GetRevokedIds() []string {
 	if x != nil {
-		return x.RevokedIds
+		return x.xxx_hidden_RevokedIds
 	}
 	return nil
 }
 
 func (x *CRSRevokeResponse) SetCrsRevocationErrors(v []*CRSRevokeResponse_CRSRevocationError) {
-	x.CrsRevocationErrors = v
+	x.xxx_hidden_CrsRevocationErrors = &v
 }
 
 func (x *CRSRevokeResponse) SetRevokedIds(v []string) {
-	x.RevokedIds = v
+	x.xxx_hidden_RevokedIds = v
 }
 
 type CRSRevokeResponse_builder struct {
@@ -1326,17 +1431,19 @@ func (b0 CRSRevokeResponse_builder) Build() *CRSRevokeResponse {
 	m0 := &CRSRevokeResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CrsRevocationErrors = b.CrsRevocationErrors
-	x.RevokedIds = b.RevokedIds
+	x.xxx_hidden_CrsRevocationErrors = &b.CrsRevocationErrors
+	x.xxx_hidden_RevokedIds = b.RevokedIds
 	return m0
 }
 
 type InitBundleMeta_ImpactedCluster struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Id            *string                `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,2,opt,name=id"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *InitBundleMeta_ImpactedCluster) Reset() {
@@ -1365,47 +1472,57 @@ func (x *InitBundleMeta_ImpactedCluster) ProtoReflect() protoreflect.Message {
 }
 
 func (x *InitBundleMeta_ImpactedCluster) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InitBundleMeta_ImpactedCluster) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InitBundleMeta_ImpactedCluster) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *InitBundleMeta_ImpactedCluster) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *InitBundleMeta_ImpactedCluster) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *InitBundleMeta_ImpactedCluster) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *InitBundleMeta_ImpactedCluster) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *InitBundleMeta_ImpactedCluster) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Id = nil
 }
 
 type InitBundleMeta_ImpactedCluster_builder struct {
@@ -1419,18 +1536,26 @@ func (b0 InitBundleMeta_ImpactedCluster_builder) Build() *InitBundleMeta_Impacte
 	m0 := &InitBundleMeta_ImpactedCluster{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Id = b.Id
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Id = b.Id
+	}
 	return m0
 }
 
 type InitBundleRevokeResponse_InitBundleRevocationError struct {
-	state            protoimpl.MessageState            `protogen:"hybrid.v1"`
-	Id               *string                           `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Error            *string                           `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
-	ImpactedClusters []*InitBundleMeta_ImpactedCluster `protobuf:"bytes,3,rep,name=impacted_clusters,json=impactedClusters" json:"impacted_clusters,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Id               *string                            `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Error            *string                            `protobuf:"bytes,2,opt,name=error"`
+	xxx_hidden_ImpactedClusters *[]*InitBundleMeta_ImpactedCluster `protobuf:"bytes,3,rep,name=impacted_clusters,json=impactedClusters"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) Reset() {
@@ -1459,58 +1584,70 @@ func (x *InitBundleRevokeResponse_InitBundleRevocationError) ProtoReflect() prot
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) GetError() string {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		if x.xxx_hidden_Error != nil {
+			return *x.xxx_hidden_Error
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) GetImpactedClusters() []*InitBundleMeta_ImpactedCluster {
 	if x != nil {
-		return x.ImpactedClusters
+		if x.xxx_hidden_ImpactedClusters != nil {
+			return *x.xxx_hidden_ImpactedClusters
+		}
 	}
 	return nil
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) SetError(v string) {
-	x.Error = &v
+	x.xxx_hidden_Error = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) SetImpactedClusters(v []*InitBundleMeta_ImpactedCluster) {
-	x.ImpactedClusters = v
+	x.xxx_hidden_ImpactedClusters = &v
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) HasError() bool {
 	if x == nil {
 		return false
 	}
-	return x.Error != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) ClearError() {
-	x.Error = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Error = nil
 }
 
 type InitBundleRevokeResponse_InitBundleRevocationError_builder struct {
@@ -1525,18 +1662,26 @@ func (b0 InitBundleRevokeResponse_InitBundleRevocationError_builder) Build() *In
 	m0 := &InitBundleRevokeResponse_InitBundleRevocationError{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Error = b.Error
-	x.ImpactedClusters = b.ImpactedClusters
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Error != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Error = b.Error
+	}
+	x.xxx_hidden_ImpactedClusters = &b.ImpactedClusters
 	return m0
 }
 
 type CRSRevokeResponse_CRSRevocationError struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Error         *string                `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Error       *string                `protobuf:"bytes,2,opt,name=error"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CRSRevokeResponse_CRSRevocationError) Reset() {
@@ -1565,47 +1710,57 @@ func (x *CRSRevokeResponse_CRSRevocationError) ProtoReflect() protoreflect.Messa
 }
 
 func (x *CRSRevokeResponse_CRSRevocationError) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CRSRevokeResponse_CRSRevocationError) GetError() string {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		if x.xxx_hidden_Error != nil {
+			return *x.xxx_hidden_Error
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CRSRevokeResponse_CRSRevocationError) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *CRSRevokeResponse_CRSRevocationError) SetError(v string) {
-	x.Error = &v
+	x.xxx_hidden_Error = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *CRSRevokeResponse_CRSRevocationError) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CRSRevokeResponse_CRSRevocationError) HasError() bool {
 	if x == nil {
 		return false
 	}
-	return x.Error != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CRSRevokeResponse_CRSRevocationError) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *CRSRevokeResponse_CRSRevocationError) ClearError() {
-	x.Error = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Error = nil
 }
 
 type CRSRevokeResponse_CRSRevocationError_builder struct {
@@ -1619,8 +1774,14 @@ func (b0 CRSRevokeResponse_CRSRevocationError_builder) Build() *CRSRevokeRespons
 	m0 := &CRSRevokeResponse_CRSRevocationError{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Error = b.Error
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Error != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Error = b.Error
+	}
 	return m0
 }
 
@@ -1702,7 +1863,7 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\x12GenerateInitBundle\x12\x18.v1.InitBundleGenRequest\x1a\x19.v1.InitBundleGenResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/cluster-init/init-bundles\x12U\n" +
 	"\vGenerateCRS\x12\x11.v1.CRSGenRequest\x1a\x12.v1.CRSGenResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/v1/cluster-init/crs\x12n\n" +
 	"\x13GenerateCRSExtended\x12\x19.v1.CRSGenRequestExtended\x1a\x12.v1.CRSGenResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/cluster-init/crs-extendedB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x01b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_cluster_init_service_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_api_v1_cluster_init_service_proto_goTypes = []any{

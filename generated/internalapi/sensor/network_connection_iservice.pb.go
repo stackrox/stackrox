@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/network_connection_iservice.proto
 
-//go:build !protoopaque
-
 package sensor
 
 import (
@@ -24,14 +22,10 @@ const (
 )
 
 type NetworkConnectionInfoMessage struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Msg:
-	//
-	//	*NetworkConnectionInfoMessage_Register
-	//	*NetworkConnectionInfoMessage_Info
-	Msg           isNetworkConnectionInfoMessage_Msg `protobuf_oneof:"msg"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Msg isNetworkConnectionInfoMessage_Msg `protobuf_oneof:"msg"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *NetworkConnectionInfoMessage) Reset() {
@@ -59,16 +53,9 @@ func (x *NetworkConnectionInfoMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *NetworkConnectionInfoMessage) GetMsg() isNetworkConnectionInfoMessage_Msg {
-	if x != nil {
-		return x.Msg
-	}
-	return nil
-}
-
 func (x *NetworkConnectionInfoMessage) GetRegister() *CollectorRegisterRequest {
 	if x != nil {
-		if x, ok := x.Msg.(*NetworkConnectionInfoMessage_Register); ok {
+		if x, ok := x.xxx_hidden_Msg.(*networkConnectionInfoMessage_Register); ok {
 			return x.Register
 		}
 	}
@@ -77,7 +64,7 @@ func (x *NetworkConnectionInfoMessage) GetRegister() *CollectorRegisterRequest {
 
 func (x *NetworkConnectionInfoMessage) GetInfo() *NetworkConnectionInfo {
 	if x != nil {
-		if x, ok := x.Msg.(*NetworkConnectionInfoMessage_Info); ok {
+		if x, ok := x.xxx_hidden_Msg.(*networkConnectionInfoMessage_Info); ok {
 			return x.Info
 		}
 	}
@@ -86,32 +73,32 @@ func (x *NetworkConnectionInfoMessage) GetInfo() *NetworkConnectionInfo {
 
 func (x *NetworkConnectionInfoMessage) SetRegister(v *CollectorRegisterRequest) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &NetworkConnectionInfoMessage_Register{v}
+	x.xxx_hidden_Msg = &networkConnectionInfoMessage_Register{v}
 }
 
 func (x *NetworkConnectionInfoMessage) SetInfo(v *NetworkConnectionInfo) {
 	if v == nil {
-		x.Msg = nil
+		x.xxx_hidden_Msg = nil
 		return
 	}
-	x.Msg = &NetworkConnectionInfoMessage_Info{v}
+	x.xxx_hidden_Msg = &networkConnectionInfoMessage_Info{v}
 }
 
 func (x *NetworkConnectionInfoMessage) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.Msg != nil
+	return x.xxx_hidden_Msg != nil
 }
 
 func (x *NetworkConnectionInfoMessage) HasRegister() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*NetworkConnectionInfoMessage_Register)
+	_, ok := x.xxx_hidden_Msg.(*networkConnectionInfoMessage_Register)
 	return ok
 }
 
@@ -119,23 +106,23 @@ func (x *NetworkConnectionInfoMessage) HasInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Msg.(*NetworkConnectionInfoMessage_Info)
+	_, ok := x.xxx_hidden_Msg.(*networkConnectionInfoMessage_Info)
 	return ok
 }
 
 func (x *NetworkConnectionInfoMessage) ClearMsg() {
-	x.Msg = nil
+	x.xxx_hidden_Msg = nil
 }
 
 func (x *NetworkConnectionInfoMessage) ClearRegister() {
-	if _, ok := x.Msg.(*NetworkConnectionInfoMessage_Register); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*networkConnectionInfoMessage_Register); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
 func (x *NetworkConnectionInfoMessage) ClearInfo() {
-	if _, ok := x.Msg.(*NetworkConnectionInfoMessage_Info); ok {
-		x.Msg = nil
+	if _, ok := x.xxx_hidden_Msg.(*networkConnectionInfoMessage_Info); ok {
+		x.xxx_hidden_Msg = nil
 	}
 }
 
@@ -147,10 +134,10 @@ func (x *NetworkConnectionInfoMessage) WhichMsg() case_NetworkConnectionInfoMess
 	if x == nil {
 		return NetworkConnectionInfoMessage_Msg_not_set_case
 	}
-	switch x.Msg.(type) {
-	case *NetworkConnectionInfoMessage_Register:
+	switch x.xxx_hidden_Msg.(type) {
+	case *networkConnectionInfoMessage_Register:
 		return NetworkConnectionInfoMessage_Register_case
-	case *NetworkConnectionInfoMessage_Info:
+	case *networkConnectionInfoMessage_Info:
 		return NetworkConnectionInfoMessage_Info_case
 	default:
 		return NetworkConnectionInfoMessage_Msg_not_set_case
@@ -160,10 +147,10 @@ func (x *NetworkConnectionInfoMessage) WhichMsg() case_NetworkConnectionInfoMess
 type NetworkConnectionInfoMessage_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Msg:
+	// Fields of oneof xxx_hidden_Msg:
 	Register *CollectorRegisterRequest
 	Info     *NetworkConnectionInfo
-	// -- end of Msg
+	// -- end of xxx_hidden_Msg
 }
 
 func (b0 NetworkConnectionInfoMessage_builder) Build() *NetworkConnectionInfoMessage {
@@ -171,10 +158,10 @@ func (b0 NetworkConnectionInfoMessage_builder) Build() *NetworkConnectionInfoMes
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Register != nil {
-		x.Msg = &NetworkConnectionInfoMessage_Register{b.Register}
+		x.xxx_hidden_Msg = &networkConnectionInfoMessage_Register{b.Register}
 	}
 	if b.Info != nil {
-		x.Msg = &NetworkConnectionInfoMessage_Info{b.Info}
+		x.xxx_hidden_Msg = &networkConnectionInfoMessage_Info{b.Info}
 	}
 	return m0
 }
@@ -193,24 +180,24 @@ type isNetworkConnectionInfoMessage_Msg interface {
 	isNetworkConnectionInfoMessage_Msg()
 }
 
-type NetworkConnectionInfoMessage_Register struct {
+type networkConnectionInfoMessage_Register struct {
 	Register *CollectorRegisterRequest `protobuf:"bytes,1,opt,name=register,oneof"`
 }
 
-type NetworkConnectionInfoMessage_Info struct {
+type networkConnectionInfoMessage_Info struct {
 	Info *NetworkConnectionInfo `protobuf:"bytes,2,opt,name=info,oneof"`
 }
 
-func (*NetworkConnectionInfoMessage_Register) isNetworkConnectionInfoMessage_Msg() {}
+func (*networkConnectionInfoMessage_Register) isNetworkConnectionInfoMessage_Msg() {}
 
-func (*NetworkConnectionInfoMessage_Info) isNetworkConnectionInfoMessage_Msg() {}
+func (*networkConnectionInfoMessage_Info) isNetworkConnectionInfoMessage_Msg() {}
 
 type NetworkFlowsControlMessage struct {
-	state             protoimpl.MessageState `protogen:"hybrid.v1"`
-	PublicIpAddresses *IPAddressList         `protobuf:"bytes,1,opt,name=public_ip_addresses,json=publicIpAddresses" json:"public_ip_addresses,omitempty"`
-	IpNetworks        *IPNetworkList         `protobuf:"bytes,2,opt,name=ip_networks,json=ipNetworks" json:"ip_networks,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PublicIpAddresses *IPAddressList         `protobuf:"bytes,1,opt,name=public_ip_addresses,json=publicIpAddresses"`
+	xxx_hidden_IpNetworks        *IPNetworkList         `protobuf:"bytes,2,opt,name=ip_networks,json=ipNetworks"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *NetworkFlowsControlMessage) Reset() {
@@ -240,46 +227,46 @@ func (x *NetworkFlowsControlMessage) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkFlowsControlMessage) GetPublicIpAddresses() *IPAddressList {
 	if x != nil {
-		return x.PublicIpAddresses
+		return x.xxx_hidden_PublicIpAddresses
 	}
 	return nil
 }
 
 func (x *NetworkFlowsControlMessage) GetIpNetworks() *IPNetworkList {
 	if x != nil {
-		return x.IpNetworks
+		return x.xxx_hidden_IpNetworks
 	}
 	return nil
 }
 
 func (x *NetworkFlowsControlMessage) SetPublicIpAddresses(v *IPAddressList) {
-	x.PublicIpAddresses = v
+	x.xxx_hidden_PublicIpAddresses = v
 }
 
 func (x *NetworkFlowsControlMessage) SetIpNetworks(v *IPNetworkList) {
-	x.IpNetworks = v
+	x.xxx_hidden_IpNetworks = v
 }
 
 func (x *NetworkFlowsControlMessage) HasPublicIpAddresses() bool {
 	if x == nil {
 		return false
 	}
-	return x.PublicIpAddresses != nil
+	return x.xxx_hidden_PublicIpAddresses != nil
 }
 
 func (x *NetworkFlowsControlMessage) HasIpNetworks() bool {
 	if x == nil {
 		return false
 	}
-	return x.IpNetworks != nil
+	return x.xxx_hidden_IpNetworks != nil
 }
 
 func (x *NetworkFlowsControlMessage) ClearPublicIpAddresses() {
-	x.PublicIpAddresses = nil
+	x.xxx_hidden_PublicIpAddresses = nil
 }
 
 func (x *NetworkFlowsControlMessage) ClearIpNetworks() {
-	x.IpNetworks = nil
+	x.xxx_hidden_IpNetworks = nil
 }
 
 type NetworkFlowsControlMessage_builder struct {
@@ -293,23 +280,17 @@ func (b0 NetworkFlowsControlMessage_builder) Build() *NetworkFlowsControlMessage
 	m0 := &NetworkFlowsControlMessage{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PublicIpAddresses = b.PublicIpAddresses
-	x.IpNetworks = b.IpNetworks
+	x.xxx_hidden_PublicIpAddresses = b.PublicIpAddresses
+	x.xxx_hidden_IpNetworks = b.IpNetworks
 	return m0
 }
 
 type IPAddressList struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// A list of IPv4 addresses, encoded in correct byte order (i.e., 127.0.0.1 is encoded as 0x7f000001). On a
-	// little-endian system, you must convert to big endian to interpret the value as a binary address.
-	Ipv4Addresses []uint32 `protobuf:"fixed32,1,rep,packed,name=ipv4_addresses,json=ipv4Addresses" json:"ipv4_addresses,omitempty"`
-	// A list of IPv6 addresses, as uint64 pairs. Each pair is ordered in network order (big endian, i.e., first high,
-	// then low); each uint64 is encoded in the correct byte order and may need to be converted to big endian on little
-	// endian System. E.g., the IPv6 address ::1 (local loopback) is encoded as a `0` uint64 followed by a `1` uint64.
-	// This field must always have an even number of values; otherwise it should be discarded.
-	Ipv6Addresses []uint64 `protobuf:"fixed64,2,rep,packed,name=ipv6_addresses,json=ipv6Addresses" json:"ipv6_addresses,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Ipv4Addresses []uint32               `protobuf:"fixed32,1,rep,packed,name=ipv4_addresses,json=ipv4Addresses"`
+	xxx_hidden_Ipv6Addresses []uint64               `protobuf:"fixed64,2,rep,packed,name=ipv6_addresses,json=ipv6Addresses"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *IPAddressList) Reset() {
@@ -339,24 +320,24 @@ func (x *IPAddressList) ProtoReflect() protoreflect.Message {
 
 func (x *IPAddressList) GetIpv4Addresses() []uint32 {
 	if x != nil {
-		return x.Ipv4Addresses
+		return x.xxx_hidden_Ipv4Addresses
 	}
 	return nil
 }
 
 func (x *IPAddressList) GetIpv6Addresses() []uint64 {
 	if x != nil {
-		return x.Ipv6Addresses
+		return x.xxx_hidden_Ipv6Addresses
 	}
 	return nil
 }
 
 func (x *IPAddressList) SetIpv4Addresses(v []uint32) {
-	x.Ipv4Addresses = v
+	x.xxx_hidden_Ipv4Addresses = v
 }
 
 func (x *IPAddressList) SetIpv6Addresses(v []uint64) {
-	x.Ipv6Addresses = v
+	x.xxx_hidden_Ipv6Addresses = v
 }
 
 type IPAddressList_builder struct {
@@ -376,25 +357,19 @@ func (b0 IPAddressList_builder) Build() *IPAddressList {
 	m0 := &IPAddressList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Ipv4Addresses = b.Ipv4Addresses
-	x.Ipv6Addresses = b.Ipv6Addresses
+	x.xxx_hidden_Ipv4Addresses = b.Ipv4Addresses
+	x.xxx_hidden_Ipv6Addresses = b.Ipv6Addresses
 	return m0
 }
 
 type IPNetworkList struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// A list of IPv4 networks, as a sequence of bytes. First four bytes represent IP followed by the byte representing
-	// the network prefix length. Each sequence encoded in correct byte order (i.e., 127.0.0.1/8 is encoded as 0x7f0000018).
-	// On a little-endian system, you must convert to big endian to interpret the value as a binary address.
-	// This field must always have an 5x number of values; otherwise it should be discarded.
-	Ipv4Networks []byte `protobuf:"bytes,1,opt,name=ipv4_networks,json=ipv4Networks" json:"ipv4_networks,omitempty"`
-	// A list of IPv6 networks, as a sequence of bytes. First 16 bytes representing IP followed by the byte representing
-	// the network prefix length. Each IP sequence is ordered in network order (big endian, i.e., first high, then low).
-	// Each order is encoded in the correct byte order and may need to be converted to big endian on little endian System.
-	// This field must always have an 17x number of values; otherwise it should be discarded.
-	Ipv6Networks  []byte `protobuf:"bytes,2,opt,name=ipv6_networks,json=ipv6Networks" json:"ipv6_networks,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Ipv4Networks []byte                 `protobuf:"bytes,1,opt,name=ipv4_networks,json=ipv4Networks"`
+	xxx_hidden_Ipv6Networks []byte                 `protobuf:"bytes,2,opt,name=ipv6_networks,json=ipv6Networks"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *IPNetworkList) Reset() {
@@ -424,14 +399,14 @@ func (x *IPNetworkList) ProtoReflect() protoreflect.Message {
 
 func (x *IPNetworkList) GetIpv4Networks() []byte {
 	if x != nil {
-		return x.Ipv4Networks
+		return x.xxx_hidden_Ipv4Networks
 	}
 	return nil
 }
 
 func (x *IPNetworkList) GetIpv6Networks() []byte {
 	if x != nil {
-		return x.Ipv6Networks
+		return x.xxx_hidden_Ipv6Networks
 	}
 	return nil
 }
@@ -440,36 +415,40 @@ func (x *IPNetworkList) SetIpv4Networks(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Ipv4Networks = v
+	x.xxx_hidden_Ipv4Networks = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *IPNetworkList) SetIpv6Networks(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Ipv6Networks = v
+	x.xxx_hidden_Ipv6Networks = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *IPNetworkList) HasIpv4Networks() bool {
 	if x == nil {
 		return false
 	}
-	return x.Ipv4Networks != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *IPNetworkList) HasIpv6Networks() bool {
 	if x == nil {
 		return false
 	}
-	return x.Ipv6Networks != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *IPNetworkList) ClearIpv4Networks() {
-	x.Ipv4Networks = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Ipv4Networks = nil
 }
 
 func (x *IPNetworkList) ClearIpv6Networks() {
-	x.Ipv6Networks = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Ipv6Networks = nil
 }
 
 type IPNetworkList_builder struct {
@@ -491,8 +470,14 @@ func (b0 IPNetworkList_builder) Build() *IPNetworkList {
 	m0 := &IPNetworkList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Ipv4Networks = b.Ipv4Networks
-	x.Ipv6Networks = b.Ipv6Networks
+	if b.Ipv4Networks != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Ipv4Networks = b.Ipv4Networks
+	}
+	if b.Ipv6Networks != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Ipv6Networks = b.Ipv6Networks
+	}
 	return m0
 }
 
@@ -516,7 +501,7 @@ const file_internalapi_sensor_network_connection_iservice_proto_rawDesc = "" +
 	"\ripv4_networks\x18\x01 \x01(\fR\fipv4Networks\x12#\n" +
 	"\ripv6_networks\x18\x02 \x01(\fR\fipv6Networks2\x89\x01\n" +
 	"\x1cNetworkConnectionInfoService\x12i\n" +
-	"\x19PushNetworkConnectionInfo\x12$.sensor.NetworkConnectionInfoMessage\x1a\".sensor.NetworkFlowsControlMessage(\x010\x01B(Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19PushNetworkConnectionInfo\x12$.sensor.NetworkConnectionInfoMessage\x1a\".sensor.NetworkFlowsControlMessage(\x010\x01B(Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_network_connection_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internalapi_sensor_network_connection_iservice_proto_goTypes = []any{
@@ -549,8 +534,8 @@ func file_internalapi_sensor_network_connection_iservice_proto_init() {
 	file_internalapi_sensor_collector_proto_init()
 	file_internalapi_sensor_network_connection_info_proto_init()
 	file_internalapi_sensor_network_connection_iservice_proto_msgTypes[0].OneofWrappers = []any{
-		(*NetworkConnectionInfoMessage_Register)(nil),
-		(*NetworkConnectionInfoMessage_Info)(nil),
+		(*networkConnectionInfoMessage_Register)(nil),
+		(*networkConnectionInfoMessage_Info)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

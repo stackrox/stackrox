@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/feature_flag_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -25,12 +23,14 @@ const (
 )
 
 type FeatureFlag struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	EnvVar        *string                `protobuf:"bytes,2,opt,name=env_var,json=envVar" json:"env_var,omitempty"`
-	Enabled       *bool                  `protobuf:"varint,3,opt,name=enabled" json:"enabled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_EnvVar      *string                `protobuf:"bytes,2,opt,name=env_var,json=envVar"`
+	xxx_hidden_Enabled     bool                   `protobuf:"varint,3,opt,name=enabled"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *FeatureFlag) Reset() {
@@ -59,69 +59,81 @@ func (x *FeatureFlag) ProtoReflect() protoreflect.Message {
 }
 
 func (x *FeatureFlag) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FeatureFlag) GetEnvVar() string {
-	if x != nil && x.EnvVar != nil {
-		return *x.EnvVar
+	if x != nil {
+		if x.xxx_hidden_EnvVar != nil {
+			return *x.xxx_hidden_EnvVar
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FeatureFlag) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
+	if x != nil {
+		return x.xxx_hidden_Enabled
 	}
 	return false
 }
 
 func (x *FeatureFlag) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *FeatureFlag) SetEnvVar(v string) {
-	x.EnvVar = &v
+	x.xxx_hidden_EnvVar = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *FeatureFlag) SetEnabled(v bool) {
-	x.Enabled = &v
+	x.xxx_hidden_Enabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *FeatureFlag) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *FeatureFlag) HasEnvVar() bool {
 	if x == nil {
 		return false
 	}
-	return x.EnvVar != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *FeatureFlag) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.Enabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *FeatureFlag) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *FeatureFlag) ClearEnvVar() {
-	x.EnvVar = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_EnvVar = nil
 }
 
 func (x *FeatureFlag) ClearEnabled() {
-	x.Enabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Enabled = false
 }
 
 type FeatureFlag_builder struct {
@@ -136,17 +148,26 @@ func (b0 FeatureFlag_builder) Build() *FeatureFlag {
 	m0 := &FeatureFlag{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.EnvVar = b.EnvVar
-	x.Enabled = b.Enabled
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.EnvVar != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_EnvVar = b.EnvVar
+	}
+	if b.Enabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Enabled = *b.Enabled
+	}
 	return m0
 }
 
 type GetFeatureFlagsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	FeatureFlags  []*FeatureFlag         `protobuf:"bytes,1,rep,name=feature_flags,json=featureFlags" json:"feature_flags,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_FeatureFlags *[]*FeatureFlag        `protobuf:"bytes,1,rep,name=feature_flags,json=featureFlags"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetFeatureFlagsResponse) Reset() {
@@ -176,13 +197,15 @@ func (x *GetFeatureFlagsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetFeatureFlagsResponse) GetFeatureFlags() []*FeatureFlag {
 	if x != nil {
-		return x.FeatureFlags
+		if x.xxx_hidden_FeatureFlags != nil {
+			return *x.xxx_hidden_FeatureFlags
+		}
 	}
 	return nil
 }
 
 func (x *GetFeatureFlagsResponse) SetFeatureFlags(v []*FeatureFlag) {
-	x.FeatureFlags = v
+	x.xxx_hidden_FeatureFlags = &v
 }
 
 type GetFeatureFlagsResponse_builder struct {
@@ -195,7 +218,7 @@ func (b0 GetFeatureFlagsResponse_builder) Build() *GetFeatureFlagsResponse {
 	m0 := &GetFeatureFlagsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.FeatureFlags = b.FeatureFlags
+	x.xxx_hidden_FeatureFlags = &b.FeatureFlags
 	return m0
 }
 
@@ -212,7 +235,7 @@ const file_api_v1_feature_flag_service_proto_rawDesc = "" +
 	"\rfeature_flags\x18\x01 \x03(\v2\x0f.v1.FeatureFlagR\ffeatureFlags2i\n" +
 	"\x12FeatureFlagService\x12S\n" +
 	"\x0fGetFeatureFlags\x12\t.v1.Empty\x1a\x1b.v1.GetFeatureFlagsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/featureflagsB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x01b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_feature_flag_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_v1_feature_flag_service_proto_goTypes = []any{

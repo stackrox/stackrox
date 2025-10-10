@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/secret_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -28,10 +26,10 @@ const (
 // A list of secrets (free of scoped information)
 // Next Tag: 2
 type SecretList struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Secrets       []*storage.Secret      `protobuf:"bytes,1,rep,name=secrets" json:"secrets,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Secrets *[]*storage.Secret     `protobuf:"bytes,1,rep,name=secrets"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *SecretList) Reset() {
@@ -61,13 +59,15 @@ func (x *SecretList) ProtoReflect() protoreflect.Message {
 
 func (x *SecretList) GetSecrets() []*storage.Secret {
 	if x != nil {
-		return x.Secrets
+		if x.xxx_hidden_Secrets != nil {
+			return *x.xxx_hidden_Secrets
+		}
 	}
 	return nil
 }
 
 func (x *SecretList) SetSecrets(v []*storage.Secret) {
-	x.Secrets = v
+	x.xxx_hidden_Secrets = &v
 }
 
 type SecretList_builder struct {
@@ -80,17 +80,17 @@ func (b0 SecretList_builder) Build() *SecretList {
 	m0 := &SecretList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Secrets = b.Secrets
+	x.xxx_hidden_Secrets = &b.Secrets
 	return m0
 }
 
 // A list of secrets with their relationships.
 // Next Tag: 2
 type ListSecretsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Secrets       []*storage.ListSecret  `protobuf:"bytes,1,rep,name=secrets" json:"secrets,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Secrets *[]*storage.ListSecret `protobuf:"bytes,1,rep,name=secrets"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ListSecretsResponse) Reset() {
@@ -120,13 +120,15 @@ func (x *ListSecretsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListSecretsResponse) GetSecrets() []*storage.ListSecret {
 	if x != nil {
-		return x.Secrets
+		if x.xxx_hidden_Secrets != nil {
+			return *x.xxx_hidden_Secrets
+		}
 	}
 	return nil
 }
 
 func (x *ListSecretsResponse) SetSecrets(v []*storage.ListSecret) {
-	x.Secrets = v
+	x.xxx_hidden_Secrets = &v
 }
 
 type ListSecretsResponse_builder struct {
@@ -139,15 +141,17 @@ func (b0 ListSecretsResponse_builder) Build() *ListSecretsResponse {
 	m0 := &ListSecretsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Secrets = b.Secrets
+	x.xxx_hidden_Secrets = &b.Secrets
 	return m0
 }
 
 type CountSecretsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Count         *int32                 `protobuf:"varint,1,opt,name=count" json:"count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Count       int32                  `protobuf:"varint,1,opt,name=count"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CountSecretsResponse) Reset() {
@@ -176,25 +180,27 @@ func (x *CountSecretsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CountSecretsResponse) GetCount() int32 {
-	if x != nil && x.Count != nil {
-		return *x.Count
+	if x != nil {
+		return x.xxx_hidden_Count
 	}
 	return 0
 }
 
 func (x *CountSecretsResponse) SetCount(v int32) {
-	x.Count = &v
+	x.xxx_hidden_Count = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *CountSecretsResponse) HasCount() bool {
 	if x == nil {
 		return false
 	}
-	return x.Count != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CountSecretsResponse) ClearCount() {
-	x.Count = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Count = 0
 }
 
 type CountSecretsResponse_builder struct {
@@ -207,7 +213,10 @@ func (b0 CountSecretsResponse_builder) Build() *CountSecretsResponse {
 	m0 := &CountSecretsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Count = b.Count
+	if b.Count != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Count = *b.Count
+	}
 	return m0
 }
 
@@ -227,7 +236,7 @@ const file_api_v1_secret_service_proto_rawDesc = "" +
 	"\tGetSecret\x12\x10.v1.ResourceByID\x1a\x0f.storage.Secret\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/secrets/{id}\x12P\n" +
 	"\fCountSecrets\x12\f.v1.RawQuery\x1a\x18.v1.CountSecretsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/secretscount\x12I\n" +
 	"\vListSecrets\x12\f.v1.RawQuery\x1a\x17.v1.ListSecretsResponse\"\x13\x82\xd3\xe4\x93\x02\r\x12\v/v1/secretsB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_secret_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_api_v1_secret_service_proto_goTypes = []any{

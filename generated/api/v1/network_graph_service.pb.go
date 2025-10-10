@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/network_graph_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -27,10 +25,12 @@ const (
 )
 
 type NetworkGraphScope struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Query         *string                `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,1,opt,name=query"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkGraphScope) Reset() {
@@ -59,25 +59,30 @@ func (x *NetworkGraphScope) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NetworkGraphScope) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkGraphScope) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *NetworkGraphScope) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NetworkGraphScope) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Query = nil
 }
 
 type NetworkGraphScope_builder struct {
@@ -90,17 +95,22 @@ func (b0 NetworkGraphScope_builder) Build() *NetworkGraphScope {
 	m0 := &NetworkGraphScope{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Query = b.Query
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Query = b.Query
+	}
 	return m0
 }
 
 type NetworkEdgeProperties struct {
-	state               protoimpl.MessageState `protogen:"hybrid.v1"`
-	Port                *uint32                `protobuf:"varint,1,opt,name=port" json:"port,omitempty"`
-	Protocol            *storage.L4Protocol    `protobuf:"varint,2,opt,name=protocol,enum=storage.L4Protocol" json:"protocol,omitempty"`
-	LastActiveTimestamp *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_active_timestamp,json=lastActiveTimestamp" json:"last_active_timestamp,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Port                uint32                 `protobuf:"varint,1,opt,name=port"`
+	xxx_hidden_Protocol            storage.L4Protocol     `protobuf:"varint,2,opt,name=protocol,enum=storage.L4Protocol"`
+	xxx_hidden_LastActiveTimestamp *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_active_timestamp,json=lastActiveTimestamp"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *NetworkEdgeProperties) Reset() {
@@ -129,69 +139,75 @@ func (x *NetworkEdgeProperties) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NetworkEdgeProperties) GetPort() uint32 {
-	if x != nil && x.Port != nil {
-		return *x.Port
+	if x != nil {
+		return x.xxx_hidden_Port
 	}
 	return 0
 }
 
 func (x *NetworkEdgeProperties) GetProtocol() storage.L4Protocol {
-	if x != nil && x.Protocol != nil {
-		return *x.Protocol
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Protocol
+		}
 	}
 	return storage.L4Protocol(0)
 }
 
 func (x *NetworkEdgeProperties) GetLastActiveTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastActiveTimestamp
+		return x.xxx_hidden_LastActiveTimestamp
 	}
 	return nil
 }
 
 func (x *NetworkEdgeProperties) SetPort(v uint32) {
-	x.Port = &v
+	x.xxx_hidden_Port = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *NetworkEdgeProperties) SetProtocol(v storage.L4Protocol) {
-	x.Protocol = &v
+	x.xxx_hidden_Protocol = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *NetworkEdgeProperties) SetLastActiveTimestamp(v *timestamppb.Timestamp) {
-	x.LastActiveTimestamp = v
+	x.xxx_hidden_LastActiveTimestamp = v
 }
 
 func (x *NetworkEdgeProperties) HasPort() bool {
 	if x == nil {
 		return false
 	}
-	return x.Port != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NetworkEdgeProperties) HasProtocol() bool {
 	if x == nil {
 		return false
 	}
-	return x.Protocol != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkEdgeProperties) HasLastActiveTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastActiveTimestamp != nil
+	return x.xxx_hidden_LastActiveTimestamp != nil
 }
 
 func (x *NetworkEdgeProperties) ClearPort() {
-	x.Port = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Port = 0
 }
 
 func (x *NetworkEdgeProperties) ClearProtocol() {
-	x.Protocol = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Protocol = storage.L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
 func (x *NetworkEdgeProperties) ClearLastActiveTimestamp() {
-	x.LastActiveTimestamp = nil
+	x.xxx_hidden_LastActiveTimestamp = nil
 }
 
 type NetworkEdgeProperties_builder struct {
@@ -206,17 +222,23 @@ func (b0 NetworkEdgeProperties_builder) Build() *NetworkEdgeProperties {
 	m0 := &NetworkEdgeProperties{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Port = b.Port
-	x.Protocol = b.Protocol
-	x.LastActiveTimestamp = b.LastActiveTimestamp
+	if b.Port != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Port = *b.Port
+	}
+	if b.Protocol != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Protocol = *b.Protocol
+	}
+	x.xxx_hidden_LastActiveTimestamp = b.LastActiveTimestamp
 	return m0
 }
 
 type NetworkEdgePropertiesBundle struct {
-	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
-	Properties    []*NetworkEdgeProperties `protobuf:"bytes,1,rep,name=properties" json:"properties,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_Properties *[]*NetworkEdgeProperties `protobuf:"bytes,1,rep,name=properties"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *NetworkEdgePropertiesBundle) Reset() {
@@ -246,13 +268,15 @@ func (x *NetworkEdgePropertiesBundle) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkEdgePropertiesBundle) GetProperties() []*NetworkEdgeProperties {
 	if x != nil {
-		return x.Properties
+		if x.xxx_hidden_Properties != nil {
+			return *x.xxx_hidden_Properties
+		}
 	}
 	return nil
 }
 
 func (x *NetworkEdgePropertiesBundle) SetProperties(v []*NetworkEdgeProperties) {
-	x.Properties = v
+	x.xxx_hidden_Properties = &v
 }
 
 type NetworkEdgePropertiesBundle_builder struct {
@@ -265,21 +289,23 @@ func (b0 NetworkEdgePropertiesBundle_builder) Build() *NetworkEdgePropertiesBund
 	m0 := &NetworkEdgePropertiesBundle{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Properties = b.Properties
+	x.xxx_hidden_Properties = &b.Properties
 	return m0
 }
 
 type NetworkNode struct {
-	state              protoimpl.MessageState                 `protogen:"hybrid.v1"`
-	Entity             *storage.NetworkEntityInfo             `protobuf:"bytes,1,opt,name=entity" json:"entity,omitempty"`
-	InternetAccess     *bool                                  `protobuf:"varint,2,opt,name=internet_access,json=internetAccess" json:"internet_access,omitempty"`
-	PolicyIds          []string                               `protobuf:"bytes,3,rep,name=policy_ids,json=policyIds" json:"policy_ids,omitempty"`
-	NonIsolatedIngress *bool                                  `protobuf:"varint,5,opt,name=non_isolated_ingress,json=nonIsolatedIngress" json:"non_isolated_ingress,omitempty"`
-	NonIsolatedEgress  *bool                                  `protobuf:"varint,6,opt,name=non_isolated_egress,json=nonIsolatedEgress" json:"non_isolated_egress,omitempty"`
-	QueryMatch         *bool                                  `protobuf:"varint,7,opt,name=query_match,json=queryMatch" json:"query_match,omitempty"`
-	OutEdges           map[int32]*NetworkEdgePropertiesBundle `protobuf:"bytes,4,rep,name=out_edges,json=outEdges" json:"out_edges,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                         protoimpl.MessageState                 `protogen:"opaque.v1"`
+	xxx_hidden_Entity             *storage.NetworkEntityInfo             `protobuf:"bytes,1,opt,name=entity"`
+	xxx_hidden_InternetAccess     bool                                   `protobuf:"varint,2,opt,name=internet_access,json=internetAccess"`
+	xxx_hidden_PolicyIds          []string                               `protobuf:"bytes,3,rep,name=policy_ids,json=policyIds"`
+	xxx_hidden_NonIsolatedIngress bool                                   `protobuf:"varint,5,opt,name=non_isolated_ingress,json=nonIsolatedIngress"`
+	xxx_hidden_NonIsolatedEgress  bool                                   `protobuf:"varint,6,opt,name=non_isolated_egress,json=nonIsolatedEgress"`
+	xxx_hidden_QueryMatch         bool                                   `protobuf:"varint,7,opt,name=query_match,json=queryMatch"`
+	xxx_hidden_OutEdges           map[int32]*NetworkEdgePropertiesBundle `protobuf:"bytes,4,rep,name=out_edges,json=outEdges" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
+	XXX_presence                  [1]uint32
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *NetworkNode) Reset() {
@@ -309,134 +335,142 @@ func (x *NetworkNode) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkNode) GetEntity() *storage.NetworkEntityInfo {
 	if x != nil {
-		return x.Entity
+		return x.xxx_hidden_Entity
 	}
 	return nil
 }
 
 func (x *NetworkNode) GetInternetAccess() bool {
-	if x != nil && x.InternetAccess != nil {
-		return *x.InternetAccess
+	if x != nil {
+		return x.xxx_hidden_InternetAccess
 	}
 	return false
 }
 
 func (x *NetworkNode) GetPolicyIds() []string {
 	if x != nil {
-		return x.PolicyIds
+		return x.xxx_hidden_PolicyIds
 	}
 	return nil
 }
 
 func (x *NetworkNode) GetNonIsolatedIngress() bool {
-	if x != nil && x.NonIsolatedIngress != nil {
-		return *x.NonIsolatedIngress
+	if x != nil {
+		return x.xxx_hidden_NonIsolatedIngress
 	}
 	return false
 }
 
 func (x *NetworkNode) GetNonIsolatedEgress() bool {
-	if x != nil && x.NonIsolatedEgress != nil {
-		return *x.NonIsolatedEgress
+	if x != nil {
+		return x.xxx_hidden_NonIsolatedEgress
 	}
 	return false
 }
 
 func (x *NetworkNode) GetQueryMatch() bool {
-	if x != nil && x.QueryMatch != nil {
-		return *x.QueryMatch
+	if x != nil {
+		return x.xxx_hidden_QueryMatch
 	}
 	return false
 }
 
 func (x *NetworkNode) GetOutEdges() map[int32]*NetworkEdgePropertiesBundle {
 	if x != nil {
-		return x.OutEdges
+		return x.xxx_hidden_OutEdges
 	}
 	return nil
 }
 
 func (x *NetworkNode) SetEntity(v *storage.NetworkEntityInfo) {
-	x.Entity = v
+	x.xxx_hidden_Entity = v
 }
 
 func (x *NetworkNode) SetInternetAccess(v bool) {
-	x.InternetAccess = &v
+	x.xxx_hidden_InternetAccess = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *NetworkNode) SetPolicyIds(v []string) {
-	x.PolicyIds = v
+	x.xxx_hidden_PolicyIds = v
 }
 
 func (x *NetworkNode) SetNonIsolatedIngress(v bool) {
-	x.NonIsolatedIngress = &v
+	x.xxx_hidden_NonIsolatedIngress = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *NetworkNode) SetNonIsolatedEgress(v bool) {
-	x.NonIsolatedEgress = &v
+	x.xxx_hidden_NonIsolatedEgress = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *NetworkNode) SetQueryMatch(v bool) {
-	x.QueryMatch = &v
+	x.xxx_hidden_QueryMatch = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 func (x *NetworkNode) SetOutEdges(v map[int32]*NetworkEdgePropertiesBundle) {
-	x.OutEdges = v
+	x.xxx_hidden_OutEdges = v
 }
 
 func (x *NetworkNode) HasEntity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Entity != nil
+	return x.xxx_hidden_Entity != nil
 }
 
 func (x *NetworkNode) HasInternetAccess() bool {
 	if x == nil {
 		return false
 	}
-	return x.InternetAccess != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkNode) HasNonIsolatedIngress() bool {
 	if x == nil {
 		return false
 	}
-	return x.NonIsolatedIngress != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *NetworkNode) HasNonIsolatedEgress() bool {
 	if x == nil {
 		return false
 	}
-	return x.NonIsolatedEgress != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *NetworkNode) HasQueryMatch() bool {
 	if x == nil {
 		return false
 	}
-	return x.QueryMatch != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *NetworkNode) ClearEntity() {
-	x.Entity = nil
+	x.xxx_hidden_Entity = nil
 }
 
 func (x *NetworkNode) ClearInternetAccess() {
-	x.InternetAccess = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_InternetAccess = false
 }
 
 func (x *NetworkNode) ClearNonIsolatedIngress() {
-	x.NonIsolatedIngress = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_NonIsolatedIngress = false
 }
 
 func (x *NetworkNode) ClearNonIsolatedEgress() {
-	x.NonIsolatedEgress = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_NonIsolatedEgress = false
 }
 
 func (x *NetworkNode) ClearQueryMatch() {
-	x.QueryMatch = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_QueryMatch = false
 }
 
 type NetworkNode_builder struct {
@@ -455,26 +489,40 @@ func (b0 NetworkNode_builder) Build() *NetworkNode {
 	m0 := &NetworkNode{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entity = b.Entity
-	x.InternetAccess = b.InternetAccess
-	x.PolicyIds = b.PolicyIds
-	x.NonIsolatedIngress = b.NonIsolatedIngress
-	x.NonIsolatedEgress = b.NonIsolatedEgress
-	x.QueryMatch = b.QueryMatch
-	x.OutEdges = b.OutEdges
+	x.xxx_hidden_Entity = b.Entity
+	if b.InternetAccess != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_InternetAccess = *b.InternetAccess
+	}
+	x.xxx_hidden_PolicyIds = b.PolicyIds
+	if b.NonIsolatedIngress != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_NonIsolatedIngress = *b.NonIsolatedIngress
+	}
+	if b.NonIsolatedEgress != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_NonIsolatedEgress = *b.NonIsolatedEgress
+	}
+	if b.QueryMatch != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_QueryMatch = *b.QueryMatch
+	}
+	x.xxx_hidden_OutEdges = b.OutEdges
 	return m0
 }
 
 type NetworkGraphRequest struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	ClusterId       *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	Query           *string                `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
-	Since           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since" json:"since,omitempty"`
-	IncludePorts    *bool                  `protobuf:"varint,4,opt,name=include_ports,json=includePorts" json:"include_ports,omitempty"`
-	Scope           *NetworkGraphScope     `protobuf:"bytes,5,opt,name=scope" json:"scope,omitempty"`
-	IncludePolicies *bool                  `protobuf:"varint,6,opt,name=include_policies,json=includePolicies" json:"include_policies,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId       *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Query           *string                `protobuf:"bytes,2,opt,name=query"`
+	xxx_hidden_Since           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since"`
+	xxx_hidden_IncludePorts    bool                   `protobuf:"varint,4,opt,name=include_ports,json=includePorts"`
+	xxx_hidden_Scope           *NetworkGraphScope     `protobuf:"bytes,5,opt,name=scope"`
+	xxx_hidden_IncludePolicies bool                   `protobuf:"varint,6,opt,name=include_policies,json=includePolicies"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *NetworkGraphRequest) Reset() {
@@ -503,135 +551,149 @@ func (x *NetworkGraphRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NetworkGraphRequest) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkGraphRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NetworkGraphRequest) GetSince() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Since
+		return x.xxx_hidden_Since
 	}
 	return nil
 }
 
 func (x *NetworkGraphRequest) GetIncludePorts() bool {
-	if x != nil && x.IncludePorts != nil {
-		return *x.IncludePorts
+	if x != nil {
+		return x.xxx_hidden_IncludePorts
 	}
 	return false
 }
 
 func (x *NetworkGraphRequest) GetScope() *NetworkGraphScope {
 	if x != nil {
-		return x.Scope
+		return x.xxx_hidden_Scope
 	}
 	return nil
 }
 
 func (x *NetworkGraphRequest) GetIncludePolicies() bool {
-	if x != nil && x.IncludePolicies != nil {
-		return *x.IncludePolicies
+	if x != nil {
+		return x.xxx_hidden_IncludePolicies
 	}
 	return false
 }
 
 func (x *NetworkGraphRequest) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *NetworkGraphRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *NetworkGraphRequest) SetSince(v *timestamppb.Timestamp) {
-	x.Since = v
+	x.xxx_hidden_Since = v
 }
 
 func (x *NetworkGraphRequest) SetIncludePorts(v bool) {
-	x.IncludePorts = &v
+	x.xxx_hidden_IncludePorts = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *NetworkGraphRequest) SetScope(v *NetworkGraphScope) {
-	x.Scope = v
+	x.xxx_hidden_Scope = v
 }
 
 func (x *NetworkGraphRequest) SetIncludePolicies(v bool) {
-	x.IncludePolicies = &v
+	x.xxx_hidden_IncludePolicies = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
 }
 
 func (x *NetworkGraphRequest) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NetworkGraphRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *NetworkGraphRequest) HasSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.Since != nil
+	return x.xxx_hidden_Since != nil
 }
 
 func (x *NetworkGraphRequest) HasIncludePorts() bool {
 	if x == nil {
 		return false
 	}
-	return x.IncludePorts != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *NetworkGraphRequest) HasScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.Scope != nil
+	return x.xxx_hidden_Scope != nil
 }
 
 func (x *NetworkGraphRequest) HasIncludePolicies() bool {
 	if x == nil {
 		return false
 	}
-	return x.IncludePolicies != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *NetworkGraphRequest) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *NetworkGraphRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Query = nil
 }
 
 func (x *NetworkGraphRequest) ClearSince() {
-	x.Since = nil
+	x.xxx_hidden_Since = nil
 }
 
 func (x *NetworkGraphRequest) ClearIncludePorts() {
-	x.IncludePorts = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_IncludePorts = false
 }
 
 func (x *NetworkGraphRequest) ClearScope() {
-	x.Scope = nil
+	x.xxx_hidden_Scope = nil
 }
 
 func (x *NetworkGraphRequest) ClearIncludePolicies() {
-	x.IncludePolicies = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_IncludePolicies = false
 }
 
 type NetworkGraphRequest_builder struct {
@@ -649,21 +711,35 @@ func (b0 NetworkGraphRequest_builder) Build() *NetworkGraphRequest {
 	m0 := &NetworkGraphRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.Query = b.Query
-	x.Since = b.Since
-	x.IncludePorts = b.IncludePorts
-	x.Scope = b.Scope
-	x.IncludePolicies = b.IncludePolicies
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_Query = b.Query
+	}
+	x.xxx_hidden_Since = b.Since
+	if b.IncludePorts != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_IncludePorts = *b.IncludePorts
+	}
+	x.xxx_hidden_Scope = b.Scope
+	if b.IncludePolicies != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_IncludePolicies = *b.IncludePolicies
+	}
 	return m0
 }
 
 type NetworkGraph struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Epoch         *uint32                `protobuf:"varint,1,opt,name=epoch" json:"epoch,omitempty"`
-	Nodes         []*NetworkNode         `protobuf:"bytes,2,rep,name=nodes" json:"nodes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Epoch       uint32                 `protobuf:"varint,1,opt,name=epoch"`
+	xxx_hidden_Nodes       *[]*NetworkNode        `protobuf:"bytes,2,rep,name=nodes"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NetworkGraph) Reset() {
@@ -692,36 +768,40 @@ func (x *NetworkGraph) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NetworkGraph) GetEpoch() uint32 {
-	if x != nil && x.Epoch != nil {
-		return *x.Epoch
+	if x != nil {
+		return x.xxx_hidden_Epoch
 	}
 	return 0
 }
 
 func (x *NetworkGraph) GetNodes() []*NetworkNode {
 	if x != nil {
-		return x.Nodes
+		if x.xxx_hidden_Nodes != nil {
+			return *x.xxx_hidden_Nodes
+		}
 	}
 	return nil
 }
 
 func (x *NetworkGraph) SetEpoch(v uint32) {
-	x.Epoch = &v
+	x.xxx_hidden_Epoch = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *NetworkGraph) SetNodes(v []*NetworkNode) {
-	x.Nodes = v
+	x.xxx_hidden_Nodes = &v
 }
 
 func (x *NetworkGraph) HasEpoch() bool {
 	if x == nil {
 		return false
 	}
-	return x.Epoch != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NetworkGraph) ClearEpoch() {
-	x.Epoch = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Epoch = 0
 }
 
 type NetworkGraph_builder struct {
@@ -735,17 +815,22 @@ func (b0 NetworkGraph_builder) Build() *NetworkGraph {
 	m0 := &NetworkGraph{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Epoch = b.Epoch
-	x.Nodes = b.Nodes
+	if b.Epoch != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Epoch = *b.Epoch
+	}
+	x.xxx_hidden_Nodes = &b.Nodes
 	return m0
 }
 
 type CreateNetworkEntityRequest struct {
-	state         protoimpl.MessageState                    `protogen:"hybrid.v1"`
-	ClusterId     *string                                   `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	Entity        *storage.NetworkEntityInfo_ExternalSource `protobuf:"bytes,2,opt,name=entity" json:"entity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState                    `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId   *string                                   `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Entity      *storage.NetworkEntityInfo_ExternalSource `protobuf:"bytes,2,opt,name=entity"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CreateNetworkEntityRequest) Reset() {
@@ -774,47 +859,52 @@ func (x *CreateNetworkEntityRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CreateNetworkEntityRequest) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CreateNetworkEntityRequest) GetEntity() *storage.NetworkEntityInfo_ExternalSource {
 	if x != nil {
-		return x.Entity
+		return x.xxx_hidden_Entity
 	}
 	return nil
 }
 
 func (x *CreateNetworkEntityRequest) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *CreateNetworkEntityRequest) SetEntity(v *storage.NetworkEntityInfo_ExternalSource) {
-	x.Entity = v
+	x.xxx_hidden_Entity = v
 }
 
 func (x *CreateNetworkEntityRequest) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CreateNetworkEntityRequest) HasEntity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Entity != nil
+	return x.xxx_hidden_Entity != nil
 }
 
 func (x *CreateNetworkEntityRequest) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *CreateNetworkEntityRequest) ClearEntity() {
-	x.Entity = nil
+	x.xxx_hidden_Entity = nil
 }
 
 type CreateNetworkEntityRequest_builder struct {
@@ -828,17 +918,22 @@ func (b0 CreateNetworkEntityRequest_builder) Build() *CreateNetworkEntityRequest
 	m0 := &CreateNetworkEntityRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.Entity = b.Entity
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	x.xxx_hidden_Entity = b.Entity
 	return m0
 }
 
 type PatchNetworkEntityRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PatchNetworkEntityRequest) Reset() {
@@ -867,47 +962,57 @@ func (x *PatchNetworkEntityRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PatchNetworkEntityRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PatchNetworkEntityRequest) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PatchNetworkEntityRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *PatchNetworkEntityRequest) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *PatchNetworkEntityRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PatchNetworkEntityRequest) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *PatchNetworkEntityRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *PatchNetworkEntityRequest) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 type PatchNetworkEntityRequest_builder struct {
@@ -921,17 +1026,25 @@ func (b0 PatchNetworkEntityRequest_builder) Build() *PatchNetworkEntityRequest {
 	m0 := &PatchNetworkEntityRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Name = b.Name
+	}
 	return m0
 }
 
 type GetExternalNetworkEntitiesRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ClusterId     *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	Query         *string                `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId   *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,2,opt,name=query"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetExternalNetworkEntitiesRequest) Reset() {
@@ -960,47 +1073,57 @@ func (x *GetExternalNetworkEntitiesRequest) ProtoReflect() protoreflect.Message 
 }
 
 func (x *GetExternalNetworkEntitiesRequest) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetExternalNetworkEntitiesRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetExternalNetworkEntitiesRequest) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetExternalNetworkEntitiesRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetExternalNetworkEntitiesRequest) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetExternalNetworkEntitiesRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetExternalNetworkEntitiesRequest) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *GetExternalNetworkEntitiesRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Query = nil
 }
 
 type GetExternalNetworkEntitiesRequest_builder struct {
@@ -1014,16 +1137,22 @@ func (b0 GetExternalNetworkEntitiesRequest_builder) Build() *GetExternalNetworkE
 	m0 := &GetExternalNetworkEntitiesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.Query = b.Query
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Query = b.Query
+	}
 	return m0
 }
 
 type GetExternalNetworkEntitiesResponse struct {
-	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
-	Entities      []*storage.NetworkEntity `protobuf:"bytes,1,rep,name=entities" json:"entities,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_Entities *[]*storage.NetworkEntity `protobuf:"bytes,1,rep,name=entities"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *GetExternalNetworkEntitiesResponse) Reset() {
@@ -1053,13 +1182,15 @@ func (x *GetExternalNetworkEntitiesResponse) ProtoReflect() protoreflect.Message
 
 func (x *GetExternalNetworkEntitiesResponse) GetEntities() []*storage.NetworkEntity {
 	if x != nil {
-		return x.Entities
+		if x.xxx_hidden_Entities != nil {
+			return *x.xxx_hidden_Entities
+		}
 	}
 	return nil
 }
 
 func (x *GetExternalNetworkEntitiesResponse) SetEntities(v []*storage.NetworkEntity) {
-	x.Entities = v
+	x.xxx_hidden_Entities = &v
 }
 
 type GetExternalNetworkEntitiesResponse_builder struct {
@@ -1072,19 +1203,21 @@ func (b0 GetExternalNetworkEntitiesResponse_builder) Build() *GetExternalNetwork
 	m0 := &GetExternalNetworkEntitiesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entities = b.Entities
+	x.xxx_hidden_Entities = &b.Entities
 	return m0
 }
 
 type GetExternalNetworkFlowsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ClusterId     *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	EntityId      *string                `protobuf:"bytes,2,opt,name=entity_id,json=entityId" json:"entity_id,omitempty"`
-	Query         *string                `protobuf:"bytes,3,opt,name=query" json:"query,omitempty"`
-	Since         *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=since" json:"since,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,5,opt,name=pagination" json:"pagination,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId   *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_EntityId    *string                `protobuf:"bytes,2,opt,name=entity_id,json=entityId"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,3,opt,name=query"`
+	xxx_hidden_Since       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=since"`
+	xxx_hidden_Pagination  *Pagination            `protobuf:"bytes,5,opt,name=pagination"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetExternalNetworkFlowsRequest) Reset() {
@@ -1113,113 +1246,128 @@ func (x *GetExternalNetworkFlowsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GetExternalNetworkFlowsRequest) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetExternalNetworkFlowsRequest) GetEntityId() string {
-	if x != nil && x.EntityId != nil {
-		return *x.EntityId
+	if x != nil {
+		if x.xxx_hidden_EntityId != nil {
+			return *x.xxx_hidden_EntityId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetExternalNetworkFlowsRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetExternalNetworkFlowsRequest) GetSince() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Since
+		return x.xxx_hidden_Since
 	}
 	return nil
 }
 
 func (x *GetExternalNetworkFlowsRequest) GetPagination() *Pagination {
 	if x != nil {
-		return x.Pagination
+		return x.xxx_hidden_Pagination
 	}
 	return nil
 }
 
 func (x *GetExternalNetworkFlowsRequest) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *GetExternalNetworkFlowsRequest) SetEntityId(v string) {
-	x.EntityId = &v
+	x.xxx_hidden_EntityId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *GetExternalNetworkFlowsRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *GetExternalNetworkFlowsRequest) SetSince(v *timestamppb.Timestamp) {
-	x.Since = v
+	x.xxx_hidden_Since = v
 }
 
 func (x *GetExternalNetworkFlowsRequest) SetPagination(v *Pagination) {
-	x.Pagination = v
+	x.xxx_hidden_Pagination = v
 }
 
 func (x *GetExternalNetworkFlowsRequest) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetExternalNetworkFlowsRequest) HasEntityId() bool {
 	if x == nil {
 		return false
 	}
-	return x.EntityId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetExternalNetworkFlowsRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *GetExternalNetworkFlowsRequest) HasSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.Since != nil
+	return x.xxx_hidden_Since != nil
 }
 
 func (x *GetExternalNetworkFlowsRequest) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pagination != nil
+	return x.xxx_hidden_Pagination != nil
 }
 
 func (x *GetExternalNetworkFlowsRequest) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *GetExternalNetworkFlowsRequest) ClearEntityId() {
-	x.EntityId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_EntityId = nil
 }
 
 func (x *GetExternalNetworkFlowsRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Query = nil
 }
 
 func (x *GetExternalNetworkFlowsRequest) ClearSince() {
-	x.Since = nil
+	x.xxx_hidden_Since = nil
 }
 
 func (x *GetExternalNetworkFlowsRequest) ClearPagination() {
-	x.Pagination = nil
+	x.xxx_hidden_Pagination = nil
 }
 
 type GetExternalNetworkFlowsRequest_builder struct {
@@ -1236,21 +1384,32 @@ func (b0 GetExternalNetworkFlowsRequest_builder) Build() *GetExternalNetworkFlow
 	m0 := &GetExternalNetworkFlowsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.EntityId = b.EntityId
-	x.Query = b.Query
-	x.Since = b.Since
-	x.Pagination = b.Pagination
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.EntityId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_EntityId = b.EntityId
+	}
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Query = b.Query
+	}
+	x.xxx_hidden_Since = b.Since
+	x.xxx_hidden_Pagination = b.Pagination
 	return m0
 }
 
 type GetExternalNetworkFlowsResponse struct {
-	state         protoimpl.MessageState     `protogen:"hybrid.v1"`
-	Entity        *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity" json:"entity,omitempty"`
-	TotalFlows    *int32                     `protobuf:"varint,2,opt,name=total_flows,json=totalFlows" json:"total_flows,omitempty"`
-	Flows         []*storage.NetworkFlow     `protobuf:"bytes,3,rep,name=flows" json:"flows,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Entity      *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity"`
+	xxx_hidden_TotalFlows  int32                      `protobuf:"varint,2,opt,name=total_flows,json=totalFlows"`
+	xxx_hidden_Flows       *[]*storage.NetworkFlow    `protobuf:"bytes,3,rep,name=flows"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetExternalNetworkFlowsResponse) Reset() {
@@ -1280,57 +1439,61 @@ func (x *GetExternalNetworkFlowsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetExternalNetworkFlowsResponse) GetEntity() *storage.NetworkEntityInfo {
 	if x != nil {
-		return x.Entity
+		return x.xxx_hidden_Entity
 	}
 	return nil
 }
 
 func (x *GetExternalNetworkFlowsResponse) GetTotalFlows() int32 {
-	if x != nil && x.TotalFlows != nil {
-		return *x.TotalFlows
+	if x != nil {
+		return x.xxx_hidden_TotalFlows
 	}
 	return 0
 }
 
 func (x *GetExternalNetworkFlowsResponse) GetFlows() []*storage.NetworkFlow {
 	if x != nil {
-		return x.Flows
+		if x.xxx_hidden_Flows != nil {
+			return *x.xxx_hidden_Flows
+		}
 	}
 	return nil
 }
 
 func (x *GetExternalNetworkFlowsResponse) SetEntity(v *storage.NetworkEntityInfo) {
-	x.Entity = v
+	x.xxx_hidden_Entity = v
 }
 
 func (x *GetExternalNetworkFlowsResponse) SetTotalFlows(v int32) {
-	x.TotalFlows = &v
+	x.xxx_hidden_TotalFlows = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *GetExternalNetworkFlowsResponse) SetFlows(v []*storage.NetworkFlow) {
-	x.Flows = v
+	x.xxx_hidden_Flows = &v
 }
 
 func (x *GetExternalNetworkFlowsResponse) HasEntity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Entity != nil
+	return x.xxx_hidden_Entity != nil
 }
 
 func (x *GetExternalNetworkFlowsResponse) HasTotalFlows() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalFlows != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetExternalNetworkFlowsResponse) ClearEntity() {
-	x.Entity = nil
+	x.xxx_hidden_Entity = nil
 }
 
 func (x *GetExternalNetworkFlowsResponse) ClearTotalFlows() {
-	x.TotalFlows = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_TotalFlows = 0
 }
 
 type GetExternalNetworkFlowsResponse_builder struct {
@@ -1345,20 +1508,25 @@ func (b0 GetExternalNetworkFlowsResponse_builder) Build() *GetExternalNetworkFlo
 	m0 := &GetExternalNetworkFlowsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entity = b.Entity
-	x.TotalFlows = b.TotalFlows
-	x.Flows = b.Flows
+	x.xxx_hidden_Entity = b.Entity
+	if b.TotalFlows != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_TotalFlows = *b.TotalFlows
+	}
+	x.xxx_hidden_Flows = &b.Flows
 	return m0
 }
 
 type GetExternalNetworkFlowsMetadataRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ClusterId     *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	Query         *string                `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
-	Since         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since" json:"since,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,4,opt,name=pagination" json:"pagination,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId   *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,2,opt,name=query"`
+	xxx_hidden_Since       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since"`
+	xxx_hidden_Pagination  *Pagination            `protobuf:"bytes,4,opt,name=pagination"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) Reset() {
@@ -1387,91 +1555,101 @@ func (x *GetExternalNetworkFlowsMetadataRequest) ProtoReflect() protoreflect.Mes
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) GetSince() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Since
+		return x.xxx_hidden_Since
 	}
 	return nil
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) GetPagination() *Pagination {
 	if x != nil {
-		return x.Pagination
+		return x.xxx_hidden_Pagination
 	}
 	return nil
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) SetSince(v *timestamppb.Timestamp) {
-	x.Since = v
+	x.xxx_hidden_Since = v
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) SetPagination(v *Pagination) {
-	x.Pagination = v
+	x.xxx_hidden_Pagination = v
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) HasSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.Since != nil
+	return x.xxx_hidden_Since != nil
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pagination != nil
+	return x.xxx_hidden_Pagination != nil
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Query = nil
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) ClearSince() {
-	x.Since = nil
+	x.xxx_hidden_Since = nil
 }
 
 func (x *GetExternalNetworkFlowsMetadataRequest) ClearPagination() {
-	x.Pagination = nil
+	x.xxx_hidden_Pagination = nil
 }
 
 type GetExternalNetworkFlowsMetadataRequest_builder struct {
@@ -1487,19 +1665,27 @@ func (b0 GetExternalNetworkFlowsMetadataRequest_builder) Build() *GetExternalNet
 	m0 := &GetExternalNetworkFlowsMetadataRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.Query = b.Query
-	x.Since = b.Since
-	x.Pagination = b.Pagination
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Query = b.Query
+	}
+	x.xxx_hidden_Since = b.Since
+	x.xxx_hidden_Pagination = b.Pagination
 	return m0
 }
 
 type ExternalNetworkFlowMetadata struct {
-	state         protoimpl.MessageState     `protogen:"hybrid.v1"`
-	Entity        *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity" json:"entity,omitempty"`
-	FlowsCount    *int32                     `protobuf:"varint,2,opt,name=flowsCount" json:"flowsCount,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Entity      *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity"`
+	xxx_hidden_FlowsCount  int32                      `protobuf:"varint,2,opt,name=flowsCount"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ExternalNetworkFlowMetadata) Reset() {
@@ -1529,46 +1715,48 @@ func (x *ExternalNetworkFlowMetadata) ProtoReflect() protoreflect.Message {
 
 func (x *ExternalNetworkFlowMetadata) GetEntity() *storage.NetworkEntityInfo {
 	if x != nil {
-		return x.Entity
+		return x.xxx_hidden_Entity
 	}
 	return nil
 }
 
 func (x *ExternalNetworkFlowMetadata) GetFlowsCount() int32 {
-	if x != nil && x.FlowsCount != nil {
-		return *x.FlowsCount
+	if x != nil {
+		return x.xxx_hidden_FlowsCount
 	}
 	return 0
 }
 
 func (x *ExternalNetworkFlowMetadata) SetEntity(v *storage.NetworkEntityInfo) {
-	x.Entity = v
+	x.xxx_hidden_Entity = v
 }
 
 func (x *ExternalNetworkFlowMetadata) SetFlowsCount(v int32) {
-	x.FlowsCount = &v
+	x.xxx_hidden_FlowsCount = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ExternalNetworkFlowMetadata) HasEntity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Entity != nil
+	return x.xxx_hidden_Entity != nil
 }
 
 func (x *ExternalNetworkFlowMetadata) HasFlowsCount() bool {
 	if x == nil {
 		return false
 	}
-	return x.FlowsCount != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ExternalNetworkFlowMetadata) ClearEntity() {
-	x.Entity = nil
+	x.xxx_hidden_Entity = nil
 }
 
 func (x *ExternalNetworkFlowMetadata) ClearFlowsCount() {
-	x.FlowsCount = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_FlowsCount = 0
 }
 
 type ExternalNetworkFlowMetadata_builder struct {
@@ -1582,17 +1770,22 @@ func (b0 ExternalNetworkFlowMetadata_builder) Build() *ExternalNetworkFlowMetada
 	m0 := &ExternalNetworkFlowMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entity = b.Entity
-	x.FlowsCount = b.FlowsCount
+	x.xxx_hidden_Entity = b.Entity
+	if b.FlowsCount != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_FlowsCount = *b.FlowsCount
+	}
 	return m0
 }
 
 type GetExternalNetworkFlowsMetadataResponse struct {
-	state         protoimpl.MessageState         `protogen:"hybrid.v1"`
-	Entities      []*ExternalNetworkFlowMetadata `protobuf:"bytes,1,rep,name=entities" json:"entities,omitempty"`
-	TotalEntities *int32                         `protobuf:"varint,2,opt,name=total_entities,json=totalEntities" json:"total_entities,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_Entities      *[]*ExternalNetworkFlowMetadata `protobuf:"bytes,1,rep,name=entities"`
+	xxx_hidden_TotalEntities int32                           `protobuf:"varint,2,opt,name=total_entities,json=totalEntities"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *GetExternalNetworkFlowsMetadataResponse) Reset() {
@@ -1622,35 +1815,39 @@ func (x *GetExternalNetworkFlowsMetadataResponse) ProtoReflect() protoreflect.Me
 
 func (x *GetExternalNetworkFlowsMetadataResponse) GetEntities() []*ExternalNetworkFlowMetadata {
 	if x != nil {
-		return x.Entities
+		if x.xxx_hidden_Entities != nil {
+			return *x.xxx_hidden_Entities
+		}
 	}
 	return nil
 }
 
 func (x *GetExternalNetworkFlowsMetadataResponse) GetTotalEntities() int32 {
-	if x != nil && x.TotalEntities != nil {
-		return *x.TotalEntities
+	if x != nil {
+		return x.xxx_hidden_TotalEntities
 	}
 	return 0
 }
 
 func (x *GetExternalNetworkFlowsMetadataResponse) SetEntities(v []*ExternalNetworkFlowMetadata) {
-	x.Entities = v
+	x.xxx_hidden_Entities = &v
 }
 
 func (x *GetExternalNetworkFlowsMetadataResponse) SetTotalEntities(v int32) {
-	x.TotalEntities = &v
+	x.xxx_hidden_TotalEntities = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetExternalNetworkFlowsMetadataResponse) HasTotalEntities() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalEntities != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetExternalNetworkFlowsMetadataResponse) ClearTotalEntities() {
-	x.TotalEntities = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_TotalEntities = 0
 }
 
 type GetExternalNetworkFlowsMetadataResponse_builder struct {
@@ -1664,16 +1861,19 @@ func (b0 GetExternalNetworkFlowsMetadataResponse_builder) Build() *GetExternalNe
 	m0 := &GetExternalNetworkFlowsMetadataResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entities = b.Entities
-	x.TotalEntities = b.TotalEntities
+	x.xxx_hidden_Entities = &b.Entities
+	if b.TotalEntities != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_TotalEntities = *b.TotalEntities
+	}
 	return m0
 }
 
 type PutNetworkGraphConfigRequest struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Config        *storage.NetworkGraphConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Config *storage.NetworkGraphConfig `protobuf:"bytes,1,opt,name=config"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *PutNetworkGraphConfigRequest) Reset() {
@@ -1703,24 +1903,24 @@ func (x *PutNetworkGraphConfigRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PutNetworkGraphConfigRequest) GetConfig() *storage.NetworkGraphConfig {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *PutNetworkGraphConfigRequest) SetConfig(v *storage.NetworkGraphConfig) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *PutNetworkGraphConfigRequest) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *PutNetworkGraphConfigRequest) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 type PutNetworkGraphConfigRequest_builder struct {
@@ -1733,7 +1933,7 @@ func (b0 PutNetworkGraphConfigRequest_builder) Build() *PutNetworkGraphConfigReq
 	m0 := &PutNetworkGraphConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
+	x.xxx_hidden_Config = b.Config
 	return m0
 }
 
@@ -1832,7 +2032,7 @@ const file_api_v1_network_graph_service_proto_rawDesc = "" +
 	"\x1bDeleteExternalNetworkEntity\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\".\x82\xd3\xe4\x93\x02(*&/v1/networkgraph/externalentities/{id}\x12`\n" +
 	"\x15GetNetworkGraphConfig\x12\t.v1.Empty\x1a\x1b.storage.NetworkGraphConfig\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/networkgraph/config\x12z\n" +
 	"\x15PutNetworkGraphConfig\x12 .v1.PutNetworkGraphConfigRequest\x1a\x1b.storage.NetworkGraphConfig\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\x1a\x17/v1/networkgraph/configB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x03b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x03b\beditionsp\xe8\a"
 
 var file_api_v1_network_graph_service_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_api_v1_network_graph_service_proto_goTypes = []any{

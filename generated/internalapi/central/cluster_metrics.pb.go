@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/cluster_metrics.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -26,12 +24,14 @@ const (
 // ClusterMetrics defines a set of metrics, which are collected by Sensor and
 // send to Central.
 type ClusterMetrics struct {
-	state                     protoimpl.MessageState `protogen:"hybrid.v1"`
-	NodeCount                 *int64                 `protobuf:"varint,1,opt,name=node_count,json=nodeCount" json:"node_count,omitempty"`                                                  // The number of nodes in the cluster accessible by Sensor.
-	CpuCapacity               *int64                 `protobuf:"varint,2,opt,name=cpu_capacity,json=cpuCapacity" json:"cpu_capacity,omitempty"`                                            // The total cpu capacity of all nodes accessible by Sensor.
-	ComplianceOperatorVersion *string                `protobuf:"bytes,3,opt,name=compliance_operator_version,json=complianceOperatorVersion" json:"compliance_operator_version,omitempty"` // Compliance operator version discovered by this Sensor.
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state                                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_NodeCount                 int64                  `protobuf:"varint,1,opt,name=node_count,json=nodeCount"`
+	xxx_hidden_CpuCapacity               int64                  `protobuf:"varint,2,opt,name=cpu_capacity,json=cpuCapacity"`
+	xxx_hidden_ComplianceOperatorVersion *string                `protobuf:"bytes,3,opt,name=compliance_operator_version,json=complianceOperatorVersion"`
+	XXX_raceDetectHookData               protoimpl.RaceDetectHookData
+	XXX_presence                         [1]uint32
+	unknownFields                        protoimpl.UnknownFields
+	sizeCache                            protoimpl.SizeCache
 }
 
 func (x *ClusterMetrics) Reset() {
@@ -60,69 +60,78 @@ func (x *ClusterMetrics) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ClusterMetrics) GetNodeCount() int64 {
-	if x != nil && x.NodeCount != nil {
-		return *x.NodeCount
+	if x != nil {
+		return x.xxx_hidden_NodeCount
 	}
 	return 0
 }
 
 func (x *ClusterMetrics) GetCpuCapacity() int64 {
-	if x != nil && x.CpuCapacity != nil {
-		return *x.CpuCapacity
+	if x != nil {
+		return x.xxx_hidden_CpuCapacity
 	}
 	return 0
 }
 
 func (x *ClusterMetrics) GetComplianceOperatorVersion() string {
-	if x != nil && x.ComplianceOperatorVersion != nil {
-		return *x.ComplianceOperatorVersion
+	if x != nil {
+		if x.xxx_hidden_ComplianceOperatorVersion != nil {
+			return *x.xxx_hidden_ComplianceOperatorVersion
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterMetrics) SetNodeCount(v int64) {
-	x.NodeCount = &v
+	x.xxx_hidden_NodeCount = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *ClusterMetrics) SetCpuCapacity(v int64) {
-	x.CpuCapacity = &v
+	x.xxx_hidden_CpuCapacity = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ClusterMetrics) SetComplianceOperatorVersion(v string) {
-	x.ComplianceOperatorVersion = &v
+	x.xxx_hidden_ComplianceOperatorVersion = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ClusterMetrics) HasNodeCount() bool {
 	if x == nil {
 		return false
 	}
-	return x.NodeCount != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ClusterMetrics) HasCpuCapacity() bool {
 	if x == nil {
 		return false
 	}
-	return x.CpuCapacity != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ClusterMetrics) HasComplianceOperatorVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.ComplianceOperatorVersion != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ClusterMetrics) ClearNodeCount() {
-	x.NodeCount = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_NodeCount = 0
 }
 
 func (x *ClusterMetrics) ClearCpuCapacity() {
-	x.CpuCapacity = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_CpuCapacity = 0
 }
 
 func (x *ClusterMetrics) ClearComplianceOperatorVersion() {
-	x.ComplianceOperatorVersion = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ComplianceOperatorVersion = nil
 }
 
 type ClusterMetrics_builder struct {
@@ -137,9 +146,18 @@ func (b0 ClusterMetrics_builder) Build() *ClusterMetrics {
 	m0 := &ClusterMetrics{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.NodeCount = b.NodeCount
-	x.CpuCapacity = b.CpuCapacity
-	x.ComplianceOperatorVersion = b.ComplianceOperatorVersion
+	if b.NodeCount != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_NodeCount = *b.NodeCount
+	}
+	if b.CpuCapacity != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_CpuCapacity = *b.CpuCapacity
+	}
+	if b.ComplianceOperatorVersion != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_ComplianceOperatorVersion = b.ComplianceOperatorVersion
+	}
 	return m0
 }
 
@@ -152,7 +170,7 @@ const file_internalapi_central_cluster_metrics_proto_rawDesc = "" +
 	"\n" +
 	"node_count\x18\x01 \x01(\x03R\tnodeCount\x12!\n" +
 	"\fcpu_capacity\x18\x02 \x01(\x03R\vcpuCapacity\x12>\n" +
-	"\x1bcompliance_operator_version\x18\x03 \x01(\tR\x19complianceOperatorVersionB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x1bcompliance_operator_version\x18\x03 \x01(\tR\x19complianceOperatorVersionB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_cluster_metrics_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_central_cluster_metrics_proto_goTypes = []any{

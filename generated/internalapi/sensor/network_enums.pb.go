@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/network_enums.proto
 
-//go:build !protoopaque
-
 package sensor
 
 import (
@@ -124,7 +122,7 @@ const file_internalapi_sensor_network_enums_proto_rawDesc = "" +
 	"\x15SOCKET_FAMILY_UNKNOWN\x10\x00\x12\x16\n" +
 	"\x12SOCKET_FAMILY_IPV4\x10\x01\x12\x16\n" +
 	"\x12SOCKET_FAMILY_IPV6\x10\x02BB\n" +
-	"\x18io.stackrox.proto.api.v1Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_network_enums_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_internalapi_sensor_network_enums_proto_goTypes = []any{

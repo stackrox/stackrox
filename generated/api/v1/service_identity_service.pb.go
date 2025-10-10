@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/service_identity_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,10 +24,10 @@ const (
 )
 
 type ServiceIdentityResponse struct {
-	state         protoimpl.MessageState     `protogen:"hybrid.v1"`
-	Identities    []*storage.ServiceIdentity `protobuf:"bytes,1,rep,name=identities" json:"identities,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Identities *[]*storage.ServiceIdentity `protobuf:"bytes,1,rep,name=identities"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ServiceIdentityResponse) Reset() {
@@ -59,13 +57,15 @@ func (x *ServiceIdentityResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ServiceIdentityResponse) GetIdentities() []*storage.ServiceIdentity {
 	if x != nil {
-		return x.Identities
+		if x.xxx_hidden_Identities != nil {
+			return *x.xxx_hidden_Identities
+		}
 	}
 	return nil
 }
 
 func (x *ServiceIdentityResponse) SetIdentities(v []*storage.ServiceIdentity) {
-	x.Identities = v
+	x.xxx_hidden_Identities = &v
 }
 
 type ServiceIdentityResponse_builder struct {
@@ -78,16 +78,18 @@ func (b0 ServiceIdentityResponse_builder) Build() *ServiceIdentityResponse {
 	m0 := &ServiceIdentityResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Identities = b.Identities
+	x.xxx_hidden_Identities = &b.Identities
 	return m0
 }
 
 type CreateServiceIdentityRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Type          *storage.ServiceType   `protobuf:"varint,2,opt,name=type,enum=storage.ServiceType" json:"type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Type        storage.ServiceType    `protobuf:"varint,2,opt,name=type,enum=storage.ServiceType"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CreateServiceIdentityRequest) Reset() {
@@ -116,47 +118,56 @@ func (x *CreateServiceIdentityRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CreateServiceIdentityRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CreateServiceIdentityRequest) GetType() storage.ServiceType {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return storage.ServiceType(0)
 }
 
 func (x *CreateServiceIdentityRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *CreateServiceIdentityRequest) SetType(v storage.ServiceType) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *CreateServiceIdentityRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CreateServiceIdentityRequest) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CreateServiceIdentityRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *CreateServiceIdentityRequest) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Type = storage.ServiceType_UNKNOWN_SERVICE
 }
 
 type CreateServiceIdentityRequest_builder struct {
@@ -170,18 +181,26 @@ func (b0 CreateServiceIdentityRequest_builder) Build() *CreateServiceIdentityReq
 	m0 := &CreateServiceIdentityRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Type = b.Type
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Type = *b.Type
+	}
 	return m0
 }
 
 type CreateServiceIdentityResponse struct {
-	state          protoimpl.MessageState   `protogen:"hybrid.v1"`
-	Identity       *storage.ServiceIdentity `protobuf:"bytes,1,opt,name=identity" json:"identity,omitempty"`
-	CertificatePem []byte                   `protobuf:"bytes,2,opt,name=certificate_pem,json=certificatePem" json:"certificate_pem,omitempty"`
-	PrivateKeyPem  []byte                   `protobuf:"bytes,3,opt,name=private_key_pem,json=privateKeyPem" json:"private_key_pem,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_Identity       *storage.ServiceIdentity `protobuf:"bytes,1,opt,name=identity"`
+	xxx_hidden_CertificatePem []byte                   `protobuf:"bytes,2,opt,name=certificate_pem,json=certificatePem"`
+	xxx_hidden_PrivateKeyPem  []byte                   `protobuf:"bytes,3,opt,name=private_key_pem,json=privateKeyPem"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *CreateServiceIdentityResponse) Reset() {
@@ -211,74 +230,78 @@ func (x *CreateServiceIdentityResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateServiceIdentityResponse) GetIdentity() *storage.ServiceIdentity {
 	if x != nil {
-		return x.Identity
+		return x.xxx_hidden_Identity
 	}
 	return nil
 }
 
 func (x *CreateServiceIdentityResponse) GetCertificatePem() []byte {
 	if x != nil {
-		return x.CertificatePem
+		return x.xxx_hidden_CertificatePem
 	}
 	return nil
 }
 
 func (x *CreateServiceIdentityResponse) GetPrivateKeyPem() []byte {
 	if x != nil {
-		return x.PrivateKeyPem
+		return x.xxx_hidden_PrivateKeyPem
 	}
 	return nil
 }
 
 func (x *CreateServiceIdentityResponse) SetIdentity(v *storage.ServiceIdentity) {
-	x.Identity = v
+	x.xxx_hidden_Identity = v
 }
 
 func (x *CreateServiceIdentityResponse) SetCertificatePem(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.CertificatePem = v
+	x.xxx_hidden_CertificatePem = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *CreateServiceIdentityResponse) SetPrivateKeyPem(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.PrivateKeyPem = v
+	x.xxx_hidden_PrivateKeyPem = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *CreateServiceIdentityResponse) HasIdentity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Identity != nil
+	return x.xxx_hidden_Identity != nil
 }
 
 func (x *CreateServiceIdentityResponse) HasCertificatePem() bool {
 	if x == nil {
 		return false
 	}
-	return x.CertificatePem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CreateServiceIdentityResponse) HasPrivateKeyPem() bool {
 	if x == nil {
 		return false
 	}
-	return x.PrivateKeyPem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *CreateServiceIdentityResponse) ClearIdentity() {
-	x.Identity = nil
+	x.xxx_hidden_Identity = nil
 }
 
 func (x *CreateServiceIdentityResponse) ClearCertificatePem() {
-	x.CertificatePem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_CertificatePem = nil
 }
 
 func (x *CreateServiceIdentityResponse) ClearPrivateKeyPem() {
-	x.PrivateKeyPem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_PrivateKeyPem = nil
 }
 
 type CreateServiceIdentityResponse_builder struct {
@@ -293,17 +316,25 @@ func (b0 CreateServiceIdentityResponse_builder) Build() *CreateServiceIdentityRe
 	m0 := &CreateServiceIdentityResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Identity = b.Identity
-	x.CertificatePem = b.CertificatePem
-	x.PrivateKeyPem = b.PrivateKeyPem
+	x.xxx_hidden_Identity = b.Identity
+	if b.CertificatePem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_CertificatePem = b.CertificatePem
+	}
+	if b.PrivateKeyPem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_PrivateKeyPem = b.PrivateKeyPem
+	}
 	return m0
 }
 
 type Authority struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	CertificatePem []byte                 `protobuf:"bytes,1,opt,name=certificate_pem,json=certificatePem" json:"certificate_pem,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CertificatePem []byte                 `protobuf:"bytes,1,opt,name=certificate_pem,json=certificatePem"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *Authority) Reset() {
@@ -333,7 +364,7 @@ func (x *Authority) ProtoReflect() protoreflect.Message {
 
 func (x *Authority) GetCertificatePem() []byte {
 	if x != nil {
-		return x.CertificatePem
+		return x.xxx_hidden_CertificatePem
 	}
 	return nil
 }
@@ -342,18 +373,20 @@ func (x *Authority) SetCertificatePem(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.CertificatePem = v
+	x.xxx_hidden_CertificatePem = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *Authority) HasCertificatePem() bool {
 	if x == nil {
 		return false
 	}
-	return x.CertificatePem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Authority) ClearCertificatePem() {
-	x.CertificatePem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_CertificatePem = nil
 }
 
 type Authority_builder struct {
@@ -366,15 +399,18 @@ func (b0 Authority_builder) Build() *Authority {
 	m0 := &Authority{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CertificatePem = b.CertificatePem
+	if b.CertificatePem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_CertificatePem = b.CertificatePem
+	}
 	return m0
 }
 
 type Authorities struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Authorities   []*Authority           `protobuf:"bytes,1,rep,name=authorities" json:"authorities,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Authorities *[]*Authority          `protobuf:"bytes,1,rep,name=authorities"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Authorities) Reset() {
@@ -404,13 +440,15 @@ func (x *Authorities) ProtoReflect() protoreflect.Message {
 
 func (x *Authorities) GetAuthorities() []*Authority {
 	if x != nil {
-		return x.Authorities
+		if x.xxx_hidden_Authorities != nil {
+			return *x.xxx_hidden_Authorities
+		}
 	}
 	return nil
 }
 
 func (x *Authorities) SetAuthorities(v []*Authority) {
-	x.Authorities = v
+	x.xxx_hidden_Authorities = &v
 }
 
 type Authorities_builder struct {
@@ -423,7 +461,7 @@ func (b0 Authorities_builder) Build() *Authorities {
 	m0 := &Authorities{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Authorities = b.Authorities
+	x.xxx_hidden_Authorities = &b.Authorities
 	return m0
 }
 
@@ -451,7 +489,7 @@ const file_api_v1_service_identity_service_proto_rawDesc = "" +
 	"\x14GetServiceIdentities\x12\t.v1.Empty\x1a\x1b.v1.ServiceIdentityResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/serviceIdentities\x12~\n" +
 	"\x15CreateServiceIdentity\x12 .v1.CreateServiceIdentityRequest\x1a!.v1.CreateServiceIdentityResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/v1/serviceIdentities\x12E\n" +
 	"\x0eGetAuthorities\x12\t.v1.Empty\x1a\x0f.v1.Authorities\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/authoritiesB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x01b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_service_identity_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_v1_service_identity_service_proto_goTypes = []any{

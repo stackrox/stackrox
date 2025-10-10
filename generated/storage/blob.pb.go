@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/blob.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -26,15 +24,17 @@ const (
 
 // Next Tag: 7
 type Blob struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty" sql:"pk" search:"Blob Name"` // @gotags: sql:"pk" search:"Blob Name"
-	Oid           *uint32                `protobuf:"varint,2,opt,name=oid" json:"oid,omitempty"`
-	Checksum      *string                `protobuf:"bytes,3,opt,name=checksum" json:"checksum,omitempty"`
-	Length        *int64                 `protobuf:"varint,4,opt,name=length" json:"length,omitempty" search:"Blob Length"` // @gotags: search:"Blob Length"
-	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty"`
-	ModifiedTime  *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=modified_time,json=modifiedTime" json:"modified_time,omitempty" search:"Blob Modified On"` // @gotags: search:"Blob Modified On"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name         *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Oid          uint32                 `protobuf:"varint,2,opt,name=oid"`
+	xxx_hidden_Checksum     *string                `protobuf:"bytes,3,opt,name=checksum"`
+	xxx_hidden_Length       int64                  `protobuf:"varint,4,opt,name=length"`
+	xxx_hidden_LastUpdated  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated"`
+	xxx_hidden_ModifiedTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=modified_time,json=modifiedTime"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Blob) Reset() {
@@ -63,135 +63,149 @@ func (x *Blob) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Blob) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Blob) GetOid() uint32 {
-	if x != nil && x.Oid != nil {
-		return *x.Oid
+	if x != nil {
+		return x.xxx_hidden_Oid
 	}
 	return 0
 }
 
 func (x *Blob) GetChecksum() string {
-	if x != nil && x.Checksum != nil {
-		return *x.Checksum
+	if x != nil {
+		if x.xxx_hidden_Checksum != nil {
+			return *x.xxx_hidden_Checksum
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Blob) GetLength() int64 {
-	if x != nil && x.Length != nil {
-		return *x.Length
+	if x != nil {
+		return x.xxx_hidden_Length
 	}
 	return 0
 }
 
 func (x *Blob) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastUpdated
+		return x.xxx_hidden_LastUpdated
 	}
 	return nil
 }
 
 func (x *Blob) GetModifiedTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ModifiedTime
+		return x.xxx_hidden_ModifiedTime
 	}
 	return nil
 }
 
 func (x *Blob) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *Blob) SetOid(v uint32) {
-	x.Oid = &v
+	x.xxx_hidden_Oid = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *Blob) SetChecksum(v string) {
-	x.Checksum = &v
+	x.xxx_hidden_Checksum = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *Blob) SetLength(v int64) {
-	x.Length = &v
+	x.xxx_hidden_Length = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *Blob) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.LastUpdated = v
+	x.xxx_hidden_LastUpdated = v
 }
 
 func (x *Blob) SetModifiedTime(v *timestamppb.Timestamp) {
-	x.ModifiedTime = v
+	x.xxx_hidden_ModifiedTime = v
 }
 
 func (x *Blob) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Blob) HasOid() bool {
 	if x == nil {
 		return false
 	}
-	return x.Oid != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Blob) HasChecksum() bool {
 	if x == nil {
 		return false
 	}
-	return x.Checksum != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Blob) HasLength() bool {
 	if x == nil {
 		return false
 	}
-	return x.Length != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Blob) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastUpdated != nil
+	return x.xxx_hidden_LastUpdated != nil
 }
 
 func (x *Blob) HasModifiedTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.ModifiedTime != nil
+	return x.xxx_hidden_ModifiedTime != nil
 }
 
 func (x *Blob) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Blob) ClearOid() {
-	x.Oid = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Oid = 0
 }
 
 func (x *Blob) ClearChecksum() {
-	x.Checksum = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Checksum = nil
 }
 
 func (x *Blob) ClearLength() {
-	x.Length = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Length = 0
 }
 
 func (x *Blob) ClearLastUpdated() {
-	x.LastUpdated = nil
+	x.xxx_hidden_LastUpdated = nil
 }
 
 func (x *Blob) ClearModifiedTime() {
-	x.ModifiedTime = nil
+	x.xxx_hidden_ModifiedTime = nil
 }
 
 type Blob_builder struct {
@@ -209,12 +223,24 @@ func (b0 Blob_builder) Build() *Blob {
 	m0 := &Blob{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Oid = b.Oid
-	x.Checksum = b.Checksum
-	x.Length = b.Length
-	x.LastUpdated = b.LastUpdated
-	x.ModifiedTime = b.ModifiedTime
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Oid != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_Oid = *b.Oid
+	}
+	if b.Checksum != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_Checksum = b.Checksum
+	}
+	if b.Length != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_Length = *b.Length
+	}
+	x.xxx_hidden_LastUpdated = b.LastUpdated
+	x.xxx_hidden_ModifiedTime = b.ModifiedTime
 	return m0
 }
 
@@ -230,7 +256,7 @@ const file_storage_blob_proto_rawDesc = "" +
 	"\x06length\x18\x04 \x01(\x03R\x06length\x12=\n" +
 	"\flast_updated\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12?\n" +
 	"\rmodified_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\fmodifiedTimeB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_blob_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_blob_proto_goTypes = []any{

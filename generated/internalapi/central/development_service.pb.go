@@ -7,8 +7,6 @@
 // This is an internal service which contains tools intended to be used only for testing.
 // It will NOT be available in Central in production builds.
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -78,11 +76,13 @@ func (x URLHasValidCertResponse_URLResult) Number() protoreflect.EnumNumber {
 }
 
 type URLHasValidCertRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Url           *string                `protobuf:"bytes,1,opt,name=url" json:"url,omitempty"`
-	CertPEM       *string                `protobuf:"bytes,2,opt,name=certPEM" json:"certPEM,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Url         *string                `protobuf:"bytes,1,opt,name=url"`
+	xxx_hidden_CertPEM     *string                `protobuf:"bytes,2,opt,name=certPEM"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *URLHasValidCertRequest) Reset() {
@@ -111,47 +111,57 @@ func (x *URLHasValidCertRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *URLHasValidCertRequest) GetUrl() string {
-	if x != nil && x.Url != nil {
-		return *x.Url
+	if x != nil {
+		if x.xxx_hidden_Url != nil {
+			return *x.xxx_hidden_Url
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *URLHasValidCertRequest) GetCertPEM() string {
-	if x != nil && x.CertPEM != nil {
-		return *x.CertPEM
+	if x != nil {
+		if x.xxx_hidden_CertPEM != nil {
+			return *x.xxx_hidden_CertPEM
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *URLHasValidCertRequest) SetUrl(v string) {
-	x.Url = &v
+	x.xxx_hidden_Url = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *URLHasValidCertRequest) SetCertPEM(v string) {
-	x.CertPEM = &v
+	x.xxx_hidden_CertPEM = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *URLHasValidCertRequest) HasUrl() bool {
 	if x == nil {
 		return false
 	}
-	return x.Url != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *URLHasValidCertRequest) HasCertPEM() bool {
 	if x == nil {
 		return false
 	}
-	return x.CertPEM != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *URLHasValidCertRequest) ClearUrl() {
-	x.Url = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Url = nil
 }
 
 func (x *URLHasValidCertRequest) ClearCertPEM() {
-	x.CertPEM = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_CertPEM = nil
 }
 
 type URLHasValidCertRequest_builder struct {
@@ -165,17 +175,25 @@ func (b0 URLHasValidCertRequest_builder) Build() *URLHasValidCertRequest {
 	m0 := &URLHasValidCertRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Url = b.Url
-	x.CertPEM = b.CertPEM
+	if b.Url != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Url = b.Url
+	}
+	if b.CertPEM != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_CertPEM = b.CertPEM
+	}
 	return m0
 }
 
 type URLHasValidCertResponse struct {
-	state         protoimpl.MessageState             `protogen:"hybrid.v1"`
-	Result        *URLHasValidCertResponse_URLResult `protobuf:"varint,1,opt,name=result,enum=central.URLHasValidCertResponse_URLResult" json:"result,omitempty"`
-	Details       *string                            `protobuf:"bytes,2,opt,name=details" json:"details,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState            `protogen:"opaque.v1"`
+	xxx_hidden_Result      URLHasValidCertResponse_URLResult `protobuf:"varint,1,opt,name=result,enum=central.URLHasValidCertResponse_URLResult"`
+	xxx_hidden_Details     *string                           `protobuf:"bytes,2,opt,name=details"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *URLHasValidCertResponse) Reset() {
@@ -204,47 +222,56 @@ func (x *URLHasValidCertResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *URLHasValidCertResponse) GetResult() URLHasValidCertResponse_URLResult {
-	if x != nil && x.Result != nil {
-		return *x.Result
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Result
+		}
 	}
 	return URLHasValidCertResponse_UNSET
 }
 
 func (x *URLHasValidCertResponse) GetDetails() string {
-	if x != nil && x.Details != nil {
-		return *x.Details
+	if x != nil {
+		if x.xxx_hidden_Details != nil {
+			return *x.xxx_hidden_Details
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *URLHasValidCertResponse) SetResult(v URLHasValidCertResponse_URLResult) {
-	x.Result = &v
+	x.xxx_hidden_Result = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *URLHasValidCertResponse) SetDetails(v string) {
-	x.Details = &v
+	x.xxx_hidden_Details = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *URLHasValidCertResponse) HasResult() bool {
 	if x == nil {
 		return false
 	}
-	return x.Result != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *URLHasValidCertResponse) HasDetails() bool {
 	if x == nil {
 		return false
 	}
-	return x.Details != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *URLHasValidCertResponse) ClearResult() {
-	x.Result = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Result = URLHasValidCertResponse_UNSET
 }
 
 func (x *URLHasValidCertResponse) ClearDetails() {
-	x.Details = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Details = nil
 }
 
 type URLHasValidCertResponse_builder struct {
@@ -258,16 +285,24 @@ func (b0 URLHasValidCertResponse_builder) Build() *URLHasValidCertResponse {
 	m0 := &URLHasValidCertResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Result = b.Result
-	x.Details = b.Details
+	if b.Result != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Result = *b.Result
+	}
+	if b.Details != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Details = b.Details
+	}
 	return m0
 }
 
 type RandomDataRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Size          *int32                 `protobuf:"varint,1,opt,name=size" json:"size,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Size        int32                  `protobuf:"varint,1,opt,name=size"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *RandomDataRequest) Reset() {
@@ -296,25 +331,27 @@ func (x *RandomDataRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *RandomDataRequest) GetSize() int32 {
-	if x != nil && x.Size != nil {
-		return *x.Size
+	if x != nil {
+		return x.xxx_hidden_Size
 	}
 	return 0
 }
 
 func (x *RandomDataRequest) SetSize(v int32) {
-	x.Size = &v
+	x.xxx_hidden_Size = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *RandomDataRequest) HasSize() bool {
 	if x == nil {
 		return false
 	}
-	return x.Size != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *RandomDataRequest) ClearSize() {
-	x.Size = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Size = 0
 }
 
 type RandomDataRequest_builder struct {
@@ -327,15 +364,20 @@ func (b0 RandomDataRequest_builder) Build() *RandomDataRequest {
 	m0 := &RandomDataRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Size = b.Size
+	if b.Size != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Size = *b.Size
+	}
 	return m0
 }
 
 type RandomDataResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Data          []byte                 `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Data        []byte                 `protobuf:"bytes,1,opt,name=data"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *RandomDataResponse) Reset() {
@@ -365,7 +407,7 @@ func (x *RandomDataResponse) ProtoReflect() protoreflect.Message {
 
 func (x *RandomDataResponse) GetData() []byte {
 	if x != nil {
-		return x.Data
+		return x.xxx_hidden_Data
 	}
 	return nil
 }
@@ -374,18 +416,20 @@ func (x *RandomDataResponse) SetData(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Data = v
+	x.xxx_hidden_Data = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *RandomDataResponse) HasData() bool {
 	if x == nil {
 		return false
 	}
-	return x.Data != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *RandomDataResponse) ClearData() {
-	x.Data = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Data = nil
 }
 
 type RandomDataResponse_builder struct {
@@ -398,15 +442,18 @@ func (b0 RandomDataResponse_builder) Build() *RandomDataResponse {
 	m0 := &RandomDataResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Data = b.Data
+	if b.Data != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Data = b.Data
+	}
 	return m0
 }
 
 type EnvVarsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	EnvVars       []string               `protobuf:"bytes,1,rep,name=env_vars,json=envVars" json:"env_vars,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_EnvVars []string               `protobuf:"bytes,1,rep,name=env_vars,json=envVars"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *EnvVarsResponse) Reset() {
@@ -436,13 +483,13 @@ func (x *EnvVarsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *EnvVarsResponse) GetEnvVars() []string {
 	if x != nil {
-		return x.EnvVars
+		return x.xxx_hidden_EnvVars
 	}
 	return nil
 }
 
 func (x *EnvVarsResponse) SetEnvVars(v []string) {
-	x.EnvVars = v
+	x.xxx_hidden_EnvVars = v
 }
 
 type EnvVarsResponse_builder struct {
@@ -455,15 +502,15 @@ func (b0 EnvVarsResponse_builder) Build() *EnvVarsResponse {
 	m0 := &EnvVarsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.EnvVars = b.EnvVars
+	x.xxx_hidden_EnvVars = b.EnvVars
 	return m0
 }
 
 type ReconciliationStatsByClusterResponse struct {
-	state         protoimpl.MessageState                                                `protogen:"hybrid.v1"`
-	Stats         []*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster `protobuf:"bytes,1,rep,name=stats" json:"stats,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState                                                 `protogen:"opaque.v1"`
+	xxx_hidden_Stats *[]*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster `protobuf:"bytes,1,rep,name=stats"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ReconciliationStatsByClusterResponse) Reset() {
@@ -493,13 +540,15 @@ func (x *ReconciliationStatsByClusterResponse) ProtoReflect() protoreflect.Messa
 
 func (x *ReconciliationStatsByClusterResponse) GetStats() []*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster {
 	if x != nil {
-		return x.Stats
+		if x.xxx_hidden_Stats != nil {
+			return *x.xxx_hidden_Stats
+		}
 	}
 	return nil
 }
 
 func (x *ReconciliationStatsByClusterResponse) SetStats(v []*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) {
-	x.Stats = v
+	x.xxx_hidden_Stats = &v
 }
 
 type ReconciliationStatsByClusterResponse_builder struct {
@@ -512,16 +561,18 @@ func (b0 ReconciliationStatsByClusterResponse_builder) Build() *ReconciliationSt
 	m0 := &ReconciliationStatsByClusterResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Stats = b.Stats
+	x.xxx_hidden_Stats = &b.Stats
 	return m0
 }
 
 type ReplicateImageRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Times         *int32                 `protobuf:"varint,2,opt,name=times" json:"times,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Times       int32                  `protobuf:"varint,2,opt,name=times"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ReplicateImageRequest) Reset() {
@@ -550,47 +601,54 @@ func (x *ReplicateImageRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ReplicateImageRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ReplicateImageRequest) GetTimes() int32 {
-	if x != nil && x.Times != nil {
-		return *x.Times
+	if x != nil {
+		return x.xxx_hidden_Times
 	}
 	return 0
 }
 
 func (x *ReplicateImageRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ReplicateImageRequest) SetTimes(v int32) {
-	x.Times = &v
+	x.xxx_hidden_Times = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ReplicateImageRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ReplicateImageRequest) HasTimes() bool {
 	if x == nil {
 		return false
 	}
-	return x.Times != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ReplicateImageRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ReplicateImageRequest) ClearTimes() {
-	x.Times = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Times = 0
 }
 
 type ReplicateImageRequest_builder struct {
@@ -604,13 +662,19 @@ func (b0 ReplicateImageRequest_builder) Build() *ReplicateImageRequest {
 	m0 := &ReplicateImageRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Times = b.Times
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Times != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Times = *b.Times
+	}
 	return m0
 }
 
 type Empty struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -653,12 +717,14 @@ func (b0 Empty_builder) Build() *Empty {
 }
 
 type ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster struct {
-	state                protoimpl.MessageState `protogen:"hybrid.v1"`
-	ClusterId            *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	ReconciliationDone   *bool                  `protobuf:"varint,2,opt,name=reconciliation_done,json=reconciliationDone" json:"reconciliation_done,omitempty"`
-	DeletedObjectsByType map[string]int32       `protobuf:"bytes,3,rep,name=deleted_objects_by_type,json=deletedObjectsByType" json:"deleted_objects_by_type,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterId            *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ReconciliationDone   bool                   `protobuf:"varint,2,opt,name=reconciliation_done,json=reconciliationDone"`
+	xxx_hidden_DeletedObjectsByType map[string]int32       `protobuf:"bytes,3,rep,name=deleted_objects_by_type,json=deletedObjectsByType" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
+	XXX_presence                    [1]uint32
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) Reset() {
@@ -687,58 +753,65 @@ func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) Pro
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) GetReconciliationDone() bool {
-	if x != nil && x.ReconciliationDone != nil {
-		return *x.ReconciliationDone
+	if x != nil {
+		return x.xxx_hidden_ReconciliationDone
 	}
 	return false
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) GetDeletedObjectsByType() map[string]int32 {
 	if x != nil {
-		return x.DeletedObjectsByType
+		return x.xxx_hidden_DeletedObjectsByType
 	}
 	return nil
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) SetReconciliationDone(v bool) {
-	x.ReconciliationDone = &v
+	x.xxx_hidden_ReconciliationDone = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) SetDeletedObjectsByType(v map[string]int32) {
-	x.DeletedObjectsByType = v
+	x.xxx_hidden_DeletedObjectsByType = v
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) HasReconciliationDone() bool {
 	if x == nil {
 		return false
 	}
-	return x.ReconciliationDone != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) ClearReconciliationDone() {
-	x.ReconciliationDone = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ReconciliationDone = false
 }
 
 type ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster_builder struct {
@@ -753,9 +826,15 @@ func (b0 ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster_buil
 	m0 := &ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterId = b.ClusterId
-	x.ReconciliationDone = b.ReconciliationDone
-	x.DeletedObjectsByType = b.DeletedObjectsByType
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ReconciliationDone != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_ReconciliationDone = *b.ReconciliationDone
+	}
+	x.xxx_hidden_DeletedObjectsByType = b.DeletedObjectsByType
 	return m0
 }
 
@@ -803,7 +882,7 @@ const file_internalapi_central_development_service_proto_rawDesc = "" +
 	"RandomData\x12\x1a.central.RandomDataRequest\x1a\x1b.central.RandomDataResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/internal/dev/random\x12U\n" +
 	"\aEnvVars\x12\x0e.central.Empty\x1a\x18.central.EnvVarsResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/internal/dev/envvars\x12\x8b\x01\n" +
 	"\x1cReconciliationStatsByCluster\x12\x0e.central.Empty\x1a-.central.ReconciliationStatsByClusterResponse\",\x82\xd3\xe4\x93\x02&\x12$/v1/internal/dev/reconciliationstatsBN\n" +
-	"%io.stackrox.proto.internalapi.centralZ\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02X\x00b\beditionsp\xe8\a"
+	"%io.stackrox.proto.internalapi.centralZ\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03X\x00b\beditionsp\xe8\a"
 
 var file_internalapi_central_development_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_internalapi_central_development_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)

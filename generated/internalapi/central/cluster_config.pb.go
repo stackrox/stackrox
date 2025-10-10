@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/cluster_config.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -25,10 +23,10 @@ const (
 )
 
 type ClusterConfig struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	Config        *storage.DynamicClusterConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Config *storage.DynamicClusterConfig `protobuf:"bytes,1,opt,name=config"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ClusterConfig) Reset() {
@@ -58,24 +56,24 @@ func (x *ClusterConfig) ProtoReflect() protoreflect.Message {
 
 func (x *ClusterConfig) GetConfig() *storage.DynamicClusterConfig {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *ClusterConfig) SetConfig(v *storage.DynamicClusterConfig) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *ClusterConfig) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *ClusterConfig) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 type ClusterConfig_builder struct {
@@ -88,7 +86,7 @@ func (b0 ClusterConfig_builder) Build() *ClusterConfig {
 	m0 := &ClusterConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
+	x.xxx_hidden_Config = b.Config
 	return m0
 }
 
@@ -98,7 +96,7 @@ const file_internalapi_central_cluster_config_proto_rawDesc = "" +
 	"\n" +
 	"(internalapi/central/cluster_config.proto\x12\acentral\x1a\x15storage/cluster.proto\x1a!google/protobuf/go_features.proto\"F\n" +
 	"\rClusterConfig\x125\n" +
-	"\x06config\x18\x01 \x01(\v2\x1d.storage.DynamicClusterConfigR\x06configB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x06config\x18\x01 \x01(\v2\x1d.storage.DynamicClusterConfigR\x06configB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_cluster_config_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_central_cluster_config_proto_goTypes = []any{

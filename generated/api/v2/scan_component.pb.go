@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v2/scan_component.proto
 
-//go:build !protoopaque
-
 package v2
 
 import (
@@ -127,20 +125,19 @@ func (x ScanComponent_Note) Number() protoreflect.EnumNumber {
 }
 
 type ScanComponent struct {
-	state   protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name    *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Version *string                `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
-	// Types that are valid to be assigned to SetTopCvss:
-	//
-	//	*ScanComponent_TopCvss
-	SetTopCvss    isScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	RiskScore     *float32                   `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore" json:"risk_score,omitempty"`
-	Architecture  *string                    `protobuf:"bytes,5,opt,name=architecture" json:"architecture,omitempty"`
-	Vulns         []*EmbeddedVulnerability   `protobuf:"bytes,6,rep,name=vulns" json:"vulns,omitempty"`
-	Source        *SourceType                `protobuf:"varint,7,opt,name=source,enum=v2.SourceType" json:"source,omitempty"`
-	Notes         []ScanComponent_Note       `protobuf:"varint,8,rep,packed,name=notes,enum=v2.ScanComponent_Note" json:"notes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Name         *string                    `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Version      *string                    `protobuf:"bytes,2,opt,name=version"`
+	xxx_hidden_SetTopCvss   isScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
+	xxx_hidden_RiskScore    float32                    `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore"`
+	xxx_hidden_Architecture *string                    `protobuf:"bytes,5,opt,name=architecture"`
+	xxx_hidden_Vulns        *[]*EmbeddedVulnerability  `protobuf:"bytes,6,rep,name=vulns"`
+	xxx_hidden_Source       SourceType                 `protobuf:"varint,7,opt,name=source,enum=v2.SourceType"`
+	xxx_hidden_Notes        []ScanComponent_Note       `protobuf:"varint,8,rep,packed,name=notes,enum=v2.ScanComponent_Note"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ScanComponent) Reset() {
@@ -169,133 +166,139 @@ func (x *ScanComponent) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ScanComponent) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ScanComponent) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *ScanComponent) GetSetTopCvss() isScanComponent_SetTopCvss {
+func (x *ScanComponent) GetTopCvss() float32 {
 	if x != nil {
-		return x.SetTopCvss
-	}
-	return nil
-}
-
-func (x *ScanComponent) Get_TopCvss() float32 {
-	if x != nil {
-		if x, ok := x.SetTopCvss.(*ScanComponent_TopCvss); ok {
+		if x, ok := x.xxx_hidden_SetTopCvss.(*scanComponent_TopCvss); ok {
 			return x.TopCvss
 		}
 	}
 	return 0
 }
 
-// Deprecated: Use Get_TopCvss instead.
-func (x *ScanComponent) GetTopCvss() float32 {
-	return x.Get_TopCvss()
-}
-
 func (x *ScanComponent) GetRiskScore() float32 {
-	if x != nil && x.RiskScore != nil {
-		return *x.RiskScore
+	if x != nil {
+		return x.xxx_hidden_RiskScore
 	}
 	return 0
 }
 
 func (x *ScanComponent) GetArchitecture() string {
-	if x != nil && x.Architecture != nil {
-		return *x.Architecture
+	if x != nil {
+		if x.xxx_hidden_Architecture != nil {
+			return *x.xxx_hidden_Architecture
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ScanComponent) GetVulns() []*EmbeddedVulnerability {
 	if x != nil {
-		return x.Vulns
+		if x.xxx_hidden_Vulns != nil {
+			return *x.xxx_hidden_Vulns
+		}
 	}
 	return nil
 }
 
 func (x *ScanComponent) GetSource() SourceType {
-	if x != nil && x.Source != nil {
-		return *x.Source
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			return x.xxx_hidden_Source
+		}
 	}
 	return SourceType_OS
 }
 
 func (x *ScanComponent) GetNotes() []ScanComponent_Note {
 	if x != nil {
-		return x.Notes
+		return x.xxx_hidden_Notes
 	}
 	return nil
 }
 
 func (x *ScanComponent) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
 }
 
 func (x *ScanComponent) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
 }
 
-func (x *ScanComponent) Set_TopCvss(v float32) {
-	x.SetTopCvss = &ScanComponent_TopCvss{v}
+func (x *ScanComponent) SetTopCvss(v float32) {
+	x.xxx_hidden_SetTopCvss = &scanComponent_TopCvss{v}
 }
 
 func (x *ScanComponent) SetRiskScore(v float32) {
-	x.RiskScore = &v
+	x.xxx_hidden_RiskScore = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
 }
 
 func (x *ScanComponent) SetArchitecture(v string) {
-	x.Architecture = &v
+	x.xxx_hidden_Architecture = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
 }
 
 func (x *ScanComponent) SetVulns(v []*EmbeddedVulnerability) {
-	x.Vulns = v
+	x.xxx_hidden_Vulns = &v
 }
 
 func (x *ScanComponent) SetSource(v SourceType) {
-	x.Source = &v
+	x.xxx_hidden_Source = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
 }
 
 func (x *ScanComponent) SetNotes(v []ScanComponent_Note) {
-	x.Notes = v
+	x.xxx_hidden_Notes = v
 }
 
 func (x *ScanComponent) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ScanComponent) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ScanComponent) HasSetTopCvss() bool {
 	if x == nil {
 		return false
 	}
-	return x.SetTopCvss != nil
+	return x.xxx_hidden_SetTopCvss != nil
 }
 
-func (x *ScanComponent) Has_TopCvss() bool {
+func (x *ScanComponent) HasTopCvss() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.SetTopCvss.(*ScanComponent_TopCvss)
+	_, ok := x.xxx_hidden_SetTopCvss.(*scanComponent_TopCvss)
 	return ok
 }
 
@@ -303,51 +306,56 @@ func (x *ScanComponent) HasRiskScore() bool {
 	if x == nil {
 		return false
 	}
-	return x.RiskScore != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ScanComponent) HasArchitecture() bool {
 	if x == nil {
 		return false
 	}
-	return x.Architecture != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ScanComponent) HasSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.Source != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ScanComponent) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ScanComponent) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Version = nil
 }
 
 func (x *ScanComponent) ClearSetTopCvss() {
-	x.SetTopCvss = nil
+	x.xxx_hidden_SetTopCvss = nil
 }
 
-func (x *ScanComponent) Clear_TopCvss() {
-	if _, ok := x.SetTopCvss.(*ScanComponent_TopCvss); ok {
-		x.SetTopCvss = nil
+func (x *ScanComponent) ClearTopCvss() {
+	if _, ok := x.xxx_hidden_SetTopCvss.(*scanComponent_TopCvss); ok {
+		x.xxx_hidden_SetTopCvss = nil
 	}
 }
 
 func (x *ScanComponent) ClearRiskScore() {
-	x.RiskScore = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_RiskScore = 0
 }
 
 func (x *ScanComponent) ClearArchitecture() {
-	x.Architecture = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Architecture = nil
 }
 
 func (x *ScanComponent) ClearSource() {
-	x.Source = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_Source = SourceType_OS
 }
 
 const ScanComponent_SetTopCvss_not_set_case case_ScanComponent_SetTopCvss = 0
@@ -357,8 +365,8 @@ func (x *ScanComponent) WhichSetTopCvss() case_ScanComponent_SetTopCvss {
 	if x == nil {
 		return ScanComponent_SetTopCvss_not_set_case
 	}
-	switch x.SetTopCvss.(type) {
-	case *ScanComponent_TopCvss:
+	switch x.xxx_hidden_SetTopCvss.(type) {
+	case *scanComponent_TopCvss:
 		return ScanComponent_TopCvss_case
 	default:
 		return ScanComponent_SetTopCvss_not_set_case
@@ -370,9 +378,9 @@ type ScanComponent_builder struct {
 
 	Name    *string
 	Version *string
-	// Fields of oneof SetTopCvss:
+	// Fields of oneof xxx_hidden_SetTopCvss:
 	TopCvss *float32
-	// -- end of SetTopCvss
+	// -- end of xxx_hidden_SetTopCvss
 	RiskScore    *float32
 	Architecture *string
 	Vulns        []*EmbeddedVulnerability
@@ -384,16 +392,31 @@ func (b0 ScanComponent_builder) Build() *ScanComponent {
 	m0 := &ScanComponent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Version = b.Version
-	if b.TopCvss != nil {
-		x.SetTopCvss = &ScanComponent_TopCvss{*b.TopCvss}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
+		x.xxx_hidden_Name = b.Name
 	}
-	x.RiskScore = b.RiskScore
-	x.Architecture = b.Architecture
-	x.Vulns = b.Vulns
-	x.Source = b.Source
-	x.Notes = b.Notes
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
+		x.xxx_hidden_Version = b.Version
+	}
+	if b.TopCvss != nil {
+		x.xxx_hidden_SetTopCvss = &scanComponent_TopCvss{*b.TopCvss}
+	}
+	if b.RiskScore != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		x.xxx_hidden_RiskScore = *b.RiskScore
+	}
+	if b.Architecture != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
+		x.xxx_hidden_Architecture = b.Architecture
+	}
+	x.xxx_hidden_Vulns = &b.Vulns
+	if b.Source != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_Source = *b.Source
+	}
+	x.xxx_hidden_Notes = b.Notes
 	return m0
 }
 
@@ -411,11 +434,11 @@ type isScanComponent_SetTopCvss interface {
 	isScanComponent_SetTopCvss()
 }
 
-type ScanComponent_TopCvss struct {
+type scanComponent_TopCvss struct {
 	TopCvss float32 `protobuf:"fixed32,3,opt,name=top_cvss,json=topCvss,oneof"`
 }
 
-func (*ScanComponent_TopCvss) isScanComponent_SetTopCvss() {}
+func (*scanComponent_TopCvss) isScanComponent_SetTopCvss() {}
 
 var File_api_v2_scan_component_proto protoreflect.FileDescriptor
 
@@ -448,7 +471,7 @@ const file_api_v2_scan_component_proto_rawDesc = "" +
 	"\x02GO\x10\a\x12\x15\n" +
 	"\x11DOTNETCORERUNTIME\x10\x05\x12\x12\n" +
 	"\x0eINFRASTRUCTURE\x10\x06B/\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_api_v2_scan_component_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v2_scan_component_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
@@ -476,7 +499,7 @@ func file_api_v2_scan_component_proto_init() {
 	}
 	file_api_v2_vulnerability_proto_init()
 	file_api_v2_scan_component_proto_msgTypes[0].OneofWrappers = []any{
-		(*ScanComponent_TopCvss)(nil),
+		(*scanComponent_TopCvss)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

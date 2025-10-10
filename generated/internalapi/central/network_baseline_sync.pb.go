@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/network_baseline_sync.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -25,10 +23,10 @@ const (
 )
 
 type NetworkBaselineSync struct {
-	state            protoimpl.MessageState     `protogen:"hybrid.v1"`
-	NetworkBaselines []*storage.NetworkBaseline `protobuf:"bytes,1,rep,name=network_baselines,json=networkBaselines" json:"network_baselines,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_NetworkBaselines *[]*storage.NetworkBaseline `protobuf:"bytes,1,rep,name=network_baselines,json=networkBaselines"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *NetworkBaselineSync) Reset() {
@@ -58,13 +56,15 @@ func (x *NetworkBaselineSync) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkBaselineSync) GetNetworkBaselines() []*storage.NetworkBaseline {
 	if x != nil {
-		return x.NetworkBaselines
+		if x.xxx_hidden_NetworkBaselines != nil {
+			return *x.xxx_hidden_NetworkBaselines
+		}
 	}
 	return nil
 }
 
 func (x *NetworkBaselineSync) SetNetworkBaselines(v []*storage.NetworkBaseline) {
-	x.NetworkBaselines = v
+	x.xxx_hidden_NetworkBaselines = &v
 }
 
 type NetworkBaselineSync_builder struct {
@@ -77,7 +77,7 @@ func (b0 NetworkBaselineSync_builder) Build() *NetworkBaselineSync {
 	m0 := &NetworkBaselineSync{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.NetworkBaselines = b.NetworkBaselines
+	x.xxx_hidden_NetworkBaselines = &b.NetworkBaselines
 	return m0
 }
 
@@ -87,7 +87,7 @@ const file_internalapi_central_network_baseline_sync_proto_rawDesc = "" +
 	"\n" +
 	"/internalapi/central/network_baseline_sync.proto\x12\acentral\x1a\x1estorage/network_baseline.proto\x1a!google/protobuf/go_features.proto\"\\\n" +
 	"\x13NetworkBaselineSync\x12E\n" +
-	"\x11network_baselines\x18\x01 \x03(\v2\x18.storage.NetworkBaselineR\x10networkBaselinesB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x11network_baselines\x18\x01 \x03(\v2\x18.storage.NetworkBaselineR\x10networkBaselinesB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_network_baseline_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_central_network_baseline_sync_proto_goTypes = []any{

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/secret.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -100,22 +98,22 @@ func (x SecretType) Number() protoreflect.EnumNumber {
 // (regardless of time, scope, or context)
 // ////////////////////////////////////////
 type Secret struct {
-	state       protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id          *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Secret ID,store,hidden" sql:"pk,type(uuid)"`                                      // @gotags: search:"Secret ID,store,hidden" sql:"pk,type(uuid)"
-	Name        *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Secret,store"`                                  // @gotags: search:"Secret,store"
-	ClusterId   *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	ClusterName *string                `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty" search:"Cluster,store"` // @gotags: search:"Cluster,store"
-	Namespace   *string                `protobuf:"bytes,5,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,store"`                        // @gotags: search:"Namespace,store"
-	Type        *string                `protobuf:"bytes,6,opt,name=type" json:"type,omitempty"`
-	Labels      map[string]string      `protobuf:"bytes,7,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt" json:"created_at,omitempty" search:"Created Time"` // @gotags: search:"Created Time"
-	// Metadata about the secrets.
-	// The secret need not be a file, but rather may be an arbitrary value.
-	Files         []*SecretDataFile   `protobuf:"bytes,10,rep,name=files" json:"files,omitempty"`
-	Relationship  *SecretRelationship `protobuf:"bytes,11,opt,name=relationship" json:"relationship,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id           *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name         *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_ClusterId    *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ClusterName  *string                `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_Namespace    *string                `protobuf:"bytes,5,opt,name=namespace"`
+	xxx_hidden_Type         *string                `protobuf:"bytes,6,opt,name=type"`
+	xxx_hidden_Labels       map[string]string      `protobuf:"bytes,7,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_Annotations  map[string]string      `protobuf:"bytes,8,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt"`
+	xxx_hidden_Files        *[]*SecretDataFile     `protobuf:"bytes,10,rep,name=files"`
+	xxx_hidden_Relationship *SecretRelationship    `protobuf:"bytes,11,opt,name=relationship"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Secret) Reset() {
@@ -144,212 +142,244 @@ func (x *Secret) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Secret) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Secret) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Secret) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Secret) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Secret) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Secret) GetType() string {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if x.xxx_hidden_Type != nil {
+			return *x.xxx_hidden_Type
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Secret) GetLabels() map[string]string {
 	if x != nil {
-		return x.Labels
+		return x.xxx_hidden_Labels
 	}
 	return nil
 }
 
 func (x *Secret) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.Annotations
+		return x.xxx_hidden_Annotations
 	}
 	return nil
 }
 
 func (x *Secret) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return nil
 }
 
 func (x *Secret) GetFiles() []*SecretDataFile {
 	if x != nil {
-		return x.Files
+		if x.xxx_hidden_Files != nil {
+			return *x.xxx_hidden_Files
+		}
 	}
 	return nil
 }
 
 func (x *Secret) GetRelationship() *SecretRelationship {
 	if x != nil {
-		return x.Relationship
+		return x.xxx_hidden_Relationship
 	}
 	return nil
 }
 
 func (x *Secret) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
 }
 
 func (x *Secret) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
 }
 
 func (x *Secret) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
 }
 
 func (x *Secret) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
 }
 
 func (x *Secret) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
 }
 
 func (x *Secret) SetType(v string) {
-	x.Type = &v
+	x.xxx_hidden_Type = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
 }
 
 func (x *Secret) SetLabels(v map[string]string) {
-	x.Labels = v
+	x.xxx_hidden_Labels = v
 }
 
 func (x *Secret) SetAnnotations(v map[string]string) {
-	x.Annotations = v
+	x.xxx_hidden_Annotations = v
 }
 
 func (x *Secret) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.CreatedAt = v
+	x.xxx_hidden_CreatedAt = v
 }
 
 func (x *Secret) SetFiles(v []*SecretDataFile) {
-	x.Files = v
+	x.xxx_hidden_Files = &v
 }
 
 func (x *Secret) SetRelationship(v *SecretRelationship) {
-	x.Relationship = v
+	x.xxx_hidden_Relationship = v
 }
 
 func (x *Secret) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Secret) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Secret) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Secret) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Secret) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Secret) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Secret) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedAt != nil
+	return x.xxx_hidden_CreatedAt != nil
 }
 
 func (x *Secret) HasRelationship() bool {
 	if x == nil {
 		return false
 	}
-	return x.Relationship != nil
+	return x.xxx_hidden_Relationship != nil
 }
 
 func (x *Secret) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Secret) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Secret) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *Secret) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *Secret) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *Secret) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Type = nil
 }
 
 func (x *Secret) ClearCreatedAt() {
-	x.CreatedAt = nil
+	x.xxx_hidden_CreatedAt = nil
 }
 
 func (x *Secret) ClearRelationship() {
-	x.Relationship = nil
+	x.xxx_hidden_Relationship = nil
 }
 
 type Secret_builder struct {
@@ -374,31 +404,51 @@ func (b0 Secret_builder) Build() *Secret {
 	m0 := &Secret{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.ClusterId = b.ClusterId
-	x.ClusterName = b.ClusterName
-	x.Namespace = b.Namespace
-	x.Type = b.Type
-	x.Labels = b.Labels
-	x.Annotations = b.Annotations
-	x.CreatedAt = b.CreatedAt
-	x.Files = b.Files
-	x.Relationship = b.Relationship
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
+		x.xxx_hidden_Type = b.Type
+	}
+	x.xxx_hidden_Labels = b.Labels
+	x.xxx_hidden_Annotations = b.Annotations
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_Files = &b.Files
+	x.xxx_hidden_Relationship = b.Relationship
 	return m0
 }
 
 type ListSecret struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	ClusterId     *string                `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	ClusterName   *string                `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
-	Namespace     *string                `protobuf:"bytes,4,opt,name=namespace" json:"namespace,omitempty"`
-	Types         []SecretType           `protobuf:"varint,5,rep,packed,name=types,enum=storage.SecretType" json:"types,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_ClusterId   *string                `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ClusterName *string                `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_Namespace   *string                `protobuf:"bytes,4,opt,name=namespace"`
+	xxx_hidden_Types       []SecretType           `protobuf:"varint,5,rep,packed,name=types,enum=storage.SecretType"`
+	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListSecret) Reset() {
@@ -427,146 +477,171 @@ func (x *ListSecret) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ListSecret) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListSecret) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListSecret) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListSecret) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListSecret) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListSecret) GetTypes() []SecretType {
 	if x != nil {
-		return x.Types
+		return x.xxx_hidden_Types
 	}
 	return nil
 }
 
 func (x *ListSecret) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return nil
 }
 
 func (x *ListSecret) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *ListSecret) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *ListSecret) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *ListSecret) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *ListSecret) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *ListSecret) SetTypes(v []SecretType) {
-	x.Types = v
+	x.xxx_hidden_Types = v
 }
 
 func (x *ListSecret) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.CreatedAt = v
+	x.xxx_hidden_CreatedAt = v
 }
 
 func (x *ListSecret) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ListSecret) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ListSecret) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ListSecret) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ListSecret) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ListSecret) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedAt != nil
+	return x.xxx_hidden_CreatedAt != nil
 }
 
 func (x *ListSecret) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ListSecret) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ListSecret) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *ListSecret) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *ListSecret) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *ListSecret) ClearCreatedAt() {
-	x.CreatedAt = nil
+	x.xxx_hidden_CreatedAt = nil
 }
 
 type ListSecret_builder struct {
@@ -585,28 +660,42 @@ func (b0 ListSecret_builder) Build() *ListSecret {
 	m0 := &ListSecret{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.ClusterId = b.ClusterId
-	x.ClusterName = b.ClusterName
-	x.Namespace = b.Namespace
-	x.Types = b.Types
-	x.CreatedAt = b.CreatedAt
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	x.xxx_hidden_Types = b.Types
+	x.xxx_hidden_CreatedAt = b.CreatedAt
 	return m0
 }
 
 // The combined relationships that belong to the secret.
 // Next Tag: 6
 type SecretRelationship struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Secret id
-	Id *string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	// Container id to relationship.s
-	ContainerRelationships []*SecretContainerRelationship `protobuf:"bytes,4,rep,name=container_relationships,json=containerRelationships" json:"container_relationships,omitempty"`
-	// Deployment id to relationship.
-	DeploymentRelationships []*SecretDeploymentRelationship `protobuf:"bytes,5,rep,name=deployment_relationships,json=deploymentRelationships" json:"deployment_relationships,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                              protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Id                      *string                          `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_ContainerRelationships  *[]*SecretContainerRelationship  `protobuf:"bytes,4,rep,name=container_relationships,json=containerRelationships"`
+	xxx_hidden_DeploymentRelationships *[]*SecretDeploymentRelationship `protobuf:"bytes,5,rep,name=deployment_relationships,json=deploymentRelationships"`
+	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
+	XXX_presence                       [1]uint32
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *SecretRelationship) Reset() {
@@ -635,47 +724,56 @@ func (x *SecretRelationship) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SecretRelationship) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SecretRelationship) GetContainerRelationships() []*SecretContainerRelationship {
 	if x != nil {
-		return x.ContainerRelationships
+		if x.xxx_hidden_ContainerRelationships != nil {
+			return *x.xxx_hidden_ContainerRelationships
+		}
 	}
 	return nil
 }
 
 func (x *SecretRelationship) GetDeploymentRelationships() []*SecretDeploymentRelationship {
 	if x != nil {
-		return x.DeploymentRelationships
+		if x.xxx_hidden_DeploymentRelationships != nil {
+			return *x.xxx_hidden_DeploymentRelationships
+		}
 	}
 	return nil
 }
 
 func (x *SecretRelationship) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *SecretRelationship) SetContainerRelationships(v []*SecretContainerRelationship) {
-	x.ContainerRelationships = v
+	x.xxx_hidden_ContainerRelationships = &v
 }
 
 func (x *SecretRelationship) SetDeploymentRelationships(v []*SecretDeploymentRelationship) {
-	x.DeploymentRelationships = v
+	x.xxx_hidden_DeploymentRelationships = &v
 }
 
 func (x *SecretRelationship) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SecretRelationship) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 type SecretRelationship_builder struct {
@@ -693,22 +791,25 @@ func (b0 SecretRelationship_builder) Build() *SecretRelationship {
 	m0 := &SecretRelationship{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.ContainerRelationships = b.ContainerRelationships
-	x.DeploymentRelationships = b.DeploymentRelationships
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Id = b.Id
+	}
+	x.xxx_hidden_ContainerRelationships = &b.ContainerRelationships
+	x.xxx_hidden_DeploymentRelationships = &b.DeploymentRelationships
 	return m0
 }
 
 // Secrets can be used by a deployment.
 // Next Tag: 3
 type SecretDeploymentRelationship struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Id of the deployment using the secret within a container.
-	Id *string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	// Name of the deployment.
-	Name          *string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SecretDeploymentRelationship) Reset() {
@@ -737,47 +838,57 @@ func (x *SecretDeploymentRelationship) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SecretDeploymentRelationship) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SecretDeploymentRelationship) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SecretDeploymentRelationship) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *SecretDeploymentRelationship) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *SecretDeploymentRelationship) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SecretDeploymentRelationship) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SecretDeploymentRelationship) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *SecretDeploymentRelationship) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 type SecretDeploymentRelationship_builder struct {
@@ -793,21 +904,27 @@ func (b0 SecretDeploymentRelationship_builder) Build() *SecretDeploymentRelation
 	m0 := &SecretDeploymentRelationship{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Name = b.Name
+	}
 	return m0
 }
 
 // Secrets can be mounted in a path in a container.
 // Next Tag: 3
 type SecretContainerRelationship struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Id of the container the secret is mounted in.
-	Id *string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	// Path is a container specific mounting directory.
-	Path          *string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Path        *string                `protobuf:"bytes,2,opt,name=path"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SecretContainerRelationship) Reset() {
@@ -836,47 +953,57 @@ func (x *SecretContainerRelationship) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SecretContainerRelationship) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SecretContainerRelationship) GetPath() string {
-	if x != nil && x.Path != nil {
-		return *x.Path
+	if x != nil {
+		if x.xxx_hidden_Path != nil {
+			return *x.xxx_hidden_Path
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SecretContainerRelationship) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *SecretContainerRelationship) SetPath(v string) {
-	x.Path = &v
+	x.xxx_hidden_Path = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *SecretContainerRelationship) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SecretContainerRelationship) HasPath() bool {
 	if x == nil {
 		return false
 	}
-	return x.Path != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SecretContainerRelationship) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *SecretContainerRelationship) ClearPath() {
-	x.Path = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Path = nil
 }
 
 type SecretContainerRelationship_builder struct {
@@ -892,16 +1019,22 @@ func (b0 SecretContainerRelationship_builder) Build() *SecretContainerRelationsh
 	m0 := &SecretContainerRelationship{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Path = b.Path
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Path != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Path = b.Path
+	}
 	return m0
 }
 
 type ImagePullSecret struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Registries    []*ImagePullSecret_Registry `protobuf:"bytes,1,rep,name=registries" json:"registries,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_Registries *[]*ImagePullSecret_Registry `protobuf:"bytes,1,rep,name=registries"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ImagePullSecret) Reset() {
@@ -931,13 +1064,15 @@ func (x *ImagePullSecret) ProtoReflect() protoreflect.Message {
 
 func (x *ImagePullSecret) GetRegistries() []*ImagePullSecret_Registry {
 	if x != nil {
-		return x.Registries
+		if x.xxx_hidden_Registries != nil {
+			return *x.xxx_hidden_Registries
+		}
 	}
 	return nil
 }
 
 func (x *ImagePullSecret) SetRegistries(v []*ImagePullSecret_Registry) {
-	x.Registries = v
+	x.xxx_hidden_Registries = &v
 }
 
 type ImagePullSecret_builder struct {
@@ -950,23 +1085,21 @@ func (b0 ImagePullSecret_builder) Build() *ImagePullSecret {
 	m0 := &ImagePullSecret{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Registries = b.Registries
+	x.xxx_hidden_Registries = &b.Registries
 	return m0
 }
 
 // Metadata about secret. Additional information is presented for a certificate file and
 // imagePullSecret, but the "file" may also represent some arbitrary value.
 type SecretDataFile struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name  *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Type  *SecretType            `protobuf:"varint,2,opt,name=type,enum=storage.SecretType" json:"type,omitempty" search:"Secret Type"` // @gotags: search:"Secret Type"
-	// Types that are valid to be assigned to Metadata:
-	//
-	//	*SecretDataFile_Cert
-	//	*SecretDataFile_ImagePullSecret
-	Metadata      isSecretDataFile_Metadata `protobuf_oneof:"metadata"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                   `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Type        SecretType                `protobuf:"varint,2,opt,name=type,enum=storage.SecretType"`
+	xxx_hidden_Metadata    isSecretDataFile_Metadata `protobuf_oneof:"metadata"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SecretDataFile) Reset() {
@@ -995,29 +1128,27 @@ func (x *SecretDataFile) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SecretDataFile) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SecretDataFile) GetType() SecretType {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return SecretType_UNDETERMINED
 }
 
-func (x *SecretDataFile) GetMetadata() isSecretDataFile_Metadata {
-	if x != nil {
-		return x.Metadata
-	}
-	return nil
-}
-
 func (x *SecretDataFile) GetCert() *Cert {
 	if x != nil {
-		if x, ok := x.Metadata.(*SecretDataFile_Cert); ok {
+		if x, ok := x.xxx_hidden_Metadata.(*secretDataFile_Cert); ok {
 			return x.Cert
 		}
 	}
@@ -1026,7 +1157,7 @@ func (x *SecretDataFile) GetCert() *Cert {
 
 func (x *SecretDataFile) GetImagePullSecret() *ImagePullSecret {
 	if x != nil {
-		if x, ok := x.Metadata.(*SecretDataFile_ImagePullSecret); ok {
+		if x, ok := x.xxx_hidden_Metadata.(*secretDataFile_ImagePullSecret); ok {
 			return x.ImagePullSecret
 		}
 	}
@@ -1034,55 +1165,57 @@ func (x *SecretDataFile) GetImagePullSecret() *ImagePullSecret {
 }
 
 func (x *SecretDataFile) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *SecretDataFile) SetType(v SecretType) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *SecretDataFile) SetCert(v *Cert) {
 	if v == nil {
-		x.Metadata = nil
+		x.xxx_hidden_Metadata = nil
 		return
 	}
-	x.Metadata = &SecretDataFile_Cert{v}
+	x.xxx_hidden_Metadata = &secretDataFile_Cert{v}
 }
 
 func (x *SecretDataFile) SetImagePullSecret(v *ImagePullSecret) {
 	if v == nil {
-		x.Metadata = nil
+		x.xxx_hidden_Metadata = nil
 		return
 	}
-	x.Metadata = &SecretDataFile_ImagePullSecret{v}
+	x.xxx_hidden_Metadata = &secretDataFile_ImagePullSecret{v}
 }
 
 func (x *SecretDataFile) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SecretDataFile) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SecretDataFile) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.Metadata != nil
+	return x.xxx_hidden_Metadata != nil
 }
 
 func (x *SecretDataFile) HasCert() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Metadata.(*SecretDataFile_Cert)
+	_, ok := x.xxx_hidden_Metadata.(*secretDataFile_Cert)
 	return ok
 }
 
@@ -1090,31 +1223,33 @@ func (x *SecretDataFile) HasImagePullSecret() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Metadata.(*SecretDataFile_ImagePullSecret)
+	_, ok := x.xxx_hidden_Metadata.(*secretDataFile_ImagePullSecret)
 	return ok
 }
 
 func (x *SecretDataFile) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *SecretDataFile) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Type = SecretType_UNDETERMINED
 }
 
 func (x *SecretDataFile) ClearMetadata() {
-	x.Metadata = nil
+	x.xxx_hidden_Metadata = nil
 }
 
 func (x *SecretDataFile) ClearCert() {
-	if _, ok := x.Metadata.(*SecretDataFile_Cert); ok {
-		x.Metadata = nil
+	if _, ok := x.xxx_hidden_Metadata.(*secretDataFile_Cert); ok {
+		x.xxx_hidden_Metadata = nil
 	}
 }
 
 func (x *SecretDataFile) ClearImagePullSecret() {
-	if _, ok := x.Metadata.(*SecretDataFile_ImagePullSecret); ok {
-		x.Metadata = nil
+	if _, ok := x.xxx_hidden_Metadata.(*secretDataFile_ImagePullSecret); ok {
+		x.xxx_hidden_Metadata = nil
 	}
 }
 
@@ -1126,10 +1261,10 @@ func (x *SecretDataFile) WhichMetadata() case_SecretDataFile_Metadata {
 	if x == nil {
 		return SecretDataFile_Metadata_not_set_case
 	}
-	switch x.Metadata.(type) {
-	case *SecretDataFile_Cert:
+	switch x.xxx_hidden_Metadata.(type) {
+	case *secretDataFile_Cert:
 		return SecretDataFile_Cert_case
-	case *SecretDataFile_ImagePullSecret:
+	case *secretDataFile_ImagePullSecret:
 		return SecretDataFile_ImagePullSecret_case
 	default:
 		return SecretDataFile_Metadata_not_set_case
@@ -1141,23 +1276,29 @@ type SecretDataFile_builder struct {
 
 	Name *string
 	Type *SecretType
-	// Fields of oneof Metadata:
+	// Fields of oneof xxx_hidden_Metadata:
 	Cert            *Cert
 	ImagePullSecret *ImagePullSecret
-	// -- end of Metadata
+	// -- end of xxx_hidden_Metadata
 }
 
 func (b0 SecretDataFile_builder) Build() *SecretDataFile {
 	m0 := &SecretDataFile{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Type = b.Type
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Type = *b.Type
+	}
 	if b.Cert != nil {
-		x.Metadata = &SecretDataFile_Cert{b.Cert}
+		x.xxx_hidden_Metadata = &secretDataFile_Cert{b.Cert}
 	}
 	if b.ImagePullSecret != nil {
-		x.Metadata = &SecretDataFile_ImagePullSecret{b.ImagePullSecret}
+		x.xxx_hidden_Metadata = &secretDataFile_ImagePullSecret{b.ImagePullSecret}
 	}
 	return m0
 }
@@ -1176,28 +1317,30 @@ type isSecretDataFile_Metadata interface {
 	isSecretDataFile_Metadata()
 }
 
-type SecretDataFile_Cert struct {
+type secretDataFile_Cert struct {
 	Cert *Cert `protobuf:"bytes,3,opt,name=cert,oneof"`
 }
 
-type SecretDataFile_ImagePullSecret struct {
+type secretDataFile_ImagePullSecret struct {
 	ImagePullSecret *ImagePullSecret `protobuf:"bytes,4,opt,name=image_pull_secret,json=imagePullSecret,oneof"`
 }
 
-func (*SecretDataFile_Cert) isSecretDataFile_Metadata() {}
+func (*secretDataFile_Cert) isSecretDataFile_Metadata() {}
 
-func (*SecretDataFile_ImagePullSecret) isSecretDataFile_Metadata() {}
+func (*secretDataFile_ImagePullSecret) isSecretDataFile_Metadata() {}
 
 type Cert struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Subject       *CertName              `protobuf:"bytes,1,opt,name=subject" json:"subject,omitempty"`
-	Issuer        *CertName              `protobuf:"bytes,2,opt,name=issuer" json:"issuer,omitempty"`
-	Sans          []string               `protobuf:"bytes,3,rep,name=sans" json:"sans,omitempty"`
-	StartDate     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate" json:"start_date,omitempty"`
-	EndDate       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate" json:"end_date,omitempty" search:"Cert Expiration"` // @gotags: search:"Cert Expiration"
-	Algorithm     *string                `protobuf:"bytes,6,opt,name=algorithm" json:"algorithm,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Subject     *CertName              `protobuf:"bytes,1,opt,name=subject"`
+	xxx_hidden_Issuer      *CertName              `protobuf:"bytes,2,opt,name=issuer"`
+	xxx_hidden_Sans        []string               `protobuf:"bytes,3,rep,name=sans"`
+	xxx_hidden_StartDate   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate"`
+	xxx_hidden_EndDate     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate"`
+	xxx_hidden_Algorithm   *string                `protobuf:"bytes,6,opt,name=algorithm"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Cert) Reset() {
@@ -1227,123 +1370,128 @@ func (x *Cert) ProtoReflect() protoreflect.Message {
 
 func (x *Cert) GetSubject() *CertName {
 	if x != nil {
-		return x.Subject
+		return x.xxx_hidden_Subject
 	}
 	return nil
 }
 
 func (x *Cert) GetIssuer() *CertName {
 	if x != nil {
-		return x.Issuer
+		return x.xxx_hidden_Issuer
 	}
 	return nil
 }
 
 func (x *Cert) GetSans() []string {
 	if x != nil {
-		return x.Sans
+		return x.xxx_hidden_Sans
 	}
 	return nil
 }
 
 func (x *Cert) GetStartDate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.StartDate
+		return x.xxx_hidden_StartDate
 	}
 	return nil
 }
 
 func (x *Cert) GetEndDate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.EndDate
+		return x.xxx_hidden_EndDate
 	}
 	return nil
 }
 
 func (x *Cert) GetAlgorithm() string {
-	if x != nil && x.Algorithm != nil {
-		return *x.Algorithm
+	if x != nil {
+		if x.xxx_hidden_Algorithm != nil {
+			return *x.xxx_hidden_Algorithm
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Cert) SetSubject(v *CertName) {
-	x.Subject = v
+	x.xxx_hidden_Subject = v
 }
 
 func (x *Cert) SetIssuer(v *CertName) {
-	x.Issuer = v
+	x.xxx_hidden_Issuer = v
 }
 
 func (x *Cert) SetSans(v []string) {
-	x.Sans = v
+	x.xxx_hidden_Sans = v
 }
 
 func (x *Cert) SetStartDate(v *timestamppb.Timestamp) {
-	x.StartDate = v
+	x.xxx_hidden_StartDate = v
 }
 
 func (x *Cert) SetEndDate(v *timestamppb.Timestamp) {
-	x.EndDate = v
+	x.xxx_hidden_EndDate = v
 }
 
 func (x *Cert) SetAlgorithm(v string) {
-	x.Algorithm = &v
+	x.xxx_hidden_Algorithm = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
 }
 
 func (x *Cert) HasSubject() bool {
 	if x == nil {
 		return false
 	}
-	return x.Subject != nil
+	return x.xxx_hidden_Subject != nil
 }
 
 func (x *Cert) HasIssuer() bool {
 	if x == nil {
 		return false
 	}
-	return x.Issuer != nil
+	return x.xxx_hidden_Issuer != nil
 }
 
 func (x *Cert) HasStartDate() bool {
 	if x == nil {
 		return false
 	}
-	return x.StartDate != nil
+	return x.xxx_hidden_StartDate != nil
 }
 
 func (x *Cert) HasEndDate() bool {
 	if x == nil {
 		return false
 	}
-	return x.EndDate != nil
+	return x.xxx_hidden_EndDate != nil
 }
 
 func (x *Cert) HasAlgorithm() bool {
 	if x == nil {
 		return false
 	}
-	return x.Algorithm != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Cert) ClearSubject() {
-	x.Subject = nil
+	x.xxx_hidden_Subject = nil
 }
 
 func (x *Cert) ClearIssuer() {
-	x.Issuer = nil
+	x.xxx_hidden_Issuer = nil
 }
 
 func (x *Cert) ClearStartDate() {
-	x.StartDate = nil
+	x.xxx_hidden_StartDate = nil
 }
 
 func (x *Cert) ClearEndDate() {
-	x.EndDate = nil
+	x.xxx_hidden_EndDate = nil
 }
 
 func (x *Cert) ClearAlgorithm() {
-	x.Algorithm = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Algorithm = nil
 }
 
 type Cert_builder struct {
@@ -1361,28 +1509,33 @@ func (b0 Cert_builder) Build() *Cert {
 	m0 := &Cert{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Subject = b.Subject
-	x.Issuer = b.Issuer
-	x.Sans = b.Sans
-	x.StartDate = b.StartDate
-	x.EndDate = b.EndDate
-	x.Algorithm = b.Algorithm
+	x.xxx_hidden_Subject = b.Subject
+	x.xxx_hidden_Issuer = b.Issuer
+	x.xxx_hidden_Sans = b.Sans
+	x.xxx_hidden_StartDate = b.StartDate
+	x.xxx_hidden_EndDate = b.EndDate
+	if b.Algorithm != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_Algorithm = b.Algorithm
+	}
 	return m0
 }
 
 type CertName struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	CommonName       *string                `protobuf:"bytes,1,opt,name=common_name,json=commonName" json:"common_name,omitempty"`
-	Country          *string                `protobuf:"bytes,2,opt,name=country" json:"country,omitempty"`
-	Organization     *string                `protobuf:"bytes,3,opt,name=organization" json:"organization,omitempty"`
-	OrganizationUnit *string                `protobuf:"bytes,4,opt,name=organization_unit,json=organizationUnit" json:"organization_unit,omitempty"`
-	Locality         *string                `protobuf:"bytes,5,opt,name=locality" json:"locality,omitempty"`
-	Province         *string                `protobuf:"bytes,6,opt,name=province" json:"province,omitempty"`
-	StreetAddress    *string                `protobuf:"bytes,7,opt,name=street_address,json=streetAddress" json:"street_address,omitempty"`
-	PostalCode       *string                `protobuf:"bytes,8,opt,name=postal_code,json=postalCode" json:"postal_code,omitempty"`
-	Names            []string               `protobuf:"bytes,9,rep,name=names" json:"names,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CommonName       *string                `protobuf:"bytes,1,opt,name=common_name,json=commonName"`
+	xxx_hidden_Country          *string                `protobuf:"bytes,2,opt,name=country"`
+	xxx_hidden_Organization     *string                `protobuf:"bytes,3,opt,name=organization"`
+	xxx_hidden_OrganizationUnit *string                `protobuf:"bytes,4,opt,name=organization_unit,json=organizationUnit"`
+	xxx_hidden_Locality         *string                `protobuf:"bytes,5,opt,name=locality"`
+	xxx_hidden_Province         *string                `protobuf:"bytes,6,opt,name=province"`
+	xxx_hidden_StreetAddress    *string                `protobuf:"bytes,7,opt,name=street_address,json=streetAddress"`
+	xxx_hidden_PostalCode       *string                `protobuf:"bytes,8,opt,name=postal_code,json=postalCode"`
+	xxx_hidden_Names            []string               `protobuf:"bytes,9,rep,name=names"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *CertName) Reset() {
@@ -1411,190 +1564,230 @@ func (x *CertName) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CertName) GetCommonName() string {
-	if x != nil && x.CommonName != nil {
-		return *x.CommonName
+	if x != nil {
+		if x.xxx_hidden_CommonName != nil {
+			return *x.xxx_hidden_CommonName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CertName) GetCountry() string {
-	if x != nil && x.Country != nil {
-		return *x.Country
+	if x != nil {
+		if x.xxx_hidden_Country != nil {
+			return *x.xxx_hidden_Country
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CertName) GetOrganization() string {
-	if x != nil && x.Organization != nil {
-		return *x.Organization
+	if x != nil {
+		if x.xxx_hidden_Organization != nil {
+			return *x.xxx_hidden_Organization
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CertName) GetOrganizationUnit() string {
-	if x != nil && x.OrganizationUnit != nil {
-		return *x.OrganizationUnit
+	if x != nil {
+		if x.xxx_hidden_OrganizationUnit != nil {
+			return *x.xxx_hidden_OrganizationUnit
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CertName) GetLocality() string {
-	if x != nil && x.Locality != nil {
-		return *x.Locality
+	if x != nil {
+		if x.xxx_hidden_Locality != nil {
+			return *x.xxx_hidden_Locality
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CertName) GetProvince() string {
-	if x != nil && x.Province != nil {
-		return *x.Province
+	if x != nil {
+		if x.xxx_hidden_Province != nil {
+			return *x.xxx_hidden_Province
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CertName) GetStreetAddress() string {
-	if x != nil && x.StreetAddress != nil {
-		return *x.StreetAddress
+	if x != nil {
+		if x.xxx_hidden_StreetAddress != nil {
+			return *x.xxx_hidden_StreetAddress
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CertName) GetPostalCode() string {
-	if x != nil && x.PostalCode != nil {
-		return *x.PostalCode
+	if x != nil {
+		if x.xxx_hidden_PostalCode != nil {
+			return *x.xxx_hidden_PostalCode
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CertName) GetNames() []string {
 	if x != nil {
-		return x.Names
+		return x.xxx_hidden_Names
 	}
 	return nil
 }
 
 func (x *CertName) SetCommonName(v string) {
-	x.CommonName = &v
+	x.xxx_hidden_CommonName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
 }
 
 func (x *CertName) SetCountry(v string) {
-	x.Country = &v
+	x.xxx_hidden_Country = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
 }
 
 func (x *CertName) SetOrganization(v string) {
-	x.Organization = &v
+	x.xxx_hidden_Organization = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
 }
 
 func (x *CertName) SetOrganizationUnit(v string) {
-	x.OrganizationUnit = &v
+	x.xxx_hidden_OrganizationUnit = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
 }
 
 func (x *CertName) SetLocality(v string) {
-	x.Locality = &v
+	x.xxx_hidden_Locality = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
 }
 
 func (x *CertName) SetProvince(v string) {
-	x.Province = &v
+	x.xxx_hidden_Province = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
 }
 
 func (x *CertName) SetStreetAddress(v string) {
-	x.StreetAddress = &v
+	x.xxx_hidden_StreetAddress = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
 }
 
 func (x *CertName) SetPostalCode(v string) {
-	x.PostalCode = &v
+	x.xxx_hidden_PostalCode = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
 }
 
 func (x *CertName) SetNames(v []string) {
-	x.Names = v
+	x.xxx_hidden_Names = v
 }
 
 func (x *CertName) HasCommonName() bool {
 	if x == nil {
 		return false
 	}
-	return x.CommonName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CertName) HasCountry() bool {
 	if x == nil {
 		return false
 	}
-	return x.Country != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CertName) HasOrganization() bool {
 	if x == nil {
 		return false
 	}
-	return x.Organization != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *CertName) HasOrganizationUnit() bool {
 	if x == nil {
 		return false
 	}
-	return x.OrganizationUnit != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *CertName) HasLocality() bool {
 	if x == nil {
 		return false
 	}
-	return x.Locality != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *CertName) HasProvince() bool {
 	if x == nil {
 		return false
 	}
-	return x.Province != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *CertName) HasStreetAddress() bool {
 	if x == nil {
 		return false
 	}
-	return x.StreetAddress != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *CertName) HasPostalCode() bool {
 	if x == nil {
 		return false
 	}
-	return x.PostalCode != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *CertName) ClearCommonName() {
-	x.CommonName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_CommonName = nil
 }
 
 func (x *CertName) ClearCountry() {
-	x.Country = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Country = nil
 }
 
 func (x *CertName) ClearOrganization() {
-	x.Organization = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Organization = nil
 }
 
 func (x *CertName) ClearOrganizationUnit() {
-	x.OrganizationUnit = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_OrganizationUnit = nil
 }
 
 func (x *CertName) ClearLocality() {
-	x.Locality = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Locality = nil
 }
 
 func (x *CertName) ClearProvince() {
-	x.Province = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Province = nil
 }
 
 func (x *CertName) ClearStreetAddress() {
-	x.StreetAddress = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_StreetAddress = nil
 }
 
 func (x *CertName) ClearPostalCode() {
-	x.PostalCode = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_PostalCode = nil
 }
 
 type CertName_builder struct {
@@ -1615,24 +1808,50 @@ func (b0 CertName_builder) Build() *CertName {
 	m0 := &CertName{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CommonName = b.CommonName
-	x.Country = b.Country
-	x.Organization = b.Organization
-	x.OrganizationUnit = b.OrganizationUnit
-	x.Locality = b.Locality
-	x.Province = b.Province
-	x.StreetAddress = b.StreetAddress
-	x.PostalCode = b.PostalCode
-	x.Names = b.Names
+	if b.CommonName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
+		x.xxx_hidden_CommonName = b.CommonName
+	}
+	if b.Country != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
+		x.xxx_hidden_Country = b.Country
+	}
+	if b.Organization != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
+		x.xxx_hidden_Organization = b.Organization
+	}
+	if b.OrganizationUnit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
+		x.xxx_hidden_OrganizationUnit = b.OrganizationUnit
+	}
+	if b.Locality != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
+		x.xxx_hidden_Locality = b.Locality
+	}
+	if b.Province != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
+		x.xxx_hidden_Province = b.Province
+	}
+	if b.StreetAddress != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
+		x.xxx_hidden_StreetAddress = b.StreetAddress
+	}
+	if b.PostalCode != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
+		x.xxx_hidden_PostalCode = b.PostalCode
+	}
+	x.xxx_hidden_Names = b.Names
 	return m0
 }
 
 type ImagePullSecret_Registry struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty" search:"Image Pull Secret Registry,store"` // @gotags: search:"Image Pull Secret Registry,store"
-	Username      *string                `protobuf:"bytes,2,opt,name=username" json:"username,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Username    *string                `protobuf:"bytes,2,opt,name=username"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImagePullSecret_Registry) Reset() {
@@ -1661,47 +1880,57 @@ func (x *ImagePullSecret_Registry) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ImagePullSecret_Registry) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImagePullSecret_Registry) GetUsername() string {
-	if x != nil && x.Username != nil {
-		return *x.Username
+	if x != nil {
+		if x.xxx_hidden_Username != nil {
+			return *x.xxx_hidden_Username
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImagePullSecret_Registry) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ImagePullSecret_Registry) SetUsername(v string) {
-	x.Username = &v
+	x.xxx_hidden_Username = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ImagePullSecret_Registry) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ImagePullSecret_Registry) HasUsername() bool {
 	if x == nil {
 		return false
 	}
-	return x.Username != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ImagePullSecret_Registry) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ImagePullSecret_Registry) ClearUsername() {
-	x.Username = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Username = nil
 }
 
 type ImagePullSecret_Registry_builder struct {
@@ -1715,8 +1944,14 @@ func (b0 ImagePullSecret_Registry_builder) Build() *ImagePullSecret_Registry {
 	m0 := &ImagePullSecret_Registry{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Username = b.Username
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Username != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Username = b.Username
+	}
 	return m0
 }
 
@@ -1816,7 +2051,7 @@ const file_storage_secret_proto_rawDesc = "" +
 	"\x15ENCRYPTED_PRIVATE_KEY\x10\n" +
 	"\x12\x15\n" +
 	"\x11IMAGE_PULL_SECRET\x10\vB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_secret_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_secret_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
@@ -1867,8 +2102,8 @@ func file_storage_secret_proto_init() {
 		return
 	}
 	file_storage_secret_proto_msgTypes[6].OneofWrappers = []any{
-		(*SecretDataFile_Cert)(nil),
-		(*SecretDataFile_ImagePullSecret)(nil),
+		(*secretDataFile_Cert)(nil),
+		(*secretDataFile_ImagePullSecret)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

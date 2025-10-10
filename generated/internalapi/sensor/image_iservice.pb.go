@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/image_iservice.proto
 
-//go:build !protoopaque
-
 package sensor
 
 import (
@@ -25,12 +23,14 @@ const (
 )
 
 type GetImageRequest struct {
-	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
-	Image         *storage.ContainerImage `protobuf:"bytes,1,opt,name=image" json:"image,omitempty"`
-	Namespace     *string                 `protobuf:"bytes,3,opt,name=namespace" json:"namespace,omitempty"`
-	ScanInline    *bool                   `protobuf:"varint,2,opt,name=scan_inline,json=scanInline" json:"scan_inline,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Image       *storage.ContainerImage `protobuf:"bytes,1,opt,name=image"`
+	xxx_hidden_Namespace   *string                 `protobuf:"bytes,3,opt,name=namespace"`
+	xxx_hidden_ScanInline  bool                    `protobuf:"varint,2,opt,name=scan_inline,json=scanInline"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetImageRequest) Reset() {
@@ -60,68 +60,75 @@ func (x *GetImageRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetImageRequest) GetImage() *storage.ContainerImage {
 	if x != nil {
-		return x.Image
+		return x.xxx_hidden_Image
 	}
 	return nil
 }
 
 func (x *GetImageRequest) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetImageRequest) GetScanInline() bool {
-	if x != nil && x.ScanInline != nil {
-		return *x.ScanInline
+	if x != nil {
+		return x.xxx_hidden_ScanInline
 	}
 	return false
 }
 
 func (x *GetImageRequest) SetImage(v *storage.ContainerImage) {
-	x.Image = v
+	x.xxx_hidden_Image = v
 }
 
 func (x *GetImageRequest) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *GetImageRequest) SetScanInline(v bool) {
-	x.ScanInline = &v
+	x.xxx_hidden_ScanInline = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *GetImageRequest) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Image != nil
+	return x.xxx_hidden_Image != nil
 }
 
 func (x *GetImageRequest) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetImageRequest) HasScanInline() bool {
 	if x == nil {
 		return false
 	}
-	return x.ScanInline != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *GetImageRequest) ClearImage() {
-	x.Image = nil
+	x.xxx_hidden_Image = nil
 }
 
 func (x *GetImageRequest) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *GetImageRequest) ClearScanInline() {
-	x.ScanInline = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ScanInline = false
 }
 
 type GetImageRequest_builder struct {
@@ -136,17 +143,23 @@ func (b0 GetImageRequest_builder) Build() *GetImageRequest {
 	m0 := &GetImageRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Image = b.Image
-	x.Namespace = b.Namespace
-	x.ScanInline = b.ScanInline
+	x.xxx_hidden_Image = b.Image
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.ScanInline != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_ScanInline = *b.ScanInline
+	}
 	return m0
 }
 
 type GetImageResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Image         *storage.Image         `protobuf:"bytes,1,opt,name=image" json:"image,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Image *storage.Image         `protobuf:"bytes,1,opt,name=image"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GetImageResponse) Reset() {
@@ -176,24 +189,24 @@ func (x *GetImageResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetImageResponse) GetImage() *storage.Image {
 	if x != nil {
-		return x.Image
+		return x.xxx_hidden_Image
 	}
 	return nil
 }
 
 func (x *GetImageResponse) SetImage(v *storage.Image) {
-	x.Image = v
+	x.xxx_hidden_Image = v
 }
 
 func (x *GetImageResponse) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Image != nil
+	return x.xxx_hidden_Image != nil
 }
 
 func (x *GetImageResponse) ClearImage() {
-	x.Image = nil
+	x.xxx_hidden_Image = nil
 }
 
 type GetImageResponse_builder struct {
@@ -206,7 +219,7 @@ func (b0 GetImageResponse_builder) Build() *GetImageResponse {
 	m0 := &GetImageResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Image = b.Image
+	x.xxx_hidden_Image = b.Image
 	return m0
 }
 
@@ -223,7 +236,7 @@ const file_internalapi_sensor_image_iservice_proto_rawDesc = "" +
 	"\x10GetImageResponse\x12$\n" +
 	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image2M\n" +
 	"\fImageService\x12=\n" +
-	"\bGetImage\x12\x17.sensor.GetImageRequest\x1a\x18.sensor.GetImageResponseB%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\bGetImage\x12\x17.sensor.GetImageRequest\x1a\x18.sensor.GetImageResponseB%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_image_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_sensor_image_iservice_proto_goTypes = []any{

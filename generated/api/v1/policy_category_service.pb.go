@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/policy_category_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -25,12 +23,14 @@ const (
 )
 
 type PolicyCategory struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	IsDefault     *bool                  `protobuf:"varint,3,opt,name=isDefault" json:"isDefault,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_IsDefault   bool                   `protobuf:"varint,3,opt,name=isDefault"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PolicyCategory) Reset() {
@@ -59,69 +59,81 @@ func (x *PolicyCategory) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PolicyCategory) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PolicyCategory) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PolicyCategory) GetIsDefault() bool {
-	if x != nil && x.IsDefault != nil {
-		return *x.IsDefault
+	if x != nil {
+		return x.xxx_hidden_IsDefault
 	}
 	return false
 }
 
 func (x *PolicyCategory) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *PolicyCategory) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *PolicyCategory) SetIsDefault(v bool) {
-	x.IsDefault = &v
+	x.xxx_hidden_IsDefault = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *PolicyCategory) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PolicyCategory) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *PolicyCategory) HasIsDefault() bool {
 	if x == nil {
 		return false
 	}
-	return x.IsDefault != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *PolicyCategory) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *PolicyCategory) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *PolicyCategory) ClearIsDefault() {
-	x.IsDefault = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_IsDefault = false
 }
 
 type PolicyCategory_builder struct {
@@ -136,17 +148,26 @@ func (b0 PolicyCategory_builder) Build() *PolicyCategory {
 	m0 := &PolicyCategory{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.IsDefault = b.IsDefault
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.IsDefault != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_IsDefault = *b.IsDefault
+	}
 	return m0
 }
 
 type PostPolicyCategoryRequest struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	PolicyCategory *PolicyCategory        `protobuf:"bytes,1,opt,name=policyCategory" json:"policyCategory,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PolicyCategory *PolicyCategory        `protobuf:"bytes,1,opt,name=policyCategory"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *PostPolicyCategoryRequest) Reset() {
@@ -176,24 +197,24 @@ func (x *PostPolicyCategoryRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PostPolicyCategoryRequest) GetPolicyCategory() *PolicyCategory {
 	if x != nil {
-		return x.PolicyCategory
+		return x.xxx_hidden_PolicyCategory
 	}
 	return nil
 }
 
 func (x *PostPolicyCategoryRequest) SetPolicyCategory(v *PolicyCategory) {
-	x.PolicyCategory = v
+	x.xxx_hidden_PolicyCategory = v
 }
 
 func (x *PostPolicyCategoryRequest) HasPolicyCategory() bool {
 	if x == nil {
 		return false
 	}
-	return x.PolicyCategory != nil
+	return x.xxx_hidden_PolicyCategory != nil
 }
 
 func (x *PostPolicyCategoryRequest) ClearPolicyCategory() {
-	x.PolicyCategory = nil
+	x.xxx_hidden_PolicyCategory = nil
 }
 
 type PostPolicyCategoryRequest_builder struct {
@@ -206,15 +227,15 @@ func (b0 PostPolicyCategoryRequest_builder) Build() *PostPolicyCategoryRequest {
 	m0 := &PostPolicyCategoryRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PolicyCategory = b.PolicyCategory
+	x.xxx_hidden_PolicyCategory = b.PolicyCategory
 	return m0
 }
 
 type GetPolicyCategoriesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Categories    []*PolicyCategory      `protobuf:"bytes,1,rep,name=categories" json:"categories,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Categories *[]*PolicyCategory     `protobuf:"bytes,1,rep,name=categories"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *GetPolicyCategoriesResponse) Reset() {
@@ -244,13 +265,15 @@ func (x *GetPolicyCategoriesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetPolicyCategoriesResponse) GetCategories() []*PolicyCategory {
 	if x != nil {
-		return x.Categories
+		if x.xxx_hidden_Categories != nil {
+			return *x.xxx_hidden_Categories
+		}
 	}
 	return nil
 }
 
 func (x *GetPolicyCategoriesResponse) SetCategories(v []*PolicyCategory) {
-	x.Categories = v
+	x.xxx_hidden_Categories = &v
 }
 
 type GetPolicyCategoriesResponse_builder struct {
@@ -263,16 +286,18 @@ func (b0 GetPolicyCategoriesResponse_builder) Build() *GetPolicyCategoriesRespon
 	m0 := &GetPolicyCategoriesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Categories = b.Categories
+	x.xxx_hidden_Categories = &b.Categories
 	return m0
 }
 
 type RenamePolicyCategoryRequest struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id              *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	NewCategoryName *string                `protobuf:"bytes,2,opt,name=new_category_name,json=newCategoryName" json:"new_category_name,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id              *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_NewCategoryName *string                `protobuf:"bytes,2,opt,name=new_category_name,json=newCategoryName"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *RenamePolicyCategoryRequest) Reset() {
@@ -301,47 +326,57 @@ func (x *RenamePolicyCategoryRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *RenamePolicyCategoryRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *RenamePolicyCategoryRequest) GetNewCategoryName() string {
-	if x != nil && x.NewCategoryName != nil {
-		return *x.NewCategoryName
+	if x != nil {
+		if x.xxx_hidden_NewCategoryName != nil {
+			return *x.xxx_hidden_NewCategoryName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *RenamePolicyCategoryRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *RenamePolicyCategoryRequest) SetNewCategoryName(v string) {
-	x.NewCategoryName = &v
+	x.xxx_hidden_NewCategoryName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *RenamePolicyCategoryRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *RenamePolicyCategoryRequest) HasNewCategoryName() bool {
 	if x == nil {
 		return false
 	}
-	return x.NewCategoryName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *RenamePolicyCategoryRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *RenamePolicyCategoryRequest) ClearNewCategoryName() {
-	x.NewCategoryName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_NewCategoryName = nil
 }
 
 type RenamePolicyCategoryRequest_builder struct {
@@ -355,16 +390,24 @@ func (b0 RenamePolicyCategoryRequest_builder) Build() *RenamePolicyCategoryReque
 	m0 := &RenamePolicyCategoryRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.NewCategoryName = b.NewCategoryName
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.NewCategoryName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_NewCategoryName = b.NewCategoryName
+	}
 	return m0
 }
 
 type DeletePolicyCategoryRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeletePolicyCategoryRequest) Reset() {
@@ -393,25 +436,30 @@ func (x *DeletePolicyCategoryRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DeletePolicyCategoryRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DeletePolicyCategoryRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *DeletePolicyCategoryRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DeletePolicyCategoryRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 type DeletePolicyCategoryRequest_builder struct {
@@ -424,7 +472,10 @@ func (b0 DeletePolicyCategoryRequest_builder) Build() *DeletePolicyCategoryReque
 	m0 := &DeletePolicyCategoryRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Id = b.Id
+	}
 	return m0
 }
 
@@ -454,7 +505,7 @@ const file_api_v1_policy_category_service_proto_rawDesc = "" +
 	"\x12PostPolicyCategory\x12\x1d.v1.PostPolicyCategoryRequest\x1a\x12.v1.PolicyCategory\",\x82\xd3\xe4\x93\x02&:\x0epolicyCategory\"\x14/v1/policycategories\x12l\n" +
 	"\x14RenamePolicyCategory\x12\x1f.v1.RenamePolicyCategoryRequest\x1a\x12.v1.PolicyCategory\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\x1a\x14/v1/policycategories\x12e\n" +
 	"\x14DeletePolicyCategory\x12\x1f.v1.DeletePolicyCategoryRequest\x1a\t.v1.Empty\"!\x82\xd3\xe4\x93\x02\x1b*\x19/v1/policycategories/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x03b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x03b\beditionsp\xe8\a"
 
 var file_api_v1_policy_category_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_v1_policy_category_service_proto_goTypes = []any{

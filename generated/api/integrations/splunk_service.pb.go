@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/integrations/splunk_service.proto
 
-//go:build !protoopaque
-
 package integrations
 
 import (
@@ -81,12 +79,13 @@ func (x SplunkViolation_ViolationInfo_ViolationType) Number() protoreflect.EnumN
 
 // SplunkViolationsResponse is what StackRox Platform returns on the request from Splunk Technology Addon for StackRox.
 type SplunkViolationsResponse struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Violations []*SplunkViolation     `protobuf:"bytes,1,rep,name=violations" json:"violations,omitempty"`
-	// new_checkpoint sets the checkpoint value for Splunk to use on the next call.
-	NewCheckpoint *string `protobuf:"bytes,6,opt,name=new_checkpoint,json=newCheckpoint" json:"new_checkpoint,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Violations    *[]*SplunkViolation    `protobuf:"bytes,1,rep,name=violations"`
+	xxx_hidden_NewCheckpoint *string                `protobuf:"bytes,6,opt,name=new_checkpoint,json=newCheckpoint"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *SplunkViolationsResponse) Reset() {
@@ -116,35 +115,42 @@ func (x *SplunkViolationsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *SplunkViolationsResponse) GetViolations() []*SplunkViolation {
 	if x != nil {
-		return x.Violations
+		if x.xxx_hidden_Violations != nil {
+			return *x.xxx_hidden_Violations
+		}
 	}
 	return nil
 }
 
 func (x *SplunkViolationsResponse) GetNewCheckpoint() string {
-	if x != nil && x.NewCheckpoint != nil {
-		return *x.NewCheckpoint
+	if x != nil {
+		if x.xxx_hidden_NewCheckpoint != nil {
+			return *x.xxx_hidden_NewCheckpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolationsResponse) SetViolations(v []*SplunkViolation) {
-	x.Violations = v
+	x.xxx_hidden_Violations = &v
 }
 
 func (x *SplunkViolationsResponse) SetNewCheckpoint(v string) {
-	x.NewCheckpoint = &v
+	x.xxx_hidden_NewCheckpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *SplunkViolationsResponse) HasNewCheckpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.NewCheckpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SplunkViolationsResponse) ClearNewCheckpoint() {
-	x.NewCheckpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_NewCheckpoint = nil
 }
 
 type SplunkViolationsResponse_builder struct {
@@ -159,8 +165,11 @@ func (b0 SplunkViolationsResponse_builder) Build() *SplunkViolationsResponse {
 	m0 := &SplunkViolationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Violations = b.Violations
-	x.NewCheckpoint = b.NewCheckpoint
+	x.xxx_hidden_Violations = &b.Violations
+	if b.NewCheckpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_NewCheckpoint = b.NewCheckpoint
+	}
 	return m0
 }
 
@@ -173,20 +182,15 @@ func (b0 SplunkViolationsResponse_builder) Build() *SplunkViolationsResponse {
 // Note that SplunkViolation still re-uses some definitions from storage where it seemed practical to not reinvent too
 // much.
 type SplunkViolation struct {
-	state         protoimpl.MessageState         `protogen:"hybrid.v1"`
-	ViolationInfo *SplunkViolation_ViolationInfo `protobuf:"bytes,1,opt,name=violation_info,json=violationInfo" json:"violation_info,omitempty"`
-	AlertInfo     *SplunkViolation_AlertInfo     `protobuf:"bytes,2,opt,name=alert_info,json=alertInfo" json:"alert_info,omitempty"`
-	ProcessInfo   *SplunkViolation_ProcessInfo   `protobuf:"bytes,3,opt,name=process_info,json=processInfo" json:"process_info,omitempty"`
-	// Types that are valid to be assigned to EntityInfo:
-	//
-	//	*SplunkViolation_DeploymentInfo_
-	//	*SplunkViolation_ResourceInfo_
-	EntityInfo isSplunkViolation_EntityInfo `protobuf_oneof:"EntityInfo"`
-	PolicyInfo *SplunkViolation_PolicyInfo  `protobuf:"bytes,5,opt,name=policy_info,json=policyInfo" json:"policy_info,omitempty"`
-	// extra details for network violation
-	NetworkFlowInfo *storage.Alert_Violation_NetworkFlowInfo `protobuf:"bytes,6,opt,name=network_flow_info,json=networkFlowInfo" json:"network_flow_info,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState                   `protogen:"opaque.v1"`
+	xxx_hidden_ViolationInfo   *SplunkViolation_ViolationInfo           `protobuf:"bytes,1,opt,name=violation_info,json=violationInfo"`
+	xxx_hidden_AlertInfo       *SplunkViolation_AlertInfo               `protobuf:"bytes,2,opt,name=alert_info,json=alertInfo"`
+	xxx_hidden_ProcessInfo     *SplunkViolation_ProcessInfo             `protobuf:"bytes,3,opt,name=process_info,json=processInfo"`
+	xxx_hidden_EntityInfo      isSplunkViolation_EntityInfo             `protobuf_oneof:"EntityInfo"`
+	xxx_hidden_PolicyInfo      *SplunkViolation_PolicyInfo              `protobuf:"bytes,5,opt,name=policy_info,json=policyInfo"`
+	xxx_hidden_NetworkFlowInfo *storage.Alert_Violation_NetworkFlowInfo `protobuf:"bytes,6,opt,name=network_flow_info,json=networkFlowInfo"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *SplunkViolation) Reset() {
@@ -216,35 +220,28 @@ func (x *SplunkViolation) ProtoReflect() protoreflect.Message {
 
 func (x *SplunkViolation) GetViolationInfo() *SplunkViolation_ViolationInfo {
 	if x != nil {
-		return x.ViolationInfo
+		return x.xxx_hidden_ViolationInfo
 	}
 	return nil
 }
 
 func (x *SplunkViolation) GetAlertInfo() *SplunkViolation_AlertInfo {
 	if x != nil {
-		return x.AlertInfo
+		return x.xxx_hidden_AlertInfo
 	}
 	return nil
 }
 
 func (x *SplunkViolation) GetProcessInfo() *SplunkViolation_ProcessInfo {
 	if x != nil {
-		return x.ProcessInfo
-	}
-	return nil
-}
-
-func (x *SplunkViolation) GetEntityInfo() isSplunkViolation_EntityInfo {
-	if x != nil {
-		return x.EntityInfo
+		return x.xxx_hidden_ProcessInfo
 	}
 	return nil
 }
 
 func (x *SplunkViolation) GetDeploymentInfo() *SplunkViolation_DeploymentInfo {
 	if x != nil {
-		if x, ok := x.EntityInfo.(*SplunkViolation_DeploymentInfo_); ok {
+		if x, ok := x.xxx_hidden_EntityInfo.(*splunkViolation_DeploymentInfo_); ok {
 			return x.DeploymentInfo
 		}
 	}
@@ -253,7 +250,7 @@ func (x *SplunkViolation) GetDeploymentInfo() *SplunkViolation_DeploymentInfo {
 
 func (x *SplunkViolation) GetResourceInfo() *SplunkViolation_ResourceInfo {
 	if x != nil {
-		if x, ok := x.EntityInfo.(*SplunkViolation_ResourceInfo_); ok {
+		if x, ok := x.xxx_hidden_EntityInfo.(*splunkViolation_ResourceInfo_); ok {
 			return x.ResourceInfo
 		}
 	}
@@ -262,87 +259,87 @@ func (x *SplunkViolation) GetResourceInfo() *SplunkViolation_ResourceInfo {
 
 func (x *SplunkViolation) GetPolicyInfo() *SplunkViolation_PolicyInfo {
 	if x != nil {
-		return x.PolicyInfo
+		return x.xxx_hidden_PolicyInfo
 	}
 	return nil
 }
 
 func (x *SplunkViolation) GetNetworkFlowInfo() *storage.Alert_Violation_NetworkFlowInfo {
 	if x != nil {
-		return x.NetworkFlowInfo
+		return x.xxx_hidden_NetworkFlowInfo
 	}
 	return nil
 }
 
 func (x *SplunkViolation) SetViolationInfo(v *SplunkViolation_ViolationInfo) {
-	x.ViolationInfo = v
+	x.xxx_hidden_ViolationInfo = v
 }
 
 func (x *SplunkViolation) SetAlertInfo(v *SplunkViolation_AlertInfo) {
-	x.AlertInfo = v
+	x.xxx_hidden_AlertInfo = v
 }
 
 func (x *SplunkViolation) SetProcessInfo(v *SplunkViolation_ProcessInfo) {
-	x.ProcessInfo = v
+	x.xxx_hidden_ProcessInfo = v
 }
 
 func (x *SplunkViolation) SetDeploymentInfo(v *SplunkViolation_DeploymentInfo) {
 	if v == nil {
-		x.EntityInfo = nil
+		x.xxx_hidden_EntityInfo = nil
 		return
 	}
-	x.EntityInfo = &SplunkViolation_DeploymentInfo_{v}
+	x.xxx_hidden_EntityInfo = &splunkViolation_DeploymentInfo_{v}
 }
 
 func (x *SplunkViolation) SetResourceInfo(v *SplunkViolation_ResourceInfo) {
 	if v == nil {
-		x.EntityInfo = nil
+		x.xxx_hidden_EntityInfo = nil
 		return
 	}
-	x.EntityInfo = &SplunkViolation_ResourceInfo_{v}
+	x.xxx_hidden_EntityInfo = &splunkViolation_ResourceInfo_{v}
 }
 
 func (x *SplunkViolation) SetPolicyInfo(v *SplunkViolation_PolicyInfo) {
-	x.PolicyInfo = v
+	x.xxx_hidden_PolicyInfo = v
 }
 
 func (x *SplunkViolation) SetNetworkFlowInfo(v *storage.Alert_Violation_NetworkFlowInfo) {
-	x.NetworkFlowInfo = v
+	x.xxx_hidden_NetworkFlowInfo = v
 }
 
 func (x *SplunkViolation) HasViolationInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.ViolationInfo != nil
+	return x.xxx_hidden_ViolationInfo != nil
 }
 
 func (x *SplunkViolation) HasAlertInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.AlertInfo != nil
+	return x.xxx_hidden_AlertInfo != nil
 }
 
 func (x *SplunkViolation) HasProcessInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessInfo != nil
+	return x.xxx_hidden_ProcessInfo != nil
 }
 
 func (x *SplunkViolation) HasEntityInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.EntityInfo != nil
+	return x.xxx_hidden_EntityInfo != nil
 }
 
 func (x *SplunkViolation) HasDeploymentInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.EntityInfo.(*SplunkViolation_DeploymentInfo_)
+	_, ok := x.xxx_hidden_EntityInfo.(*splunkViolation_DeploymentInfo_)
 	return ok
 }
 
@@ -350,7 +347,7 @@ func (x *SplunkViolation) HasResourceInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.EntityInfo.(*SplunkViolation_ResourceInfo_)
+	_, ok := x.xxx_hidden_EntityInfo.(*splunkViolation_ResourceInfo_)
 	return ok
 }
 
@@ -358,50 +355,50 @@ func (x *SplunkViolation) HasPolicyInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.PolicyInfo != nil
+	return x.xxx_hidden_PolicyInfo != nil
 }
 
 func (x *SplunkViolation) HasNetworkFlowInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.NetworkFlowInfo != nil
+	return x.xxx_hidden_NetworkFlowInfo != nil
 }
 
 func (x *SplunkViolation) ClearViolationInfo() {
-	x.ViolationInfo = nil
+	x.xxx_hidden_ViolationInfo = nil
 }
 
 func (x *SplunkViolation) ClearAlertInfo() {
-	x.AlertInfo = nil
+	x.xxx_hidden_AlertInfo = nil
 }
 
 func (x *SplunkViolation) ClearProcessInfo() {
-	x.ProcessInfo = nil
+	x.xxx_hidden_ProcessInfo = nil
 }
 
 func (x *SplunkViolation) ClearEntityInfo() {
-	x.EntityInfo = nil
+	x.xxx_hidden_EntityInfo = nil
 }
 
 func (x *SplunkViolation) ClearDeploymentInfo() {
-	if _, ok := x.EntityInfo.(*SplunkViolation_DeploymentInfo_); ok {
-		x.EntityInfo = nil
+	if _, ok := x.xxx_hidden_EntityInfo.(*splunkViolation_DeploymentInfo_); ok {
+		x.xxx_hidden_EntityInfo = nil
 	}
 }
 
 func (x *SplunkViolation) ClearResourceInfo() {
-	if _, ok := x.EntityInfo.(*SplunkViolation_ResourceInfo_); ok {
-		x.EntityInfo = nil
+	if _, ok := x.xxx_hidden_EntityInfo.(*splunkViolation_ResourceInfo_); ok {
+		x.xxx_hidden_EntityInfo = nil
 	}
 }
 
 func (x *SplunkViolation) ClearPolicyInfo() {
-	x.PolicyInfo = nil
+	x.xxx_hidden_PolicyInfo = nil
 }
 
 func (x *SplunkViolation) ClearNetworkFlowInfo() {
-	x.NetworkFlowInfo = nil
+	x.xxx_hidden_NetworkFlowInfo = nil
 }
 
 const SplunkViolation_EntityInfo_not_set_case case_SplunkViolation_EntityInfo = 0
@@ -412,10 +409,10 @@ func (x *SplunkViolation) WhichEntityInfo() case_SplunkViolation_EntityInfo {
 	if x == nil {
 		return SplunkViolation_EntityInfo_not_set_case
 	}
-	switch x.EntityInfo.(type) {
-	case *SplunkViolation_DeploymentInfo_:
+	switch x.xxx_hidden_EntityInfo.(type) {
+	case *splunkViolation_DeploymentInfo_:
 		return SplunkViolation_DeploymentInfo_case
-	case *SplunkViolation_ResourceInfo_:
+	case *splunkViolation_ResourceInfo_:
 		return SplunkViolation_ResourceInfo_case
 	default:
 		return SplunkViolation_EntityInfo_not_set_case
@@ -428,10 +425,10 @@ type SplunkViolation_builder struct {
 	ViolationInfo *SplunkViolation_ViolationInfo
 	AlertInfo     *SplunkViolation_AlertInfo
 	ProcessInfo   *SplunkViolation_ProcessInfo
-	// Fields of oneof EntityInfo:
+	// Fields of oneof xxx_hidden_EntityInfo:
 	DeploymentInfo *SplunkViolation_DeploymentInfo
 	ResourceInfo   *SplunkViolation_ResourceInfo
-	// -- end of EntityInfo
+	// -- end of xxx_hidden_EntityInfo
 	PolicyInfo *SplunkViolation_PolicyInfo
 	// extra details for network violation
 	NetworkFlowInfo *storage.Alert_Violation_NetworkFlowInfo
@@ -441,17 +438,17 @@ func (b0 SplunkViolation_builder) Build() *SplunkViolation {
 	m0 := &SplunkViolation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ViolationInfo = b.ViolationInfo
-	x.AlertInfo = b.AlertInfo
-	x.ProcessInfo = b.ProcessInfo
+	x.xxx_hidden_ViolationInfo = b.ViolationInfo
+	x.xxx_hidden_AlertInfo = b.AlertInfo
+	x.xxx_hidden_ProcessInfo = b.ProcessInfo
 	if b.DeploymentInfo != nil {
-		x.EntityInfo = &SplunkViolation_DeploymentInfo_{b.DeploymentInfo}
+		x.xxx_hidden_EntityInfo = &splunkViolation_DeploymentInfo_{b.DeploymentInfo}
 	}
 	if b.ResourceInfo != nil {
-		x.EntityInfo = &SplunkViolation_ResourceInfo_{b.ResourceInfo}
+		x.xxx_hidden_EntityInfo = &splunkViolation_ResourceInfo_{b.ResourceInfo}
 	}
-	x.PolicyInfo = b.PolicyInfo
-	x.NetworkFlowInfo = b.NetworkFlowInfo
+	x.xxx_hidden_PolicyInfo = b.PolicyInfo
+	x.xxx_hidden_NetworkFlowInfo = b.NetworkFlowInfo
 	return m0
 }
 
@@ -469,39 +466,35 @@ type isSplunkViolation_EntityInfo interface {
 	isSplunkViolation_EntityInfo()
 }
 
-type SplunkViolation_DeploymentInfo_ struct {
+type splunkViolation_DeploymentInfo_ struct {
 	DeploymentInfo *SplunkViolation_DeploymentInfo `protobuf:"bytes,4,opt,name=deployment_info,json=deploymentInfo,oneof"`
 }
 
-type SplunkViolation_ResourceInfo_ struct {
+type splunkViolation_ResourceInfo_ struct {
 	ResourceInfo *SplunkViolation_ResourceInfo `protobuf:"bytes,10,opt,name=resource_info,json=resourceInfo,oneof"`
 }
 
-func (*SplunkViolation_DeploymentInfo_) isSplunkViolation_EntityInfo() {}
+func (*splunkViolation_DeploymentInfo_) isSplunkViolation_EntityInfo() {}
 
-func (*SplunkViolation_ResourceInfo_) isSplunkViolation_EntityInfo() {}
+func (*splunkViolation_ResourceInfo_) isSplunkViolation_EntityInfo() {}
 
 // From storage.Alert.Violation (numbers <100).
 type SplunkViolation_ViolationInfo struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// In case of non-Process alerts (k8s and non-runtime), this is surrogate identifier derived from
-	// alert_id + crypto_hash(storage.Alert.Violation).
-	// In case of Process alerts, this has the same value as ProcessInfo.process_violation_id.
-	ViolationId                *string                                               `protobuf:"bytes,1,opt,name=violation_id,json=violationId" json:"violation_id,omitempty"`
-	ViolationMessage           *string                                               `protobuf:"bytes,2,opt,name=violation_message,json=violationMessage" json:"violation_message,omitempty"`
-	ViolationMessageAttributes []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr `protobuf:"bytes,3,rep,name=violation_message_attributes,json=violationMessageAttributes" json:"violation_message_attributes,omitempty"`
-	ViolationType              *SplunkViolation_ViolationInfo_ViolationType          `protobuf:"varint,4,opt,name=violation_type,json=violationType,enum=integrations.SplunkViolation_ViolationInfo_ViolationType" json:"violation_type,omitempty"`
-	// In case of k8s alerts, this is storage.Alert.Violation.time
-	// In case of Process alerts, this is storage.ProcessSignal.process_creation_time
-	// In case of other alerts, this is storage.Alert.time
-	ViolationTime      *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=violation_time,json=violationTime" json:"violation_time,omitempty"`
-	PodId              *string                `protobuf:"bytes,102,opt,name=pod_id,json=podId" json:"pod_id,omitempty"`
-	PodUid             *string                `protobuf:"bytes,103,opt,name=pod_uid,json=podUid" json:"pod_uid,omitempty"`
-	ContainerName      *string                `protobuf:"bytes,104,opt,name=container_name,json=containerName" json:"container_name,omitempty"`
-	ContainerStartTime *timestamppb.Timestamp `protobuf:"bytes,105,opt,name=container_start_time,json=containerStartTime" json:"container_start_time,omitempty"`
-	ContainerId        *string                `protobuf:"bytes,106,opt,name=container_id,json=containerId" json:"container_id,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                                 protoimpl.MessageState                                 `protogen:"opaque.v1"`
+	xxx_hidden_ViolationId                *string                                                `protobuf:"bytes,1,opt,name=violation_id,json=violationId"`
+	xxx_hidden_ViolationMessage           *string                                                `protobuf:"bytes,2,opt,name=violation_message,json=violationMessage"`
+	xxx_hidden_ViolationMessageAttributes *[]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr `protobuf:"bytes,3,rep,name=violation_message_attributes,json=violationMessageAttributes"`
+	xxx_hidden_ViolationType              SplunkViolation_ViolationInfo_ViolationType            `protobuf:"varint,4,opt,name=violation_type,json=violationType,enum=integrations.SplunkViolation_ViolationInfo_ViolationType"`
+	xxx_hidden_ViolationTime              *timestamppb.Timestamp                                 `protobuf:"bytes,5,opt,name=violation_time,json=violationTime"`
+	xxx_hidden_PodId                      *string                                                `protobuf:"bytes,102,opt,name=pod_id,json=podId"`
+	xxx_hidden_PodUid                     *string                                                `protobuf:"bytes,103,opt,name=pod_uid,json=podUid"`
+	xxx_hidden_ContainerName              *string                                                `protobuf:"bytes,104,opt,name=container_name,json=containerName"`
+	xxx_hidden_ContainerStartTime         *timestamppb.Timestamp                                 `protobuf:"bytes,105,opt,name=container_start_time,json=containerStartTime"`
+	xxx_hidden_ContainerId                *string                                                `protobuf:"bytes,106,opt,name=container_id,json=containerId"`
+	XXX_raceDetectHookData                protoimpl.RaceDetectHookData
+	XXX_presence                          [1]uint32
+	unknownFields                         protoimpl.UnknownFields
+	sizeCache                             protoimpl.SizeCache
 }
 
 func (x *SplunkViolation_ViolationInfo) Reset() {
@@ -530,212 +523,248 @@ func (x *SplunkViolation_ViolationInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SplunkViolation_ViolationInfo) GetViolationId() string {
-	if x != nil && x.ViolationId != nil {
-		return *x.ViolationId
+	if x != nil {
+		if x.xxx_hidden_ViolationId != nil {
+			return *x.xxx_hidden_ViolationId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ViolationInfo) GetViolationMessage() string {
-	if x != nil && x.ViolationMessage != nil {
-		return *x.ViolationMessage
+	if x != nil {
+		if x.xxx_hidden_ViolationMessage != nil {
+			return *x.xxx_hidden_ViolationMessage
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ViolationInfo) GetViolationMessageAttributes() []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
 	if x != nil {
-		return x.ViolationMessageAttributes
+		if x.xxx_hidden_ViolationMessageAttributes != nil {
+			return *x.xxx_hidden_ViolationMessageAttributes
+		}
 	}
 	return nil
 }
 
 func (x *SplunkViolation_ViolationInfo) GetViolationType() SplunkViolation_ViolationInfo_ViolationType {
-	if x != nil && x.ViolationType != nil {
-		return *x.ViolationType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			return x.xxx_hidden_ViolationType
+		}
 	}
 	return SplunkViolation_ViolationInfo_UNKNOWN
 }
 
 func (x *SplunkViolation_ViolationInfo) GetViolationTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ViolationTime
+		return x.xxx_hidden_ViolationTime
 	}
 	return nil
 }
 
 func (x *SplunkViolation_ViolationInfo) GetPodId() string {
-	if x != nil && x.PodId != nil {
-		return *x.PodId
+	if x != nil {
+		if x.xxx_hidden_PodId != nil {
+			return *x.xxx_hidden_PodId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ViolationInfo) GetPodUid() string {
-	if x != nil && x.PodUid != nil {
-		return *x.PodUid
+	if x != nil {
+		if x.xxx_hidden_PodUid != nil {
+			return *x.xxx_hidden_PodUid
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ViolationInfo) GetContainerName() string {
-	if x != nil && x.ContainerName != nil {
-		return *x.ContainerName
+	if x != nil {
+		if x.xxx_hidden_ContainerName != nil {
+			return *x.xxx_hidden_ContainerName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ViolationInfo) GetContainerStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ContainerStartTime
+		return x.xxx_hidden_ContainerStartTime
 	}
 	return nil
 }
 
 func (x *SplunkViolation_ViolationInfo) GetContainerId() string {
-	if x != nil && x.ContainerId != nil {
-		return *x.ContainerId
+	if x != nil {
+		if x.xxx_hidden_ContainerId != nil {
+			return *x.xxx_hidden_ContainerId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ViolationInfo) SetViolationId(v string) {
-	x.ViolationId = &v
+	x.xxx_hidden_ViolationId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 10)
 }
 
 func (x *SplunkViolation_ViolationInfo) SetViolationMessage(v string) {
-	x.ViolationMessage = &v
+	x.xxx_hidden_ViolationMessage = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
 }
 
 func (x *SplunkViolation_ViolationInfo) SetViolationMessageAttributes(v []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr) {
-	x.ViolationMessageAttributes = v
+	x.xxx_hidden_ViolationMessageAttributes = &v
 }
 
 func (x *SplunkViolation_ViolationInfo) SetViolationType(v SplunkViolation_ViolationInfo_ViolationType) {
-	x.ViolationType = &v
+	x.xxx_hidden_ViolationType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 10)
 }
 
 func (x *SplunkViolation_ViolationInfo) SetViolationTime(v *timestamppb.Timestamp) {
-	x.ViolationTime = v
+	x.xxx_hidden_ViolationTime = v
 }
 
 func (x *SplunkViolation_ViolationInfo) SetPodId(v string) {
-	x.PodId = &v
+	x.xxx_hidden_PodId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 10)
 }
 
 func (x *SplunkViolation_ViolationInfo) SetPodUid(v string) {
-	x.PodUid = &v
+	x.xxx_hidden_PodUid = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 10)
 }
 
 func (x *SplunkViolation_ViolationInfo) SetContainerName(v string) {
-	x.ContainerName = &v
+	x.xxx_hidden_ContainerName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 10)
 }
 
 func (x *SplunkViolation_ViolationInfo) SetContainerStartTime(v *timestamppb.Timestamp) {
-	x.ContainerStartTime = v
+	x.xxx_hidden_ContainerStartTime = v
 }
 
 func (x *SplunkViolation_ViolationInfo) SetContainerId(v string) {
-	x.ContainerId = &v
+	x.xxx_hidden_ContainerId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
 }
 
 func (x *SplunkViolation_ViolationInfo) HasViolationId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ViolationId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SplunkViolation_ViolationInfo) HasViolationMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.ViolationMessage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SplunkViolation_ViolationInfo) HasViolationType() bool {
 	if x == nil {
 		return false
 	}
-	return x.ViolationType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *SplunkViolation_ViolationInfo) HasViolationTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.ViolationTime != nil
+	return x.xxx_hidden_ViolationTime != nil
 }
 
 func (x *SplunkViolation_ViolationInfo) HasPodId() bool {
 	if x == nil {
 		return false
 	}
-	return x.PodId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *SplunkViolation_ViolationInfo) HasPodUid() bool {
 	if x == nil {
 		return false
 	}
-	return x.PodUid != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *SplunkViolation_ViolationInfo) HasContainerName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ContainerName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *SplunkViolation_ViolationInfo) HasContainerStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.ContainerStartTime != nil
+	return x.xxx_hidden_ContainerStartTime != nil
 }
 
 func (x *SplunkViolation_ViolationInfo) HasContainerId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ContainerId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *SplunkViolation_ViolationInfo) ClearViolationId() {
-	x.ViolationId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ViolationId = nil
 }
 
 func (x *SplunkViolation_ViolationInfo) ClearViolationMessage() {
-	x.ViolationMessage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ViolationMessage = nil
 }
 
 func (x *SplunkViolation_ViolationInfo) ClearViolationType() {
-	x.ViolationType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ViolationType = SplunkViolation_ViolationInfo_UNKNOWN
 }
 
 func (x *SplunkViolation_ViolationInfo) ClearViolationTime() {
-	x.ViolationTime = nil
+	x.xxx_hidden_ViolationTime = nil
 }
 
 func (x *SplunkViolation_ViolationInfo) ClearPodId() {
-	x.PodId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_PodId = nil
 }
 
 func (x *SplunkViolation_ViolationInfo) ClearPodUid() {
-	x.PodUid = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_PodUid = nil
 }
 
 func (x *SplunkViolation_ViolationInfo) ClearContainerName() {
-	x.ContainerName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_ContainerName = nil
 }
 
 func (x *SplunkViolation_ViolationInfo) ClearContainerStartTime() {
-	x.ContainerStartTime = nil
+	x.xxx_hidden_ContainerStartTime = nil
 }
 
 func (x *SplunkViolation_ViolationInfo) ClearContainerId() {
-	x.ContainerId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_ContainerId = nil
 }
 
 type SplunkViolation_ViolationInfo_builder struct {
@@ -763,27 +792,50 @@ func (b0 SplunkViolation_ViolationInfo_builder) Build() *SplunkViolation_Violati
 	m0 := &SplunkViolation_ViolationInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ViolationId = b.ViolationId
-	x.ViolationMessage = b.ViolationMessage
-	x.ViolationMessageAttributes = b.ViolationMessageAttributes
-	x.ViolationType = b.ViolationType
-	x.ViolationTime = b.ViolationTime
-	x.PodId = b.PodId
-	x.PodUid = b.PodUid
-	x.ContainerName = b.ContainerName
-	x.ContainerStartTime = b.ContainerStartTime
-	x.ContainerId = b.ContainerId
+	if b.ViolationId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 10)
+		x.xxx_hidden_ViolationId = b.ViolationId
+	}
+	if b.ViolationMessage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
+		x.xxx_hidden_ViolationMessage = b.ViolationMessage
+	}
+	x.xxx_hidden_ViolationMessageAttributes = &b.ViolationMessageAttributes
+	if b.ViolationType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 10)
+		x.xxx_hidden_ViolationType = *b.ViolationType
+	}
+	x.xxx_hidden_ViolationTime = b.ViolationTime
+	if b.PodId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 10)
+		x.xxx_hidden_PodId = b.PodId
+	}
+	if b.PodUid != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 10)
+		x.xxx_hidden_PodUid = b.PodUid
+	}
+	if b.ContainerName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
+		x.xxx_hidden_ContainerName = b.ContainerName
+	}
+	x.xxx_hidden_ContainerStartTime = b.ContainerStartTime
+	if b.ContainerId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
+		x.xxx_hidden_ContainerId = b.ContainerId
+	}
 	return m0
 }
 
 // From storage.Alert
 type SplunkViolation_AlertInfo struct {
-	state              protoimpl.MessageState  `protogen:"hybrid.v1"`
-	AlertId            *string                 `protobuf:"bytes,1,opt,name=alert_id,json=alertId" json:"alert_id,omitempty"`
-	LifecycleStage     *storage.LifecycleStage `protobuf:"varint,2,opt,name=lifecycle_stage,json=lifecycleStage,enum=storage.LifecycleStage" json:"lifecycle_stage,omitempty"`
-	AlertFirstOccurred *timestamppb.Timestamp  `protobuf:"bytes,4,opt,name=alert_first_occurred,json=alertFirstOccurred" json:"alert_first_occurred,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AlertId            *string                `protobuf:"bytes,1,opt,name=alert_id,json=alertId"`
+	xxx_hidden_LifecycleStage     storage.LifecycleStage `protobuf:"varint,2,opt,name=lifecycle_stage,json=lifecycleStage,enum=storage.LifecycleStage"`
+	xxx_hidden_AlertFirstOccurred *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=alert_first_occurred,json=alertFirstOccurred"`
+	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
+	XXX_presence                  [1]uint32
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *SplunkViolation_AlertInfo) Reset() {
@@ -812,69 +864,78 @@ func (x *SplunkViolation_AlertInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SplunkViolation_AlertInfo) GetAlertId() string {
-	if x != nil && x.AlertId != nil {
-		return *x.AlertId
+	if x != nil {
+		if x.xxx_hidden_AlertId != nil {
+			return *x.xxx_hidden_AlertId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_AlertInfo) GetLifecycleStage() storage.LifecycleStage {
-	if x != nil && x.LifecycleStage != nil {
-		return *x.LifecycleStage
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_LifecycleStage
+		}
 	}
 	return storage.LifecycleStage(0)
 }
 
 func (x *SplunkViolation_AlertInfo) GetAlertFirstOccurred() *timestamppb.Timestamp {
 	if x != nil {
-		return x.AlertFirstOccurred
+		return x.xxx_hidden_AlertFirstOccurred
 	}
 	return nil
 }
 
 func (x *SplunkViolation_AlertInfo) SetAlertId(v string) {
-	x.AlertId = &v
+	x.xxx_hidden_AlertId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *SplunkViolation_AlertInfo) SetLifecycleStage(v storage.LifecycleStage) {
-	x.LifecycleStage = &v
+	x.xxx_hidden_LifecycleStage = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *SplunkViolation_AlertInfo) SetAlertFirstOccurred(v *timestamppb.Timestamp) {
-	x.AlertFirstOccurred = v
+	x.xxx_hidden_AlertFirstOccurred = v
 }
 
 func (x *SplunkViolation_AlertInfo) HasAlertId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AlertId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SplunkViolation_AlertInfo) HasLifecycleStage() bool {
 	if x == nil {
 		return false
 	}
-	return x.LifecycleStage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SplunkViolation_AlertInfo) HasAlertFirstOccurred() bool {
 	if x == nil {
 		return false
 	}
-	return x.AlertFirstOccurred != nil
+	return x.xxx_hidden_AlertFirstOccurred != nil
 }
 
 func (x *SplunkViolation_AlertInfo) ClearAlertId() {
-	x.AlertId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_AlertId = nil
 }
 
 func (x *SplunkViolation_AlertInfo) ClearLifecycleStage() {
-	x.LifecycleStage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_LifecycleStage = storage.LifecycleStage_DEPLOY
 }
 
 func (x *SplunkViolation_AlertInfo) ClearAlertFirstOccurred() {
-	x.AlertFirstOccurred = nil
+	x.xxx_hidden_AlertFirstOccurred = nil
 }
 
 type SplunkViolation_AlertInfo_builder struct {
@@ -889,28 +950,35 @@ func (b0 SplunkViolation_AlertInfo_builder) Build() *SplunkViolation_AlertInfo {
 	m0 := &SplunkViolation_AlertInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AlertId = b.AlertId
-	x.LifecycleStage = b.LifecycleStage
-	x.AlertFirstOccurred = b.AlertFirstOccurred
+	if b.AlertId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_AlertId = b.AlertId
+	}
+	if b.LifecycleStage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_LifecycleStage = *b.LifecycleStage
+	}
+	x.xxx_hidden_AlertFirstOccurred = b.AlertFirstOccurred
 	return m0
 }
 
 // From storage.ProcessIndicator (numbers 1xx) and storage.ProcessSignal (numbers 2xx).
 type SplunkViolation_ProcessInfo struct {
-	state               protoimpl.MessageState `protogen:"hybrid.v1"`
-	ProcessViolationId  *string                `protobuf:"bytes,101,opt,name=process_violation_id,json=processViolationId" json:"process_violation_id,omitempty"`
-	ProcessSignalId     *string                `protobuf:"bytes,202,opt,name=process_signal_id,json=processSignalId" json:"process_signal_id,omitempty"`
-	ProcessCreationTime *timestamppb.Timestamp `protobuf:"bytes,203,opt,name=process_creation_time,json=processCreationTime" json:"process_creation_time,omitempty"`
-	ProcessName         *string                `protobuf:"bytes,204,opt,name=process_name,json=processName" json:"process_name,omitempty"`
-	ProcessArgs         *string                `protobuf:"bytes,205,opt,name=process_args,json=processArgs" json:"process_args,omitempty"`
-	ExecFilePath        *string                `protobuf:"bytes,206,opt,name=exec_file_path,json=execFilePath" json:"exec_file_path,omitempty"`
-	// UInt32Value is used for pid, process_uid and process_gid instead of plain uint32 to include 0 values on output.
-	Pid                *wrapperspb.UInt32Value              `protobuf:"bytes,207,opt,name=pid" json:"pid,omitempty"`
-	ProcessUid         *wrapperspb.UInt32Value              `protobuf:"bytes,208,opt,name=process_uid,json=processUid" json:"process_uid,omitempty"`
-	ProcessGid         *wrapperspb.UInt32Value              `protobuf:"bytes,209,opt,name=process_gid,json=processGid" json:"process_gid,omitempty"`
-	ProcessLineageInfo []*storage.ProcessSignal_LineageInfo `protobuf:"bytes,210,rep,name=process_lineage_info,json=processLineageInfo" json:"process_lineage_info,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                          protoimpl.MessageState                `protogen:"opaque.v1"`
+	xxx_hidden_ProcessViolationId  *string                               `protobuf:"bytes,101,opt,name=process_violation_id,json=processViolationId"`
+	xxx_hidden_ProcessSignalId     *string                               `protobuf:"bytes,202,opt,name=process_signal_id,json=processSignalId"`
+	xxx_hidden_ProcessCreationTime *timestamppb.Timestamp                `protobuf:"bytes,203,opt,name=process_creation_time,json=processCreationTime"`
+	xxx_hidden_ProcessName         *string                               `protobuf:"bytes,204,opt,name=process_name,json=processName"`
+	xxx_hidden_ProcessArgs         *string                               `protobuf:"bytes,205,opt,name=process_args,json=processArgs"`
+	xxx_hidden_ExecFilePath        *string                               `protobuf:"bytes,206,opt,name=exec_file_path,json=execFilePath"`
+	xxx_hidden_Pid                 *wrapperspb.UInt32Value               `protobuf:"bytes,207,opt,name=pid"`
+	xxx_hidden_ProcessUid          *wrapperspb.UInt32Value               `protobuf:"bytes,208,opt,name=process_uid,json=processUid"`
+	xxx_hidden_ProcessGid          *wrapperspb.UInt32Value               `protobuf:"bytes,209,opt,name=process_gid,json=processGid"`
+	xxx_hidden_ProcessLineageInfo  *[]*storage.ProcessSignal_LineageInfo `protobuf:"bytes,210,rep,name=process_lineage_info,json=processLineageInfo"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *SplunkViolation_ProcessInfo) Reset() {
@@ -939,212 +1007,239 @@ func (x *SplunkViolation_ProcessInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SplunkViolation_ProcessInfo) GetProcessViolationId() string {
-	if x != nil && x.ProcessViolationId != nil {
-		return *x.ProcessViolationId
+	if x != nil {
+		if x.xxx_hidden_ProcessViolationId != nil {
+			return *x.xxx_hidden_ProcessViolationId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ProcessInfo) GetProcessSignalId() string {
-	if x != nil && x.ProcessSignalId != nil {
-		return *x.ProcessSignalId
+	if x != nil {
+		if x.xxx_hidden_ProcessSignalId != nil {
+			return *x.xxx_hidden_ProcessSignalId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ProcessInfo) GetProcessCreationTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ProcessCreationTime
+		return x.xxx_hidden_ProcessCreationTime
 	}
 	return nil
 }
 
 func (x *SplunkViolation_ProcessInfo) GetProcessName() string {
-	if x != nil && x.ProcessName != nil {
-		return *x.ProcessName
+	if x != nil {
+		if x.xxx_hidden_ProcessName != nil {
+			return *x.xxx_hidden_ProcessName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ProcessInfo) GetProcessArgs() string {
-	if x != nil && x.ProcessArgs != nil {
-		return *x.ProcessArgs
+	if x != nil {
+		if x.xxx_hidden_ProcessArgs != nil {
+			return *x.xxx_hidden_ProcessArgs
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ProcessInfo) GetExecFilePath() string {
-	if x != nil && x.ExecFilePath != nil {
-		return *x.ExecFilePath
+	if x != nil {
+		if x.xxx_hidden_ExecFilePath != nil {
+			return *x.xxx_hidden_ExecFilePath
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ProcessInfo) GetPid() *wrapperspb.UInt32Value {
 	if x != nil {
-		return x.Pid
+		return x.xxx_hidden_Pid
 	}
 	return nil
 }
 
 func (x *SplunkViolation_ProcessInfo) GetProcessUid() *wrapperspb.UInt32Value {
 	if x != nil {
-		return x.ProcessUid
+		return x.xxx_hidden_ProcessUid
 	}
 	return nil
 }
 
 func (x *SplunkViolation_ProcessInfo) GetProcessGid() *wrapperspb.UInt32Value {
 	if x != nil {
-		return x.ProcessGid
+		return x.xxx_hidden_ProcessGid
 	}
 	return nil
 }
 
 func (x *SplunkViolation_ProcessInfo) GetProcessLineageInfo() []*storage.ProcessSignal_LineageInfo {
 	if x != nil {
-		return x.ProcessLineageInfo
+		if x.xxx_hidden_ProcessLineageInfo != nil {
+			return *x.xxx_hidden_ProcessLineageInfo
+		}
 	}
 	return nil
 }
 
 func (x *SplunkViolation_ProcessInfo) SetProcessViolationId(v string) {
-	x.ProcessViolationId = &v
+	x.xxx_hidden_ProcessViolationId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 10)
 }
 
 func (x *SplunkViolation_ProcessInfo) SetProcessSignalId(v string) {
-	x.ProcessSignalId = &v
+	x.xxx_hidden_ProcessSignalId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
 }
 
 func (x *SplunkViolation_ProcessInfo) SetProcessCreationTime(v *timestamppb.Timestamp) {
-	x.ProcessCreationTime = v
+	x.xxx_hidden_ProcessCreationTime = v
 }
 
 func (x *SplunkViolation_ProcessInfo) SetProcessName(v string) {
-	x.ProcessName = &v
+	x.xxx_hidden_ProcessName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 10)
 }
 
 func (x *SplunkViolation_ProcessInfo) SetProcessArgs(v string) {
-	x.ProcessArgs = &v
+	x.xxx_hidden_ProcessArgs = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 10)
 }
 
 func (x *SplunkViolation_ProcessInfo) SetExecFilePath(v string) {
-	x.ExecFilePath = &v
+	x.xxx_hidden_ExecFilePath = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 10)
 }
 
 func (x *SplunkViolation_ProcessInfo) SetPid(v *wrapperspb.UInt32Value) {
-	x.Pid = v
+	x.xxx_hidden_Pid = v
 }
 
 func (x *SplunkViolation_ProcessInfo) SetProcessUid(v *wrapperspb.UInt32Value) {
-	x.ProcessUid = v
+	x.xxx_hidden_ProcessUid = v
 }
 
 func (x *SplunkViolation_ProcessInfo) SetProcessGid(v *wrapperspb.UInt32Value) {
-	x.ProcessGid = v
+	x.xxx_hidden_ProcessGid = v
 }
 
 func (x *SplunkViolation_ProcessInfo) SetProcessLineageInfo(v []*storage.ProcessSignal_LineageInfo) {
-	x.ProcessLineageInfo = v
+	x.xxx_hidden_ProcessLineageInfo = &v
 }
 
 func (x *SplunkViolation_ProcessInfo) HasProcessViolationId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessViolationId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SplunkViolation_ProcessInfo) HasProcessSignalId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessSignalId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SplunkViolation_ProcessInfo) HasProcessCreationTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessCreationTime != nil
+	return x.xxx_hidden_ProcessCreationTime != nil
 }
 
 func (x *SplunkViolation_ProcessInfo) HasProcessName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *SplunkViolation_ProcessInfo) HasProcessArgs() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessArgs != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *SplunkViolation_ProcessInfo) HasExecFilePath() bool {
 	if x == nil {
 		return false
 	}
-	return x.ExecFilePath != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *SplunkViolation_ProcessInfo) HasPid() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pid != nil
+	return x.xxx_hidden_Pid != nil
 }
 
 func (x *SplunkViolation_ProcessInfo) HasProcessUid() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessUid != nil
+	return x.xxx_hidden_ProcessUid != nil
 }
 
 func (x *SplunkViolation_ProcessInfo) HasProcessGid() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessGid != nil
+	return x.xxx_hidden_ProcessGid != nil
 }
 
 func (x *SplunkViolation_ProcessInfo) ClearProcessViolationId() {
-	x.ProcessViolationId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ProcessViolationId = nil
 }
 
 func (x *SplunkViolation_ProcessInfo) ClearProcessSignalId() {
-	x.ProcessSignalId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ProcessSignalId = nil
 }
 
 func (x *SplunkViolation_ProcessInfo) ClearProcessCreationTime() {
-	x.ProcessCreationTime = nil
+	x.xxx_hidden_ProcessCreationTime = nil
 }
 
 func (x *SplunkViolation_ProcessInfo) ClearProcessName() {
-	x.ProcessName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ProcessName = nil
 }
 
 func (x *SplunkViolation_ProcessInfo) ClearProcessArgs() {
-	x.ProcessArgs = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_ProcessArgs = nil
 }
 
 func (x *SplunkViolation_ProcessInfo) ClearExecFilePath() {
-	x.ExecFilePath = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_ExecFilePath = nil
 }
 
 func (x *SplunkViolation_ProcessInfo) ClearPid() {
-	x.Pid = nil
+	x.xxx_hidden_Pid = nil
 }
 
 func (x *SplunkViolation_ProcessInfo) ClearProcessUid() {
-	x.ProcessUid = nil
+	x.xxx_hidden_ProcessUid = nil
 }
 
 func (x *SplunkViolation_ProcessInfo) ClearProcessGid() {
-	x.ProcessGid = nil
+	x.xxx_hidden_ProcessGid = nil
 }
 
 type SplunkViolation_ProcessInfo_builder struct {
@@ -1167,16 +1262,31 @@ func (b0 SplunkViolation_ProcessInfo_builder) Build() *SplunkViolation_ProcessIn
 	m0 := &SplunkViolation_ProcessInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ProcessViolationId = b.ProcessViolationId
-	x.ProcessSignalId = b.ProcessSignalId
-	x.ProcessCreationTime = b.ProcessCreationTime
-	x.ProcessName = b.ProcessName
-	x.ProcessArgs = b.ProcessArgs
-	x.ExecFilePath = b.ExecFilePath
-	x.Pid = b.Pid
-	x.ProcessUid = b.ProcessUid
-	x.ProcessGid = b.ProcessGid
-	x.ProcessLineageInfo = b.ProcessLineageInfo
+	if b.ProcessViolationId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 10)
+		x.xxx_hidden_ProcessViolationId = b.ProcessViolationId
+	}
+	if b.ProcessSignalId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
+		x.xxx_hidden_ProcessSignalId = b.ProcessSignalId
+	}
+	x.xxx_hidden_ProcessCreationTime = b.ProcessCreationTime
+	if b.ProcessName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 10)
+		x.xxx_hidden_ProcessName = b.ProcessName
+	}
+	if b.ProcessArgs != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 10)
+		x.xxx_hidden_ProcessArgs = b.ProcessArgs
+	}
+	if b.ExecFilePath != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 10)
+		x.xxx_hidden_ExecFilePath = b.ExecFilePath
+	}
+	x.xxx_hidden_Pid = b.Pid
+	x.xxx_hidden_ProcessUid = b.ProcessUid
+	x.xxx_hidden_ProcessGid = b.ProcessGid
+	x.xxx_hidden_ProcessLineageInfo = &b.ProcessLineageInfo
 	return m0
 }
 
@@ -1185,20 +1295,22 @@ func (b0 SplunkViolation_ProcessInfo_builder) Build() *SplunkViolation_ProcessIn
 // historical reasons and backwards compatibility. Next time we modify DeploymentInfo/ResourceInfo we should consider
 // unifying both and migrating users to ResourceInfo (or even newer object).
 type SplunkViolation_DeploymentInfo struct {
-	state                 protoimpl.MessageState                `protogen:"hybrid.v1"`
-	DeploymentId          *string                               `protobuf:"bytes,101,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
-	DeploymentName        *string                               `protobuf:"bytes,102,opt,name=deployment_name,json=deploymentName" json:"deployment_name,omitempty"`
-	DeploymentType        *string                               `protobuf:"bytes,103,opt,name=deployment_type,json=deploymentType" json:"deployment_type,omitempty"`
-	DeploymentNamespace   *string                               `protobuf:"bytes,104,opt,name=deployment_namespace,json=deploymentNamespace" json:"deployment_namespace,omitempty"`
-	DeploymentNamespaceId *string                               `protobuf:"bytes,105,opt,name=deployment_namespace_id,json=deploymentNamespaceId" json:"deployment_namespace_id,omitempty"`
-	DeploymentLabels      map[string]string                     `protobuf:"bytes,106,rep,name=deployment_labels,json=deploymentLabels" json:"deployment_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	ClusterId             *string                               `protobuf:"bytes,107,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	ClusterName           *string                               `protobuf:"bytes,108,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
-	DeploymentContainers  []*storage.Alert_Deployment_Container `protobuf:"bytes,109,rep,name=deployment_containers,json=deploymentContainers" json:"deployment_containers,omitempty"`
-	DeploymentAnnotations map[string]string                     `protobuf:"bytes,110,rep,name=deployment_annotations,json=deploymentAnnotations" json:"deployment_annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	DeploymentImage       *storage.ContainerImage               `protobuf:"bytes,201,opt,name=deployment_image,json=deploymentImage" json:"deployment_image,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState                 `protogen:"opaque.v1"`
+	xxx_hidden_DeploymentId          *string                                `protobuf:"bytes,101,opt,name=deployment_id,json=deploymentId"`
+	xxx_hidden_DeploymentName        *string                                `protobuf:"bytes,102,opt,name=deployment_name,json=deploymentName"`
+	xxx_hidden_DeploymentType        *string                                `protobuf:"bytes,103,opt,name=deployment_type,json=deploymentType"`
+	xxx_hidden_DeploymentNamespace   *string                                `protobuf:"bytes,104,opt,name=deployment_namespace,json=deploymentNamespace"`
+	xxx_hidden_DeploymentNamespaceId *string                                `protobuf:"bytes,105,opt,name=deployment_namespace_id,json=deploymentNamespaceId"`
+	xxx_hidden_DeploymentLabels      map[string]string                      `protobuf:"bytes,106,rep,name=deployment_labels,json=deploymentLabels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_ClusterId             *string                                `protobuf:"bytes,107,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ClusterName           *string                                `protobuf:"bytes,108,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_DeploymentContainers  *[]*storage.Alert_Deployment_Container `protobuf:"bytes,109,rep,name=deployment_containers,json=deploymentContainers"`
+	xxx_hidden_DeploymentAnnotations map[string]string                      `protobuf:"bytes,110,rep,name=deployment_annotations,json=deploymentAnnotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_DeploymentImage       *storage.ContainerImage                `protobuf:"bytes,201,opt,name=deployment_image,json=deploymentImage"`
+	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
+	XXX_presence                     [1]uint32
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *SplunkViolation_DeploymentInfo) Reset() {
@@ -1227,212 +1339,249 @@ func (x *SplunkViolation_DeploymentInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetDeploymentId() string {
-	if x != nil && x.DeploymentId != nil {
-		return *x.DeploymentId
+	if x != nil {
+		if x.xxx_hidden_DeploymentId != nil {
+			return *x.xxx_hidden_DeploymentId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetDeploymentName() string {
-	if x != nil && x.DeploymentName != nil {
-		return *x.DeploymentName
+	if x != nil {
+		if x.xxx_hidden_DeploymentName != nil {
+			return *x.xxx_hidden_DeploymentName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetDeploymentType() string {
-	if x != nil && x.DeploymentType != nil {
-		return *x.DeploymentType
+	if x != nil {
+		if x.xxx_hidden_DeploymentType != nil {
+			return *x.xxx_hidden_DeploymentType
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetDeploymentNamespace() string {
-	if x != nil && x.DeploymentNamespace != nil {
-		return *x.DeploymentNamespace
+	if x != nil {
+		if x.xxx_hidden_DeploymentNamespace != nil {
+			return *x.xxx_hidden_DeploymentNamespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetDeploymentNamespaceId() string {
-	if x != nil && x.DeploymentNamespaceId != nil {
-		return *x.DeploymentNamespaceId
+	if x != nil {
+		if x.xxx_hidden_DeploymentNamespaceId != nil {
+			return *x.xxx_hidden_DeploymentNamespaceId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetDeploymentLabels() map[string]string {
 	if x != nil {
-		return x.DeploymentLabels
+		return x.xxx_hidden_DeploymentLabels
 	}
 	return nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetDeploymentContainers() []*storage.Alert_Deployment_Container {
 	if x != nil {
-		return x.DeploymentContainers
+		if x.xxx_hidden_DeploymentContainers != nil {
+			return *x.xxx_hidden_DeploymentContainers
+		}
 	}
 	return nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetDeploymentAnnotations() map[string]string {
 	if x != nil {
-		return x.DeploymentAnnotations
+		return x.xxx_hidden_DeploymentAnnotations
 	}
 	return nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) GetDeploymentImage() *storage.ContainerImage {
 	if x != nil {
-		return x.DeploymentImage
+		return x.xxx_hidden_DeploymentImage
 	}
 	return nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetDeploymentId(v string) {
-	x.DeploymentId = &v
+	x.xxx_hidden_DeploymentId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetDeploymentName(v string) {
-	x.DeploymentName = &v
+	x.xxx_hidden_DeploymentName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetDeploymentType(v string) {
-	x.DeploymentType = &v
+	x.xxx_hidden_DeploymentType = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetDeploymentNamespace(v string) {
-	x.DeploymentNamespace = &v
+	x.xxx_hidden_DeploymentNamespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetDeploymentNamespaceId(v string) {
-	x.DeploymentNamespaceId = &v
+	x.xxx_hidden_DeploymentNamespaceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetDeploymentLabels(v map[string]string) {
-	x.DeploymentLabels = v
+	x.xxx_hidden_DeploymentLabels = v
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetDeploymentContainers(v []*storage.Alert_Deployment_Container) {
-	x.DeploymentContainers = v
+	x.xxx_hidden_DeploymentContainers = &v
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetDeploymentAnnotations(v map[string]string) {
-	x.DeploymentAnnotations = v
+	x.xxx_hidden_DeploymentAnnotations = v
 }
 
 func (x *SplunkViolation_DeploymentInfo) SetDeploymentImage(v *storage.ContainerImage) {
-	x.DeploymentImage = v
+	x.xxx_hidden_DeploymentImage = v
 }
 
 func (x *SplunkViolation_DeploymentInfo) HasDeploymentId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SplunkViolation_DeploymentInfo) HasDeploymentName() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SplunkViolation_DeploymentInfo) HasDeploymentType() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *SplunkViolation_DeploymentInfo) HasDeploymentNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentNamespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *SplunkViolation_DeploymentInfo) HasDeploymentNamespaceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentNamespaceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *SplunkViolation_DeploymentInfo) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *SplunkViolation_DeploymentInfo) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *SplunkViolation_DeploymentInfo) HasDeploymentImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentImage != nil
+	return x.xxx_hidden_DeploymentImage != nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) ClearDeploymentId() {
-	x.DeploymentId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_DeploymentId = nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) ClearDeploymentName() {
-	x.DeploymentName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_DeploymentName = nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) ClearDeploymentType() {
-	x.DeploymentType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_DeploymentType = nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) ClearDeploymentNamespace() {
-	x.DeploymentNamespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_DeploymentNamespace = nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) ClearDeploymentNamespaceId() {
-	x.DeploymentNamespaceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_DeploymentNamespaceId = nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *SplunkViolation_DeploymentInfo) ClearDeploymentImage() {
-	x.DeploymentImage = nil
+	x.xxx_hidden_DeploymentImage = nil
 }
 
 type SplunkViolation_DeploymentInfo_builder struct {
@@ -1455,31 +1604,53 @@ func (b0 SplunkViolation_DeploymentInfo_builder) Build() *SplunkViolation_Deploy
 	m0 := &SplunkViolation_DeploymentInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DeploymentId = b.DeploymentId
-	x.DeploymentName = b.DeploymentName
-	x.DeploymentType = b.DeploymentType
-	x.DeploymentNamespace = b.DeploymentNamespace
-	x.DeploymentNamespaceId = b.DeploymentNamespaceId
-	x.DeploymentLabels = b.DeploymentLabels
-	x.ClusterId = b.ClusterId
-	x.ClusterName = b.ClusterName
-	x.DeploymentContainers = b.DeploymentContainers
-	x.DeploymentAnnotations = b.DeploymentAnnotations
-	x.DeploymentImage = b.DeploymentImage
+	if b.DeploymentId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
+		x.xxx_hidden_DeploymentId = b.DeploymentId
+	}
+	if b.DeploymentName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
+		x.xxx_hidden_DeploymentName = b.DeploymentName
+	}
+	if b.DeploymentType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
+		x.xxx_hidden_DeploymentType = b.DeploymentType
+	}
+	if b.DeploymentNamespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
+		x.xxx_hidden_DeploymentNamespace = b.DeploymentNamespace
+	}
+	if b.DeploymentNamespaceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
+		x.xxx_hidden_DeploymentNamespaceId = b.DeploymentNamespaceId
+	}
+	x.xxx_hidden_DeploymentLabels = b.DeploymentLabels
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	x.xxx_hidden_DeploymentContainers = &b.DeploymentContainers
+	x.xxx_hidden_DeploymentAnnotations = b.DeploymentAnnotations
+	x.xxx_hidden_DeploymentImage = b.DeploymentImage
 	return m0
 }
 
 // A trimmed down version of storage.Alert.Resource.
 type SplunkViolation_ResourceInfo struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// This is converted from an enum to a string so that it can be properly formatted (capitalized, etc)
-	ResourceType  *string `protobuf:"bytes,1,opt,name=resource_type,json=resourceType" json:"resource_type,omitempty"`
-	Name          *string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	ClusterId     *string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	ClusterName   *string `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
-	Namespace     *string `protobuf:"bytes,5,opt,name=namespace" json:"namespace,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ResourceType *string                `protobuf:"bytes,1,opt,name=resource_type,json=resourceType"`
+	xxx_hidden_Name         *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_ClusterId    *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ClusterName  *string                `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_Namespace    *string                `protobuf:"bytes,5,opt,name=namespace"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *SplunkViolation_ResourceInfo) Reset() {
@@ -1508,113 +1679,138 @@ func (x *SplunkViolation_ResourceInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SplunkViolation_ResourceInfo) GetResourceType() string {
-	if x != nil && x.ResourceType != nil {
-		return *x.ResourceType
+	if x != nil {
+		if x.xxx_hidden_ResourceType != nil {
+			return *x.xxx_hidden_ResourceType
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ResourceInfo) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ResourceInfo) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ResourceInfo) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ResourceInfo) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_ResourceInfo) SetResourceType(v string) {
-	x.ResourceType = &v
+	x.xxx_hidden_ResourceType = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *SplunkViolation_ResourceInfo) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *SplunkViolation_ResourceInfo) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *SplunkViolation_ResourceInfo) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *SplunkViolation_ResourceInfo) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *SplunkViolation_ResourceInfo) HasResourceType() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResourceType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SplunkViolation_ResourceInfo) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SplunkViolation_ResourceInfo) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *SplunkViolation_ResourceInfo) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *SplunkViolation_ResourceInfo) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *SplunkViolation_ResourceInfo) ClearResourceType() {
-	x.ResourceType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ResourceType = nil
 }
 
 func (x *SplunkViolation_ResourceInfo) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *SplunkViolation_ResourceInfo) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *SplunkViolation_ResourceInfo) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *SplunkViolation_ResourceInfo) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Namespace = nil
 }
 
 type SplunkViolation_ResourceInfo_builder struct {
@@ -1632,27 +1828,44 @@ func (b0 SplunkViolation_ResourceInfo_builder) Build() *SplunkViolation_Resource
 	m0 := &SplunkViolation_ResourceInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ResourceType = b.ResourceType
-	x.Name = b.Name
-	x.ClusterId = b.ClusterId
-	x.ClusterName = b.ClusterName
-	x.Namespace = b.Namespace
+	if b.ResourceType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_ResourceType = b.ResourceType
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
 	return m0
 }
 
 // From storage.Policy
 type SplunkViolation_PolicyInfo struct {
-	state                 protoimpl.MessageState `protogen:"hybrid.v1"`
-	PolicyId              *string                `protobuf:"bytes,1,opt,name=policy_id,json=policyId" json:"policy_id,omitempty"`
-	PolicyName            *string                `protobuf:"bytes,2,opt,name=policy_name,json=policyName" json:"policy_name,omitempty"`
-	PolicyDescription     *string                `protobuf:"bytes,3,opt,name=policy_description,json=policyDescription" json:"policy_description,omitempty"`
-	PolicyRationale       *string                `protobuf:"bytes,4,opt,name=policy_rationale,json=policyRationale" json:"policy_rationale,omitempty"`
-	PolicyCategories      []string               `protobuf:"bytes,5,rep,name=policy_categories,json=policyCategories" json:"policy_categories,omitempty"`
-	PolicyLifecycleStages []string               `protobuf:"bytes,6,rep,name=policy_lifecycle_stages,json=policyLifecycleStages" json:"policy_lifecycle_stages,omitempty"`
-	PolicySeverity        *string                `protobuf:"bytes,7,opt,name=policy_severity,json=policySeverity" json:"policy_severity,omitempty"`
-	PolicyVersion         *string                `protobuf:"bytes,8,opt,name=policy_version,json=policyVersion" json:"policy_version,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PolicyId              *string                `protobuf:"bytes,1,opt,name=policy_id,json=policyId"`
+	xxx_hidden_PolicyName            *string                `protobuf:"bytes,2,opt,name=policy_name,json=policyName"`
+	xxx_hidden_PolicyDescription     *string                `protobuf:"bytes,3,opt,name=policy_description,json=policyDescription"`
+	xxx_hidden_PolicyRationale       *string                `protobuf:"bytes,4,opt,name=policy_rationale,json=policyRationale"`
+	xxx_hidden_PolicyCategories      []string               `protobuf:"bytes,5,rep,name=policy_categories,json=policyCategories"`
+	xxx_hidden_PolicyLifecycleStages []string               `protobuf:"bytes,6,rep,name=policy_lifecycle_stages,json=policyLifecycleStages"`
+	xxx_hidden_PolicySeverity        *string                `protobuf:"bytes,7,opt,name=policy_severity,json=policySeverity"`
+	xxx_hidden_PolicyVersion         *string                `protobuf:"bytes,8,opt,name=policy_version,json=policyVersion"`
+	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
+	XXX_presence                     [1]uint32
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *SplunkViolation_PolicyInfo) Reset() {
@@ -1681,157 +1894,187 @@ func (x *SplunkViolation_PolicyInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SplunkViolation_PolicyInfo) GetPolicyId() string {
-	if x != nil && x.PolicyId != nil {
-		return *x.PolicyId
+	if x != nil {
+		if x.xxx_hidden_PolicyId != nil {
+			return *x.xxx_hidden_PolicyId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_PolicyInfo) GetPolicyName() string {
-	if x != nil && x.PolicyName != nil {
-		return *x.PolicyName
+	if x != nil {
+		if x.xxx_hidden_PolicyName != nil {
+			return *x.xxx_hidden_PolicyName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_PolicyInfo) GetPolicyDescription() string {
-	if x != nil && x.PolicyDescription != nil {
-		return *x.PolicyDescription
+	if x != nil {
+		if x.xxx_hidden_PolicyDescription != nil {
+			return *x.xxx_hidden_PolicyDescription
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_PolicyInfo) GetPolicyRationale() string {
-	if x != nil && x.PolicyRationale != nil {
-		return *x.PolicyRationale
+	if x != nil {
+		if x.xxx_hidden_PolicyRationale != nil {
+			return *x.xxx_hidden_PolicyRationale
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_PolicyInfo) GetPolicyCategories() []string {
 	if x != nil {
-		return x.PolicyCategories
+		return x.xxx_hidden_PolicyCategories
 	}
 	return nil
 }
 
 func (x *SplunkViolation_PolicyInfo) GetPolicyLifecycleStages() []string {
 	if x != nil {
-		return x.PolicyLifecycleStages
+		return x.xxx_hidden_PolicyLifecycleStages
 	}
 	return nil
 }
 
 func (x *SplunkViolation_PolicyInfo) GetPolicySeverity() string {
-	if x != nil && x.PolicySeverity != nil {
-		return *x.PolicySeverity
+	if x != nil {
+		if x.xxx_hidden_PolicySeverity != nil {
+			return *x.xxx_hidden_PolicySeverity
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_PolicyInfo) GetPolicyVersion() string {
-	if x != nil && x.PolicyVersion != nil {
-		return *x.PolicyVersion
+	if x != nil {
+		if x.xxx_hidden_PolicyVersion != nil {
+			return *x.xxx_hidden_PolicyVersion
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SplunkViolation_PolicyInfo) SetPolicyId(v string) {
-	x.PolicyId = &v
+	x.xxx_hidden_PolicyId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
 }
 
 func (x *SplunkViolation_PolicyInfo) SetPolicyName(v string) {
-	x.PolicyName = &v
+	x.xxx_hidden_PolicyName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
 }
 
 func (x *SplunkViolation_PolicyInfo) SetPolicyDescription(v string) {
-	x.PolicyDescription = &v
+	x.xxx_hidden_PolicyDescription = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
 }
 
 func (x *SplunkViolation_PolicyInfo) SetPolicyRationale(v string) {
-	x.PolicyRationale = &v
+	x.xxx_hidden_PolicyRationale = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
 }
 
 func (x *SplunkViolation_PolicyInfo) SetPolicyCategories(v []string) {
-	x.PolicyCategories = v
+	x.xxx_hidden_PolicyCategories = v
 }
 
 func (x *SplunkViolation_PolicyInfo) SetPolicyLifecycleStages(v []string) {
-	x.PolicyLifecycleStages = v
+	x.xxx_hidden_PolicyLifecycleStages = v
 }
 
 func (x *SplunkViolation_PolicyInfo) SetPolicySeverity(v string) {
-	x.PolicySeverity = &v
+	x.xxx_hidden_PolicySeverity = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
 }
 
 func (x *SplunkViolation_PolicyInfo) SetPolicyVersion(v string) {
-	x.PolicyVersion = &v
+	x.xxx_hidden_PolicyVersion = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
 }
 
 func (x *SplunkViolation_PolicyInfo) HasPolicyId() bool {
 	if x == nil {
 		return false
 	}
-	return x.PolicyId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SplunkViolation_PolicyInfo) HasPolicyName() bool {
 	if x == nil {
 		return false
 	}
-	return x.PolicyName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SplunkViolation_PolicyInfo) HasPolicyDescription() bool {
 	if x == nil {
 		return false
 	}
-	return x.PolicyDescription != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *SplunkViolation_PolicyInfo) HasPolicyRationale() bool {
 	if x == nil {
 		return false
 	}
-	return x.PolicyRationale != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *SplunkViolation_PolicyInfo) HasPolicySeverity() bool {
 	if x == nil {
 		return false
 	}
-	return x.PolicySeverity != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *SplunkViolation_PolicyInfo) HasPolicyVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.PolicyVersion != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *SplunkViolation_PolicyInfo) ClearPolicyId() {
-	x.PolicyId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_PolicyId = nil
 }
 
 func (x *SplunkViolation_PolicyInfo) ClearPolicyName() {
-	x.PolicyName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_PolicyName = nil
 }
 
 func (x *SplunkViolation_PolicyInfo) ClearPolicyDescription() {
-	x.PolicyDescription = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_PolicyDescription = nil
 }
 
 func (x *SplunkViolation_PolicyInfo) ClearPolicyRationale() {
-	x.PolicyRationale = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_PolicyRationale = nil
 }
 
 func (x *SplunkViolation_PolicyInfo) ClearPolicySeverity() {
-	x.PolicySeverity = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_PolicySeverity = nil
 }
 
 func (x *SplunkViolation_PolicyInfo) ClearPolicyVersion() {
-	x.PolicyVersion = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_PolicyVersion = nil
 }
 
 type SplunkViolation_PolicyInfo_builder struct {
@@ -1851,14 +2094,32 @@ func (b0 SplunkViolation_PolicyInfo_builder) Build() *SplunkViolation_PolicyInfo
 	m0 := &SplunkViolation_PolicyInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PolicyId = b.PolicyId
-	x.PolicyName = b.PolicyName
-	x.PolicyDescription = b.PolicyDescription
-	x.PolicyRationale = b.PolicyRationale
-	x.PolicyCategories = b.PolicyCategories
-	x.PolicyLifecycleStages = b.PolicyLifecycleStages
-	x.PolicySeverity = b.PolicySeverity
-	x.PolicyVersion = b.PolicyVersion
+	if b.PolicyId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
+		x.xxx_hidden_PolicyId = b.PolicyId
+	}
+	if b.PolicyName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
+		x.xxx_hidden_PolicyName = b.PolicyName
+	}
+	if b.PolicyDescription != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
+		x.xxx_hidden_PolicyDescription = b.PolicyDescription
+	}
+	if b.PolicyRationale != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		x.xxx_hidden_PolicyRationale = b.PolicyRationale
+	}
+	x.xxx_hidden_PolicyCategories = b.PolicyCategories
+	x.xxx_hidden_PolicyLifecycleStages = b.PolicyLifecycleStages
+	if b.PolicySeverity != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_PolicySeverity = b.PolicySeverity
+	}
+	if b.PolicyVersion != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_PolicyVersion = b.PolicyVersion
+	}
 	return m0
 }
 
@@ -1956,7 +2217,7 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\x0epolicy_version\x18\b \x01(\tR\rpolicyVersionB\f\n" +
 	"\n" +
 	"EntityInfoBM\n" +
-	"\"io.stackrox.proto.api.integrationsZ\x1f./api/integrations;integrations\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\"io.stackrox.proto.api.integrationsZ\x1f./api/integrations;integrations\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_api_integrations_splunk_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_integrations_splunk_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
@@ -2018,8 +2279,8 @@ func file_api_integrations_splunk_service_proto_init() {
 		return
 	}
 	file_api_integrations_splunk_service_proto_msgTypes[1].OneofWrappers = []any{
-		(*SplunkViolation_DeploymentInfo_)(nil),
-		(*SplunkViolation_ResourceInfo_)(nil),
+		(*splunkViolation_DeploymentInfo_)(nil),
+		(*splunkViolation_ResourceInfo_)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

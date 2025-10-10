@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/role.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -119,27 +117,18 @@ func (x EffectiveAccessScope_State) Number() protoreflect.EnumNumber {
 // resource_to_access together with global_access or by referencing a
 // permission set by its id in permission_set_name.
 type Role struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// `name` and `description` are provided by the user and can be changed.
-	Name        *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Description *string `protobuf:"bytes,5,opt,name=description" json:"description,omitempty"`
-	// The associated PermissionSet and AccessScope for this Role.
-	PermissionSetId *string `protobuf:"bytes,6,opt,name=permission_set_id,json=permissionSetId" json:"permission_set_id,omitempty" sql:"type(uuid)"` // @gotags: sql:"type(uuid)"
-	AccessScopeId   *string `protobuf:"bytes,7,opt,name=access_scope_id,json=accessScopeId" json:"access_scope_id,omitempty" sql:"type(uuid)"`       // @gotags: sql:"type(uuid)"
-	// Minimum (not default!) access level for every resource. Can be extended
-	// below by explicit permissions but not shrunk.
-	// Deprecated 2021-04-20 in favor of `permission_set_id`.
-	// This field now should be always NO_ACCESS
-	//
-	// Deprecated: Marked as deprecated in storage/role.proto.
-	GlobalAccess *Access `protobuf:"varint,2,opt,name=global_access,json=globalAccess,enum=storage.Access" json:"global_access,omitempty"`
-	// Deprecated 2021-04-20 in favor of `permission_set_id`.
-	//
-	// Deprecated: Marked as deprecated in storage/role.proto.
-	ResourceToAccess map[string]Access `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
-	Traits           *Traits           `protobuf:"bytes,8,opt,name=traits" json:"traits,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name             *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Description      *string                `protobuf:"bytes,5,opt,name=description"`
+	xxx_hidden_PermissionSetId  *string                `protobuf:"bytes,6,opt,name=permission_set_id,json=permissionSetId"`
+	xxx_hidden_AccessScopeId    *string                `protobuf:"bytes,7,opt,name=access_scope_id,json=accessScopeId"`
+	xxx_hidden_GlobalAccess     Access                 `protobuf:"varint,2,opt,name=global_access,json=globalAccess,enum=storage.Access"`
+	xxx_hidden_ResourceToAccess map[string]Access      `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
+	xxx_hidden_Traits           *Traits                `protobuf:"bytes,8,opt,name=traits"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *Role) Reset() {
@@ -168,37 +157,51 @@ func (x *Role) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Role) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Role) GetDescription() string {
-	if x != nil && x.Description != nil {
-		return *x.Description
+	if x != nil {
+		if x.xxx_hidden_Description != nil {
+			return *x.xxx_hidden_Description
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Role) GetPermissionSetId() string {
-	if x != nil && x.PermissionSetId != nil {
-		return *x.PermissionSetId
+	if x != nil {
+		if x.xxx_hidden_PermissionSetId != nil {
+			return *x.xxx_hidden_PermissionSetId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Role) GetAccessScopeId() string {
-	if x != nil && x.AccessScopeId != nil {
-		return *x.AccessScopeId
+	if x != nil {
+		if x.xxx_hidden_AccessScopeId != nil {
+			return *x.xxx_hidden_AccessScopeId
+		}
+		return ""
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in storage/role.proto.
 func (x *Role) GetGlobalAccess() Access {
-	if x != nil && x.GlobalAccess != nil {
-		return *x.GlobalAccess
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			return x.xxx_hidden_GlobalAccess
+		}
 	}
 	return Access_NO_ACCESS
 }
@@ -206,74 +209,79 @@ func (x *Role) GetGlobalAccess() Access {
 // Deprecated: Marked as deprecated in storage/role.proto.
 func (x *Role) GetResourceToAccess() map[string]Access {
 	if x != nil {
-		return x.ResourceToAccess
+		return x.xxx_hidden_ResourceToAccess
 	}
 	return nil
 }
 
 func (x *Role) GetTraits() *Traits {
 	if x != nil {
-		return x.Traits
+		return x.xxx_hidden_Traits
 	}
 	return nil
 }
 
 func (x *Role) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *Role) SetDescription(v string) {
-	x.Description = &v
+	x.xxx_hidden_Description = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *Role) SetPermissionSetId(v string) {
-	x.PermissionSetId = &v
+	x.xxx_hidden_PermissionSetId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *Role) SetAccessScopeId(v string) {
-	x.AccessScopeId = &v
+	x.xxx_hidden_AccessScopeId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 // Deprecated: Marked as deprecated in storage/role.proto.
 func (x *Role) SetGlobalAccess(v Access) {
-	x.GlobalAccess = &v
+	x.xxx_hidden_GlobalAccess = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 // Deprecated: Marked as deprecated in storage/role.proto.
 func (x *Role) SetResourceToAccess(v map[string]Access) {
-	x.ResourceToAccess = v
+	x.xxx_hidden_ResourceToAccess = v
 }
 
 func (x *Role) SetTraits(v *Traits) {
-	x.Traits = v
+	x.xxx_hidden_Traits = v
 }
 
 func (x *Role) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Role) HasDescription() bool {
 	if x == nil {
 		return false
 	}
-	return x.Description != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Role) HasPermissionSetId() bool {
 	if x == nil {
 		return false
 	}
-	return x.PermissionSetId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Role) HasAccessScopeId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AccessScopeId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 // Deprecated: Marked as deprecated in storage/role.proto.
@@ -281,39 +289,44 @@ func (x *Role) HasGlobalAccess() bool {
 	if x == nil {
 		return false
 	}
-	return x.GlobalAccess != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Role) HasTraits() bool {
 	if x == nil {
 		return false
 	}
-	return x.Traits != nil
+	return x.xxx_hidden_Traits != nil
 }
 
 func (x *Role) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Role) ClearDescription() {
-	x.Description = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Description = nil
 }
 
 func (x *Role) ClearPermissionSetId() {
-	x.PermissionSetId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_PermissionSetId = nil
 }
 
 func (x *Role) ClearAccessScopeId() {
-	x.AccessScopeId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_AccessScopeId = nil
 }
 
 // Deprecated: Marked as deprecated in storage/role.proto.
 func (x *Role) ClearGlobalAccess() {
-	x.GlobalAccess = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_GlobalAccess = Access_NO_ACCESS
 }
 
 func (x *Role) ClearTraits() {
-	x.Traits = nil
+	x.xxx_hidden_Traits = nil
 }
 
 type Role_builder struct {
@@ -343,28 +356,43 @@ func (b0 Role_builder) Build() *Role {
 	m0 := &Role{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Description = b.Description
-	x.PermissionSetId = b.PermissionSetId
-	x.AccessScopeId = b.AccessScopeId
-	x.GlobalAccess = b.GlobalAccess
-	x.ResourceToAccess = b.ResourceToAccess
-	x.Traits = b.Traits
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Description != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Description = b.Description
+	}
+	if b.PermissionSetId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_PermissionSetId = b.PermissionSetId
+	}
+	if b.AccessScopeId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_AccessScopeId = b.AccessScopeId
+	}
+	if b.GlobalAccess != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_GlobalAccess = *b.GlobalAccess
+	}
+	x.xxx_hidden_ResourceToAccess = b.ResourceToAccess
+	x.xxx_hidden_Traits = b.Traits
 	return m0
 }
 
 // This encodes a set of permissions for StackRox resources.
 type PermissionSet struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// id is generated and cannot be changed.
-	Id *string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	// `name` and `description` are provided by the user and can be changed.
-	Name             *string           `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Description      *string           `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
-	ResourceToAccess map[string]Access `protobuf:"bytes,4,rep,name=resource_to_access,json=resourceToAccess" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
-	Traits           *Traits           `protobuf:"bytes,5,opt,name=traits" json:"traits,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id               *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name             *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Description      *string                `protobuf:"bytes,3,opt,name=description"`
+	xxx_hidden_ResourceToAccess map[string]Access      `protobuf:"bytes,4,rep,name=resource_to_access,json=resourceToAccess" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
+	xxx_hidden_Traits           *Traits                `protobuf:"bytes,5,opt,name=traits"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *PermissionSet) Reset() {
@@ -393,102 +421,117 @@ func (x *PermissionSet) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PermissionSet) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PermissionSet) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PermissionSet) GetDescription() string {
-	if x != nil && x.Description != nil {
-		return *x.Description
+	if x != nil {
+		if x.xxx_hidden_Description != nil {
+			return *x.xxx_hidden_Description
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PermissionSet) GetResourceToAccess() map[string]Access {
 	if x != nil {
-		return x.ResourceToAccess
+		return x.xxx_hidden_ResourceToAccess
 	}
 	return nil
 }
 
 func (x *PermissionSet) GetTraits() *Traits {
 	if x != nil {
-		return x.Traits
+		return x.xxx_hidden_Traits
 	}
 	return nil
 }
 
 func (x *PermissionSet) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *PermissionSet) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *PermissionSet) SetDescription(v string) {
-	x.Description = &v
+	x.xxx_hidden_Description = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *PermissionSet) SetResourceToAccess(v map[string]Access) {
-	x.ResourceToAccess = v
+	x.xxx_hidden_ResourceToAccess = v
 }
 
 func (x *PermissionSet) SetTraits(v *Traits) {
-	x.Traits = v
+	x.xxx_hidden_Traits = v
 }
 
 func (x *PermissionSet) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PermissionSet) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *PermissionSet) HasDescription() bool {
 	if x == nil {
 		return false
 	}
-	return x.Description != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *PermissionSet) HasTraits() bool {
 	if x == nil {
 		return false
 	}
-	return x.Traits != nil
+	return x.xxx_hidden_Traits != nil
 }
 
 func (x *PermissionSet) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *PermissionSet) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *PermissionSet) ClearDescription() {
-	x.Description = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Description = nil
 }
 
 func (x *PermissionSet) ClearTraits() {
-	x.Traits = nil
+	x.xxx_hidden_Traits = nil
 }
 
 type PermissionSet_builder struct {
@@ -507,27 +550,36 @@ func (b0 PermissionSet_builder) Build() *PermissionSet {
 	m0 := &PermissionSet{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Description = b.Description
-	x.ResourceToAccess = b.ResourceToAccess
-	x.Traits = b.Traits
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Description != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Description = b.Description
+	}
+	x.xxx_hidden_ResourceToAccess = b.ResourceToAccess
+	x.xxx_hidden_Traits = b.Traits
 	return m0
 }
 
 // Simple access scope is a (simple) selection criteria for scoped resources.
 // It does *not* allow multi-component AND-rules nor set operations on names.
 type SimpleAccessScope struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// `id` is generated and cannot be changed.
-	Id *string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	// `name` and `description` are provided by the user and can be changed.
-	Name          *string                  `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Description   *string                  `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
-	Rules         *SimpleAccessScope_Rules `protobuf:"bytes,4,opt,name=rules" json:"rules,omitempty"`
-	Traits        *Traits                  `protobuf:"bytes,5,opt,name=traits" json:"traits,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                  `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                  `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Description *string                  `protobuf:"bytes,3,opt,name=description"`
+	xxx_hidden_Rules       *SimpleAccessScope_Rules `protobuf:"bytes,4,opt,name=rules"`
+	xxx_hidden_Traits      *Traits                  `protobuf:"bytes,5,opt,name=traits"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SimpleAccessScope) Reset() {
@@ -556,113 +608,128 @@ func (x *SimpleAccessScope) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SimpleAccessScope) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SimpleAccessScope) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SimpleAccessScope) GetDescription() string {
-	if x != nil && x.Description != nil {
-		return *x.Description
+	if x != nil {
+		if x.xxx_hidden_Description != nil {
+			return *x.xxx_hidden_Description
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SimpleAccessScope) GetRules() *SimpleAccessScope_Rules {
 	if x != nil {
-		return x.Rules
+		return x.xxx_hidden_Rules
 	}
 	return nil
 }
 
 func (x *SimpleAccessScope) GetTraits() *Traits {
 	if x != nil {
-		return x.Traits
+		return x.xxx_hidden_Traits
 	}
 	return nil
 }
 
 func (x *SimpleAccessScope) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *SimpleAccessScope) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *SimpleAccessScope) SetDescription(v string) {
-	x.Description = &v
+	x.xxx_hidden_Description = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *SimpleAccessScope) SetRules(v *SimpleAccessScope_Rules) {
-	x.Rules = v
+	x.xxx_hidden_Rules = v
 }
 
 func (x *SimpleAccessScope) SetTraits(v *Traits) {
-	x.Traits = v
+	x.xxx_hidden_Traits = v
 }
 
 func (x *SimpleAccessScope) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SimpleAccessScope) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SimpleAccessScope) HasDescription() bool {
 	if x == nil {
 		return false
 	}
-	return x.Description != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *SimpleAccessScope) HasRules() bool {
 	if x == nil {
 		return false
 	}
-	return x.Rules != nil
+	return x.xxx_hidden_Rules != nil
 }
 
 func (x *SimpleAccessScope) HasTraits() bool {
 	if x == nil {
 		return false
 	}
-	return x.Traits != nil
+	return x.xxx_hidden_Traits != nil
 }
 
 func (x *SimpleAccessScope) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *SimpleAccessScope) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *SimpleAccessScope) ClearDescription() {
-	x.Description = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Description = nil
 }
 
 func (x *SimpleAccessScope) ClearRules() {
-	x.Rules = nil
+	x.xxx_hidden_Rules = nil
 }
 
 func (x *SimpleAccessScope) ClearTraits() {
-	x.Traits = nil
+	x.xxx_hidden_Traits = nil
 }
 
 type SimpleAccessScope_builder struct {
@@ -681,11 +748,20 @@ func (b0 SimpleAccessScope_builder) Build() *SimpleAccessScope {
 	m0 := &SimpleAccessScope{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Description = b.Description
-	x.Rules = b.Rules
-	x.Traits = b.Traits
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Description != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Description = b.Description
+	}
+	x.xxx_hidden_Rules = b.Rules
+	x.xxx_hidden_Traits = b.Traits
 	return m0
 }
 
@@ -696,10 +772,10 @@ func (b0 SimpleAccessScope_builder) Build() *SimpleAccessScope {
 // EffectiveAccessScope represents a tree with nodes marked as included and
 // excluded. If a node is included, all its child nodes are included.
 type EffectiveAccessScope struct {
-	state         protoimpl.MessageState          `protogen:"hybrid.v1"`
-	Clusters      []*EffectiveAccessScope_Cluster `protobuf:"bytes,1,rep,name=clusters" json:"clusters,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Clusters *[]*EffectiveAccessScope_Cluster `protobuf:"bytes,1,rep,name=clusters"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *EffectiveAccessScope) Reset() {
@@ -729,13 +805,15 @@ func (x *EffectiveAccessScope) ProtoReflect() protoreflect.Message {
 
 func (x *EffectiveAccessScope) GetClusters() []*EffectiveAccessScope_Cluster {
 	if x != nil {
-		return x.Clusters
+		if x.xxx_hidden_Clusters != nil {
+			return *x.xxx_hidden_Clusters
+		}
 	}
 	return nil
 }
 
 func (x *EffectiveAccessScope) SetClusters(v []*EffectiveAccessScope_Cluster) {
-	x.Clusters = v
+	x.xxx_hidden_Clusters = &v
 }
 
 type EffectiveAccessScope_builder struct {
@@ -748,7 +826,7 @@ func (b0 EffectiveAccessScope_builder) Build() *EffectiveAccessScope {
 	m0 := &EffectiveAccessScope{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Clusters = b.Clusters
+	x.xxx_hidden_Clusters = &b.Clusters
 	return m0
 }
 
@@ -756,13 +834,13 @@ func (b0 EffectiveAccessScope_builder) Build() *EffectiveAccessScope {
 // joined by logical OR: if there exists a rule allowing resource `x`,
 // `x` is in the access scope.
 type SimpleAccessScope_Rules struct {
-	state                   protoimpl.MessageState               `protogen:"hybrid.v1"`
-	IncludedClusters        []string                             `protobuf:"bytes,1,rep,name=included_clusters,json=includedClusters" json:"included_clusters,omitempty"`
-	IncludedNamespaces      []*SimpleAccessScope_Rules_Namespace `protobuf:"bytes,2,rep,name=included_namespaces,json=includedNamespaces" json:"included_namespaces,omitempty"`
-	ClusterLabelSelectors   []*SetBasedLabelSelector             `protobuf:"bytes,3,rep,name=cluster_label_selectors,json=clusterLabelSelectors" json:"cluster_label_selectors,omitempty"`
-	NamespaceLabelSelectors []*SetBasedLabelSelector             `protobuf:"bytes,4,rep,name=namespace_label_selectors,json=namespaceLabelSelectors" json:"namespace_label_selectors,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                              protoimpl.MessageState                `protogen:"opaque.v1"`
+	xxx_hidden_IncludedClusters        []string                              `protobuf:"bytes,1,rep,name=included_clusters,json=includedClusters"`
+	xxx_hidden_IncludedNamespaces      *[]*SimpleAccessScope_Rules_Namespace `protobuf:"bytes,2,rep,name=included_namespaces,json=includedNamespaces"`
+	xxx_hidden_ClusterLabelSelectors   *[]*SetBasedLabelSelector             `protobuf:"bytes,3,rep,name=cluster_label_selectors,json=clusterLabelSelectors"`
+	xxx_hidden_NamespaceLabelSelectors *[]*SetBasedLabelSelector             `protobuf:"bytes,4,rep,name=namespace_label_selectors,json=namespaceLabelSelectors"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *SimpleAccessScope_Rules) Reset() {
@@ -792,46 +870,52 @@ func (x *SimpleAccessScope_Rules) ProtoReflect() protoreflect.Message {
 
 func (x *SimpleAccessScope_Rules) GetIncludedClusters() []string {
 	if x != nil {
-		return x.IncludedClusters
+		return x.xxx_hidden_IncludedClusters
 	}
 	return nil
 }
 
 func (x *SimpleAccessScope_Rules) GetIncludedNamespaces() []*SimpleAccessScope_Rules_Namespace {
 	if x != nil {
-		return x.IncludedNamespaces
+		if x.xxx_hidden_IncludedNamespaces != nil {
+			return *x.xxx_hidden_IncludedNamespaces
+		}
 	}
 	return nil
 }
 
 func (x *SimpleAccessScope_Rules) GetClusterLabelSelectors() []*SetBasedLabelSelector {
 	if x != nil {
-		return x.ClusterLabelSelectors
+		if x.xxx_hidden_ClusterLabelSelectors != nil {
+			return *x.xxx_hidden_ClusterLabelSelectors
+		}
 	}
 	return nil
 }
 
 func (x *SimpleAccessScope_Rules) GetNamespaceLabelSelectors() []*SetBasedLabelSelector {
 	if x != nil {
-		return x.NamespaceLabelSelectors
+		if x.xxx_hidden_NamespaceLabelSelectors != nil {
+			return *x.xxx_hidden_NamespaceLabelSelectors
+		}
 	}
 	return nil
 }
 
 func (x *SimpleAccessScope_Rules) SetIncludedClusters(v []string) {
-	x.IncludedClusters = v
+	x.xxx_hidden_IncludedClusters = v
 }
 
 func (x *SimpleAccessScope_Rules) SetIncludedNamespaces(v []*SimpleAccessScope_Rules_Namespace) {
-	x.IncludedNamespaces = v
+	x.xxx_hidden_IncludedNamespaces = &v
 }
 
 func (x *SimpleAccessScope_Rules) SetClusterLabelSelectors(v []*SetBasedLabelSelector) {
-	x.ClusterLabelSelectors = v
+	x.xxx_hidden_ClusterLabelSelectors = &v
 }
 
 func (x *SimpleAccessScope_Rules) SetNamespaceLabelSelectors(v []*SetBasedLabelSelector) {
-	x.NamespaceLabelSelectors = v
+	x.xxx_hidden_NamespaceLabelSelectors = &v
 }
 
 type SimpleAccessScope_Rules_builder struct {
@@ -847,20 +931,21 @@ func (b0 SimpleAccessScope_Rules_builder) Build() *SimpleAccessScope_Rules {
 	m0 := &SimpleAccessScope_Rules{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.IncludedClusters = b.IncludedClusters
-	x.IncludedNamespaces = b.IncludedNamespaces
-	x.ClusterLabelSelectors = b.ClusterLabelSelectors
-	x.NamespaceLabelSelectors = b.NamespaceLabelSelectors
+	x.xxx_hidden_IncludedClusters = b.IncludedClusters
+	x.xxx_hidden_IncludedNamespaces = &b.IncludedNamespaces
+	x.xxx_hidden_ClusterLabelSelectors = &b.ClusterLabelSelectors
+	x.xxx_hidden_NamespaceLabelSelectors = &b.NamespaceLabelSelectors
 	return m0
 }
 
 type SimpleAccessScope_Rules_Namespace struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Both fields must be set.
-	ClusterName   *string `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
-	NamespaceName *string `protobuf:"bytes,2,opt,name=namespace_name,json=namespaceName" json:"namespace_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterName   *string                `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_NamespaceName *string                `protobuf:"bytes,2,opt,name=namespace_name,json=namespaceName"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) Reset() {
@@ -889,47 +974,57 @@ func (x *SimpleAccessScope_Rules_Namespace) ProtoReflect() protoreflect.Message 
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) GetNamespaceName() string {
-	if x != nil && x.NamespaceName != nil {
-		return *x.NamespaceName
+	if x != nil {
+		if x.xxx_hidden_NamespaceName != nil {
+			return *x.xxx_hidden_NamespaceName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) SetNamespaceName(v string) {
-	x.NamespaceName = &v
+	x.xxx_hidden_NamespaceName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) HasNamespaceName() bool {
 	if x == nil {
 		return false
 	}
-	return x.NamespaceName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) ClearNamespaceName() {
-	x.NamespaceName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_NamespaceName = nil
 }
 
 type SimpleAccessScope_Rules_Namespace_builder struct {
@@ -944,19 +1039,27 @@ func (b0 SimpleAccessScope_Rules_Namespace_builder) Build() *SimpleAccessScope_R
 	m0 := &SimpleAccessScope_Rules_Namespace{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterName = b.ClusterName
-	x.NamespaceName = b.NamespaceName
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	if b.NamespaceName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_NamespaceName = b.NamespaceName
+	}
 	return m0
 }
 
 type EffectiveAccessScope_Namespace struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Id            *string                     `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name          *string                     `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	State         *EffectiveAccessScope_State `protobuf:"varint,3,opt,name=state,enum=storage.EffectiveAccessScope_State" json:"state,omitempty"`
-	Labels        map[string]string           `protobuf:"bytes,4,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                    `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                    `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_State       EffectiveAccessScope_State `protobuf:"varint,3,opt,name=state,enum=storage.EffectiveAccessScope_State"`
+	xxx_hidden_Labels      map[string]string          `protobuf:"bytes,4,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *EffectiveAccessScope_Namespace) Reset() {
@@ -985,80 +1088,94 @@ func (x *EffectiveAccessScope_Namespace) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EffectiveAccessScope_Namespace) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *EffectiveAccessScope_Namespace) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *EffectiveAccessScope_Namespace) GetState() EffectiveAccessScope_State {
-	if x != nil && x.State != nil {
-		return *x.State
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_State
+		}
 	}
 	return EffectiveAccessScope_UNKNOWN
 }
 
 func (x *EffectiveAccessScope_Namespace) GetLabels() map[string]string {
 	if x != nil {
-		return x.Labels
+		return x.xxx_hidden_Labels
 	}
 	return nil
 }
 
 func (x *EffectiveAccessScope_Namespace) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *EffectiveAccessScope_Namespace) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *EffectiveAccessScope_Namespace) SetState(v EffectiveAccessScope_State) {
-	x.State = &v
+	x.xxx_hidden_State = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *EffectiveAccessScope_Namespace) SetLabels(v map[string]string) {
-	x.Labels = v
+	x.xxx_hidden_Labels = v
 }
 
 func (x *EffectiveAccessScope_Namespace) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *EffectiveAccessScope_Namespace) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *EffectiveAccessScope_Namespace) HasState() bool {
 	if x == nil {
 		return false
 	}
-	return x.State != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *EffectiveAccessScope_Namespace) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *EffectiveAccessScope_Namespace) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *EffectiveAccessScope_Namespace) ClearState() {
-	x.State = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_State = EffectiveAccessScope_UNKNOWN
 }
 
 type EffectiveAccessScope_Namespace_builder struct {
@@ -1074,22 +1191,33 @@ func (b0 EffectiveAccessScope_Namespace_builder) Build() *EffectiveAccessScope_N
 	m0 := &EffectiveAccessScope_Namespace{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.State = b.State
-	x.Labels = b.Labels
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.State != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_State = *b.State
+	}
+	x.xxx_hidden_Labels = b.Labels
 	return m0
 }
 
 type EffectiveAccessScope_Cluster struct {
-	state         protoimpl.MessageState            `protogen:"hybrid.v1"`
-	Id            *string                           `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name          *string                           `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	State         *EffectiveAccessScope_State       `protobuf:"varint,3,opt,name=state,enum=storage.EffectiveAccessScope_State" json:"state,omitempty"`
-	Labels        map[string]string                 `protobuf:"bytes,5,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Namespaces    []*EffectiveAccessScope_Namespace `protobuf:"bytes,4,rep,name=namespaces" json:"namespaces,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                            `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                            `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_State       EffectiveAccessScope_State         `protobuf:"varint,3,opt,name=state,enum=storage.EffectiveAccessScope_State"`
+	xxx_hidden_Labels      map[string]string                  `protobuf:"bytes,5,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_Namespaces  *[]*EffectiveAccessScope_Namespace `protobuf:"bytes,4,rep,name=namespaces"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *EffectiveAccessScope_Cluster) Reset() {
@@ -1118,91 +1246,107 @@ func (x *EffectiveAccessScope_Cluster) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EffectiveAccessScope_Cluster) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *EffectiveAccessScope_Cluster) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *EffectiveAccessScope_Cluster) GetState() EffectiveAccessScope_State {
-	if x != nil && x.State != nil {
-		return *x.State
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_State
+		}
 	}
 	return EffectiveAccessScope_UNKNOWN
 }
 
 func (x *EffectiveAccessScope_Cluster) GetLabels() map[string]string {
 	if x != nil {
-		return x.Labels
+		return x.xxx_hidden_Labels
 	}
 	return nil
 }
 
 func (x *EffectiveAccessScope_Cluster) GetNamespaces() []*EffectiveAccessScope_Namespace {
 	if x != nil {
-		return x.Namespaces
+		if x.xxx_hidden_Namespaces != nil {
+			return *x.xxx_hidden_Namespaces
+		}
 	}
 	return nil
 }
 
 func (x *EffectiveAccessScope_Cluster) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *EffectiveAccessScope_Cluster) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *EffectiveAccessScope_Cluster) SetState(v EffectiveAccessScope_State) {
-	x.State = &v
+	x.xxx_hidden_State = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *EffectiveAccessScope_Cluster) SetLabels(v map[string]string) {
-	x.Labels = v
+	x.xxx_hidden_Labels = v
 }
 
 func (x *EffectiveAccessScope_Cluster) SetNamespaces(v []*EffectiveAccessScope_Namespace) {
-	x.Namespaces = v
+	x.xxx_hidden_Namespaces = &v
 }
 
 func (x *EffectiveAccessScope_Cluster) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *EffectiveAccessScope_Cluster) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *EffectiveAccessScope_Cluster) HasState() bool {
 	if x == nil {
 		return false
 	}
-	return x.State != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *EffectiveAccessScope_Cluster) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *EffectiveAccessScope_Cluster) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *EffectiveAccessScope_Cluster) ClearState() {
-	x.State = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_State = EffectiveAccessScope_UNKNOWN
 }
 
 type EffectiveAccessScope_Cluster_builder struct {
@@ -1219,11 +1363,20 @@ func (b0 EffectiveAccessScope_Cluster_builder) Build() *EffectiveAccessScope_Clu
 	m0 := &EffectiveAccessScope_Cluster{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.State = b.State
-	x.Labels = b.Labels
-	x.Namespaces = b.Namespaces
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.State != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_State = *b.State
+	}
+	x.xxx_hidden_Labels = b.Labels
+	x.xxx_hidden_Namespaces = &b.Namespaces
 	return m0
 }
 
@@ -1296,7 +1449,7 @@ const file_storage_role_proto_rawDesc = "" +
 	"\tNO_ACCESS\x10\x00\x12\x0f\n" +
 	"\vREAD_ACCESS\x10\x01\x12\x15\n" +
 	"\x11READ_WRITE_ACCESS\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_role_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_role_proto_msgTypes = make([]protoimpl.MessageInfo, 12)

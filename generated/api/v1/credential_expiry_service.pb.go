@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/credential_expiry_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -76,7 +74,7 @@ func (x GetCertExpiry_Component) Number() protoreflect.EnumNumber {
 }
 
 type GetCertExpiry struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,10 +117,12 @@ func (b0 GetCertExpiry_builder) Build() *GetCertExpiry {
 }
 
 type GetCertExpiry_Request struct {
-	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
-	Component     *GetCertExpiry_Component `protobuf:"varint,1,opt,name=component,enum=v1.GetCertExpiry_Component" json:"component,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Component   GetCertExpiry_Component `protobuf:"varint,1,opt,name=component,enum=v1.GetCertExpiry_Component"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetCertExpiry_Request) Reset() {
@@ -151,25 +151,29 @@ func (x *GetCertExpiry_Request) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GetCertExpiry_Request) GetComponent() GetCertExpiry_Component {
-	if x != nil && x.Component != nil {
-		return *x.Component
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Component
+		}
 	}
 	return GetCertExpiry_UNKNOWN
 }
 
 func (x *GetCertExpiry_Request) SetComponent(v GetCertExpiry_Component) {
-	x.Component = &v
+	x.xxx_hidden_Component = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *GetCertExpiry_Request) HasComponent() bool {
 	if x == nil {
 		return false
 	}
-	return x.Component != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetCertExpiry_Request) ClearComponent() {
-	x.Component = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Component = GetCertExpiry_UNKNOWN
 }
 
 type GetCertExpiry_Request_builder struct {
@@ -182,15 +186,18 @@ func (b0 GetCertExpiry_Request_builder) Build() *GetCertExpiry_Request {
 	m0 := &GetCertExpiry_Request{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Component = b.Component
+	if b.Component != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Component = *b.Component
+	}
 	return m0
 }
 
 type GetCertExpiry_Response struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Expiry        *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=expiry" json:"expiry,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Expiry *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=expiry"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetCertExpiry_Response) Reset() {
@@ -220,24 +227,24 @@ func (x *GetCertExpiry_Response) ProtoReflect() protoreflect.Message {
 
 func (x *GetCertExpiry_Response) GetExpiry() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Expiry
+		return x.xxx_hidden_Expiry
 	}
 	return nil
 }
 
 func (x *GetCertExpiry_Response) SetExpiry(v *timestamppb.Timestamp) {
-	x.Expiry = v
+	x.xxx_hidden_Expiry = v
 }
 
 func (x *GetCertExpiry_Response) HasExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.Expiry != nil
+	return x.xxx_hidden_Expiry != nil
 }
 
 func (x *GetCertExpiry_Response) ClearExpiry() {
-	x.Expiry = nil
+	x.xxx_hidden_Expiry = nil
 }
 
 type GetCertExpiry_Response_builder struct {
@@ -250,7 +257,7 @@ func (b0 GetCertExpiry_Response_builder) Build() *GetCertExpiry_Response {
 	m0 := &GetCertExpiry_Response{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Expiry = b.Expiry
+	x.xxx_hidden_Expiry = b.Expiry
 	return m0
 }
 
@@ -274,7 +281,7 @@ const file_api_v1_credential_expiry_service_proto_rawDesc = "" +
 	"CENTRAL_DB\x10\x042\x7f\n" +
 	"\x17CredentialExpiryService\x12d\n" +
 	"\rGetCertExpiry\x12\x19.v1.GetCertExpiry.Request\x1a\x1a.v1.GetCertExpiry.Response\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/credentialexpiryB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x00b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x00b\beditionsp\xe8\a"
 
 var file_api_v1_credential_expiry_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v1_credential_expiry_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/telemetry.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -72,10 +70,12 @@ func (x PullTelemetryDataRequest_TelemetryDataType) Number() protoreflect.EnumNu
 }
 
 type CancelPullTelemetryDataRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	RequestId     *string                `protobuf:"bytes,1,opt,name=request_id,json=requestId" json:"request_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RequestId   *string                `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CancelPullTelemetryDataRequest) Reset() {
@@ -104,25 +104,30 @@ func (x *CancelPullTelemetryDataRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CancelPullTelemetryDataRequest) GetRequestId() string {
-	if x != nil && x.RequestId != nil {
-		return *x.RequestId
+	if x != nil {
+		if x.xxx_hidden_RequestId != nil {
+			return *x.xxx_hidden_RequestId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CancelPullTelemetryDataRequest) SetRequestId(v string) {
-	x.RequestId = &v
+	x.xxx_hidden_RequestId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *CancelPullTelemetryDataRequest) HasRequestId() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CancelPullTelemetryDataRequest) ClearRequestId() {
-	x.RequestId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_RequestId = nil
 }
 
 type CancelPullTelemetryDataRequest_builder struct {
@@ -135,20 +140,25 @@ func (b0 CancelPullTelemetryDataRequest_builder) Build() *CancelPullTelemetryDat
 	m0 := &CancelPullTelemetryDataRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestId = b.RequestId
+	if b.RequestId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_RequestId = b.RequestId
+	}
 	return m0
 }
 
 // PullTelemetryDataRequest requests telemetry at Sensor
 type PullTelemetryDataRequest struct {
-	state                  protoimpl.MessageState                      `protogen:"hybrid.v1"`
-	RequestId              *string                                     `protobuf:"bytes,1,opt,name=request_id,json=requestId" json:"request_id,omitempty"`
-	DataType               *PullTelemetryDataRequest_TelemetryDataType `protobuf:"varint,2,opt,name=data_type,json=dataType,enum=central.PullTelemetryDataRequest_TelemetryDataType" json:"data_type,omitempty"`
-	TimeoutMs              *int64                                      `protobuf:"varint,3,opt,name=timeout_ms,json=timeoutMs" json:"timeout_ms,omitempty"`
-	Since                  *timestamppb.Timestamp                      `protobuf:"bytes,4,opt,name=since" json:"since,omitempty"`
-	WithComplianceOperator *bool                                       `protobuf:"varint,5,opt,name=with_compliance_operator,json=withComplianceOperator" json:"with_compliance_operator,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                             protoimpl.MessageState                     `protogen:"opaque.v1"`
+	xxx_hidden_RequestId              *string                                    `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
+	xxx_hidden_DataType               PullTelemetryDataRequest_TelemetryDataType `protobuf:"varint,2,opt,name=data_type,json=dataType,enum=central.PullTelemetryDataRequest_TelemetryDataType"`
+	xxx_hidden_TimeoutMs              int64                                      `protobuf:"varint,3,opt,name=timeout_ms,json=timeoutMs"`
+	xxx_hidden_Since                  *timestamppb.Timestamp                     `protobuf:"bytes,4,opt,name=since"`
+	xxx_hidden_WithComplianceOperator bool                                       `protobuf:"varint,5,opt,name=with_compliance_operator,json=withComplianceOperator"`
+	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
+	XXX_presence                      [1]uint32
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *PullTelemetryDataRequest) Reset() {
@@ -177,113 +187,126 @@ func (x *PullTelemetryDataRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PullTelemetryDataRequest) GetRequestId() string {
-	if x != nil && x.RequestId != nil {
-		return *x.RequestId
+	if x != nil {
+		if x.xxx_hidden_RequestId != nil {
+			return *x.xxx_hidden_RequestId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PullTelemetryDataRequest) GetDataType() PullTelemetryDataRequest_TelemetryDataType {
-	if x != nil && x.DataType != nil {
-		return *x.DataType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_DataType
+		}
 	}
 	return PullTelemetryDataRequest_UNKNOWN
 }
 
 func (x *PullTelemetryDataRequest) GetTimeoutMs() int64 {
-	if x != nil && x.TimeoutMs != nil {
-		return *x.TimeoutMs
+	if x != nil {
+		return x.xxx_hidden_TimeoutMs
 	}
 	return 0
 }
 
 func (x *PullTelemetryDataRequest) GetSince() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Since
+		return x.xxx_hidden_Since
 	}
 	return nil
 }
 
 func (x *PullTelemetryDataRequest) GetWithComplianceOperator() bool {
-	if x != nil && x.WithComplianceOperator != nil {
-		return *x.WithComplianceOperator
+	if x != nil {
+		return x.xxx_hidden_WithComplianceOperator
 	}
 	return false
 }
 
 func (x *PullTelemetryDataRequest) SetRequestId(v string) {
-	x.RequestId = &v
+	x.xxx_hidden_RequestId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *PullTelemetryDataRequest) SetDataType(v PullTelemetryDataRequest_TelemetryDataType) {
-	x.DataType = &v
+	x.xxx_hidden_DataType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *PullTelemetryDataRequest) SetTimeoutMs(v int64) {
-	x.TimeoutMs = &v
+	x.xxx_hidden_TimeoutMs = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *PullTelemetryDataRequest) SetSince(v *timestamppb.Timestamp) {
-	x.Since = v
+	x.xxx_hidden_Since = v
 }
 
 func (x *PullTelemetryDataRequest) SetWithComplianceOperator(v bool) {
-	x.WithComplianceOperator = &v
+	x.xxx_hidden_WithComplianceOperator = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *PullTelemetryDataRequest) HasRequestId() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PullTelemetryDataRequest) HasDataType() bool {
 	if x == nil {
 		return false
 	}
-	return x.DataType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *PullTelemetryDataRequest) HasTimeoutMs() bool {
 	if x == nil {
 		return false
 	}
-	return x.TimeoutMs != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *PullTelemetryDataRequest) HasSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.Since != nil
+	return x.xxx_hidden_Since != nil
 }
 
 func (x *PullTelemetryDataRequest) HasWithComplianceOperator() bool {
 	if x == nil {
 		return false
 	}
-	return x.WithComplianceOperator != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *PullTelemetryDataRequest) ClearRequestId() {
-	x.RequestId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_RequestId = nil
 }
 
 func (x *PullTelemetryDataRequest) ClearDataType() {
-	x.DataType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_DataType = PullTelemetryDataRequest_UNKNOWN
 }
 
 func (x *PullTelemetryDataRequest) ClearTimeoutMs() {
-	x.TimeoutMs = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_TimeoutMs = 0
 }
 
 func (x *PullTelemetryDataRequest) ClearSince() {
-	x.Since = nil
+	x.xxx_hidden_Since = nil
 }
 
 func (x *PullTelemetryDataRequest) ClearWithComplianceOperator() {
-	x.WithComplianceOperator = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_WithComplianceOperator = false
 }
 
 type PullTelemetryDataRequest_builder struct {
@@ -300,25 +323,31 @@ func (b0 PullTelemetryDataRequest_builder) Build() *PullTelemetryDataRequest {
 	m0 := &PullTelemetryDataRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestId = b.RequestId
-	x.DataType = b.DataType
-	x.TimeoutMs = b.TimeoutMs
-	x.Since = b.Since
-	x.WithComplianceOperator = b.WithComplianceOperator
+	if b.RequestId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_RequestId = b.RequestId
+	}
+	if b.DataType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_DataType = *b.DataType
+	}
+	if b.TimeoutMs != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_TimeoutMs = *b.TimeoutMs
+	}
+	x.xxx_hidden_Since = b.Since
+	if b.WithComplianceOperator != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_WithComplianceOperator = *b.WithComplianceOperator
+	}
 	return m0
 }
 
 type TelemetryResponsePayload struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Payload:
-	//
-	//	*TelemetryResponsePayload_EndOfStream_
-	//	*TelemetryResponsePayload_KubernetesInfo_
-	//	*TelemetryResponsePayload_ClusterInfo_
-	//	*TelemetryResponsePayload_MetricsInfo
-	Payload       isTelemetryResponsePayload_Payload `protobuf_oneof:"payload"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Payload isTelemetryResponsePayload_Payload `protobuf_oneof:"payload"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *TelemetryResponsePayload) Reset() {
@@ -346,16 +375,9 @@ func (x *TelemetryResponsePayload) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *TelemetryResponsePayload) GetPayload() isTelemetryResponsePayload_Payload {
-	if x != nil {
-		return x.Payload
-	}
-	return nil
-}
-
 func (x *TelemetryResponsePayload) GetEndOfStream() *TelemetryResponsePayload_EndOfStream {
 	if x != nil {
-		if x, ok := x.Payload.(*TelemetryResponsePayload_EndOfStream_); ok {
+		if x, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_EndOfStream_); ok {
 			return x.EndOfStream
 		}
 	}
@@ -364,7 +386,7 @@ func (x *TelemetryResponsePayload) GetEndOfStream() *TelemetryResponsePayload_En
 
 func (x *TelemetryResponsePayload) GetKubernetesInfo() *TelemetryResponsePayload_KubernetesInfo {
 	if x != nil {
-		if x, ok := x.Payload.(*TelemetryResponsePayload_KubernetesInfo_); ok {
+		if x, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_KubernetesInfo_); ok {
 			return x.KubernetesInfo
 		}
 	}
@@ -373,7 +395,7 @@ func (x *TelemetryResponsePayload) GetKubernetesInfo() *TelemetryResponsePayload
 
 func (x *TelemetryResponsePayload) GetClusterInfo() *TelemetryResponsePayload_ClusterInfo {
 	if x != nil {
-		if x, ok := x.Payload.(*TelemetryResponsePayload_ClusterInfo_); ok {
+		if x, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_ClusterInfo_); ok {
 			return x.ClusterInfo
 		}
 	}
@@ -382,7 +404,7 @@ func (x *TelemetryResponsePayload) GetClusterInfo() *TelemetryResponsePayload_Cl
 
 func (x *TelemetryResponsePayload) GetMetricsInfo() *TelemetryResponsePayload_KubernetesInfo {
 	if x != nil {
-		if x, ok := x.Payload.(*TelemetryResponsePayload_MetricsInfo); ok {
+		if x, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_MetricsInfo); ok {
 			return x.MetricsInfo
 		}
 	}
@@ -391,48 +413,48 @@ func (x *TelemetryResponsePayload) GetMetricsInfo() *TelemetryResponsePayload_Ku
 
 func (x *TelemetryResponsePayload) SetEndOfStream(v *TelemetryResponsePayload_EndOfStream) {
 	if v == nil {
-		x.Payload = nil
+		x.xxx_hidden_Payload = nil
 		return
 	}
-	x.Payload = &TelemetryResponsePayload_EndOfStream_{v}
+	x.xxx_hidden_Payload = &telemetryResponsePayload_EndOfStream_{v}
 }
 
 func (x *TelemetryResponsePayload) SetKubernetesInfo(v *TelemetryResponsePayload_KubernetesInfo) {
 	if v == nil {
-		x.Payload = nil
+		x.xxx_hidden_Payload = nil
 		return
 	}
-	x.Payload = &TelemetryResponsePayload_KubernetesInfo_{v}
+	x.xxx_hidden_Payload = &telemetryResponsePayload_KubernetesInfo_{v}
 }
 
 func (x *TelemetryResponsePayload) SetClusterInfo(v *TelemetryResponsePayload_ClusterInfo) {
 	if v == nil {
-		x.Payload = nil
+		x.xxx_hidden_Payload = nil
 		return
 	}
-	x.Payload = &TelemetryResponsePayload_ClusterInfo_{v}
+	x.xxx_hidden_Payload = &telemetryResponsePayload_ClusterInfo_{v}
 }
 
 func (x *TelemetryResponsePayload) SetMetricsInfo(v *TelemetryResponsePayload_KubernetesInfo) {
 	if v == nil {
-		x.Payload = nil
+		x.xxx_hidden_Payload = nil
 		return
 	}
-	x.Payload = &TelemetryResponsePayload_MetricsInfo{v}
+	x.xxx_hidden_Payload = &telemetryResponsePayload_MetricsInfo{v}
 }
 
 func (x *TelemetryResponsePayload) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.Payload != nil
+	return x.xxx_hidden_Payload != nil
 }
 
 func (x *TelemetryResponsePayload) HasEndOfStream() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Payload.(*TelemetryResponsePayload_EndOfStream_)
+	_, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_EndOfStream_)
 	return ok
 }
 
@@ -440,7 +462,7 @@ func (x *TelemetryResponsePayload) HasKubernetesInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Payload.(*TelemetryResponsePayload_KubernetesInfo_)
+	_, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_KubernetesInfo_)
 	return ok
 }
 
@@ -448,7 +470,7 @@ func (x *TelemetryResponsePayload) HasClusterInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Payload.(*TelemetryResponsePayload_ClusterInfo_)
+	_, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_ClusterInfo_)
 	return ok
 }
 
@@ -456,35 +478,35 @@ func (x *TelemetryResponsePayload) HasMetricsInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Payload.(*TelemetryResponsePayload_MetricsInfo)
+	_, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_MetricsInfo)
 	return ok
 }
 
 func (x *TelemetryResponsePayload) ClearPayload() {
-	x.Payload = nil
+	x.xxx_hidden_Payload = nil
 }
 
 func (x *TelemetryResponsePayload) ClearEndOfStream() {
-	if _, ok := x.Payload.(*TelemetryResponsePayload_EndOfStream_); ok {
-		x.Payload = nil
+	if _, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_EndOfStream_); ok {
+		x.xxx_hidden_Payload = nil
 	}
 }
 
 func (x *TelemetryResponsePayload) ClearKubernetesInfo() {
-	if _, ok := x.Payload.(*TelemetryResponsePayload_KubernetesInfo_); ok {
-		x.Payload = nil
+	if _, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_KubernetesInfo_); ok {
+		x.xxx_hidden_Payload = nil
 	}
 }
 
 func (x *TelemetryResponsePayload) ClearClusterInfo() {
-	if _, ok := x.Payload.(*TelemetryResponsePayload_ClusterInfo_); ok {
-		x.Payload = nil
+	if _, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_ClusterInfo_); ok {
+		x.xxx_hidden_Payload = nil
 	}
 }
 
 func (x *TelemetryResponsePayload) ClearMetricsInfo() {
-	if _, ok := x.Payload.(*TelemetryResponsePayload_MetricsInfo); ok {
-		x.Payload = nil
+	if _, ok := x.xxx_hidden_Payload.(*telemetryResponsePayload_MetricsInfo); ok {
+		x.xxx_hidden_Payload = nil
 	}
 }
 
@@ -498,14 +520,14 @@ func (x *TelemetryResponsePayload) WhichPayload() case_TelemetryResponsePayload_
 	if x == nil {
 		return TelemetryResponsePayload_Payload_not_set_case
 	}
-	switch x.Payload.(type) {
-	case *TelemetryResponsePayload_EndOfStream_:
+	switch x.xxx_hidden_Payload.(type) {
+	case *telemetryResponsePayload_EndOfStream_:
 		return TelemetryResponsePayload_EndOfStream_case
-	case *TelemetryResponsePayload_KubernetesInfo_:
+	case *telemetryResponsePayload_KubernetesInfo_:
 		return TelemetryResponsePayload_KubernetesInfo_case
-	case *TelemetryResponsePayload_ClusterInfo_:
+	case *telemetryResponsePayload_ClusterInfo_:
 		return TelemetryResponsePayload_ClusterInfo_case
-	case *TelemetryResponsePayload_MetricsInfo:
+	case *telemetryResponsePayload_MetricsInfo:
 		return TelemetryResponsePayload_MetricsInfo_case
 	default:
 		return TelemetryResponsePayload_Payload_not_set_case
@@ -515,12 +537,12 @@ func (x *TelemetryResponsePayload) WhichPayload() case_TelemetryResponsePayload_
 type TelemetryResponsePayload_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Payload:
+	// Fields of oneof xxx_hidden_Payload:
 	EndOfStream    *TelemetryResponsePayload_EndOfStream
 	KubernetesInfo *TelemetryResponsePayload_KubernetesInfo
 	ClusterInfo    *TelemetryResponsePayload_ClusterInfo
 	MetricsInfo    *TelemetryResponsePayload_KubernetesInfo
-	// -- end of Payload
+	// -- end of xxx_hidden_Payload
 }
 
 func (b0 TelemetryResponsePayload_builder) Build() *TelemetryResponsePayload {
@@ -528,16 +550,16 @@ func (b0 TelemetryResponsePayload_builder) Build() *TelemetryResponsePayload {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.EndOfStream != nil {
-		x.Payload = &TelemetryResponsePayload_EndOfStream_{b.EndOfStream}
+		x.xxx_hidden_Payload = &telemetryResponsePayload_EndOfStream_{b.EndOfStream}
 	}
 	if b.KubernetesInfo != nil {
-		x.Payload = &TelemetryResponsePayload_KubernetesInfo_{b.KubernetesInfo}
+		x.xxx_hidden_Payload = &telemetryResponsePayload_KubernetesInfo_{b.KubernetesInfo}
 	}
 	if b.ClusterInfo != nil {
-		x.Payload = &TelemetryResponsePayload_ClusterInfo_{b.ClusterInfo}
+		x.xxx_hidden_Payload = &telemetryResponsePayload_ClusterInfo_{b.ClusterInfo}
 	}
 	if b.MetricsInfo != nil {
-		x.Payload = &TelemetryResponsePayload_MetricsInfo{b.MetricsInfo}
+		x.xxx_hidden_Payload = &telemetryResponsePayload_MetricsInfo{b.MetricsInfo}
 	}
 	return m0
 }
@@ -556,36 +578,38 @@ type isTelemetryResponsePayload_Payload interface {
 	isTelemetryResponsePayload_Payload()
 }
 
-type TelemetryResponsePayload_EndOfStream_ struct {
+type telemetryResponsePayload_EndOfStream_ struct {
 	EndOfStream *TelemetryResponsePayload_EndOfStream `protobuf:"bytes,1,opt,name=end_of_stream,json=endOfStream,oneof"`
 }
 
-type TelemetryResponsePayload_KubernetesInfo_ struct {
+type telemetryResponsePayload_KubernetesInfo_ struct {
 	KubernetesInfo *TelemetryResponsePayload_KubernetesInfo `protobuf:"bytes,2,opt,name=kubernetes_info,json=kubernetesInfo,oneof"`
 }
 
-type TelemetryResponsePayload_ClusterInfo_ struct {
+type telemetryResponsePayload_ClusterInfo_ struct {
 	ClusterInfo *TelemetryResponsePayload_ClusterInfo `protobuf:"bytes,3,opt,name=cluster_info,json=clusterInfo,oneof"`
 }
 
-type TelemetryResponsePayload_MetricsInfo struct {
+type telemetryResponsePayload_MetricsInfo struct {
 	MetricsInfo *TelemetryResponsePayload_KubernetesInfo `protobuf:"bytes,4,opt,name=metrics_info,json=metricsInfo,oneof"`
 }
 
-func (*TelemetryResponsePayload_EndOfStream_) isTelemetryResponsePayload_Payload() {}
+func (*telemetryResponsePayload_EndOfStream_) isTelemetryResponsePayload_Payload() {}
 
-func (*TelemetryResponsePayload_KubernetesInfo_) isTelemetryResponsePayload_Payload() {}
+func (*telemetryResponsePayload_KubernetesInfo_) isTelemetryResponsePayload_Payload() {}
 
-func (*TelemetryResponsePayload_ClusterInfo_) isTelemetryResponsePayload_Payload() {}
+func (*telemetryResponsePayload_ClusterInfo_) isTelemetryResponsePayload_Payload() {}
 
-func (*TelemetryResponsePayload_MetricsInfo) isTelemetryResponsePayload_Payload() {}
+func (*telemetryResponsePayload_MetricsInfo) isTelemetryResponsePayload_Payload() {}
 
 type PullTelemetryDataResponse struct {
-	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
-	RequestId     *string                   `protobuf:"bytes,1,opt,name=request_id,json=requestId" json:"request_id,omitempty"`
-	Payload       *TelemetryResponsePayload `protobuf:"bytes,2,opt,name=payload" json:"payload,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_RequestId   *string                   `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
+	xxx_hidden_Payload     *TelemetryResponsePayload `protobuf:"bytes,2,opt,name=payload"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PullTelemetryDataResponse) Reset() {
@@ -614,47 +638,52 @@ func (x *PullTelemetryDataResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PullTelemetryDataResponse) GetRequestId() string {
-	if x != nil && x.RequestId != nil {
-		return *x.RequestId
+	if x != nil {
+		if x.xxx_hidden_RequestId != nil {
+			return *x.xxx_hidden_RequestId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PullTelemetryDataResponse) GetPayload() *TelemetryResponsePayload {
 	if x != nil {
-		return x.Payload
+		return x.xxx_hidden_Payload
 	}
 	return nil
 }
 
 func (x *PullTelemetryDataResponse) SetRequestId(v string) {
-	x.RequestId = &v
+	x.xxx_hidden_RequestId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *PullTelemetryDataResponse) SetPayload(v *TelemetryResponsePayload) {
-	x.Payload = v
+	x.xxx_hidden_Payload = v
 }
 
 func (x *PullTelemetryDataResponse) HasRequestId() bool {
 	if x == nil {
 		return false
 	}
-	return x.RequestId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PullTelemetryDataResponse) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.Payload != nil
+	return x.xxx_hidden_Payload != nil
 }
 
 func (x *PullTelemetryDataResponse) ClearRequestId() {
-	x.RequestId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_RequestId = nil
 }
 
 func (x *PullTelemetryDataResponse) ClearPayload() {
-	x.Payload = nil
+	x.xxx_hidden_Payload = nil
 }
 
 type PullTelemetryDataResponse_builder struct {
@@ -668,21 +697,23 @@ func (b0 PullTelemetryDataResponse_builder) Build() *PullTelemetryDataResponse {
 	m0 := &PullTelemetryDataResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RequestId = b.RequestId
-	x.Payload = b.Payload
+	if b.RequestId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_RequestId = b.RequestId
+	}
+	x.xxx_hidden_Payload = b.Payload
 	return m0
 }
 
 type TelemetryConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// API user ID hash:
-	UserId *string `protobuf:"bytes,1,opt,name=user_id,json=userId" json:"user_id,omitempty"`
-	// An empty endpoint means using default endpoint:
-	Endpoint *string `protobuf:"bytes,2,opt,name=endpoint" json:"endpoint,omitempty"`
-	// Telemetry storage service key:
-	StorageKeyV1  *string `protobuf:"bytes,3,opt,name=storage_key_v1,json=storageKeyV1" json:"storage_key_v1,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UserId       *string                `protobuf:"bytes,1,opt,name=user_id,json=userId"`
+	xxx_hidden_Endpoint     *string                `protobuf:"bytes,2,opt,name=endpoint"`
+	xxx_hidden_StorageKeyV1 *string                `protobuf:"bytes,3,opt,name=storage_key_v1,json=storageKeyV1"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *TelemetryConfig) Reset() {
@@ -711,69 +742,84 @@ func (x *TelemetryConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *TelemetryConfig) GetUserId() string {
-	if x != nil && x.UserId != nil {
-		return *x.UserId
+	if x != nil {
+		if x.xxx_hidden_UserId != nil {
+			return *x.xxx_hidden_UserId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *TelemetryConfig) GetEndpoint() string {
-	if x != nil && x.Endpoint != nil {
-		return *x.Endpoint
+	if x != nil {
+		if x.xxx_hidden_Endpoint != nil {
+			return *x.xxx_hidden_Endpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *TelemetryConfig) GetStorageKeyV1() string {
-	if x != nil && x.StorageKeyV1 != nil {
-		return *x.StorageKeyV1
+	if x != nil {
+		if x.xxx_hidden_StorageKeyV1 != nil {
+			return *x.xxx_hidden_StorageKeyV1
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *TelemetryConfig) SetUserId(v string) {
-	x.UserId = &v
+	x.xxx_hidden_UserId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *TelemetryConfig) SetEndpoint(v string) {
-	x.Endpoint = &v
+	x.xxx_hidden_Endpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *TelemetryConfig) SetStorageKeyV1(v string) {
-	x.StorageKeyV1 = &v
+	x.xxx_hidden_StorageKeyV1 = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *TelemetryConfig) HasUserId() bool {
 	if x == nil {
 		return false
 	}
-	return x.UserId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *TelemetryConfig) HasEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.Endpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *TelemetryConfig) HasStorageKeyV1() bool {
 	if x == nil {
 		return false
 	}
-	return x.StorageKeyV1 != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *TelemetryConfig) ClearUserId() {
-	x.UserId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_UserId = nil
 }
 
 func (x *TelemetryConfig) ClearEndpoint() {
-	x.Endpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Endpoint = nil
 }
 
 func (x *TelemetryConfig) ClearStorageKeyV1() {
-	x.StorageKeyV1 = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_StorageKeyV1 = nil
 }
 
 type TelemetryConfig_builder struct {
@@ -791,17 +837,28 @@ func (b0 TelemetryConfig_builder) Build() *TelemetryConfig {
 	m0 := &TelemetryConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.UserId = b.UserId
-	x.Endpoint = b.Endpoint
-	x.StorageKeyV1 = b.StorageKeyV1
+	if b.UserId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_UserId = b.UserId
+	}
+	if b.Endpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Endpoint = b.Endpoint
+	}
+	if b.StorageKeyV1 != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_StorageKeyV1 = b.StorageKeyV1
+	}
 	return m0
 }
 
 type TelemetryResponsePayload_EndOfStream struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ErrorMessage  *string                `protobuf:"bytes,1,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"` // empty indicates success
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ErrorMessage *string                `protobuf:"bytes,1,opt,name=error_message,json=errorMessage"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *TelemetryResponsePayload_EndOfStream) Reset() {
@@ -830,25 +887,30 @@ func (x *TelemetryResponsePayload_EndOfStream) ProtoReflect() protoreflect.Messa
 }
 
 func (x *TelemetryResponsePayload_EndOfStream) GetErrorMessage() string {
-	if x != nil && x.ErrorMessage != nil {
-		return *x.ErrorMessage
+	if x != nil {
+		if x.xxx_hidden_ErrorMessage != nil {
+			return *x.xxx_hidden_ErrorMessage
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *TelemetryResponsePayload_EndOfStream) SetErrorMessage(v string) {
-	x.ErrorMessage = &v
+	x.xxx_hidden_ErrorMessage = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *TelemetryResponsePayload_EndOfStream) HasErrorMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.ErrorMessage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *TelemetryResponsePayload_EndOfStream) ClearErrorMessage() {
-	x.ErrorMessage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ErrorMessage = nil
 }
 
 type TelemetryResponsePayload_EndOfStream_builder struct {
@@ -861,15 +923,18 @@ func (b0 TelemetryResponsePayload_EndOfStream_builder) Build() *TelemetryRespons
 	m0 := &TelemetryResponsePayload_EndOfStream{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ErrorMessage = b.ErrorMessage
+	if b.ErrorMessage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_ErrorMessage = b.ErrorMessage
+	}
 	return m0
 }
 
 type TelemetryResponsePayload_KubernetesInfo struct {
-	state         protoimpl.MessageState                          `protogen:"hybrid.v1"`
-	Files         []*TelemetryResponsePayload_KubernetesInfo_File `protobuf:"bytes,1,rep,name=files" json:"files,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState                           `protogen:"opaque.v1"`
+	xxx_hidden_Files *[]*TelemetryResponsePayload_KubernetesInfo_File `protobuf:"bytes,1,rep,name=files"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo) Reset() {
@@ -899,13 +964,15 @@ func (x *TelemetryResponsePayload_KubernetesInfo) ProtoReflect() protoreflect.Me
 
 func (x *TelemetryResponsePayload_KubernetesInfo) GetFiles() []*TelemetryResponsePayload_KubernetesInfo_File {
 	if x != nil {
-		return x.Files
+		if x.xxx_hidden_Files != nil {
+			return *x.xxx_hidden_Files
+		}
 	}
 	return nil
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo) SetFiles(v []*TelemetryResponsePayload_KubernetesInfo_File) {
-	x.Files = v
+	x.xxx_hidden_Files = &v
 }
 
 type TelemetryResponsePayload_KubernetesInfo_builder struct {
@@ -918,15 +985,17 @@ func (b0 TelemetryResponsePayload_KubernetesInfo_builder) Build() *TelemetryResp
 	m0 := &TelemetryResponsePayload_KubernetesInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Files = b.Files
+	x.xxx_hidden_Files = &b.Files
 	return m0
 }
 
 type TelemetryResponsePayload_ClusterInfo struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Chunk         []byte                 `protobuf:"bytes,1,opt,name=chunk" json:"chunk,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Chunk       []byte                 `protobuf:"bytes,1,opt,name=chunk"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TelemetryResponsePayload_ClusterInfo) Reset() {
@@ -956,7 +1025,7 @@ func (x *TelemetryResponsePayload_ClusterInfo) ProtoReflect() protoreflect.Messa
 
 func (x *TelemetryResponsePayload_ClusterInfo) GetChunk() []byte {
 	if x != nil {
-		return x.Chunk
+		return x.xxx_hidden_Chunk
 	}
 	return nil
 }
@@ -965,18 +1034,20 @@ func (x *TelemetryResponsePayload_ClusterInfo) SetChunk(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Chunk = v
+	x.xxx_hidden_Chunk = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *TelemetryResponsePayload_ClusterInfo) HasChunk() bool {
 	if x == nil {
 		return false
 	}
-	return x.Chunk != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *TelemetryResponsePayload_ClusterInfo) ClearChunk() {
-	x.Chunk = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Chunk = nil
 }
 
 type TelemetryResponsePayload_ClusterInfo_builder struct {
@@ -989,16 +1060,21 @@ func (b0 TelemetryResponsePayload_ClusterInfo_builder) Build() *TelemetryRespons
 	m0 := &TelemetryResponsePayload_ClusterInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Chunk = b.Chunk
+	if b.Chunk != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Chunk = b.Chunk
+	}
 	return m0
 }
 
 type TelemetryResponsePayload_KubernetesInfo_File struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Path          *string                `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	Contents      []byte                 `protobuf:"bytes,2,opt,name=contents" json:"contents,omitempty"` // compression (if any) is handled at the gRPC level
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Path        *string                `protobuf:"bytes,1,opt,name=path"`
+	xxx_hidden_Contents    []byte                 `protobuf:"bytes,2,opt,name=contents"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo_File) Reset() {
@@ -1027,50 +1103,57 @@ func (x *TelemetryResponsePayload_KubernetesInfo_File) ProtoReflect() protorefle
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo_File) GetPath() string {
-	if x != nil && x.Path != nil {
-		return *x.Path
+	if x != nil {
+		if x.xxx_hidden_Path != nil {
+			return *x.xxx_hidden_Path
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo_File) GetContents() []byte {
 	if x != nil {
-		return x.Contents
+		return x.xxx_hidden_Contents
 	}
 	return nil
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo_File) SetPath(v string) {
-	x.Path = &v
+	x.xxx_hidden_Path = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo_File) SetContents(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Contents = v
+	x.xxx_hidden_Contents = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo_File) HasPath() bool {
 	if x == nil {
 		return false
 	}
-	return x.Path != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo_File) HasContents() bool {
 	if x == nil {
 		return false
 	}
-	return x.Contents != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo_File) ClearPath() {
-	x.Path = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Path = nil
 }
 
 func (x *TelemetryResponsePayload_KubernetesInfo_File) ClearContents() {
-	x.Contents = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Contents = nil
 }
 
 type TelemetryResponsePayload_KubernetesInfo_File_builder struct {
@@ -1084,8 +1167,14 @@ func (b0 TelemetryResponsePayload_KubernetesInfo_File_builder) Build() *Telemetr
 	m0 := &TelemetryResponsePayload_KubernetesInfo_File{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Path = b.Path
-	x.Contents = b.Contents
+	if b.Path != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Path = b.Path
+	}
+	if b.Contents != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Contents = b.Contents
+	}
 	return m0
 }
 
@@ -1132,7 +1221,7 @@ const file_internalapi_central_telemetry_proto_rawDesc = "" +
 	"\x0fTelemetryConfig\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
 	"\bendpoint\x18\x02 \x01(\tR\bendpoint\x12$\n" +
-	"\x0estorage_key_v1\x18\x03 \x01(\tR\fstorageKeyV1B'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x0estorage_key_v1\x18\x03 \x01(\tR\fstorageKeyV1B'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_telemetry_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_internalapi_central_telemetry_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
@@ -1171,10 +1260,10 @@ func file_internalapi_central_telemetry_proto_init() {
 		return
 	}
 	file_internalapi_central_telemetry_proto_msgTypes[2].OneofWrappers = []any{
-		(*TelemetryResponsePayload_EndOfStream_)(nil),
-		(*TelemetryResponsePayload_KubernetesInfo_)(nil),
-		(*TelemetryResponsePayload_ClusterInfo_)(nil),
-		(*TelemetryResponsePayload_MetricsInfo)(nil),
+		(*telemetryResponsePayload_EndOfStream_)(nil),
+		(*telemetryResponsePayload_KubernetesInfo_)(nil),
+		(*telemetryResponsePayload_ClusterInfo_)(nil),
+		(*telemetryResponsePayload_MetricsInfo)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

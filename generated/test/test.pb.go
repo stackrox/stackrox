@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: test/test.proto
 
-//go:build !protoopaque
-
 package test
 
 import (
@@ -70,11 +68,13 @@ func (x TestClone_CloneEnum) Number() protoreflect.EnumNumber {
 }
 
 type TestCloneSubMessage struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Int32         *int32                 `protobuf:"varint,1,opt,name=int32" json:"int32,omitempty"`
-	String_       *string                `protobuf:"bytes,2,opt,name=string" json:"string,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Int32       int32                  `protobuf:"varint,1,opt,name=int32"`
+	xxx_hidden_String_     *string                `protobuf:"bytes,2,opt,name=string"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TestCloneSubMessage) Reset() {
@@ -103,52 +103,54 @@ func (x *TestCloneSubMessage) ProtoReflect() protoreflect.Message {
 }
 
 func (x *TestCloneSubMessage) GetInt32() int32 {
-	if x != nil && x.Int32 != nil {
-		return *x.Int32
+	if x != nil {
+		return x.xxx_hidden_Int32
 	}
 	return 0
 }
 
 func (x *TestCloneSubMessage) GetString() string {
-	if x != nil && x.String_ != nil {
-		return *x.String_
+	if x != nil {
+		if x.xxx_hidden_String_ != nil {
+			return *x.xxx_hidden_String_
+		}
+		return ""
 	}
 	return ""
 }
 
-// Deprecated: Use GetString instead.
-func (x *TestCloneSubMessage) GetString_() string {
-	return x.GetString()
-}
-
 func (x *TestCloneSubMessage) SetInt32(v int32) {
-	x.Int32 = &v
+	x.xxx_hidden_Int32 = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *TestCloneSubMessage) SetString(v string) {
-	x.String_ = &v
+	x.xxx_hidden_String_ = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *TestCloneSubMessage) HasInt32() bool {
 	if x == nil {
 		return false
 	}
-	return x.Int32 != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *TestCloneSubMessage) HasString() bool {
 	if x == nil {
 		return false
 	}
-	return x.String_ != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *TestCloneSubMessage) ClearInt32() {
-	x.Int32 = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Int32 = 0
 }
 
 func (x *TestCloneSubMessage) ClearString() {
-	x.String_ = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_String_ = nil
 }
 
 type TestCloneSubMessage_builder struct {
@@ -162,33 +164,36 @@ func (b0 TestCloneSubMessage_builder) Build() *TestCloneSubMessage {
 	m0 := &TestCloneSubMessage{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Int32 = b.Int32
-	x.String_ = b.String
+	if b.Int32 != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Int32 = *b.Int32
+	}
+	if b.String != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_String_ = b.String
+	}
 	return m0
 }
 
 type TestClone struct {
-	state       protoimpl.MessageState          `protogen:"hybrid.v1"`
-	IntSlice    []int32                         `protobuf:"varint,1,rep,packed,name=int_slice,json=intSlice" json:"int_slice,omitempty"`
-	StringSlice []string                        `protobuf:"bytes,2,rep,name=string_slice,json=stringSlice" json:"string_slice,omitempty"`
-	SubMessages []*TestCloneSubMessage          `protobuf:"bytes,3,rep,name=sub_messages,json=subMessages" json:"sub_messages,omitempty"`
-	MessageMap  map[string]*TestCloneSubMessage `protobuf:"bytes,4,rep,name=message_map,json=messageMap" json:"message_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	StringMap   map[string]string               `protobuf:"bytes,5,rep,name=string_map,json=stringMap" json:"string_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	EnumSlice   []TestClone_CloneEnum           `protobuf:"varint,6,rep,packed,name=enum_slice,json=enumSlice,enum=test.TestClone_CloneEnum" json:"enum_slice,omitempty"`
-	Ts          *timestamppb.Timestamp          `protobuf:"bytes,7,opt,name=ts" json:"ts,omitempty"`
-	// Types that are valid to be assigned to Primitive:
-	//
-	//	*TestClone_Int32
-	//	*TestClone_String_
-	//	*TestClone_Msg
-	Primitive     isTestClone_Primitive `protobuf_oneof:"primitive"`
-	Any           *anypb.Any            `protobuf:"bytes,11,opt,name=any" json:"any,omitempty"`
-	BytesMap      map[string][]byte     `protobuf:"bytes,12,rep,name=bytes_map,json=bytesMap" json:"bytes_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	BytesSlice    [][]byte              `protobuf:"bytes,13,rep,name=bytes_slice,json=bytesSlice" json:"bytes_slice,omitempty"`
-	Bytes         []byte                `protobuf:"bytes,14,opt,name=bytes" json:"bytes,omitempty"`
-	SubMessage    *TestCloneSubMessage  `protobuf:"bytes,15,opt,name=sub_message,json=subMessage" json:"sub_message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_IntSlice    []int32                         `protobuf:"varint,1,rep,packed,name=int_slice,json=intSlice"`
+	xxx_hidden_StringSlice []string                        `protobuf:"bytes,2,rep,name=string_slice,json=stringSlice"`
+	xxx_hidden_SubMessages *[]*TestCloneSubMessage         `protobuf:"bytes,3,rep,name=sub_messages,json=subMessages"`
+	xxx_hidden_MessageMap  map[string]*TestCloneSubMessage `protobuf:"bytes,4,rep,name=message_map,json=messageMap" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_StringMap   map[string]string               `protobuf:"bytes,5,rep,name=string_map,json=stringMap" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_EnumSlice   []TestClone_CloneEnum           `protobuf:"varint,6,rep,packed,name=enum_slice,json=enumSlice,enum=test.TestClone_CloneEnum"`
+	xxx_hidden_Ts          *timestamppb.Timestamp          `protobuf:"bytes,7,opt,name=ts"`
+	xxx_hidden_Primitive   isTestClone_Primitive           `protobuf_oneof:"primitive"`
+	xxx_hidden_Any         *anypb.Any                      `protobuf:"bytes,11,opt,name=any"`
+	xxx_hidden_BytesMap    map[string][]byte               `protobuf:"bytes,12,rep,name=bytes_map,json=bytesMap" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_BytesSlice  [][]byte                        `protobuf:"bytes,13,rep,name=bytes_slice,json=bytesSlice"`
+	xxx_hidden_Bytes       []byte                          `protobuf:"bytes,14,opt,name=bytes"`
+	xxx_hidden_SubMessage  *TestCloneSubMessage            `protobuf:"bytes,15,opt,name=sub_message,json=subMessage"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TestClone) Reset() {
@@ -218,63 +223,58 @@ func (x *TestClone) ProtoReflect() protoreflect.Message {
 
 func (x *TestClone) GetIntSlice() []int32 {
 	if x != nil {
-		return x.IntSlice
+		return x.xxx_hidden_IntSlice
 	}
 	return nil
 }
 
 func (x *TestClone) GetStringSlice() []string {
 	if x != nil {
-		return x.StringSlice
+		return x.xxx_hidden_StringSlice
 	}
 	return nil
 }
 
 func (x *TestClone) GetSubMessages() []*TestCloneSubMessage {
 	if x != nil {
-		return x.SubMessages
+		if x.xxx_hidden_SubMessages != nil {
+			return *x.xxx_hidden_SubMessages
+		}
 	}
 	return nil
 }
 
 func (x *TestClone) GetMessageMap() map[string]*TestCloneSubMessage {
 	if x != nil {
-		return x.MessageMap
+		return x.xxx_hidden_MessageMap
 	}
 	return nil
 }
 
 func (x *TestClone) GetStringMap() map[string]string {
 	if x != nil {
-		return x.StringMap
+		return x.xxx_hidden_StringMap
 	}
 	return nil
 }
 
 func (x *TestClone) GetEnumSlice() []TestClone_CloneEnum {
 	if x != nil {
-		return x.EnumSlice
+		return x.xxx_hidden_EnumSlice
 	}
 	return nil
 }
 
 func (x *TestClone) GetTs() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Ts
-	}
-	return nil
-}
-
-func (x *TestClone) GetPrimitive() isTestClone_Primitive {
-	if x != nil {
-		return x.Primitive
+		return x.xxx_hidden_Ts
 	}
 	return nil
 }
 
 func (x *TestClone) GetInt32() int32 {
 	if x != nil {
-		if x, ok := x.Primitive.(*TestClone_Int32); ok {
+		if x, ok := x.xxx_hidden_Primitive.(*testClone_Int32); ok {
 			return x.Int32
 		}
 	}
@@ -283,21 +283,16 @@ func (x *TestClone) GetInt32() int32 {
 
 func (x *TestClone) GetString() string {
 	if x != nil {
-		if x, ok := x.Primitive.(*TestClone_String_); ok {
+		if x, ok := x.xxx_hidden_Primitive.(*testClone_String_); ok {
 			return x.String_
 		}
 	}
 	return ""
 }
 
-// Deprecated: Use GetString instead.
-func (x *TestClone) GetString_() string {
-	return x.GetString()
-}
-
 func (x *TestClone) GetMsg() *TestCloneSubMessage {
 	if x != nil {
-		if x, ok := x.Primitive.(*TestClone_Msg); ok {
+		if x, ok := x.xxx_hidden_Primitive.(*testClone_Msg); ok {
 			return x.Msg
 		}
 	}
@@ -306,125 +301,126 @@ func (x *TestClone) GetMsg() *TestCloneSubMessage {
 
 func (x *TestClone) GetAny() *anypb.Any {
 	if x != nil {
-		return x.Any
+		return x.xxx_hidden_Any
 	}
 	return nil
 }
 
 func (x *TestClone) GetBytesMap() map[string][]byte {
 	if x != nil {
-		return x.BytesMap
+		return x.xxx_hidden_BytesMap
 	}
 	return nil
 }
 
 func (x *TestClone) GetBytesSlice() [][]byte {
 	if x != nil {
-		return x.BytesSlice
+		return x.xxx_hidden_BytesSlice
 	}
 	return nil
 }
 
 func (x *TestClone) GetBytes() []byte {
 	if x != nil {
-		return x.Bytes
+		return x.xxx_hidden_Bytes
 	}
 	return nil
 }
 
 func (x *TestClone) GetSubMessage() *TestCloneSubMessage {
 	if x != nil {
-		return x.SubMessage
+		return x.xxx_hidden_SubMessage
 	}
 	return nil
 }
 
 func (x *TestClone) SetIntSlice(v []int32) {
-	x.IntSlice = v
+	x.xxx_hidden_IntSlice = v
 }
 
 func (x *TestClone) SetStringSlice(v []string) {
-	x.StringSlice = v
+	x.xxx_hidden_StringSlice = v
 }
 
 func (x *TestClone) SetSubMessages(v []*TestCloneSubMessage) {
-	x.SubMessages = v
+	x.xxx_hidden_SubMessages = &v
 }
 
 func (x *TestClone) SetMessageMap(v map[string]*TestCloneSubMessage) {
-	x.MessageMap = v
+	x.xxx_hidden_MessageMap = v
 }
 
 func (x *TestClone) SetStringMap(v map[string]string) {
-	x.StringMap = v
+	x.xxx_hidden_StringMap = v
 }
 
 func (x *TestClone) SetEnumSlice(v []TestClone_CloneEnum) {
-	x.EnumSlice = v
+	x.xxx_hidden_EnumSlice = v
 }
 
 func (x *TestClone) SetTs(v *timestamppb.Timestamp) {
-	x.Ts = v
+	x.xxx_hidden_Ts = v
 }
 
 func (x *TestClone) SetInt32(v int32) {
-	x.Primitive = &TestClone_Int32{v}
+	x.xxx_hidden_Primitive = &testClone_Int32{v}
 }
 
 func (x *TestClone) SetString(v string) {
-	x.Primitive = &TestClone_String_{v}
+	x.xxx_hidden_Primitive = &testClone_String_{v}
 }
 
 func (x *TestClone) SetMsg(v *TestCloneSubMessage) {
 	if v == nil {
-		x.Primitive = nil
+		x.xxx_hidden_Primitive = nil
 		return
 	}
-	x.Primitive = &TestClone_Msg{v}
+	x.xxx_hidden_Primitive = &testClone_Msg{v}
 }
 
 func (x *TestClone) SetAny(v *anypb.Any) {
-	x.Any = v
+	x.xxx_hidden_Any = v
 }
 
 func (x *TestClone) SetBytesMap(v map[string][]byte) {
-	x.BytesMap = v
+	x.xxx_hidden_BytesMap = v
 }
 
 func (x *TestClone) SetBytesSlice(v [][]byte) {
-	x.BytesSlice = v
+	x.xxx_hidden_BytesSlice = v
 }
 
 func (x *TestClone) SetBytes(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Bytes = v
+	x.xxx_hidden_Bytes = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 13)
 }
 
 func (x *TestClone) SetSubMessage(v *TestCloneSubMessage) {
-	x.SubMessage = v
+	x.xxx_hidden_SubMessage = v
 }
 
 func (x *TestClone) HasTs() bool {
 	if x == nil {
 		return false
 	}
-	return x.Ts != nil
+	return x.xxx_hidden_Ts != nil
 }
 
 func (x *TestClone) HasPrimitive() bool {
 	if x == nil {
 		return false
 	}
-	return x.Primitive != nil
+	return x.xxx_hidden_Primitive != nil
 }
 
 func (x *TestClone) HasInt32() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Primitive.(*TestClone_Int32)
+	_, ok := x.xxx_hidden_Primitive.(*testClone_Int32)
 	return ok
 }
 
@@ -432,7 +428,7 @@ func (x *TestClone) HasString() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Primitive.(*TestClone_String_)
+	_, ok := x.xxx_hidden_Primitive.(*testClone_String_)
 	return ok
 }
 
@@ -440,7 +436,7 @@ func (x *TestClone) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Primitive.(*TestClone_Msg)
+	_, ok := x.xxx_hidden_Primitive.(*testClone_Msg)
 	return ok
 }
 
@@ -448,59 +444,60 @@ func (x *TestClone) HasAny() bool {
 	if x == nil {
 		return false
 	}
-	return x.Any != nil
+	return x.xxx_hidden_Any != nil
 }
 
 func (x *TestClone) HasBytes() bool {
 	if x == nil {
 		return false
 	}
-	return x.Bytes != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
 }
 
 func (x *TestClone) HasSubMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.SubMessage != nil
+	return x.xxx_hidden_SubMessage != nil
 }
 
 func (x *TestClone) ClearTs() {
-	x.Ts = nil
+	x.xxx_hidden_Ts = nil
 }
 
 func (x *TestClone) ClearPrimitive() {
-	x.Primitive = nil
+	x.xxx_hidden_Primitive = nil
 }
 
 func (x *TestClone) ClearInt32() {
-	if _, ok := x.Primitive.(*TestClone_Int32); ok {
-		x.Primitive = nil
+	if _, ok := x.xxx_hidden_Primitive.(*testClone_Int32); ok {
+		x.xxx_hidden_Primitive = nil
 	}
 }
 
 func (x *TestClone) ClearString() {
-	if _, ok := x.Primitive.(*TestClone_String_); ok {
-		x.Primitive = nil
+	if _, ok := x.xxx_hidden_Primitive.(*testClone_String_); ok {
+		x.xxx_hidden_Primitive = nil
 	}
 }
 
 func (x *TestClone) ClearMsg() {
-	if _, ok := x.Primitive.(*TestClone_Msg); ok {
-		x.Primitive = nil
+	if _, ok := x.xxx_hidden_Primitive.(*testClone_Msg); ok {
+		x.xxx_hidden_Primitive = nil
 	}
 }
 
 func (x *TestClone) ClearAny() {
-	x.Any = nil
+	x.xxx_hidden_Any = nil
 }
 
 func (x *TestClone) ClearBytes() {
-	x.Bytes = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	x.xxx_hidden_Bytes = nil
 }
 
 func (x *TestClone) ClearSubMessage() {
-	x.SubMessage = nil
+	x.xxx_hidden_SubMessage = nil
 }
 
 const TestClone_Primitive_not_set_case case_TestClone_Primitive = 0
@@ -512,12 +509,12 @@ func (x *TestClone) WhichPrimitive() case_TestClone_Primitive {
 	if x == nil {
 		return TestClone_Primitive_not_set_case
 	}
-	switch x.Primitive.(type) {
-	case *TestClone_Int32:
+	switch x.xxx_hidden_Primitive.(type) {
+	case *testClone_Int32:
 		return TestClone_Int32_case
-	case *TestClone_String_:
+	case *testClone_String_:
 		return TestClone_String__case
-	case *TestClone_Msg:
+	case *testClone_Msg:
 		return TestClone_Msg_case
 	default:
 		return TestClone_Primitive_not_set_case
@@ -534,11 +531,11 @@ type TestClone_builder struct {
 	StringMap   map[string]string
 	EnumSlice   []TestClone_CloneEnum
 	Ts          *timestamppb.Timestamp
-	// Fields of oneof Primitive:
+	// Fields of oneof xxx_hidden_Primitive:
 	Int32  *int32
 	String *string
 	Msg    *TestCloneSubMessage
-	// -- end of Primitive
+	// -- end of xxx_hidden_Primitive
 	Any        *anypb.Any
 	BytesMap   map[string][]byte
 	BytesSlice [][]byte
@@ -550,27 +547,30 @@ func (b0 TestClone_builder) Build() *TestClone {
 	m0 := &TestClone{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.IntSlice = b.IntSlice
-	x.StringSlice = b.StringSlice
-	x.SubMessages = b.SubMessages
-	x.MessageMap = b.MessageMap
-	x.StringMap = b.StringMap
-	x.EnumSlice = b.EnumSlice
-	x.Ts = b.Ts
+	x.xxx_hidden_IntSlice = b.IntSlice
+	x.xxx_hidden_StringSlice = b.StringSlice
+	x.xxx_hidden_SubMessages = &b.SubMessages
+	x.xxx_hidden_MessageMap = b.MessageMap
+	x.xxx_hidden_StringMap = b.StringMap
+	x.xxx_hidden_EnumSlice = b.EnumSlice
+	x.xxx_hidden_Ts = b.Ts
 	if b.Int32 != nil {
-		x.Primitive = &TestClone_Int32{*b.Int32}
+		x.xxx_hidden_Primitive = &testClone_Int32{*b.Int32}
 	}
 	if b.String != nil {
-		x.Primitive = &TestClone_String_{*b.String}
+		x.xxx_hidden_Primitive = &testClone_String_{*b.String}
 	}
 	if b.Msg != nil {
-		x.Primitive = &TestClone_Msg{b.Msg}
+		x.xxx_hidden_Primitive = &testClone_Msg{b.Msg}
 	}
-	x.Any = b.Any
-	x.BytesMap = b.BytesMap
-	x.BytesSlice = b.BytesSlice
-	x.Bytes = b.Bytes
-	x.SubMessage = b.SubMessage
+	x.xxx_hidden_Any = b.Any
+	x.xxx_hidden_BytesMap = b.BytesMap
+	x.xxx_hidden_BytesSlice = b.BytesSlice
+	if b.Bytes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 13)
+		x.xxx_hidden_Bytes = b.Bytes
+	}
+	x.xxx_hidden_SubMessage = b.SubMessage
 	return m0
 }
 
@@ -588,23 +588,23 @@ type isTestClone_Primitive interface {
 	isTestClone_Primitive()
 }
 
-type TestClone_Int32 struct {
+type testClone_Int32 struct {
 	Int32 int32 `protobuf:"varint,8,opt,name=int32,oneof"`
 }
 
-type TestClone_String_ struct {
+type testClone_String_ struct {
 	String_ string `protobuf:"bytes,9,opt,name=string,oneof"`
 }
 
-type TestClone_Msg struct {
+type testClone_Msg struct {
 	Msg *TestCloneSubMessage `protobuf:"bytes,10,opt,name=msg,oneof"`
 }
 
-func (*TestClone_Int32) isTestClone_Primitive() {}
+func (*testClone_Int32) isTestClone_Primitive() {}
 
-func (*TestClone_String_) isTestClone_Primitive() {}
+func (*testClone_String_) isTestClone_Primitive() {}
 
-func (*TestClone_Msg) isTestClone_Primitive() {}
+func (*testClone_Msg) isTestClone_Primitive() {}
 
 var File_test_test_proto protoreflect.FileDescriptor
 
@@ -650,7 +650,7 @@ const file_test_test_proto_rawDesc = "" +
 	"\x04Val1\x10\x01\x12\b\n" +
 	"\x04Val2\x10\x02B\v\n" +
 	"\tprimitiveB-\n" +
-	"\x16io.stackrox.proto.testZ\v./test;test\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x16io.stackrox.proto.testZ\v./test;test\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_test_test_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_test_test_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
@@ -688,9 +688,9 @@ func file_test_test_proto_init() {
 		return
 	}
 	file_test_test_proto_msgTypes[1].OneofWrappers = []any{
-		(*TestClone_Int32)(nil),
-		(*TestClone_String_)(nil),
-		(*TestClone_Msg)(nil),
+		(*testClone_Int32)(nil),
+		(*testClone_String_)(nil),
+		(*testClone_Msg)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

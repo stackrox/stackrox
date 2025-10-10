@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/operation_status.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -72,7 +70,7 @@ const file_storage_operation_status_proto_rawDesc = "" +
 	"\x0fOperationStatus\x12\b\n" +
 	"\x04FAIL\x10\x00\x12\b\n" +
 	"\x04PASS\x10\x01B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_operation_status_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_operation_status_proto_goTypes = []any{

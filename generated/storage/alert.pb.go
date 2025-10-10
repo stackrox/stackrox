@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/alert.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -284,33 +282,28 @@ func (x ListAlert_ResourceType) Number() protoreflect.EnumNumber {
 
 // Next available tag: 24
 type Alert struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id             *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"`                                                                            // @gotags: search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"
-	Policy         *Policy                `protobuf:"bytes,2,opt,name=policy" json:"policy,omitempty" sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"`                                                                    // @gotags: sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"
-	LifecycleStage *LifecycleStage        `protobuf:"varint,3,opt,name=lifecycle_stage,json=lifecycleStage,enum=storage.LifecycleStage" json:"lifecycle_stage,omitempty" search:"Lifecycle Stage" sql:"index=btree"` // @gotags: search:"Lifecycle Stage" sql:"index=btree"
-	ClusterId      *string                `protobuf:"bytes,18,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,store" sql:"type(uuid)"`                                            // @gotags: search:"Cluster ID,store" sql:"type(uuid)"
-	ClusterName    *string                `protobuf:"bytes,19,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty" search:"Cluster,store"`                                      // @gotags: search:"Cluster,store"
-	Namespace      *string                `protobuf:"bytes,20,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,store"`                                                             // @gotags: search:"Namespace,store"
-	NamespaceId    *string                `protobuf:"bytes,21,opt,name=namespace_id,json=namespaceId" json:"namespace_id,omitempty" search:"Namespace ID" sql:"type(uuid)"`                                      // @gotags: search:"Namespace ID" sql:"type(uuid)"
-	// Types that are valid to be assigned to Entity:
-	//
-	//	*Alert_Deployment_
-	//	*Alert_Image
-	//	*Alert_Resource_
-	Entity isAlert_Entity `protobuf_oneof:"Entity"`
-	// For run-time phase alert, a maximum of 40 violations are retained.
-	Violations       []*Alert_Violation      `protobuf:"bytes,5,rep,name=violations" json:"violations,omitempty" search:"-"`                                      // @gotags: search:"-"
-	ProcessViolation *Alert_ProcessViolation `protobuf:"bytes,13,opt,name=process_violation,json=processViolation" json:"process_violation,omitempty" search:"-"` // @gotags: search:"-"
-	Enforcement      *Alert_Enforcement      `protobuf:"bytes,6,opt,name=enforcement" json:"enforcement,omitempty"`
-	Time             *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time" json:"time,omitempty" sensorhash:"ignore" search:"Violation Time" sql:"index=btree"`                                         // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
-	FirstOccurred    *timestamppb.Timestamp  `protobuf:"bytes,10,opt,name=first_occurred,json=firstOccurred" json:"first_occurred,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
-	// The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
-	ResolvedAt        *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt" json:"resolved_at,omitempty" sensorhash:"ignore"`                                // @gotags: sensorhash:"ignore"
-	State             *ViolationState        `protobuf:"varint,11,opt,name=state,enum=storage.ViolationState" json:"state,omitempty" search:"Violation State,store" sql:"index=btree"`                               // @gotags: search:"Violation State,store" sql:"index=btree"
-	PlatformComponent *bool                  `protobuf:"varint,22,opt,name=platform_component,json=platformComponent" json:"platform_component,omitempty" search:"Platform Component"`          // @gotags: search:"Platform Component"
-	EntityType        *Alert_EntityType      `protobuf:"varint,23,opt,name=entity_type,json=entityType,enum=storage.Alert_EntityType" json:"entity_type,omitempty" search:"Entity Type"` // @gotags: search:"Entity Type"
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Id                *string                 `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Policy            *Policy                 `protobuf:"bytes,2,opt,name=policy"`
+	xxx_hidden_LifecycleStage    LifecycleStage          `protobuf:"varint,3,opt,name=lifecycle_stage,json=lifecycleStage,enum=storage.LifecycleStage"`
+	xxx_hidden_ClusterId         *string                 `protobuf:"bytes,18,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ClusterName       *string                 `protobuf:"bytes,19,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_Namespace         *string                 `protobuf:"bytes,20,opt,name=namespace"`
+	xxx_hidden_NamespaceId       *string                 `protobuf:"bytes,21,opt,name=namespace_id,json=namespaceId"`
+	xxx_hidden_Entity            isAlert_Entity          `protobuf_oneof:"Entity"`
+	xxx_hidden_Violations        *[]*Alert_Violation     `protobuf:"bytes,5,rep,name=violations"`
+	xxx_hidden_ProcessViolation  *Alert_ProcessViolation `protobuf:"bytes,13,opt,name=process_violation,json=processViolation"`
+	xxx_hidden_Enforcement       *Alert_Enforcement      `protobuf:"bytes,6,opt,name=enforcement"`
+	xxx_hidden_Time              *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time"`
+	xxx_hidden_FirstOccurred     *timestamppb.Timestamp  `protobuf:"bytes,10,opt,name=first_occurred,json=firstOccurred"`
+	xxx_hidden_ResolvedAt        *timestamppb.Timestamp  `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt"`
+	xxx_hidden_State             ViolationState          `protobuf:"varint,11,opt,name=state,enum=storage.ViolationState"`
+	xxx_hidden_PlatformComponent bool                    `protobuf:"varint,22,opt,name=platform_component,json=platformComponent"`
+	xxx_hidden_EntityType        Alert_EntityType        `protobuf:"varint,23,opt,name=entity_type,json=entityType,enum=storage.Alert_EntityType"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *Alert) Reset() {
@@ -339,64 +332,74 @@ func (x *Alert) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Alert) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert) GetPolicy() *Policy {
 	if x != nil {
-		return x.Policy
+		return x.xxx_hidden_Policy
 	}
 	return nil
 }
 
 func (x *Alert) GetLifecycleStage() LifecycleStage {
-	if x != nil && x.LifecycleStage != nil {
-		return *x.LifecycleStage
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_LifecycleStage
+		}
 	}
 	return LifecycleStage_DEPLOY
 }
 
 func (x *Alert) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert) GetNamespaceId() string {
-	if x != nil && x.NamespaceId != nil {
-		return *x.NamespaceId
+	if x != nil {
+		if x.xxx_hidden_NamespaceId != nil {
+			return *x.xxx_hidden_NamespaceId
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *Alert) GetEntity() isAlert_Entity {
-	if x != nil {
-		return x.Entity
-	}
-	return nil
-}
-
 func (x *Alert) GetDeployment() *Alert_Deployment {
 	if x != nil {
-		if x, ok := x.Entity.(*Alert_Deployment_); ok {
+		if x, ok := x.xxx_hidden_Entity.(*alert_Deployment_); ok {
 			return x.Deployment
 		}
 	}
@@ -405,7 +408,7 @@ func (x *Alert) GetDeployment() *Alert_Deployment {
 
 func (x *Alert) GetImage() *ContainerImage {
 	if x != nil {
-		if x, ok := x.Entity.(*Alert_Image); ok {
+		if x, ok := x.xxx_hidden_Entity.(*alert_Image); ok {
 			return x.Image
 		}
 	}
@@ -414,7 +417,7 @@ func (x *Alert) GetImage() *ContainerImage {
 
 func (x *Alert) GetResource() *Alert_Resource {
 	if x != nil {
-		if x, ok := x.Entity.(*Alert_Resource_); ok {
+		if x, ok := x.xxx_hidden_Entity.(*alert_Resource_); ok {
 			return x.Resource
 		}
 	}
@@ -423,216 +426,231 @@ func (x *Alert) GetResource() *Alert_Resource {
 
 func (x *Alert) GetViolations() []*Alert_Violation {
 	if x != nil {
-		return x.Violations
+		if x.xxx_hidden_Violations != nil {
+			return *x.xxx_hidden_Violations
+		}
 	}
 	return nil
 }
 
 func (x *Alert) GetProcessViolation() *Alert_ProcessViolation {
 	if x != nil {
-		return x.ProcessViolation
+		return x.xxx_hidden_ProcessViolation
 	}
 	return nil
 }
 
 func (x *Alert) GetEnforcement() *Alert_Enforcement {
 	if x != nil {
-		return x.Enforcement
+		return x.xxx_hidden_Enforcement
 	}
 	return nil
 }
 
 func (x *Alert) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Time
+		return x.xxx_hidden_Time
 	}
 	return nil
 }
 
 func (x *Alert) GetFirstOccurred() *timestamppb.Timestamp {
 	if x != nil {
-		return x.FirstOccurred
+		return x.xxx_hidden_FirstOccurred
 	}
 	return nil
 }
 
 func (x *Alert) GetResolvedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ResolvedAt
+		return x.xxx_hidden_ResolvedAt
 	}
 	return nil
 }
 
 func (x *Alert) GetState() ViolationState {
-	if x != nil && x.State != nil {
-		return *x.State
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 14) {
+			return x.xxx_hidden_State
+		}
 	}
 	return ViolationState_ACTIVE
 }
 
 func (x *Alert) GetPlatformComponent() bool {
-	if x != nil && x.PlatformComponent != nil {
-		return *x.PlatformComponent
+	if x != nil {
+		return x.xxx_hidden_PlatformComponent
 	}
 	return false
 }
 
 func (x *Alert) GetEntityType() Alert_EntityType {
-	if x != nil && x.EntityType != nil {
-		return *x.EntityType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 16) {
+			return x.xxx_hidden_EntityType
+		}
 	}
 	return Alert_UNSET
 }
 
 func (x *Alert) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 17)
 }
 
 func (x *Alert) SetPolicy(v *Policy) {
-	x.Policy = v
+	x.xxx_hidden_Policy = v
 }
 
 func (x *Alert) SetLifecycleStage(v LifecycleStage) {
-	x.LifecycleStage = &v
+	x.xxx_hidden_LifecycleStage = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 17)
 }
 
 func (x *Alert) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 17)
 }
 
 func (x *Alert) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 17)
 }
 
 func (x *Alert) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 17)
 }
 
 func (x *Alert) SetNamespaceId(v string) {
-	x.NamespaceId = &v
+	x.xxx_hidden_NamespaceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 17)
 }
 
 func (x *Alert) SetDeployment(v *Alert_Deployment) {
 	if v == nil {
-		x.Entity = nil
+		x.xxx_hidden_Entity = nil
 		return
 	}
-	x.Entity = &Alert_Deployment_{v}
+	x.xxx_hidden_Entity = &alert_Deployment_{v}
 }
 
 func (x *Alert) SetImage(v *ContainerImage) {
 	if v == nil {
-		x.Entity = nil
+		x.xxx_hidden_Entity = nil
 		return
 	}
-	x.Entity = &Alert_Image{v}
+	x.xxx_hidden_Entity = &alert_Image{v}
 }
 
 func (x *Alert) SetResource(v *Alert_Resource) {
 	if v == nil {
-		x.Entity = nil
+		x.xxx_hidden_Entity = nil
 		return
 	}
-	x.Entity = &Alert_Resource_{v}
+	x.xxx_hidden_Entity = &alert_Resource_{v}
 }
 
 func (x *Alert) SetViolations(v []*Alert_Violation) {
-	x.Violations = v
+	x.xxx_hidden_Violations = &v
 }
 
 func (x *Alert) SetProcessViolation(v *Alert_ProcessViolation) {
-	x.ProcessViolation = v
+	x.xxx_hidden_ProcessViolation = v
 }
 
 func (x *Alert) SetEnforcement(v *Alert_Enforcement) {
-	x.Enforcement = v
+	x.xxx_hidden_Enforcement = v
 }
 
 func (x *Alert) SetTime(v *timestamppb.Timestamp) {
-	x.Time = v
+	x.xxx_hidden_Time = v
 }
 
 func (x *Alert) SetFirstOccurred(v *timestamppb.Timestamp) {
-	x.FirstOccurred = v
+	x.xxx_hidden_FirstOccurred = v
 }
 
 func (x *Alert) SetResolvedAt(v *timestamppb.Timestamp) {
-	x.ResolvedAt = v
+	x.xxx_hidden_ResolvedAt = v
 }
 
 func (x *Alert) SetState(v ViolationState) {
-	x.State = &v
+	x.xxx_hidden_State = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 17)
 }
 
 func (x *Alert) SetPlatformComponent(v bool) {
-	x.PlatformComponent = &v
+	x.xxx_hidden_PlatformComponent = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 15, 17)
 }
 
 func (x *Alert) SetEntityType(v Alert_EntityType) {
-	x.EntityType = &v
+	x.xxx_hidden_EntityType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 16, 17)
 }
 
 func (x *Alert) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Alert) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.Policy != nil
+	return x.xxx_hidden_Policy != nil
 }
 
 func (x *Alert) HasLifecycleStage() bool {
 	if x == nil {
 		return false
 	}
-	return x.LifecycleStage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Alert) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Alert) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Alert) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Alert) HasNamespaceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.NamespaceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *Alert) HasEntity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Entity != nil
+	return x.xxx_hidden_Entity != nil
 }
 
 func (x *Alert) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Entity.(*Alert_Deployment_)
+	_, ok := x.xxx_hidden_Entity.(*alert_Deployment_)
 	return ok
 }
 
@@ -640,7 +658,7 @@ func (x *Alert) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Entity.(*Alert_Image)
+	_, ok := x.xxx_hidden_Entity.(*alert_Image)
 	return ok
 }
 
@@ -648,7 +666,7 @@ func (x *Alert) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Entity.(*Alert_Resource_)
+	_, ok := x.xxx_hidden_Entity.(*alert_Resource_)
 	return ok
 }
 
@@ -656,138 +674,147 @@ func (x *Alert) HasProcessViolation() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessViolation != nil
+	return x.xxx_hidden_ProcessViolation != nil
 }
 
 func (x *Alert) HasEnforcement() bool {
 	if x == nil {
 		return false
 	}
-	return x.Enforcement != nil
+	return x.xxx_hidden_Enforcement != nil
 }
 
 func (x *Alert) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.Time != nil
+	return x.xxx_hidden_Time != nil
 }
 
 func (x *Alert) HasFirstOccurred() bool {
 	if x == nil {
 		return false
 	}
-	return x.FirstOccurred != nil
+	return x.xxx_hidden_FirstOccurred != nil
 }
 
 func (x *Alert) HasResolvedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResolvedAt != nil
+	return x.xxx_hidden_ResolvedAt != nil
 }
 
 func (x *Alert) HasState() bool {
 	if x == nil {
 		return false
 	}
-	return x.State != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 14)
 }
 
 func (x *Alert) HasPlatformComponent() bool {
 	if x == nil {
 		return false
 	}
-	return x.PlatformComponent != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 15)
 }
 
 func (x *Alert) HasEntityType() bool {
 	if x == nil {
 		return false
 	}
-	return x.EntityType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 16)
 }
 
 func (x *Alert) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Alert) ClearPolicy() {
-	x.Policy = nil
+	x.xxx_hidden_Policy = nil
 }
 
 func (x *Alert) ClearLifecycleStage() {
-	x.LifecycleStage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_LifecycleStage = LifecycleStage_DEPLOY
 }
 
 func (x *Alert) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *Alert) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *Alert) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *Alert) ClearNamespaceId() {
-	x.NamespaceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_NamespaceId = nil
 }
 
 func (x *Alert) ClearEntity() {
-	x.Entity = nil
+	x.xxx_hidden_Entity = nil
 }
 
 func (x *Alert) ClearDeployment() {
-	if _, ok := x.Entity.(*Alert_Deployment_); ok {
-		x.Entity = nil
+	if _, ok := x.xxx_hidden_Entity.(*alert_Deployment_); ok {
+		x.xxx_hidden_Entity = nil
 	}
 }
 
 func (x *Alert) ClearImage() {
-	if _, ok := x.Entity.(*Alert_Image); ok {
-		x.Entity = nil
+	if _, ok := x.xxx_hidden_Entity.(*alert_Image); ok {
+		x.xxx_hidden_Entity = nil
 	}
 }
 
 func (x *Alert) ClearResource() {
-	if _, ok := x.Entity.(*Alert_Resource_); ok {
-		x.Entity = nil
+	if _, ok := x.xxx_hidden_Entity.(*alert_Resource_); ok {
+		x.xxx_hidden_Entity = nil
 	}
 }
 
 func (x *Alert) ClearProcessViolation() {
-	x.ProcessViolation = nil
+	x.xxx_hidden_ProcessViolation = nil
 }
 
 func (x *Alert) ClearEnforcement() {
-	x.Enforcement = nil
+	x.xxx_hidden_Enforcement = nil
 }
 
 func (x *Alert) ClearTime() {
-	x.Time = nil
+	x.xxx_hidden_Time = nil
 }
 
 func (x *Alert) ClearFirstOccurred() {
-	x.FirstOccurred = nil
+	x.xxx_hidden_FirstOccurred = nil
 }
 
 func (x *Alert) ClearResolvedAt() {
-	x.ResolvedAt = nil
+	x.xxx_hidden_ResolvedAt = nil
 }
 
 func (x *Alert) ClearState() {
-	x.State = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 14)
+	x.xxx_hidden_State = ViolationState_ACTIVE
 }
 
 func (x *Alert) ClearPlatformComponent() {
-	x.PlatformComponent = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 15)
+	x.xxx_hidden_PlatformComponent = false
 }
 
 func (x *Alert) ClearEntityType() {
-	x.EntityType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 16)
+	x.xxx_hidden_EntityType = Alert_UNSET
 }
 
 const Alert_Entity_not_set_case case_Alert_Entity = 0
@@ -799,12 +826,12 @@ func (x *Alert) WhichEntity() case_Alert_Entity {
 	if x == nil {
 		return Alert_Entity_not_set_case
 	}
-	switch x.Entity.(type) {
-	case *Alert_Deployment_:
+	switch x.xxx_hidden_Entity.(type) {
+	case *alert_Deployment_:
 		return Alert_Deployment_case
-	case *Alert_Image:
+	case *alert_Image:
 		return Alert_Image_case
-	case *Alert_Resource_:
+	case *alert_Resource_:
 		return Alert_Resource_case
 	default:
 		return Alert_Entity_not_set_case
@@ -821,7 +848,7 @@ type Alert_builder struct {
 	ClusterName    *string
 	Namespace      *string
 	NamespaceId    *string
-	// Fields of oneof Entity:
+	// Fields of oneof xxx_hidden_Entity:
 	// Represents an alert on a deployment
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	Deployment *Alert_Deployment
@@ -831,7 +858,7 @@ type Alert_builder struct {
 	// Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	Resource *Alert_Resource
-	// -- end of Entity
+	// -- end of xxx_hidden_Entity
 	// For run-time phase alert, a maximum of 40 violations are retained.
 	Violations       []*Alert_Violation
 	ProcessViolation *Alert_ProcessViolation
@@ -849,31 +876,58 @@ func (b0 Alert_builder) Build() *Alert {
 	m0 := &Alert{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Policy = b.Policy
-	x.LifecycleStage = b.LifecycleStage
-	x.ClusterId = b.ClusterId
-	x.ClusterName = b.ClusterName
-	x.Namespace = b.Namespace
-	x.NamespaceId = b.NamespaceId
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 17)
+		x.xxx_hidden_Id = b.Id
+	}
+	x.xxx_hidden_Policy = b.Policy
+	if b.LifecycleStage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 17)
+		x.xxx_hidden_LifecycleStage = *b.LifecycleStage
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 17)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 17)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 17)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.NamespaceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 17)
+		x.xxx_hidden_NamespaceId = b.NamespaceId
+	}
 	if b.Deployment != nil {
-		x.Entity = &Alert_Deployment_{b.Deployment}
+		x.xxx_hidden_Entity = &alert_Deployment_{b.Deployment}
 	}
 	if b.Image != nil {
-		x.Entity = &Alert_Image{b.Image}
+		x.xxx_hidden_Entity = &alert_Image{b.Image}
 	}
 	if b.Resource != nil {
-		x.Entity = &Alert_Resource_{b.Resource}
+		x.xxx_hidden_Entity = &alert_Resource_{b.Resource}
 	}
-	x.Violations = b.Violations
-	x.ProcessViolation = b.ProcessViolation
-	x.Enforcement = b.Enforcement
-	x.Time = b.Time
-	x.FirstOccurred = b.FirstOccurred
-	x.ResolvedAt = b.ResolvedAt
-	x.State = b.State
-	x.PlatformComponent = b.PlatformComponent
-	x.EntityType = b.EntityType
+	x.xxx_hidden_Violations = &b.Violations
+	x.xxx_hidden_ProcessViolation = b.ProcessViolation
+	x.xxx_hidden_Enforcement = b.Enforcement
+	x.xxx_hidden_Time = b.Time
+	x.xxx_hidden_FirstOccurred = b.FirstOccurred
+	x.xxx_hidden_ResolvedAt = b.ResolvedAt
+	if b.State != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 17)
+		x.xxx_hidden_State = *b.State
+	}
+	if b.PlatformComponent != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 15, 17)
+		x.xxx_hidden_PlatformComponent = *b.PlatformComponent
+	}
+	if b.EntityType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 16, 17)
+		x.xxx_hidden_EntityType = *b.EntityType
+	}
 	return m0
 }
 
@@ -891,49 +945,45 @@ type isAlert_Entity interface {
 	isAlert_Entity()
 }
 
-type Alert_Deployment_ struct {
+type alert_Deployment_ struct {
 	// Represents an alert on a deployment
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	Deployment *Alert_Deployment `protobuf:"bytes,4,opt,name=deployment,oneof"`
 }
 
-type Alert_Image struct {
+type alert_Image struct {
 	// Represents an alert on a container image.
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	Image *ContainerImage `protobuf:"bytes,15,opt,name=image,oneof" sql:"ignore-fks,ignore-index"` // @gotags: sql:"ignore-fks,ignore-index"
 }
 
-type Alert_Resource_ struct {
+type alert_Resource_ struct {
 	// Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	Resource *Alert_Resource `protobuf:"bytes,16,opt,name=resource,oneof"`
 }
 
-func (*Alert_Deployment_) isAlert_Entity() {}
+func (*alert_Deployment_) isAlert_Entity() {}
 
-func (*Alert_Image) isAlert_Entity() {}
+func (*alert_Image) isAlert_Entity() {}
 
-func (*Alert_Resource_) isAlert_Entity() {}
+func (*alert_Resource_) isAlert_Entity() {}
 
 type ListAlert struct {
-	state             protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Id                *string                     `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	LifecycleStage    *LifecycleStage             `protobuf:"varint,2,opt,name=lifecycle_stage,json=lifecycleStage,enum=storage.LifecycleStage" json:"lifecycle_stage,omitempty"`
-	Time              *timestamppb.Timestamp      `protobuf:"bytes,3,opt,name=time" json:"time,omitempty"`
-	Policy            *ListAlertPolicy            `protobuf:"bytes,4,opt,name=policy" json:"policy,omitempty"`
-	State             *ViolationState             `protobuf:"varint,6,opt,name=state,enum=storage.ViolationState" json:"state,omitempty"`
-	EnforcementCount  *int32                      `protobuf:"varint,7,opt,name=enforcement_count,json=enforcementCount" json:"enforcement_count,omitempty"`
-	EnforcementAction *EnforcementAction          `protobuf:"varint,9,opt,name=enforcement_action,json=enforcementAction,enum=storage.EnforcementAction" json:"enforcement_action,omitempty"`
-	CommonEntityInfo  *ListAlert_CommonEntityInfo `protobuf:"bytes,10,opt,name=common_entity_info,json=commonEntityInfo" json:"common_entity_info,omitempty"`
-	// Tags 5, 11-15 reserved for this oneof. Next available tag: 12
-	//
-	// Types that are valid to be assigned to Entity:
-	//
-	//	*ListAlert_Deployment
-	//	*ListAlert_Resource
-	Entity        isListAlert_Entity `protobuf_oneof:"Entity"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                        protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Id                *string                     `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_LifecycleStage    LifecycleStage              `protobuf:"varint,2,opt,name=lifecycle_stage,json=lifecycleStage,enum=storage.LifecycleStage"`
+	xxx_hidden_Time              *timestamppb.Timestamp      `protobuf:"bytes,3,opt,name=time"`
+	xxx_hidden_Policy            *ListAlertPolicy            `protobuf:"bytes,4,opt,name=policy"`
+	xxx_hidden_State             ViolationState              `protobuf:"varint,6,opt,name=state,enum=storage.ViolationState"`
+	xxx_hidden_EnforcementCount  int32                       `protobuf:"varint,7,opt,name=enforcement_count,json=enforcementCount"`
+	xxx_hidden_EnforcementAction EnforcementAction           `protobuf:"varint,9,opt,name=enforcement_action,json=enforcementAction,enum=storage.EnforcementAction"`
+	xxx_hidden_CommonEntityInfo  *ListAlert_CommonEntityInfo `protobuf:"bytes,10,opt,name=common_entity_info,json=commonEntityInfo"`
+	xxx_hidden_Entity            isListAlert_Entity          `protobuf_oneof:"Entity"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *ListAlert) Reset() {
@@ -962,71 +1012,73 @@ func (x *ListAlert) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ListAlert) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlert) GetLifecycleStage() LifecycleStage {
-	if x != nil && x.LifecycleStage != nil {
-		return *x.LifecycleStage
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_LifecycleStage
+		}
 	}
 	return LifecycleStage_DEPLOY
 }
 
 func (x *ListAlert) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Time
+		return x.xxx_hidden_Time
 	}
 	return nil
 }
 
 func (x *ListAlert) GetPolicy() *ListAlertPolicy {
 	if x != nil {
-		return x.Policy
+		return x.xxx_hidden_Policy
 	}
 	return nil
 }
 
 func (x *ListAlert) GetState() ViolationState {
-	if x != nil && x.State != nil {
-		return *x.State
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			return x.xxx_hidden_State
+		}
 	}
 	return ViolationState_ACTIVE
 }
 
 func (x *ListAlert) GetEnforcementCount() int32 {
-	if x != nil && x.EnforcementCount != nil {
-		return *x.EnforcementCount
+	if x != nil {
+		return x.xxx_hidden_EnforcementCount
 	}
 	return 0
 }
 
 func (x *ListAlert) GetEnforcementAction() EnforcementAction {
-	if x != nil && x.EnforcementAction != nil {
-		return *x.EnforcementAction
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			return x.xxx_hidden_EnforcementAction
+		}
 	}
 	return EnforcementAction_UNSET_ENFORCEMENT
 }
 
 func (x *ListAlert) GetCommonEntityInfo() *ListAlert_CommonEntityInfo {
 	if x != nil {
-		return x.CommonEntityInfo
-	}
-	return nil
-}
-
-func (x *ListAlert) GetEntity() isListAlert_Entity {
-	if x != nil {
-		return x.Entity
+		return x.xxx_hidden_CommonEntityInfo
 	}
 	return nil
 }
 
 func (x *ListAlert) GetDeployment() *ListAlertDeployment {
 	if x != nil {
-		if x, ok := x.Entity.(*ListAlert_Deployment); ok {
+		if x, ok := x.xxx_hidden_Entity.(*listAlert_Deployment); ok {
 			return x.Deployment
 		}
 	}
@@ -1035,7 +1087,7 @@ func (x *ListAlert) GetDeployment() *ListAlertDeployment {
 
 func (x *ListAlert) GetResource() *ListAlert_ResourceEntity {
 	if x != nil {
-		if x, ok := x.Entity.(*ListAlert_Resource); ok {
+		if x, ok := x.xxx_hidden_Entity.(*listAlert_Resource); ok {
 			return x.Resource
 		}
 	}
@@ -1043,121 +1095,126 @@ func (x *ListAlert) GetResource() *ListAlert_ResourceEntity {
 }
 
 func (x *ListAlert) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
 }
 
 func (x *ListAlert) SetLifecycleStage(v LifecycleStage) {
-	x.LifecycleStage = &v
+	x.xxx_hidden_LifecycleStage = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
 }
 
 func (x *ListAlert) SetTime(v *timestamppb.Timestamp) {
-	x.Time = v
+	x.xxx_hidden_Time = v
 }
 
 func (x *ListAlert) SetPolicy(v *ListAlertPolicy) {
-	x.Policy = v
+	x.xxx_hidden_Policy = v
 }
 
 func (x *ListAlert) SetState(v ViolationState) {
-	x.State = &v
+	x.xxx_hidden_State = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
 }
 
 func (x *ListAlert) SetEnforcementCount(v int32) {
-	x.EnforcementCount = &v
+	x.xxx_hidden_EnforcementCount = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
 }
 
 func (x *ListAlert) SetEnforcementAction(v EnforcementAction) {
-	x.EnforcementAction = &v
+	x.xxx_hidden_EnforcementAction = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
 }
 
 func (x *ListAlert) SetCommonEntityInfo(v *ListAlert_CommonEntityInfo) {
-	x.CommonEntityInfo = v
+	x.xxx_hidden_CommonEntityInfo = v
 }
 
 func (x *ListAlert) SetDeployment(v *ListAlertDeployment) {
 	if v == nil {
-		x.Entity = nil
+		x.xxx_hidden_Entity = nil
 		return
 	}
-	x.Entity = &ListAlert_Deployment{v}
+	x.xxx_hidden_Entity = &listAlert_Deployment{v}
 }
 
 func (x *ListAlert) SetResource(v *ListAlert_ResourceEntity) {
 	if v == nil {
-		x.Entity = nil
+		x.xxx_hidden_Entity = nil
 		return
 	}
-	x.Entity = &ListAlert_Resource{v}
+	x.xxx_hidden_Entity = &listAlert_Resource{v}
 }
 
 func (x *ListAlert) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ListAlert) HasLifecycleStage() bool {
 	if x == nil {
 		return false
 	}
-	return x.LifecycleStage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ListAlert) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.Time != nil
+	return x.xxx_hidden_Time != nil
 }
 
 func (x *ListAlert) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.Policy != nil
+	return x.xxx_hidden_Policy != nil
 }
 
 func (x *ListAlert) HasState() bool {
 	if x == nil {
 		return false
 	}
-	return x.State != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ListAlert) HasEnforcementCount() bool {
 	if x == nil {
 		return false
 	}
-	return x.EnforcementCount != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *ListAlert) HasEnforcementAction() bool {
 	if x == nil {
 		return false
 	}
-	return x.EnforcementAction != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ListAlert) HasCommonEntityInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.CommonEntityInfo != nil
+	return x.xxx_hidden_CommonEntityInfo != nil
 }
 
 func (x *ListAlert) HasEntity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Entity != nil
+	return x.xxx_hidden_Entity != nil
 }
 
 func (x *ListAlert) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Entity.(*ListAlert_Deployment)
+	_, ok := x.xxx_hidden_Entity.(*listAlert_Deployment)
 	return ok
 }
 
@@ -1165,55 +1222,60 @@ func (x *ListAlert) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Entity.(*ListAlert_Resource)
+	_, ok := x.xxx_hidden_Entity.(*listAlert_Resource)
 	return ok
 }
 
 func (x *ListAlert) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ListAlert) ClearLifecycleStage() {
-	x.LifecycleStage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_LifecycleStage = LifecycleStage_DEPLOY
 }
 
 func (x *ListAlert) ClearTime() {
-	x.Time = nil
+	x.xxx_hidden_Time = nil
 }
 
 func (x *ListAlert) ClearPolicy() {
-	x.Policy = nil
+	x.xxx_hidden_Policy = nil
 }
 
 func (x *ListAlert) ClearState() {
-	x.State = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_State = ViolationState_ACTIVE
 }
 
 func (x *ListAlert) ClearEnforcementCount() {
-	x.EnforcementCount = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_EnforcementCount = 0
 }
 
 func (x *ListAlert) ClearEnforcementAction() {
-	x.EnforcementAction = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_EnforcementAction = EnforcementAction_UNSET_ENFORCEMENT
 }
 
 func (x *ListAlert) ClearCommonEntityInfo() {
-	x.CommonEntityInfo = nil
+	x.xxx_hidden_CommonEntityInfo = nil
 }
 
 func (x *ListAlert) ClearEntity() {
-	x.Entity = nil
+	x.xxx_hidden_Entity = nil
 }
 
 func (x *ListAlert) ClearDeployment() {
-	if _, ok := x.Entity.(*ListAlert_Deployment); ok {
-		x.Entity = nil
+	if _, ok := x.xxx_hidden_Entity.(*listAlert_Deployment); ok {
+		x.xxx_hidden_Entity = nil
 	}
 }
 
 func (x *ListAlert) ClearResource() {
-	if _, ok := x.Entity.(*ListAlert_Resource); ok {
-		x.Entity = nil
+	if _, ok := x.xxx_hidden_Entity.(*listAlert_Resource); ok {
+		x.xxx_hidden_Entity = nil
 	}
 }
 
@@ -1225,10 +1287,10 @@ func (x *ListAlert) WhichEntity() case_ListAlert_Entity {
 	if x == nil {
 		return ListAlert_Entity_not_set_case
 	}
-	switch x.Entity.(type) {
-	case *ListAlert_Deployment:
+	switch x.xxx_hidden_Entity.(type) {
+	case *listAlert_Deployment:
 		return ListAlert_Deployment_case
-	case *ListAlert_Resource:
+	case *listAlert_Resource:
 		return ListAlert_Resource_case
 	default:
 		return ListAlert_Entity_not_set_case
@@ -1248,33 +1310,48 @@ type ListAlert_builder struct {
 	CommonEntityInfo  *ListAlert_CommonEntityInfo
 	// Tags 5, 11-15 reserved for this oneof. Next available tag: 12
 
-	// Fields of oneof Entity:
+	// Fields of oneof xxx_hidden_Entity:
 	// Represents an alert on a deployment
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	Deployment *ListAlertDeployment
 	// Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	Resource *ListAlert_ResourceEntity
-	// -- end of Entity
+	// -- end of xxx_hidden_Entity
 }
 
 func (b0 ListAlert_builder) Build() *ListAlert {
 	m0 := &ListAlert{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.LifecycleStage = b.LifecycleStage
-	x.Time = b.Time
-	x.Policy = b.Policy
-	x.State = b.State
-	x.EnforcementCount = b.EnforcementCount
-	x.EnforcementAction = b.EnforcementAction
-	x.CommonEntityInfo = b.CommonEntityInfo
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.LifecycleStage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
+		x.xxx_hidden_LifecycleStage = *b.LifecycleStage
+	}
+	x.xxx_hidden_Time = b.Time
+	x.xxx_hidden_Policy = b.Policy
+	if b.State != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
+		x.xxx_hidden_State = *b.State
+	}
+	if b.EnforcementCount != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
+		x.xxx_hidden_EnforcementCount = *b.EnforcementCount
+	}
+	if b.EnforcementAction != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
+		x.xxx_hidden_EnforcementAction = *b.EnforcementAction
+	}
+	x.xxx_hidden_CommonEntityInfo = b.CommonEntityInfo
 	if b.Deployment != nil {
-		x.Entity = &ListAlert_Deployment{b.Deployment}
+		x.xxx_hidden_Entity = &listAlert_Deployment{b.Deployment}
 	}
 	if b.Resource != nil {
-		x.Entity = &ListAlert_Resource{b.Resource}
+		x.xxx_hidden_Entity = &listAlert_Resource{b.Resource}
 	}
 	return m0
 }
@@ -1293,33 +1370,34 @@ type isListAlert_Entity interface {
 	isListAlert_Entity()
 }
 
-type ListAlert_Deployment struct {
+type listAlert_Deployment struct {
 	// Represents an alert on a deployment
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	Deployment *ListAlertDeployment `protobuf:"bytes,5,opt,name=deployment,oneof"`
 }
 
-type ListAlert_Resource struct {
+type listAlert_Resource struct {
 	// Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	Resource *ListAlert_ResourceEntity `protobuf:"bytes,11,opt,name=resource,oneof"`
 }
 
-func (*ListAlert_Deployment) isListAlert_Entity() {}
+func (*listAlert_Deployment) isListAlert_Entity() {}
 
-func (*ListAlert_Resource) isListAlert_Entity() {}
+func (*listAlert_Resource) isListAlert_Entity() {}
 
 type ListAlertPolicy struct {
-	state       protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id          *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name        *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Severity    *Severity              `protobuf:"varint,3,opt,name=severity,enum=storage.Severity" json:"severity,omitempty"`
-	Description *string                `protobuf:"bytes,4,opt,name=description" json:"description,omitempty"`
-	Categories  []string               `protobuf:"bytes,5,rep,name=categories" json:"categories,omitempty"`
-	// For internal use only.
-	DeveloperInternalFields *ListAlertPolicy_DevFields `protobuf:"bytes,6,opt,name=developer_internal_fields,json=developerInternalFields" json:"developer_internal_fields,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                              protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Id                      *string                    `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name                    *string                    `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Severity                Severity                   `protobuf:"varint,3,opt,name=severity,enum=storage.Severity"`
+	xxx_hidden_Description             *string                    `protobuf:"bytes,4,opt,name=description"`
+	xxx_hidden_Categories              []string                   `protobuf:"bytes,5,rep,name=categories"`
+	xxx_hidden_DeveloperInternalFields *ListAlertPolicy_DevFields `protobuf:"bytes,6,opt,name=developer_internal_fields,json=developerInternalFields"`
+	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
+	XXX_presence                       [1]uint32
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *ListAlertPolicy) Reset() {
@@ -1348,124 +1426,143 @@ func (x *ListAlertPolicy) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ListAlertPolicy) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlertPolicy) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlertPolicy) GetSeverity() Severity {
-	if x != nil && x.Severity != nil {
-		return *x.Severity
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Severity
+		}
 	}
 	return Severity_UNSET_SEVERITY
 }
 
 func (x *ListAlertPolicy) GetDescription() string {
-	if x != nil && x.Description != nil {
-		return *x.Description
+	if x != nil {
+		if x.xxx_hidden_Description != nil {
+			return *x.xxx_hidden_Description
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlertPolicy) GetCategories() []string {
 	if x != nil {
-		return x.Categories
+		return x.xxx_hidden_Categories
 	}
 	return nil
 }
 
 func (x *ListAlertPolicy) GetDeveloperInternalFields() *ListAlertPolicy_DevFields {
 	if x != nil {
-		return x.DeveloperInternalFields
+		return x.xxx_hidden_DeveloperInternalFields
 	}
 	return nil
 }
 
 func (x *ListAlertPolicy) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *ListAlertPolicy) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *ListAlertPolicy) SetSeverity(v Severity) {
-	x.Severity = &v
+	x.xxx_hidden_Severity = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *ListAlertPolicy) SetDescription(v string) {
-	x.Description = &v
+	x.xxx_hidden_Description = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *ListAlertPolicy) SetCategories(v []string) {
-	x.Categories = v
+	x.xxx_hidden_Categories = v
 }
 
 func (x *ListAlertPolicy) SetDeveloperInternalFields(v *ListAlertPolicy_DevFields) {
-	x.DeveloperInternalFields = v
+	x.xxx_hidden_DeveloperInternalFields = v
 }
 
 func (x *ListAlertPolicy) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ListAlertPolicy) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ListAlertPolicy) HasSeverity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Severity != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ListAlertPolicy) HasDescription() bool {
 	if x == nil {
 		return false
 	}
-	return x.Description != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ListAlertPolicy) HasDeveloperInternalFields() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeveloperInternalFields != nil
+	return x.xxx_hidden_DeveloperInternalFields != nil
 }
 
 func (x *ListAlertPolicy) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ListAlertPolicy) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ListAlertPolicy) ClearSeverity() {
-	x.Severity = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Severity = Severity_UNSET_SEVERITY
 }
 
 func (x *ListAlertPolicy) ClearDescription() {
-	x.Description = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Description = nil
 }
 
 func (x *ListAlertPolicy) ClearDeveloperInternalFields() {
-	x.DeveloperInternalFields = nil
+	x.xxx_hidden_DeveloperInternalFields = nil
 }
 
 type ListAlertPolicy_builder struct {
@@ -1484,39 +1581,41 @@ func (b0 ListAlertPolicy_builder) Build() *ListAlertPolicy {
 	m0 := &ListAlertPolicy{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Severity = b.Severity
-	x.Description = b.Description
-	x.Categories = b.Categories
-	x.DeveloperInternalFields = b.DeveloperInternalFields
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Severity != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_Severity = *b.Severity
+	}
+	if b.Description != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_Description = b.Description
+	}
+	x.xxx_hidden_Categories = b.Categories
+	x.xxx_hidden_DeveloperInternalFields = b.DeveloperInternalFields
 	return m0
 }
 
 type ListAlertDeployment struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id    *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name  *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
-	//
-	// Deprecated: Marked as deprecated in storage/alert.proto.
-	ClusterName *string `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"` // This field has moved to CommonEntityInfo
-	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
-	//
-	// Deprecated: Marked as deprecated in storage/alert.proto.
-	Namespace *string `protobuf:"bytes,5,opt,name=namespace" json:"namespace,omitempty"` // This field has moved to CommonEntityInfo
-	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
-	//
-	// Deprecated: Marked as deprecated in storage/alert.proto.
-	ClusterId *string `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"` // This field has moved to CommonEntityInfo
-	Inactive  *bool   `protobuf:"varint,7,opt,name=inactive" json:"inactive,omitempty"`
-	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
-	//
-	// Deprecated: Marked as deprecated in storage/alert.proto.
-	NamespaceId    *string `protobuf:"bytes,8,opt,name=namespace_id,json=namespaceId" json:"namespace_id,omitempty"` // This field has moved to CommonEntityInfo
-	DeploymentType *string `protobuf:"bytes,9,opt,name=deployment_type,json=deploymentType" json:"deployment_type,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id             *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name           *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_ClusterName    *string                `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_Namespace      *string                `protobuf:"bytes,5,opt,name=namespace"`
+	xxx_hidden_ClusterId      *string                `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Inactive       bool                   `protobuf:"varint,7,opt,name=inactive"`
+	xxx_hidden_NamespaceId    *string                `protobuf:"bytes,8,opt,name=namespace_id,json=namespaceId"`
+	xxx_hidden_DeploymentType *string                `protobuf:"bytes,9,opt,name=deployment_type,json=deploymentType"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *ListAlertDeployment) Reset() {
@@ -1545,113 +1644,142 @@ func (x *ListAlertDeployment) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ListAlertDeployment) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlertDeployment) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlertDeployment) GetInactive() bool {
-	if x != nil && x.Inactive != nil {
-		return *x.Inactive
+	if x != nil {
+		return x.xxx_hidden_Inactive
 	}
 	return false
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) GetNamespaceId() string {
-	if x != nil && x.NamespaceId != nil {
-		return *x.NamespaceId
+	if x != nil {
+		if x.xxx_hidden_NamespaceId != nil {
+			return *x.xxx_hidden_NamespaceId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlertDeployment) GetDeploymentType() string {
-	if x != nil && x.DeploymentType != nil {
-		return *x.DeploymentType
+	if x != nil {
+		if x.xxx_hidden_DeploymentType != nil {
+			return *x.xxx_hidden_DeploymentType
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlertDeployment) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
 }
 
 func (x *ListAlertDeployment) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
 }
 
 func (x *ListAlertDeployment) SetInactive(v bool) {
-	x.Inactive = &v
+	x.xxx_hidden_Inactive = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) SetNamespaceId(v string) {
-	x.NamespaceId = &v
+	x.xxx_hidden_NamespaceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
 }
 
 func (x *ListAlertDeployment) SetDeploymentType(v string) {
-	x.DeploymentType = &v
+	x.xxx_hidden_DeploymentType = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
 }
 
 func (x *ListAlertDeployment) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ListAlertDeployment) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
@@ -1659,7 +1787,7 @@ func (x *ListAlertDeployment) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
@@ -1667,7 +1795,7 @@ func (x *ListAlertDeployment) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
@@ -1675,14 +1803,14 @@ func (x *ListAlertDeployment) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ListAlertDeployment) HasInactive() bool {
 	if x == nil {
 		return false
 	}
-	return x.Inactive != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
@@ -1690,50 +1818,58 @@ func (x *ListAlertDeployment) HasNamespaceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.NamespaceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ListAlertDeployment) HasDeploymentType() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *ListAlertDeployment) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ListAlertDeployment) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ClusterName = nil
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Namespace = nil
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *ListAlertDeployment) ClearInactive() {
-	x.Inactive = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Inactive = false
 }
 
 // Deprecated: Marked as deprecated in storage/alert.proto.
 func (x *ListAlertDeployment) ClearNamespaceId() {
-	x.NamespaceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_NamespaceId = nil
 }
 
 func (x *ListAlertDeployment) ClearDeploymentType() {
-	x.DeploymentType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_DeploymentType = nil
 }
 
 type ListAlertDeployment_builder struct {
@@ -1765,32 +1901,58 @@ func (b0 ListAlertDeployment_builder) Build() *ListAlertDeployment {
 	m0 := &ListAlertDeployment{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.ClusterName = b.ClusterName
-	x.Namespace = b.Namespace
-	x.ClusterId = b.ClusterId
-	x.Inactive = b.Inactive
-	x.NamespaceId = b.NamespaceId
-	x.DeploymentType = b.DeploymentType
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.Inactive != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		x.xxx_hidden_Inactive = *b.Inactive
+	}
+	if b.NamespaceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_NamespaceId = b.NamespaceId
+	}
+	if b.DeploymentType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_DeploymentType = b.DeploymentType
+	}
 	return m0
 }
 
 type Alert_Deployment struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	Id            *string                       `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Deployment ID,store,hidden" sql:"index=hash,type(uuid)"`     // @gotags: search:"Deployment ID,store,hidden" sql:"index=hash,type(uuid)"
-	Name          *string                       `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Deployment,store"` // @gotags: search:"Deployment,store"
-	Type          *string                       `protobuf:"bytes,4,opt,name=type" json:"type,omitempty"`
-	Namespace     *string                       `protobuf:"bytes,5,opt,name=namespace" json:"namespace,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
-	NamespaceId   *string                       `protobuf:"bytes,16,opt,name=namespace_id,json=namespaceId" json:"namespace_id,omitempty"`                                             // This field has to be duplicated in Alert for scope management and search.
-	Labels        map[string]string             `protobuf:"bytes,7,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
-	ClusterId     *string                       `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`                                                    // This field has to be duplicated in Alert for scope management and search.
-	ClusterName   *string                       `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`                                             // This field has to be duplicated in Alert for scope management and search.
-	Containers    []*Alert_Deployment_Container `protobuf:"bytes,11,rep,name=containers" json:"containers,omitempty"`
-	Annotations   map[string]string             `protobuf:"bytes,14,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
-	Inactive      *bool                         `protobuf:"varint,15,opt,name=inactive" json:"inactive,omitempty" search:"Inactive Deployment"`                                                                                // @gotags: search:"Inactive Deployment"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                        `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                        `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Type        *string                        `protobuf:"bytes,4,opt,name=type"`
+	xxx_hidden_Namespace   *string                        `protobuf:"bytes,5,opt,name=namespace"`
+	xxx_hidden_NamespaceId *string                        `protobuf:"bytes,16,opt,name=namespace_id,json=namespaceId"`
+	xxx_hidden_Labels      map[string]string              `protobuf:"bytes,7,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_ClusterId   *string                        `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ClusterName *string                        `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_Containers  *[]*Alert_Deployment_Container `protobuf:"bytes,11,rep,name=containers"`
+	xxx_hidden_Annotations map[string]string              `protobuf:"bytes,14,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_Inactive    bool                           `protobuf:"varint,15,opt,name=inactive"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Alert_Deployment) Reset() {
@@ -1819,212 +1981,251 @@ func (x *Alert_Deployment) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Alert_Deployment) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Deployment) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Deployment) GetType() string {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if x.xxx_hidden_Type != nil {
+			return *x.xxx_hidden_Type
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Deployment) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Deployment) GetNamespaceId() string {
-	if x != nil && x.NamespaceId != nil {
-		return *x.NamespaceId
+	if x != nil {
+		if x.xxx_hidden_NamespaceId != nil {
+			return *x.xxx_hidden_NamespaceId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Deployment) GetLabels() map[string]string {
 	if x != nil {
-		return x.Labels
+		return x.xxx_hidden_Labels
 	}
 	return nil
 }
 
 func (x *Alert_Deployment) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Deployment) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Deployment) GetContainers() []*Alert_Deployment_Container {
 	if x != nil {
-		return x.Containers
+		if x.xxx_hidden_Containers != nil {
+			return *x.xxx_hidden_Containers
+		}
 	}
 	return nil
 }
 
 func (x *Alert_Deployment) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.Annotations
+		return x.xxx_hidden_Annotations
 	}
 	return nil
 }
 
 func (x *Alert_Deployment) GetInactive() bool {
-	if x != nil && x.Inactive != nil {
-		return *x.Inactive
+	if x != nil {
+		return x.xxx_hidden_Inactive
 	}
 	return false
 }
 
 func (x *Alert_Deployment) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
 }
 
 func (x *Alert_Deployment) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
 }
 
 func (x *Alert_Deployment) SetType(v string) {
-	x.Type = &v
+	x.xxx_hidden_Type = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
 }
 
 func (x *Alert_Deployment) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
 }
 
 func (x *Alert_Deployment) SetNamespaceId(v string) {
-	x.NamespaceId = &v
+	x.xxx_hidden_NamespaceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
 }
 
 func (x *Alert_Deployment) SetLabels(v map[string]string) {
-	x.Labels = v
+	x.xxx_hidden_Labels = v
 }
 
 func (x *Alert_Deployment) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
 }
 
 func (x *Alert_Deployment) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
 }
 
 func (x *Alert_Deployment) SetContainers(v []*Alert_Deployment_Container) {
-	x.Containers = v
+	x.xxx_hidden_Containers = &v
 }
 
 func (x *Alert_Deployment) SetAnnotations(v map[string]string) {
-	x.Annotations = v
+	x.xxx_hidden_Annotations = v
 }
 
 func (x *Alert_Deployment) SetInactive(v bool) {
-	x.Inactive = &v
+	x.xxx_hidden_Inactive = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
 }
 
 func (x *Alert_Deployment) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Alert_Deployment) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Alert_Deployment) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Alert_Deployment) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Alert_Deployment) HasNamespaceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.NamespaceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Alert_Deployment) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *Alert_Deployment) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *Alert_Deployment) HasInactive() bool {
 	if x == nil {
 		return false
 	}
-	return x.Inactive != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
 }
 
 func (x *Alert_Deployment) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Alert_Deployment) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Alert_Deployment) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Type = nil
 }
 
 func (x *Alert_Deployment) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *Alert_Deployment) ClearNamespaceId() {
-	x.NamespaceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_NamespaceId = nil
 }
 
 func (x *Alert_Deployment) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *Alert_Deployment) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *Alert_Deployment) ClearInactive() {
-	x.Inactive = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	x.xxx_hidden_Inactive = false
 }
 
 type Alert_Deployment_builder struct {
@@ -2047,31 +2248,57 @@ func (b0 Alert_Deployment_builder) Build() *Alert_Deployment {
 	m0 := &Alert_Deployment{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Type = b.Type
-	x.Namespace = b.Namespace
-	x.NamespaceId = b.NamespaceId
-	x.Labels = b.Labels
-	x.ClusterId = b.ClusterId
-	x.ClusterName = b.ClusterName
-	x.Containers = b.Containers
-	x.Annotations = b.Annotations
-	x.Inactive = b.Inactive
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
+		x.xxx_hidden_Type = b.Type
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.NamespaceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
+		x.xxx_hidden_NamespaceId = b.NamespaceId
+	}
+	x.xxx_hidden_Labels = b.Labels
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	x.xxx_hidden_Containers = &b.Containers
+	x.xxx_hidden_Annotations = b.Annotations
+	if b.Inactive != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
+		x.xxx_hidden_Inactive = *b.Inactive
+	}
 	return m0
 }
 
 // Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)
 type Alert_Resource struct {
-	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
-	ResourceType  *Alert_Resource_ResourceType `protobuf:"varint,1,opt,name=resource_type,json=resourceType,enum=storage.Alert_Resource_ResourceType" json:"resource_type,omitempty" search:"Resource Type,store"` // @gotags: search:"Resource Type,store"
-	Name          *string                      `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Resource"`                                                                               // @gotags: search:"Resource"
-	ClusterId     *string                      `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`                                                    // This field has to be duplicated in Alert for scope management and search.
-	ClusterName   *string                      `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`                                              // This field has to be duplicated in Alert for scope management and search.
-	Namespace     *string                      `protobuf:"bytes,5,opt,name=namespace" json:"namespace,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
-	NamespaceId   *string                      `protobuf:"bytes,6,opt,name=namespace_id,json=namespaceId" json:"namespace_id,omitempty"`                                              // This field has to be duplicated in Alert for scope management and search.
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_ResourceType Alert_Resource_ResourceType `protobuf:"varint,1,opt,name=resource_type,json=resourceType,enum=storage.Alert_Resource_ResourceType"`
+	xxx_hidden_Name         *string                     `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_ClusterId    *string                     `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ClusterName  *string                     `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_Namespace    *string                     `protobuf:"bytes,5,opt,name=namespace"`
+	xxx_hidden_NamespaceId  *string                     `protobuf:"bytes,6,opt,name=namespace_id,json=namespaceId"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Alert_Resource) Reset() {
@@ -2100,135 +2327,164 @@ func (x *Alert_Resource) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Alert_Resource) GetResourceType() Alert_Resource_ResourceType {
-	if x != nil && x.ResourceType != nil {
-		return *x.ResourceType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_ResourceType
+		}
 	}
 	return Alert_Resource_UNKNOWN
 }
 
 func (x *Alert_Resource) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Resource) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Resource) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Resource) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Resource) GetNamespaceId() string {
-	if x != nil && x.NamespaceId != nil {
-		return *x.NamespaceId
+	if x != nil {
+		if x.xxx_hidden_NamespaceId != nil {
+			return *x.xxx_hidden_NamespaceId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Resource) SetResourceType(v Alert_Resource_ResourceType) {
-	x.ResourceType = &v
+	x.xxx_hidden_ResourceType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *Alert_Resource) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *Alert_Resource) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *Alert_Resource) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *Alert_Resource) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
 }
 
 func (x *Alert_Resource) SetNamespaceId(v string) {
-	x.NamespaceId = &v
+	x.xxx_hidden_NamespaceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
 }
 
 func (x *Alert_Resource) HasResourceType() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResourceType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Alert_Resource) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Alert_Resource) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Alert_Resource) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Alert_Resource) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Alert_Resource) HasNamespaceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.NamespaceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Alert_Resource) ClearResourceType() {
-	x.ResourceType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ResourceType = Alert_Resource_UNKNOWN
 }
 
 func (x *Alert_Resource) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Alert_Resource) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *Alert_Resource) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *Alert_Resource) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *Alert_Resource) ClearNamespaceId() {
-	x.NamespaceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_NamespaceId = nil
 }
 
 type Alert_Resource_builder struct {
@@ -2246,31 +2502,43 @@ func (b0 Alert_Resource_builder) Build() *Alert_Resource {
 	m0 := &Alert_Resource{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ResourceType = b.ResourceType
-	x.Name = b.Name
-	x.ClusterId = b.ClusterId
-	x.ClusterName = b.ClusterName
-	x.Namespace = b.Namespace
-	x.NamespaceId = b.NamespaceId
+	if b.ResourceType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_ResourceType = *b.ResourceType
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.NamespaceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_NamespaceId = b.NamespaceId
+	}
 	return m0
 }
 
 type Alert_Violation struct {
-	state   protoimpl.MessageState `protogen:"hybrid.v1"`
-	Message *string                `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	// Types that are valid to be assigned to MessageAttributes:
-	//
-	//	*Alert_Violation_KeyValueAttrs_
-	//	*Alert_Violation_NetworkFlowInfo_
-	MessageAttributes isAlert_Violation_MessageAttributes `protobuf_oneof:"MessageAttributes"`
-	// 'type' is for internal use only.
-	Type *Alert_Violation_Type `protobuf:"varint,5,opt,name=type,enum=storage.Alert_Violation_Type" json:"type,omitempty"`
-	// Indicates violation time. This field differs from top-level field 'time' which represents last time the alert
-	// occurred in case of multiple occurrences of the policy alert. As of 55.0, this field is set only for kubernetes
-	// event violations, but may not be limited to it in future.
-	Time          *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=time" json:"time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                        protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_Message           *string                             `protobuf:"bytes,1,opt,name=message"`
+	xxx_hidden_MessageAttributes isAlert_Violation_MessageAttributes `protobuf_oneof:"MessageAttributes"`
+	xxx_hidden_Type              Alert_Violation_Type                `protobuf:"varint,5,opt,name=type,enum=storage.Alert_Violation_Type"`
+	xxx_hidden_Time              *timestamppb.Timestamp              `protobuf:"bytes,6,opt,name=time"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *Alert_Violation) Reset() {
@@ -2299,22 +2567,18 @@ func (x *Alert_Violation) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Alert_Violation) GetMessage() string {
-	if x != nil && x.Message != nil {
-		return *x.Message
+	if x != nil {
+		if x.xxx_hidden_Message != nil {
+			return *x.xxx_hidden_Message
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *Alert_Violation) GetMessageAttributes() isAlert_Violation_MessageAttributes {
-	if x != nil {
-		return x.MessageAttributes
-	}
-	return nil
-}
-
 func (x *Alert_Violation) GetKeyValueAttrs() *Alert_Violation_KeyValueAttrs {
 	if x != nil {
-		if x, ok := x.MessageAttributes.(*Alert_Violation_KeyValueAttrs_); ok {
+		if x, ok := x.xxx_hidden_MessageAttributes.(*alert_Violation_KeyValueAttrs_); ok {
 			return x.KeyValueAttrs
 		}
 	}
@@ -2323,7 +2587,7 @@ func (x *Alert_Violation) GetKeyValueAttrs() *Alert_Violation_KeyValueAttrs {
 
 func (x *Alert_Violation) GetNetworkFlowInfo() *Alert_Violation_NetworkFlowInfo {
 	if x != nil {
-		if x, ok := x.MessageAttributes.(*Alert_Violation_NetworkFlowInfo_); ok {
+		if x, ok := x.xxx_hidden_MessageAttributes.(*alert_Violation_NetworkFlowInfo_); ok {
 			return x.NetworkFlowInfo
 		}
 	}
@@ -2331,66 +2595,70 @@ func (x *Alert_Violation) GetNetworkFlowInfo() *Alert_Violation_NetworkFlowInfo 
 }
 
 func (x *Alert_Violation) GetType() Alert_Violation_Type {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return Alert_Violation_GENERIC
 }
 
 func (x *Alert_Violation) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Time
+		return x.xxx_hidden_Time
 	}
 	return nil
 }
 
 func (x *Alert_Violation) SetMessage(v string) {
-	x.Message = &v
+	x.xxx_hidden_Message = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *Alert_Violation) SetKeyValueAttrs(v *Alert_Violation_KeyValueAttrs) {
 	if v == nil {
-		x.MessageAttributes = nil
+		x.xxx_hidden_MessageAttributes = nil
 		return
 	}
-	x.MessageAttributes = &Alert_Violation_KeyValueAttrs_{v}
+	x.xxx_hidden_MessageAttributes = &alert_Violation_KeyValueAttrs_{v}
 }
 
 func (x *Alert_Violation) SetNetworkFlowInfo(v *Alert_Violation_NetworkFlowInfo) {
 	if v == nil {
-		x.MessageAttributes = nil
+		x.xxx_hidden_MessageAttributes = nil
 		return
 	}
-	x.MessageAttributes = &Alert_Violation_NetworkFlowInfo_{v}
+	x.xxx_hidden_MessageAttributes = &alert_Violation_NetworkFlowInfo_{v}
 }
 
 func (x *Alert_Violation) SetType(v Alert_Violation_Type) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *Alert_Violation) SetTime(v *timestamppb.Timestamp) {
-	x.Time = v
+	x.xxx_hidden_Time = v
 }
 
 func (x *Alert_Violation) HasMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Message != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Alert_Violation) HasMessageAttributes() bool {
 	if x == nil {
 		return false
 	}
-	return x.MessageAttributes != nil
+	return x.xxx_hidden_MessageAttributes != nil
 }
 
 func (x *Alert_Violation) HasKeyValueAttrs() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.MessageAttributes.(*Alert_Violation_KeyValueAttrs_)
+	_, ok := x.xxx_hidden_MessageAttributes.(*alert_Violation_KeyValueAttrs_)
 	return ok
 }
 
@@ -2398,7 +2666,7 @@ func (x *Alert_Violation) HasNetworkFlowInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.MessageAttributes.(*Alert_Violation_NetworkFlowInfo_)
+	_, ok := x.xxx_hidden_MessageAttributes.(*alert_Violation_NetworkFlowInfo_)
 	return ok
 }
 
@@ -2406,42 +2674,44 @@ func (x *Alert_Violation) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Alert_Violation) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.Time != nil
+	return x.xxx_hidden_Time != nil
 }
 
 func (x *Alert_Violation) ClearMessage() {
-	x.Message = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Message = nil
 }
 
 func (x *Alert_Violation) ClearMessageAttributes() {
-	x.MessageAttributes = nil
+	x.xxx_hidden_MessageAttributes = nil
 }
 
 func (x *Alert_Violation) ClearKeyValueAttrs() {
-	if _, ok := x.MessageAttributes.(*Alert_Violation_KeyValueAttrs_); ok {
-		x.MessageAttributes = nil
+	if _, ok := x.xxx_hidden_MessageAttributes.(*alert_Violation_KeyValueAttrs_); ok {
+		x.xxx_hidden_MessageAttributes = nil
 	}
 }
 
 func (x *Alert_Violation) ClearNetworkFlowInfo() {
-	if _, ok := x.MessageAttributes.(*Alert_Violation_NetworkFlowInfo_); ok {
-		x.MessageAttributes = nil
+	if _, ok := x.xxx_hidden_MessageAttributes.(*alert_Violation_NetworkFlowInfo_); ok {
+		x.xxx_hidden_MessageAttributes = nil
 	}
 }
 
 func (x *Alert_Violation) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Type = Alert_Violation_GENERIC
 }
 
 func (x *Alert_Violation) ClearTime() {
-	x.Time = nil
+	x.xxx_hidden_Time = nil
 }
 
 const Alert_Violation_MessageAttributes_not_set_case case_Alert_Violation_MessageAttributes = 0
@@ -2452,10 +2722,10 @@ func (x *Alert_Violation) WhichMessageAttributes() case_Alert_Violation_MessageA
 	if x == nil {
 		return Alert_Violation_MessageAttributes_not_set_case
 	}
-	switch x.MessageAttributes.(type) {
-	case *Alert_Violation_KeyValueAttrs_:
+	switch x.xxx_hidden_MessageAttributes.(type) {
+	case *alert_Violation_KeyValueAttrs_:
 		return Alert_Violation_KeyValueAttrs_case
-	case *Alert_Violation_NetworkFlowInfo_:
+	case *alert_Violation_NetworkFlowInfo_:
 		return Alert_Violation_NetworkFlowInfo_case
 	default:
 		return Alert_Violation_MessageAttributes_not_set_case
@@ -2466,10 +2736,10 @@ type Alert_Violation_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Message *string
-	// Fields of oneof MessageAttributes:
+	// Fields of oneof xxx_hidden_MessageAttributes:
 	KeyValueAttrs   *Alert_Violation_KeyValueAttrs
 	NetworkFlowInfo *Alert_Violation_NetworkFlowInfo
-	// -- end of MessageAttributes
+	// -- end of xxx_hidden_MessageAttributes
 	// 'type' is for internal use only.
 	Type *Alert_Violation_Type
 	// Indicates violation time. This field differs from top-level field 'time' which represents last time the alert
@@ -2482,15 +2752,21 @@ func (b0 Alert_Violation_builder) Build() *Alert_Violation {
 	m0 := &Alert_Violation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Message = b.Message
+	if b.Message != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Message = b.Message
+	}
 	if b.KeyValueAttrs != nil {
-		x.MessageAttributes = &Alert_Violation_KeyValueAttrs_{b.KeyValueAttrs}
+		x.xxx_hidden_MessageAttributes = &alert_Violation_KeyValueAttrs_{b.KeyValueAttrs}
 	}
 	if b.NetworkFlowInfo != nil {
-		x.MessageAttributes = &Alert_Violation_NetworkFlowInfo_{b.NetworkFlowInfo}
+		x.xxx_hidden_MessageAttributes = &alert_Violation_NetworkFlowInfo_{b.NetworkFlowInfo}
 	}
-	x.Type = b.Type
-	x.Time = b.Time
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Type = *b.Type
+	}
+	x.xxx_hidden_Time = b.Time
 	return m0
 }
 
@@ -2508,24 +2784,26 @@ type isAlert_Violation_MessageAttributes interface {
 	isAlert_Violation_MessageAttributes()
 }
 
-type Alert_Violation_KeyValueAttrs_ struct {
+type alert_Violation_KeyValueAttrs_ struct {
 	KeyValueAttrs *Alert_Violation_KeyValueAttrs `protobuf:"bytes,4,opt,name=key_value_attrs,json=keyValueAttrs,oneof"`
 }
 
-type Alert_Violation_NetworkFlowInfo_ struct {
+type alert_Violation_NetworkFlowInfo_ struct {
 	NetworkFlowInfo *Alert_Violation_NetworkFlowInfo `protobuf:"bytes,7,opt,name=network_flow_info,json=networkFlowInfo,oneof" search:"-" sql:"-"` // @gotags: search:"-" sql:"-"
 }
 
-func (*Alert_Violation_KeyValueAttrs_) isAlert_Violation_MessageAttributes() {}
+func (*alert_Violation_KeyValueAttrs_) isAlert_Violation_MessageAttributes() {}
 
-func (*Alert_Violation_NetworkFlowInfo_) isAlert_Violation_MessageAttributes() {}
+func (*alert_Violation_NetworkFlowInfo_) isAlert_Violation_MessageAttributes() {}
 
 type Alert_ProcessViolation struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Message       *string                `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	Processes     []*ProcessIndicator    `protobuf:"bytes,2,rep,name=processes" json:"processes,omitempty" sql:"ignore-fks"` // @gotags: sql:"ignore-fks"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Message     *string                `protobuf:"bytes,1,opt,name=message"`
+	xxx_hidden_Processes   *[]*ProcessIndicator   `protobuf:"bytes,2,rep,name=processes"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Alert_ProcessViolation) Reset() {
@@ -2554,36 +2832,43 @@ func (x *Alert_ProcessViolation) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Alert_ProcessViolation) GetMessage() string {
-	if x != nil && x.Message != nil {
-		return *x.Message
+	if x != nil {
+		if x.xxx_hidden_Message != nil {
+			return *x.xxx_hidden_Message
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_ProcessViolation) GetProcesses() []*ProcessIndicator {
 	if x != nil {
-		return x.Processes
+		if x.xxx_hidden_Processes != nil {
+			return *x.xxx_hidden_Processes
+		}
 	}
 	return nil
 }
 
 func (x *Alert_ProcessViolation) SetMessage(v string) {
-	x.Message = &v
+	x.xxx_hidden_Message = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *Alert_ProcessViolation) SetProcesses(v []*ProcessIndicator) {
-	x.Processes = v
+	x.xxx_hidden_Processes = &v
 }
 
 func (x *Alert_ProcessViolation) HasMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Message != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Alert_ProcessViolation) ClearMessage() {
-	x.Message = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Message = nil
 }
 
 type Alert_ProcessViolation_builder struct {
@@ -2597,17 +2882,22 @@ func (b0 Alert_ProcessViolation_builder) Build() *Alert_ProcessViolation {
 	m0 := &Alert_ProcessViolation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Message = b.Message
-	x.Processes = b.Processes
+	if b.Message != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Message = b.Message
+	}
+	x.xxx_hidden_Processes = &b.Processes
 	return m0
 }
 
 type Alert_Enforcement struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Action        *EnforcementAction     `protobuf:"varint,1,opt,name=action,enum=storage.EnforcementAction" json:"action,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
-	Message       *string                `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Action      EnforcementAction      `protobuf:"varint,1,opt,name=action,enum=storage.EnforcementAction"`
+	xxx_hidden_Message     *string                `protobuf:"bytes,2,opt,name=message"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Alert_Enforcement) Reset() {
@@ -2636,47 +2926,56 @@ func (x *Alert_Enforcement) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Alert_Enforcement) GetAction() EnforcementAction {
-	if x != nil && x.Action != nil {
-		return *x.Action
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Action
+		}
 	}
 	return EnforcementAction_UNSET_ENFORCEMENT
 }
 
 func (x *Alert_Enforcement) GetMessage() string {
-	if x != nil && x.Message != nil {
-		return *x.Message
+	if x != nil {
+		if x.xxx_hidden_Message != nil {
+			return *x.xxx_hidden_Message
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Enforcement) SetAction(v EnforcementAction) {
-	x.Action = &v
+	x.xxx_hidden_Action = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *Alert_Enforcement) SetMessage(v string) {
-	x.Message = &v
+	x.xxx_hidden_Message = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *Alert_Enforcement) HasAction() bool {
 	if x == nil {
 		return false
 	}
-	return x.Action != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Alert_Enforcement) HasMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Message != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Alert_Enforcement) ClearAction() {
-	x.Action = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Action = EnforcementAction_UNSET_ENFORCEMENT
 }
 
 func (x *Alert_Enforcement) ClearMessage() {
-	x.Message = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Message = nil
 }
 
 type Alert_Enforcement_builder struct {
@@ -2690,17 +2989,25 @@ func (b0 Alert_Enforcement_builder) Build() *Alert_Enforcement {
 	m0 := &Alert_Enforcement{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Action = b.Action
-	x.Message = b.Message
+	if b.Action != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Action = *b.Action
+	}
+	if b.Message != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Message = b.Message
+	}
 	return m0
 }
 
 type Alert_Deployment_Container struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Image         *ContainerImage        `protobuf:"bytes,3,opt,name=image" json:"image,omitempty" search:"-" sql:"ignore-fks,ignore-index"` // @gotags: search:"-" sql:"ignore-fks,ignore-index"
-	Name          *string                `protobuf:"bytes,10,opt,name=name" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Image       *ContainerImage        `protobuf:"bytes,3,opt,name=image"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,10,opt,name=name"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Alert_Deployment_Container) Reset() {
@@ -2730,46 +3037,51 @@ func (x *Alert_Deployment_Container) ProtoReflect() protoreflect.Message {
 
 func (x *Alert_Deployment_Container) GetImage() *ContainerImage {
 	if x != nil {
-		return x.Image
+		return x.xxx_hidden_Image
 	}
 	return nil
 }
 
 func (x *Alert_Deployment_Container) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Deployment_Container) SetImage(v *ContainerImage) {
-	x.Image = v
+	x.xxx_hidden_Image = v
 }
 
 func (x *Alert_Deployment_Container) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *Alert_Deployment_Container) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Image != nil
+	return x.xxx_hidden_Image != nil
 }
 
 func (x *Alert_Deployment_Container) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Alert_Deployment_Container) ClearImage() {
-	x.Image = nil
+	x.xxx_hidden_Image = nil
 }
 
 func (x *Alert_Deployment_Container) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 type Alert_Deployment_Container_builder struct {
@@ -2783,16 +3095,19 @@ func (b0 Alert_Deployment_Container_builder) Build() *Alert_Deployment_Container
 	m0 := &Alert_Deployment_Container{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Image = b.Image
-	x.Name = b.Name
+	x.xxx_hidden_Image = b.Image
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Name = b.Name
+	}
 	return m0
 }
 
 type Alert_Violation_KeyValueAttrs struct {
-	state         protoimpl.MessageState                        `protogen:"hybrid.v1"`
-	Attrs         []*Alert_Violation_KeyValueAttrs_KeyValueAttr `protobuf:"bytes,1,rep,name=attrs" json:"attrs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState                         `protogen:"opaque.v1"`
+	xxx_hidden_Attrs *[]*Alert_Violation_KeyValueAttrs_KeyValueAttr `protobuf:"bytes,1,rep,name=attrs"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Alert_Violation_KeyValueAttrs) Reset() {
@@ -2822,13 +3137,15 @@ func (x *Alert_Violation_KeyValueAttrs) ProtoReflect() protoreflect.Message {
 
 func (x *Alert_Violation_KeyValueAttrs) GetAttrs() []*Alert_Violation_KeyValueAttrs_KeyValueAttr {
 	if x != nil {
-		return x.Attrs
+		if x.xxx_hidden_Attrs != nil {
+			return *x.xxx_hidden_Attrs
+		}
 	}
 	return nil
 }
 
 func (x *Alert_Violation_KeyValueAttrs) SetAttrs(v []*Alert_Violation_KeyValueAttrs_KeyValueAttr) {
-	x.Attrs = v
+	x.xxx_hidden_Attrs = &v
 }
 
 type Alert_Violation_KeyValueAttrs_builder struct {
@@ -2841,17 +3158,19 @@ func (b0 Alert_Violation_KeyValueAttrs_builder) Build() *Alert_Violation_KeyValu
 	m0 := &Alert_Violation_KeyValueAttrs{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Attrs = b.Attrs
+	x.xxx_hidden_Attrs = &b.Attrs
 	return m0
 }
 
 type Alert_Violation_NetworkFlowInfo struct {
-	state         protoimpl.MessageState                  `protogen:"hybrid.v1"`
-	Protocol      *L4Protocol                             `protobuf:"varint,1,opt,name=protocol,enum=storage.L4Protocol" json:"protocol,omitempty"`
-	Source        *Alert_Violation_NetworkFlowInfo_Entity `protobuf:"bytes,2,opt,name=source" json:"source,omitempty"`
-	Destination   *Alert_Violation_NetworkFlowInfo_Entity `protobuf:"bytes,3,opt,name=destination" json:"destination,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState                  `protogen:"opaque.v1"`
+	xxx_hidden_Protocol    L4Protocol                              `protobuf:"varint,1,opt,name=protocol,enum=storage.L4Protocol"`
+	xxx_hidden_Source      *Alert_Violation_NetworkFlowInfo_Entity `protobuf:"bytes,2,opt,name=source"`
+	xxx_hidden_Destination *Alert_Violation_NetworkFlowInfo_Entity `protobuf:"bytes,3,opt,name=destination"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) Reset() {
@@ -2880,69 +3199,73 @@ func (x *Alert_Violation_NetworkFlowInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) GetProtocol() L4Protocol {
-	if x != nil && x.Protocol != nil {
-		return *x.Protocol
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Protocol
+		}
 	}
 	return L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) GetSource() *Alert_Violation_NetworkFlowInfo_Entity {
 	if x != nil {
-		return x.Source
+		return x.xxx_hidden_Source
 	}
 	return nil
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) GetDestination() *Alert_Violation_NetworkFlowInfo_Entity {
 	if x != nil {
-		return x.Destination
+		return x.xxx_hidden_Destination
 	}
 	return nil
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) SetProtocol(v L4Protocol) {
-	x.Protocol = &v
+	x.xxx_hidden_Protocol = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) SetSource(v *Alert_Violation_NetworkFlowInfo_Entity) {
-	x.Source = v
+	x.xxx_hidden_Source = v
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) SetDestination(v *Alert_Violation_NetworkFlowInfo_Entity) {
-	x.Destination = v
+	x.xxx_hidden_Destination = v
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) HasProtocol() bool {
 	if x == nil {
 		return false
 	}
-	return x.Protocol != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) HasSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.Source != nil
+	return x.xxx_hidden_Source != nil
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) HasDestination() bool {
 	if x == nil {
 		return false
 	}
-	return x.Destination != nil
+	return x.xxx_hidden_Destination != nil
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) ClearProtocol() {
-	x.Protocol = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Protocol = L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) ClearSource() {
-	x.Source = nil
+	x.xxx_hidden_Source = nil
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) ClearDestination() {
-	x.Destination = nil
+	x.xxx_hidden_Destination = nil
 }
 
 type Alert_Violation_NetworkFlowInfo_builder struct {
@@ -2957,18 +3280,23 @@ func (b0 Alert_Violation_NetworkFlowInfo_builder) Build() *Alert_Violation_Netwo
 	m0 := &Alert_Violation_NetworkFlowInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Protocol = b.Protocol
-	x.Source = b.Source
-	x.Destination = b.Destination
+	if b.Protocol != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Protocol = *b.Protocol
+	}
+	x.xxx_hidden_Source = b.Source
+	x.xxx_hidden_Destination = b.Destination
 	return m0
 }
 
 type Alert_Violation_KeyValueAttrs_KeyValueAttr struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Key           *string                `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	Value         *string                `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Key         *string                `protobuf:"bytes,1,opt,name=key"`
+	xxx_hidden_Value       *string                `protobuf:"bytes,2,opt,name=value"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) Reset() {
@@ -2997,47 +3325,57 @@ func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) ProtoReflect() protoreflect
 }
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) GetKey() string {
-	if x != nil && x.Key != nil {
-		return *x.Key
+	if x != nil {
+		if x.xxx_hidden_Key != nil {
+			return *x.xxx_hidden_Key
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) GetValue() string {
-	if x != nil && x.Value != nil {
-		return *x.Value
+	if x != nil {
+		if x.xxx_hidden_Value != nil {
+			return *x.xxx_hidden_Value
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) SetKey(v string) {
-	x.Key = &v
+	x.xxx_hidden_Key = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) SetValue(v string) {
-	x.Value = &v
+	x.xxx_hidden_Value = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.Key != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) HasValue() bool {
 	if x == nil {
 		return false
 	}
-	return x.Value != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) ClearKey() {
-	x.Key = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Key = nil
 }
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) ClearValue() {
-	x.Value = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Value = nil
 }
 
 type Alert_Violation_KeyValueAttrs_KeyValueAttr_builder struct {
@@ -3051,20 +3389,28 @@ func (b0 Alert_Violation_KeyValueAttrs_KeyValueAttr_builder) Build() *Alert_Viol
 	m0 := &Alert_Violation_KeyValueAttrs_KeyValueAttr{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Key = b.Key
-	x.Value = b.Value
+	if b.Key != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Key = b.Key
+	}
+	if b.Value != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Value = b.Value
+	}
 	return m0
 }
 
 type Alert_Violation_NetworkFlowInfo_Entity struct {
-	state               protoimpl.MessageState  `protogen:"hybrid.v1"`
-	Name                *string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	EntityType          *NetworkEntityInfo_Type `protobuf:"varint,2,opt,name=entity_type,json=entityType,enum=storage.NetworkEntityInfo_Type" json:"entity_type,omitempty"`
-	DeploymentNamespace *string                 `protobuf:"bytes,3,opt,name=deployment_namespace,json=deploymentNamespace" json:"deployment_namespace,omitempty"`
-	DeploymentType      *string                 `protobuf:"bytes,5,opt,name=deployment_type,json=deploymentType" json:"deployment_type,omitempty"`
-	Port                *int32                  `protobuf:"varint,6,opt,name=port" json:"port,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name                *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_EntityType          NetworkEntityInfo_Type `protobuf:"varint,2,opt,name=entity_type,json=entityType,enum=storage.NetworkEntityInfo_Type"`
+	xxx_hidden_DeploymentNamespace *string                `protobuf:"bytes,3,opt,name=deployment_namespace,json=deploymentNamespace"`
+	xxx_hidden_DeploymentType      *string                `protobuf:"bytes,5,opt,name=deployment_type,json=deploymentType"`
+	xxx_hidden_Port                int32                  `protobuf:"varint,6,opt,name=port"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) Reset() {
@@ -3093,113 +3439,134 @@ func (x *Alert_Violation_NetworkFlowInfo_Entity) ProtoReflect() protoreflect.Mes
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) GetEntityType() NetworkEntityInfo_Type {
-	if x != nil && x.EntityType != nil {
-		return *x.EntityType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_EntityType
+		}
 	}
 	return NetworkEntityInfo_UNKNOWN_TYPE
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) GetDeploymentNamespace() string {
-	if x != nil && x.DeploymentNamespace != nil {
-		return *x.DeploymentNamespace
+	if x != nil {
+		if x.xxx_hidden_DeploymentNamespace != nil {
+			return *x.xxx_hidden_DeploymentNamespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) GetDeploymentType() string {
-	if x != nil && x.DeploymentType != nil {
-		return *x.DeploymentType
+	if x != nil {
+		if x.xxx_hidden_DeploymentType != nil {
+			return *x.xxx_hidden_DeploymentType
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) GetPort() int32 {
-	if x != nil && x.Port != nil {
-		return *x.Port
+	if x != nil {
+		return x.xxx_hidden_Port
 	}
 	return 0
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) SetEntityType(v NetworkEntityInfo_Type) {
-	x.EntityType = &v
+	x.xxx_hidden_EntityType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) SetDeploymentNamespace(v string) {
-	x.DeploymentNamespace = &v
+	x.xxx_hidden_DeploymentNamespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) SetDeploymentType(v string) {
-	x.DeploymentType = &v
+	x.xxx_hidden_DeploymentType = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) SetPort(v int32) {
-	x.Port = &v
+	x.xxx_hidden_Port = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) HasEntityType() bool {
 	if x == nil {
 		return false
 	}
-	return x.EntityType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) HasDeploymentNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentNamespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) HasDeploymentType() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) HasPort() bool {
 	if x == nil {
 		return false
 	}
-	return x.Port != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) ClearEntityType() {
-	x.EntityType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_EntityType = NetworkEntityInfo_UNKNOWN_TYPE
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) ClearDeploymentNamespace() {
-	x.DeploymentNamespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_DeploymentNamespace = nil
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) ClearDeploymentType() {
-	x.DeploymentType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_DeploymentType = nil
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) ClearPort() {
-	x.Port = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Port = 0
 }
 
 type Alert_Violation_NetworkFlowInfo_Entity_builder struct {
@@ -3216,24 +3583,41 @@ func (b0 Alert_Violation_NetworkFlowInfo_Entity_builder) Build() *Alert_Violatio
 	m0 := &Alert_Violation_NetworkFlowInfo_Entity{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.EntityType = b.EntityType
-	x.DeploymentNamespace = b.DeploymentNamespace
-	x.DeploymentType = b.DeploymentType
-	x.Port = b.Port
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.EntityType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_EntityType = *b.EntityType
+	}
+	if b.DeploymentNamespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_DeploymentNamespace = b.DeploymentNamespace
+	}
+	if b.DeploymentType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_DeploymentType = b.DeploymentType
+	}
+	if b.Port != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_Port = *b.Port
+	}
 	return m0
 }
 
 // Fields common to all entities that an alert might belong to.
 type ListAlert_CommonEntityInfo struct {
-	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
-	ClusterName   *string                 `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
-	Namespace     *string                 `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
-	ClusterId     *string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	NamespaceId   *string                 `protobuf:"bytes,4,opt,name=namespace_id,json=namespaceId" json:"namespace_id,omitempty"`
-	ResourceType  *ListAlert_ResourceType `protobuf:"varint,5,opt,name=resource_type,json=resourceType,enum=storage.ListAlert_ResourceType" json:"resource_type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClusterName  *string                `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_Namespace    *string                `protobuf:"bytes,2,opt,name=namespace"`
+	xxx_hidden_ClusterId    *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_NamespaceId  *string                `protobuf:"bytes,4,opt,name=namespace_id,json=namespaceId"`
+	xxx_hidden_ResourceType ListAlert_ResourceType `protobuf:"varint,5,opt,name=resource_type,json=resourceType,enum=storage.ListAlert_ResourceType"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ListAlert_CommonEntityInfo) Reset() {
@@ -3262,113 +3646,137 @@ func (x *ListAlert_CommonEntityInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ListAlert_CommonEntityInfo) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlert_CommonEntityInfo) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlert_CommonEntityInfo) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlert_CommonEntityInfo) GetNamespaceId() string {
-	if x != nil && x.NamespaceId != nil {
-		return *x.NamespaceId
+	if x != nil {
+		if x.xxx_hidden_NamespaceId != nil {
+			return *x.xxx_hidden_NamespaceId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlert_CommonEntityInfo) GetResourceType() ListAlert_ResourceType {
-	if x != nil && x.ResourceType != nil {
-		return *x.ResourceType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			return x.xxx_hidden_ResourceType
+		}
 	}
 	return ListAlert_DEPLOYMENT
 }
 
 func (x *ListAlert_CommonEntityInfo) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *ListAlert_CommonEntityInfo) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *ListAlert_CommonEntityInfo) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *ListAlert_CommonEntityInfo) SetNamespaceId(v string) {
-	x.NamespaceId = &v
+	x.xxx_hidden_NamespaceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *ListAlert_CommonEntityInfo) SetResourceType(v ListAlert_ResourceType) {
-	x.ResourceType = &v
+	x.xxx_hidden_ResourceType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *ListAlert_CommonEntityInfo) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ListAlert_CommonEntityInfo) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ListAlert_CommonEntityInfo) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ListAlert_CommonEntityInfo) HasNamespaceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.NamespaceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ListAlert_CommonEntityInfo) HasResourceType() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResourceType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ListAlert_CommonEntityInfo) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *ListAlert_CommonEntityInfo) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *ListAlert_CommonEntityInfo) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *ListAlert_CommonEntityInfo) ClearNamespaceId() {
-	x.NamespaceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_NamespaceId = nil
 }
 
 func (x *ListAlert_CommonEntityInfo) ClearResourceType() {
-	x.ResourceType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_ResourceType = ListAlert_DEPLOYMENT
 }
 
 type ListAlert_CommonEntityInfo_builder struct {
@@ -3385,19 +3793,36 @@ func (b0 ListAlert_CommonEntityInfo_builder) Build() *ListAlert_CommonEntityInfo
 	m0 := &ListAlert_CommonEntityInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ClusterName = b.ClusterName
-	x.Namespace = b.Namespace
-	x.ClusterId = b.ClusterId
-	x.NamespaceId = b.NamespaceId
-	x.ResourceType = b.ResourceType
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.NamespaceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_NamespaceId = b.NamespaceId
+	}
+	if b.ResourceType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_ResourceType = *b.ResourceType
+	}
 	return m0
 }
 
 type ListAlert_ResourceEntity struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListAlert_ResourceEntity) Reset() {
@@ -3426,25 +3851,30 @@ func (x *ListAlert_ResourceEntity) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ListAlert_ResourceEntity) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlert_ResourceEntity) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *ListAlert_ResourceEntity) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ListAlert_ResourceEntity) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 type ListAlert_ResourceEntity_builder struct {
@@ -3457,15 +3887,20 @@ func (b0 ListAlert_ResourceEntity_builder) Build() *ListAlert_ResourceEntity {
 	m0 := &ListAlert_ResourceEntity{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Name = b.Name
+	}
 	return m0
 }
 
 type ListAlertPolicy_DevFields struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	SORTName      *string                `protobuf:"bytes,6,opt,name=SORT_name,json=SORTName" json:"SORT_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SORTName    *string                `protobuf:"bytes,6,opt,name=SORT_name,json=SORTName"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListAlertPolicy_DevFields) Reset() {
@@ -3494,25 +3929,30 @@ func (x *ListAlertPolicy_DevFields) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ListAlertPolicy_DevFields) GetSORTName() string {
-	if x != nil && x.SORTName != nil {
-		return *x.SORTName
+	if x != nil {
+		if x.xxx_hidden_SORTName != nil {
+			return *x.xxx_hidden_SORTName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ListAlertPolicy_DevFields) SetSORTName(v string) {
-	x.SORTName = &v
+	x.xxx_hidden_SORTName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *ListAlertPolicy_DevFields) HasSORTName() bool {
 	if x == nil {
 		return false
 	}
-	return x.SORTName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ListAlertPolicy_DevFields) ClearSORTName() {
-	x.SORTName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_SORTName = nil
 }
 
 type ListAlertPolicy_DevFields_builder struct {
@@ -3525,7 +3965,10 @@ func (b0 ListAlertPolicy_DevFields_builder) Build() *ListAlertPolicy_DevFields {
 	m0 := &ListAlertPolicy_DevFields{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.SORTName = b.SORTName
+	if b.SORTName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_SORTName = b.SORTName
+	}
 	return m0
 }
 
@@ -3710,7 +4153,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x06ACTIVE\x10\x00\x12\f\n" +
 	"\bRESOLVED\x10\x02\x12\r\n" +
 	"\tATTEMPTED\x10\x03\"\x04\b\x01\x10\x01*\aSNOOZEDB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_alert_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_storage_alert_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
@@ -3807,17 +4250,17 @@ func file_storage_alert_proto_init() {
 	file_storage_policy_proto_init()
 	file_storage_process_indicator_proto_init()
 	file_storage_alert_proto_msgTypes[0].OneofWrappers = []any{
-		(*Alert_Deployment_)(nil),
-		(*Alert_Image)(nil),
-		(*Alert_Resource_)(nil),
+		(*alert_Deployment_)(nil),
+		(*alert_Image)(nil),
+		(*alert_Resource_)(nil),
 	}
 	file_storage_alert_proto_msgTypes[1].OneofWrappers = []any{
-		(*ListAlert_Deployment)(nil),
-		(*ListAlert_Resource)(nil),
+		(*listAlert_Deployment)(nil),
+		(*listAlert_Resource)(nil),
 	}
 	file_storage_alert_proto_msgTypes[6].OneofWrappers = []any{
-		(*Alert_Violation_KeyValueAttrs_)(nil),
-		(*Alert_Violation_NetworkFlowInfo_)(nil),
+		(*alert_Violation_KeyValueAttrs_)(nil),
+		(*alert_Violation_NetworkFlowInfo_)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

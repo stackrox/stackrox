@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/db_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -121,17 +119,14 @@ func (x DBExportManifest_EncodingType) Number() protoreflect.EnumNumber {
 }
 
 type DBRestoreRequestHeader struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The name of the database export format. Mandatory.
-	FormatName *string `protobuf:"bytes,1,opt,name=format_name,json=formatName" json:"format_name,omitempty"`
-	// A manifest of all the files in the restore data. The remainder of a restore request body (without the header),
-	// independent of the export format, is always a concatenation of all encoded file data, with no separators in
-	// between (determined purely by the order and sizes listed in the manifest).
-	Manifest *DBExportManifest `protobuf:"bytes,2,opt,name=manifest" json:"manifest,omitempty"`
-	// Information about the local file with which the restore was initiated. Optional.
-	LocalFile     *DBRestoreRequestHeader_LocalFileInfo `protobuf:"bytes,3,opt,name=local_file,json=localFile" json:"local_file,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState                `protogen:"opaque.v1"`
+	xxx_hidden_FormatName  *string                               `protobuf:"bytes,1,opt,name=format_name,json=formatName"`
+	xxx_hidden_Manifest    *DBExportManifest                     `protobuf:"bytes,2,opt,name=manifest"`
+	xxx_hidden_LocalFile   *DBRestoreRequestHeader_LocalFileInfo `protobuf:"bytes,3,opt,name=local_file,json=localFile"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DBRestoreRequestHeader) Reset() {
@@ -160,69 +155,74 @@ func (x *DBRestoreRequestHeader) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DBRestoreRequestHeader) GetFormatName() string {
-	if x != nil && x.FormatName != nil {
-		return *x.FormatName
+	if x != nil {
+		if x.xxx_hidden_FormatName != nil {
+			return *x.xxx_hidden_FormatName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DBRestoreRequestHeader) GetManifest() *DBExportManifest {
 	if x != nil {
-		return x.Manifest
+		return x.xxx_hidden_Manifest
 	}
 	return nil
 }
 
 func (x *DBRestoreRequestHeader) GetLocalFile() *DBRestoreRequestHeader_LocalFileInfo {
 	if x != nil {
-		return x.LocalFile
+		return x.xxx_hidden_LocalFile
 	}
 	return nil
 }
 
 func (x *DBRestoreRequestHeader) SetFormatName(v string) {
-	x.FormatName = &v
+	x.xxx_hidden_FormatName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *DBRestoreRequestHeader) SetManifest(v *DBExportManifest) {
-	x.Manifest = v
+	x.xxx_hidden_Manifest = v
 }
 
 func (x *DBRestoreRequestHeader) SetLocalFile(v *DBRestoreRequestHeader_LocalFileInfo) {
-	x.LocalFile = v
+	x.xxx_hidden_LocalFile = v
 }
 
 func (x *DBRestoreRequestHeader) HasFormatName() bool {
 	if x == nil {
 		return false
 	}
-	return x.FormatName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DBRestoreRequestHeader) HasManifest() bool {
 	if x == nil {
 		return false
 	}
-	return x.Manifest != nil
+	return x.xxx_hidden_Manifest != nil
 }
 
 func (x *DBRestoreRequestHeader) HasLocalFile() bool {
 	if x == nil {
 		return false
 	}
-	return x.LocalFile != nil
+	return x.xxx_hidden_LocalFile != nil
 }
 
 func (x *DBRestoreRequestHeader) ClearFormatName() {
-	x.FormatName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_FormatName = nil
 }
 
 func (x *DBRestoreRequestHeader) ClearManifest() {
-	x.Manifest = nil
+	x.xxx_hidden_Manifest = nil
 }
 
 func (x *DBRestoreRequestHeader) ClearLocalFile() {
-	x.LocalFile = nil
+	x.xxx_hidden_LocalFile = nil
 }
 
 type DBRestoreRequestHeader_builder struct {
@@ -242,26 +242,27 @@ func (b0 DBRestoreRequestHeader_builder) Build() *DBRestoreRequestHeader {
 	m0 := &DBRestoreRequestHeader{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.FormatName = b.FormatName
-	x.Manifest = b.Manifest
-	x.LocalFile = b.LocalFile
+	if b.FormatName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_FormatName = b.FormatName
+	}
+	x.xxx_hidden_Manifest = b.Manifest
+	x.xxx_hidden_LocalFile = b.LocalFile
 	return m0
 }
 
 // The metadata of an ongoing or completed restore process. This is the *static* metadata, which will not change
 // (i.e., it is not a status).
 type DBRestoreProcessMetadata struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// An ID identifying the restore process. Auto-assigned.
-	Id *string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	// The header with which the restore was initiated.
-	Header *DBRestoreRequestHeader `protobuf:"bytes,2,opt,name=header" json:"header,omitempty"`
-	// The time at which the restore process was started.
-	StartTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start_time,json=startTime" json:"start_time,omitempty"`
-	// The user who initiated the database restore process.
-	InitiatingUserName *string `protobuf:"bytes,4,opt,name=initiating_user_name,json=initiatingUserName" json:"initiating_user_name,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                         protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Id                 *string                 `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Header             *DBRestoreRequestHeader `protobuf:"bytes,2,opt,name=header"`
+	xxx_hidden_StartTime          *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=start_time,json=startTime"`
+	xxx_hidden_InitiatingUserName *string                 `protobuf:"bytes,4,opt,name=initiating_user_name,json=initiatingUserName"`
+	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
+	XXX_presence                  [1]uint32
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *DBRestoreProcessMetadata) Reset() {
@@ -290,91 +291,101 @@ func (x *DBRestoreProcessMetadata) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DBRestoreProcessMetadata) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DBRestoreProcessMetadata) GetHeader() *DBRestoreRequestHeader {
 	if x != nil {
-		return x.Header
+		return x.xxx_hidden_Header
 	}
 	return nil
 }
 
 func (x *DBRestoreProcessMetadata) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.StartTime
+		return x.xxx_hidden_StartTime
 	}
 	return nil
 }
 
 func (x *DBRestoreProcessMetadata) GetInitiatingUserName() string {
-	if x != nil && x.InitiatingUserName != nil {
-		return *x.InitiatingUserName
+	if x != nil {
+		if x.xxx_hidden_InitiatingUserName != nil {
+			return *x.xxx_hidden_InitiatingUserName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DBRestoreProcessMetadata) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *DBRestoreProcessMetadata) SetHeader(v *DBRestoreRequestHeader) {
-	x.Header = v
+	x.xxx_hidden_Header = v
 }
 
 func (x *DBRestoreProcessMetadata) SetStartTime(v *timestamppb.Timestamp) {
-	x.StartTime = v
+	x.xxx_hidden_StartTime = v
 }
 
 func (x *DBRestoreProcessMetadata) SetInitiatingUserName(v string) {
-	x.InitiatingUserName = &v
+	x.xxx_hidden_InitiatingUserName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *DBRestoreProcessMetadata) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DBRestoreProcessMetadata) HasHeader() bool {
 	if x == nil {
 		return false
 	}
-	return x.Header != nil
+	return x.xxx_hidden_Header != nil
 }
 
 func (x *DBRestoreProcessMetadata) HasStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.StartTime != nil
+	return x.xxx_hidden_StartTime != nil
 }
 
 func (x *DBRestoreProcessMetadata) HasInitiatingUserName() bool {
 	if x == nil {
 		return false
 	}
-	return x.InitiatingUserName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *DBRestoreProcessMetadata) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *DBRestoreProcessMetadata) ClearHeader() {
-	x.Header = nil
+	x.xxx_hidden_Header = nil
 }
 
 func (x *DBRestoreProcessMetadata) ClearStartTime() {
-	x.StartTime = nil
+	x.xxx_hidden_StartTime = nil
 }
 
 func (x *DBRestoreProcessMetadata) ClearInitiatingUserName() {
-	x.InitiatingUserName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_InitiatingUserName = nil
 }
 
 type DBRestoreProcessMetadata_builder struct {
@@ -394,24 +405,32 @@ func (b0 DBRestoreProcessMetadata_builder) Build() *DBRestoreProcessMetadata {
 	m0 := &DBRestoreProcessMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Header = b.Header
-	x.StartTime = b.StartTime
-	x.InitiatingUserName = b.InitiatingUserName
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Id = b.Id
+	}
+	x.xxx_hidden_Header = b.Header
+	x.xxx_hidden_StartTime = b.StartTime
+	if b.InitiatingUserName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_InitiatingUserName = b.InitiatingUserName
+	}
 	return m0
 }
 
 type DBRestoreProcessStatus struct {
-	state          protoimpl.MessageState             `protogen:"hybrid.v1"`
-	Metadata       *DBRestoreProcessMetadata          `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
-	AttemptId      *string                            `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId" json:"attempt_id,omitempty"`
-	State          *DBRestoreProcessStatus_State      `protobuf:"varint,3,opt,name=state,enum=v1.DBRestoreProcessStatus_State" json:"state,omitempty"`
-	ResumeInfo     *DBRestoreProcessStatus_ResumeInfo `protobuf:"bytes,4,opt,name=resume_info,json=resumeInfo" json:"resume_info,omitempty"`              // only populated if state is PAUSED
-	Error          *string                            `protobuf:"bytes,5,opt,name=error" json:"error,omitempty"`                                          // only populated when state is COMPLETED
-	BytesRead      *int64                             `protobuf:"varint,6,opt,name=bytes_read,json=bytesRead" json:"bytes_read,omitempty"`                // Payload bytes read so far (approximate)
-	FilesProcessed *int64                             `protobuf:"varint,7,opt,name=files_processed,json=filesProcessed" json:"files_processed,omitempty"` // Files processed so far (approximate)
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Metadata       *DBRestoreProcessMetadata          `protobuf:"bytes,1,opt,name=metadata"`
+	xxx_hidden_AttemptId      *string                            `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId"`
+	xxx_hidden_State          DBRestoreProcessStatus_State       `protobuf:"varint,3,opt,name=state,enum=v1.DBRestoreProcessStatus_State"`
+	xxx_hidden_ResumeInfo     *DBRestoreProcessStatus_ResumeInfo `protobuf:"bytes,4,opt,name=resume_info,json=resumeInfo"`
+	xxx_hidden_Error          *string                            `protobuf:"bytes,5,opt,name=error"`
+	xxx_hidden_BytesRead      int64                              `protobuf:"varint,6,opt,name=bytes_read,json=bytesRead"`
+	xxx_hidden_FilesProcessed int64                              `protobuf:"varint,7,opt,name=files_processed,json=filesProcessed"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *DBRestoreProcessStatus) Reset() {
@@ -441,156 +460,174 @@ func (x *DBRestoreProcessStatus) ProtoReflect() protoreflect.Message {
 
 func (x *DBRestoreProcessStatus) GetMetadata() *DBRestoreProcessMetadata {
 	if x != nil {
-		return x.Metadata
+		return x.xxx_hidden_Metadata
 	}
 	return nil
 }
 
 func (x *DBRestoreProcessStatus) GetAttemptId() string {
-	if x != nil && x.AttemptId != nil {
-		return *x.AttemptId
+	if x != nil {
+		if x.xxx_hidden_AttemptId != nil {
+			return *x.xxx_hidden_AttemptId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DBRestoreProcessStatus) GetState() DBRestoreProcessStatus_State {
-	if x != nil && x.State != nil {
-		return *x.State
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_State
+		}
 	}
 	return DBRestoreProcessStatus_UNKNOWN
 }
 
 func (x *DBRestoreProcessStatus) GetResumeInfo() *DBRestoreProcessStatus_ResumeInfo {
 	if x != nil {
-		return x.ResumeInfo
+		return x.xxx_hidden_ResumeInfo
 	}
 	return nil
 }
 
 func (x *DBRestoreProcessStatus) GetError() string {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		if x.xxx_hidden_Error != nil {
+			return *x.xxx_hidden_Error
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DBRestoreProcessStatus) GetBytesRead() int64 {
-	if x != nil && x.BytesRead != nil {
-		return *x.BytesRead
+	if x != nil {
+		return x.xxx_hidden_BytesRead
 	}
 	return 0
 }
 
 func (x *DBRestoreProcessStatus) GetFilesProcessed() int64 {
-	if x != nil && x.FilesProcessed != nil {
-		return *x.FilesProcessed
+	if x != nil {
+		return x.xxx_hidden_FilesProcessed
 	}
 	return 0
 }
 
 func (x *DBRestoreProcessStatus) SetMetadata(v *DBRestoreProcessMetadata) {
-	x.Metadata = v
+	x.xxx_hidden_Metadata = v
 }
 
 func (x *DBRestoreProcessStatus) SetAttemptId(v string) {
-	x.AttemptId = &v
+	x.xxx_hidden_AttemptId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *DBRestoreProcessStatus) SetState(v DBRestoreProcessStatus_State) {
-	x.State = &v
+	x.xxx_hidden_State = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *DBRestoreProcessStatus) SetResumeInfo(v *DBRestoreProcessStatus_ResumeInfo) {
-	x.ResumeInfo = v
+	x.xxx_hidden_ResumeInfo = v
 }
 
 func (x *DBRestoreProcessStatus) SetError(v string) {
-	x.Error = &v
+	x.xxx_hidden_Error = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *DBRestoreProcessStatus) SetBytesRead(v int64) {
-	x.BytesRead = &v
+	x.xxx_hidden_BytesRead = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
 }
 
 func (x *DBRestoreProcessStatus) SetFilesProcessed(v int64) {
-	x.FilesProcessed = &v
+	x.xxx_hidden_FilesProcessed = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *DBRestoreProcessStatus) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.Metadata != nil
+	return x.xxx_hidden_Metadata != nil
 }
 
 func (x *DBRestoreProcessStatus) HasAttemptId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AttemptId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DBRestoreProcessStatus) HasState() bool {
 	if x == nil {
 		return false
 	}
-	return x.State != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DBRestoreProcessStatus) HasResumeInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResumeInfo != nil
+	return x.xxx_hidden_ResumeInfo != nil
 }
 
 func (x *DBRestoreProcessStatus) HasError() bool {
 	if x == nil {
 		return false
 	}
-	return x.Error != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *DBRestoreProcessStatus) HasBytesRead() bool {
 	if x == nil {
 		return false
 	}
-	return x.BytesRead != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *DBRestoreProcessStatus) HasFilesProcessed() bool {
 	if x == nil {
 		return false
 	}
-	return x.FilesProcessed != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *DBRestoreProcessStatus) ClearMetadata() {
-	x.Metadata = nil
+	x.xxx_hidden_Metadata = nil
 }
 
 func (x *DBRestoreProcessStatus) ClearAttemptId() {
-	x.AttemptId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_AttemptId = nil
 }
 
 func (x *DBRestoreProcessStatus) ClearState() {
-	x.State = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_State = DBRestoreProcessStatus_UNKNOWN
 }
 
 func (x *DBRestoreProcessStatus) ClearResumeInfo() {
-	x.ResumeInfo = nil
+	x.xxx_hidden_ResumeInfo = nil
 }
 
 func (x *DBRestoreProcessStatus) ClearError() {
-	x.Error = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Error = nil
 }
 
 func (x *DBRestoreProcessStatus) ClearBytesRead() {
-	x.BytesRead = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_BytesRead = 0
 }
 
 func (x *DBRestoreProcessStatus) ClearFilesProcessed() {
-	x.FilesProcessed = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_FilesProcessed = 0
 }
 
 type DBRestoreProcessStatus_builder struct {
@@ -609,13 +646,28 @@ func (b0 DBRestoreProcessStatus_builder) Build() *DBRestoreProcessStatus {
 	m0 := &DBRestoreProcessStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Metadata = b.Metadata
-	x.AttemptId = b.AttemptId
-	x.State = b.State
-	x.ResumeInfo = b.ResumeInfo
-	x.Error = b.Error
-	x.BytesRead = b.BytesRead
-	x.FilesProcessed = b.FilesProcessed
+	x.xxx_hidden_Metadata = b.Metadata
+	if b.AttemptId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_AttemptId = b.AttemptId
+	}
+	if b.State != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_State = *b.State
+	}
+	x.xxx_hidden_ResumeInfo = b.ResumeInfo
+	if b.Error != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		x.xxx_hidden_Error = b.Error
+	}
+	if b.BytesRead != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		x.xxx_hidden_BytesRead = *b.BytesRead
+	}
+	if b.FilesProcessed != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_FilesProcessed = *b.FilesProcessed
+	}
 	return m0
 }
 
@@ -623,10 +675,10 @@ func (b0 DBRestoreProcessStatus_builder) Build() *DBRestoreProcessStatus {
 // interpreted as binding, i.e., the server must ensure that it will read and make use of every file listed in the
 // manifest, otherwise it must reject the request.
 type DBExportManifest struct {
-	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
-	Files         []*DBExportManifest_File `protobuf:"bytes,1,rep,name=files" json:"files,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_Files *[]*DBExportManifest_File `protobuf:"bytes,1,rep,name=files"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *DBExportManifest) Reset() {
@@ -656,13 +708,15 @@ func (x *DBExportManifest) ProtoReflect() protoreflect.Message {
 
 func (x *DBExportManifest) GetFiles() []*DBExportManifest_File {
 	if x != nil {
-		return x.Files
+		if x.xxx_hidden_Files != nil {
+			return *x.xxx_hidden_Files
+		}
 	}
 	return nil
 }
 
 func (x *DBExportManifest) SetFiles(v []*DBExportManifest_File) {
-	x.Files = v
+	x.xxx_hidden_Files = &v
 }
 
 type DBExportManifest_builder struct {
@@ -675,17 +729,19 @@ func (b0 DBExportManifest_builder) Build() *DBExportManifest {
 	m0 := &DBExportManifest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Files = b.Files
+	x.xxx_hidden_Files = &b.Files
 	return m0
 }
 
 // DBExportFormat describes a format (= a collection of files) for the database export.
 type DBExportFormat struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	FormatName    *string                `protobuf:"bytes,1,opt,name=format_name,json=formatName" json:"format_name,omitempty"`
-	Files         []*DBExportFormat_File `protobuf:"bytes,2,rep,name=files" json:"files,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_FormatName  *string                 `protobuf:"bytes,1,opt,name=format_name,json=formatName"`
+	xxx_hidden_Files       *[]*DBExportFormat_File `protobuf:"bytes,2,rep,name=files"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DBExportFormat) Reset() {
@@ -714,36 +770,43 @@ func (x *DBExportFormat) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DBExportFormat) GetFormatName() string {
-	if x != nil && x.FormatName != nil {
-		return *x.FormatName
+	if x != nil {
+		if x.xxx_hidden_FormatName != nil {
+			return *x.xxx_hidden_FormatName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DBExportFormat) GetFiles() []*DBExportFormat_File {
 	if x != nil {
-		return x.Files
+		if x.xxx_hidden_Files != nil {
+			return *x.xxx_hidden_Files
+		}
 	}
 	return nil
 }
 
 func (x *DBExportFormat) SetFormatName(v string) {
-	x.FormatName = &v
+	x.xxx_hidden_FormatName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *DBExportFormat) SetFiles(v []*DBExportFormat_File) {
-	x.Files = v
+	x.xxx_hidden_Files = &v
 }
 
 func (x *DBExportFormat) HasFormatName() bool {
 	if x == nil {
 		return false
 	}
-	return x.FormatName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DBExportFormat) ClearFormatName() {
-	x.FormatName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_FormatName = nil
 }
 
 type DBExportFormat_builder struct {
@@ -757,17 +820,20 @@ func (b0 DBExportFormat_builder) Build() *DBExportFormat {
 	m0 := &DBExportFormat{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.FormatName = b.FormatName
-	x.Files = b.Files
+	if b.FormatName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_FormatName = b.FormatName
+	}
+	x.xxx_hidden_Files = &b.Files
 	return m0
 }
 
 type GetDBExportCapabilitiesResponse struct {
-	state              protoimpl.MessageState          `protogen:"hybrid.v1"`
-	Formats            []*DBExportFormat               `protobuf:"bytes,1,rep,name=formats" json:"formats,omitempty"`
-	SupportedEncodings []DBExportManifest_EncodingType `protobuf:"varint,2,rep,packed,name=supported_encodings,json=supportedEncodings,enum=v1.DBExportManifest_EncodingType" json:"supported_encodings,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                         protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_Formats            *[]*DBExportFormat              `protobuf:"bytes,1,rep,name=formats"`
+	xxx_hidden_SupportedEncodings []DBExportManifest_EncodingType `protobuf:"varint,2,rep,packed,name=supported_encodings,json=supportedEncodings,enum=v1.DBExportManifest_EncodingType"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *GetDBExportCapabilitiesResponse) Reset() {
@@ -797,24 +863,26 @@ func (x *GetDBExportCapabilitiesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetDBExportCapabilitiesResponse) GetFormats() []*DBExportFormat {
 	if x != nil {
-		return x.Formats
+		if x.xxx_hidden_Formats != nil {
+			return *x.xxx_hidden_Formats
+		}
 	}
 	return nil
 }
 
 func (x *GetDBExportCapabilitiesResponse) GetSupportedEncodings() []DBExportManifest_EncodingType {
 	if x != nil {
-		return x.SupportedEncodings
+		return x.xxx_hidden_SupportedEncodings
 	}
 	return nil
 }
 
 func (x *GetDBExportCapabilitiesResponse) SetFormats(v []*DBExportFormat) {
-	x.Formats = v
+	x.xxx_hidden_Formats = &v
 }
 
 func (x *GetDBExportCapabilitiesResponse) SetSupportedEncodings(v []DBExportManifest_EncodingType) {
-	x.SupportedEncodings = v
+	x.xxx_hidden_SupportedEncodings = v
 }
 
 type GetDBExportCapabilitiesResponse_builder struct {
@@ -828,16 +896,16 @@ func (b0 GetDBExportCapabilitiesResponse_builder) Build() *GetDBExportCapabiliti
 	m0 := &GetDBExportCapabilitiesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Formats = b.Formats
-	x.SupportedEncodings = b.SupportedEncodings
+	x.xxx_hidden_Formats = &b.Formats
+	x.xxx_hidden_SupportedEncodings = b.SupportedEncodings
 	return m0
 }
 
 type GetActiveDBRestoreProcessResponse struct {
-	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
-	ActiveStatus  *DBRestoreProcessStatus `protobuf:"bytes,1,opt,name=active_status,json=activeStatus" json:"active_status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_ActiveStatus *DBRestoreProcessStatus `protobuf:"bytes,1,opt,name=active_status,json=activeStatus"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetActiveDBRestoreProcessResponse) Reset() {
@@ -867,24 +935,24 @@ func (x *GetActiveDBRestoreProcessResponse) ProtoReflect() protoreflect.Message 
 
 func (x *GetActiveDBRestoreProcessResponse) GetActiveStatus() *DBRestoreProcessStatus {
 	if x != nil {
-		return x.ActiveStatus
+		return x.xxx_hidden_ActiveStatus
 	}
 	return nil
 }
 
 func (x *GetActiveDBRestoreProcessResponse) SetActiveStatus(v *DBRestoreProcessStatus) {
-	x.ActiveStatus = v
+	x.xxx_hidden_ActiveStatus = v
 }
 
 func (x *GetActiveDBRestoreProcessResponse) HasActiveStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.ActiveStatus != nil
+	return x.xxx_hidden_ActiveStatus != nil
 }
 
 func (x *GetActiveDBRestoreProcessResponse) ClearActiveStatus() {
-	x.ActiveStatus = nil
+	x.xxx_hidden_ActiveStatus = nil
 }
 
 type GetActiveDBRestoreProcessResponse_builder struct {
@@ -897,16 +965,18 @@ func (b0 GetActiveDBRestoreProcessResponse_builder) Build() *GetActiveDBRestoreP
 	m0 := &GetActiveDBRestoreProcessResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ActiveStatus = b.ActiveStatus
+	x.xxx_hidden_ActiveStatus = b.ActiveStatus
 	return m0
 }
 
 type InterruptDBRestoreProcessRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ProcessId     *string                `protobuf:"bytes,1,opt,name=process_id,json=processId" json:"process_id,omitempty"`
-	AttemptId     *string                `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId" json:"attempt_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ProcessId   *string                `protobuf:"bytes,1,opt,name=process_id,json=processId"`
+	xxx_hidden_AttemptId   *string                `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *InterruptDBRestoreProcessRequest) Reset() {
@@ -935,47 +1005,57 @@ func (x *InterruptDBRestoreProcessRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *InterruptDBRestoreProcessRequest) GetProcessId() string {
-	if x != nil && x.ProcessId != nil {
-		return *x.ProcessId
+	if x != nil {
+		if x.xxx_hidden_ProcessId != nil {
+			return *x.xxx_hidden_ProcessId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InterruptDBRestoreProcessRequest) GetAttemptId() string {
-	if x != nil && x.AttemptId != nil {
-		return *x.AttemptId
+	if x != nil {
+		if x.xxx_hidden_AttemptId != nil {
+			return *x.xxx_hidden_AttemptId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *InterruptDBRestoreProcessRequest) SetProcessId(v string) {
-	x.ProcessId = &v
+	x.xxx_hidden_ProcessId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *InterruptDBRestoreProcessRequest) SetAttemptId(v string) {
-	x.AttemptId = &v
+	x.xxx_hidden_AttemptId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *InterruptDBRestoreProcessRequest) HasProcessId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProcessId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *InterruptDBRestoreProcessRequest) HasAttemptId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AttemptId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *InterruptDBRestoreProcessRequest) ClearProcessId() {
-	x.ProcessId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ProcessId = nil
 }
 
 func (x *InterruptDBRestoreProcessRequest) ClearAttemptId() {
-	x.AttemptId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_AttemptId = nil
 }
 
 type InterruptDBRestoreProcessRequest_builder struct {
@@ -989,16 +1069,22 @@ func (b0 InterruptDBRestoreProcessRequest_builder) Build() *InterruptDBRestorePr
 	m0 := &InterruptDBRestoreProcessRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ProcessId = b.ProcessId
-	x.AttemptId = b.AttemptId
+	if b.ProcessId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_ProcessId = b.ProcessId
+	}
+	if b.AttemptId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_AttemptId = b.AttemptId
+	}
 	return m0
 }
 
 type InterruptDBRestoreProcessResponse struct {
-	state         protoimpl.MessageState             `protogen:"hybrid.v1"`
-	ResumeInfo    *DBRestoreProcessStatus_ResumeInfo `protobuf:"bytes,1,opt,name=resume_info,json=resumeInfo" json:"resume_info,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_ResumeInfo *DBRestoreProcessStatus_ResumeInfo `protobuf:"bytes,1,opt,name=resume_info,json=resumeInfo"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *InterruptDBRestoreProcessResponse) Reset() {
@@ -1028,24 +1114,24 @@ func (x *InterruptDBRestoreProcessResponse) ProtoReflect() protoreflect.Message 
 
 func (x *InterruptDBRestoreProcessResponse) GetResumeInfo() *DBRestoreProcessStatus_ResumeInfo {
 	if x != nil {
-		return x.ResumeInfo
+		return x.xxx_hidden_ResumeInfo
 	}
 	return nil
 }
 
 func (x *InterruptDBRestoreProcessResponse) SetResumeInfo(v *DBRestoreProcessStatus_ResumeInfo) {
-	x.ResumeInfo = v
+	x.xxx_hidden_ResumeInfo = v
 }
 
 func (x *InterruptDBRestoreProcessResponse) HasResumeInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.ResumeInfo != nil
+	return x.xxx_hidden_ResumeInfo != nil
 }
 
 func (x *InterruptDBRestoreProcessResponse) ClearResumeInfo() {
-	x.ResumeInfo = nil
+	x.xxx_hidden_ResumeInfo = nil
 }
 
 type InterruptDBRestoreProcessResponse_builder struct {
@@ -1058,20 +1144,20 @@ func (b0 InterruptDBRestoreProcessResponse_builder) Build() *InterruptDBRestoreP
 	m0 := &InterruptDBRestoreProcessResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ResumeInfo = b.ResumeInfo
+	x.xxx_hidden_ResumeInfo = b.ResumeInfo
 	return m0
 }
 
 // LocalFileInfo provides information about the file on the local machine of the user initiating the restore
 // process, in order to provide information to other users about ongoing restore processes.
 type DBRestoreRequestHeader_LocalFileInfo struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The full path of the file.
-	Path *string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	// The size of the file, in bytes. 0 if unknown.
-	BytesSize     *int64 `protobuf:"varint,2,opt,name=bytes_size,json=bytesSize" json:"bytes_size,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Path        *string                `protobuf:"bytes,1,opt,name=path"`
+	xxx_hidden_BytesSize   int64                  `protobuf:"varint,2,opt,name=bytes_size,json=bytesSize"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DBRestoreRequestHeader_LocalFileInfo) Reset() {
@@ -1100,47 +1186,54 @@ func (x *DBRestoreRequestHeader_LocalFileInfo) ProtoReflect() protoreflect.Messa
 }
 
 func (x *DBRestoreRequestHeader_LocalFileInfo) GetPath() string {
-	if x != nil && x.Path != nil {
-		return *x.Path
+	if x != nil {
+		if x.xxx_hidden_Path != nil {
+			return *x.xxx_hidden_Path
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DBRestoreRequestHeader_LocalFileInfo) GetBytesSize() int64 {
-	if x != nil && x.BytesSize != nil {
-		return *x.BytesSize
+	if x != nil {
+		return x.xxx_hidden_BytesSize
 	}
 	return 0
 }
 
 func (x *DBRestoreRequestHeader_LocalFileInfo) SetPath(v string) {
-	x.Path = &v
+	x.xxx_hidden_Path = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *DBRestoreRequestHeader_LocalFileInfo) SetBytesSize(v int64) {
-	x.BytesSize = &v
+	x.xxx_hidden_BytesSize = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DBRestoreRequestHeader_LocalFileInfo) HasPath() bool {
 	if x == nil {
 		return false
 	}
-	return x.Path != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DBRestoreRequestHeader_LocalFileInfo) HasBytesSize() bool {
 	if x == nil {
 		return false
 	}
-	return x.BytesSize != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DBRestoreRequestHeader_LocalFileInfo) ClearPath() {
-	x.Path = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Path = nil
 }
 
 func (x *DBRestoreRequestHeader_LocalFileInfo) ClearBytesSize() {
-	x.BytesSize = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_BytesSize = 0
 }
 
 type DBRestoreRequestHeader_LocalFileInfo_builder struct {
@@ -1156,16 +1249,24 @@ func (b0 DBRestoreRequestHeader_LocalFileInfo_builder) Build() *DBRestoreRequest
 	m0 := &DBRestoreRequestHeader_LocalFileInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Path = b.Path
-	x.BytesSize = b.BytesSize
+	if b.Path != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Path = b.Path
+	}
+	if b.BytesSize != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_BytesSize = *b.BytesSize
+	}
 	return m0
 }
 
 type DBRestoreProcessStatus_ResumeInfo struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Pos           *int64                 `protobuf:"varint,1,opt,name=pos" json:"pos,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Pos         int64                  `protobuf:"varint,1,opt,name=pos"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DBRestoreProcessStatus_ResumeInfo) Reset() {
@@ -1194,25 +1295,27 @@ func (x *DBRestoreProcessStatus_ResumeInfo) ProtoReflect() protoreflect.Message 
 }
 
 func (x *DBRestoreProcessStatus_ResumeInfo) GetPos() int64 {
-	if x != nil && x.Pos != nil {
-		return *x.Pos
+	if x != nil {
+		return x.xxx_hidden_Pos
 	}
 	return 0
 }
 
 func (x *DBRestoreProcessStatus_ResumeInfo) SetPos(v int64) {
-	x.Pos = &v
+	x.xxx_hidden_Pos = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *DBRestoreProcessStatus_ResumeInfo) HasPos() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pos != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DBRestoreProcessStatus_ResumeInfo) ClearPos() {
-	x.Pos = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Pos = 0
 }
 
 type DBRestoreProcessStatus_ResumeInfo_builder struct {
@@ -1225,23 +1328,25 @@ func (b0 DBRestoreProcessStatus_ResumeInfo_builder) Build() *DBRestoreProcessSta
 	m0 := &DBRestoreProcessStatus_ResumeInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Pos = b.Pos
+	if b.Pos != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Pos = *b.Pos
+	}
 	return m0
 }
 
 // A single file in the restore body.
 type DBExportManifest_File struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The name of the file. This may or may not be a (relative) file path and up to the server to interpret.
-	// For databases exported as ZIP files, this is the path relative to the root of the archive.
-	Name        *string                        `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Encoding    *DBExportManifest_EncodingType `protobuf:"varint,2,opt,name=encoding,enum=v1.DBExportManifest_EncodingType" json:"encoding,omitempty"`
-	EncodedSize *int64                         `protobuf:"varint,3,opt,name=encoded_size,json=encodedSize" json:"encoded_size,omitempty"`
-	DecodedSize *int64                         `protobuf:"varint,4,opt,name=decoded_size,json=decodedSize" json:"decoded_size,omitempty"`
-	// The CRC32 (IEEE) checksum of the decoded(!) data.
-	DecodedCrc32  *uint32 `protobuf:"fixed32,5,opt,name=decoded_crc32,json=decodedCrc32" json:"decoded_crc32,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Name         *string                       `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Encoding     DBExportManifest_EncodingType `protobuf:"varint,2,opt,name=encoding,enum=v1.DBExportManifest_EncodingType"`
+	xxx_hidden_EncodedSize  int64                         `protobuf:"varint,3,opt,name=encoded_size,json=encodedSize"`
+	xxx_hidden_DecodedSize  int64                         `protobuf:"varint,4,opt,name=decoded_size,json=decodedSize"`
+	xxx_hidden_DecodedCrc32 uint32                        `protobuf:"fixed32,5,opt,name=decoded_crc32,json=decodedCrc32"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *DBExportManifest_File) Reset() {
@@ -1270,113 +1375,128 @@ func (x *DBExportManifest_File) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DBExportManifest_File) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DBExportManifest_File) GetEncoding() DBExportManifest_EncodingType {
-	if x != nil && x.Encoding != nil {
-		return *x.Encoding
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_Encoding
+		}
 	}
 	return DBExportManifest_UNKNOWN
 }
 
 func (x *DBExportManifest_File) GetEncodedSize() int64 {
-	if x != nil && x.EncodedSize != nil {
-		return *x.EncodedSize
+	if x != nil {
+		return x.xxx_hidden_EncodedSize
 	}
 	return 0
 }
 
 func (x *DBExportManifest_File) GetDecodedSize() int64 {
-	if x != nil && x.DecodedSize != nil {
-		return *x.DecodedSize
+	if x != nil {
+		return x.xxx_hidden_DecodedSize
 	}
 	return 0
 }
 
 func (x *DBExportManifest_File) GetDecodedCrc32() uint32 {
-	if x != nil && x.DecodedCrc32 != nil {
-		return *x.DecodedCrc32
+	if x != nil {
+		return x.xxx_hidden_DecodedCrc32
 	}
 	return 0
 }
 
 func (x *DBExportManifest_File) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *DBExportManifest_File) SetEncoding(v DBExportManifest_EncodingType) {
-	x.Encoding = &v
+	x.xxx_hidden_Encoding = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *DBExportManifest_File) SetEncodedSize(v int64) {
-	x.EncodedSize = &v
+	x.xxx_hidden_EncodedSize = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *DBExportManifest_File) SetDecodedSize(v int64) {
-	x.DecodedSize = &v
+	x.xxx_hidden_DecodedSize = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *DBExportManifest_File) SetDecodedCrc32(v uint32) {
-	x.DecodedCrc32 = &v
+	x.xxx_hidden_DecodedCrc32 = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *DBExportManifest_File) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DBExportManifest_File) HasEncoding() bool {
 	if x == nil {
 		return false
 	}
-	return x.Encoding != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DBExportManifest_File) HasEncodedSize() bool {
 	if x == nil {
 		return false
 	}
-	return x.EncodedSize != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DBExportManifest_File) HasDecodedSize() bool {
 	if x == nil {
 		return false
 	}
-	return x.DecodedSize != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *DBExportManifest_File) HasDecodedCrc32() bool {
 	if x == nil {
 		return false
 	}
-	return x.DecodedCrc32 != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *DBExportManifest_File) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *DBExportManifest_File) ClearEncoding() {
-	x.Encoding = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Encoding = DBExportManifest_UNKNOWN
 }
 
 func (x *DBExportManifest_File) ClearEncodedSize() {
-	x.EncodedSize = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_EncodedSize = 0
 }
 
 func (x *DBExportManifest_File) ClearDecodedSize() {
-	x.DecodedSize = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_DecodedSize = 0
 }
 
 func (x *DBExportManifest_File) ClearDecodedCrc32() {
-	x.DecodedCrc32 = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_DecodedCrc32 = 0
 }
 
 type DBExportManifest_File_builder struct {
@@ -1396,20 +1516,37 @@ func (b0 DBExportManifest_File_builder) Build() *DBExportManifest_File {
 	m0 := &DBExportManifest_File{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Encoding = b.Encoding
-	x.EncodedSize = b.EncodedSize
-	x.DecodedSize = b.DecodedSize
-	x.DecodedCrc32 = b.DecodedCrc32
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Encoding != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Encoding = *b.Encoding
+	}
+	if b.EncodedSize != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_EncodedSize = *b.EncodedSize
+	}
+	if b.DecodedSize != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_DecodedSize = *b.DecodedSize
+	}
+	if b.DecodedCrc32 != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_DecodedCrc32 = *b.DecodedCrc32
+	}
 	return m0
 }
 
 type DBExportFormat_File struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Optional      *bool                  `protobuf:"varint,2,opt,name=optional" json:"optional,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Optional    bool                   `protobuf:"varint,2,opt,name=optional"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DBExportFormat_File) Reset() {
@@ -1438,47 +1575,54 @@ func (x *DBExportFormat_File) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DBExportFormat_File) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DBExportFormat_File) GetOptional() bool {
-	if x != nil && x.Optional != nil {
-		return *x.Optional
+	if x != nil {
+		return x.xxx_hidden_Optional
 	}
 	return false
 }
 
 func (x *DBExportFormat_File) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *DBExportFormat_File) SetOptional(v bool) {
-	x.Optional = &v
+	x.xxx_hidden_Optional = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DBExportFormat_File) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DBExportFormat_File) HasOptional() bool {
 	if x == nil {
 		return false
 	}
-	return x.Optional != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DBExportFormat_File) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *DBExportFormat_File) ClearOptional() {
-	x.Optional = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Optional = false
 }
 
 type DBExportFormat_File_builder struct {
@@ -1492,8 +1636,14 @@ func (b0 DBExportFormat_File_builder) Build() *DBExportFormat_File {
 	m0 := &DBExportFormat_File{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Optional = b.Optional
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Optional != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Optional = *b.Optional
+	}
 	return m0
 }
 
@@ -1576,7 +1726,7 @@ const file_api_v1_db_service_proto_rawDesc = "" +
 	"\x17GetActiveRestoreProcess\x12\t.v1.Empty\x1a%.v1.GetActiveDBRestoreProcessResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/db/restore\x12\xa1\x01\n" +
 	"\x17InterruptRestoreProcess\x12$.v1.InterruptDBRestoreProcessRequest\x1a%.v1.InterruptDBRestoreProcessResponse\"9\x82\xd3\xe4\x93\x023\"1/v1/db/interruptrestore/{process_id}/{attempt_id}\x12P\n" +
 	"\x14CancelRestoreProcess\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x1b\x82\xd3\xe4\x93\x02\x15*\x13/v1/db/restore/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_db_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v1_db_service_proto_msgTypes = make([]protoimpl.MessageInfo, 13)

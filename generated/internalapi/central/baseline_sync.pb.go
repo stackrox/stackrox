@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/baseline_sync.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -25,10 +23,10 @@ const (
 )
 
 type BaselineSync struct {
-	state         protoimpl.MessageState     `protogen:"hybrid.v1"`
-	Baselines     []*storage.ProcessBaseline `protobuf:"bytes,1,rep,name=baselines" json:"baselines,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Baselines *[]*storage.ProcessBaseline `protobuf:"bytes,1,rep,name=baselines"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *BaselineSync) Reset() {
@@ -58,13 +56,15 @@ func (x *BaselineSync) ProtoReflect() protoreflect.Message {
 
 func (x *BaselineSync) GetBaselines() []*storage.ProcessBaseline {
 	if x != nil {
-		return x.Baselines
+		if x.xxx_hidden_Baselines != nil {
+			return *x.xxx_hidden_Baselines
+		}
 	}
 	return nil
 }
 
 func (x *BaselineSync) SetBaselines(v []*storage.ProcessBaseline) {
-	x.Baselines = v
+	x.xxx_hidden_Baselines = &v
 }
 
 type BaselineSync_builder struct {
@@ -77,7 +77,7 @@ func (b0 BaselineSync_builder) Build() *BaselineSync {
 	m0 := &BaselineSync{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Baselines = b.Baselines
+	x.xxx_hidden_Baselines = &b.Baselines
 	return m0
 }
 
@@ -87,7 +87,7 @@ const file_internalapi_central_baseline_sync_proto_rawDesc = "" +
 	"\n" +
 	"'internalapi/central/baseline_sync.proto\x12\acentral\x1a\x1estorage/process_baseline.proto\x1a!google/protobuf/go_features.proto\"F\n" +
 	"\fBaselineSync\x126\n" +
-	"\tbaselines\x18\x01 \x03(\v2\x18.storage.ProcessBaselineR\tbaselinesB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\tbaselines\x18\x01 \x03(\v2\x18.storage.ProcessBaselineR\tbaselinesB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_baseline_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_central_baseline_sync_proto_goTypes = []any{

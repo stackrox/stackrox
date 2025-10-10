@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/cluster.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -463,18 +461,14 @@ func (x ClusterHealthStatus_HealthStatusLabel) Number() protoreflect.EnumNumber 
 
 // ClusterMetadata contains metadata information about the cluster infrastructure.
 type ClusterMetadata struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	Type  *ClusterMetadata_Type  `protobuf:"varint,1,opt,name=type,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type"` // @gotags: search:"Cluster Type"
-	// Name represents the name under which the cluster is registered with the
-	// cloud provider. In case of self managed OpenShift it is the name chosen
-	// by the OpenShift installer.
-	Name *string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	// Id represents a unique ID under which the cluster is registered with the
-	// cloud provider. Not all cluster types have an id. For all OpenShift
-	// clusters, this is the Red Hat `cluster_id` registered with OCM.
-	Id            *string `protobuf:"bytes,3,opt,name=id" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Type        ClusterMetadata_Type   `protobuf:"varint,1,opt,name=type,enum=storage.ClusterMetadata_Type"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,3,opt,name=id"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ClusterMetadata) Reset() {
@@ -503,69 +497,83 @@ func (x *ClusterMetadata) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ClusterMetadata) GetType() ClusterMetadata_Type {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return ClusterMetadata_UNSPECIFIED
 }
 
 func (x *ClusterMetadata) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterMetadata) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterMetadata) SetType(v ClusterMetadata_Type) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *ClusterMetadata) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ClusterMetadata) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ClusterMetadata) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ClusterMetadata) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ClusterMetadata) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ClusterMetadata) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Type = ClusterMetadata_UNSPECIFIED
 }
 
 func (x *ClusterMetadata) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ClusterMetadata) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Id = nil
 }
 
 type ClusterMetadata_builder struct {
@@ -586,21 +594,29 @@ func (b0 ClusterMetadata_builder) Build() *ClusterMetadata {
 	m0 := &ClusterMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Type = b.Type
-	x.Name = b.Name
-	x.Id = b.Id
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Type = *b.Type
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Id = b.Id
+	}
 	return m0
 }
 
 type GoogleProviderMetadata struct {
-	state   protoimpl.MessageState `protogen:"hybrid.v1"`
-	Project *string                `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
-	// Deprecated in favor of providerMetadata.cluster.name.
-	//
-	// Deprecated: Marked as deprecated in storage/cluster.proto.
-	ClusterName   *string `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Project     *string                `protobuf:"bytes,1,opt,name=project"`
+	xxx_hidden_ClusterName *string                `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GoogleProviderMetadata) Reset() {
@@ -629,34 +645,42 @@ func (x *GoogleProviderMetadata) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GoogleProviderMetadata) GetProject() string {
-	if x != nil && x.Project != nil {
-		return *x.Project
+	if x != nil {
+		if x.xxx_hidden_Project != nil {
+			return *x.xxx_hidden_Project
+		}
+		return ""
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in storage/cluster.proto.
 func (x *GoogleProviderMetadata) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GoogleProviderMetadata) SetProject(v string) {
-	x.Project = &v
+	x.xxx_hidden_Project = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 // Deprecated: Marked as deprecated in storage/cluster.proto.
 func (x *GoogleProviderMetadata) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GoogleProviderMetadata) HasProject() bool {
 	if x == nil {
 		return false
 	}
-	return x.Project != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 // Deprecated: Marked as deprecated in storage/cluster.proto.
@@ -664,16 +688,18 @@ func (x *GoogleProviderMetadata) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GoogleProviderMetadata) ClearProject() {
-	x.Project = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Project = nil
 }
 
 // Deprecated: Marked as deprecated in storage/cluster.proto.
 func (x *GoogleProviderMetadata) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ClusterName = nil
 }
 
 type GoogleProviderMetadata_builder struct {
@@ -690,16 +716,24 @@ func (b0 GoogleProviderMetadata_builder) Build() *GoogleProviderMetadata {
 	m0 := &GoogleProviderMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Project = b.Project
-	x.ClusterName = b.ClusterName
+	if b.Project != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Project = b.Project
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
 	return m0
 }
 
 type AWSProviderMetadata struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	AccountId     *string                `protobuf:"bytes,1,opt,name=account_id,json=accountId" json:"account_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AccountId   *string                `protobuf:"bytes,1,opt,name=account_id,json=accountId"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AWSProviderMetadata) Reset() {
@@ -728,25 +762,30 @@ func (x *AWSProviderMetadata) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AWSProviderMetadata) GetAccountId() string {
-	if x != nil && x.AccountId != nil {
-		return *x.AccountId
+	if x != nil {
+		if x.xxx_hidden_AccountId != nil {
+			return *x.xxx_hidden_AccountId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AWSProviderMetadata) SetAccountId(v string) {
-	x.AccountId = &v
+	x.xxx_hidden_AccountId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *AWSProviderMetadata) HasAccountId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AccountId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AWSProviderMetadata) ClearAccountId() {
-	x.AccountId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_AccountId = nil
 }
 
 type AWSProviderMetadata_builder struct {
@@ -759,15 +798,20 @@ func (b0 AWSProviderMetadata_builder) Build() *AWSProviderMetadata {
 	m0 := &AWSProviderMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AccountId = b.AccountId
+	if b.AccountId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_AccountId = b.AccountId
+	}
 	return m0
 }
 
 type AzureProviderMetadata struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	SubscriptionId *string                `protobuf:"bytes,1,opt,name=subscription_id,json=subscriptionId" json:"subscription_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SubscriptionId *string                `protobuf:"bytes,1,opt,name=subscription_id,json=subscriptionId"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *AzureProviderMetadata) Reset() {
@@ -796,25 +840,30 @@ func (x *AzureProviderMetadata) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AzureProviderMetadata) GetSubscriptionId() string {
-	if x != nil && x.SubscriptionId != nil {
-		return *x.SubscriptionId
+	if x != nil {
+		if x.xxx_hidden_SubscriptionId != nil {
+			return *x.xxx_hidden_SubscriptionId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AzureProviderMetadata) SetSubscriptionId(v string) {
-	x.SubscriptionId = &v
+	x.xxx_hidden_SubscriptionId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *AzureProviderMetadata) HasSubscriptionId() bool {
 	if x == nil {
 		return false
 	}
-	return x.SubscriptionId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AzureProviderMetadata) ClearSubscriptionId() {
-	x.SubscriptionId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_SubscriptionId = nil
 }
 
 type AzureProviderMetadata_builder struct {
@@ -827,24 +876,24 @@ func (b0 AzureProviderMetadata_builder) Build() *AzureProviderMetadata {
 	m0 := &AzureProviderMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.SubscriptionId = b.SubscriptionId
+	if b.SubscriptionId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_SubscriptionId = b.SubscriptionId
+	}
 	return m0
 }
 
 type ProviderMetadata struct {
-	state  protoimpl.MessageState `protogen:"hybrid.v1"`
-	Region *string                `protobuf:"bytes,1,opt,name=region" json:"region,omitempty"`
-	Zone   *string                `protobuf:"bytes,2,opt,name=zone" json:"zone,omitempty"`
-	// Types that are valid to be assigned to Provider:
-	//
-	//	*ProviderMetadata_Google
-	//	*ProviderMetadata_Aws
-	//	*ProviderMetadata_Azure
-	Provider      isProviderMetadata_Provider `protobuf_oneof:"Provider"`
-	Verified      *bool                       `protobuf:"varint,15,opt,name=verified" json:"verified,omitempty"`
-	Cluster       *ClusterMetadata            `protobuf:"bytes,16,opt,name=cluster" json:"cluster,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Region      *string                     `protobuf:"bytes,1,opt,name=region"`
+	xxx_hidden_Zone        *string                     `protobuf:"bytes,2,opt,name=zone"`
+	xxx_hidden_Provider    isProviderMetadata_Provider `protobuf_oneof:"Provider"`
+	xxx_hidden_Verified    bool                        `protobuf:"varint,15,opt,name=verified"`
+	xxx_hidden_Cluster     *ClusterMetadata            `protobuf:"bytes,16,opt,name=cluster"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ProviderMetadata) Reset() {
@@ -873,29 +922,28 @@ func (x *ProviderMetadata) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ProviderMetadata) GetRegion() string {
-	if x != nil && x.Region != nil {
-		return *x.Region
+	if x != nil {
+		if x.xxx_hidden_Region != nil {
+			return *x.xxx_hidden_Region
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProviderMetadata) GetZone() string {
-	if x != nil && x.Zone != nil {
-		return *x.Zone
+	if x != nil {
+		if x.xxx_hidden_Zone != nil {
+			return *x.xxx_hidden_Zone
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *ProviderMetadata) GetProvider() isProviderMetadata_Provider {
-	if x != nil {
-		return x.Provider
-	}
-	return nil
-}
-
 func (x *ProviderMetadata) GetGoogle() *GoogleProviderMetadata {
 	if x != nil {
-		if x, ok := x.Provider.(*ProviderMetadata_Google); ok {
+		if x, ok := x.xxx_hidden_Provider.(*providerMetadata_Google); ok {
 			return x.Google
 		}
 	}
@@ -904,7 +952,7 @@ func (x *ProviderMetadata) GetGoogle() *GoogleProviderMetadata {
 
 func (x *ProviderMetadata) GetAws() *AWSProviderMetadata {
 	if x != nil {
-		if x, ok := x.Provider.(*ProviderMetadata_Aws); ok {
+		if x, ok := x.xxx_hidden_Provider.(*providerMetadata_Aws); ok {
 			return x.Aws
 		}
 	}
@@ -913,7 +961,7 @@ func (x *ProviderMetadata) GetAws() *AWSProviderMetadata {
 
 func (x *ProviderMetadata) GetAzure() *AzureProviderMetadata {
 	if x != nil {
-		if x, ok := x.Provider.(*ProviderMetadata_Azure); ok {
+		if x, ok := x.xxx_hidden_Provider.(*providerMetadata_Azure); ok {
 			return x.Azure
 		}
 	}
@@ -921,85 +969,88 @@ func (x *ProviderMetadata) GetAzure() *AzureProviderMetadata {
 }
 
 func (x *ProviderMetadata) GetVerified() bool {
-	if x != nil && x.Verified != nil {
-		return *x.Verified
+	if x != nil {
+		return x.xxx_hidden_Verified
 	}
 	return false
 }
 
 func (x *ProviderMetadata) GetCluster() *ClusterMetadata {
 	if x != nil {
-		return x.Cluster
+		return x.xxx_hidden_Cluster
 	}
 	return nil
 }
 
 func (x *ProviderMetadata) SetRegion(v string) {
-	x.Region = &v
+	x.xxx_hidden_Region = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *ProviderMetadata) SetZone(v string) {
-	x.Zone = &v
+	x.xxx_hidden_Zone = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *ProviderMetadata) SetGoogle(v *GoogleProviderMetadata) {
 	if v == nil {
-		x.Provider = nil
+		x.xxx_hidden_Provider = nil
 		return
 	}
-	x.Provider = &ProviderMetadata_Google{v}
+	x.xxx_hidden_Provider = &providerMetadata_Google{v}
 }
 
 func (x *ProviderMetadata) SetAws(v *AWSProviderMetadata) {
 	if v == nil {
-		x.Provider = nil
+		x.xxx_hidden_Provider = nil
 		return
 	}
-	x.Provider = &ProviderMetadata_Aws{v}
+	x.xxx_hidden_Provider = &providerMetadata_Aws{v}
 }
 
 func (x *ProviderMetadata) SetAzure(v *AzureProviderMetadata) {
 	if v == nil {
-		x.Provider = nil
+		x.xxx_hidden_Provider = nil
 		return
 	}
-	x.Provider = &ProviderMetadata_Azure{v}
+	x.xxx_hidden_Provider = &providerMetadata_Azure{v}
 }
 
 func (x *ProviderMetadata) SetVerified(v bool) {
-	x.Verified = &v
+	x.xxx_hidden_Verified = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *ProviderMetadata) SetCluster(v *ClusterMetadata) {
-	x.Cluster = v
+	x.xxx_hidden_Cluster = v
 }
 
 func (x *ProviderMetadata) HasRegion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Region != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ProviderMetadata) HasZone() bool {
 	if x == nil {
 		return false
 	}
-	return x.Zone != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ProviderMetadata) HasProvider() bool {
 	if x == nil {
 		return false
 	}
-	return x.Provider != nil
+	return x.xxx_hidden_Provider != nil
 }
 
 func (x *ProviderMetadata) HasGoogle() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Provider.(*ProviderMetadata_Google)
+	_, ok := x.xxx_hidden_Provider.(*providerMetadata_Google)
 	return ok
 }
 
@@ -1007,7 +1058,7 @@ func (x *ProviderMetadata) HasAws() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Provider.(*ProviderMetadata_Aws)
+	_, ok := x.xxx_hidden_Provider.(*providerMetadata_Aws)
 	return ok
 }
 
@@ -1015,7 +1066,7 @@ func (x *ProviderMetadata) HasAzure() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Provider.(*ProviderMetadata_Azure)
+	_, ok := x.xxx_hidden_Provider.(*providerMetadata_Azure)
 	return ok
 }
 
@@ -1023,52 +1074,55 @@ func (x *ProviderMetadata) HasVerified() bool {
 	if x == nil {
 		return false
 	}
-	return x.Verified != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ProviderMetadata) HasCluster() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cluster != nil
+	return x.xxx_hidden_Cluster != nil
 }
 
 func (x *ProviderMetadata) ClearRegion() {
-	x.Region = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Region = nil
 }
 
 func (x *ProviderMetadata) ClearZone() {
-	x.Zone = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Zone = nil
 }
 
 func (x *ProviderMetadata) ClearProvider() {
-	x.Provider = nil
+	x.xxx_hidden_Provider = nil
 }
 
 func (x *ProviderMetadata) ClearGoogle() {
-	if _, ok := x.Provider.(*ProviderMetadata_Google); ok {
-		x.Provider = nil
+	if _, ok := x.xxx_hidden_Provider.(*providerMetadata_Google); ok {
+		x.xxx_hidden_Provider = nil
 	}
 }
 
 func (x *ProviderMetadata) ClearAws() {
-	if _, ok := x.Provider.(*ProviderMetadata_Aws); ok {
-		x.Provider = nil
+	if _, ok := x.xxx_hidden_Provider.(*providerMetadata_Aws); ok {
+		x.xxx_hidden_Provider = nil
 	}
 }
 
 func (x *ProviderMetadata) ClearAzure() {
-	if _, ok := x.Provider.(*ProviderMetadata_Azure); ok {
-		x.Provider = nil
+	if _, ok := x.xxx_hidden_Provider.(*providerMetadata_Azure); ok {
+		x.xxx_hidden_Provider = nil
 	}
 }
 
 func (x *ProviderMetadata) ClearVerified() {
-	x.Verified = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Verified = false
 }
 
 func (x *ProviderMetadata) ClearCluster() {
-	x.Cluster = nil
+	x.xxx_hidden_Cluster = nil
 }
 
 const ProviderMetadata_Provider_not_set_case case_ProviderMetadata_Provider = 0
@@ -1080,12 +1134,12 @@ func (x *ProviderMetadata) WhichProvider() case_ProviderMetadata_Provider {
 	if x == nil {
 		return ProviderMetadata_Provider_not_set_case
 	}
-	switch x.Provider.(type) {
-	case *ProviderMetadata_Google:
+	switch x.xxx_hidden_Provider.(type) {
+	case *providerMetadata_Google:
 		return ProviderMetadata_Google_case
-	case *ProviderMetadata_Aws:
+	case *providerMetadata_Aws:
 		return ProviderMetadata_Aws_case
-	case *ProviderMetadata_Azure:
+	case *providerMetadata_Azure:
 		return ProviderMetadata_Azure_case
 	default:
 		return ProviderMetadata_Provider_not_set_case
@@ -1097,11 +1151,11 @@ type ProviderMetadata_builder struct {
 
 	Region *string
 	Zone   *string
-	// Fields of oneof Provider:
+	// Fields of oneof xxx_hidden_Provider:
 	Google *GoogleProviderMetadata
 	Aws    *AWSProviderMetadata
 	Azure  *AzureProviderMetadata
-	// -- end of Provider
+	// -- end of xxx_hidden_Provider
 	Verified *bool
 	Cluster  *ClusterMetadata
 }
@@ -1110,19 +1164,28 @@ func (b0 ProviderMetadata_builder) Build() *ProviderMetadata {
 	m0 := &ProviderMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Region = b.Region
-	x.Zone = b.Zone
+	if b.Region != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Region = b.Region
+	}
+	if b.Zone != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Zone = b.Zone
+	}
 	if b.Google != nil {
-		x.Provider = &ProviderMetadata_Google{b.Google}
+		x.xxx_hidden_Provider = &providerMetadata_Google{b.Google}
 	}
 	if b.Aws != nil {
-		x.Provider = &ProviderMetadata_Aws{b.Aws}
+		x.xxx_hidden_Provider = &providerMetadata_Aws{b.Aws}
 	}
 	if b.Azure != nil {
-		x.Provider = &ProviderMetadata_Azure{b.Azure}
+		x.xxx_hidden_Provider = &providerMetadata_Azure{b.Azure}
 	}
-	x.Verified = b.Verified
-	x.Cluster = b.Cluster
+	if b.Verified != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_Verified = *b.Verified
+	}
+	x.xxx_hidden_Cluster = b.Cluster
 	return m0
 }
 
@@ -1140,35 +1203,34 @@ type isProviderMetadata_Provider interface {
 	isProviderMetadata_Provider()
 }
 
-type ProviderMetadata_Google struct {
+type providerMetadata_Google struct {
 	Google *GoogleProviderMetadata `protobuf:"bytes,3,opt,name=google,oneof"`
 }
 
-type ProviderMetadata_Aws struct {
+type providerMetadata_Aws struct {
 	Aws *AWSProviderMetadata `protobuf:"bytes,4,opt,name=aws,oneof"`
 }
 
-type ProviderMetadata_Azure struct {
+type providerMetadata_Azure struct {
 	Azure *AzureProviderMetadata `protobuf:"bytes,5,opt,name=azure,oneof"`
 }
 
-func (*ProviderMetadata_Google) isProviderMetadata_Provider() {}
+func (*providerMetadata_Google) isProviderMetadata_Provider() {}
 
-func (*ProviderMetadata_Aws) isProviderMetadata_Provider() {}
+func (*providerMetadata_Aws) isProviderMetadata_Provider() {}
 
-func (*ProviderMetadata_Azure) isProviderMetadata_Provider() {}
+func (*providerMetadata_Azure) isProviderMetadata_Provider() {}
 
 type OrchestratorMetadata struct {
-	state   protoimpl.MessageState `protogen:"hybrid.v1"`
-	Version *string                `protobuf:"bytes,1,opt,name=version" json:"version,omitempty" search:"Cluster Kubernetes Version"` // @gotags: search:"Cluster Kubernetes Version"
-	// Types that are valid to be assigned to IsOpenshift:
-	//
-	//	*OrchestratorMetadata_OpenshiftVersion
-	IsOpenshift   isOrchestratorMetadata_IsOpenshift `protobuf_oneof:"is_openshift"`
-	BuildDate     *timestamppb.Timestamp             `protobuf:"bytes,2,opt,name=build_date,json=buildDate" json:"build_date,omitempty"`
-	ApiVersions   []string                           `protobuf:"bytes,3,rep,name=api_versions,json=apiVersions" json:"api_versions,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Version     *string                            `protobuf:"bytes,1,opt,name=version"`
+	xxx_hidden_IsOpenshift isOrchestratorMetadata_IsOpenshift `protobuf_oneof:"is_openshift"`
+	xxx_hidden_BuildDate   *timestamppb.Timestamp             `protobuf:"bytes,2,opt,name=build_date,json=buildDate"`
+	xxx_hidden_ApiVersions []string                           `protobuf:"bytes,3,rep,name=api_versions,json=apiVersions"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *OrchestratorMetadata) Reset() {
@@ -1197,22 +1259,18 @@ func (x *OrchestratorMetadata) ProtoReflect() protoreflect.Message {
 }
 
 func (x *OrchestratorMetadata) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *OrchestratorMetadata) GetIsOpenshift() isOrchestratorMetadata_IsOpenshift {
-	if x != nil {
-		return x.IsOpenshift
-	}
-	return nil
-}
-
 func (x *OrchestratorMetadata) GetOpenshiftVersion() string {
 	if x != nil {
-		if x, ok := x.IsOpenshift.(*OrchestratorMetadata_OpenshiftVersion); ok {
+		if x, ok := x.xxx_hidden_IsOpenshift.(*orchestratorMetadata_OpenshiftVersion); ok {
 			return x.OpenshiftVersion
 		}
 	}
@@ -1221,53 +1279,54 @@ func (x *OrchestratorMetadata) GetOpenshiftVersion() string {
 
 func (x *OrchestratorMetadata) GetBuildDate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.BuildDate
+		return x.xxx_hidden_BuildDate
 	}
 	return nil
 }
 
 func (x *OrchestratorMetadata) GetApiVersions() []string {
 	if x != nil {
-		return x.ApiVersions
+		return x.xxx_hidden_ApiVersions
 	}
 	return nil
 }
 
 func (x *OrchestratorMetadata) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *OrchestratorMetadata) SetOpenshiftVersion(v string) {
-	x.IsOpenshift = &OrchestratorMetadata_OpenshiftVersion{v}
+	x.xxx_hidden_IsOpenshift = &orchestratorMetadata_OpenshiftVersion{v}
 }
 
 func (x *OrchestratorMetadata) SetBuildDate(v *timestamppb.Timestamp) {
-	x.BuildDate = v
+	x.xxx_hidden_BuildDate = v
 }
 
 func (x *OrchestratorMetadata) SetApiVersions(v []string) {
-	x.ApiVersions = v
+	x.xxx_hidden_ApiVersions = v
 }
 
 func (x *OrchestratorMetadata) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *OrchestratorMetadata) HasIsOpenshift() bool {
 	if x == nil {
 		return false
 	}
-	return x.IsOpenshift != nil
+	return x.xxx_hidden_IsOpenshift != nil
 }
 
 func (x *OrchestratorMetadata) HasOpenshiftVersion() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.IsOpenshift.(*OrchestratorMetadata_OpenshiftVersion)
+	_, ok := x.xxx_hidden_IsOpenshift.(*orchestratorMetadata_OpenshiftVersion)
 	return ok
 }
 
@@ -1275,25 +1334,26 @@ func (x *OrchestratorMetadata) HasBuildDate() bool {
 	if x == nil {
 		return false
 	}
-	return x.BuildDate != nil
+	return x.xxx_hidden_BuildDate != nil
 }
 
 func (x *OrchestratorMetadata) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Version = nil
 }
 
 func (x *OrchestratorMetadata) ClearIsOpenshift() {
-	x.IsOpenshift = nil
+	x.xxx_hidden_IsOpenshift = nil
 }
 
 func (x *OrchestratorMetadata) ClearOpenshiftVersion() {
-	if _, ok := x.IsOpenshift.(*OrchestratorMetadata_OpenshiftVersion); ok {
-		x.IsOpenshift = nil
+	if _, ok := x.xxx_hidden_IsOpenshift.(*orchestratorMetadata_OpenshiftVersion); ok {
+		x.xxx_hidden_IsOpenshift = nil
 	}
 }
 
 func (x *OrchestratorMetadata) ClearBuildDate() {
-	x.BuildDate = nil
+	x.xxx_hidden_BuildDate = nil
 }
 
 const OrchestratorMetadata_IsOpenshift_not_set_case case_OrchestratorMetadata_IsOpenshift = 0
@@ -1303,8 +1363,8 @@ func (x *OrchestratorMetadata) WhichIsOpenshift() case_OrchestratorMetadata_IsOp
 	if x == nil {
 		return OrchestratorMetadata_IsOpenshift_not_set_case
 	}
-	switch x.IsOpenshift.(type) {
-	case *OrchestratorMetadata_OpenshiftVersion:
+	switch x.xxx_hidden_IsOpenshift.(type) {
+	case *orchestratorMetadata_OpenshiftVersion:
 		return OrchestratorMetadata_OpenshiftVersion_case
 	default:
 		return OrchestratorMetadata_IsOpenshift_not_set_case
@@ -1315,9 +1375,9 @@ type OrchestratorMetadata_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Version *string
-	// Fields of oneof IsOpenshift:
+	// Fields of oneof xxx_hidden_IsOpenshift:
 	OpenshiftVersion *string
-	// -- end of IsOpenshift
+	// -- end of xxx_hidden_IsOpenshift
 	BuildDate   *timestamppb.Timestamp
 	ApiVersions []string
 }
@@ -1326,12 +1386,15 @@ func (b0 OrchestratorMetadata_builder) Build() *OrchestratorMetadata {
 	m0 := &OrchestratorMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
-	if b.OpenshiftVersion != nil {
-		x.IsOpenshift = &OrchestratorMetadata_OpenshiftVersion{*b.OpenshiftVersion}
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Version = b.Version
 	}
-	x.BuildDate = b.BuildDate
-	x.ApiVersions = b.ApiVersions
+	if b.OpenshiftVersion != nil {
+		x.xxx_hidden_IsOpenshift = &orchestratorMetadata_OpenshiftVersion{*b.OpenshiftVersion}
+	}
+	x.xxx_hidden_BuildDate = b.BuildDate
+	x.xxx_hidden_ApiVersions = b.ApiVersions
 	return m0
 }
 
@@ -1349,21 +1412,23 @@ type isOrchestratorMetadata_IsOpenshift interface {
 	isOrchestratorMetadata_IsOpenshift()
 }
 
-type OrchestratorMetadata_OpenshiftVersion struct {
+type orchestratorMetadata_OpenshiftVersion struct {
 	OpenshiftVersion string `protobuf:"bytes,4,opt,name=openshift_version,json=openshiftVersion,oneof"`
 }
 
-func (*OrchestratorMetadata_OpenshiftVersion) isOrchestratorMetadata_IsOpenshift() {}
+func (*orchestratorMetadata_OpenshiftVersion) isOrchestratorMetadata_IsOpenshift() {}
 
 type AdmissionControllerConfig struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	Enabled          *bool                  `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
-	TimeoutSeconds   *int32                 `protobuf:"varint,2,opt,name=timeout_seconds,json=timeoutSeconds" json:"timeout_seconds,omitempty"`
-	ScanInline       *bool                  `protobuf:"varint,3,opt,name=scan_inline,json=scanInline" json:"scan_inline,omitempty"`
-	DisableBypass    *bool                  `protobuf:"varint,4,opt,name=disable_bypass,json=disableBypass" json:"disable_bypass,omitempty"`
-	EnforceOnUpdates *bool                  `protobuf:"varint,5,opt,name=enforce_on_updates,json=enforceOnUpdates" json:"enforce_on_updates,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Enabled          bool                   `protobuf:"varint,1,opt,name=enabled"`
+	xxx_hidden_TimeoutSeconds   int32                  `protobuf:"varint,2,opt,name=timeout_seconds,json=timeoutSeconds"`
+	xxx_hidden_ScanInline       bool                   `protobuf:"varint,3,opt,name=scan_inline,json=scanInline"`
+	xxx_hidden_DisableBypass    bool                   `protobuf:"varint,4,opt,name=disable_bypass,json=disableBypass"`
+	xxx_hidden_EnforceOnUpdates bool                   `protobuf:"varint,5,opt,name=enforce_on_updates,json=enforceOnUpdates"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *AdmissionControllerConfig) Reset() {
@@ -1392,113 +1457,123 @@ func (x *AdmissionControllerConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AdmissionControllerConfig) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
+	if x != nil {
+		return x.xxx_hidden_Enabled
 	}
 	return false
 }
 
 func (x *AdmissionControllerConfig) GetTimeoutSeconds() int32 {
-	if x != nil && x.TimeoutSeconds != nil {
-		return *x.TimeoutSeconds
+	if x != nil {
+		return x.xxx_hidden_TimeoutSeconds
 	}
 	return 0
 }
 
 func (x *AdmissionControllerConfig) GetScanInline() bool {
-	if x != nil && x.ScanInline != nil {
-		return *x.ScanInline
+	if x != nil {
+		return x.xxx_hidden_ScanInline
 	}
 	return false
 }
 
 func (x *AdmissionControllerConfig) GetDisableBypass() bool {
-	if x != nil && x.DisableBypass != nil {
-		return *x.DisableBypass
+	if x != nil {
+		return x.xxx_hidden_DisableBypass
 	}
 	return false
 }
 
 func (x *AdmissionControllerConfig) GetEnforceOnUpdates() bool {
-	if x != nil && x.EnforceOnUpdates != nil {
-		return *x.EnforceOnUpdates
+	if x != nil {
+		return x.xxx_hidden_EnforceOnUpdates
 	}
 	return false
 }
 
 func (x *AdmissionControllerConfig) SetEnabled(v bool) {
-	x.Enabled = &v
+	x.xxx_hidden_Enabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *AdmissionControllerConfig) SetTimeoutSeconds(v int32) {
-	x.TimeoutSeconds = &v
+	x.xxx_hidden_TimeoutSeconds = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *AdmissionControllerConfig) SetScanInline(v bool) {
-	x.ScanInline = &v
+	x.xxx_hidden_ScanInline = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *AdmissionControllerConfig) SetDisableBypass(v bool) {
-	x.DisableBypass = &v
+	x.xxx_hidden_DisableBypass = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *AdmissionControllerConfig) SetEnforceOnUpdates(v bool) {
-	x.EnforceOnUpdates = &v
+	x.xxx_hidden_EnforceOnUpdates = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *AdmissionControllerConfig) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.Enabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AdmissionControllerConfig) HasTimeoutSeconds() bool {
 	if x == nil {
 		return false
 	}
-	return x.TimeoutSeconds != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *AdmissionControllerConfig) HasScanInline() bool {
 	if x == nil {
 		return false
 	}
-	return x.ScanInline != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *AdmissionControllerConfig) HasDisableBypass() bool {
 	if x == nil {
 		return false
 	}
-	return x.DisableBypass != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *AdmissionControllerConfig) HasEnforceOnUpdates() bool {
 	if x == nil {
 		return false
 	}
-	return x.EnforceOnUpdates != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *AdmissionControllerConfig) ClearEnabled() {
-	x.Enabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Enabled = false
 }
 
 func (x *AdmissionControllerConfig) ClearTimeoutSeconds() {
-	x.TimeoutSeconds = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_TimeoutSeconds = 0
 }
 
 func (x *AdmissionControllerConfig) ClearScanInline() {
-	x.ScanInline = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ScanInline = false
 }
 
 func (x *AdmissionControllerConfig) ClearDisableBypass() {
-	x.DisableBypass = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_DisableBypass = false
 }
 
 func (x *AdmissionControllerConfig) ClearEnforceOnUpdates() {
-	x.EnforceOnUpdates = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_EnforceOnUpdates = false
 }
 
 type AdmissionControllerConfig_builder struct {
@@ -1515,19 +1590,36 @@ func (b0 AdmissionControllerConfig_builder) Build() *AdmissionControllerConfig {
 	m0 := &AdmissionControllerConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Enabled = b.Enabled
-	x.TimeoutSeconds = b.TimeoutSeconds
-	x.ScanInline = b.ScanInline
-	x.DisableBypass = b.DisableBypass
-	x.EnforceOnUpdates = b.EnforceOnUpdates
+	if b.Enabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Enabled = *b.Enabled
+	}
+	if b.TimeoutSeconds != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_TimeoutSeconds = *b.TimeoutSeconds
+	}
+	if b.ScanInline != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_ScanInline = *b.ScanInline
+	}
+	if b.DisableBypass != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_DisableBypass = *b.DisableBypass
+	}
+	if b.EnforceOnUpdates != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_EnforceOnUpdates = *b.EnforceOnUpdates
+	}
 	return m0
 }
 
 type TolerationsConfig struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Disabled      *bool                  `protobuf:"varint,1,opt,name=disabled" json:"disabled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Disabled    bool                   `protobuf:"varint,1,opt,name=disabled"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *TolerationsConfig) Reset() {
@@ -1556,25 +1648,27 @@ func (x *TolerationsConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *TolerationsConfig) GetDisabled() bool {
-	if x != nil && x.Disabled != nil {
-		return *x.Disabled
+	if x != nil {
+		return x.xxx_hidden_Disabled
 	}
 	return false
 }
 
 func (x *TolerationsConfig) SetDisabled(v bool) {
-	x.Disabled = &v
+	x.xxx_hidden_Disabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *TolerationsConfig) HasDisabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.Disabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *TolerationsConfig) ClearDisabled() {
-	x.Disabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Disabled = false
 }
 
 type TolerationsConfig_builder struct {
@@ -1587,26 +1681,31 @@ func (b0 TolerationsConfig_builder) Build() *TolerationsConfig {
 	m0 := &TolerationsConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Disabled = b.Disabled
+	if b.Disabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Disabled = *b.Disabled
+	}
 	return m0
 }
 
 // The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded.
 type StaticClusterConfig struct {
-	state                          protoimpl.MessageState `protogen:"hybrid.v1"`
-	Type                           *ClusterType           `protobuf:"varint,1,opt,name=type,enum=storage.ClusterType" json:"type,omitempty"`
-	MainImage                      *string                `protobuf:"bytes,2,opt,name=main_image,json=mainImage" json:"main_image,omitempty"`
-	CentralApiEndpoint             *string                `protobuf:"bytes,3,opt,name=central_api_endpoint,json=centralApiEndpoint" json:"central_api_endpoint,omitempty"`
-	CollectionMethod               *CollectionMethod      `protobuf:"varint,4,opt,name=collection_method,json=collectionMethod,enum=storage.CollectionMethod" json:"collection_method,omitempty"`
-	CollectorImage                 *string                `protobuf:"bytes,5,opt,name=collector_image,json=collectorImage" json:"collector_image,omitempty"`
-	AdmissionController            *bool                  `protobuf:"varint,6,opt,name=admission_controller,json=admissionController" json:"admission_controller,omitempty"`
-	AdmissionControllerUpdates     *bool                  `protobuf:"varint,7,opt,name=admission_controller_updates,json=admissionControllerUpdates" json:"admission_controller_updates,omitempty"`
-	TolerationsConfig              *TolerationsConfig     `protobuf:"bytes,8,opt,name=tolerations_config,json=tolerationsConfig" json:"tolerations_config,omitempty"`
-	SlimCollector                  *bool                  `protobuf:"varint,9,opt,name=slim_collector,json=slimCollector" json:"slim_collector,omitempty"`
-	AdmissionControllerEvents      *bool                  `protobuf:"varint,10,opt,name=admission_controller_events,json=admissionControllerEvents" json:"admission_controller_events,omitempty"`
-	AdmissionControllerFailOnError *bool                  `protobuf:"varint,11,opt,name=admission_controller_fail_on_error,json=admissionControllerFailOnError" json:"admission_controller_fail_on_error,omitempty"`
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	state                                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Type                           ClusterType            `protobuf:"varint,1,opt,name=type,enum=storage.ClusterType"`
+	xxx_hidden_MainImage                      *string                `protobuf:"bytes,2,opt,name=main_image,json=mainImage"`
+	xxx_hidden_CentralApiEndpoint             *string                `protobuf:"bytes,3,opt,name=central_api_endpoint,json=centralApiEndpoint"`
+	xxx_hidden_CollectionMethod               CollectionMethod       `protobuf:"varint,4,opt,name=collection_method,json=collectionMethod,enum=storage.CollectionMethod"`
+	xxx_hidden_CollectorImage                 *string                `protobuf:"bytes,5,opt,name=collector_image,json=collectorImage"`
+	xxx_hidden_AdmissionController            bool                   `protobuf:"varint,6,opt,name=admission_controller,json=admissionController"`
+	xxx_hidden_AdmissionControllerUpdates     bool                   `protobuf:"varint,7,opt,name=admission_controller_updates,json=admissionControllerUpdates"`
+	xxx_hidden_TolerationsConfig              *TolerationsConfig     `protobuf:"bytes,8,opt,name=tolerations_config,json=tolerationsConfig"`
+	xxx_hidden_SlimCollector                  bool                   `protobuf:"varint,9,opt,name=slim_collector,json=slimCollector"`
+	xxx_hidden_AdmissionControllerEvents      bool                   `protobuf:"varint,10,opt,name=admission_controller_events,json=admissionControllerEvents"`
+	xxx_hidden_AdmissionControllerFailOnError bool                   `protobuf:"varint,11,opt,name=admission_controller_fail_on_error,json=admissionControllerFailOnError"`
+	XXX_raceDetectHookData                    protoimpl.RaceDetectHookData
+	XXX_presence                              [1]uint32
+	unknownFields                             protoimpl.UnknownFields
+	sizeCache                                 protoimpl.SizeCache
 }
 
 func (x *StaticClusterConfig) Reset() {
@@ -1635,245 +1734,278 @@ func (x *StaticClusterConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *StaticClusterConfig) GetType() ClusterType {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return ClusterType_GENERIC_CLUSTER
 }
 
 func (x *StaticClusterConfig) GetMainImage() string {
-	if x != nil && x.MainImage != nil {
-		return *x.MainImage
+	if x != nil {
+		if x.xxx_hidden_MainImage != nil {
+			return *x.xxx_hidden_MainImage
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *StaticClusterConfig) GetCentralApiEndpoint() string {
-	if x != nil && x.CentralApiEndpoint != nil {
-		return *x.CentralApiEndpoint
+	if x != nil {
+		if x.xxx_hidden_CentralApiEndpoint != nil {
+			return *x.xxx_hidden_CentralApiEndpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *StaticClusterConfig) GetCollectionMethod() CollectionMethod {
-	if x != nil && x.CollectionMethod != nil {
-		return *x.CollectionMethod
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			return x.xxx_hidden_CollectionMethod
+		}
 	}
 	return CollectionMethod_UNSET_COLLECTION
 }
 
 func (x *StaticClusterConfig) GetCollectorImage() string {
-	if x != nil && x.CollectorImage != nil {
-		return *x.CollectorImage
+	if x != nil {
+		if x.xxx_hidden_CollectorImage != nil {
+			return *x.xxx_hidden_CollectorImage
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *StaticClusterConfig) GetAdmissionController() bool {
-	if x != nil && x.AdmissionController != nil {
-		return *x.AdmissionController
+	if x != nil {
+		return x.xxx_hidden_AdmissionController
 	}
 	return false
 }
 
 func (x *StaticClusterConfig) GetAdmissionControllerUpdates() bool {
-	if x != nil && x.AdmissionControllerUpdates != nil {
-		return *x.AdmissionControllerUpdates
+	if x != nil {
+		return x.xxx_hidden_AdmissionControllerUpdates
 	}
 	return false
 }
 
 func (x *StaticClusterConfig) GetTolerationsConfig() *TolerationsConfig {
 	if x != nil {
-		return x.TolerationsConfig
+		return x.xxx_hidden_TolerationsConfig
 	}
 	return nil
 }
 
 func (x *StaticClusterConfig) GetSlimCollector() bool {
-	if x != nil && x.SlimCollector != nil {
-		return *x.SlimCollector
+	if x != nil {
+		return x.xxx_hidden_SlimCollector
 	}
 	return false
 }
 
 func (x *StaticClusterConfig) GetAdmissionControllerEvents() bool {
-	if x != nil && x.AdmissionControllerEvents != nil {
-		return *x.AdmissionControllerEvents
+	if x != nil {
+		return x.xxx_hidden_AdmissionControllerEvents
 	}
 	return false
 }
 
 func (x *StaticClusterConfig) GetAdmissionControllerFailOnError() bool {
-	if x != nil && x.AdmissionControllerFailOnError != nil {
-		return *x.AdmissionControllerFailOnError
+	if x != nil {
+		return x.xxx_hidden_AdmissionControllerFailOnError
 	}
 	return false
 }
 
 func (x *StaticClusterConfig) SetType(v ClusterType) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
 }
 
 func (x *StaticClusterConfig) SetMainImage(v string) {
-	x.MainImage = &v
+	x.xxx_hidden_MainImage = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
 }
 
 func (x *StaticClusterConfig) SetCentralApiEndpoint(v string) {
-	x.CentralApiEndpoint = &v
+	x.xxx_hidden_CentralApiEndpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
 }
 
 func (x *StaticClusterConfig) SetCollectionMethod(v CollectionMethod) {
-	x.CollectionMethod = &v
+	x.xxx_hidden_CollectionMethod = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
 }
 
 func (x *StaticClusterConfig) SetCollectorImage(v string) {
-	x.CollectorImage = &v
+	x.xxx_hidden_CollectorImage = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
 }
 
 func (x *StaticClusterConfig) SetAdmissionController(v bool) {
-	x.AdmissionController = &v
+	x.xxx_hidden_AdmissionController = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
 }
 
 func (x *StaticClusterConfig) SetAdmissionControllerUpdates(v bool) {
-	x.AdmissionControllerUpdates = &v
+	x.xxx_hidden_AdmissionControllerUpdates = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
 }
 
 func (x *StaticClusterConfig) SetTolerationsConfig(v *TolerationsConfig) {
-	x.TolerationsConfig = v
+	x.xxx_hidden_TolerationsConfig = v
 }
 
 func (x *StaticClusterConfig) SetSlimCollector(v bool) {
-	x.SlimCollector = &v
+	x.xxx_hidden_SlimCollector = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
 }
 
 func (x *StaticClusterConfig) SetAdmissionControllerEvents(v bool) {
-	x.AdmissionControllerEvents = &v
+	x.xxx_hidden_AdmissionControllerEvents = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
 }
 
 func (x *StaticClusterConfig) SetAdmissionControllerFailOnError(v bool) {
-	x.AdmissionControllerFailOnError = &v
+	x.xxx_hidden_AdmissionControllerFailOnError = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
 }
 
 func (x *StaticClusterConfig) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *StaticClusterConfig) HasMainImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.MainImage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *StaticClusterConfig) HasCentralApiEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.CentralApiEndpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *StaticClusterConfig) HasCollectionMethod() bool {
 	if x == nil {
 		return false
 	}
-	return x.CollectionMethod != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *StaticClusterConfig) HasCollectorImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.CollectorImage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *StaticClusterConfig) HasAdmissionController() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionController != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *StaticClusterConfig) HasAdmissionControllerUpdates() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionControllerUpdates != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *StaticClusterConfig) HasTolerationsConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.TolerationsConfig != nil
+	return x.xxx_hidden_TolerationsConfig != nil
 }
 
 func (x *StaticClusterConfig) HasSlimCollector() bool {
 	if x == nil {
 		return false
 	}
-	return x.SlimCollector != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *StaticClusterConfig) HasAdmissionControllerEvents() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionControllerEvents != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *StaticClusterConfig) HasAdmissionControllerFailOnError() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionControllerFailOnError != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
 }
 
 func (x *StaticClusterConfig) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Type = ClusterType_GENERIC_CLUSTER
 }
 
 func (x *StaticClusterConfig) ClearMainImage() {
-	x.MainImage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_MainImage = nil
 }
 
 func (x *StaticClusterConfig) ClearCentralApiEndpoint() {
-	x.CentralApiEndpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_CentralApiEndpoint = nil
 }
 
 func (x *StaticClusterConfig) ClearCollectionMethod() {
-	x.CollectionMethod = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_CollectionMethod = CollectionMethod_UNSET_COLLECTION
 }
 
 func (x *StaticClusterConfig) ClearCollectorImage() {
-	x.CollectorImage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_CollectorImage = nil
 }
 
 func (x *StaticClusterConfig) ClearAdmissionController() {
-	x.AdmissionController = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_AdmissionController = false
 }
 
 func (x *StaticClusterConfig) ClearAdmissionControllerUpdates() {
-	x.AdmissionControllerUpdates = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_AdmissionControllerUpdates = false
 }
 
 func (x *StaticClusterConfig) ClearTolerationsConfig() {
-	x.TolerationsConfig = nil
+	x.xxx_hidden_TolerationsConfig = nil
 }
 
 func (x *StaticClusterConfig) ClearSlimCollector() {
-	x.SlimCollector = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_SlimCollector = false
 }
 
 func (x *StaticClusterConfig) ClearAdmissionControllerEvents() {
-	x.AdmissionControllerEvents = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_AdmissionControllerEvents = false
 }
 
 func (x *StaticClusterConfig) ClearAdmissionControllerFailOnError() {
-	x.AdmissionControllerFailOnError = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	x.xxx_hidden_AdmissionControllerFailOnError = false
 }
 
 type StaticClusterConfig_builder struct {
@@ -1896,27 +2028,57 @@ func (b0 StaticClusterConfig_builder) Build() *StaticClusterConfig {
 	m0 := &StaticClusterConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Type = b.Type
-	x.MainImage = b.MainImage
-	x.CentralApiEndpoint = b.CentralApiEndpoint
-	x.CollectionMethod = b.CollectionMethod
-	x.CollectorImage = b.CollectorImage
-	x.AdmissionController = b.AdmissionController
-	x.AdmissionControllerUpdates = b.AdmissionControllerUpdates
-	x.TolerationsConfig = b.TolerationsConfig
-	x.SlimCollector = b.SlimCollector
-	x.AdmissionControllerEvents = b.AdmissionControllerEvents
-	x.AdmissionControllerFailOnError = b.AdmissionControllerFailOnError
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
+		x.xxx_hidden_Type = *b.Type
+	}
+	if b.MainImage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
+		x.xxx_hidden_MainImage = b.MainImage
+	}
+	if b.CentralApiEndpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
+		x.xxx_hidden_CentralApiEndpoint = b.CentralApiEndpoint
+	}
+	if b.CollectionMethod != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
+		x.xxx_hidden_CollectionMethod = *b.CollectionMethod
+	}
+	if b.CollectorImage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
+		x.xxx_hidden_CollectorImage = b.CollectorImage
+	}
+	if b.AdmissionController != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
+		x.xxx_hidden_AdmissionController = *b.AdmissionController
+	}
+	if b.AdmissionControllerUpdates != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
+		x.xxx_hidden_AdmissionControllerUpdates = *b.AdmissionControllerUpdates
+	}
+	x.xxx_hidden_TolerationsConfig = b.TolerationsConfig
+	if b.SlimCollector != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
+		x.xxx_hidden_SlimCollector = *b.SlimCollector
+	}
+	if b.AdmissionControllerEvents != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
+		x.xxx_hidden_AdmissionControllerEvents = *b.AdmissionControllerEvents
+	}
+	if b.AdmissionControllerFailOnError != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
+		x.xxx_hidden_AdmissionControllerFailOnError = *b.AdmissionControllerFailOnError
+	}
 	return m0
 }
 
 type AutoLockProcessBaselinesConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// More fields can be added later to control the feature at the
-	// namespace level
-	Enabled       *bool `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Enabled     bool                   `protobuf:"varint,1,opt,name=enabled"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AutoLockProcessBaselinesConfig) Reset() {
@@ -1945,25 +2107,27 @@ func (x *AutoLockProcessBaselinesConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *AutoLockProcessBaselinesConfig) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
+	if x != nil {
+		return x.xxx_hidden_Enabled
 	}
 	return false
 }
 
 func (x *AutoLockProcessBaselinesConfig) SetEnabled(v bool) {
-	x.Enabled = &v
+	x.xxx_hidden_Enabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *AutoLockProcessBaselinesConfig) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.Enabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *AutoLockProcessBaselinesConfig) ClearEnabled() {
-	x.Enabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Enabled = false
 }
 
 type AutoLockProcessBaselinesConfig_builder struct {
@@ -1978,19 +2142,24 @@ func (b0 AutoLockProcessBaselinesConfig_builder) Build() *AutoLockProcessBaselin
 	m0 := &AutoLockProcessBaselinesConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Enabled = b.Enabled
+	if b.Enabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Enabled = *b.Enabled
+	}
 	return m0
 }
 
 // The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for "hot reloading" of values without restarting Secured cluster components.
 type DynamicClusterConfig struct {
-	state                          protoimpl.MessageState          `protogen:"hybrid.v1"`
-	AdmissionControllerConfig      *AdmissionControllerConfig      `protobuf:"bytes,1,opt,name=admission_controller_config,json=admissionControllerConfig" json:"admission_controller_config,omitempty"`
-	RegistryOverride               *string                         `protobuf:"bytes,2,opt,name=registry_override,json=registryOverride" json:"registry_override,omitempty"`
-	DisableAuditLogs               *bool                           `protobuf:"varint,3,opt,name=disable_audit_logs,json=disableAuditLogs" json:"disable_audit_logs,omitempty"`
-	AutoLockProcessBaselinesConfig *AutoLockProcessBaselinesConfig `protobuf:"bytes,4,opt,name=auto_lock_process_baselines_config,json=autoLockProcessBaselinesConfig" json:"auto_lock_process_baselines_config,omitempty"`
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	state                                     protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_AdmissionControllerConfig      *AdmissionControllerConfig      `protobuf:"bytes,1,opt,name=admission_controller_config,json=admissionControllerConfig"`
+	xxx_hidden_RegistryOverride               *string                         `protobuf:"bytes,2,opt,name=registry_override,json=registryOverride"`
+	xxx_hidden_DisableAuditLogs               bool                            `protobuf:"varint,3,opt,name=disable_audit_logs,json=disableAuditLogs"`
+	xxx_hidden_AutoLockProcessBaselinesConfig *AutoLockProcessBaselinesConfig `protobuf:"bytes,4,opt,name=auto_lock_process_baselines_config,json=autoLockProcessBaselinesConfig"`
+	XXX_raceDetectHookData                    protoimpl.RaceDetectHookData
+	XXX_presence                              [1]uint32
+	unknownFields                             protoimpl.UnknownFields
+	sizeCache                                 protoimpl.SizeCache
 }
 
 func (x *DynamicClusterConfig) Reset() {
@@ -2020,90 +2189,97 @@ func (x *DynamicClusterConfig) ProtoReflect() protoreflect.Message {
 
 func (x *DynamicClusterConfig) GetAdmissionControllerConfig() *AdmissionControllerConfig {
 	if x != nil {
-		return x.AdmissionControllerConfig
+		return x.xxx_hidden_AdmissionControllerConfig
 	}
 	return nil
 }
 
 func (x *DynamicClusterConfig) GetRegistryOverride() string {
-	if x != nil && x.RegistryOverride != nil {
-		return *x.RegistryOverride
+	if x != nil {
+		if x.xxx_hidden_RegistryOverride != nil {
+			return *x.xxx_hidden_RegistryOverride
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DynamicClusterConfig) GetDisableAuditLogs() bool {
-	if x != nil && x.DisableAuditLogs != nil {
-		return *x.DisableAuditLogs
+	if x != nil {
+		return x.xxx_hidden_DisableAuditLogs
 	}
 	return false
 }
 
 func (x *DynamicClusterConfig) GetAutoLockProcessBaselinesConfig() *AutoLockProcessBaselinesConfig {
 	if x != nil {
-		return x.AutoLockProcessBaselinesConfig
+		return x.xxx_hidden_AutoLockProcessBaselinesConfig
 	}
 	return nil
 }
 
 func (x *DynamicClusterConfig) SetAdmissionControllerConfig(v *AdmissionControllerConfig) {
-	x.AdmissionControllerConfig = v
+	x.xxx_hidden_AdmissionControllerConfig = v
 }
 
 func (x *DynamicClusterConfig) SetRegistryOverride(v string) {
-	x.RegistryOverride = &v
+	x.xxx_hidden_RegistryOverride = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *DynamicClusterConfig) SetDisableAuditLogs(v bool) {
-	x.DisableAuditLogs = &v
+	x.xxx_hidden_DisableAuditLogs = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *DynamicClusterConfig) SetAutoLockProcessBaselinesConfig(v *AutoLockProcessBaselinesConfig) {
-	x.AutoLockProcessBaselinesConfig = v
+	x.xxx_hidden_AutoLockProcessBaselinesConfig = v
 }
 
 func (x *DynamicClusterConfig) HasAdmissionControllerConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionControllerConfig != nil
+	return x.xxx_hidden_AdmissionControllerConfig != nil
 }
 
 func (x *DynamicClusterConfig) HasRegistryOverride() bool {
 	if x == nil {
 		return false
 	}
-	return x.RegistryOverride != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DynamicClusterConfig) HasDisableAuditLogs() bool {
 	if x == nil {
 		return false
 	}
-	return x.DisableAuditLogs != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DynamicClusterConfig) HasAutoLockProcessBaselinesConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.AutoLockProcessBaselinesConfig != nil
+	return x.xxx_hidden_AutoLockProcessBaselinesConfig != nil
 }
 
 func (x *DynamicClusterConfig) ClearAdmissionControllerConfig() {
-	x.AdmissionControllerConfig = nil
+	x.xxx_hidden_AdmissionControllerConfig = nil
 }
 
 func (x *DynamicClusterConfig) ClearRegistryOverride() {
-	x.RegistryOverride = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_RegistryOverride = nil
 }
 
 func (x *DynamicClusterConfig) ClearDisableAuditLogs() {
-	x.DisableAuditLogs = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_DisableAuditLogs = false
 }
 
 func (x *DynamicClusterConfig) ClearAutoLockProcessBaselinesConfig() {
-	x.AutoLockProcessBaselinesConfig = nil
+	x.xxx_hidden_AutoLockProcessBaselinesConfig = nil
 }
 
 type DynamicClusterConfig_builder struct {
@@ -2119,23 +2295,31 @@ func (b0 DynamicClusterConfig_builder) Build() *DynamicClusterConfig {
 	m0 := &DynamicClusterConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AdmissionControllerConfig = b.AdmissionControllerConfig
-	x.RegistryOverride = b.RegistryOverride
-	x.DisableAuditLogs = b.DisableAuditLogs
-	x.AutoLockProcessBaselinesConfig = b.AutoLockProcessBaselinesConfig
+	x.xxx_hidden_AdmissionControllerConfig = b.AdmissionControllerConfig
+	if b.RegistryOverride != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_RegistryOverride = b.RegistryOverride
+	}
+	if b.DisableAuditLogs != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_DisableAuditLogs = *b.DisableAuditLogs
+	}
+	x.xxx_hidden_AutoLockProcessBaselinesConfig = b.AutoLockProcessBaselinesConfig
 	return m0
 }
 
 // Encodes a complete cluster configuration minus ID/Name identifiers
 // including static and dynamic settings.
 type CompleteClusterConfig struct {
-	state             protoimpl.MessageState `protogen:"hybrid.v1"`
-	DynamicConfig     *DynamicClusterConfig  `protobuf:"bytes,1,opt,name=dynamic_config,json=dynamicConfig" json:"dynamic_config,omitempty"`
-	StaticConfig      *StaticClusterConfig   `protobuf:"bytes,2,opt,name=static_config,json=staticConfig" json:"static_config,omitempty"`
-	ConfigFingerprint *string                `protobuf:"bytes,3,opt,name=config_fingerprint,json=configFingerprint" json:"config_fingerprint,omitempty"`
-	ClusterLabels     map[string]string      `protobuf:"bytes,4,rep,name=cluster_labels,json=clusterLabels" json:"cluster_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_DynamicConfig     *DynamicClusterConfig  `protobuf:"bytes,1,opt,name=dynamic_config,json=dynamicConfig"`
+	xxx_hidden_StaticConfig      *StaticClusterConfig   `protobuf:"bytes,2,opt,name=static_config,json=staticConfig"`
+	xxx_hidden_ConfigFingerprint *string                `protobuf:"bytes,3,opt,name=config_fingerprint,json=configFingerprint"`
+	xxx_hidden_ClusterLabels     map[string]string      `protobuf:"bytes,4,rep,name=cluster_labels,json=clusterLabels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *CompleteClusterConfig) Reset() {
@@ -2165,79 +2349,84 @@ func (x *CompleteClusterConfig) ProtoReflect() protoreflect.Message {
 
 func (x *CompleteClusterConfig) GetDynamicConfig() *DynamicClusterConfig {
 	if x != nil {
-		return x.DynamicConfig
+		return x.xxx_hidden_DynamicConfig
 	}
 	return nil
 }
 
 func (x *CompleteClusterConfig) GetStaticConfig() *StaticClusterConfig {
 	if x != nil {
-		return x.StaticConfig
+		return x.xxx_hidden_StaticConfig
 	}
 	return nil
 }
 
 func (x *CompleteClusterConfig) GetConfigFingerprint() string {
-	if x != nil && x.ConfigFingerprint != nil {
-		return *x.ConfigFingerprint
+	if x != nil {
+		if x.xxx_hidden_ConfigFingerprint != nil {
+			return *x.xxx_hidden_ConfigFingerprint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CompleteClusterConfig) GetClusterLabels() map[string]string {
 	if x != nil {
-		return x.ClusterLabels
+		return x.xxx_hidden_ClusterLabels
 	}
 	return nil
 }
 
 func (x *CompleteClusterConfig) SetDynamicConfig(v *DynamicClusterConfig) {
-	x.DynamicConfig = v
+	x.xxx_hidden_DynamicConfig = v
 }
 
 func (x *CompleteClusterConfig) SetStaticConfig(v *StaticClusterConfig) {
-	x.StaticConfig = v
+	x.xxx_hidden_StaticConfig = v
 }
 
 func (x *CompleteClusterConfig) SetConfigFingerprint(v string) {
-	x.ConfigFingerprint = &v
+	x.xxx_hidden_ConfigFingerprint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *CompleteClusterConfig) SetClusterLabels(v map[string]string) {
-	x.ClusterLabels = v
+	x.xxx_hidden_ClusterLabels = v
 }
 
 func (x *CompleteClusterConfig) HasDynamicConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.DynamicConfig != nil
+	return x.xxx_hidden_DynamicConfig != nil
 }
 
 func (x *CompleteClusterConfig) HasStaticConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.StaticConfig != nil
+	return x.xxx_hidden_StaticConfig != nil
 }
 
 func (x *CompleteClusterConfig) HasConfigFingerprint() bool {
 	if x == nil {
 		return false
 	}
-	return x.ConfigFingerprint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *CompleteClusterConfig) ClearDynamicConfig() {
-	x.DynamicConfig = nil
+	x.xxx_hidden_DynamicConfig = nil
 }
 
 func (x *CompleteClusterConfig) ClearStaticConfig() {
-	x.StaticConfig = nil
+	x.xxx_hidden_StaticConfig = nil
 }
 
 func (x *CompleteClusterConfig) ClearConfigFingerprint() {
-	x.ConfigFingerprint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ConfigFingerprint = nil
 }
 
 type CompleteClusterConfig_builder struct {
@@ -2253,10 +2442,13 @@ func (b0 CompleteClusterConfig_builder) Build() *CompleteClusterConfig {
 	m0 := &CompleteClusterConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DynamicConfig = b.DynamicConfig
-	x.StaticConfig = b.StaticConfig
-	x.ConfigFingerprint = b.ConfigFingerprint
-	x.ClusterLabels = b.ClusterLabels
+	x.xxx_hidden_DynamicConfig = b.DynamicConfig
+	x.xxx_hidden_StaticConfig = b.StaticConfig
+	if b.ConfigFingerprint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_ConfigFingerprint = b.ConfigFingerprint
+	}
+	x.xxx_hidden_ClusterLabels = b.ClusterLabels
 	return m0
 }
 
@@ -2264,15 +2456,17 @@ func (b0 CompleteClusterConfig_builder) Build() *CompleteClusterConfig {
 // whether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network
 // partition), or from a deployment in a different namespace or cluster.
 type SensorDeploymentIdentification struct {
-	state               protoimpl.MessageState `protogen:"hybrid.v1"`
-	SystemNamespaceId   *string                `protobuf:"bytes,1,opt,name=system_namespace_id,json=systemNamespaceId" json:"system_namespace_id,omitempty"`
-	DefaultNamespaceId  *string                `protobuf:"bytes,2,opt,name=default_namespace_id,json=defaultNamespaceId" json:"default_namespace_id,omitempty"`
-	AppNamespace        *string                `protobuf:"bytes,3,opt,name=app_namespace,json=appNamespace" json:"app_namespace,omitempty"`
-	AppNamespaceId      *string                `protobuf:"bytes,4,opt,name=app_namespace_id,json=appNamespaceId" json:"app_namespace_id,omitempty"`
-	AppServiceaccountId *string                `protobuf:"bytes,5,opt,name=app_serviceaccount_id,json=appServiceaccountId" json:"app_serviceaccount_id,omitempty"`
-	K8SNodeName         *string                `protobuf:"bytes,6,opt,name=k8s_node_name,json=k8sNodeName" json:"k8s_node_name,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SystemNamespaceId   *string                `protobuf:"bytes,1,opt,name=system_namespace_id,json=systemNamespaceId"`
+	xxx_hidden_DefaultNamespaceId  *string                `protobuf:"bytes,2,opt,name=default_namespace_id,json=defaultNamespaceId"`
+	xxx_hidden_AppNamespace        *string                `protobuf:"bytes,3,opt,name=app_namespace,json=appNamespace"`
+	xxx_hidden_AppNamespaceId      *string                `protobuf:"bytes,4,opt,name=app_namespace_id,json=appNamespaceId"`
+	xxx_hidden_AppServiceaccountId *string                `protobuf:"bytes,5,opt,name=app_serviceaccount_id,json=appServiceaccountId"`
+	xxx_hidden_K8SNodeName         *string                `protobuf:"bytes,6,opt,name=k8s_node_name,json=k8sNodeName"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *SensorDeploymentIdentification) Reset() {
@@ -2301,135 +2495,165 @@ func (x *SensorDeploymentIdentification) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SensorDeploymentIdentification) GetSystemNamespaceId() string {
-	if x != nil && x.SystemNamespaceId != nil {
-		return *x.SystemNamespaceId
+	if x != nil {
+		if x.xxx_hidden_SystemNamespaceId != nil {
+			return *x.xxx_hidden_SystemNamespaceId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorDeploymentIdentification) GetDefaultNamespaceId() string {
-	if x != nil && x.DefaultNamespaceId != nil {
-		return *x.DefaultNamespaceId
+	if x != nil {
+		if x.xxx_hidden_DefaultNamespaceId != nil {
+			return *x.xxx_hidden_DefaultNamespaceId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorDeploymentIdentification) GetAppNamespace() string {
-	if x != nil && x.AppNamespace != nil {
-		return *x.AppNamespace
+	if x != nil {
+		if x.xxx_hidden_AppNamespace != nil {
+			return *x.xxx_hidden_AppNamespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorDeploymentIdentification) GetAppNamespaceId() string {
-	if x != nil && x.AppNamespaceId != nil {
-		return *x.AppNamespaceId
+	if x != nil {
+		if x.xxx_hidden_AppNamespaceId != nil {
+			return *x.xxx_hidden_AppNamespaceId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorDeploymentIdentification) GetAppServiceaccountId() string {
-	if x != nil && x.AppServiceaccountId != nil {
-		return *x.AppServiceaccountId
+	if x != nil {
+		if x.xxx_hidden_AppServiceaccountId != nil {
+			return *x.xxx_hidden_AppServiceaccountId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorDeploymentIdentification) GetK8SNodeName() string {
-	if x != nil && x.K8SNodeName != nil {
-		return *x.K8SNodeName
+	if x != nil {
+		if x.xxx_hidden_K8SNodeName != nil {
+			return *x.xxx_hidden_K8SNodeName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *SensorDeploymentIdentification) SetSystemNamespaceId(v string) {
-	x.SystemNamespaceId = &v
+	x.xxx_hidden_SystemNamespaceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *SensorDeploymentIdentification) SetDefaultNamespaceId(v string) {
-	x.DefaultNamespaceId = &v
+	x.xxx_hidden_DefaultNamespaceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *SensorDeploymentIdentification) SetAppNamespace(v string) {
-	x.AppNamespace = &v
+	x.xxx_hidden_AppNamespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *SensorDeploymentIdentification) SetAppNamespaceId(v string) {
-	x.AppNamespaceId = &v
+	x.xxx_hidden_AppNamespaceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *SensorDeploymentIdentification) SetAppServiceaccountId(v string) {
-	x.AppServiceaccountId = &v
+	x.xxx_hidden_AppServiceaccountId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
 }
 
 func (x *SensorDeploymentIdentification) SetK8SNodeName(v string) {
-	x.K8SNodeName = &v
+	x.xxx_hidden_K8SNodeName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
 }
 
 func (x *SensorDeploymentIdentification) HasSystemNamespaceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.SystemNamespaceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SensorDeploymentIdentification) HasDefaultNamespaceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DefaultNamespaceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *SensorDeploymentIdentification) HasAppNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.AppNamespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *SensorDeploymentIdentification) HasAppNamespaceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AppNamespaceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *SensorDeploymentIdentification) HasAppServiceaccountId() bool {
 	if x == nil {
 		return false
 	}
-	return x.AppServiceaccountId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *SensorDeploymentIdentification) HasK8SNodeName() bool {
 	if x == nil {
 		return false
 	}
-	return x.K8SNodeName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *SensorDeploymentIdentification) ClearSystemNamespaceId() {
-	x.SystemNamespaceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_SystemNamespaceId = nil
 }
 
 func (x *SensorDeploymentIdentification) ClearDefaultNamespaceId() {
-	x.DefaultNamespaceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_DefaultNamespaceId = nil
 }
 
 func (x *SensorDeploymentIdentification) ClearAppNamespace() {
-	x.AppNamespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_AppNamespace = nil
 }
 
 func (x *SensorDeploymentIdentification) ClearAppNamespaceId() {
-	x.AppNamespaceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_AppNamespaceId = nil
 }
 
 func (x *SensorDeploymentIdentification) ClearAppServiceaccountId() {
-	x.AppServiceaccountId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_AppServiceaccountId = nil
 }
 
 func (x *SensorDeploymentIdentification) ClearK8SNodeName() {
-	x.K8SNodeName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_K8SNodeName = nil
 }
 
 type SensorDeploymentIdentification_builder struct {
@@ -2447,49 +2671,65 @@ func (b0 SensorDeploymentIdentification_builder) Build() *SensorDeploymentIdenti
 	m0 := &SensorDeploymentIdentification{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.SystemNamespaceId = b.SystemNamespaceId
-	x.DefaultNamespaceId = b.DefaultNamespaceId
-	x.AppNamespace = b.AppNamespace
-	x.AppNamespaceId = b.AppNamespaceId
-	x.AppServiceaccountId = b.AppServiceaccountId
-	x.K8SNodeName = b.K8SNodeName
+	if b.SystemNamespaceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_SystemNamespaceId = b.SystemNamespaceId
+	}
+	if b.DefaultNamespaceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_DefaultNamespaceId = b.DefaultNamespaceId
+	}
+	if b.AppNamespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_AppNamespace = b.AppNamespace
+	}
+	if b.AppNamespaceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_AppNamespaceId = b.AppNamespaceId
+	}
+	if b.AppServiceaccountId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_AppServiceaccountId = b.AppServiceaccountId
+	}
+	if b.K8SNodeName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_K8SNodeName = b.K8SNodeName
+	}
 	return m0
 }
 
 // Next tag: 33
 type Cluster struct {
-	state              protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id                 *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"`                                                                                    // @gotags: search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"
-	Name               *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Cluster,store" sql:"unique"`                                                                                // @gotags: search:"Cluster,store" sql:"unique"
-	Type               *ClusterType           `protobuf:"varint,3,opt,name=type,enum=storage.ClusterType" json:"type,omitempty" search:"Cluster Platform Type"`                                                      // @gotags: search:"Cluster Platform Type"
-	Labels             map[string]string      `protobuf:"bytes,27,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Cluster Label"` // @gotags: search:"Cluster Label"
-	MainImage          *string                `protobuf:"bytes,4,opt,name=main_image,json=mainImage" json:"main_image,omitempty"`
-	CollectorImage     *string                `protobuf:"bytes,16,opt,name=collector_image,json=collectorImage" json:"collector_image,omitempty"`
-	CentralApiEndpoint *string                `protobuf:"bytes,5,opt,name=central_api_endpoint,json=centralApiEndpoint" json:"central_api_endpoint,omitempty"`
-	// Deprecated: Marked as deprecated in storage/cluster.proto.
-	RuntimeSupport             *bool                 `protobuf:"varint,7,opt,name=runtime_support,json=runtimeSupport" json:"runtime_support,omitempty"`
-	CollectionMethod           *CollectionMethod     `protobuf:"varint,17,opt,name=collection_method,json=collectionMethod,enum=storage.CollectionMethod" json:"collection_method,omitempty"`
-	AdmissionController        *bool                 `protobuf:"varint,13,opt,name=admission_controller,json=admissionController" json:"admission_controller,omitempty"`
-	AdmissionControllerUpdates *bool                 `protobuf:"varint,21,opt,name=admission_controller_updates,json=admissionControllerUpdates" json:"admission_controller_updates,omitempty"`
-	AdmissionControllerEvents  *bool                 `protobuf:"varint,25,opt,name=admission_controller_events,json=admissionControllerEvents" json:"admission_controller_events,omitempty"`
-	Status                     *ClusterStatus        `protobuf:"bytes,15,opt,name=status" json:"status,omitempty"`
-	DynamicConfig              *DynamicClusterConfig `protobuf:"bytes,18,opt,name=dynamic_config,json=dynamicConfig" json:"dynamic_config,omitempty"`
-	TolerationsConfig          *TolerationsConfig    `protobuf:"bytes,19,opt,name=tolerations_config,json=tolerationsConfig" json:"tolerations_config,omitempty"`
-	Priority                   *int64                `protobuf:"varint,20,opt,name=priority" json:"priority,omitempty"`
-	HealthStatus               *ClusterHealthStatus  `protobuf:"bytes,22,opt,name=health_status,json=healthStatus" json:"health_status,omitempty" sql:"-"` // @gotags: sql:"-"
-	SlimCollector              *bool                 `protobuf:"varint,23,opt,name=slim_collector,json=slimCollector" json:"slim_collector,omitempty"`
-	// The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
-	HelmConfig *CompleteClusterConfig `protobuf:"bytes,24,opt,name=helm_config,json=helmConfig" json:"helm_config,omitempty"`
-	// most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any).
-	MostRecentSensorId *SensorDeploymentIdentification `protobuf:"bytes,26,opt,name=most_recent_sensor_id,json=mostRecentSensorId" json:"most_recent_sensor_id,omitempty"`
-	// For internal use only.
-	AuditLogState                  map[string]*AuditLogFileState `protobuf:"bytes,28,rep,name=audit_log_state,json=auditLogState" json:"audit_log_state,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	InitBundleId                   *string                       `protobuf:"bytes,29,opt,name=init_bundle_id,json=initBundleId" json:"init_bundle_id,omitempty"`
-	ManagedBy                      *ManagerType                  `protobuf:"varint,30,opt,name=managed_by,json=managedBy,enum=storage.ManagerType" json:"managed_by,omitempty"`
-	SensorCapabilities             []string                      `protobuf:"bytes,31,rep,name=sensor_capabilities,json=sensorCapabilities" json:"sensor_capabilities,omitempty"`
-	AdmissionControllerFailOnError *bool                         `protobuf:"varint,32,opt,name=admission_controller_fail_on_error,json=admissionControllerFailOnError" json:"admission_controller_fail_on_error,omitempty"`
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	state                                     protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_Id                             *string                         `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name                           *string                         `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Type                           ClusterType                     `protobuf:"varint,3,opt,name=type,enum=storage.ClusterType"`
+	xxx_hidden_Labels                         map[string]string               `protobuf:"bytes,27,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_MainImage                      *string                         `protobuf:"bytes,4,opt,name=main_image,json=mainImage"`
+	xxx_hidden_CollectorImage                 *string                         `protobuf:"bytes,16,opt,name=collector_image,json=collectorImage"`
+	xxx_hidden_CentralApiEndpoint             *string                         `protobuf:"bytes,5,opt,name=central_api_endpoint,json=centralApiEndpoint"`
+	xxx_hidden_RuntimeSupport                 bool                            `protobuf:"varint,7,opt,name=runtime_support,json=runtimeSupport"`
+	xxx_hidden_CollectionMethod               CollectionMethod                `protobuf:"varint,17,opt,name=collection_method,json=collectionMethod,enum=storage.CollectionMethod"`
+	xxx_hidden_AdmissionController            bool                            `protobuf:"varint,13,opt,name=admission_controller,json=admissionController"`
+	xxx_hidden_AdmissionControllerUpdates     bool                            `protobuf:"varint,21,opt,name=admission_controller_updates,json=admissionControllerUpdates"`
+	xxx_hidden_AdmissionControllerEvents      bool                            `protobuf:"varint,25,opt,name=admission_controller_events,json=admissionControllerEvents"`
+	xxx_hidden_Status                         *ClusterStatus                  `protobuf:"bytes,15,opt,name=status"`
+	xxx_hidden_DynamicConfig                  *DynamicClusterConfig           `protobuf:"bytes,18,opt,name=dynamic_config,json=dynamicConfig"`
+	xxx_hidden_TolerationsConfig              *TolerationsConfig              `protobuf:"bytes,19,opt,name=tolerations_config,json=tolerationsConfig"`
+	xxx_hidden_Priority                       int64                           `protobuf:"varint,20,opt,name=priority"`
+	xxx_hidden_HealthStatus                   *ClusterHealthStatus            `protobuf:"bytes,22,opt,name=health_status,json=healthStatus"`
+	xxx_hidden_SlimCollector                  bool                            `protobuf:"varint,23,opt,name=slim_collector,json=slimCollector"`
+	xxx_hidden_HelmConfig                     *CompleteClusterConfig          `protobuf:"bytes,24,opt,name=helm_config,json=helmConfig"`
+	xxx_hidden_MostRecentSensorId             *SensorDeploymentIdentification `protobuf:"bytes,26,opt,name=most_recent_sensor_id,json=mostRecentSensorId"`
+	xxx_hidden_AuditLogState                  map[string]*AuditLogFileState   `protobuf:"bytes,28,rep,name=audit_log_state,json=auditLogState" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_InitBundleId                   *string                         `protobuf:"bytes,29,opt,name=init_bundle_id,json=initBundleId"`
+	xxx_hidden_ManagedBy                      ManagerType                     `protobuf:"varint,30,opt,name=managed_by,json=managedBy,enum=storage.ManagerType"`
+	xxx_hidden_SensorCapabilities             []string                        `protobuf:"bytes,31,rep,name=sensor_capabilities,json=sensorCapabilities"`
+	xxx_hidden_AdmissionControllerFailOnError bool                            `protobuf:"varint,32,opt,name=admission_controller_fail_on_error,json=admissionControllerFailOnError"`
+	XXX_raceDetectHookData                    protoimpl.RaceDetectHookData
+	XXX_presence                              [1]uint32
+	unknownFields                             protoimpl.UnknownFields
+	sizeCache                                 protoimpl.SizeCache
 }
 
 func (x *Cluster) Reset() {
@@ -2518,322 +2758,362 @@ func (x *Cluster) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Cluster) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Cluster) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Cluster) GetType() ClusterType {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return ClusterType_GENERIC_CLUSTER
 }
 
 func (x *Cluster) GetLabels() map[string]string {
 	if x != nil {
-		return x.Labels
+		return x.xxx_hidden_Labels
 	}
 	return nil
 }
 
 func (x *Cluster) GetMainImage() string {
-	if x != nil && x.MainImage != nil {
-		return *x.MainImage
+	if x != nil {
+		if x.xxx_hidden_MainImage != nil {
+			return *x.xxx_hidden_MainImage
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Cluster) GetCollectorImage() string {
-	if x != nil && x.CollectorImage != nil {
-		return *x.CollectorImage
+	if x != nil {
+		if x.xxx_hidden_CollectorImage != nil {
+			return *x.xxx_hidden_CollectorImage
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Cluster) GetCentralApiEndpoint() string {
-	if x != nil && x.CentralApiEndpoint != nil {
-		return *x.CentralApiEndpoint
+	if x != nil {
+		if x.xxx_hidden_CentralApiEndpoint != nil {
+			return *x.xxx_hidden_CentralApiEndpoint
+		}
+		return ""
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in storage/cluster.proto.
 func (x *Cluster) GetRuntimeSupport() bool {
-	if x != nil && x.RuntimeSupport != nil {
-		return *x.RuntimeSupport
+	if x != nil {
+		return x.xxx_hidden_RuntimeSupport
 	}
 	return false
 }
 
 func (x *Cluster) GetCollectionMethod() CollectionMethod {
-	if x != nil && x.CollectionMethod != nil {
-		return *x.CollectionMethod
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			return x.xxx_hidden_CollectionMethod
+		}
 	}
 	return CollectionMethod_UNSET_COLLECTION
 }
 
 func (x *Cluster) GetAdmissionController() bool {
-	if x != nil && x.AdmissionController != nil {
-		return *x.AdmissionController
+	if x != nil {
+		return x.xxx_hidden_AdmissionController
 	}
 	return false
 }
 
 func (x *Cluster) GetAdmissionControllerUpdates() bool {
-	if x != nil && x.AdmissionControllerUpdates != nil {
-		return *x.AdmissionControllerUpdates
+	if x != nil {
+		return x.xxx_hidden_AdmissionControllerUpdates
 	}
 	return false
 }
 
 func (x *Cluster) GetAdmissionControllerEvents() bool {
-	if x != nil && x.AdmissionControllerEvents != nil {
-		return *x.AdmissionControllerEvents
+	if x != nil {
+		return x.xxx_hidden_AdmissionControllerEvents
 	}
 	return false
 }
 
 func (x *Cluster) GetStatus() *ClusterStatus {
 	if x != nil {
-		return x.Status
+		return x.xxx_hidden_Status
 	}
 	return nil
 }
 
 func (x *Cluster) GetDynamicConfig() *DynamicClusterConfig {
 	if x != nil {
-		return x.DynamicConfig
+		return x.xxx_hidden_DynamicConfig
 	}
 	return nil
 }
 
 func (x *Cluster) GetTolerationsConfig() *TolerationsConfig {
 	if x != nil {
-		return x.TolerationsConfig
+		return x.xxx_hidden_TolerationsConfig
 	}
 	return nil
 }
 
 func (x *Cluster) GetPriority() int64 {
-	if x != nil && x.Priority != nil {
-		return *x.Priority
+	if x != nil {
+		return x.xxx_hidden_Priority
 	}
 	return 0
 }
 
 func (x *Cluster) GetHealthStatus() *ClusterHealthStatus {
 	if x != nil {
-		return x.HealthStatus
+		return x.xxx_hidden_HealthStatus
 	}
 	return nil
 }
 
 func (x *Cluster) GetSlimCollector() bool {
-	if x != nil && x.SlimCollector != nil {
-		return *x.SlimCollector
+	if x != nil {
+		return x.xxx_hidden_SlimCollector
 	}
 	return false
 }
 
 func (x *Cluster) GetHelmConfig() *CompleteClusterConfig {
 	if x != nil {
-		return x.HelmConfig
+		return x.xxx_hidden_HelmConfig
 	}
 	return nil
 }
 
 func (x *Cluster) GetMostRecentSensorId() *SensorDeploymentIdentification {
 	if x != nil {
-		return x.MostRecentSensorId
+		return x.xxx_hidden_MostRecentSensorId
 	}
 	return nil
 }
 
 func (x *Cluster) GetAuditLogState() map[string]*AuditLogFileState {
 	if x != nil {
-		return x.AuditLogState
+		return x.xxx_hidden_AuditLogState
 	}
 	return nil
 }
 
 func (x *Cluster) GetInitBundleId() string {
-	if x != nil && x.InitBundleId != nil {
-		return *x.InitBundleId
+	if x != nil {
+		if x.xxx_hidden_InitBundleId != nil {
+			return *x.xxx_hidden_InitBundleId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Cluster) GetManagedBy() ManagerType {
-	if x != nil && x.ManagedBy != nil {
-		return *x.ManagedBy
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 22) {
+			return x.xxx_hidden_ManagedBy
+		}
 	}
 	return ManagerType_MANAGER_TYPE_UNKNOWN
 }
 
 func (x *Cluster) GetSensorCapabilities() []string {
 	if x != nil {
-		return x.SensorCapabilities
+		return x.xxx_hidden_SensorCapabilities
 	}
 	return nil
 }
 
 func (x *Cluster) GetAdmissionControllerFailOnError() bool {
-	if x != nil && x.AdmissionControllerFailOnError != nil {
-		return *x.AdmissionControllerFailOnError
+	if x != nil {
+		return x.xxx_hidden_AdmissionControllerFailOnError
 	}
 	return false
 }
 
 func (x *Cluster) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 25)
 }
 
 func (x *Cluster) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 25)
 }
 
 func (x *Cluster) SetType(v ClusterType) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 25)
 }
 
 func (x *Cluster) SetLabels(v map[string]string) {
-	x.Labels = v
+	x.xxx_hidden_Labels = v
 }
 
 func (x *Cluster) SetMainImage(v string) {
-	x.MainImage = &v
+	x.xxx_hidden_MainImage = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 25)
 }
 
 func (x *Cluster) SetCollectorImage(v string) {
-	x.CollectorImage = &v
+	x.xxx_hidden_CollectorImage = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 25)
 }
 
 func (x *Cluster) SetCentralApiEndpoint(v string) {
-	x.CentralApiEndpoint = &v
+	x.xxx_hidden_CentralApiEndpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 25)
 }
 
 // Deprecated: Marked as deprecated in storage/cluster.proto.
 func (x *Cluster) SetRuntimeSupport(v bool) {
-	x.RuntimeSupport = &v
+	x.xxx_hidden_RuntimeSupport = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 25)
 }
 
 func (x *Cluster) SetCollectionMethod(v CollectionMethod) {
-	x.CollectionMethod = &v
+	x.xxx_hidden_CollectionMethod = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 25)
 }
 
 func (x *Cluster) SetAdmissionController(v bool) {
-	x.AdmissionController = &v
+	x.xxx_hidden_AdmissionController = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 25)
 }
 
 func (x *Cluster) SetAdmissionControllerUpdates(v bool) {
-	x.AdmissionControllerUpdates = &v
+	x.xxx_hidden_AdmissionControllerUpdates = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 25)
 }
 
 func (x *Cluster) SetAdmissionControllerEvents(v bool) {
-	x.AdmissionControllerEvents = &v
+	x.xxx_hidden_AdmissionControllerEvents = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 25)
 }
 
 func (x *Cluster) SetStatus(v *ClusterStatus) {
-	x.Status = v
+	x.xxx_hidden_Status = v
 }
 
 func (x *Cluster) SetDynamicConfig(v *DynamicClusterConfig) {
-	x.DynamicConfig = v
+	x.xxx_hidden_DynamicConfig = v
 }
 
 func (x *Cluster) SetTolerationsConfig(v *TolerationsConfig) {
-	x.TolerationsConfig = v
+	x.xxx_hidden_TolerationsConfig = v
 }
 
 func (x *Cluster) SetPriority(v int64) {
-	x.Priority = &v
+	x.xxx_hidden_Priority = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 15, 25)
 }
 
 func (x *Cluster) SetHealthStatus(v *ClusterHealthStatus) {
-	x.HealthStatus = v
+	x.xxx_hidden_HealthStatus = v
 }
 
 func (x *Cluster) SetSlimCollector(v bool) {
-	x.SlimCollector = &v
+	x.xxx_hidden_SlimCollector = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 17, 25)
 }
 
 func (x *Cluster) SetHelmConfig(v *CompleteClusterConfig) {
-	x.HelmConfig = v
+	x.xxx_hidden_HelmConfig = v
 }
 
 func (x *Cluster) SetMostRecentSensorId(v *SensorDeploymentIdentification) {
-	x.MostRecentSensorId = v
+	x.xxx_hidden_MostRecentSensorId = v
 }
 
 func (x *Cluster) SetAuditLogState(v map[string]*AuditLogFileState) {
-	x.AuditLogState = v
+	x.xxx_hidden_AuditLogState = v
 }
 
 func (x *Cluster) SetInitBundleId(v string) {
-	x.InitBundleId = &v
+	x.xxx_hidden_InitBundleId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 21, 25)
 }
 
 func (x *Cluster) SetManagedBy(v ManagerType) {
-	x.ManagedBy = &v
+	x.xxx_hidden_ManagedBy = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 22, 25)
 }
 
 func (x *Cluster) SetSensorCapabilities(v []string) {
-	x.SensorCapabilities = v
+	x.xxx_hidden_SensorCapabilities = v
 }
 
 func (x *Cluster) SetAdmissionControllerFailOnError(v bool) {
-	x.AdmissionControllerFailOnError = &v
+	x.xxx_hidden_AdmissionControllerFailOnError = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 24, 25)
 }
 
 func (x *Cluster) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Cluster) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Cluster) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Cluster) HasMainImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.MainImage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Cluster) HasCollectorImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.CollectorImage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Cluster) HasCentralApiEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.CentralApiEndpoint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 // Deprecated: Marked as deprecated in storage/cluster.proto.
@@ -2841,201 +3121,217 @@ func (x *Cluster) HasRuntimeSupport() bool {
 	if x == nil {
 		return false
 	}
-	return x.RuntimeSupport != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *Cluster) HasCollectionMethod() bool {
 	if x == nil {
 		return false
 	}
-	return x.CollectionMethod != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *Cluster) HasAdmissionController() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionController != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *Cluster) HasAdmissionControllerUpdates() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionControllerUpdates != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
 }
 
 func (x *Cluster) HasAdmissionControllerEvents() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionControllerEvents != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
 }
 
 func (x *Cluster) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.Status != nil
+	return x.xxx_hidden_Status != nil
 }
 
 func (x *Cluster) HasDynamicConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.DynamicConfig != nil
+	return x.xxx_hidden_DynamicConfig != nil
 }
 
 func (x *Cluster) HasTolerationsConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.TolerationsConfig != nil
+	return x.xxx_hidden_TolerationsConfig != nil
 }
 
 func (x *Cluster) HasPriority() bool {
 	if x == nil {
 		return false
 	}
-	return x.Priority != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 15)
 }
 
 func (x *Cluster) HasHealthStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.HealthStatus != nil
+	return x.xxx_hidden_HealthStatus != nil
 }
 
 func (x *Cluster) HasSlimCollector() bool {
 	if x == nil {
 		return false
 	}
-	return x.SlimCollector != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 17)
 }
 
 func (x *Cluster) HasHelmConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.HelmConfig != nil
+	return x.xxx_hidden_HelmConfig != nil
 }
 
 func (x *Cluster) HasMostRecentSensorId() bool {
 	if x == nil {
 		return false
 	}
-	return x.MostRecentSensorId != nil
+	return x.xxx_hidden_MostRecentSensorId != nil
 }
 
 func (x *Cluster) HasInitBundleId() bool {
 	if x == nil {
 		return false
 	}
-	return x.InitBundleId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 21)
 }
 
 func (x *Cluster) HasManagedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.ManagedBy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 22)
 }
 
 func (x *Cluster) HasAdmissionControllerFailOnError() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionControllerFailOnError != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 24)
 }
 
 func (x *Cluster) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Cluster) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Cluster) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Type = ClusterType_GENERIC_CLUSTER
 }
 
 func (x *Cluster) ClearMainImage() {
-	x.MainImage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_MainImage = nil
 }
 
 func (x *Cluster) ClearCollectorImage() {
-	x.CollectorImage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_CollectorImage = nil
 }
 
 func (x *Cluster) ClearCentralApiEndpoint() {
-	x.CentralApiEndpoint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_CentralApiEndpoint = nil
 }
 
 // Deprecated: Marked as deprecated in storage/cluster.proto.
 func (x *Cluster) ClearRuntimeSupport() {
-	x.RuntimeSupport = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_RuntimeSupport = false
 }
 
 func (x *Cluster) ClearCollectionMethod() {
-	x.CollectionMethod = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_CollectionMethod = CollectionMethod_UNSET_COLLECTION
 }
 
 func (x *Cluster) ClearAdmissionController() {
-	x.AdmissionController = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_AdmissionController = false
 }
 
 func (x *Cluster) ClearAdmissionControllerUpdates() {
-	x.AdmissionControllerUpdates = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	x.xxx_hidden_AdmissionControllerUpdates = false
 }
 
 func (x *Cluster) ClearAdmissionControllerEvents() {
-	x.AdmissionControllerEvents = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	x.xxx_hidden_AdmissionControllerEvents = false
 }
 
 func (x *Cluster) ClearStatus() {
-	x.Status = nil
+	x.xxx_hidden_Status = nil
 }
 
 func (x *Cluster) ClearDynamicConfig() {
-	x.DynamicConfig = nil
+	x.xxx_hidden_DynamicConfig = nil
 }
 
 func (x *Cluster) ClearTolerationsConfig() {
-	x.TolerationsConfig = nil
+	x.xxx_hidden_TolerationsConfig = nil
 }
 
 func (x *Cluster) ClearPriority() {
-	x.Priority = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 15)
+	x.xxx_hidden_Priority = 0
 }
 
 func (x *Cluster) ClearHealthStatus() {
-	x.HealthStatus = nil
+	x.xxx_hidden_HealthStatus = nil
 }
 
 func (x *Cluster) ClearSlimCollector() {
-	x.SlimCollector = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 17)
+	x.xxx_hidden_SlimCollector = false
 }
 
 func (x *Cluster) ClearHelmConfig() {
-	x.HelmConfig = nil
+	x.xxx_hidden_HelmConfig = nil
 }
 
 func (x *Cluster) ClearMostRecentSensorId() {
-	x.MostRecentSensorId = nil
+	x.xxx_hidden_MostRecentSensorId = nil
 }
 
 func (x *Cluster) ClearInitBundleId() {
-	x.InitBundleId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 21)
+	x.xxx_hidden_InitBundleId = nil
 }
 
 func (x *Cluster) ClearManagedBy() {
-	x.ManagedBy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 22)
+	x.xxx_hidden_ManagedBy = ManagerType_MANAGER_TYPE_UNKNOWN
 }
 
 func (x *Cluster) ClearAdmissionControllerFailOnError() {
-	x.AdmissionControllerFailOnError = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 24)
+	x.xxx_hidden_AdmissionControllerFailOnError = false
 }
 
 type Cluster_builder struct {
@@ -3076,40 +3372,88 @@ func (b0 Cluster_builder) Build() *Cluster {
 	m0 := &Cluster{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Type = b.Type
-	x.Labels = b.Labels
-	x.MainImage = b.MainImage
-	x.CollectorImage = b.CollectorImage
-	x.CentralApiEndpoint = b.CentralApiEndpoint
-	x.RuntimeSupport = b.RuntimeSupport
-	x.CollectionMethod = b.CollectionMethod
-	x.AdmissionController = b.AdmissionController
-	x.AdmissionControllerUpdates = b.AdmissionControllerUpdates
-	x.AdmissionControllerEvents = b.AdmissionControllerEvents
-	x.Status = b.Status
-	x.DynamicConfig = b.DynamicConfig
-	x.TolerationsConfig = b.TolerationsConfig
-	x.Priority = b.Priority
-	x.HealthStatus = b.HealthStatus
-	x.SlimCollector = b.SlimCollector
-	x.HelmConfig = b.HelmConfig
-	x.MostRecentSensorId = b.MostRecentSensorId
-	x.AuditLogState = b.AuditLogState
-	x.InitBundleId = b.InitBundleId
-	x.ManagedBy = b.ManagedBy
-	x.SensorCapabilities = b.SensorCapabilities
-	x.AdmissionControllerFailOnError = b.AdmissionControllerFailOnError
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 25)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 25)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 25)
+		x.xxx_hidden_Type = *b.Type
+	}
+	x.xxx_hidden_Labels = b.Labels
+	if b.MainImage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 25)
+		x.xxx_hidden_MainImage = b.MainImage
+	}
+	if b.CollectorImage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 25)
+		x.xxx_hidden_CollectorImage = b.CollectorImage
+	}
+	if b.CentralApiEndpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 25)
+		x.xxx_hidden_CentralApiEndpoint = b.CentralApiEndpoint
+	}
+	if b.RuntimeSupport != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 25)
+		x.xxx_hidden_RuntimeSupport = *b.RuntimeSupport
+	}
+	if b.CollectionMethod != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 25)
+		x.xxx_hidden_CollectionMethod = *b.CollectionMethod
+	}
+	if b.AdmissionController != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 25)
+		x.xxx_hidden_AdmissionController = *b.AdmissionController
+	}
+	if b.AdmissionControllerUpdates != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 25)
+		x.xxx_hidden_AdmissionControllerUpdates = *b.AdmissionControllerUpdates
+	}
+	if b.AdmissionControllerEvents != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 25)
+		x.xxx_hidden_AdmissionControllerEvents = *b.AdmissionControllerEvents
+	}
+	x.xxx_hidden_Status = b.Status
+	x.xxx_hidden_DynamicConfig = b.DynamicConfig
+	x.xxx_hidden_TolerationsConfig = b.TolerationsConfig
+	if b.Priority != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 15, 25)
+		x.xxx_hidden_Priority = *b.Priority
+	}
+	x.xxx_hidden_HealthStatus = b.HealthStatus
+	if b.SlimCollector != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 17, 25)
+		x.xxx_hidden_SlimCollector = *b.SlimCollector
+	}
+	x.xxx_hidden_HelmConfig = b.HelmConfig
+	x.xxx_hidden_MostRecentSensorId = b.MostRecentSensorId
+	x.xxx_hidden_AuditLogState = b.AuditLogState
+	if b.InitBundleId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 21, 25)
+		x.xxx_hidden_InitBundleId = b.InitBundleId
+	}
+	if b.ManagedBy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 22, 25)
+		x.xxx_hidden_ManagedBy = *b.ManagedBy
+	}
+	x.xxx_hidden_SensorCapabilities = b.SensorCapabilities
+	if b.AdmissionControllerFailOnError != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 24, 25)
+		x.xxx_hidden_AdmissionControllerFailOnError = *b.AdmissionControllerFailOnError
+	}
 	return m0
 }
 
 type ClusterCertExpiryStatus struct {
-	state               protoimpl.MessageState `protogen:"hybrid.v1"`
-	SensorCertExpiry    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=sensor_cert_expiry,json=sensorCertExpiry" json:"sensor_cert_expiry,omitempty"`
-	SensorCertNotBefore *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=sensor_cert_not_before,json=sensorCertNotBefore" json:"sensor_cert_not_before,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SensorCertExpiry    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=sensor_cert_expiry,json=sensorCertExpiry"`
+	xxx_hidden_SensorCertNotBefore *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=sensor_cert_not_before,json=sensorCertNotBefore"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *ClusterCertExpiryStatus) Reset() {
@@ -3139,46 +3483,46 @@ func (x *ClusterCertExpiryStatus) ProtoReflect() protoreflect.Message {
 
 func (x *ClusterCertExpiryStatus) GetSensorCertExpiry() *timestamppb.Timestamp {
 	if x != nil {
-		return x.SensorCertExpiry
+		return x.xxx_hidden_SensorCertExpiry
 	}
 	return nil
 }
 
 func (x *ClusterCertExpiryStatus) GetSensorCertNotBefore() *timestamppb.Timestamp {
 	if x != nil {
-		return x.SensorCertNotBefore
+		return x.xxx_hidden_SensorCertNotBefore
 	}
 	return nil
 }
 
 func (x *ClusterCertExpiryStatus) SetSensorCertExpiry(v *timestamppb.Timestamp) {
-	x.SensorCertExpiry = v
+	x.xxx_hidden_SensorCertExpiry = v
 }
 
 func (x *ClusterCertExpiryStatus) SetSensorCertNotBefore(v *timestamppb.Timestamp) {
-	x.SensorCertNotBefore = v
+	x.xxx_hidden_SensorCertNotBefore = v
 }
 
 func (x *ClusterCertExpiryStatus) HasSensorCertExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.SensorCertExpiry != nil
+	return x.xxx_hidden_SensorCertExpiry != nil
 }
 
 func (x *ClusterCertExpiryStatus) HasSensorCertNotBefore() bool {
 	if x == nil {
 		return false
 	}
-	return x.SensorCertNotBefore != nil
+	return x.xxx_hidden_SensorCertNotBefore != nil
 }
 
 func (x *ClusterCertExpiryStatus) ClearSensorCertExpiry() {
-	x.SensorCertExpiry = nil
+	x.xxx_hidden_SensorCertExpiry = nil
 }
 
 func (x *ClusterCertExpiryStatus) ClearSensorCertNotBefore() {
-	x.SensorCertNotBefore = nil
+	x.xxx_hidden_SensorCertNotBefore = nil
 }
 
 type ClusterCertExpiryStatus_builder struct {
@@ -3192,22 +3536,23 @@ func (b0 ClusterCertExpiryStatus_builder) Build() *ClusterCertExpiryStatus {
 	m0 := &ClusterCertExpiryStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.SensorCertExpiry = b.SensorCertExpiry
-	x.SensorCertNotBefore = b.SensorCertNotBefore
+	x.xxx_hidden_SensorCertExpiry = b.SensorCertExpiry
+	x.xxx_hidden_SensorCertNotBefore = b.SensorCertNotBefore
 	return m0
 }
 
 type ClusterStatus struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	SensorVersion *string                `protobuf:"bytes,1,opt,name=sensor_version,json=sensorVersion" json:"sensor_version,omitempty"`
-	// This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
-	DEPRECATEDLastContact *timestamppb.Timestamp   `protobuf:"bytes,2,opt,name=DEPRECATED_last_contact,json=DEPRECATEDLastContact" json:"DEPRECATED_last_contact,omitempty"`
-	ProviderMetadata      *ProviderMetadata        `protobuf:"bytes,3,opt,name=provider_metadata,json=providerMetadata" json:"provider_metadata,omitempty"`
-	OrchestratorMetadata  *OrchestratorMetadata    `protobuf:"bytes,4,opt,name=orchestrator_metadata,json=orchestratorMetadata" json:"orchestrator_metadata,omitempty"`
-	UpgradeStatus         *ClusterUpgradeStatus    `protobuf:"bytes,5,opt,name=upgrade_status,json=upgradeStatus" json:"upgrade_status,omitempty"`
-	CertExpiryStatus      *ClusterCertExpiryStatus `protobuf:"bytes,6,opt,name=cert_expiry_status,json=certExpiryStatus" json:"cert_expiry_status,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_SensorVersion         *string                  `protobuf:"bytes,1,opt,name=sensor_version,json=sensorVersion"`
+	xxx_hidden_DEPRECATEDLastContact *timestamppb.Timestamp   `protobuf:"bytes,2,opt,name=DEPRECATED_last_contact,json=DEPRECATEDLastContact"`
+	xxx_hidden_ProviderMetadata      *ProviderMetadata        `protobuf:"bytes,3,opt,name=provider_metadata,json=providerMetadata"`
+	xxx_hidden_OrchestratorMetadata  *OrchestratorMetadata    `protobuf:"bytes,4,opt,name=orchestrator_metadata,json=orchestratorMetadata"`
+	xxx_hidden_UpgradeStatus         *ClusterUpgradeStatus    `protobuf:"bytes,5,opt,name=upgrade_status,json=upgradeStatus"`
+	xxx_hidden_CertExpiryStatus      *ClusterCertExpiryStatus `protobuf:"bytes,6,opt,name=cert_expiry_status,json=certExpiryStatus"`
+	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
+	XXX_presence                     [1]uint32
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *ClusterStatus) Reset() {
@@ -3236,135 +3581,140 @@ func (x *ClusterStatus) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ClusterStatus) GetSensorVersion() string {
-	if x != nil && x.SensorVersion != nil {
-		return *x.SensorVersion
+	if x != nil {
+		if x.xxx_hidden_SensorVersion != nil {
+			return *x.xxx_hidden_SensorVersion
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterStatus) GetDEPRECATEDLastContact() *timestamppb.Timestamp {
 	if x != nil {
-		return x.DEPRECATEDLastContact
+		return x.xxx_hidden_DEPRECATEDLastContact
 	}
 	return nil
 }
 
 func (x *ClusterStatus) GetProviderMetadata() *ProviderMetadata {
 	if x != nil {
-		return x.ProviderMetadata
+		return x.xxx_hidden_ProviderMetadata
 	}
 	return nil
 }
 
 func (x *ClusterStatus) GetOrchestratorMetadata() *OrchestratorMetadata {
 	if x != nil {
-		return x.OrchestratorMetadata
+		return x.xxx_hidden_OrchestratorMetadata
 	}
 	return nil
 }
 
 func (x *ClusterStatus) GetUpgradeStatus() *ClusterUpgradeStatus {
 	if x != nil {
-		return x.UpgradeStatus
+		return x.xxx_hidden_UpgradeStatus
 	}
 	return nil
 }
 
 func (x *ClusterStatus) GetCertExpiryStatus() *ClusterCertExpiryStatus {
 	if x != nil {
-		return x.CertExpiryStatus
+		return x.xxx_hidden_CertExpiryStatus
 	}
 	return nil
 }
 
 func (x *ClusterStatus) SetSensorVersion(v string) {
-	x.SensorVersion = &v
+	x.xxx_hidden_SensorVersion = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *ClusterStatus) SetDEPRECATEDLastContact(v *timestamppb.Timestamp) {
-	x.DEPRECATEDLastContact = v
+	x.xxx_hidden_DEPRECATEDLastContact = v
 }
 
 func (x *ClusterStatus) SetProviderMetadata(v *ProviderMetadata) {
-	x.ProviderMetadata = v
+	x.xxx_hidden_ProviderMetadata = v
 }
 
 func (x *ClusterStatus) SetOrchestratorMetadata(v *OrchestratorMetadata) {
-	x.OrchestratorMetadata = v
+	x.xxx_hidden_OrchestratorMetadata = v
 }
 
 func (x *ClusterStatus) SetUpgradeStatus(v *ClusterUpgradeStatus) {
-	x.UpgradeStatus = v
+	x.xxx_hidden_UpgradeStatus = v
 }
 
 func (x *ClusterStatus) SetCertExpiryStatus(v *ClusterCertExpiryStatus) {
-	x.CertExpiryStatus = v
+	x.xxx_hidden_CertExpiryStatus = v
 }
 
 func (x *ClusterStatus) HasSensorVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.SensorVersion != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ClusterStatus) HasDEPRECATEDLastContact() bool {
 	if x == nil {
 		return false
 	}
-	return x.DEPRECATEDLastContact != nil
+	return x.xxx_hidden_DEPRECATEDLastContact != nil
 }
 
 func (x *ClusterStatus) HasProviderMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProviderMetadata != nil
+	return x.xxx_hidden_ProviderMetadata != nil
 }
 
 func (x *ClusterStatus) HasOrchestratorMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.OrchestratorMetadata != nil
+	return x.xxx_hidden_OrchestratorMetadata != nil
 }
 
 func (x *ClusterStatus) HasUpgradeStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpgradeStatus != nil
+	return x.xxx_hidden_UpgradeStatus != nil
 }
 
 func (x *ClusterStatus) HasCertExpiryStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.CertExpiryStatus != nil
+	return x.xxx_hidden_CertExpiryStatus != nil
 }
 
 func (x *ClusterStatus) ClearSensorVersion() {
-	x.SensorVersion = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_SensorVersion = nil
 }
 
 func (x *ClusterStatus) ClearDEPRECATEDLastContact() {
-	x.DEPRECATEDLastContact = nil
+	x.xxx_hidden_DEPRECATEDLastContact = nil
 }
 
 func (x *ClusterStatus) ClearProviderMetadata() {
-	x.ProviderMetadata = nil
+	x.xxx_hidden_ProviderMetadata = nil
 }
 
 func (x *ClusterStatus) ClearOrchestratorMetadata() {
-	x.OrchestratorMetadata = nil
+	x.xxx_hidden_OrchestratorMetadata = nil
 }
 
 func (x *ClusterStatus) ClearUpgradeStatus() {
-	x.UpgradeStatus = nil
+	x.xxx_hidden_UpgradeStatus = nil
 }
 
 func (x *ClusterStatus) ClearCertExpiryStatus() {
-	x.CertExpiryStatus = nil
+	x.xxx_hidden_CertExpiryStatus = nil
 }
 
 type ClusterStatus_builder struct {
@@ -3383,26 +3733,27 @@ func (b0 ClusterStatus_builder) Build() *ClusterStatus {
 	m0 := &ClusterStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.SensorVersion = b.SensorVersion
-	x.DEPRECATEDLastContact = b.DEPRECATEDLastContact
-	x.ProviderMetadata = b.ProviderMetadata
-	x.OrchestratorMetadata = b.OrchestratorMetadata
-	x.UpgradeStatus = b.UpgradeStatus
-	x.CertExpiryStatus = b.CertExpiryStatus
+	if b.SensorVersion != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_SensorVersion = b.SensorVersion
+	}
+	x.xxx_hidden_DEPRECATEDLastContact = b.DEPRECATEDLastContact
+	x.xxx_hidden_ProviderMetadata = b.ProviderMetadata
+	x.xxx_hidden_OrchestratorMetadata = b.OrchestratorMetadata
+	x.xxx_hidden_UpgradeStatus = b.UpgradeStatus
+	x.xxx_hidden_CertExpiryStatus = b.CertExpiryStatus
 	return m0
 }
 
 type ClusterUpgradeStatus struct {
-	state                     protoimpl.MessageState              `protogen:"hybrid.v1"`
-	Upgradability             *ClusterUpgradeStatus_Upgradability `protobuf:"varint,1,opt,name=upgradability,enum=storage.ClusterUpgradeStatus_Upgradability" json:"upgradability,omitempty"`
-	UpgradabilityStatusReason *string                             `protobuf:"bytes,2,opt,name=upgradability_status_reason,json=upgradabilityStatusReason" json:"upgradability_status_reason,omitempty"`
-	// The progress of the current or most recent upgrade, if any,
-	// Note that we don't store any historical data -- the moment
-	// a new upgrade attempt is triggered, we overwrite
-	// information from the previous attempt.
-	MostRecentProcess *ClusterUpgradeStatus_UpgradeProcessStatus `protobuf:"bytes,3,opt,name=most_recent_process,json=mostRecentProcess" json:"most_recent_process,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                                protoimpl.MessageState                     `protogen:"opaque.v1"`
+	xxx_hidden_Upgradability             ClusterUpgradeStatus_Upgradability         `protobuf:"varint,1,opt,name=upgradability,enum=storage.ClusterUpgradeStatus_Upgradability"`
+	xxx_hidden_UpgradabilityStatusReason *string                                    `protobuf:"bytes,2,opt,name=upgradability_status_reason,json=upgradabilityStatusReason"`
+	xxx_hidden_MostRecentProcess         *ClusterUpgradeStatus_UpgradeProcessStatus `protobuf:"bytes,3,opt,name=most_recent_process,json=mostRecentProcess"`
+	XXX_raceDetectHookData               protoimpl.RaceDetectHookData
+	XXX_presence                         [1]uint32
+	unknownFields                        protoimpl.UnknownFields
+	sizeCache                            protoimpl.SizeCache
 }
 
 func (x *ClusterUpgradeStatus) Reset() {
@@ -3431,69 +3782,78 @@ func (x *ClusterUpgradeStatus) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ClusterUpgradeStatus) GetUpgradability() ClusterUpgradeStatus_Upgradability {
-	if x != nil && x.Upgradability != nil {
-		return *x.Upgradability
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Upgradability
+		}
 	}
 	return ClusterUpgradeStatus_UNSET
 }
 
 func (x *ClusterUpgradeStatus) GetUpgradabilityStatusReason() string {
-	if x != nil && x.UpgradabilityStatusReason != nil {
-		return *x.UpgradabilityStatusReason
+	if x != nil {
+		if x.xxx_hidden_UpgradabilityStatusReason != nil {
+			return *x.xxx_hidden_UpgradabilityStatusReason
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterUpgradeStatus) GetMostRecentProcess() *ClusterUpgradeStatus_UpgradeProcessStatus {
 	if x != nil {
-		return x.MostRecentProcess
+		return x.xxx_hidden_MostRecentProcess
 	}
 	return nil
 }
 
 func (x *ClusterUpgradeStatus) SetUpgradability(v ClusterUpgradeStatus_Upgradability) {
-	x.Upgradability = &v
+	x.xxx_hidden_Upgradability = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *ClusterUpgradeStatus) SetUpgradabilityStatusReason(v string) {
-	x.UpgradabilityStatusReason = &v
+	x.xxx_hidden_UpgradabilityStatusReason = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ClusterUpgradeStatus) SetMostRecentProcess(v *ClusterUpgradeStatus_UpgradeProcessStatus) {
-	x.MostRecentProcess = v
+	x.xxx_hidden_MostRecentProcess = v
 }
 
 func (x *ClusterUpgradeStatus) HasUpgradability() bool {
 	if x == nil {
 		return false
 	}
-	return x.Upgradability != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ClusterUpgradeStatus) HasUpgradabilityStatusReason() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpgradabilityStatusReason != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ClusterUpgradeStatus) HasMostRecentProcess() bool {
 	if x == nil {
 		return false
 	}
-	return x.MostRecentProcess != nil
+	return x.xxx_hidden_MostRecentProcess != nil
 }
 
 func (x *ClusterUpgradeStatus) ClearUpgradability() {
-	x.Upgradability = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Upgradability = ClusterUpgradeStatus_UNSET
 }
 
 func (x *ClusterUpgradeStatus) ClearUpgradabilityStatusReason() {
-	x.UpgradabilityStatusReason = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_UpgradabilityStatusReason = nil
 }
 
 func (x *ClusterUpgradeStatus) ClearMostRecentProcess() {
-	x.MostRecentProcess = nil
+	x.xxx_hidden_MostRecentProcess = nil
 }
 
 type ClusterUpgradeStatus_builder struct {
@@ -3512,19 +3872,27 @@ func (b0 ClusterUpgradeStatus_builder) Build() *ClusterUpgradeStatus {
 	m0 := &ClusterUpgradeStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Upgradability = b.Upgradability
-	x.UpgradabilityStatusReason = b.UpgradabilityStatusReason
-	x.MostRecentProcess = b.MostRecentProcess
+	if b.Upgradability != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Upgradability = *b.Upgradability
+	}
+	if b.UpgradabilityStatusReason != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_UpgradabilityStatusReason = b.UpgradabilityStatusReason
+	}
+	x.xxx_hidden_MostRecentProcess = b.MostRecentProcess
 	return m0
 }
 
 type UpgradeProgress struct {
-	state               protoimpl.MessageState        `protogen:"hybrid.v1"`
-	UpgradeState        *UpgradeProgress_UpgradeState `protobuf:"varint,1,opt,name=upgrade_state,json=upgradeState,enum=storage.UpgradeProgress_UpgradeState" json:"upgrade_state,omitempty"`
-	UpgradeStatusDetail *string                       `protobuf:"bytes,2,opt,name=upgrade_status_detail,json=upgradeStatusDetail" json:"upgrade_status_detail,omitempty"`
-	Since               *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=since" json:"since,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_UpgradeState        UpgradeProgress_UpgradeState `protobuf:"varint,1,opt,name=upgrade_state,json=upgradeState,enum=storage.UpgradeProgress_UpgradeState"`
+	xxx_hidden_UpgradeStatusDetail *string                      `protobuf:"bytes,2,opt,name=upgrade_status_detail,json=upgradeStatusDetail"`
+	xxx_hidden_Since               *timestamppb.Timestamp       `protobuf:"bytes,3,opt,name=since"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *UpgradeProgress) Reset() {
@@ -3553,69 +3921,78 @@ func (x *UpgradeProgress) ProtoReflect() protoreflect.Message {
 }
 
 func (x *UpgradeProgress) GetUpgradeState() UpgradeProgress_UpgradeState {
-	if x != nil && x.UpgradeState != nil {
-		return *x.UpgradeState
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_UpgradeState
+		}
 	}
 	return UpgradeProgress_UPGRADE_INITIALIZING
 }
 
 func (x *UpgradeProgress) GetUpgradeStatusDetail() string {
-	if x != nil && x.UpgradeStatusDetail != nil {
-		return *x.UpgradeStatusDetail
+	if x != nil {
+		if x.xxx_hidden_UpgradeStatusDetail != nil {
+			return *x.xxx_hidden_UpgradeStatusDetail
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpgradeProgress) GetSince() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Since
+		return x.xxx_hidden_Since
 	}
 	return nil
 }
 
 func (x *UpgradeProgress) SetUpgradeState(v UpgradeProgress_UpgradeState) {
-	x.UpgradeState = &v
+	x.xxx_hidden_UpgradeState = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *UpgradeProgress) SetUpgradeStatusDetail(v string) {
-	x.UpgradeStatusDetail = &v
+	x.xxx_hidden_UpgradeStatusDetail = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *UpgradeProgress) SetSince(v *timestamppb.Timestamp) {
-	x.Since = v
+	x.xxx_hidden_Since = v
 }
 
 func (x *UpgradeProgress) HasUpgradeState() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpgradeState != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpgradeProgress) HasUpgradeStatusDetail() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpgradeStatusDetail != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UpgradeProgress) HasSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.Since != nil
+	return x.xxx_hidden_Since != nil
 }
 
 func (x *UpgradeProgress) ClearUpgradeState() {
-	x.UpgradeState = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_UpgradeState = UpgradeProgress_UPGRADE_INITIALIZING
 }
 
 func (x *UpgradeProgress) ClearUpgradeStatusDetail() {
-	x.UpgradeStatusDetail = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_UpgradeStatusDetail = nil
 }
 
 func (x *UpgradeProgress) ClearSince() {
-	x.Since = nil
+	x.xxx_hidden_Since = nil
 }
 
 type UpgradeProgress_builder struct {
@@ -3630,20 +4007,28 @@ func (b0 UpgradeProgress_builder) Build() *UpgradeProgress {
 	m0 := &UpgradeProgress{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.UpgradeState = b.UpgradeState
-	x.UpgradeStatusDetail = b.UpgradeStatusDetail
-	x.Since = b.Since
+	if b.UpgradeState != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_UpgradeState = *b.UpgradeState
+	}
+	if b.UpgradeStatusDetail != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_UpgradeStatusDetail = b.UpgradeStatusDetail
+	}
+	x.xxx_hidden_Since = b.Since
 	return m0
 }
 
 // AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance
 // For internal use only
 type AuditLogFileState struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	CollectLogsSince *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=collect_logs_since,json=collectLogsSince" json:"collect_logs_since,omitempty"`
-	LastAuditId      *string                `protobuf:"bytes,2,opt,name=last_audit_id,json=lastAuditId" json:"last_audit_id,omitempty"` // Previously received audit id. May be empty
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CollectLogsSince *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=collect_logs_since,json=collectLogsSince"`
+	xxx_hidden_LastAuditId      *string                `protobuf:"bytes,2,opt,name=last_audit_id,json=lastAuditId"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *AuditLogFileState) Reset() {
@@ -3673,46 +4058,51 @@ func (x *AuditLogFileState) ProtoReflect() protoreflect.Message {
 
 func (x *AuditLogFileState) GetCollectLogsSince() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CollectLogsSince
+		return x.xxx_hidden_CollectLogsSince
 	}
 	return nil
 }
 
 func (x *AuditLogFileState) GetLastAuditId() string {
-	if x != nil && x.LastAuditId != nil {
-		return *x.LastAuditId
+	if x != nil {
+		if x.xxx_hidden_LastAuditId != nil {
+			return *x.xxx_hidden_LastAuditId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *AuditLogFileState) SetCollectLogsSince(v *timestamppb.Timestamp) {
-	x.CollectLogsSince = v
+	x.xxx_hidden_CollectLogsSince = v
 }
 
 func (x *AuditLogFileState) SetLastAuditId(v string) {
-	x.LastAuditId = &v
+	x.xxx_hidden_LastAuditId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *AuditLogFileState) HasCollectLogsSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.CollectLogsSince != nil
+	return x.xxx_hidden_CollectLogsSince != nil
 }
 
 func (x *AuditLogFileState) HasLastAuditId() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastAuditId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *AuditLogFileState) ClearCollectLogsSince() {
-	x.CollectLogsSince = nil
+	x.xxx_hidden_CollectLogsSince = nil
 }
 
 func (x *AuditLogFileState) ClearLastAuditId() {
-	x.LastAuditId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_LastAuditId = nil
 }
 
 type AuditLogFileState_builder struct {
@@ -3726,38 +4116,31 @@ func (b0 AuditLogFileState_builder) Build() *AuditLogFileState {
 	m0 := &AuditLogFileState{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CollectLogsSince = b.CollectLogsSince
-	x.LastAuditId = b.LastAuditId
+	x.xxx_hidden_CollectLogsSince = b.CollectLogsSince
+	if b.LastAuditId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_LastAuditId = b.LastAuditId
+	}
 	return m0
 }
 
 type ClusterHealthStatus struct {
-	state                      protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Id                         *string                     `protobuf:"bytes,9,opt,name=id" json:"id,omitempty" sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"
-	CollectorHealthInfo        *CollectorHealthInfo        `protobuf:"bytes,1,opt,name=collector_health_info,json=collectorHealthInfo" json:"collector_health_info,omitempty"`
-	AdmissionControlHealthInfo *AdmissionControlHealthInfo `protobuf:"bytes,8,opt,name=admission_control_health_info,json=admissionControlHealthInfo" json:"admission_control_health_info,omitempty"`
-	// scanner_health_info is filled when the scanner is deployed on a secured cluster (so called "local scanner").
-	// Please do not confuse this with the default scanner deployment on a central cluster.
-	ScannerHealthInfo *ScannerHealthInfo `protobuf:"bytes,10,opt,name=scanner_health_info,json=scannerHealthInfo" json:"scanner_health_info,omitempty"`
-	// The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
-	SensorHealthStatus           *ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,2,opt,name=sensor_health_status,json=sensorHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"sensor_health_status,omitempty" search:"Sensor Status,store"`                                 // @gotags: search:"Sensor Status,store"
-	CollectorHealthStatus        *ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,3,opt,name=collector_health_status,json=collectorHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"collector_health_status,omitempty" search:"Collector Status,store"`                        // @gotags: search:"Collector Status,store"
-	OverallHealthStatus          *ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,4,opt,name=overall_health_status,json=overallHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"overall_health_status,omitempty" search:"Cluster Status,store"`                              // @gotags: search:"Cluster Status,store"
-	AdmissionControlHealthStatus *ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,7,opt,name=admission_control_health_status,json=admissionControlHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"admission_control_health_status,omitempty" search:"Admission Control Status,store"` // @gotags: search:"Admission Control Status,store"
-	ScannerHealthStatus          *ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,11,opt,name=scanner_health_status,json=scannerHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"scanner_health_status,omitempty" search:"Scanner Status,store"`                             // @gotags: search:"Scanner Status,store"
-	// For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
-	// this timestamp will be updated by central pipeline when message is processed.
-	//
-	// Note: we use this setting to guard against a specific attack vector during CRS-based cluster registration.
-	// Assuming that a CRS was used to register a cluster A and the CRS is leaked, an attacker shall not be able
-	// to re-run the CRS-flow which would then equip the attacker with a certificate & key issued to the cluster A.
-	// As countermeasure we only allow re-running the CRS-flow only as long as the last_contact field is empty,
-	// indicating that the legit cluster A's sensor has not yet connected with the CRS-issued service certificates.
-	LastContact *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_contact,json=lastContact" json:"last_contact,omitempty" search:"Last Contact,store"` // @gotags: search:"Last Contact,store"
-	// To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
-	HealthInfoComplete *bool `protobuf:"varint,6,opt,name=health_info_complete,json=healthInfoComplete" json:"health_info_complete,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                                   protoimpl.MessageState                `protogen:"opaque.v1"`
+	xxx_hidden_Id                           *string                               `protobuf:"bytes,9,opt,name=id"`
+	xxx_hidden_CollectorHealthInfo          *CollectorHealthInfo                  `protobuf:"bytes,1,opt,name=collector_health_info,json=collectorHealthInfo"`
+	xxx_hidden_AdmissionControlHealthInfo   *AdmissionControlHealthInfo           `protobuf:"bytes,8,opt,name=admission_control_health_info,json=admissionControlHealthInfo"`
+	xxx_hidden_ScannerHealthInfo            *ScannerHealthInfo                    `protobuf:"bytes,10,opt,name=scanner_health_info,json=scannerHealthInfo"`
+	xxx_hidden_SensorHealthStatus           ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,2,opt,name=sensor_health_status,json=sensorHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel"`
+	xxx_hidden_CollectorHealthStatus        ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,3,opt,name=collector_health_status,json=collectorHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel"`
+	xxx_hidden_OverallHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,4,opt,name=overall_health_status,json=overallHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel"`
+	xxx_hidden_AdmissionControlHealthStatus ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,7,opt,name=admission_control_health_status,json=admissionControlHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel"`
+	xxx_hidden_ScannerHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,11,opt,name=scanner_health_status,json=scannerHealthStatus,enum=storage.ClusterHealthStatus_HealthStatusLabel"`
+	xxx_hidden_LastContact                  *timestamppb.Timestamp                `protobuf:"bytes,5,opt,name=last_contact,json=lastContact"`
+	xxx_hidden_HealthInfoComplete           bool                                  `protobuf:"varint,6,opt,name=health_info_complete,json=healthInfoComplete"`
+	XXX_raceDetectHookData                  protoimpl.RaceDetectHookData
+	XXX_presence                            [1]uint32
+	unknownFields                           protoimpl.UnknownFields
+	sizeCache                               protoimpl.SizeCache
 }
 
 func (x *ClusterHealthStatus) Reset() {
@@ -3786,245 +4169,272 @@ func (x *ClusterHealthStatus) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ClusterHealthStatus) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterHealthStatus) GetCollectorHealthInfo() *CollectorHealthInfo {
 	if x != nil {
-		return x.CollectorHealthInfo
+		return x.xxx_hidden_CollectorHealthInfo
 	}
 	return nil
 }
 
 func (x *ClusterHealthStatus) GetAdmissionControlHealthInfo() *AdmissionControlHealthInfo {
 	if x != nil {
-		return x.AdmissionControlHealthInfo
+		return x.xxx_hidden_AdmissionControlHealthInfo
 	}
 	return nil
 }
 
 func (x *ClusterHealthStatus) GetScannerHealthInfo() *ScannerHealthInfo {
 	if x != nil {
-		return x.ScannerHealthInfo
+		return x.xxx_hidden_ScannerHealthInfo
 	}
 	return nil
 }
 
 func (x *ClusterHealthStatus) GetSensorHealthStatus() ClusterHealthStatus_HealthStatusLabel {
-	if x != nil && x.SensorHealthStatus != nil {
-		return *x.SensorHealthStatus
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			return x.xxx_hidden_SensorHealthStatus
+		}
 	}
 	return ClusterHealthStatus_UNINITIALIZED
 }
 
 func (x *ClusterHealthStatus) GetCollectorHealthStatus() ClusterHealthStatus_HealthStatusLabel {
-	if x != nil && x.CollectorHealthStatus != nil {
-		return *x.CollectorHealthStatus
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			return x.xxx_hidden_CollectorHealthStatus
+		}
 	}
 	return ClusterHealthStatus_UNINITIALIZED
 }
 
 func (x *ClusterHealthStatus) GetOverallHealthStatus() ClusterHealthStatus_HealthStatusLabel {
-	if x != nil && x.OverallHealthStatus != nil {
-		return *x.OverallHealthStatus
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			return x.xxx_hidden_OverallHealthStatus
+		}
 	}
 	return ClusterHealthStatus_UNINITIALIZED
 }
 
 func (x *ClusterHealthStatus) GetAdmissionControlHealthStatus() ClusterHealthStatus_HealthStatusLabel {
-	if x != nil && x.AdmissionControlHealthStatus != nil {
-		return *x.AdmissionControlHealthStatus
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
+			return x.xxx_hidden_AdmissionControlHealthStatus
+		}
 	}
 	return ClusterHealthStatus_UNINITIALIZED
 }
 
 func (x *ClusterHealthStatus) GetScannerHealthStatus() ClusterHealthStatus_HealthStatusLabel {
-	if x != nil && x.ScannerHealthStatus != nil {
-		return *x.ScannerHealthStatus
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			return x.xxx_hidden_ScannerHealthStatus
+		}
 	}
 	return ClusterHealthStatus_UNINITIALIZED
 }
 
 func (x *ClusterHealthStatus) GetLastContact() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastContact
+		return x.xxx_hidden_LastContact
 	}
 	return nil
 }
 
 func (x *ClusterHealthStatus) GetHealthInfoComplete() bool {
-	if x != nil && x.HealthInfoComplete != nil {
-		return *x.HealthInfoComplete
+	if x != nil {
+		return x.xxx_hidden_HealthInfoComplete
 	}
 	return false
 }
 
 func (x *ClusterHealthStatus) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
 }
 
 func (x *ClusterHealthStatus) SetCollectorHealthInfo(v *CollectorHealthInfo) {
-	x.CollectorHealthInfo = v
+	x.xxx_hidden_CollectorHealthInfo = v
 }
 
 func (x *ClusterHealthStatus) SetAdmissionControlHealthInfo(v *AdmissionControlHealthInfo) {
-	x.AdmissionControlHealthInfo = v
+	x.xxx_hidden_AdmissionControlHealthInfo = v
 }
 
 func (x *ClusterHealthStatus) SetScannerHealthInfo(v *ScannerHealthInfo) {
-	x.ScannerHealthInfo = v
+	x.xxx_hidden_ScannerHealthInfo = v
 }
 
 func (x *ClusterHealthStatus) SetSensorHealthStatus(v ClusterHealthStatus_HealthStatusLabel) {
-	x.SensorHealthStatus = &v
+	x.xxx_hidden_SensorHealthStatus = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
 }
 
 func (x *ClusterHealthStatus) SetCollectorHealthStatus(v ClusterHealthStatus_HealthStatusLabel) {
-	x.CollectorHealthStatus = &v
+	x.xxx_hidden_CollectorHealthStatus = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
 }
 
 func (x *ClusterHealthStatus) SetOverallHealthStatus(v ClusterHealthStatus_HealthStatusLabel) {
-	x.OverallHealthStatus = &v
+	x.xxx_hidden_OverallHealthStatus = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
 }
 
 func (x *ClusterHealthStatus) SetAdmissionControlHealthStatus(v ClusterHealthStatus_HealthStatusLabel) {
-	x.AdmissionControlHealthStatus = &v
+	x.xxx_hidden_AdmissionControlHealthStatus = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
 }
 
 func (x *ClusterHealthStatus) SetScannerHealthStatus(v ClusterHealthStatus_HealthStatusLabel) {
-	x.ScannerHealthStatus = &v
+	x.xxx_hidden_ScannerHealthStatus = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
 }
 
 func (x *ClusterHealthStatus) SetLastContact(v *timestamppb.Timestamp) {
-	x.LastContact = v
+	x.xxx_hidden_LastContact = v
 }
 
 func (x *ClusterHealthStatus) SetHealthInfoComplete(v bool) {
-	x.HealthInfoComplete = &v
+	x.xxx_hidden_HealthInfoComplete = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
 }
 
 func (x *ClusterHealthStatus) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ClusterHealthStatus) HasCollectorHealthInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.CollectorHealthInfo != nil
+	return x.xxx_hidden_CollectorHealthInfo != nil
 }
 
 func (x *ClusterHealthStatus) HasAdmissionControlHealthInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionControlHealthInfo != nil
+	return x.xxx_hidden_AdmissionControlHealthInfo != nil
 }
 
 func (x *ClusterHealthStatus) HasScannerHealthInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.ScannerHealthInfo != nil
+	return x.xxx_hidden_ScannerHealthInfo != nil
 }
 
 func (x *ClusterHealthStatus) HasSensorHealthStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.SensorHealthStatus != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ClusterHealthStatus) HasCollectorHealthStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.CollectorHealthStatus != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *ClusterHealthStatus) HasOverallHealthStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.OverallHealthStatus != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ClusterHealthStatus) HasAdmissionControlHealthStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.AdmissionControlHealthStatus != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *ClusterHealthStatus) HasScannerHealthStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.ScannerHealthStatus != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *ClusterHealthStatus) HasLastContact() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastContact != nil
+	return x.xxx_hidden_LastContact != nil
 }
 
 func (x *ClusterHealthStatus) HasHealthInfoComplete() bool {
 	if x == nil {
 		return false
 	}
-	return x.HealthInfoComplete != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
 }
 
 func (x *ClusterHealthStatus) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ClusterHealthStatus) ClearCollectorHealthInfo() {
-	x.CollectorHealthInfo = nil
+	x.xxx_hidden_CollectorHealthInfo = nil
 }
 
 func (x *ClusterHealthStatus) ClearAdmissionControlHealthInfo() {
-	x.AdmissionControlHealthInfo = nil
+	x.xxx_hidden_AdmissionControlHealthInfo = nil
 }
 
 func (x *ClusterHealthStatus) ClearScannerHealthInfo() {
-	x.ScannerHealthInfo = nil
+	x.xxx_hidden_ScannerHealthInfo = nil
 }
 
 func (x *ClusterHealthStatus) ClearSensorHealthStatus() {
-	x.SensorHealthStatus = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_SensorHealthStatus = ClusterHealthStatus_UNINITIALIZED
 }
 
 func (x *ClusterHealthStatus) ClearCollectorHealthStatus() {
-	x.CollectorHealthStatus = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_CollectorHealthStatus = ClusterHealthStatus_UNINITIALIZED
 }
 
 func (x *ClusterHealthStatus) ClearOverallHealthStatus() {
-	x.OverallHealthStatus = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_OverallHealthStatus = ClusterHealthStatus_UNINITIALIZED
 }
 
 func (x *ClusterHealthStatus) ClearAdmissionControlHealthStatus() {
-	x.AdmissionControlHealthStatus = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_AdmissionControlHealthStatus = ClusterHealthStatus_UNINITIALIZED
 }
 
 func (x *ClusterHealthStatus) ClearScannerHealthStatus() {
-	x.ScannerHealthStatus = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_ScannerHealthStatus = ClusterHealthStatus_UNINITIALIZED
 }
 
 func (x *ClusterHealthStatus) ClearLastContact() {
-	x.LastContact = nil
+	x.xxx_hidden_LastContact = nil
 }
 
 func (x *ClusterHealthStatus) ClearHealthInfoComplete() {
-	x.HealthInfoComplete = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	x.xxx_hidden_HealthInfoComplete = false
 }
 
 type ClusterHealthStatus_builder struct {
@@ -4059,17 +4469,38 @@ func (b0 ClusterHealthStatus_builder) Build() *ClusterHealthStatus {
 	m0 := &ClusterHealthStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.CollectorHealthInfo = b.CollectorHealthInfo
-	x.AdmissionControlHealthInfo = b.AdmissionControlHealthInfo
-	x.ScannerHealthInfo = b.ScannerHealthInfo
-	x.SensorHealthStatus = b.SensorHealthStatus
-	x.CollectorHealthStatus = b.CollectorHealthStatus
-	x.OverallHealthStatus = b.OverallHealthStatus
-	x.AdmissionControlHealthStatus = b.AdmissionControlHealthStatus
-	x.ScannerHealthStatus = b.ScannerHealthStatus
-	x.LastContact = b.LastContact
-	x.HealthInfoComplete = b.HealthInfoComplete
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
+		x.xxx_hidden_Id = b.Id
+	}
+	x.xxx_hidden_CollectorHealthInfo = b.CollectorHealthInfo
+	x.xxx_hidden_AdmissionControlHealthInfo = b.AdmissionControlHealthInfo
+	x.xxx_hidden_ScannerHealthInfo = b.ScannerHealthInfo
+	if b.SensorHealthStatus != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
+		x.xxx_hidden_SensorHealthStatus = *b.SensorHealthStatus
+	}
+	if b.CollectorHealthStatus != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
+		x.xxx_hidden_CollectorHealthStatus = *b.CollectorHealthStatus
+	}
+	if b.OverallHealthStatus != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
+		x.xxx_hidden_OverallHealthStatus = *b.OverallHealthStatus
+	}
+	if b.AdmissionControlHealthStatus != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
+		x.xxx_hidden_AdmissionControlHealthStatus = *b.AdmissionControlHealthStatus
+	}
+	if b.ScannerHealthStatus != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
+		x.xxx_hidden_ScannerHealthStatus = *b.ScannerHealthStatus
+	}
+	x.xxx_hidden_LastContact = b.LastContact
+	if b.HealthInfoComplete != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
+		x.xxx_hidden_HealthInfoComplete = *b.HealthInfoComplete
+	}
 	return m0
 }
 
@@ -4077,25 +4508,16 @@ func (b0 ClusterHealthStatus_builder) Build() *ClusterHealthStatus {
 // Aggregated collector health status is not included because it is derived in central and not in the component that
 // first reports CollectorHealthInfo (sensor).
 type CollectorHealthInfo struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// This is the version of the collector deamonset as returned by k8s API
-	Version *string `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
-	// Types that are valid to be assigned to TotalDesiredPodsOpt:
-	//
-	//	*CollectorHealthInfo_TotalDesiredPods
-	TotalDesiredPodsOpt isCollectorHealthInfo_TotalDesiredPodsOpt `protobuf_oneof:"total_desired_pods_opt"`
-	// Types that are valid to be assigned to TotalReadyPodsOpt:
-	//
-	//	*CollectorHealthInfo_TotalReadyPods
-	TotalReadyPodsOpt isCollectorHealthInfo_TotalReadyPodsOpt `protobuf_oneof:"total_ready_pods_opt"`
-	// Types that are valid to be assigned to TotalRegisteredNodesOpt:
-	//
-	//	*CollectorHealthInfo_TotalRegisteredNodes
-	TotalRegisteredNodesOpt isCollectorHealthInfo_TotalRegisteredNodesOpt `protobuf_oneof:"total_registered_nodes_opt"`
-	// Collection of errors that occurred while trying to obtain collector health info.
-	StatusErrors  []string `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors" json:"status_errors,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                              protoimpl.MessageState                        `protogen:"opaque.v1"`
+	xxx_hidden_Version                 *string                                       `protobuf:"bytes,1,opt,name=version"`
+	xxx_hidden_TotalDesiredPodsOpt     isCollectorHealthInfo_TotalDesiredPodsOpt     `protobuf_oneof:"total_desired_pods_opt"`
+	xxx_hidden_TotalReadyPodsOpt       isCollectorHealthInfo_TotalReadyPodsOpt       `protobuf_oneof:"total_ready_pods_opt"`
+	xxx_hidden_TotalRegisteredNodesOpt isCollectorHealthInfo_TotalRegisteredNodesOpt `protobuf_oneof:"total_registered_nodes_opt"`
+	xxx_hidden_StatusErrors            []string                                      `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors"`
+	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
+	XXX_presence                       [1]uint32
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *CollectorHealthInfo) Reset() {
@@ -4124,54 +4546,36 @@ func (x *CollectorHealthInfo) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CollectorHealthInfo) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *CollectorHealthInfo) GetTotalDesiredPodsOpt() isCollectorHealthInfo_TotalDesiredPodsOpt {
-	if x != nil {
-		return x.TotalDesiredPodsOpt
-	}
-	return nil
-}
-
 func (x *CollectorHealthInfo) GetTotalDesiredPods() int32 {
 	if x != nil {
-		if x, ok := x.TotalDesiredPodsOpt.(*CollectorHealthInfo_TotalDesiredPods); ok {
+		if x, ok := x.xxx_hidden_TotalDesiredPodsOpt.(*collectorHealthInfo_TotalDesiredPods); ok {
 			return x.TotalDesiredPods
 		}
 	}
 	return 0
 }
 
-func (x *CollectorHealthInfo) GetTotalReadyPodsOpt() isCollectorHealthInfo_TotalReadyPodsOpt {
-	if x != nil {
-		return x.TotalReadyPodsOpt
-	}
-	return nil
-}
-
 func (x *CollectorHealthInfo) GetTotalReadyPods() int32 {
 	if x != nil {
-		if x, ok := x.TotalReadyPodsOpt.(*CollectorHealthInfo_TotalReadyPods); ok {
+		if x, ok := x.xxx_hidden_TotalReadyPodsOpt.(*collectorHealthInfo_TotalReadyPods); ok {
 			return x.TotalReadyPods
 		}
 	}
 	return 0
 }
 
-func (x *CollectorHealthInfo) GetTotalRegisteredNodesOpt() isCollectorHealthInfo_TotalRegisteredNodesOpt {
-	if x != nil {
-		return x.TotalRegisteredNodesOpt
-	}
-	return nil
-}
-
 func (x *CollectorHealthInfo) GetTotalRegisteredNodes() int32 {
 	if x != nil {
-		if x, ok := x.TotalRegisteredNodesOpt.(*CollectorHealthInfo_TotalRegisteredNodes); ok {
+		if x, ok := x.xxx_hidden_TotalRegisteredNodesOpt.(*collectorHealthInfo_TotalRegisteredNodes); ok {
 			return x.TotalRegisteredNodes
 		}
 	}
@@ -4180,50 +4584,51 @@ func (x *CollectorHealthInfo) GetTotalRegisteredNodes() int32 {
 
 func (x *CollectorHealthInfo) GetStatusErrors() []string {
 	if x != nil {
-		return x.StatusErrors
+		return x.xxx_hidden_StatusErrors
 	}
 	return nil
 }
 
 func (x *CollectorHealthInfo) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *CollectorHealthInfo) SetTotalDesiredPods(v int32) {
-	x.TotalDesiredPodsOpt = &CollectorHealthInfo_TotalDesiredPods{v}
+	x.xxx_hidden_TotalDesiredPodsOpt = &collectorHealthInfo_TotalDesiredPods{v}
 }
 
 func (x *CollectorHealthInfo) SetTotalReadyPods(v int32) {
-	x.TotalReadyPodsOpt = &CollectorHealthInfo_TotalReadyPods{v}
+	x.xxx_hidden_TotalReadyPodsOpt = &collectorHealthInfo_TotalReadyPods{v}
 }
 
 func (x *CollectorHealthInfo) SetTotalRegisteredNodes(v int32) {
-	x.TotalRegisteredNodesOpt = &CollectorHealthInfo_TotalRegisteredNodes{v}
+	x.xxx_hidden_TotalRegisteredNodesOpt = &collectorHealthInfo_TotalRegisteredNodes{v}
 }
 
 func (x *CollectorHealthInfo) SetStatusErrors(v []string) {
-	x.StatusErrors = v
+	x.xxx_hidden_StatusErrors = v
 }
 
 func (x *CollectorHealthInfo) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CollectorHealthInfo) HasTotalDesiredPodsOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalDesiredPodsOpt != nil
+	return x.xxx_hidden_TotalDesiredPodsOpt != nil
 }
 
 func (x *CollectorHealthInfo) HasTotalDesiredPods() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.TotalDesiredPodsOpt.(*CollectorHealthInfo_TotalDesiredPods)
+	_, ok := x.xxx_hidden_TotalDesiredPodsOpt.(*collectorHealthInfo_TotalDesiredPods)
 	return ok
 }
 
@@ -4231,14 +4636,14 @@ func (x *CollectorHealthInfo) HasTotalReadyPodsOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalReadyPodsOpt != nil
+	return x.xxx_hidden_TotalReadyPodsOpt != nil
 }
 
 func (x *CollectorHealthInfo) HasTotalReadyPods() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.TotalReadyPodsOpt.(*CollectorHealthInfo_TotalReadyPods)
+	_, ok := x.xxx_hidden_TotalReadyPodsOpt.(*collectorHealthInfo_TotalReadyPods)
 	return ok
 }
 
@@ -4246,48 +4651,49 @@ func (x *CollectorHealthInfo) HasTotalRegisteredNodesOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalRegisteredNodesOpt != nil
+	return x.xxx_hidden_TotalRegisteredNodesOpt != nil
 }
 
 func (x *CollectorHealthInfo) HasTotalRegisteredNodes() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.TotalRegisteredNodesOpt.(*CollectorHealthInfo_TotalRegisteredNodes)
+	_, ok := x.xxx_hidden_TotalRegisteredNodesOpt.(*collectorHealthInfo_TotalRegisteredNodes)
 	return ok
 }
 
 func (x *CollectorHealthInfo) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Version = nil
 }
 
 func (x *CollectorHealthInfo) ClearTotalDesiredPodsOpt() {
-	x.TotalDesiredPodsOpt = nil
+	x.xxx_hidden_TotalDesiredPodsOpt = nil
 }
 
 func (x *CollectorHealthInfo) ClearTotalDesiredPods() {
-	if _, ok := x.TotalDesiredPodsOpt.(*CollectorHealthInfo_TotalDesiredPods); ok {
-		x.TotalDesiredPodsOpt = nil
+	if _, ok := x.xxx_hidden_TotalDesiredPodsOpt.(*collectorHealthInfo_TotalDesiredPods); ok {
+		x.xxx_hidden_TotalDesiredPodsOpt = nil
 	}
 }
 
 func (x *CollectorHealthInfo) ClearTotalReadyPodsOpt() {
-	x.TotalReadyPodsOpt = nil
+	x.xxx_hidden_TotalReadyPodsOpt = nil
 }
 
 func (x *CollectorHealthInfo) ClearTotalReadyPods() {
-	if _, ok := x.TotalReadyPodsOpt.(*CollectorHealthInfo_TotalReadyPods); ok {
-		x.TotalReadyPodsOpt = nil
+	if _, ok := x.xxx_hidden_TotalReadyPodsOpt.(*collectorHealthInfo_TotalReadyPods); ok {
+		x.xxx_hidden_TotalReadyPodsOpt = nil
 	}
 }
 
 func (x *CollectorHealthInfo) ClearTotalRegisteredNodesOpt() {
-	x.TotalRegisteredNodesOpt = nil
+	x.xxx_hidden_TotalRegisteredNodesOpt = nil
 }
 
 func (x *CollectorHealthInfo) ClearTotalRegisteredNodes() {
-	if _, ok := x.TotalRegisteredNodesOpt.(*CollectorHealthInfo_TotalRegisteredNodes); ok {
-		x.TotalRegisteredNodesOpt = nil
+	if _, ok := x.xxx_hidden_TotalRegisteredNodesOpt.(*collectorHealthInfo_TotalRegisteredNodes); ok {
+		x.xxx_hidden_TotalRegisteredNodesOpt = nil
 	}
 }
 
@@ -4298,8 +4704,8 @@ func (x *CollectorHealthInfo) WhichTotalDesiredPodsOpt() case_CollectorHealthInf
 	if x == nil {
 		return CollectorHealthInfo_TotalDesiredPodsOpt_not_set_case
 	}
-	switch x.TotalDesiredPodsOpt.(type) {
-	case *CollectorHealthInfo_TotalDesiredPods:
+	switch x.xxx_hidden_TotalDesiredPodsOpt.(type) {
+	case *collectorHealthInfo_TotalDesiredPods:
 		return CollectorHealthInfo_TotalDesiredPods_case
 	default:
 		return CollectorHealthInfo_TotalDesiredPodsOpt_not_set_case
@@ -4313,8 +4719,8 @@ func (x *CollectorHealthInfo) WhichTotalReadyPodsOpt() case_CollectorHealthInfo_
 	if x == nil {
 		return CollectorHealthInfo_TotalReadyPodsOpt_not_set_case
 	}
-	switch x.TotalReadyPodsOpt.(type) {
-	case *CollectorHealthInfo_TotalReadyPods:
+	switch x.xxx_hidden_TotalReadyPodsOpt.(type) {
+	case *collectorHealthInfo_TotalReadyPods:
 		return CollectorHealthInfo_TotalReadyPods_case
 	default:
 		return CollectorHealthInfo_TotalReadyPodsOpt_not_set_case
@@ -4328,8 +4734,8 @@ func (x *CollectorHealthInfo) WhichTotalRegisteredNodesOpt() case_CollectorHealt
 	if x == nil {
 		return CollectorHealthInfo_TotalRegisteredNodesOpt_not_set_case
 	}
-	switch x.TotalRegisteredNodesOpt.(type) {
-	case *CollectorHealthInfo_TotalRegisteredNodes:
+	switch x.xxx_hidden_TotalRegisteredNodesOpt.(type) {
+	case *collectorHealthInfo_TotalRegisteredNodes:
 		return CollectorHealthInfo_TotalRegisteredNodes_case
 	default:
 		return CollectorHealthInfo_TotalRegisteredNodesOpt_not_set_case
@@ -4341,15 +4747,15 @@ type CollectorHealthInfo_builder struct {
 
 	// This is the version of the collector deamonset as returned by k8s API
 	Version *string
-	// Fields of oneof TotalDesiredPodsOpt:
+	// Fields of oneof xxx_hidden_TotalDesiredPodsOpt:
 	TotalDesiredPods *int32
-	// -- end of TotalDesiredPodsOpt
-	// Fields of oneof TotalReadyPodsOpt:
+	// -- end of xxx_hidden_TotalDesiredPodsOpt
+	// Fields of oneof xxx_hidden_TotalReadyPodsOpt:
 	TotalReadyPods *int32
-	// -- end of TotalReadyPodsOpt
-	// Fields of oneof TotalRegisteredNodesOpt:
+	// -- end of xxx_hidden_TotalReadyPodsOpt
+	// Fields of oneof xxx_hidden_TotalRegisteredNodesOpt:
 	TotalRegisteredNodes *int32
-	// -- end of TotalRegisteredNodesOpt
+	// -- end of xxx_hidden_TotalRegisteredNodesOpt
 	// Collection of errors that occurred while trying to obtain collector health info.
 	StatusErrors []string
 }
@@ -4358,17 +4764,20 @@ func (b0 CollectorHealthInfo_builder) Build() *CollectorHealthInfo {
 	m0 := &CollectorHealthInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Version = b.Version
+	}
 	if b.TotalDesiredPods != nil {
-		x.TotalDesiredPodsOpt = &CollectorHealthInfo_TotalDesiredPods{*b.TotalDesiredPods}
+		x.xxx_hidden_TotalDesiredPodsOpt = &collectorHealthInfo_TotalDesiredPods{*b.TotalDesiredPods}
 	}
 	if b.TotalReadyPods != nil {
-		x.TotalReadyPodsOpt = &CollectorHealthInfo_TotalReadyPods{*b.TotalReadyPods}
+		x.xxx_hidden_TotalReadyPodsOpt = &collectorHealthInfo_TotalReadyPods{*b.TotalReadyPods}
 	}
 	if b.TotalRegisteredNodes != nil {
-		x.TotalRegisteredNodesOpt = &CollectorHealthInfo_TotalRegisteredNodes{*b.TotalRegisteredNodes}
+		x.xxx_hidden_TotalRegisteredNodesOpt = &collectorHealthInfo_TotalRegisteredNodes{*b.TotalRegisteredNodes}
 	}
-	x.StatusErrors = b.StatusErrors
+	x.xxx_hidden_StatusErrors = b.StatusErrors
 	return m0
 }
 
@@ -4406,50 +4815,43 @@ type isCollectorHealthInfo_TotalDesiredPodsOpt interface {
 	isCollectorHealthInfo_TotalDesiredPodsOpt()
 }
 
-type CollectorHealthInfo_TotalDesiredPods struct {
+type collectorHealthInfo_TotalDesiredPods struct {
 	TotalDesiredPods int32 `protobuf:"varint,2,opt,name=total_desired_pods,json=totalDesiredPods,oneof"`
 }
 
-func (*CollectorHealthInfo_TotalDesiredPods) isCollectorHealthInfo_TotalDesiredPodsOpt() {}
+func (*collectorHealthInfo_TotalDesiredPods) isCollectorHealthInfo_TotalDesiredPodsOpt() {}
 
 type isCollectorHealthInfo_TotalReadyPodsOpt interface {
 	isCollectorHealthInfo_TotalReadyPodsOpt()
 }
 
-type CollectorHealthInfo_TotalReadyPods struct {
+type collectorHealthInfo_TotalReadyPods struct {
 	TotalReadyPods int32 `protobuf:"varint,3,opt,name=total_ready_pods,json=totalReadyPods,oneof"`
 }
 
-func (*CollectorHealthInfo_TotalReadyPods) isCollectorHealthInfo_TotalReadyPodsOpt() {}
+func (*collectorHealthInfo_TotalReadyPods) isCollectorHealthInfo_TotalReadyPodsOpt() {}
 
 type isCollectorHealthInfo_TotalRegisteredNodesOpt interface {
 	isCollectorHealthInfo_TotalRegisteredNodesOpt()
 }
 
-type CollectorHealthInfo_TotalRegisteredNodes struct {
+type collectorHealthInfo_TotalRegisteredNodes struct {
 	TotalRegisteredNodes int32 `protobuf:"varint,4,opt,name=total_registered_nodes,json=totalRegisteredNodes,oneof"`
 }
 
-func (*CollectorHealthInfo_TotalRegisteredNodes) isCollectorHealthInfo_TotalRegisteredNodesOpt() {}
+func (*collectorHealthInfo_TotalRegisteredNodes) isCollectorHealthInfo_TotalRegisteredNodesOpt() {}
 
 // AdmissionControlHealthInfo carries data about admission control deployment but does not include admission control health status
 // derived from this data.
 // Aggregated admission control health status is not included because it is derived in central and not in the component that
 // first reports AdmissionControlHealthInfo (sensor).
 type AdmissionControlHealthInfo struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to TotalDesiredPodsOpt:
-	//
-	//	*AdmissionControlHealthInfo_TotalDesiredPods
-	TotalDesiredPodsOpt isAdmissionControlHealthInfo_TotalDesiredPodsOpt `protobuf_oneof:"total_desired_pods_opt"`
-	// Types that are valid to be assigned to TotalReadyPodsOpt:
-	//
-	//	*AdmissionControlHealthInfo_TotalReadyPods
-	TotalReadyPodsOpt isAdmissionControlHealthInfo_TotalReadyPodsOpt `protobuf_oneof:"total_ready_pods_opt"`
-	// Collection of errors that occurred while trying to obtain admission control health info.
-	StatusErrors  []string `protobuf:"bytes,3,rep,name=status_errors,json=statusErrors" json:"status_errors,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                          protoimpl.MessageState                           `protogen:"opaque.v1"`
+	xxx_hidden_TotalDesiredPodsOpt isAdmissionControlHealthInfo_TotalDesiredPodsOpt `protobuf_oneof:"total_desired_pods_opt"`
+	xxx_hidden_TotalReadyPodsOpt   isAdmissionControlHealthInfo_TotalReadyPodsOpt   `protobuf_oneof:"total_ready_pods_opt"`
+	xxx_hidden_StatusErrors        []string                                         `protobuf:"bytes,3,rep,name=status_errors,json=statusErrors"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *AdmissionControlHealthInfo) Reset() {
@@ -4477,32 +4879,18 @@ func (x *AdmissionControlHealthInfo) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *AdmissionControlHealthInfo) GetTotalDesiredPodsOpt() isAdmissionControlHealthInfo_TotalDesiredPodsOpt {
-	if x != nil {
-		return x.TotalDesiredPodsOpt
-	}
-	return nil
-}
-
 func (x *AdmissionControlHealthInfo) GetTotalDesiredPods() int32 {
 	if x != nil {
-		if x, ok := x.TotalDesiredPodsOpt.(*AdmissionControlHealthInfo_TotalDesiredPods); ok {
+		if x, ok := x.xxx_hidden_TotalDesiredPodsOpt.(*admissionControlHealthInfo_TotalDesiredPods); ok {
 			return x.TotalDesiredPods
 		}
 	}
 	return 0
 }
 
-func (x *AdmissionControlHealthInfo) GetTotalReadyPodsOpt() isAdmissionControlHealthInfo_TotalReadyPodsOpt {
-	if x != nil {
-		return x.TotalReadyPodsOpt
-	}
-	return nil
-}
-
 func (x *AdmissionControlHealthInfo) GetTotalReadyPods() int32 {
 	if x != nil {
-		if x, ok := x.TotalReadyPodsOpt.(*AdmissionControlHealthInfo_TotalReadyPods); ok {
+		if x, ok := x.xxx_hidden_TotalReadyPodsOpt.(*admissionControlHealthInfo_TotalReadyPods); ok {
 			return x.TotalReadyPods
 		}
 	}
@@ -4511,35 +4899,35 @@ func (x *AdmissionControlHealthInfo) GetTotalReadyPods() int32 {
 
 func (x *AdmissionControlHealthInfo) GetStatusErrors() []string {
 	if x != nil {
-		return x.StatusErrors
+		return x.xxx_hidden_StatusErrors
 	}
 	return nil
 }
 
 func (x *AdmissionControlHealthInfo) SetTotalDesiredPods(v int32) {
-	x.TotalDesiredPodsOpt = &AdmissionControlHealthInfo_TotalDesiredPods{v}
+	x.xxx_hidden_TotalDesiredPodsOpt = &admissionControlHealthInfo_TotalDesiredPods{v}
 }
 
 func (x *AdmissionControlHealthInfo) SetTotalReadyPods(v int32) {
-	x.TotalReadyPodsOpt = &AdmissionControlHealthInfo_TotalReadyPods{v}
+	x.xxx_hidden_TotalReadyPodsOpt = &admissionControlHealthInfo_TotalReadyPods{v}
 }
 
 func (x *AdmissionControlHealthInfo) SetStatusErrors(v []string) {
-	x.StatusErrors = v
+	x.xxx_hidden_StatusErrors = v
 }
 
 func (x *AdmissionControlHealthInfo) HasTotalDesiredPodsOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalDesiredPodsOpt != nil
+	return x.xxx_hidden_TotalDesiredPodsOpt != nil
 }
 
 func (x *AdmissionControlHealthInfo) HasTotalDesiredPods() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.TotalDesiredPodsOpt.(*AdmissionControlHealthInfo_TotalDesiredPods)
+	_, ok := x.xxx_hidden_TotalDesiredPodsOpt.(*admissionControlHealthInfo_TotalDesiredPods)
 	return ok
 }
 
@@ -4547,34 +4935,34 @@ func (x *AdmissionControlHealthInfo) HasTotalReadyPodsOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalReadyPodsOpt != nil
+	return x.xxx_hidden_TotalReadyPodsOpt != nil
 }
 
 func (x *AdmissionControlHealthInfo) HasTotalReadyPods() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.TotalReadyPodsOpt.(*AdmissionControlHealthInfo_TotalReadyPods)
+	_, ok := x.xxx_hidden_TotalReadyPodsOpt.(*admissionControlHealthInfo_TotalReadyPods)
 	return ok
 }
 
 func (x *AdmissionControlHealthInfo) ClearTotalDesiredPodsOpt() {
-	x.TotalDesiredPodsOpt = nil
+	x.xxx_hidden_TotalDesiredPodsOpt = nil
 }
 
 func (x *AdmissionControlHealthInfo) ClearTotalDesiredPods() {
-	if _, ok := x.TotalDesiredPodsOpt.(*AdmissionControlHealthInfo_TotalDesiredPods); ok {
-		x.TotalDesiredPodsOpt = nil
+	if _, ok := x.xxx_hidden_TotalDesiredPodsOpt.(*admissionControlHealthInfo_TotalDesiredPods); ok {
+		x.xxx_hidden_TotalDesiredPodsOpt = nil
 	}
 }
 
 func (x *AdmissionControlHealthInfo) ClearTotalReadyPodsOpt() {
-	x.TotalReadyPodsOpt = nil
+	x.xxx_hidden_TotalReadyPodsOpt = nil
 }
 
 func (x *AdmissionControlHealthInfo) ClearTotalReadyPods() {
-	if _, ok := x.TotalReadyPodsOpt.(*AdmissionControlHealthInfo_TotalReadyPods); ok {
-		x.TotalReadyPodsOpt = nil
+	if _, ok := x.xxx_hidden_TotalReadyPodsOpt.(*admissionControlHealthInfo_TotalReadyPods); ok {
+		x.xxx_hidden_TotalReadyPodsOpt = nil
 	}
 }
 
@@ -4585,8 +4973,8 @@ func (x *AdmissionControlHealthInfo) WhichTotalDesiredPodsOpt() case_AdmissionCo
 	if x == nil {
 		return AdmissionControlHealthInfo_TotalDesiredPodsOpt_not_set_case
 	}
-	switch x.TotalDesiredPodsOpt.(type) {
-	case *AdmissionControlHealthInfo_TotalDesiredPods:
+	switch x.xxx_hidden_TotalDesiredPodsOpt.(type) {
+	case *admissionControlHealthInfo_TotalDesiredPods:
 		return AdmissionControlHealthInfo_TotalDesiredPods_case
 	default:
 		return AdmissionControlHealthInfo_TotalDesiredPodsOpt_not_set_case
@@ -4600,8 +4988,8 @@ func (x *AdmissionControlHealthInfo) WhichTotalReadyPodsOpt() case_AdmissionCont
 	if x == nil {
 		return AdmissionControlHealthInfo_TotalReadyPodsOpt_not_set_case
 	}
-	switch x.TotalReadyPodsOpt.(type) {
-	case *AdmissionControlHealthInfo_TotalReadyPods:
+	switch x.xxx_hidden_TotalReadyPodsOpt.(type) {
+	case *admissionControlHealthInfo_TotalReadyPods:
 		return AdmissionControlHealthInfo_TotalReadyPods_case
 	default:
 		return AdmissionControlHealthInfo_TotalReadyPodsOpt_not_set_case
@@ -4611,12 +4999,12 @@ func (x *AdmissionControlHealthInfo) WhichTotalReadyPodsOpt() case_AdmissionCont
 type AdmissionControlHealthInfo_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof TotalDesiredPodsOpt:
+	// Fields of oneof xxx_hidden_TotalDesiredPodsOpt:
 	TotalDesiredPods *int32
-	// -- end of TotalDesiredPodsOpt
-	// Fields of oneof TotalReadyPodsOpt:
+	// -- end of xxx_hidden_TotalDesiredPodsOpt
+	// Fields of oneof xxx_hidden_TotalReadyPodsOpt:
 	TotalReadyPods *int32
-	// -- end of TotalReadyPodsOpt
+	// -- end of xxx_hidden_TotalReadyPodsOpt
 	// Collection of errors that occurred while trying to obtain admission control health info.
 	StatusErrors []string
 }
@@ -4626,12 +5014,12 @@ func (b0 AdmissionControlHealthInfo_builder) Build() *AdmissionControlHealthInfo
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.TotalDesiredPods != nil {
-		x.TotalDesiredPodsOpt = &AdmissionControlHealthInfo_TotalDesiredPods{*b.TotalDesiredPods}
+		x.xxx_hidden_TotalDesiredPodsOpt = &admissionControlHealthInfo_TotalDesiredPods{*b.TotalDesiredPods}
 	}
 	if b.TotalReadyPods != nil {
-		x.TotalReadyPodsOpt = &AdmissionControlHealthInfo_TotalReadyPods{*b.TotalReadyPods}
+		x.xxx_hidden_TotalReadyPodsOpt = &admissionControlHealthInfo_TotalReadyPods{*b.TotalReadyPods}
 	}
-	x.StatusErrors = b.StatusErrors
+	x.xxx_hidden_StatusErrors = b.StatusErrors
 	return m0
 }
 
@@ -4659,22 +5047,22 @@ type isAdmissionControlHealthInfo_TotalDesiredPodsOpt interface {
 	isAdmissionControlHealthInfo_TotalDesiredPodsOpt()
 }
 
-type AdmissionControlHealthInfo_TotalDesiredPods struct {
+type admissionControlHealthInfo_TotalDesiredPods struct {
 	TotalDesiredPods int32 `protobuf:"varint,1,opt,name=total_desired_pods,json=totalDesiredPods,oneof"`
 }
 
-func (*AdmissionControlHealthInfo_TotalDesiredPods) isAdmissionControlHealthInfo_TotalDesiredPodsOpt() {
+func (*admissionControlHealthInfo_TotalDesiredPods) isAdmissionControlHealthInfo_TotalDesiredPodsOpt() {
 }
 
 type isAdmissionControlHealthInfo_TotalReadyPodsOpt interface {
 	isAdmissionControlHealthInfo_TotalReadyPodsOpt()
 }
 
-type AdmissionControlHealthInfo_TotalReadyPods struct {
+type admissionControlHealthInfo_TotalReadyPods struct {
 	TotalReadyPods int32 `protobuf:"varint,2,opt,name=total_ready_pods,json=totalReadyPods,oneof"`
 }
 
-func (*AdmissionControlHealthInfo_TotalReadyPods) isAdmissionControlHealthInfo_TotalReadyPodsOpt() {}
+func (*admissionControlHealthInfo_TotalReadyPods) isAdmissionControlHealthInfo_TotalReadyPodsOpt() {}
 
 // ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called "local scanner").
 // When the scanner is deployed on a central cluster, the following message is NOT used.
@@ -4683,27 +5071,14 @@ func (*AdmissionControlHealthInfo_TotalReadyPods) isAdmissionControlHealthInfo_T
 // Aggregated scanner health status is not included because it is derived in central and not in the component that
 // first reports ScannerHealthInfo (sensor).
 type ScannerHealthInfo struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to TotalDesiredAnalyzerPodsOpt:
-	//
-	//	*ScannerHealthInfo_TotalDesiredAnalyzerPods
-	TotalDesiredAnalyzerPodsOpt isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt `protobuf_oneof:"total_desired_analyzer_pods_opt"`
-	// Types that are valid to be assigned to TotalReadyAnalyzerPodsOpt:
-	//
-	//	*ScannerHealthInfo_TotalReadyAnalyzerPods
-	TotalReadyAnalyzerPodsOpt isScannerHealthInfo_TotalReadyAnalyzerPodsOpt `protobuf_oneof:"total_ready_analyzer_pods_opt"`
-	// Types that are valid to be assigned to TotalDesiredDbPodsOpt:
-	//
-	//	*ScannerHealthInfo_TotalDesiredDbPods
-	TotalDesiredDbPodsOpt isScannerHealthInfo_TotalDesiredDbPodsOpt `protobuf_oneof:"total_desired_db_pods_opt"`
-	// Types that are valid to be assigned to TotalReadyDbPodsOpt:
-	//
-	//	*ScannerHealthInfo_TotalReadyDbPods
-	TotalReadyDbPodsOpt isScannerHealthInfo_TotalReadyDbPodsOpt `protobuf_oneof:"total_ready_db_pods_opt"`
-	// Collection of errors that occurred while trying to obtain scanner health info.
-	StatusErrors  []string `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors" json:"status_errors,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                                  protoimpl.MessageState                          `protogen:"opaque.v1"`
+	xxx_hidden_TotalDesiredAnalyzerPodsOpt isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt `protobuf_oneof:"total_desired_analyzer_pods_opt"`
+	xxx_hidden_TotalReadyAnalyzerPodsOpt   isScannerHealthInfo_TotalReadyAnalyzerPodsOpt   `protobuf_oneof:"total_ready_analyzer_pods_opt"`
+	xxx_hidden_TotalDesiredDbPodsOpt       isScannerHealthInfo_TotalDesiredDbPodsOpt       `protobuf_oneof:"total_desired_db_pods_opt"`
+	xxx_hidden_TotalReadyDbPodsOpt         isScannerHealthInfo_TotalReadyDbPodsOpt         `protobuf_oneof:"total_ready_db_pods_opt"`
+	xxx_hidden_StatusErrors                []string                                        `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors"`
+	unknownFields                          protoimpl.UnknownFields
+	sizeCache                              protoimpl.SizeCache
 }
 
 func (x *ScannerHealthInfo) Reset() {
@@ -4731,64 +5106,36 @@ func (x *ScannerHealthInfo) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *ScannerHealthInfo) GetTotalDesiredAnalyzerPodsOpt() isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt {
-	if x != nil {
-		return x.TotalDesiredAnalyzerPodsOpt
-	}
-	return nil
-}
-
 func (x *ScannerHealthInfo) GetTotalDesiredAnalyzerPods() int32 {
 	if x != nil {
-		if x, ok := x.TotalDesiredAnalyzerPodsOpt.(*ScannerHealthInfo_TotalDesiredAnalyzerPods); ok {
+		if x, ok := x.xxx_hidden_TotalDesiredAnalyzerPodsOpt.(*scannerHealthInfo_TotalDesiredAnalyzerPods); ok {
 			return x.TotalDesiredAnalyzerPods
 		}
 	}
 	return 0
 }
 
-func (x *ScannerHealthInfo) GetTotalReadyAnalyzerPodsOpt() isScannerHealthInfo_TotalReadyAnalyzerPodsOpt {
-	if x != nil {
-		return x.TotalReadyAnalyzerPodsOpt
-	}
-	return nil
-}
-
 func (x *ScannerHealthInfo) GetTotalReadyAnalyzerPods() int32 {
 	if x != nil {
-		if x, ok := x.TotalReadyAnalyzerPodsOpt.(*ScannerHealthInfo_TotalReadyAnalyzerPods); ok {
+		if x, ok := x.xxx_hidden_TotalReadyAnalyzerPodsOpt.(*scannerHealthInfo_TotalReadyAnalyzerPods); ok {
 			return x.TotalReadyAnalyzerPods
 		}
 	}
 	return 0
 }
 
-func (x *ScannerHealthInfo) GetTotalDesiredDbPodsOpt() isScannerHealthInfo_TotalDesiredDbPodsOpt {
-	if x != nil {
-		return x.TotalDesiredDbPodsOpt
-	}
-	return nil
-}
-
 func (x *ScannerHealthInfo) GetTotalDesiredDbPods() int32 {
 	if x != nil {
-		if x, ok := x.TotalDesiredDbPodsOpt.(*ScannerHealthInfo_TotalDesiredDbPods); ok {
+		if x, ok := x.xxx_hidden_TotalDesiredDbPodsOpt.(*scannerHealthInfo_TotalDesiredDbPods); ok {
 			return x.TotalDesiredDbPods
 		}
 	}
 	return 0
 }
 
-func (x *ScannerHealthInfo) GetTotalReadyDbPodsOpt() isScannerHealthInfo_TotalReadyDbPodsOpt {
-	if x != nil {
-		return x.TotalReadyDbPodsOpt
-	}
-	return nil
-}
-
 func (x *ScannerHealthInfo) GetTotalReadyDbPods() int32 {
 	if x != nil {
-		if x, ok := x.TotalReadyDbPodsOpt.(*ScannerHealthInfo_TotalReadyDbPods); ok {
+		if x, ok := x.xxx_hidden_TotalReadyDbPodsOpt.(*scannerHealthInfo_TotalReadyDbPods); ok {
 			return x.TotalReadyDbPods
 		}
 	}
@@ -4797,43 +5144,43 @@ func (x *ScannerHealthInfo) GetTotalReadyDbPods() int32 {
 
 func (x *ScannerHealthInfo) GetStatusErrors() []string {
 	if x != nil {
-		return x.StatusErrors
+		return x.xxx_hidden_StatusErrors
 	}
 	return nil
 }
 
 func (x *ScannerHealthInfo) SetTotalDesiredAnalyzerPods(v int32) {
-	x.TotalDesiredAnalyzerPodsOpt = &ScannerHealthInfo_TotalDesiredAnalyzerPods{v}
+	x.xxx_hidden_TotalDesiredAnalyzerPodsOpt = &scannerHealthInfo_TotalDesiredAnalyzerPods{v}
 }
 
 func (x *ScannerHealthInfo) SetTotalReadyAnalyzerPods(v int32) {
-	x.TotalReadyAnalyzerPodsOpt = &ScannerHealthInfo_TotalReadyAnalyzerPods{v}
+	x.xxx_hidden_TotalReadyAnalyzerPodsOpt = &scannerHealthInfo_TotalReadyAnalyzerPods{v}
 }
 
 func (x *ScannerHealthInfo) SetTotalDesiredDbPods(v int32) {
-	x.TotalDesiredDbPodsOpt = &ScannerHealthInfo_TotalDesiredDbPods{v}
+	x.xxx_hidden_TotalDesiredDbPodsOpt = &scannerHealthInfo_TotalDesiredDbPods{v}
 }
 
 func (x *ScannerHealthInfo) SetTotalReadyDbPods(v int32) {
-	x.TotalReadyDbPodsOpt = &ScannerHealthInfo_TotalReadyDbPods{v}
+	x.xxx_hidden_TotalReadyDbPodsOpt = &scannerHealthInfo_TotalReadyDbPods{v}
 }
 
 func (x *ScannerHealthInfo) SetStatusErrors(v []string) {
-	x.StatusErrors = v
+	x.xxx_hidden_StatusErrors = v
 }
 
 func (x *ScannerHealthInfo) HasTotalDesiredAnalyzerPodsOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalDesiredAnalyzerPodsOpt != nil
+	return x.xxx_hidden_TotalDesiredAnalyzerPodsOpt != nil
 }
 
 func (x *ScannerHealthInfo) HasTotalDesiredAnalyzerPods() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.TotalDesiredAnalyzerPodsOpt.(*ScannerHealthInfo_TotalDesiredAnalyzerPods)
+	_, ok := x.xxx_hidden_TotalDesiredAnalyzerPodsOpt.(*scannerHealthInfo_TotalDesiredAnalyzerPods)
 	return ok
 }
 
@@ -4841,14 +5188,14 @@ func (x *ScannerHealthInfo) HasTotalReadyAnalyzerPodsOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalReadyAnalyzerPodsOpt != nil
+	return x.xxx_hidden_TotalReadyAnalyzerPodsOpt != nil
 }
 
 func (x *ScannerHealthInfo) HasTotalReadyAnalyzerPods() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.TotalReadyAnalyzerPodsOpt.(*ScannerHealthInfo_TotalReadyAnalyzerPods)
+	_, ok := x.xxx_hidden_TotalReadyAnalyzerPodsOpt.(*scannerHealthInfo_TotalReadyAnalyzerPods)
 	return ok
 }
 
@@ -4856,14 +5203,14 @@ func (x *ScannerHealthInfo) HasTotalDesiredDbPodsOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalDesiredDbPodsOpt != nil
+	return x.xxx_hidden_TotalDesiredDbPodsOpt != nil
 }
 
 func (x *ScannerHealthInfo) HasTotalDesiredDbPods() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.TotalDesiredDbPodsOpt.(*ScannerHealthInfo_TotalDesiredDbPods)
+	_, ok := x.xxx_hidden_TotalDesiredDbPodsOpt.(*scannerHealthInfo_TotalDesiredDbPods)
 	return ok
 }
 
@@ -4871,54 +5218,54 @@ func (x *ScannerHealthInfo) HasTotalReadyDbPodsOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalReadyDbPodsOpt != nil
+	return x.xxx_hidden_TotalReadyDbPodsOpt != nil
 }
 
 func (x *ScannerHealthInfo) HasTotalReadyDbPods() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.TotalReadyDbPodsOpt.(*ScannerHealthInfo_TotalReadyDbPods)
+	_, ok := x.xxx_hidden_TotalReadyDbPodsOpt.(*scannerHealthInfo_TotalReadyDbPods)
 	return ok
 }
 
 func (x *ScannerHealthInfo) ClearTotalDesiredAnalyzerPodsOpt() {
-	x.TotalDesiredAnalyzerPodsOpt = nil
+	x.xxx_hidden_TotalDesiredAnalyzerPodsOpt = nil
 }
 
 func (x *ScannerHealthInfo) ClearTotalDesiredAnalyzerPods() {
-	if _, ok := x.TotalDesiredAnalyzerPodsOpt.(*ScannerHealthInfo_TotalDesiredAnalyzerPods); ok {
-		x.TotalDesiredAnalyzerPodsOpt = nil
+	if _, ok := x.xxx_hidden_TotalDesiredAnalyzerPodsOpt.(*scannerHealthInfo_TotalDesiredAnalyzerPods); ok {
+		x.xxx_hidden_TotalDesiredAnalyzerPodsOpt = nil
 	}
 }
 
 func (x *ScannerHealthInfo) ClearTotalReadyAnalyzerPodsOpt() {
-	x.TotalReadyAnalyzerPodsOpt = nil
+	x.xxx_hidden_TotalReadyAnalyzerPodsOpt = nil
 }
 
 func (x *ScannerHealthInfo) ClearTotalReadyAnalyzerPods() {
-	if _, ok := x.TotalReadyAnalyzerPodsOpt.(*ScannerHealthInfo_TotalReadyAnalyzerPods); ok {
-		x.TotalReadyAnalyzerPodsOpt = nil
+	if _, ok := x.xxx_hidden_TotalReadyAnalyzerPodsOpt.(*scannerHealthInfo_TotalReadyAnalyzerPods); ok {
+		x.xxx_hidden_TotalReadyAnalyzerPodsOpt = nil
 	}
 }
 
 func (x *ScannerHealthInfo) ClearTotalDesiredDbPodsOpt() {
-	x.TotalDesiredDbPodsOpt = nil
+	x.xxx_hidden_TotalDesiredDbPodsOpt = nil
 }
 
 func (x *ScannerHealthInfo) ClearTotalDesiredDbPods() {
-	if _, ok := x.TotalDesiredDbPodsOpt.(*ScannerHealthInfo_TotalDesiredDbPods); ok {
-		x.TotalDesiredDbPodsOpt = nil
+	if _, ok := x.xxx_hidden_TotalDesiredDbPodsOpt.(*scannerHealthInfo_TotalDesiredDbPods); ok {
+		x.xxx_hidden_TotalDesiredDbPodsOpt = nil
 	}
 }
 
 func (x *ScannerHealthInfo) ClearTotalReadyDbPodsOpt() {
-	x.TotalReadyDbPodsOpt = nil
+	x.xxx_hidden_TotalReadyDbPodsOpt = nil
 }
 
 func (x *ScannerHealthInfo) ClearTotalReadyDbPods() {
-	if _, ok := x.TotalReadyDbPodsOpt.(*ScannerHealthInfo_TotalReadyDbPods); ok {
-		x.TotalReadyDbPodsOpt = nil
+	if _, ok := x.xxx_hidden_TotalReadyDbPodsOpt.(*scannerHealthInfo_TotalReadyDbPods); ok {
+		x.xxx_hidden_TotalReadyDbPodsOpt = nil
 	}
 }
 
@@ -4929,8 +5276,8 @@ func (x *ScannerHealthInfo) WhichTotalDesiredAnalyzerPodsOpt() case_ScannerHealt
 	if x == nil {
 		return ScannerHealthInfo_TotalDesiredAnalyzerPodsOpt_not_set_case
 	}
-	switch x.TotalDesiredAnalyzerPodsOpt.(type) {
-	case *ScannerHealthInfo_TotalDesiredAnalyzerPods:
+	switch x.xxx_hidden_TotalDesiredAnalyzerPodsOpt.(type) {
+	case *scannerHealthInfo_TotalDesiredAnalyzerPods:
 		return ScannerHealthInfo_TotalDesiredAnalyzerPods_case
 	default:
 		return ScannerHealthInfo_TotalDesiredAnalyzerPodsOpt_not_set_case
@@ -4944,8 +5291,8 @@ func (x *ScannerHealthInfo) WhichTotalReadyAnalyzerPodsOpt() case_ScannerHealthI
 	if x == nil {
 		return ScannerHealthInfo_TotalReadyAnalyzerPodsOpt_not_set_case
 	}
-	switch x.TotalReadyAnalyzerPodsOpt.(type) {
-	case *ScannerHealthInfo_TotalReadyAnalyzerPods:
+	switch x.xxx_hidden_TotalReadyAnalyzerPodsOpt.(type) {
+	case *scannerHealthInfo_TotalReadyAnalyzerPods:
 		return ScannerHealthInfo_TotalReadyAnalyzerPods_case
 	default:
 		return ScannerHealthInfo_TotalReadyAnalyzerPodsOpt_not_set_case
@@ -4959,8 +5306,8 @@ func (x *ScannerHealthInfo) WhichTotalDesiredDbPodsOpt() case_ScannerHealthInfo_
 	if x == nil {
 		return ScannerHealthInfo_TotalDesiredDbPodsOpt_not_set_case
 	}
-	switch x.TotalDesiredDbPodsOpt.(type) {
-	case *ScannerHealthInfo_TotalDesiredDbPods:
+	switch x.xxx_hidden_TotalDesiredDbPodsOpt.(type) {
+	case *scannerHealthInfo_TotalDesiredDbPods:
 		return ScannerHealthInfo_TotalDesiredDbPods_case
 	default:
 		return ScannerHealthInfo_TotalDesiredDbPodsOpt_not_set_case
@@ -4974,8 +5321,8 @@ func (x *ScannerHealthInfo) WhichTotalReadyDbPodsOpt() case_ScannerHealthInfo_To
 	if x == nil {
 		return ScannerHealthInfo_TotalReadyDbPodsOpt_not_set_case
 	}
-	switch x.TotalReadyDbPodsOpt.(type) {
-	case *ScannerHealthInfo_TotalReadyDbPods:
+	switch x.xxx_hidden_TotalReadyDbPodsOpt.(type) {
+	case *scannerHealthInfo_TotalReadyDbPods:
 		return ScannerHealthInfo_TotalReadyDbPods_case
 	default:
 		return ScannerHealthInfo_TotalReadyDbPodsOpt_not_set_case
@@ -4985,18 +5332,18 @@ func (x *ScannerHealthInfo) WhichTotalReadyDbPodsOpt() case_ScannerHealthInfo_To
 type ScannerHealthInfo_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof TotalDesiredAnalyzerPodsOpt:
+	// Fields of oneof xxx_hidden_TotalDesiredAnalyzerPodsOpt:
 	TotalDesiredAnalyzerPods *int32
-	// -- end of TotalDesiredAnalyzerPodsOpt
-	// Fields of oneof TotalReadyAnalyzerPodsOpt:
+	// -- end of xxx_hidden_TotalDesiredAnalyzerPodsOpt
+	// Fields of oneof xxx_hidden_TotalReadyAnalyzerPodsOpt:
 	TotalReadyAnalyzerPods *int32
-	// -- end of TotalReadyAnalyzerPodsOpt
-	// Fields of oneof TotalDesiredDbPodsOpt:
+	// -- end of xxx_hidden_TotalReadyAnalyzerPodsOpt
+	// Fields of oneof xxx_hidden_TotalDesiredDbPodsOpt:
 	TotalDesiredDbPods *int32
-	// -- end of TotalDesiredDbPodsOpt
-	// Fields of oneof TotalReadyDbPodsOpt:
+	// -- end of xxx_hidden_TotalDesiredDbPodsOpt
+	// Fields of oneof xxx_hidden_TotalReadyDbPodsOpt:
 	TotalReadyDbPods *int32
-	// -- end of TotalReadyDbPodsOpt
+	// -- end of xxx_hidden_TotalReadyDbPodsOpt
 	// Collection of errors that occurred while trying to obtain scanner health info.
 	StatusErrors []string
 }
@@ -5006,18 +5353,18 @@ func (b0 ScannerHealthInfo_builder) Build() *ScannerHealthInfo {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.TotalDesiredAnalyzerPods != nil {
-		x.TotalDesiredAnalyzerPodsOpt = &ScannerHealthInfo_TotalDesiredAnalyzerPods{*b.TotalDesiredAnalyzerPods}
+		x.xxx_hidden_TotalDesiredAnalyzerPodsOpt = &scannerHealthInfo_TotalDesiredAnalyzerPods{*b.TotalDesiredAnalyzerPods}
 	}
 	if b.TotalReadyAnalyzerPods != nil {
-		x.TotalReadyAnalyzerPodsOpt = &ScannerHealthInfo_TotalReadyAnalyzerPods{*b.TotalReadyAnalyzerPods}
+		x.xxx_hidden_TotalReadyAnalyzerPodsOpt = &scannerHealthInfo_TotalReadyAnalyzerPods{*b.TotalReadyAnalyzerPods}
 	}
 	if b.TotalDesiredDbPods != nil {
-		x.TotalDesiredDbPodsOpt = &ScannerHealthInfo_TotalDesiredDbPods{*b.TotalDesiredDbPods}
+		x.xxx_hidden_TotalDesiredDbPodsOpt = &scannerHealthInfo_TotalDesiredDbPods{*b.TotalDesiredDbPods}
 	}
 	if b.TotalReadyDbPods != nil {
-		x.TotalReadyDbPodsOpt = &ScannerHealthInfo_TotalReadyDbPods{*b.TotalReadyDbPods}
+		x.xxx_hidden_TotalReadyDbPodsOpt = &scannerHealthInfo_TotalReadyDbPods{*b.TotalReadyDbPods}
 	}
-	x.StatusErrors = b.StatusErrors
+	x.xxx_hidden_StatusErrors = b.StatusErrors
 	return m0
 }
 
@@ -5065,54 +5412,56 @@ type isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt interface {
 	isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt()
 }
 
-type ScannerHealthInfo_TotalDesiredAnalyzerPods struct {
+type scannerHealthInfo_TotalDesiredAnalyzerPods struct {
 	TotalDesiredAnalyzerPods int32 `protobuf:"varint,1,opt,name=total_desired_analyzer_pods,json=totalDesiredAnalyzerPods,oneof"`
 }
 
-func (*ScannerHealthInfo_TotalDesiredAnalyzerPods) isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt() {
+func (*scannerHealthInfo_TotalDesiredAnalyzerPods) isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt() {
 }
 
 type isScannerHealthInfo_TotalReadyAnalyzerPodsOpt interface {
 	isScannerHealthInfo_TotalReadyAnalyzerPodsOpt()
 }
 
-type ScannerHealthInfo_TotalReadyAnalyzerPods struct {
+type scannerHealthInfo_TotalReadyAnalyzerPods struct {
 	TotalReadyAnalyzerPods int32 `protobuf:"varint,2,opt,name=total_ready_analyzer_pods,json=totalReadyAnalyzerPods,oneof"`
 }
 
-func (*ScannerHealthInfo_TotalReadyAnalyzerPods) isScannerHealthInfo_TotalReadyAnalyzerPodsOpt() {}
+func (*scannerHealthInfo_TotalReadyAnalyzerPods) isScannerHealthInfo_TotalReadyAnalyzerPodsOpt() {}
 
 type isScannerHealthInfo_TotalDesiredDbPodsOpt interface {
 	isScannerHealthInfo_TotalDesiredDbPodsOpt()
 }
 
-type ScannerHealthInfo_TotalDesiredDbPods struct {
+type scannerHealthInfo_TotalDesiredDbPods struct {
 	TotalDesiredDbPods int32 `protobuf:"varint,3,opt,name=total_desired_db_pods,json=totalDesiredDbPods,oneof"`
 }
 
-func (*ScannerHealthInfo_TotalDesiredDbPods) isScannerHealthInfo_TotalDesiredDbPodsOpt() {}
+func (*scannerHealthInfo_TotalDesiredDbPods) isScannerHealthInfo_TotalDesiredDbPodsOpt() {}
 
 type isScannerHealthInfo_TotalReadyDbPodsOpt interface {
 	isScannerHealthInfo_TotalReadyDbPodsOpt()
 }
 
-type ScannerHealthInfo_TotalReadyDbPods struct {
+type scannerHealthInfo_TotalReadyDbPods struct {
 	TotalReadyDbPods int32 `protobuf:"varint,4,opt,name=total_ready_db_pods,json=totalReadyDbPods,oneof"`
 }
 
-func (*ScannerHealthInfo_TotalReadyDbPods) isScannerHealthInfo_TotalReadyDbPodsOpt() {}
+func (*scannerHealthInfo_TotalReadyDbPods) isScannerHealthInfo_TotalReadyDbPodsOpt() {}
 
 type ClusterUpgradeStatus_UpgradeProcessStatus struct {
-	state         protoimpl.MessageState                                        `protogen:"hybrid.v1"`
-	Active        *bool                                                         `protobuf:"varint,1,opt,name=active" json:"active,omitempty"`
-	Id            *string                                                       `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"`
-	TargetVersion *string                                                       `protobuf:"bytes,3,opt,name=target_version,json=targetVersion" json:"target_version,omitempty"` // only relevant if type == Upgrade
-	UpgraderImage *string                                                       `protobuf:"bytes,4,opt,name=upgrader_image,json=upgraderImage" json:"upgrader_image,omitempty"`
-	InitiatedAt   *timestamppb.Timestamp                                        `protobuf:"bytes,5,opt,name=initiated_at,json=initiatedAt" json:"initiated_at,omitempty"`
-	Progress      *UpgradeProgress                                              `protobuf:"bytes,6,opt,name=progress" json:"progress,omitempty"`
-	Type          *ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType `protobuf:"varint,7,opt,name=type,enum=storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType" json:"type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState                                       `protogen:"opaque.v1"`
+	xxx_hidden_Active        bool                                                         `protobuf:"varint,1,opt,name=active"`
+	xxx_hidden_Id            *string                                                      `protobuf:"bytes,2,opt,name=id"`
+	xxx_hidden_TargetVersion *string                                                      `protobuf:"bytes,3,opt,name=target_version,json=targetVersion"`
+	xxx_hidden_UpgraderImage *string                                                      `protobuf:"bytes,4,opt,name=upgrader_image,json=upgraderImage"`
+	xxx_hidden_InitiatedAt   *timestamppb.Timestamp                                       `protobuf:"bytes,5,opt,name=initiated_at,json=initiatedAt"`
+	xxx_hidden_Progress      *UpgradeProgress                                             `protobuf:"bytes,6,opt,name=progress"`
+	xxx_hidden_Type          ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType `protobuf:"varint,7,opt,name=type,enum=storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) Reset() {
@@ -5141,157 +5490,178 @@ func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ProtoReflect() protoreflect.
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) GetActive() bool {
-	if x != nil && x.Active != nil {
-		return *x.Active
+	if x != nil {
+		return x.xxx_hidden_Active
 	}
 	return false
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) GetTargetVersion() string {
-	if x != nil && x.TargetVersion != nil {
-		return *x.TargetVersion
+	if x != nil {
+		if x.xxx_hidden_TargetVersion != nil {
+			return *x.xxx_hidden_TargetVersion
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) GetUpgraderImage() string {
-	if x != nil && x.UpgraderImage != nil {
-		return *x.UpgraderImage
+	if x != nil {
+		if x.xxx_hidden_UpgraderImage != nil {
+			return *x.xxx_hidden_UpgraderImage
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) GetInitiatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.InitiatedAt
+		return x.xxx_hidden_InitiatedAt
 	}
 	return nil
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) GetProgress() *UpgradeProgress {
 	if x != nil {
-		return x.Progress
+		return x.xxx_hidden_Progress
 	}
 	return nil
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) GetType() ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return ClusterUpgradeStatus_UpgradeProcessStatus_UPGRADE
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) SetActive(v bool) {
-	x.Active = &v
+	x.xxx_hidden_Active = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) SetTargetVersion(v string) {
-	x.TargetVersion = &v
+	x.xxx_hidden_TargetVersion = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) SetUpgraderImage(v string) {
-	x.UpgraderImage = &v
+	x.xxx_hidden_UpgraderImage = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) SetInitiatedAt(v *timestamppb.Timestamp) {
-	x.InitiatedAt = v
+	x.xxx_hidden_InitiatedAt = v
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) SetProgress(v *UpgradeProgress) {
-	x.Progress = v
+	x.xxx_hidden_Progress = v
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) SetType(v ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) HasActive() bool {
 	if x == nil {
 		return false
 	}
-	return x.Active != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) HasTargetVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.TargetVersion != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) HasUpgraderImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpgraderImage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) HasInitiatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.InitiatedAt != nil
+	return x.xxx_hidden_InitiatedAt != nil
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) HasProgress() bool {
 	if x == nil {
 		return false
 	}
-	return x.Progress != nil
+	return x.xxx_hidden_Progress != nil
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ClearActive() {
-	x.Active = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Active = false
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ClearTargetVersion() {
-	x.TargetVersion = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_TargetVersion = nil
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ClearUpgraderImage() {
-	x.UpgraderImage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_UpgraderImage = nil
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ClearInitiatedAt() {
-	x.InitiatedAt = nil
+	x.xxx_hidden_InitiatedAt = nil
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ClearProgress() {
-	x.Progress = nil
+	x.xxx_hidden_Progress = nil
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_Type = ClusterUpgradeStatus_UpgradeProcessStatus_UPGRADE
 }
 
 type ClusterUpgradeStatus_UpgradeProcessStatus_builder struct {
@@ -5310,13 +5680,28 @@ func (b0 ClusterUpgradeStatus_UpgradeProcessStatus_builder) Build() *ClusterUpgr
 	m0 := &ClusterUpgradeStatus_UpgradeProcessStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Active = b.Active
-	x.Id = b.Id
-	x.TargetVersion = b.TargetVersion
-	x.UpgraderImage = b.UpgraderImage
-	x.InitiatedAt = b.InitiatedAt
-	x.Progress = b.Progress
-	x.Type = b.Type
+	if b.Active != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		x.xxx_hidden_Active = *b.Active
+	}
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.TargetVersion != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		x.xxx_hidden_TargetVersion = b.TargetVersion
+	}
+	if b.UpgraderImage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		x.xxx_hidden_UpgraderImage = b.UpgraderImage
+	}
+	x.xxx_hidden_InitiatedAt = b.InitiatedAt
+	x.xxx_hidden_Progress = b.Progress
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_Type = *b.Type
+	}
 	return m0
 }
 
@@ -5559,7 +5944,7 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x13MANAGER_TYPE_MANUAL\x10\x01\x12\x1b\n" +
 	"\x17MANAGER_TYPE_HELM_CHART\x10\x02\x12$\n" +
 	" MANAGER_TYPE_KUBERNETES_OPERATOR\x10\x03B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_cluster_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
 var file_storage_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
@@ -5665,27 +6050,27 @@ func file_storage_cluster_proto_init() {
 		return
 	}
 	file_storage_cluster_proto_msgTypes[4].OneofWrappers = []any{
-		(*ProviderMetadata_Google)(nil),
-		(*ProviderMetadata_Aws)(nil),
-		(*ProviderMetadata_Azure)(nil),
+		(*providerMetadata_Google)(nil),
+		(*providerMetadata_Aws)(nil),
+		(*providerMetadata_Azure)(nil),
 	}
 	file_storage_cluster_proto_msgTypes[5].OneofWrappers = []any{
-		(*OrchestratorMetadata_OpenshiftVersion)(nil),
+		(*orchestratorMetadata_OpenshiftVersion)(nil),
 	}
 	file_storage_cluster_proto_msgTypes[20].OneofWrappers = []any{
-		(*CollectorHealthInfo_TotalDesiredPods)(nil),
-		(*CollectorHealthInfo_TotalReadyPods)(nil),
-		(*CollectorHealthInfo_TotalRegisteredNodes)(nil),
+		(*collectorHealthInfo_TotalDesiredPods)(nil),
+		(*collectorHealthInfo_TotalReadyPods)(nil),
+		(*collectorHealthInfo_TotalRegisteredNodes)(nil),
 	}
 	file_storage_cluster_proto_msgTypes[21].OneofWrappers = []any{
-		(*AdmissionControlHealthInfo_TotalDesiredPods)(nil),
-		(*AdmissionControlHealthInfo_TotalReadyPods)(nil),
+		(*admissionControlHealthInfo_TotalDesiredPods)(nil),
+		(*admissionControlHealthInfo_TotalReadyPods)(nil),
 	}
 	file_storage_cluster_proto_msgTypes[22].OneofWrappers = []any{
-		(*ScannerHealthInfo_TotalDesiredAnalyzerPods)(nil),
-		(*ScannerHealthInfo_TotalReadyAnalyzerPods)(nil),
-		(*ScannerHealthInfo_TotalDesiredDbPods)(nil),
-		(*ScannerHealthInfo_TotalReadyDbPods)(nil),
+		(*scannerHealthInfo_TotalDesiredAnalyzerPods)(nil),
+		(*scannerHealthInfo_TotalReadyAnalyzerPods)(nil),
+		(*scannerHealthInfo_TotalDesiredDbPods)(nil),
+		(*scannerHealthInfo_TotalReadyDbPods)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

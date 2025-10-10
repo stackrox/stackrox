@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/config_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,10 +24,10 @@ const (
 )
 
 type PutConfigRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Config        *storage.Config        `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Config *storage.Config        `protobuf:"bytes,1,opt,name=config"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *PutConfigRequest) Reset() {
@@ -59,24 +57,24 @@ func (x *PutConfigRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PutConfigRequest) GetConfig() *storage.Config {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *PutConfigRequest) SetConfig(v *storage.Config) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *PutConfigRequest) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *PutConfigRequest) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 type PutConfigRequest_builder struct {
@@ -89,16 +87,18 @@ func (b0 PutConfigRequest_builder) Build() *PutConfigRequest {
 	m0 := &PutConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
+	x.xxx_hidden_Config = b.Config
 	return m0
 }
 
 type DayOption struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	NumDays       *uint32                `protobuf:"varint,1,opt,name=num_days,json=numDays" json:"num_days,omitempty"`
-	Enabled       *bool                  `protobuf:"varint,2,opt,name=enabled" json:"enabled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_NumDays     uint32                 `protobuf:"varint,1,opt,name=num_days,json=numDays"`
+	xxx_hidden_Enabled     bool                   `protobuf:"varint,2,opt,name=enabled"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DayOption) Reset() {
@@ -127,47 +127,51 @@ func (x *DayOption) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DayOption) GetNumDays() uint32 {
-	if x != nil && x.NumDays != nil {
-		return *x.NumDays
+	if x != nil {
+		return x.xxx_hidden_NumDays
 	}
 	return 0
 }
 
 func (x *DayOption) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
+	if x != nil {
+		return x.xxx_hidden_Enabled
 	}
 	return false
 }
 
 func (x *DayOption) SetNumDays(v uint32) {
-	x.NumDays = &v
+	x.xxx_hidden_NumDays = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *DayOption) SetEnabled(v bool) {
-	x.Enabled = &v
+	x.xxx_hidden_Enabled = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *DayOption) HasNumDays() bool {
 	if x == nil {
 		return false
 	}
-	return x.NumDays != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DayOption) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return x.Enabled != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DayOption) ClearNumDays() {
-	x.NumDays = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_NumDays = 0
 }
 
 func (x *DayOption) ClearEnabled() {
-	x.Enabled = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Enabled = false
 }
 
 type DayOption_builder struct {
@@ -181,16 +185,22 @@ func (b0 DayOption_builder) Build() *DayOption {
 	m0 := &DayOption{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.NumDays = b.NumDays
-	x.Enabled = b.Enabled
+	if b.NumDays != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_NumDays = *b.NumDays
+	}
+	if b.Enabled != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Enabled = *b.Enabled
+	}
 	return m0
 }
 
 type VulnerabilityExceptionConfig struct {
-	state         protoimpl.MessageState                      `protogen:"hybrid.v1"`
-	ExpiryOptions *VulnerabilityExceptionConfig_ExpiryOptions `protobuf:"bytes,1,opt,name=expiry_options,json=expiryOptions" json:"expiry_options,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState                      `protogen:"opaque.v1"`
+	xxx_hidden_ExpiryOptions *VulnerabilityExceptionConfig_ExpiryOptions `protobuf:"bytes,1,opt,name=expiry_options,json=expiryOptions"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *VulnerabilityExceptionConfig) Reset() {
@@ -220,24 +230,24 @@ func (x *VulnerabilityExceptionConfig) ProtoReflect() protoreflect.Message {
 
 func (x *VulnerabilityExceptionConfig) GetExpiryOptions() *VulnerabilityExceptionConfig_ExpiryOptions {
 	if x != nil {
-		return x.ExpiryOptions
+		return x.xxx_hidden_ExpiryOptions
 	}
 	return nil
 }
 
 func (x *VulnerabilityExceptionConfig) SetExpiryOptions(v *VulnerabilityExceptionConfig_ExpiryOptions) {
-	x.ExpiryOptions = v
+	x.xxx_hidden_ExpiryOptions = v
 }
 
 func (x *VulnerabilityExceptionConfig) HasExpiryOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.ExpiryOptions != nil
+	return x.xxx_hidden_ExpiryOptions != nil
 }
 
 func (x *VulnerabilityExceptionConfig) ClearExpiryOptions() {
-	x.ExpiryOptions = nil
+	x.xxx_hidden_ExpiryOptions = nil
 }
 
 type VulnerabilityExceptionConfig_builder struct {
@@ -250,15 +260,15 @@ func (b0 VulnerabilityExceptionConfig_builder) Build() *VulnerabilityExceptionCo
 	m0 := &VulnerabilityExceptionConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ExpiryOptions = b.ExpiryOptions
+	x.xxx_hidden_ExpiryOptions = b.ExpiryOptions
 	return m0
 }
 
 type GetVulnerabilityExceptionConfigResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	Config        *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Config *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetVulnerabilityExceptionConfigResponse) Reset() {
@@ -288,24 +298,24 @@ func (x *GetVulnerabilityExceptionConfigResponse) ProtoReflect() protoreflect.Me
 
 func (x *GetVulnerabilityExceptionConfigResponse) GetConfig() *VulnerabilityExceptionConfig {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *GetVulnerabilityExceptionConfigResponse) SetConfig(v *VulnerabilityExceptionConfig) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *GetVulnerabilityExceptionConfigResponse) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *GetVulnerabilityExceptionConfigResponse) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 type GetVulnerabilityExceptionConfigResponse_builder struct {
@@ -318,15 +328,15 @@ func (b0 GetVulnerabilityExceptionConfigResponse_builder) Build() *GetVulnerabil
 	m0 := &GetVulnerabilityExceptionConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
+	x.xxx_hidden_Config = b.Config
 	return m0
 }
 
 type UpdateVulnerabilityExceptionConfigRequest struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	Config        *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Config *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *UpdateVulnerabilityExceptionConfigRequest) Reset() {
@@ -356,24 +366,24 @@ func (x *UpdateVulnerabilityExceptionConfigRequest) ProtoReflect() protoreflect.
 
 func (x *UpdateVulnerabilityExceptionConfigRequest) GetConfig() *VulnerabilityExceptionConfig {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *UpdateVulnerabilityExceptionConfigRequest) SetConfig(v *VulnerabilityExceptionConfig) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *UpdateVulnerabilityExceptionConfigRequest) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *UpdateVulnerabilityExceptionConfigRequest) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 type UpdateVulnerabilityExceptionConfigRequest_builder struct {
@@ -386,15 +396,15 @@ func (b0 UpdateVulnerabilityExceptionConfigRequest_builder) Build() *UpdateVulne
 	m0 := &UpdateVulnerabilityExceptionConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
+	x.xxx_hidden_Config = b.Config
 	return m0
 }
 
 type UpdateVulnerabilityExceptionConfigResponse struct {
-	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
-	Config        *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Config *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *UpdateVulnerabilityExceptionConfigResponse) Reset() {
@@ -424,24 +434,24 @@ func (x *UpdateVulnerabilityExceptionConfigResponse) ProtoReflect() protoreflect
 
 func (x *UpdateVulnerabilityExceptionConfigResponse) GetConfig() *VulnerabilityExceptionConfig {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *UpdateVulnerabilityExceptionConfigResponse) SetConfig(v *VulnerabilityExceptionConfig) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *UpdateVulnerabilityExceptionConfigResponse) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *UpdateVulnerabilityExceptionConfigResponse) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 type UpdateVulnerabilityExceptionConfigResponse_builder struct {
@@ -454,15 +464,15 @@ func (b0 UpdateVulnerabilityExceptionConfigResponse_builder) Build() *UpdateVuln
 	m0 := &UpdateVulnerabilityExceptionConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
+	x.xxx_hidden_Config = b.Config
 	return m0
 }
 
 type PutPlatformComponentConfigRequest struct {
-	state         protoimpl.MessageState                  `protogen:"hybrid.v1"`
-	Rules         []*storage.PlatformComponentConfig_Rule `protobuf:"bytes,1,rep,name=rules" json:"rules,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState                   `protogen:"opaque.v1"`
+	xxx_hidden_Rules *[]*storage.PlatformComponentConfig_Rule `protobuf:"bytes,1,rep,name=rules"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *PutPlatformComponentConfigRequest) Reset() {
@@ -492,13 +502,15 @@ func (x *PutPlatformComponentConfigRequest) ProtoReflect() protoreflect.Message 
 
 func (x *PutPlatformComponentConfigRequest) GetRules() []*storage.PlatformComponentConfig_Rule {
 	if x != nil {
-		return x.Rules
+		if x.xxx_hidden_Rules != nil {
+			return *x.xxx_hidden_Rules
+		}
 	}
 	return nil
 }
 
 func (x *PutPlatformComponentConfigRequest) SetRules(v []*storage.PlatformComponentConfig_Rule) {
-	x.Rules = v
+	x.xxx_hidden_Rules = &v
 }
 
 type PutPlatformComponentConfigRequest_builder struct {
@@ -511,15 +523,17 @@ func (b0 PutPlatformComponentConfigRequest_builder) Build() *PutPlatformComponen
 	m0 := &PutPlatformComponentConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Rules = b.Rules
+	x.xxx_hidden_Rules = &b.Rules
 	return m0
 }
 
 type GetDefaultRedHatLayeredProductsRegexResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Regex         *string                `protobuf:"bytes,1,opt,name=regex" json:"regex,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Regex       *string                `protobuf:"bytes,1,opt,name=regex"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetDefaultRedHatLayeredProductsRegexResponse) Reset() {
@@ -548,25 +562,30 @@ func (x *GetDefaultRedHatLayeredProductsRegexResponse) ProtoReflect() protorefle
 }
 
 func (x *GetDefaultRedHatLayeredProductsRegexResponse) GetRegex() string {
-	if x != nil && x.Regex != nil {
-		return *x.Regex
+	if x != nil {
+		if x.xxx_hidden_Regex != nil {
+			return *x.xxx_hidden_Regex
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetDefaultRedHatLayeredProductsRegexResponse) SetRegex(v string) {
-	x.Regex = &v
+	x.xxx_hidden_Regex = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *GetDefaultRedHatLayeredProductsRegexResponse) HasRegex() bool {
 	if x == nil {
 		return false
 	}
-	return x.Regex != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetDefaultRedHatLayeredProductsRegexResponse) ClearRegex() {
-	x.Regex = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Regex = nil
 }
 
 type GetDefaultRedHatLayeredProductsRegexResponse_builder struct {
@@ -579,20 +598,21 @@ func (b0 GetDefaultRedHatLayeredProductsRegexResponse_builder) Build() *GetDefau
 	m0 := &GetDefaultRedHatLayeredProductsRegexResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Regex = b.Regex
+	if b.Regex != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Regex = b.Regex
+	}
 	return m0
 }
 
 type VulnerabilityExceptionConfig_FixableCVEOptions struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities
-	// in the requests become fixable.
-	AllFixable *bool `protobuf:"varint,1,opt,name=all_fixable,json=allFixable" json:"all_fixable,omitempty"`
-	// This options allows users to expire the vulnerability deferral request if **any** vulnerability
-	// in the requests become fixable.
-	AnyFixable    *bool `protobuf:"varint,2,opt,name=any_fixable,json=anyFixable" json:"any_fixable,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AllFixable  bool                   `protobuf:"varint,1,opt,name=all_fixable,json=allFixable"`
+	xxx_hidden_AnyFixable  bool                   `protobuf:"varint,2,opt,name=any_fixable,json=anyFixable"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) Reset() {
@@ -621,47 +641,51 @@ func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ProtoReflect() protoref
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) GetAllFixable() bool {
-	if x != nil && x.AllFixable != nil {
-		return *x.AllFixable
+	if x != nil {
+		return x.xxx_hidden_AllFixable
 	}
 	return false
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) GetAnyFixable() bool {
-	if x != nil && x.AnyFixable != nil {
-		return *x.AnyFixable
+	if x != nil {
+		return x.xxx_hidden_AnyFixable
 	}
 	return false
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) SetAllFixable(v bool) {
-	x.AllFixable = &v
+	x.xxx_hidden_AllFixable = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) SetAnyFixable(v bool) {
-	x.AnyFixable = &v
+	x.xxx_hidden_AnyFixable = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) HasAllFixable() bool {
 	if x == nil {
 		return false
 	}
-	return x.AllFixable != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) HasAnyFixable() bool {
 	if x == nil {
 		return false
 	}
-	return x.AnyFixable != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ClearAllFixable() {
-	x.AllFixable = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_AllFixable = false
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ClearAnyFixable() {
-	x.AnyFixable = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_AnyFixable = false
 }
 
 type VulnerabilityExceptionConfig_FixableCVEOptions_builder struct {
@@ -679,22 +703,27 @@ func (b0 VulnerabilityExceptionConfig_FixableCVEOptions_builder) Build() *Vulner
 	m0 := &VulnerabilityExceptionConfig_FixableCVEOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AllFixable = b.AllFixable
-	x.AnyFixable = b.AnyFixable
+	if b.AllFixable != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_AllFixable = *b.AllFixable
+	}
+	if b.AnyFixable != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_AnyFixable = *b.AnyFixable
+	}
 	return m0
 }
 
 type VulnerabilityExceptionConfig_ExpiryOptions struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// This allows users to set expiry interval based on number of days.
-	DayOptions []*DayOption `protobuf:"bytes,1,rep,name=day_options,json=dayOptions" json:"day_options,omitempty"`
-	// This allows users to set vulnerability request expiry based on the CVEs.
-	FixableCveOptions *VulnerabilityExceptionConfig_FixableCVEOptions `protobuf:"bytes,2,opt,name=fixable_cve_options,json=fixableCveOptions" json:"fixable_cve_options,omitempty"`
-	// This option, if true, allows UI to show a custom date picker for setting expiry date.
-	CustomDate    *bool `protobuf:"varint,3,opt,name=custom_date,json=customDate" json:"custom_date,omitempty"`
-	Indefinite    *bool `protobuf:"varint,4,opt,name=indefinite" json:"indefinite,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                        protoimpl.MessageState                          `protogen:"opaque.v1"`
+	xxx_hidden_DayOptions        *[]*DayOption                                   `protobuf:"bytes,1,rep,name=day_options,json=dayOptions"`
+	xxx_hidden_FixableCveOptions *VulnerabilityExceptionConfig_FixableCVEOptions `protobuf:"bytes,2,opt,name=fixable_cve_options,json=fixableCveOptions"`
+	xxx_hidden_CustomDate        bool                                            `protobuf:"varint,3,opt,name=custom_date,json=customDate"`
+	xxx_hidden_Indefinite        bool                                            `protobuf:"varint,4,opt,name=indefinite"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) Reset() {
@@ -724,79 +753,85 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) ProtoReflect() protoreflect
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetDayOptions() []*DayOption {
 	if x != nil {
-		return x.DayOptions
+		if x.xxx_hidden_DayOptions != nil {
+			return *x.xxx_hidden_DayOptions
+		}
 	}
 	return nil
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetFixableCveOptions() *VulnerabilityExceptionConfig_FixableCVEOptions {
 	if x != nil {
-		return x.FixableCveOptions
+		return x.xxx_hidden_FixableCveOptions
 	}
 	return nil
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetCustomDate() bool {
-	if x != nil && x.CustomDate != nil {
-		return *x.CustomDate
+	if x != nil {
+		return x.xxx_hidden_CustomDate
 	}
 	return false
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetIndefinite() bool {
-	if x != nil && x.Indefinite != nil {
-		return *x.Indefinite
+	if x != nil {
+		return x.xxx_hidden_Indefinite
 	}
 	return false
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) SetDayOptions(v []*DayOption) {
-	x.DayOptions = v
+	x.xxx_hidden_DayOptions = &v
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) SetFixableCveOptions(v *VulnerabilityExceptionConfig_FixableCVEOptions) {
-	x.FixableCveOptions = v
+	x.xxx_hidden_FixableCveOptions = v
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) SetCustomDate(v bool) {
-	x.CustomDate = &v
+	x.xxx_hidden_CustomDate = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) SetIndefinite(v bool) {
-	x.Indefinite = &v
+	x.xxx_hidden_Indefinite = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) HasFixableCveOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.FixableCveOptions != nil
+	return x.xxx_hidden_FixableCveOptions != nil
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) HasCustomDate() bool {
 	if x == nil {
 		return false
 	}
-	return x.CustomDate != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) HasIndefinite() bool {
 	if x == nil {
 		return false
 	}
-	return x.Indefinite != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) ClearFixableCveOptions() {
-	x.FixableCveOptions = nil
+	x.xxx_hidden_FixableCveOptions = nil
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) ClearCustomDate() {
-	x.CustomDate = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_CustomDate = false
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) ClearIndefinite() {
-	x.Indefinite = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Indefinite = false
 }
 
 type VulnerabilityExceptionConfig_ExpiryOptions_builder struct {
@@ -815,10 +850,16 @@ func (b0 VulnerabilityExceptionConfig_ExpiryOptions_builder) Build() *Vulnerabil
 	m0 := &VulnerabilityExceptionConfig_ExpiryOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DayOptions = b.DayOptions
-	x.FixableCveOptions = b.FixableCveOptions
-	x.CustomDate = b.CustomDate
-	x.Indefinite = b.Indefinite
+	x.xxx_hidden_DayOptions = &b.DayOptions
+	x.xxx_hidden_FixableCveOptions = b.FixableCveOptions
+	if b.CustomDate != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_CustomDate = *b.CustomDate
+	}
+	if b.Indefinite != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Indefinite = *b.Indefinite
+	}
 	return m0
 }
 
@@ -870,7 +911,7 @@ const file_api_v1_config_service_proto_rawDesc = "" +
 	"\tPutConfig\x12\x14.v1.PutConfigRequest\x1a\x0f.storage.Config\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\x1a\n" +
 	"/v1/config\x12\x96\x01\n" +
 	"$GetDefaultRedHatLayeredProductsRegex\x12\t.v1.Empty\x1a0.v1.GetDefaultRedHatLayeredProductsRegexResponse\"1\x82\xd3\xe4\x93\x02+\x12)/v1/config/platformcomponent/rhlp/defaultB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x01b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_config_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_api_v1_config_service_proto_goTypes = []any{

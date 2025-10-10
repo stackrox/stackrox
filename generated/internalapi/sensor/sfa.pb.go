@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/sfa.proto
 
-//go:build !protoopaque
-
 package sensor
 
 import (
@@ -25,11 +23,13 @@ const (
 )
 
 type FileActivityBase struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Path          *string                `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	HostPath      *string                `protobuf:"bytes,2,opt,name=host_path,json=hostPath" json:"host_path,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Path        *string                `protobuf:"bytes,1,opt,name=path"`
+	xxx_hidden_HostPath    *string                `protobuf:"bytes,2,opt,name=host_path,json=hostPath"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *FileActivityBase) Reset() {
@@ -58,47 +58,57 @@ func (x *FileActivityBase) ProtoReflect() protoreflect.Message {
 }
 
 func (x *FileActivityBase) GetPath() string {
-	if x != nil && x.Path != nil {
-		return *x.Path
+	if x != nil {
+		if x.xxx_hidden_Path != nil {
+			return *x.xxx_hidden_Path
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FileActivityBase) GetHostPath() string {
-	if x != nil && x.HostPath != nil {
-		return *x.HostPath
+	if x != nil {
+		if x.xxx_hidden_HostPath != nil {
+			return *x.xxx_hidden_HostPath
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FileActivityBase) SetPath(v string) {
-	x.Path = &v
+	x.xxx_hidden_Path = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *FileActivityBase) SetHostPath(v string) {
-	x.HostPath = &v
+	x.xxx_hidden_HostPath = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *FileActivityBase) HasPath() bool {
 	if x == nil {
 		return false
 	}
-	return x.Path != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *FileActivityBase) HasHostPath() bool {
 	if x == nil {
 		return false
 	}
-	return x.HostPath != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *FileActivityBase) ClearPath() {
-	x.Path = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Path = nil
 }
 
 func (x *FileActivityBase) ClearHostPath() {
-	x.HostPath = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_HostPath = nil
 }
 
 type FileActivityBase_builder struct {
@@ -112,16 +122,22 @@ func (b0 FileActivityBase_builder) Build() *FileActivityBase {
 	m0 := &FileActivityBase{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Path = b.Path
-	x.HostPath = b.HostPath
+	if b.Path != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Path = b.Path
+	}
+	if b.HostPath != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_HostPath = b.HostPath
+	}
 	return m0
 }
 
 type FileCreation struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Activity      *FileActivityBase      `protobuf:"bytes,1,opt,name=activity" json:"activity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Activity *FileActivityBase      `protobuf:"bytes,1,opt,name=activity"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *FileCreation) Reset() {
@@ -151,24 +167,24 @@ func (x *FileCreation) ProtoReflect() protoreflect.Message {
 
 func (x *FileCreation) GetActivity() *FileActivityBase {
 	if x != nil {
-		return x.Activity
+		return x.xxx_hidden_Activity
 	}
 	return nil
 }
 
 func (x *FileCreation) SetActivity(v *FileActivityBase) {
-	x.Activity = v
+	x.xxx_hidden_Activity = v
 }
 
 func (x *FileCreation) HasActivity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Activity != nil
+	return x.xxx_hidden_Activity != nil
 }
 
 func (x *FileCreation) ClearActivity() {
-	x.Activity = nil
+	x.xxx_hidden_Activity = nil
 }
 
 type FileCreation_builder struct {
@@ -181,15 +197,15 @@ func (b0 FileCreation_builder) Build() *FileCreation {
 	m0 := &FileCreation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Activity = b.Activity
+	x.xxx_hidden_Activity = b.Activity
 	return m0
 }
 
 type FileUnlink struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Activity      *FileActivityBase      `protobuf:"bytes,1,opt,name=activity" json:"activity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Activity *FileActivityBase      `protobuf:"bytes,1,opt,name=activity"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *FileUnlink) Reset() {
@@ -219,24 +235,24 @@ func (x *FileUnlink) ProtoReflect() protoreflect.Message {
 
 func (x *FileUnlink) GetActivity() *FileActivityBase {
 	if x != nil {
-		return x.Activity
+		return x.xxx_hidden_Activity
 	}
 	return nil
 }
 
 func (x *FileUnlink) SetActivity(v *FileActivityBase) {
-	x.Activity = v
+	x.xxx_hidden_Activity = v
 }
 
 func (x *FileUnlink) HasActivity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Activity != nil
+	return x.xxx_hidden_Activity != nil
 }
 
 func (x *FileUnlink) ClearActivity() {
-	x.Activity = nil
+	x.xxx_hidden_Activity = nil
 }
 
 type FileUnlink_builder struct {
@@ -249,16 +265,16 @@ func (b0 FileUnlink_builder) Build() *FileUnlink {
 	m0 := &FileUnlink{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Activity = b.Activity
+	x.xxx_hidden_Activity = b.Activity
 	return m0
 }
 
 type FileRename struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Old           *FileActivityBase      `protobuf:"bytes,1,opt,name=old" json:"old,omitempty"`
-	New           *FileActivityBase      `protobuf:"bytes,2,opt,name=new" json:"new,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Old *FileActivityBase      `protobuf:"bytes,1,opt,name=old"`
+	xxx_hidden_New *FileActivityBase      `protobuf:"bytes,2,opt,name=new"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *FileRename) Reset() {
@@ -288,46 +304,46 @@ func (x *FileRename) ProtoReflect() protoreflect.Message {
 
 func (x *FileRename) GetOld() *FileActivityBase {
 	if x != nil {
-		return x.Old
+		return x.xxx_hidden_Old
 	}
 	return nil
 }
 
 func (x *FileRename) GetNew() *FileActivityBase {
 	if x != nil {
-		return x.New
+		return x.xxx_hidden_New
 	}
 	return nil
 }
 
 func (x *FileRename) SetOld(v *FileActivityBase) {
-	x.Old = v
+	x.xxx_hidden_Old = v
 }
 
 func (x *FileRename) SetNew(v *FileActivityBase) {
-	x.New = v
+	x.xxx_hidden_New = v
 }
 
 func (x *FileRename) HasOld() bool {
 	if x == nil {
 		return false
 	}
-	return x.Old != nil
+	return x.xxx_hidden_Old != nil
 }
 
 func (x *FileRename) HasNew() bool {
 	if x == nil {
 		return false
 	}
-	return x.New != nil
+	return x.xxx_hidden_New != nil
 }
 
 func (x *FileRename) ClearOld() {
-	x.Old = nil
+	x.xxx_hidden_Old = nil
 }
 
 func (x *FileRename) ClearNew() {
-	x.New = nil
+	x.xxx_hidden_New = nil
 }
 
 type FileRename_builder struct {
@@ -341,17 +357,19 @@ func (b0 FileRename_builder) Build() *FileRename {
 	m0 := &FileRename{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Old = b.Old
-	x.New = b.New
+	x.xxx_hidden_Old = b.Old
+	x.xxx_hidden_New = b.New
 	return m0
 }
 
 type FilePermissionChange struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Activity      *FileActivityBase      `protobuf:"bytes,1,opt,name=activity" json:"activity,omitempty"`
-	Mode          *uint32                `protobuf:"varint,2,opt,name=mode" json:"mode,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Activity    *FileActivityBase      `protobuf:"bytes,1,opt,name=activity"`
+	xxx_hidden_Mode        uint32                 `protobuf:"varint,2,opt,name=mode"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *FilePermissionChange) Reset() {
@@ -381,46 +399,48 @@ func (x *FilePermissionChange) ProtoReflect() protoreflect.Message {
 
 func (x *FilePermissionChange) GetActivity() *FileActivityBase {
 	if x != nil {
-		return x.Activity
+		return x.xxx_hidden_Activity
 	}
 	return nil
 }
 
 func (x *FilePermissionChange) GetMode() uint32 {
-	if x != nil && x.Mode != nil {
-		return *x.Mode
+	if x != nil {
+		return x.xxx_hidden_Mode
 	}
 	return 0
 }
 
 func (x *FilePermissionChange) SetActivity(v *FileActivityBase) {
-	x.Activity = v
+	x.xxx_hidden_Activity = v
 }
 
 func (x *FilePermissionChange) SetMode(v uint32) {
-	x.Mode = &v
+	x.xxx_hidden_Mode = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *FilePermissionChange) HasActivity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Activity != nil
+	return x.xxx_hidden_Activity != nil
 }
 
 func (x *FilePermissionChange) HasMode() bool {
 	if x == nil {
 		return false
 	}
-	return x.Mode != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *FilePermissionChange) ClearActivity() {
-	x.Activity = nil
+	x.xxx_hidden_Activity = nil
 }
 
 func (x *FilePermissionChange) ClearMode() {
-	x.Mode = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Mode = 0
 }
 
 type FilePermissionChange_builder struct {
@@ -434,20 +454,25 @@ func (b0 FilePermissionChange_builder) Build() *FilePermissionChange {
 	m0 := &FilePermissionChange{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Activity = b.Activity
-	x.Mode = b.Mode
+	x.xxx_hidden_Activity = b.Activity
+	if b.Mode != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Mode = *b.Mode
+	}
 	return m0
 }
 
 type FileOwnershipChange struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Activity      *FileActivityBase      `protobuf:"bytes,1,opt,name=activity" json:"activity,omitempty"`
-	Uid           *uint32                `protobuf:"varint,2,opt,name=uid" json:"uid,omitempty"`
-	Gid           *uint32                `protobuf:"varint,3,opt,name=gid" json:"gid,omitempty"`
-	Username      *string                `protobuf:"bytes,4,opt,name=username" json:"username,omitempty"`
-	Group         *string                `protobuf:"bytes,5,opt,name=group" json:"group,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Activity    *FileActivityBase      `protobuf:"bytes,1,opt,name=activity"`
+	xxx_hidden_Uid         uint32                 `protobuf:"varint,2,opt,name=uid"`
+	xxx_hidden_Gid         uint32                 `protobuf:"varint,3,opt,name=gid"`
+	xxx_hidden_Username    *string                `protobuf:"bytes,4,opt,name=username"`
+	xxx_hidden_Group       *string                `protobuf:"bytes,5,opt,name=group"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *FileOwnershipChange) Reset() {
@@ -477,112 +502,126 @@ func (x *FileOwnershipChange) ProtoReflect() protoreflect.Message {
 
 func (x *FileOwnershipChange) GetActivity() *FileActivityBase {
 	if x != nil {
-		return x.Activity
+		return x.xxx_hidden_Activity
 	}
 	return nil
 }
 
 func (x *FileOwnershipChange) GetUid() uint32 {
-	if x != nil && x.Uid != nil {
-		return *x.Uid
+	if x != nil {
+		return x.xxx_hidden_Uid
 	}
 	return 0
 }
 
 func (x *FileOwnershipChange) GetGid() uint32 {
-	if x != nil && x.Gid != nil {
-		return *x.Gid
+	if x != nil {
+		return x.xxx_hidden_Gid
 	}
 	return 0
 }
 
 func (x *FileOwnershipChange) GetUsername() string {
-	if x != nil && x.Username != nil {
-		return *x.Username
+	if x != nil {
+		if x.xxx_hidden_Username != nil {
+			return *x.xxx_hidden_Username
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FileOwnershipChange) GetGroup() string {
-	if x != nil && x.Group != nil {
-		return *x.Group
+	if x != nil {
+		if x.xxx_hidden_Group != nil {
+			return *x.xxx_hidden_Group
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *FileOwnershipChange) SetActivity(v *FileActivityBase) {
-	x.Activity = v
+	x.xxx_hidden_Activity = v
 }
 
 func (x *FileOwnershipChange) SetUid(v uint32) {
-	x.Uid = &v
+	x.xxx_hidden_Uid = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *FileOwnershipChange) SetGid(v uint32) {
-	x.Gid = &v
+	x.xxx_hidden_Gid = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *FileOwnershipChange) SetUsername(v string) {
-	x.Username = &v
+	x.xxx_hidden_Username = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *FileOwnershipChange) SetGroup(v string) {
-	x.Group = &v
+	x.xxx_hidden_Group = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *FileOwnershipChange) HasActivity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Activity != nil
+	return x.xxx_hidden_Activity != nil
 }
 
 func (x *FileOwnershipChange) HasUid() bool {
 	if x == nil {
 		return false
 	}
-	return x.Uid != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *FileOwnershipChange) HasGid() bool {
 	if x == nil {
 		return false
 	}
-	return x.Gid != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *FileOwnershipChange) HasUsername() bool {
 	if x == nil {
 		return false
 	}
-	return x.Username != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *FileOwnershipChange) HasGroup() bool {
 	if x == nil {
 		return false
 	}
-	return x.Group != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *FileOwnershipChange) ClearActivity() {
-	x.Activity = nil
+	x.xxx_hidden_Activity = nil
 }
 
 func (x *FileOwnershipChange) ClearUid() {
-	x.Uid = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Uid = 0
 }
 
 func (x *FileOwnershipChange) ClearGid() {
-	x.Gid = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Gid = 0
 }
 
 func (x *FileOwnershipChange) ClearUsername() {
-	x.Username = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Username = nil
 }
 
 func (x *FileOwnershipChange) ClearGroup() {
-	x.Group = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Group = nil
 }
 
 type FileOwnershipChange_builder struct {
@@ -599,19 +638,31 @@ func (b0 FileOwnershipChange_builder) Build() *FileOwnershipChange {
 	m0 := &FileOwnershipChange{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Activity = b.Activity
-	x.Uid = b.Uid
-	x.Gid = b.Gid
-	x.Username = b.Username
-	x.Group = b.Group
+	x.xxx_hidden_Activity = b.Activity
+	if b.Uid != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Uid = *b.Uid
+	}
+	if b.Gid != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Gid = *b.Gid
+	}
+	if b.Username != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_Username = b.Username
+	}
+	if b.Group != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_Group = b.Group
+	}
 	return m0
 }
 
 type FileWrite struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Activity      *FileActivityBase      `protobuf:"bytes,1,opt,name=activity" json:"activity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Activity *FileActivityBase      `protobuf:"bytes,1,opt,name=activity"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *FileWrite) Reset() {
@@ -641,24 +692,24 @@ func (x *FileWrite) ProtoReflect() protoreflect.Message {
 
 func (x *FileWrite) GetActivity() *FileActivityBase {
 	if x != nil {
-		return x.Activity
+		return x.xxx_hidden_Activity
 	}
 	return nil
 }
 
 func (x *FileWrite) SetActivity(v *FileActivityBase) {
-	x.Activity = v
+	x.xxx_hidden_Activity = v
 }
 
 func (x *FileWrite) HasActivity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Activity != nil
+	return x.xxx_hidden_Activity != nil
 }
 
 func (x *FileWrite) ClearActivity() {
-	x.Activity = nil
+	x.xxx_hidden_Activity = nil
 }
 
 type FileWrite_builder struct {
@@ -671,15 +722,15 @@ func (b0 FileWrite_builder) Build() *FileWrite {
 	m0 := &FileWrite{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Activity = b.Activity
+	x.xxx_hidden_Activity = b.Activity
 	return m0
 }
 
 type FileOpen struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Activity      *FileActivityBase      `protobuf:"bytes,1,opt,name=activity" json:"activity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Activity *FileActivityBase      `protobuf:"bytes,1,opt,name=activity"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *FileOpen) Reset() {
@@ -709,24 +760,24 @@ func (x *FileOpen) ProtoReflect() protoreflect.Message {
 
 func (x *FileOpen) GetActivity() *FileActivityBase {
 	if x != nil {
-		return x.Activity
+		return x.xxx_hidden_Activity
 	}
 	return nil
 }
 
 func (x *FileOpen) SetActivity(v *FileActivityBase) {
-	x.Activity = v
+	x.xxx_hidden_Activity = v
 }
 
 func (x *FileOpen) HasActivity() bool {
 	if x == nil {
 		return false
 	}
-	return x.Activity != nil
+	return x.xxx_hidden_Activity != nil
 }
 
 func (x *FileOpen) ClearActivity() {
-	x.Activity = nil
+	x.xxx_hidden_Activity = nil
 }
 
 type FileOpen_builder struct {
@@ -739,26 +790,17 @@ func (b0 FileOpen_builder) Build() *FileOpen {
 	m0 := &FileOpen{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Activity = b.Activity
+	x.xxx_hidden_Activity = b.Activity
 	return m0
 }
 
 type FileActivity struct {
-	state     protoimpl.MessageState `protogen:"hybrid.v1"`
-	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp" json:"timestamp,omitempty"`
-	Process   *ProcessSignal         `protobuf:"bytes,2,opt,name=process" json:"process,omitempty"`
-	// Types that are valid to be assigned to File:
-	//
-	//	*FileActivity_Creation
-	//	*FileActivity_Unlink
-	//	*FileActivity_Rename
-	//	*FileActivity_Permission
-	//	*FileActivity_Ownership
-	//	*FileActivity_Open
-	//	*FileActivity_Write
-	File          isFileActivity_File `protobuf_oneof:"file"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp"`
+	xxx_hidden_Process   *ProcessSignal         `protobuf:"bytes,2,opt,name=process"`
+	xxx_hidden_File      isFileActivity_File    `protobuf_oneof:"file"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *FileActivity) Reset() {
@@ -788,28 +830,21 @@ func (x *FileActivity) ProtoReflect() protoreflect.Message {
 
 func (x *FileActivity) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Timestamp
+		return x.xxx_hidden_Timestamp
 	}
 	return nil
 }
 
 func (x *FileActivity) GetProcess() *ProcessSignal {
 	if x != nil {
-		return x.Process
-	}
-	return nil
-}
-
-func (x *FileActivity) GetFile() isFileActivity_File {
-	if x != nil {
-		return x.File
+		return x.xxx_hidden_Process
 	}
 	return nil
 }
 
 func (x *FileActivity) GetCreation() *FileCreation {
 	if x != nil {
-		if x, ok := x.File.(*FileActivity_Creation); ok {
+		if x, ok := x.xxx_hidden_File.(*fileActivity_Creation); ok {
 			return x.Creation
 		}
 	}
@@ -818,7 +853,7 @@ func (x *FileActivity) GetCreation() *FileCreation {
 
 func (x *FileActivity) GetUnlink() *FileUnlink {
 	if x != nil {
-		if x, ok := x.File.(*FileActivity_Unlink); ok {
+		if x, ok := x.xxx_hidden_File.(*fileActivity_Unlink); ok {
 			return x.Unlink
 		}
 	}
@@ -827,7 +862,7 @@ func (x *FileActivity) GetUnlink() *FileUnlink {
 
 func (x *FileActivity) GetRename() *FileRename {
 	if x != nil {
-		if x, ok := x.File.(*FileActivity_Rename); ok {
+		if x, ok := x.xxx_hidden_File.(*fileActivity_Rename); ok {
 			return x.Rename
 		}
 	}
@@ -836,7 +871,7 @@ func (x *FileActivity) GetRename() *FileRename {
 
 func (x *FileActivity) GetPermission() *FilePermissionChange {
 	if x != nil {
-		if x, ok := x.File.(*FileActivity_Permission); ok {
+		if x, ok := x.xxx_hidden_File.(*fileActivity_Permission); ok {
 			return x.Permission
 		}
 	}
@@ -845,7 +880,7 @@ func (x *FileActivity) GetPermission() *FilePermissionChange {
 
 func (x *FileActivity) GetOwnership() *FileOwnershipChange {
 	if x != nil {
-		if x, ok := x.File.(*FileActivity_Ownership); ok {
+		if x, ok := x.xxx_hidden_File.(*fileActivity_Ownership); ok {
 			return x.Ownership
 		}
 	}
@@ -854,7 +889,7 @@ func (x *FileActivity) GetOwnership() *FileOwnershipChange {
 
 func (x *FileActivity) GetOpen() *FileOpen {
 	if x != nil {
-		if x, ok := x.File.(*FileActivity_Open); ok {
+		if x, ok := x.xxx_hidden_File.(*fileActivity_Open); ok {
 			return x.Open
 		}
 	}
@@ -863,7 +898,7 @@ func (x *FileActivity) GetOpen() *FileOpen {
 
 func (x *FileActivity) GetWrite() *FileWrite {
 	if x != nil {
-		if x, ok := x.File.(*FileActivity_Write); ok {
+		if x, ok := x.xxx_hidden_File.(*fileActivity_Write); ok {
 			return x.Write
 		}
 	}
@@ -871,95 +906,95 @@ func (x *FileActivity) GetWrite() *FileWrite {
 }
 
 func (x *FileActivity) SetTimestamp(v *timestamppb.Timestamp) {
-	x.Timestamp = v
+	x.xxx_hidden_Timestamp = v
 }
 
 func (x *FileActivity) SetProcess(v *ProcessSignal) {
-	x.Process = v
+	x.xxx_hidden_Process = v
 }
 
 func (x *FileActivity) SetCreation(v *FileCreation) {
 	if v == nil {
-		x.File = nil
+		x.xxx_hidden_File = nil
 		return
 	}
-	x.File = &FileActivity_Creation{v}
+	x.xxx_hidden_File = &fileActivity_Creation{v}
 }
 
 func (x *FileActivity) SetUnlink(v *FileUnlink) {
 	if v == nil {
-		x.File = nil
+		x.xxx_hidden_File = nil
 		return
 	}
-	x.File = &FileActivity_Unlink{v}
+	x.xxx_hidden_File = &fileActivity_Unlink{v}
 }
 
 func (x *FileActivity) SetRename(v *FileRename) {
 	if v == nil {
-		x.File = nil
+		x.xxx_hidden_File = nil
 		return
 	}
-	x.File = &FileActivity_Rename{v}
+	x.xxx_hidden_File = &fileActivity_Rename{v}
 }
 
 func (x *FileActivity) SetPermission(v *FilePermissionChange) {
 	if v == nil {
-		x.File = nil
+		x.xxx_hidden_File = nil
 		return
 	}
-	x.File = &FileActivity_Permission{v}
+	x.xxx_hidden_File = &fileActivity_Permission{v}
 }
 
 func (x *FileActivity) SetOwnership(v *FileOwnershipChange) {
 	if v == nil {
-		x.File = nil
+		x.xxx_hidden_File = nil
 		return
 	}
-	x.File = &FileActivity_Ownership{v}
+	x.xxx_hidden_File = &fileActivity_Ownership{v}
 }
 
 func (x *FileActivity) SetOpen(v *FileOpen) {
 	if v == nil {
-		x.File = nil
+		x.xxx_hidden_File = nil
 		return
 	}
-	x.File = &FileActivity_Open{v}
+	x.xxx_hidden_File = &fileActivity_Open{v}
 }
 
 func (x *FileActivity) SetWrite(v *FileWrite) {
 	if v == nil {
-		x.File = nil
+		x.xxx_hidden_File = nil
 		return
 	}
-	x.File = &FileActivity_Write{v}
+	x.xxx_hidden_File = &fileActivity_Write{v}
 }
 
 func (x *FileActivity) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.Timestamp != nil
+	return x.xxx_hidden_Timestamp != nil
 }
 
 func (x *FileActivity) HasProcess() bool {
 	if x == nil {
 		return false
 	}
-	return x.Process != nil
+	return x.xxx_hidden_Process != nil
 }
 
 func (x *FileActivity) HasFile() bool {
 	if x == nil {
 		return false
 	}
-	return x.File != nil
+	return x.xxx_hidden_File != nil
 }
 
 func (x *FileActivity) HasCreation() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.File.(*FileActivity_Creation)
+	_, ok := x.xxx_hidden_File.(*fileActivity_Creation)
 	return ok
 }
 
@@ -967,7 +1002,7 @@ func (x *FileActivity) HasUnlink() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.File.(*FileActivity_Unlink)
+	_, ok := x.xxx_hidden_File.(*fileActivity_Unlink)
 	return ok
 }
 
@@ -975,7 +1010,7 @@ func (x *FileActivity) HasRename() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.File.(*FileActivity_Rename)
+	_, ok := x.xxx_hidden_File.(*fileActivity_Rename)
 	return ok
 }
 
@@ -983,7 +1018,7 @@ func (x *FileActivity) HasPermission() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.File.(*FileActivity_Permission)
+	_, ok := x.xxx_hidden_File.(*fileActivity_Permission)
 	return ok
 }
 
@@ -991,7 +1026,7 @@ func (x *FileActivity) HasOwnership() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.File.(*FileActivity_Ownership)
+	_, ok := x.xxx_hidden_File.(*fileActivity_Ownership)
 	return ok
 }
 
@@ -999,7 +1034,7 @@ func (x *FileActivity) HasOpen() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.File.(*FileActivity_Open)
+	_, ok := x.xxx_hidden_File.(*fileActivity_Open)
 	return ok
 }
 
@@ -1007,61 +1042,61 @@ func (x *FileActivity) HasWrite() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.File.(*FileActivity_Write)
+	_, ok := x.xxx_hidden_File.(*fileActivity_Write)
 	return ok
 }
 
 func (x *FileActivity) ClearTimestamp() {
-	x.Timestamp = nil
+	x.xxx_hidden_Timestamp = nil
 }
 
 func (x *FileActivity) ClearProcess() {
-	x.Process = nil
+	x.xxx_hidden_Process = nil
 }
 
 func (x *FileActivity) ClearFile() {
-	x.File = nil
+	x.xxx_hidden_File = nil
 }
 
 func (x *FileActivity) ClearCreation() {
-	if _, ok := x.File.(*FileActivity_Creation); ok {
-		x.File = nil
+	if _, ok := x.xxx_hidden_File.(*fileActivity_Creation); ok {
+		x.xxx_hidden_File = nil
 	}
 }
 
 func (x *FileActivity) ClearUnlink() {
-	if _, ok := x.File.(*FileActivity_Unlink); ok {
-		x.File = nil
+	if _, ok := x.xxx_hidden_File.(*fileActivity_Unlink); ok {
+		x.xxx_hidden_File = nil
 	}
 }
 
 func (x *FileActivity) ClearRename() {
-	if _, ok := x.File.(*FileActivity_Rename); ok {
-		x.File = nil
+	if _, ok := x.xxx_hidden_File.(*fileActivity_Rename); ok {
+		x.xxx_hidden_File = nil
 	}
 }
 
 func (x *FileActivity) ClearPermission() {
-	if _, ok := x.File.(*FileActivity_Permission); ok {
-		x.File = nil
+	if _, ok := x.xxx_hidden_File.(*fileActivity_Permission); ok {
+		x.xxx_hidden_File = nil
 	}
 }
 
 func (x *FileActivity) ClearOwnership() {
-	if _, ok := x.File.(*FileActivity_Ownership); ok {
-		x.File = nil
+	if _, ok := x.xxx_hidden_File.(*fileActivity_Ownership); ok {
+		x.xxx_hidden_File = nil
 	}
 }
 
 func (x *FileActivity) ClearOpen() {
-	if _, ok := x.File.(*FileActivity_Open); ok {
-		x.File = nil
+	if _, ok := x.xxx_hidden_File.(*fileActivity_Open); ok {
+		x.xxx_hidden_File = nil
 	}
 }
 
 func (x *FileActivity) ClearWrite() {
-	if _, ok := x.File.(*FileActivity_Write); ok {
-		x.File = nil
+	if _, ok := x.xxx_hidden_File.(*fileActivity_Write); ok {
+		x.xxx_hidden_File = nil
 	}
 }
 
@@ -1078,20 +1113,20 @@ func (x *FileActivity) WhichFile() case_FileActivity_File {
 	if x == nil {
 		return FileActivity_File_not_set_case
 	}
-	switch x.File.(type) {
-	case *FileActivity_Creation:
+	switch x.xxx_hidden_File.(type) {
+	case *fileActivity_Creation:
 		return FileActivity_Creation_case
-	case *FileActivity_Unlink:
+	case *fileActivity_Unlink:
 		return FileActivity_Unlink_case
-	case *FileActivity_Rename:
+	case *fileActivity_Rename:
 		return FileActivity_Rename_case
-	case *FileActivity_Permission:
+	case *fileActivity_Permission:
 		return FileActivity_Permission_case
-	case *FileActivity_Ownership:
+	case *fileActivity_Ownership:
 		return FileActivity_Ownership_case
-	case *FileActivity_Open:
+	case *fileActivity_Open:
 		return FileActivity_Open_case
-	case *FileActivity_Write:
+	case *fileActivity_Write:
 		return FileActivity_Write_case
 	default:
 		return FileActivity_File_not_set_case
@@ -1103,7 +1138,7 @@ type FileActivity_builder struct {
 
 	Timestamp *timestamppb.Timestamp
 	Process   *ProcessSignal
-	// Fields of oneof File:
+	// Fields of oneof xxx_hidden_File:
 	Creation   *FileCreation
 	Unlink     *FileUnlink
 	Rename     *FileRename
@@ -1111,35 +1146,35 @@ type FileActivity_builder struct {
 	Ownership  *FileOwnershipChange
 	Open       *FileOpen
 	Write      *FileWrite
-	// -- end of File
+	// -- end of xxx_hidden_File
 }
 
 func (b0 FileActivity_builder) Build() *FileActivity {
 	m0 := &FileActivity{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Timestamp = b.Timestamp
-	x.Process = b.Process
+	x.xxx_hidden_Timestamp = b.Timestamp
+	x.xxx_hidden_Process = b.Process
 	if b.Creation != nil {
-		x.File = &FileActivity_Creation{b.Creation}
+		x.xxx_hidden_File = &fileActivity_Creation{b.Creation}
 	}
 	if b.Unlink != nil {
-		x.File = &FileActivity_Unlink{b.Unlink}
+		x.xxx_hidden_File = &fileActivity_Unlink{b.Unlink}
 	}
 	if b.Rename != nil {
-		x.File = &FileActivity_Rename{b.Rename}
+		x.xxx_hidden_File = &fileActivity_Rename{b.Rename}
 	}
 	if b.Permission != nil {
-		x.File = &FileActivity_Permission{b.Permission}
+		x.xxx_hidden_File = &fileActivity_Permission{b.Permission}
 	}
 	if b.Ownership != nil {
-		x.File = &FileActivity_Ownership{b.Ownership}
+		x.xxx_hidden_File = &fileActivity_Ownership{b.Ownership}
 	}
 	if b.Open != nil {
-		x.File = &FileActivity_Open{b.Open}
+		x.xxx_hidden_File = &fileActivity_Open{b.Open}
 	}
 	if b.Write != nil {
-		x.File = &FileActivity_Write{b.Write}
+		x.xxx_hidden_File = &fileActivity_Write{b.Write}
 	}
 	return m0
 }
@@ -1158,47 +1193,47 @@ type isFileActivity_File interface {
 	isFileActivity_File()
 }
 
-type FileActivity_Creation struct {
+type fileActivity_Creation struct {
 	Creation *FileCreation `protobuf:"bytes,3,opt,name=creation,oneof"`
 }
 
-type FileActivity_Unlink struct {
+type fileActivity_Unlink struct {
 	Unlink *FileUnlink `protobuf:"bytes,4,opt,name=unlink,oneof"`
 }
 
-type FileActivity_Rename struct {
+type fileActivity_Rename struct {
 	Rename *FileRename `protobuf:"bytes,5,opt,name=rename,oneof"`
 }
 
-type FileActivity_Permission struct {
+type fileActivity_Permission struct {
 	Permission *FilePermissionChange `protobuf:"bytes,6,opt,name=permission,oneof"`
 }
 
-type FileActivity_Ownership struct {
+type fileActivity_Ownership struct {
 	Ownership *FileOwnershipChange `protobuf:"bytes,7,opt,name=ownership,oneof"`
 }
 
-type FileActivity_Open struct {
+type fileActivity_Open struct {
 	Open *FileOpen `protobuf:"bytes,8,opt,name=open,oneof"`
 }
 
-type FileActivity_Write struct {
+type fileActivity_Write struct {
 	Write *FileWrite `protobuf:"bytes,9,opt,name=write,oneof"`
 }
 
-func (*FileActivity_Creation) isFileActivity_File() {}
+func (*fileActivity_Creation) isFileActivity_File() {}
 
-func (*FileActivity_Unlink) isFileActivity_File() {}
+func (*fileActivity_Unlink) isFileActivity_File() {}
 
-func (*FileActivity_Rename) isFileActivity_File() {}
+func (*fileActivity_Rename) isFileActivity_File() {}
 
-func (*FileActivity_Permission) isFileActivity_File() {}
+func (*fileActivity_Permission) isFileActivity_File() {}
 
-func (*FileActivity_Ownership) isFileActivity_File() {}
+func (*fileActivity_Ownership) isFileActivity_File() {}
 
-func (*FileActivity_Open) isFileActivity_File() {}
+func (*fileActivity_Open) isFileActivity_File() {}
 
-func (*FileActivity_Write) isFileActivity_File() {}
+func (*fileActivity_Write) isFileActivity_File() {}
 
 var File_internalapi_sensor_sfa_proto protoreflect.FileDescriptor
 
@@ -1242,7 +1277,7 @@ const file_internalapi_sensor_sfa_proto_rawDesc = "" +
 	"\townership\x18\a \x01(\v2\x1b.sensor.FileOwnershipChangeH\x00R\townership\x12&\n" +
 	"\x04open\x18\b \x01(\v2\x10.sensor.FileOpenH\x00R\x04open\x12)\n" +
 	"\x05write\x18\t \x01(\v2\x11.sensor.FileWriteH\x00R\x05writeB\x06\n" +
-	"\x04fileB(Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x04fileB(Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_sfa_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_internalapi_sensor_sfa_proto_goTypes = []any{
@@ -1290,13 +1325,13 @@ func file_internalapi_sensor_sfa_proto_init() {
 	}
 	file_internalapi_sensor_collector_proto_init()
 	file_internalapi_sensor_sfa_proto_msgTypes[8].OneofWrappers = []any{
-		(*FileActivity_Creation)(nil),
-		(*FileActivity_Unlink)(nil),
-		(*FileActivity_Rename)(nil),
-		(*FileActivity_Permission)(nil),
-		(*FileActivity_Ownership)(nil),
-		(*FileActivity_Open)(nil),
-		(*FileActivity_Write)(nil),
+		(*fileActivity_Creation)(nil),
+		(*fileActivity_Unlink)(nil),
+		(*fileActivity_Rename)(nil),
+		(*fileActivity_Permission)(nil),
+		(*fileActivity_Ownership)(nil),
+		(*fileActivity_Open)(nil),
+		(*fileActivity_Write)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

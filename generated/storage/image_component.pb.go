@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/image_component.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -27,23 +25,21 @@ const (
 //
 // Deprecated: Marked as deprecated in storage/image_component.proto.
 type ImageComponent struct {
-	state     protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id        *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`           // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
-	Name      *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Component,store"`       // @gotags: search:"Component,store"
-	Version   *string                `protobuf:"bytes,3,opt,name=version" json:"version,omitempty" search:"Component Version,store"` // @gotags: search:"Component Version,store"
-	License   *License               `protobuf:"bytes,4,opt,name=license" json:"license,omitempty"`
-	Priority  *int64                 `protobuf:"varint,5,opt,name=priority" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	Source    *SourceType            `protobuf:"varint,6,opt,name=source,enum=storage.SourceType" json:"source,omitempty" search:"Component Source,store"` // @gotags: search:"Component Source,store"
-	RiskScore *float32               `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
-	// Types that are valid to be assigned to SetTopCvss:
-	//
-	//	*ImageComponent_TopCvss
-	SetTopCvss isImageComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	// Component version that fixes all the fixable vulnerabilities in this component.
-	FixedBy         *string `protobuf:"bytes,9,opt,name=fixed_by,json=fixedBy" json:"fixed_by,omitempty"`
-	OperatingSystem *string `protobuf:"bytes,10,opt,name=operating_system,json=operatingSystem" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Id              *string                     `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name            *string                     `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Version         *string                     `protobuf:"bytes,3,opt,name=version"`
+	xxx_hidden_License         *License                    `protobuf:"bytes,4,opt,name=license"`
+	xxx_hidden_Priority        int64                       `protobuf:"varint,5,opt,name=priority"`
+	xxx_hidden_Source          SourceType                  `protobuf:"varint,6,opt,name=source,enum=storage.SourceType"`
+	xxx_hidden_RiskScore       float32                     `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore"`
+	xxx_hidden_SetTopCvss      isImageComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
+	xxx_hidden_FixedBy         *string                     `protobuf:"bytes,9,opt,name=fixed_by,json=fixedBy"`
+	xxx_hidden_OperatingSystem *string                     `protobuf:"bytes,10,opt,name=operating_system,json=operatingSystem"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *ImageComponent) Reset() {
@@ -72,190 +68,203 @@ func (x *ImageComponent) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ImageComponent) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponent) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponent) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponent) GetLicense() *License {
 	if x != nil {
-		return x.License
+		return x.xxx_hidden_License
 	}
 	return nil
 }
 
 func (x *ImageComponent) GetPriority() int64 {
-	if x != nil && x.Priority != nil {
-		return *x.Priority
+	if x != nil {
+		return x.xxx_hidden_Priority
 	}
 	return 0
 }
 
 func (x *ImageComponent) GetSource() SourceType {
-	if x != nil && x.Source != nil {
-		return *x.Source
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			return x.xxx_hidden_Source
+		}
 	}
 	return SourceType_OS
 }
 
 func (x *ImageComponent) GetRiskScore() float32 {
-	if x != nil && x.RiskScore != nil {
-		return *x.RiskScore
+	if x != nil {
+		return x.xxx_hidden_RiskScore
 	}
 	return 0
 }
 
-func (x *ImageComponent) GetSetTopCvss() isImageComponent_SetTopCvss {
+func (x *ImageComponent) GetTopCvss() float32 {
 	if x != nil {
-		return x.SetTopCvss
-	}
-	return nil
-}
-
-func (x *ImageComponent) Get_TopCvss() float32 {
-	if x != nil {
-		if x, ok := x.SetTopCvss.(*ImageComponent_TopCvss); ok {
+		if x, ok := x.xxx_hidden_SetTopCvss.(*imageComponent_TopCvss); ok {
 			return x.TopCvss
 		}
 	}
 	return 0
 }
 
-// Deprecated: Use Get_TopCvss instead.
-func (x *ImageComponent) GetTopCvss() float32 {
-	return x.Get_TopCvss()
-}
-
 func (x *ImageComponent) GetFixedBy() string {
-	if x != nil && x.FixedBy != nil {
-		return *x.FixedBy
+	if x != nil {
+		if x.xxx_hidden_FixedBy != nil {
+			return *x.xxx_hidden_FixedBy
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponent) GetOperatingSystem() string {
-	if x != nil && x.OperatingSystem != nil {
-		return *x.OperatingSystem
+	if x != nil {
+		if x.xxx_hidden_OperatingSystem != nil {
+			return *x.xxx_hidden_OperatingSystem
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponent) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 10)
 }
 
 func (x *ImageComponent) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
 }
 
 func (x *ImageComponent) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 10)
 }
 
 func (x *ImageComponent) SetLicense(v *License) {
-	x.License = v
+	x.xxx_hidden_License = v
 }
 
 func (x *ImageComponent) SetPriority(v int64) {
-	x.Priority = &v
+	x.xxx_hidden_Priority = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 10)
 }
 
 func (x *ImageComponent) SetSource(v SourceType) {
-	x.Source = &v
+	x.xxx_hidden_Source = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 10)
 }
 
 func (x *ImageComponent) SetRiskScore(v float32) {
-	x.RiskScore = &v
+	x.xxx_hidden_RiskScore = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 10)
 }
 
-func (x *ImageComponent) Set_TopCvss(v float32) {
-	x.SetTopCvss = &ImageComponent_TopCvss{v}
+func (x *ImageComponent) SetTopCvss(v float32) {
+	x.xxx_hidden_SetTopCvss = &imageComponent_TopCvss{v}
 }
 
 func (x *ImageComponent) SetFixedBy(v string) {
-	x.FixedBy = &v
+	x.xxx_hidden_FixedBy = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
 }
 
 func (x *ImageComponent) SetOperatingSystem(v string) {
-	x.OperatingSystem = &v
+	x.xxx_hidden_OperatingSystem = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
 }
 
 func (x *ImageComponent) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ImageComponent) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ImageComponent) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ImageComponent) HasLicense() bool {
 	if x == nil {
 		return false
 	}
-	return x.License != nil
+	return x.xxx_hidden_License != nil
 }
 
 func (x *ImageComponent) HasPriority() bool {
 	if x == nil {
 		return false
 	}
-	return x.Priority != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ImageComponent) HasSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.Source != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *ImageComponent) HasRiskScore() bool {
 	if x == nil {
 		return false
 	}
-	return x.RiskScore != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *ImageComponent) HasSetTopCvss() bool {
 	if x == nil {
 		return false
 	}
-	return x.SetTopCvss != nil
+	return x.xxx_hidden_SetTopCvss != nil
 }
 
-func (x *ImageComponent) Has_TopCvss() bool {
+func (x *ImageComponent) HasTopCvss() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.SetTopCvss.(*ImageComponent_TopCvss)
+	_, ok := x.xxx_hidden_SetTopCvss.(*imageComponent_TopCvss)
 	return ok
 }
 
@@ -263,60 +272,68 @@ func (x *ImageComponent) HasFixedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.FixedBy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *ImageComponent) HasOperatingSystem() bool {
 	if x == nil {
 		return false
 	}
-	return x.OperatingSystem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *ImageComponent) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ImageComponent) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ImageComponent) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Version = nil
 }
 
 func (x *ImageComponent) ClearLicense() {
-	x.License = nil
+	x.xxx_hidden_License = nil
 }
 
 func (x *ImageComponent) ClearPriority() {
-	x.Priority = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Priority = 0
 }
 
 func (x *ImageComponent) ClearSource() {
-	x.Source = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Source = SourceType_OS
 }
 
 func (x *ImageComponent) ClearRiskScore() {
-	x.RiskScore = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_RiskScore = 0
 }
 
 func (x *ImageComponent) ClearSetTopCvss() {
-	x.SetTopCvss = nil
+	x.xxx_hidden_SetTopCvss = nil
 }
 
-func (x *ImageComponent) Clear_TopCvss() {
-	if _, ok := x.SetTopCvss.(*ImageComponent_TopCvss); ok {
-		x.SetTopCvss = nil
+func (x *ImageComponent) ClearTopCvss() {
+	if _, ok := x.xxx_hidden_SetTopCvss.(*imageComponent_TopCvss); ok {
+		x.xxx_hidden_SetTopCvss = nil
 	}
 }
 
 func (x *ImageComponent) ClearFixedBy() {
-	x.FixedBy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_FixedBy = nil
 }
 
 func (x *ImageComponent) ClearOperatingSystem() {
-	x.OperatingSystem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_OperatingSystem = nil
 }
 
 const ImageComponent_SetTopCvss_not_set_case case_ImageComponent_SetTopCvss = 0
@@ -326,8 +343,8 @@ func (x *ImageComponent) WhichSetTopCvss() case_ImageComponent_SetTopCvss {
 	if x == nil {
 		return ImageComponent_SetTopCvss_not_set_case
 	}
-	switch x.SetTopCvss.(type) {
-	case *ImageComponent_TopCvss:
+	switch x.xxx_hidden_SetTopCvss.(type) {
+	case *imageComponent_TopCvss:
 		return ImageComponent_TopCvss_case
 	default:
 		return ImageComponent_SetTopCvss_not_set_case
@@ -345,9 +362,9 @@ type ImageComponent_builder struct {
 	Priority  *int64
 	Source    *SourceType
 	RiskScore *float32
-	// Fields of oneof SetTopCvss:
+	// Fields of oneof xxx_hidden_SetTopCvss:
 	TopCvss *float32
-	// -- end of SetTopCvss
+	// -- end of xxx_hidden_SetTopCvss
 	// Component version that fixes all the fixable vulnerabilities in this component.
 	FixedBy         *string
 	OperatingSystem *string
@@ -357,18 +374,42 @@ func (b0 ImageComponent_builder) Build() *ImageComponent {
 	m0 := &ImageComponent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Version = b.Version
-	x.License = b.License
-	x.Priority = b.Priority
-	x.Source = b.Source
-	x.RiskScore = b.RiskScore
-	if b.TopCvss != nil {
-		x.SetTopCvss = &ImageComponent_TopCvss{*b.TopCvss}
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 10)
+		x.xxx_hidden_Id = b.Id
 	}
-	x.FixedBy = b.FixedBy
-	x.OperatingSystem = b.OperatingSystem
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 10)
+		x.xxx_hidden_Version = b.Version
+	}
+	x.xxx_hidden_License = b.License
+	if b.Priority != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 10)
+		x.xxx_hidden_Priority = *b.Priority
+	}
+	if b.Source != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 10)
+		x.xxx_hidden_Source = *b.Source
+	}
+	if b.RiskScore != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 10)
+		x.xxx_hidden_RiskScore = *b.RiskScore
+	}
+	if b.TopCvss != nil {
+		x.xxx_hidden_SetTopCvss = &imageComponent_TopCvss{*b.TopCvss}
+	}
+	if b.FixedBy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
+		x.xxx_hidden_FixedBy = b.FixedBy
+	}
+	if b.OperatingSystem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
+		x.xxx_hidden_OperatingSystem = b.OperatingSystem
+	}
 	return m0
 }
 
@@ -386,43 +427,32 @@ type isImageComponent_SetTopCvss interface {
 	isImageComponent_SetTopCvss()
 }
 
-type ImageComponent_TopCvss struct {
+type imageComponent_TopCvss struct {
 	TopCvss float32 `protobuf:"fixed32,8,opt,name=top_cvss,json=topCvss,oneof" search:"Component Top CVSS,store"` // @gotags: search:"Component Top CVSS,store"
 }
 
-func (*ImageComponent_TopCvss) isImageComponent_SetTopCvss() {}
+func (*imageComponent_TopCvss) isImageComponent_SetTopCvss() {}
 
 type ImageComponentV2 struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// ID will be form of Name+version+arch+imageID
-	Id        *string     `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`                                  // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
-	Name      *string     `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Component,store"`                              // @gotags: search:"Component,store"
-	Version   *string     `protobuf:"bytes,3,opt,name=version" json:"version,omitempty" search:"Component Version,store"`                        // @gotags: search:"Component Version,store"
-	Priority  *int64      `protobuf:"varint,4,opt,name=priority" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	Source    *SourceType `protobuf:"varint,5,opt,name=source,enum=storage.SourceType" json:"source,omitempty" search:"Component Source,store"` // @gotags: search:"Component Source,store"
-	RiskScore *float32    `protobuf:"fixed32,6,opt,name=risk_score,json=riskScore" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
-	// Types that are valid to be assigned to SetTopCvss:
-	//
-	//	*ImageComponentV2_TopCvss
-	SetTopCvss isImageComponentV2_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	// Component version that fixes all the fixable vulnerabilities in this component.
-	FixedBy         *string `protobuf:"bytes,8,opt,name=fixed_by,json=fixedBy" json:"fixed_by,omitempty"`
-	OperatingSystem *string `protobuf:"bytes,9,opt,name=operating_system,json=operatingSystem" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
-	// was hash index, making it btree
-	//
-	// Deprecated: Marked as deprecated in storage/image_component.proto.
-	ImageId *string `protobuf:"bytes,10,opt,name=image_id,json=imageId" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
-	// / Layer that contains this component
-	//
-	// Types that are valid to be assigned to HasLayerIndex:
-	//
-	//	*ImageComponentV2_LayerIndex
-	HasLayerIndex isImageComponentV2_HasLayerIndex `protobuf_oneof:"has_layer_index"`
-	Location      *string                          `protobuf:"bytes,12,opt,name=location" json:"location,omitempty" search:"Component Location,store,hidden"` // @gotags: search:"Component Location,store,hidden"
-	Architecture  *string                          `protobuf:"bytes,13,opt,name=architecture" json:"architecture,omitempty"`
-	ImageIdV2     *string                          `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                      protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Id              *string                          `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name            *string                          `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Version         *string                          `protobuf:"bytes,3,opt,name=version"`
+	xxx_hidden_Priority        int64                            `protobuf:"varint,4,opt,name=priority"`
+	xxx_hidden_Source          SourceType                       `protobuf:"varint,5,opt,name=source,enum=storage.SourceType"`
+	xxx_hidden_RiskScore       float32                          `protobuf:"fixed32,6,opt,name=risk_score,json=riskScore"`
+	xxx_hidden_SetTopCvss      isImageComponentV2_SetTopCvss    `protobuf_oneof:"set_top_cvss"`
+	xxx_hidden_FixedBy         *string                          `protobuf:"bytes,8,opt,name=fixed_by,json=fixedBy"`
+	xxx_hidden_OperatingSystem *string                          `protobuf:"bytes,9,opt,name=operating_system,json=operatingSystem"`
+	xxx_hidden_ImageId         *string                          `protobuf:"bytes,10,opt,name=image_id,json=imageId"`
+	xxx_hidden_HasLayerIndex   isImageComponentV2_HasLayerIndex `protobuf_oneof:"has_layer_index"`
+	xxx_hidden_Location        *string                          `protobuf:"bytes,12,opt,name=location"`
+	xxx_hidden_Architecture    *string                          `protobuf:"bytes,13,opt,name=architecture"`
+	xxx_hidden_ImageIdV2       *string                          `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *ImageComponentV2) Reset() {
@@ -451,243 +481,260 @@ func (x *ImageComponentV2) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ImageComponentV2) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponentV2) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponentV2) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponentV2) GetPriority() int64 {
-	if x != nil && x.Priority != nil {
-		return *x.Priority
+	if x != nil {
+		return x.xxx_hidden_Priority
 	}
 	return 0
 }
 
 func (x *ImageComponentV2) GetSource() SourceType {
-	if x != nil && x.Source != nil {
-		return *x.Source
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
+			return x.xxx_hidden_Source
+		}
 	}
 	return SourceType_OS
 }
 
 func (x *ImageComponentV2) GetRiskScore() float32 {
-	if x != nil && x.RiskScore != nil {
-		return *x.RiskScore
+	if x != nil {
+		return x.xxx_hidden_RiskScore
 	}
 	return 0
 }
 
-func (x *ImageComponentV2) GetSetTopCvss() isImageComponentV2_SetTopCvss {
+func (x *ImageComponentV2) GetTopCvss() float32 {
 	if x != nil {
-		return x.SetTopCvss
-	}
-	return nil
-}
-
-func (x *ImageComponentV2) Get_TopCvss() float32 {
-	if x != nil {
-		if x, ok := x.SetTopCvss.(*ImageComponentV2_TopCvss); ok {
+		if x, ok := x.xxx_hidden_SetTopCvss.(*imageComponentV2_TopCvss); ok {
 			return x.TopCvss
 		}
 	}
 	return 0
 }
 
-// Deprecated: Use Get_TopCvss instead.
-func (x *ImageComponentV2) GetTopCvss() float32 {
-	return x.Get_TopCvss()
-}
-
 func (x *ImageComponentV2) GetFixedBy() string {
-	if x != nil && x.FixedBy != nil {
-		return *x.FixedBy
+	if x != nil {
+		if x.xxx_hidden_FixedBy != nil {
+			return *x.xxx_hidden_FixedBy
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponentV2) GetOperatingSystem() string {
-	if x != nil && x.OperatingSystem != nil {
-		return *x.OperatingSystem
+	if x != nil {
+		if x.xxx_hidden_OperatingSystem != nil {
+			return *x.xxx_hidden_OperatingSystem
+		}
+		return ""
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in storage/image_component.proto.
 func (x *ImageComponentV2) GetImageId() string {
-	if x != nil && x.ImageId != nil {
-		return *x.ImageId
+	if x != nil {
+		if x.xxx_hidden_ImageId != nil {
+			return *x.xxx_hidden_ImageId
+		}
+		return ""
 	}
 	return ""
 }
 
-func (x *ImageComponentV2) GetHasLayerIndex() isImageComponentV2_HasLayerIndex {
+func (x *ImageComponentV2) GetLayerIndex() int32 {
 	if x != nil {
-		return x.HasLayerIndex
-	}
-	return nil
-}
-
-func (x *ImageComponentV2) Get_LayerIndex() int32 {
-	if x != nil {
-		if x, ok := x.HasLayerIndex.(*ImageComponentV2_LayerIndex); ok {
+		if x, ok := x.xxx_hidden_HasLayerIndex.(*imageComponentV2_LayerIndex); ok {
 			return x.LayerIndex
 		}
 	}
 	return 0
 }
 
-// Deprecated: Use Get_LayerIndex instead.
-func (x *ImageComponentV2) GetLayerIndex() int32 {
-	return x.Get_LayerIndex()
-}
-
 func (x *ImageComponentV2) GetLocation() string {
-	if x != nil && x.Location != nil {
-		return *x.Location
+	if x != nil {
+		if x.xxx_hidden_Location != nil {
+			return *x.xxx_hidden_Location
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponentV2) GetArchitecture() string {
-	if x != nil && x.Architecture != nil {
-		return *x.Architecture
+	if x != nil {
+		if x.xxx_hidden_Architecture != nil {
+			return *x.xxx_hidden_Architecture
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponentV2) GetImageIdV2() string {
-	if x != nil && x.ImageIdV2 != nil {
-		return *x.ImageIdV2
+	if x != nil {
+		if x.xxx_hidden_ImageIdV2 != nil {
+			return *x.xxx_hidden_ImageIdV2
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageComponentV2) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 14)
 }
 
 func (x *ImageComponentV2) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 14)
 }
 
 func (x *ImageComponentV2) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 14)
 }
 
 func (x *ImageComponentV2) SetPriority(v int64) {
-	x.Priority = &v
+	x.xxx_hidden_Priority = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 14)
 }
 
 func (x *ImageComponentV2) SetSource(v SourceType) {
-	x.Source = &v
+	x.xxx_hidden_Source = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 14)
 }
 
 func (x *ImageComponentV2) SetRiskScore(v float32) {
-	x.RiskScore = &v
+	x.xxx_hidden_RiskScore = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 14)
 }
 
-func (x *ImageComponentV2) Set_TopCvss(v float32) {
-	x.SetTopCvss = &ImageComponentV2_TopCvss{v}
+func (x *ImageComponentV2) SetTopCvss(v float32) {
+	x.xxx_hidden_SetTopCvss = &imageComponentV2_TopCvss{v}
 }
 
 func (x *ImageComponentV2) SetFixedBy(v string) {
-	x.FixedBy = &v
+	x.xxx_hidden_FixedBy = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 14)
 }
 
 func (x *ImageComponentV2) SetOperatingSystem(v string) {
-	x.OperatingSystem = &v
+	x.xxx_hidden_OperatingSystem = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 14)
 }
 
 // Deprecated: Marked as deprecated in storage/image_component.proto.
 func (x *ImageComponentV2) SetImageId(v string) {
-	x.ImageId = &v
+	x.xxx_hidden_ImageId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 14)
 }
 
-func (x *ImageComponentV2) Set_LayerIndex(v int32) {
-	x.HasLayerIndex = &ImageComponentV2_LayerIndex{v}
+func (x *ImageComponentV2) SetLayerIndex(v int32) {
+	x.xxx_hidden_HasLayerIndex = &imageComponentV2_LayerIndex{v}
 }
 
 func (x *ImageComponentV2) SetLocation(v string) {
-	x.Location = &v
+	x.xxx_hidden_Location = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 14)
 }
 
 func (x *ImageComponentV2) SetArchitecture(v string) {
-	x.Architecture = &v
+	x.xxx_hidden_Architecture = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 14)
 }
 
 func (x *ImageComponentV2) SetImageIdV2(v string) {
-	x.ImageIdV2 = &v
+	x.xxx_hidden_ImageIdV2 = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 14)
 }
 
 func (x *ImageComponentV2) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ImageComponentV2) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ImageComponentV2) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ImageComponentV2) HasPriority() bool {
 	if x == nil {
 		return false
 	}
-	return x.Priority != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ImageComponentV2) HasSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.Source != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *ImageComponentV2) HasRiskScore() bool {
 	if x == nil {
 		return false
 	}
-	return x.RiskScore != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *ImageComponentV2) HasSetTopCvss() bool {
 	if x == nil {
 		return false
 	}
-	return x.SetTopCvss != nil
+	return x.xxx_hidden_SetTopCvss != nil
 }
 
-func (x *ImageComponentV2) Has_TopCvss() bool {
+func (x *ImageComponentV2) HasTopCvss() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.SetTopCvss.(*ImageComponentV2_TopCvss)
+	_, ok := x.xxx_hidden_SetTopCvss.(*imageComponentV2_TopCvss)
 	return ok
 }
 
@@ -695,14 +742,14 @@ func (x *ImageComponentV2) HasFixedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.FixedBy != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *ImageComponentV2) HasOperatingSystem() bool {
 	if x == nil {
 		return false
 	}
-	return x.OperatingSystem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 // Deprecated: Marked as deprecated in storage/image_component.proto.
@@ -710,21 +757,21 @@ func (x *ImageComponentV2) HasImageId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ImageId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *ImageComponentV2) HasHasLayerIndex() bool {
 	if x == nil {
 		return false
 	}
-	return x.HasLayerIndex != nil
+	return x.xxx_hidden_HasLayerIndex != nil
 }
 
-func (x *ImageComponentV2) Has_LayerIndex() bool {
+func (x *ImageComponentV2) HasLayerIndex() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.HasLayerIndex.(*ImageComponentV2_LayerIndex)
+	_, ok := x.xxx_hidden_HasLayerIndex.(*imageComponentV2_LayerIndex)
 	return ok
 }
 
@@ -732,90 +779,102 @@ func (x *ImageComponentV2) HasLocation() bool {
 	if x == nil {
 		return false
 	}
-	return x.Location != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
 }
 
 func (x *ImageComponentV2) HasArchitecture() bool {
 	if x == nil {
 		return false
 	}
-	return x.Architecture != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
 }
 
 func (x *ImageComponentV2) HasImageIdV2() bool {
 	if x == nil {
 		return false
 	}
-	return x.ImageIdV2 != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 13)
 }
 
 func (x *ImageComponentV2) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ImageComponentV2) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ImageComponentV2) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Version = nil
 }
 
 func (x *ImageComponentV2) ClearPriority() {
-	x.Priority = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Priority = 0
 }
 
 func (x *ImageComponentV2) ClearSource() {
-	x.Source = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Source = SourceType_OS
 }
 
 func (x *ImageComponentV2) ClearRiskScore() {
-	x.RiskScore = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_RiskScore = 0
 }
 
 func (x *ImageComponentV2) ClearSetTopCvss() {
-	x.SetTopCvss = nil
+	x.xxx_hidden_SetTopCvss = nil
 }
 
-func (x *ImageComponentV2) Clear_TopCvss() {
-	if _, ok := x.SetTopCvss.(*ImageComponentV2_TopCvss); ok {
-		x.SetTopCvss = nil
+func (x *ImageComponentV2) ClearTopCvss() {
+	if _, ok := x.xxx_hidden_SetTopCvss.(*imageComponentV2_TopCvss); ok {
+		x.xxx_hidden_SetTopCvss = nil
 	}
 }
 
 func (x *ImageComponentV2) ClearFixedBy() {
-	x.FixedBy = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_FixedBy = nil
 }
 
 func (x *ImageComponentV2) ClearOperatingSystem() {
-	x.OperatingSystem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_OperatingSystem = nil
 }
 
 // Deprecated: Marked as deprecated in storage/image_component.proto.
 func (x *ImageComponentV2) ClearImageId() {
-	x.ImageId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_ImageId = nil
 }
 
 func (x *ImageComponentV2) ClearHasLayerIndex() {
-	x.HasLayerIndex = nil
+	x.xxx_hidden_HasLayerIndex = nil
 }
 
-func (x *ImageComponentV2) Clear_LayerIndex() {
-	if _, ok := x.HasLayerIndex.(*ImageComponentV2_LayerIndex); ok {
-		x.HasLayerIndex = nil
+func (x *ImageComponentV2) ClearLayerIndex() {
+	if _, ok := x.xxx_hidden_HasLayerIndex.(*imageComponentV2_LayerIndex); ok {
+		x.xxx_hidden_HasLayerIndex = nil
 	}
 }
 
 func (x *ImageComponentV2) ClearLocation() {
-	x.Location = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	x.xxx_hidden_Location = nil
 }
 
 func (x *ImageComponentV2) ClearArchitecture() {
-	x.Architecture = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
+	x.xxx_hidden_Architecture = nil
 }
 
 func (x *ImageComponentV2) ClearImageIdV2() {
-	x.ImageIdV2 = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
+	x.xxx_hidden_ImageIdV2 = nil
 }
 
 const ImageComponentV2_SetTopCvss_not_set_case case_ImageComponentV2_SetTopCvss = 0
@@ -825,8 +884,8 @@ func (x *ImageComponentV2) WhichSetTopCvss() case_ImageComponentV2_SetTopCvss {
 	if x == nil {
 		return ImageComponentV2_SetTopCvss_not_set_case
 	}
-	switch x.SetTopCvss.(type) {
-	case *ImageComponentV2_TopCvss:
+	switch x.xxx_hidden_SetTopCvss.(type) {
+	case *imageComponentV2_TopCvss:
 		return ImageComponentV2_TopCvss_case
 	default:
 		return ImageComponentV2_SetTopCvss_not_set_case
@@ -840,8 +899,8 @@ func (x *ImageComponentV2) WhichHasLayerIndex() case_ImageComponentV2_HasLayerIn
 	if x == nil {
 		return ImageComponentV2_HasLayerIndex_not_set_case
 	}
-	switch x.HasLayerIndex.(type) {
-	case *ImageComponentV2_LayerIndex:
+	switch x.xxx_hidden_HasLayerIndex.(type) {
+	case *imageComponentV2_LayerIndex:
 		return ImageComponentV2_LayerIndex_case
 	default:
 		return ImageComponentV2_HasLayerIndex_not_set_case
@@ -858,9 +917,9 @@ type ImageComponentV2_builder struct {
 	Priority  *int64
 	Source    *SourceType
 	RiskScore *float32
-	// Fields of oneof SetTopCvss:
+	// Fields of oneof xxx_hidden_SetTopCvss:
 	TopCvss *float32
-	// -- end of SetTopCvss
+	// -- end of xxx_hidden_SetTopCvss
 	// Component version that fixes all the fixable vulnerabilities in this component.
 	FixedBy         *string
 	OperatingSystem *string
@@ -870,9 +929,9 @@ type ImageComponentV2_builder struct {
 	ImageId *string
 	/// Layer that contains this component
 
-	// Fields of oneof HasLayerIndex:
+	// Fields of oneof xxx_hidden_HasLayerIndex:
 	LayerIndex *int32
-	// -- end of HasLayerIndex
+	// -- end of xxx_hidden_HasLayerIndex
 	Location     *string
 	Architecture *string
 	ImageIdV2    *string
@@ -882,24 +941,60 @@ func (b0 ImageComponentV2_builder) Build() *ImageComponentV2 {
 	m0 := &ImageComponentV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Version = b.Version
-	x.Priority = b.Priority
-	x.Source = b.Source
-	x.RiskScore = b.RiskScore
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 14)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 14)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 14)
+		x.xxx_hidden_Version = b.Version
+	}
+	if b.Priority != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 14)
+		x.xxx_hidden_Priority = *b.Priority
+	}
+	if b.Source != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 14)
+		x.xxx_hidden_Source = *b.Source
+	}
+	if b.RiskScore != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 14)
+		x.xxx_hidden_RiskScore = *b.RiskScore
+	}
 	if b.TopCvss != nil {
-		x.SetTopCvss = &ImageComponentV2_TopCvss{*b.TopCvss}
+		x.xxx_hidden_SetTopCvss = &imageComponentV2_TopCvss{*b.TopCvss}
 	}
-	x.FixedBy = b.FixedBy
-	x.OperatingSystem = b.OperatingSystem
-	x.ImageId = b.ImageId
+	if b.FixedBy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 14)
+		x.xxx_hidden_FixedBy = b.FixedBy
+	}
+	if b.OperatingSystem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 14)
+		x.xxx_hidden_OperatingSystem = b.OperatingSystem
+	}
+	if b.ImageId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 14)
+		x.xxx_hidden_ImageId = b.ImageId
+	}
 	if b.LayerIndex != nil {
-		x.HasLayerIndex = &ImageComponentV2_LayerIndex{*b.LayerIndex}
+		x.xxx_hidden_HasLayerIndex = &imageComponentV2_LayerIndex{*b.LayerIndex}
 	}
-	x.Location = b.Location
-	x.Architecture = b.Architecture
-	x.ImageIdV2 = b.ImageIdV2
+	if b.Location != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 14)
+		x.xxx_hidden_Location = b.Location
+	}
+	if b.Architecture != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 14)
+		x.xxx_hidden_Architecture = b.Architecture
+	}
+	if b.ImageIdV2 != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 14)
+		x.xxx_hidden_ImageIdV2 = b.ImageIdV2
+	}
 	return m0
 }
 
@@ -927,21 +1022,21 @@ type isImageComponentV2_SetTopCvss interface {
 	isImageComponentV2_SetTopCvss()
 }
 
-type ImageComponentV2_TopCvss struct {
+type imageComponentV2_TopCvss struct {
 	TopCvss float32 `protobuf:"fixed32,7,opt,name=top_cvss,json=topCvss,oneof" search:"Component Top CVSS,store"` // @gotags: search:"Component Top CVSS,store"
 }
 
-func (*ImageComponentV2_TopCvss) isImageComponentV2_SetTopCvss() {}
+func (*imageComponentV2_TopCvss) isImageComponentV2_SetTopCvss() {}
 
 type isImageComponentV2_HasLayerIndex interface {
 	isImageComponentV2_HasLayerIndex()
 }
 
-type ImageComponentV2_LayerIndex struct {
+type imageComponentV2_LayerIndex struct {
 	LayerIndex int32 `protobuf:"varint,11,opt,name=layer_index,json=layerIndex,oneof"`
 }
 
-func (*ImageComponentV2_LayerIndex) isImageComponentV2_HasLayerIndex() {}
+func (*imageComponentV2_LayerIndex) isImageComponentV2_HasLayerIndex() {}
 
 var File_storage_image_component_proto protoreflect.FileDescriptor
 
@@ -982,7 +1077,7 @@ const file_storage_image_component_proto_rawDesc = "" +
 	"\vimage_id_v2\x18\x0e \x01(\tR\timageIdV2B\x0e\n" +
 	"\fset_top_cvssB\x11\n" +
 	"\x0fhas_layer_indexB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_image_component_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_image_component_proto_goTypes = []any{
@@ -1009,11 +1104,11 @@ func file_storage_image_component_proto_init() {
 	}
 	file_storage_image_proto_init()
 	file_storage_image_component_proto_msgTypes[0].OneofWrappers = []any{
-		(*ImageComponent_TopCvss)(nil),
+		(*imageComponent_TopCvss)(nil),
 	}
 	file_storage_image_component_proto_msgTypes[1].OneofWrappers = []any{
-		(*ImageComponentV2_TopCvss)(nil),
-		(*ImageComponentV2_LayerIndex)(nil),
+		(*imageComponentV2_TopCvss)(nil),
+		(*imageComponentV2_LayerIndex)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

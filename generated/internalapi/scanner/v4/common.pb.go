@@ -8,8 +8,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/scanner/v4/common.proto
 
-//go:build !protoopaque
-
 package v4
 
 import (
@@ -28,21 +26,17 @@ const (
 )
 
 type Contents struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
-	PackagesDEPRECATED []*Package          `protobuf:"bytes,1,rep,name=packagesDEPRECATED" json:"packagesDEPRECATED,omitempty"`
-	Packages           map[string]*Package `protobuf:"bytes,5,rep,name=packages" json:"packages,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
-	DistributionsDEPRECATED []*Distribution          `protobuf:"bytes,2,rep,name=distributionsDEPRECATED" json:"distributionsDEPRECATED,omitempty"`
-	Distributions           map[string]*Distribution `protobuf:"bytes,6,rep,name=distributions" json:"distributions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
-	RepositoriesDEPRECATED []*Repository          `protobuf:"bytes,3,rep,name=repositoriesDEPRECATED" json:"repositoriesDEPRECATED,omitempty"`
-	Repositories           map[string]*Repository `protobuf:"bytes,7,rep,name=repositories" json:"repositories,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
-	EnvironmentsDEPRECATED map[string]*Environment_List `protobuf:"bytes,4,rep,name=environmentsDEPRECATED" json:"environmentsDEPRECATED,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Environments           map[string]*Environment_List `protobuf:"bytes,8,rep,name=environments" json:"environments,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                              protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_PackagesDEPRECATED      *[]*Package                  `protobuf:"bytes,1,rep,name=packagesDEPRECATED"`
+	xxx_hidden_Packages                map[string]*Package          `protobuf:"bytes,5,rep,name=packages" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_DistributionsDEPRECATED *[]*Distribution             `protobuf:"bytes,2,rep,name=distributionsDEPRECATED"`
+	xxx_hidden_Distributions           map[string]*Distribution     `protobuf:"bytes,6,rep,name=distributions" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_RepositoriesDEPRECATED  *[]*Repository               `protobuf:"bytes,3,rep,name=repositoriesDEPRECATED"`
+	xxx_hidden_Repositories            map[string]*Repository       `protobuf:"bytes,7,rep,name=repositories" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_EnvironmentsDEPRECATED  map[string]*Environment_List `protobuf:"bytes,4,rep,name=environmentsDEPRECATED" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_Environments            map[string]*Environment_List `protobuf:"bytes,8,rep,name=environments" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *Contents) Reset() {
@@ -73,14 +67,16 @@ func (x *Contents) ProtoReflect() protoreflect.Message {
 // Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
 func (x *Contents) GetPackagesDEPRECATED() []*Package {
 	if x != nil {
-		return x.PackagesDEPRECATED
+		if x.xxx_hidden_PackagesDEPRECATED != nil {
+			return *x.xxx_hidden_PackagesDEPRECATED
+		}
 	}
 	return nil
 }
 
 func (x *Contents) GetPackages() map[string]*Package {
 	if x != nil {
-		return x.Packages
+		return x.xxx_hidden_Packages
 	}
 	return nil
 }
@@ -88,14 +84,16 @@ func (x *Contents) GetPackages() map[string]*Package {
 // Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
 func (x *Contents) GetDistributionsDEPRECATED() []*Distribution {
 	if x != nil {
-		return x.DistributionsDEPRECATED
+		if x.xxx_hidden_DistributionsDEPRECATED != nil {
+			return *x.xxx_hidden_DistributionsDEPRECATED
+		}
 	}
 	return nil
 }
 
 func (x *Contents) GetDistributions() map[string]*Distribution {
 	if x != nil {
-		return x.Distributions
+		return x.xxx_hidden_Distributions
 	}
 	return nil
 }
@@ -103,14 +101,16 @@ func (x *Contents) GetDistributions() map[string]*Distribution {
 // Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
 func (x *Contents) GetRepositoriesDEPRECATED() []*Repository {
 	if x != nil {
-		return x.RepositoriesDEPRECATED
+		if x.xxx_hidden_RepositoriesDEPRECATED != nil {
+			return *x.xxx_hidden_RepositoriesDEPRECATED
+		}
 	}
 	return nil
 }
 
 func (x *Contents) GetRepositories() map[string]*Repository {
 	if x != nil {
-		return x.Repositories
+		return x.xxx_hidden_Repositories
 	}
 	return nil
 }
@@ -118,52 +118,52 @@ func (x *Contents) GetRepositories() map[string]*Repository {
 // Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
 func (x *Contents) GetEnvironmentsDEPRECATED() map[string]*Environment_List {
 	if x != nil {
-		return x.EnvironmentsDEPRECATED
+		return x.xxx_hidden_EnvironmentsDEPRECATED
 	}
 	return nil
 }
 
 func (x *Contents) GetEnvironments() map[string]*Environment_List {
 	if x != nil {
-		return x.Environments
+		return x.xxx_hidden_Environments
 	}
 	return nil
 }
 
 // Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
 func (x *Contents) SetPackagesDEPRECATED(v []*Package) {
-	x.PackagesDEPRECATED = v
+	x.xxx_hidden_PackagesDEPRECATED = &v
 }
 
 func (x *Contents) SetPackages(v map[string]*Package) {
-	x.Packages = v
+	x.xxx_hidden_Packages = v
 }
 
 // Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
 func (x *Contents) SetDistributionsDEPRECATED(v []*Distribution) {
-	x.DistributionsDEPRECATED = v
+	x.xxx_hidden_DistributionsDEPRECATED = &v
 }
 
 func (x *Contents) SetDistributions(v map[string]*Distribution) {
-	x.Distributions = v
+	x.xxx_hidden_Distributions = v
 }
 
 // Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
 func (x *Contents) SetRepositoriesDEPRECATED(v []*Repository) {
-	x.RepositoriesDEPRECATED = v
+	x.xxx_hidden_RepositoriesDEPRECATED = &v
 }
 
 func (x *Contents) SetRepositories(v map[string]*Repository) {
-	x.Repositories = v
+	x.xxx_hidden_Repositories = v
 }
 
 // Deprecated: Marked as deprecated in internalapi/scanner/v4/common.proto.
 func (x *Contents) SetEnvironmentsDEPRECATED(v map[string]*Environment_List) {
-	x.EnvironmentsDEPRECATED = v
+	x.xxx_hidden_EnvironmentsDEPRECATED = v
 }
 
 func (x *Contents) SetEnvironments(v map[string]*Environment_List) {
-	x.Environments = v
+	x.xxx_hidden_Environments = v
 }
 
 type Contents_builder struct {
@@ -187,33 +187,35 @@ func (b0 Contents_builder) Build() *Contents {
 	m0 := &Contents{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PackagesDEPRECATED = b.PackagesDEPRECATED
-	x.Packages = b.Packages
-	x.DistributionsDEPRECATED = b.DistributionsDEPRECATED
-	x.Distributions = b.Distributions
-	x.RepositoriesDEPRECATED = b.RepositoriesDEPRECATED
-	x.Repositories = b.Repositories
-	x.EnvironmentsDEPRECATED = b.EnvironmentsDEPRECATED
-	x.Environments = b.Environments
+	x.xxx_hidden_PackagesDEPRECATED = &b.PackagesDEPRECATED
+	x.xxx_hidden_Packages = b.Packages
+	x.xxx_hidden_DistributionsDEPRECATED = &b.DistributionsDEPRECATED
+	x.xxx_hidden_Distributions = b.Distributions
+	x.xxx_hidden_RepositoriesDEPRECATED = &b.RepositoriesDEPRECATED
+	x.xxx_hidden_Repositories = b.Repositories
+	x.xxx_hidden_EnvironmentsDEPRECATED = b.EnvironmentsDEPRECATED
+	x.xxx_hidden_Environments = b.Environments
 	return m0
 }
 
 type Package struct {
-	state             protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id                *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name              *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Version           *string                `protobuf:"bytes,3,opt,name=version" json:"version,omitempty"`
-	NormalizedVersion *NormalizedVersion     `protobuf:"bytes,4,opt,name=normalized_version,json=normalizedVersion" json:"normalized_version,omitempty"`
-	FixedInVersion    *string                `protobuf:"bytes,5,opt,name=fixed_in_version,json=fixedInVersion" json:"fixed_in_version,omitempty"`
-	Kind              *string                `protobuf:"bytes,6,opt,name=kind" json:"kind,omitempty"`
-	Source            *Package               `protobuf:"bytes,7,opt,name=source" json:"source,omitempty"`
-	PackageDb         *string                `protobuf:"bytes,8,opt,name=package_db,json=packageDb" json:"package_db,omitempty"`
-	RepositoryHint    *string                `protobuf:"bytes,9,opt,name=repository_hint,json=repositoryHint" json:"repository_hint,omitempty"`
-	Module            *string                `protobuf:"bytes,10,opt,name=module" json:"module,omitempty"`
-	Arch              *string                `protobuf:"bytes,11,opt,name=arch" json:"arch,omitempty"`
-	Cpe               *string                `protobuf:"bytes,12,opt,name=cpe" json:"cpe,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id                *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name              *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Version           *string                `protobuf:"bytes,3,opt,name=version"`
+	xxx_hidden_NormalizedVersion *NormalizedVersion     `protobuf:"bytes,4,opt,name=normalized_version,json=normalizedVersion"`
+	xxx_hidden_FixedInVersion    *string                `protobuf:"bytes,5,opt,name=fixed_in_version,json=fixedInVersion"`
+	xxx_hidden_Kind              *string                `protobuf:"bytes,6,opt,name=kind"`
+	xxx_hidden_Source            *Package               `protobuf:"bytes,7,opt,name=source"`
+	xxx_hidden_PackageDb         *string                `protobuf:"bytes,8,opt,name=package_db,json=packageDb"`
+	xxx_hidden_RepositoryHint    *string                `protobuf:"bytes,9,opt,name=repository_hint,json=repositoryHint"`
+	xxx_hidden_Module            *string                `protobuf:"bytes,10,opt,name=module"`
+	xxx_hidden_Arch              *string                `protobuf:"bytes,11,opt,name=arch"`
+	xxx_hidden_Cpe               *string                `protobuf:"bytes,12,opt,name=cpe"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *Package) Reset() {
@@ -242,267 +244,317 @@ func (x *Package) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Package) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Package) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Package) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Package) GetNormalizedVersion() *NormalizedVersion {
 	if x != nil {
-		return x.NormalizedVersion
+		return x.xxx_hidden_NormalizedVersion
 	}
 	return nil
 }
 
 func (x *Package) GetFixedInVersion() string {
-	if x != nil && x.FixedInVersion != nil {
-		return *x.FixedInVersion
+	if x != nil {
+		if x.xxx_hidden_FixedInVersion != nil {
+			return *x.xxx_hidden_FixedInVersion
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Package) GetKind() string {
-	if x != nil && x.Kind != nil {
-		return *x.Kind
+	if x != nil {
+		if x.xxx_hidden_Kind != nil {
+			return *x.xxx_hidden_Kind
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Package) GetSource() *Package {
 	if x != nil {
-		return x.Source
+		return x.xxx_hidden_Source
 	}
 	return nil
 }
 
 func (x *Package) GetPackageDb() string {
-	if x != nil && x.PackageDb != nil {
-		return *x.PackageDb
+	if x != nil {
+		if x.xxx_hidden_PackageDb != nil {
+			return *x.xxx_hidden_PackageDb
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Package) GetRepositoryHint() string {
-	if x != nil && x.RepositoryHint != nil {
-		return *x.RepositoryHint
+	if x != nil {
+		if x.xxx_hidden_RepositoryHint != nil {
+			return *x.xxx_hidden_RepositoryHint
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Package) GetModule() string {
-	if x != nil && x.Module != nil {
-		return *x.Module
+	if x != nil {
+		if x.xxx_hidden_Module != nil {
+			return *x.xxx_hidden_Module
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Package) GetArch() string {
-	if x != nil && x.Arch != nil {
-		return *x.Arch
+	if x != nil {
+		if x.xxx_hidden_Arch != nil {
+			return *x.xxx_hidden_Arch
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Package) GetCpe() string {
-	if x != nil && x.Cpe != nil {
-		return *x.Cpe
+	if x != nil {
+		if x.xxx_hidden_Cpe != nil {
+			return *x.xxx_hidden_Cpe
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Package) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 12)
 }
 
 func (x *Package) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 12)
 }
 
 func (x *Package) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 12)
 }
 
 func (x *Package) SetNormalizedVersion(v *NormalizedVersion) {
-	x.NormalizedVersion = v
+	x.xxx_hidden_NormalizedVersion = v
 }
 
 func (x *Package) SetFixedInVersion(v string) {
-	x.FixedInVersion = &v
+	x.xxx_hidden_FixedInVersion = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 12)
 }
 
 func (x *Package) SetKind(v string) {
-	x.Kind = &v
+	x.xxx_hidden_Kind = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 12)
 }
 
 func (x *Package) SetSource(v *Package) {
-	x.Source = v
+	x.xxx_hidden_Source = v
 }
 
 func (x *Package) SetPackageDb(v string) {
-	x.PackageDb = &v
+	x.xxx_hidden_PackageDb = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 12)
 }
 
 func (x *Package) SetRepositoryHint(v string) {
-	x.RepositoryHint = &v
+	x.xxx_hidden_RepositoryHint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 12)
 }
 
 func (x *Package) SetModule(v string) {
-	x.Module = &v
+	x.xxx_hidden_Module = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 12)
 }
 
 func (x *Package) SetArch(v string) {
-	x.Arch = &v
+	x.xxx_hidden_Arch = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 12)
 }
 
 func (x *Package) SetCpe(v string) {
-	x.Cpe = &v
+	x.xxx_hidden_Cpe = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 12)
 }
 
 func (x *Package) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Package) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Package) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Package) HasNormalizedVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.NormalizedVersion != nil
+	return x.xxx_hidden_NormalizedVersion != nil
 }
 
 func (x *Package) HasFixedInVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.FixedInVersion != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Package) HasKind() bool {
 	if x == nil {
 		return false
 	}
-	return x.Kind != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Package) HasSource() bool {
 	if x == nil {
 		return false
 	}
-	return x.Source != nil
+	return x.xxx_hidden_Source != nil
 }
 
 func (x *Package) HasPackageDb() bool {
 	if x == nil {
 		return false
 	}
-	return x.PackageDb != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *Package) HasRepositoryHint() bool {
 	if x == nil {
 		return false
 	}
-	return x.RepositoryHint != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *Package) HasModule() bool {
 	if x == nil {
 		return false
 	}
-	return x.Module != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *Package) HasArch() bool {
 	if x == nil {
 		return false
 	}
-	return x.Arch != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
 }
 
 func (x *Package) HasCpe() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cpe != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
 }
 
 func (x *Package) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Package) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Package) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Version = nil
 }
 
 func (x *Package) ClearNormalizedVersion() {
-	x.NormalizedVersion = nil
+	x.xxx_hidden_NormalizedVersion = nil
 }
 
 func (x *Package) ClearFixedInVersion() {
-	x.FixedInVersion = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_FixedInVersion = nil
 }
 
 func (x *Package) ClearKind() {
-	x.Kind = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Kind = nil
 }
 
 func (x *Package) ClearSource() {
-	x.Source = nil
+	x.xxx_hidden_Source = nil
 }
 
 func (x *Package) ClearPackageDb() {
-	x.PackageDb = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_PackageDb = nil
 }
 
 func (x *Package) ClearRepositoryHint() {
-	x.RepositoryHint = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_RepositoryHint = nil
 }
 
 func (x *Package) ClearModule() {
-	x.Module = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_Module = nil
 }
 
 func (x *Package) ClearArch() {
-	x.Arch = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	x.xxx_hidden_Arch = nil
 }
 
 func (x *Package) ClearCpe() {
-	x.Cpe = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	x.xxx_hidden_Cpe = nil
 }
 
 type Package_builder struct {
@@ -526,27 +578,59 @@ func (b0 Package_builder) Build() *Package {
 	m0 := &Package{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Version = b.Version
-	x.NormalizedVersion = b.NormalizedVersion
-	x.FixedInVersion = b.FixedInVersion
-	x.Kind = b.Kind
-	x.Source = b.Source
-	x.PackageDb = b.PackageDb
-	x.RepositoryHint = b.RepositoryHint
-	x.Module = b.Module
-	x.Arch = b.Arch
-	x.Cpe = b.Cpe
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 12)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 12)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 12)
+		x.xxx_hidden_Version = b.Version
+	}
+	x.xxx_hidden_NormalizedVersion = b.NormalizedVersion
+	if b.FixedInVersion != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 12)
+		x.xxx_hidden_FixedInVersion = b.FixedInVersion
+	}
+	if b.Kind != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 12)
+		x.xxx_hidden_Kind = b.Kind
+	}
+	x.xxx_hidden_Source = b.Source
+	if b.PackageDb != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 12)
+		x.xxx_hidden_PackageDb = b.PackageDb
+	}
+	if b.RepositoryHint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 12)
+		x.xxx_hidden_RepositoryHint = b.RepositoryHint
+	}
+	if b.Module != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 12)
+		x.xxx_hidden_Module = b.Module
+	}
+	if b.Arch != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 12)
+		x.xxx_hidden_Arch = b.Arch
+	}
+	if b.Cpe != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 12)
+		x.xxx_hidden_Cpe = b.Cpe
+	}
 	return m0
 }
 
 type NormalizedVersion struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Kind          *string                `protobuf:"bytes,1,opt,name=kind" json:"kind,omitempty"`
-	V             []int32                `protobuf:"varint,2,rep,packed,name=v" json:"v,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kind        *string                `protobuf:"bytes,1,opt,name=kind"`
+	xxx_hidden_V           []int32                `protobuf:"varint,2,rep,packed,name=v"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NormalizedVersion) Reset() {
@@ -575,36 +659,41 @@ func (x *NormalizedVersion) ProtoReflect() protoreflect.Message {
 }
 
 func (x *NormalizedVersion) GetKind() string {
-	if x != nil && x.Kind != nil {
-		return *x.Kind
+	if x != nil {
+		if x.xxx_hidden_Kind != nil {
+			return *x.xxx_hidden_Kind
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *NormalizedVersion) GetV() []int32 {
 	if x != nil {
-		return x.V
+		return x.xxx_hidden_V
 	}
 	return nil
 }
 
 func (x *NormalizedVersion) SetKind(v string) {
-	x.Kind = &v
+	x.xxx_hidden_Kind = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *NormalizedVersion) SetV(v []int32) {
-	x.V = v
+	x.xxx_hidden_V = v
 }
 
 func (x *NormalizedVersion) HasKind() bool {
 	if x == nil {
 		return false
 	}
-	return x.Kind != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *NormalizedVersion) ClearKind() {
-	x.Kind = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Kind = nil
 }
 
 type NormalizedVersion_builder struct {
@@ -618,24 +707,29 @@ func (b0 NormalizedVersion_builder) Build() *NormalizedVersion {
 	m0 := &NormalizedVersion{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Kind = b.Kind
-	x.V = b.V
+	if b.Kind != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Kind = b.Kind
+	}
+	x.xxx_hidden_V = b.V
 	return m0
 }
 
 type Distribution struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id              *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Did             *string                `protobuf:"bytes,2,opt,name=did" json:"did,omitempty"`
-	Name            *string                `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	Version         *string                `protobuf:"bytes,4,opt,name=version" json:"version,omitempty"`
-	VersionCodeName *string                `protobuf:"bytes,5,opt,name=version_code_name,json=versionCodeName" json:"version_code_name,omitempty"`
-	VersionId       *string                `protobuf:"bytes,6,opt,name=version_id,json=versionId" json:"version_id,omitempty"`
-	Arch            *string                `protobuf:"bytes,7,opt,name=arch" json:"arch,omitempty"`
-	Cpe             *string                `protobuf:"bytes,8,opt,name=cpe" json:"cpe,omitempty"`
-	PrettyName      *string                `protobuf:"bytes,9,opt,name=pretty_name,json=prettyName" json:"pretty_name,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id              *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Did             *string                `protobuf:"bytes,2,opt,name=did"`
+	xxx_hidden_Name            *string                `protobuf:"bytes,3,opt,name=name"`
+	xxx_hidden_Version         *string                `protobuf:"bytes,4,opt,name=version"`
+	xxx_hidden_VersionCodeName *string                `protobuf:"bytes,5,opt,name=version_code_name,json=versionCodeName"`
+	xxx_hidden_VersionId       *string                `protobuf:"bytes,6,opt,name=version_id,json=versionId"`
+	xxx_hidden_Arch            *string                `protobuf:"bytes,7,opt,name=arch"`
+	xxx_hidden_Cpe             *string                `protobuf:"bytes,8,opt,name=cpe"`
+	xxx_hidden_PrettyName      *string                `protobuf:"bytes,9,opt,name=pretty_name,json=prettyName"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *Distribution) Reset() {
@@ -664,201 +758,246 @@ func (x *Distribution) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Distribution) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Distribution) GetDid() string {
-	if x != nil && x.Did != nil {
-		return *x.Did
+	if x != nil {
+		if x.xxx_hidden_Did != nil {
+			return *x.xxx_hidden_Did
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Distribution) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Distribution) GetVersion() string {
-	if x != nil && x.Version != nil {
-		return *x.Version
+	if x != nil {
+		if x.xxx_hidden_Version != nil {
+			return *x.xxx_hidden_Version
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Distribution) GetVersionCodeName() string {
-	if x != nil && x.VersionCodeName != nil {
-		return *x.VersionCodeName
+	if x != nil {
+		if x.xxx_hidden_VersionCodeName != nil {
+			return *x.xxx_hidden_VersionCodeName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Distribution) GetVersionId() string {
-	if x != nil && x.VersionId != nil {
-		return *x.VersionId
+	if x != nil {
+		if x.xxx_hidden_VersionId != nil {
+			return *x.xxx_hidden_VersionId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Distribution) GetArch() string {
-	if x != nil && x.Arch != nil {
-		return *x.Arch
+	if x != nil {
+		if x.xxx_hidden_Arch != nil {
+			return *x.xxx_hidden_Arch
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Distribution) GetCpe() string {
-	if x != nil && x.Cpe != nil {
-		return *x.Cpe
+	if x != nil {
+		if x.xxx_hidden_Cpe != nil {
+			return *x.xxx_hidden_Cpe
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Distribution) GetPrettyName() string {
-	if x != nil && x.PrettyName != nil {
-		return *x.PrettyName
+	if x != nil {
+		if x.xxx_hidden_PrettyName != nil {
+			return *x.xxx_hidden_PrettyName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Distribution) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
 }
 
 func (x *Distribution) SetDid(v string) {
-	x.Did = &v
+	x.xxx_hidden_Did = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
 }
 
 func (x *Distribution) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
 }
 
 func (x *Distribution) SetVersion(v string) {
-	x.Version = &v
+	x.xxx_hidden_Version = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
 }
 
 func (x *Distribution) SetVersionCodeName(v string) {
-	x.VersionCodeName = &v
+	x.xxx_hidden_VersionCodeName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
 }
 
 func (x *Distribution) SetVersionId(v string) {
-	x.VersionId = &v
+	x.xxx_hidden_VersionId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
 }
 
 func (x *Distribution) SetArch(v string) {
-	x.Arch = &v
+	x.xxx_hidden_Arch = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
 }
 
 func (x *Distribution) SetCpe(v string) {
-	x.Cpe = &v
+	x.xxx_hidden_Cpe = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
 }
 
 func (x *Distribution) SetPrettyName(v string) {
-	x.PrettyName = &v
+	x.xxx_hidden_PrettyName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
 }
 
 func (x *Distribution) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Distribution) HasDid() bool {
 	if x == nil {
 		return false
 	}
-	return x.Did != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Distribution) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Distribution) HasVersion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Version != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Distribution) HasVersionCodeName() bool {
 	if x == nil {
 		return false
 	}
-	return x.VersionCodeName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Distribution) HasVersionId() bool {
 	if x == nil {
 		return false
 	}
-	return x.VersionId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *Distribution) HasArch() bool {
 	if x == nil {
 		return false
 	}
-	return x.Arch != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *Distribution) HasCpe() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cpe != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *Distribution) HasPrettyName() bool {
 	if x == nil {
 		return false
 	}
-	return x.PrettyName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *Distribution) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Distribution) ClearDid() {
-	x.Did = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Did = nil
 }
 
 func (x *Distribution) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Distribution) ClearVersion() {
-	x.Version = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Version = nil
 }
 
 func (x *Distribution) ClearVersionCodeName() {
-	x.VersionCodeName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_VersionCodeName = nil
 }
 
 func (x *Distribution) ClearVersionId() {
-	x.VersionId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_VersionId = nil
 }
 
 func (x *Distribution) ClearArch() {
-	x.Arch = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_Arch = nil
 }
 
 func (x *Distribution) ClearCpe() {
-	x.Cpe = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_Cpe = nil
 }
 
 func (x *Distribution) ClearPrettyName() {
-	x.PrettyName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_PrettyName = nil
 }
 
 type Distribution_builder struct {
@@ -879,27 +1018,56 @@ func (b0 Distribution_builder) Build() *Distribution {
 	m0 := &Distribution{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Did = b.Did
-	x.Name = b.Name
-	x.Version = b.Version
-	x.VersionCodeName = b.VersionCodeName
-	x.VersionId = b.VersionId
-	x.Arch = b.Arch
-	x.Cpe = b.Cpe
-	x.PrettyName = b.PrettyName
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Did != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
+		x.xxx_hidden_Did = b.Did
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
+		x.xxx_hidden_Version = b.Version
+	}
+	if b.VersionCodeName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
+		x.xxx_hidden_VersionCodeName = b.VersionCodeName
+	}
+	if b.VersionId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
+		x.xxx_hidden_VersionId = b.VersionId
+	}
+	if b.Arch != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
+		x.xxx_hidden_Arch = b.Arch
+	}
+	if b.Cpe != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
+		x.xxx_hidden_Cpe = b.Cpe
+	}
+	if b.PrettyName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
+		x.xxx_hidden_PrettyName = b.PrettyName
+	}
 	return m0
 }
 
 type Repository struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name          *string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Key           *string                `protobuf:"bytes,3,opt,name=key" json:"key,omitempty"`
-	Uri           *string                `protobuf:"bytes,4,opt,name=uri" json:"uri,omitempty"`
-	Cpe           *string                `protobuf:"bytes,5,opt,name=cpe" json:"cpe,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Key         *string                `protobuf:"bytes,3,opt,name=key"`
+	xxx_hidden_Uri         *string                `protobuf:"bytes,4,opt,name=uri"`
+	xxx_hidden_Cpe         *string                `protobuf:"bytes,5,opt,name=cpe"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Repository) Reset() {
@@ -928,113 +1096,138 @@ func (x *Repository) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Repository) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Repository) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Repository) GetKey() string {
-	if x != nil && x.Key != nil {
-		return *x.Key
+	if x != nil {
+		if x.xxx_hidden_Key != nil {
+			return *x.xxx_hidden_Key
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Repository) GetUri() string {
-	if x != nil && x.Uri != nil {
-		return *x.Uri
+	if x != nil {
+		if x.xxx_hidden_Uri != nil {
+			return *x.xxx_hidden_Uri
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Repository) GetCpe() string {
-	if x != nil && x.Cpe != nil {
-		return *x.Cpe
+	if x != nil {
+		if x.xxx_hidden_Cpe != nil {
+			return *x.xxx_hidden_Cpe
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Repository) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *Repository) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *Repository) SetKey(v string) {
-	x.Key = &v
+	x.xxx_hidden_Key = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *Repository) SetUri(v string) {
-	x.Uri = &v
+	x.xxx_hidden_Uri = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *Repository) SetCpe(v string) {
-	x.Cpe = &v
+	x.xxx_hidden_Cpe = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *Repository) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Repository) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Repository) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.Key != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Repository) HasUri() bool {
 	if x == nil {
 		return false
 	}
-	return x.Uri != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *Repository) HasCpe() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cpe != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *Repository) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Repository) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Repository) ClearKey() {
-	x.Key = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Key = nil
 }
 
 func (x *Repository) ClearUri() {
-	x.Uri = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Uri = nil
 }
 
 func (x *Repository) ClearCpe() {
-	x.Cpe = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Cpe = nil
 }
 
 type Repository_builder struct {
@@ -1051,24 +1244,41 @@ func (b0 Repository_builder) Build() *Repository {
 	m0 := &Repository{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Key = b.Key
-	x.Uri = b.Uri
-	x.Cpe = b.Cpe
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Key != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Key = b.Key
+	}
+	if b.Uri != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_Uri = b.Uri
+	}
+	if b.Cpe != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		x.xxx_hidden_Cpe = b.Cpe
+	}
 	return m0
 }
 
 // Environment describes the surrounding environment a package was
 // discovered in.
 type Environment struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	PackageDb      *string                `protobuf:"bytes,1,opt,name=package_db,json=packageDb" json:"package_db,omitempty"`
-	IntroducedIn   *string                `protobuf:"bytes,2,opt,name=introduced_in,json=introducedIn" json:"introduced_in,omitempty"`
-	DistributionId *string                `protobuf:"bytes,3,opt,name=distribution_id,json=distributionId" json:"distribution_id,omitempty"`
-	RepositoryIds  []string               `protobuf:"bytes,4,rep,name=repository_ids,json=repositoryIds" json:"repository_ids,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PackageDb      *string                `protobuf:"bytes,1,opt,name=package_db,json=packageDb"`
+	xxx_hidden_IntroducedIn   *string                `protobuf:"bytes,2,opt,name=introduced_in,json=introducedIn"`
+	xxx_hidden_DistributionId *string                `protobuf:"bytes,3,opt,name=distribution_id,json=distributionId"`
+	xxx_hidden_RepositoryIds  []string               `protobuf:"bytes,4,rep,name=repository_ids,json=repositoryIds"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *Environment) Reset() {
@@ -1097,80 +1307,95 @@ func (x *Environment) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Environment) GetPackageDb() string {
-	if x != nil && x.PackageDb != nil {
-		return *x.PackageDb
+	if x != nil {
+		if x.xxx_hidden_PackageDb != nil {
+			return *x.xxx_hidden_PackageDb
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Environment) GetIntroducedIn() string {
-	if x != nil && x.IntroducedIn != nil {
-		return *x.IntroducedIn
+	if x != nil {
+		if x.xxx_hidden_IntroducedIn != nil {
+			return *x.xxx_hidden_IntroducedIn
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Environment) GetDistributionId() string {
-	if x != nil && x.DistributionId != nil {
-		return *x.DistributionId
+	if x != nil {
+		if x.xxx_hidden_DistributionId != nil {
+			return *x.xxx_hidden_DistributionId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Environment) GetRepositoryIds() []string {
 	if x != nil {
-		return x.RepositoryIds
+		return x.xxx_hidden_RepositoryIds
 	}
 	return nil
 }
 
 func (x *Environment) SetPackageDb(v string) {
-	x.PackageDb = &v
+	x.xxx_hidden_PackageDb = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *Environment) SetIntroducedIn(v string) {
-	x.IntroducedIn = &v
+	x.xxx_hidden_IntroducedIn = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *Environment) SetDistributionId(v string) {
-	x.DistributionId = &v
+	x.xxx_hidden_DistributionId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *Environment) SetRepositoryIds(v []string) {
-	x.RepositoryIds = v
+	x.xxx_hidden_RepositoryIds = v
 }
 
 func (x *Environment) HasPackageDb() bool {
 	if x == nil {
 		return false
 	}
-	return x.PackageDb != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Environment) HasIntroducedIn() bool {
 	if x == nil {
 		return false
 	}
-	return x.IntroducedIn != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Environment) HasDistributionId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DistributionId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Environment) ClearPackageDb() {
-	x.PackageDb = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_PackageDb = nil
 }
 
 func (x *Environment) ClearIntroducedIn() {
-	x.IntroducedIn = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_IntroducedIn = nil
 }
 
 func (x *Environment) ClearDistributionId() {
-	x.DistributionId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_DistributionId = nil
 }
 
 type Environment_builder struct {
@@ -1186,18 +1411,27 @@ func (b0 Environment_builder) Build() *Environment {
 	m0 := &Environment{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PackageDb = b.PackageDb
-	x.IntroducedIn = b.IntroducedIn
-	x.DistributionId = b.DistributionId
-	x.RepositoryIds = b.RepositoryIds
+	if b.PackageDb != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_PackageDb = b.PackageDb
+	}
+	if b.IntroducedIn != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_IntroducedIn = b.IntroducedIn
+	}
+	if b.DistributionId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_DistributionId = b.DistributionId
+	}
+	x.xxx_hidden_RepositoryIds = b.RepositoryIds
 	return m0
 }
 
 type Environment_List struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Environments  []*Environment         `protobuf:"bytes,1,rep,name=environments" json:"environments,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Environments *[]*Environment        `protobuf:"bytes,1,rep,name=environments"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Environment_List) Reset() {
@@ -1227,13 +1461,15 @@ func (x *Environment_List) ProtoReflect() protoreflect.Message {
 
 func (x *Environment_List) GetEnvironments() []*Environment {
 	if x != nil {
-		return x.Environments
+		if x.xxx_hidden_Environments != nil {
+			return *x.xxx_hidden_Environments
+		}
 	}
 	return nil
 }
 
 func (x *Environment_List) SetEnvironments(v []*Environment) {
-	x.Environments = v
+	x.xxx_hidden_Environments = &v
 }
 
 type Environment_List_builder struct {
@@ -1246,7 +1482,7 @@ func (b0 Environment_List_builder) Build() *Environment_List {
 	m0 := &Environment_List{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Environments = b.Environments
+	x.xxx_hidden_Environments = &b.Environments
 	return m0
 }
 
@@ -1324,7 +1560,7 @@ const file_internalapi_scanner_v4_common_proto_rawDesc = "" +
 	"\x0fdistribution_id\x18\x03 \x01(\tR\x0edistributionId\x12%\n" +
 	"\x0erepository_ids\x18\x04 \x03(\tR\rrepositoryIds\x1aC\n" +
 	"\x04List\x12;\n" +
-	"\fenvironments\x18\x01 \x03(\v2\x17.scanner.v4.EnvironmentR\fenvironmentsB%Z\x1b./internalapi/scanner/v4;v4\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\fenvironments\x18\x01 \x03(\v2\x17.scanner.v4.EnvironmentR\fenvironmentsB%Z\x1b./internalapi/scanner/v4;v4\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_scanner_v4_common_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_internalapi_scanner_v4_common_proto_goTypes = []any{

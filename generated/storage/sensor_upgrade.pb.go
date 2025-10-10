@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/sensor_upgrade.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -25,11 +23,12 @@ const (
 
 // SensorUpgradeConfig encapsulates configuration relevant to sensor auto-upgrades.
 type SensorUpgradeConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Whether to automatically trigger upgrades for out-of-date sensors.
-	EnableAutoUpgrade *bool `protobuf:"varint,1,opt,name=enable_auto_upgrade,json=enableAutoUpgrade" json:"enable_auto_upgrade,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_EnableAutoUpgrade bool                   `protobuf:"varint,1,opt,name=enable_auto_upgrade,json=enableAutoUpgrade"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *SensorUpgradeConfig) Reset() {
@@ -58,25 +57,27 @@ func (x *SensorUpgradeConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SensorUpgradeConfig) GetEnableAutoUpgrade() bool {
-	if x != nil && x.EnableAutoUpgrade != nil {
-		return *x.EnableAutoUpgrade
+	if x != nil {
+		return x.xxx_hidden_EnableAutoUpgrade
 	}
 	return false
 }
 
 func (x *SensorUpgradeConfig) SetEnableAutoUpgrade(v bool) {
-	x.EnableAutoUpgrade = &v
+	x.xxx_hidden_EnableAutoUpgrade = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *SensorUpgradeConfig) HasEnableAutoUpgrade() bool {
 	if x == nil {
 		return false
 	}
-	return x.EnableAutoUpgrade != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *SensorUpgradeConfig) ClearEnableAutoUpgrade() {
-	x.EnableAutoUpgrade = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_EnableAutoUpgrade = false
 }
 
 type SensorUpgradeConfig_builder struct {
@@ -90,7 +91,10 @@ func (b0 SensorUpgradeConfig_builder) Build() *SensorUpgradeConfig {
 	m0 := &SensorUpgradeConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.EnableAutoUpgrade = b.EnableAutoUpgrade
+	if b.EnableAutoUpgrade != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_EnableAutoUpgrade = *b.EnableAutoUpgrade
+	}
 	return m0
 }
 
@@ -101,7 +105,7 @@ const file_storage_sensor_upgrade_proto_rawDesc = "" +
 	"\x1cstorage/sensor_upgrade.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"E\n" +
 	"\x13SensorUpgradeConfig\x12.\n" +
 	"\x13enable_auto_upgrade\x18\x01 \x01(\bR\x11enableAutoUpgradeB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_sensor_upgrade_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_sensor_upgrade_proto_goTypes = []any{

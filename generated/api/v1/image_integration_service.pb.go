@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/image_integration_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -26,11 +24,13 @@ const (
 )
 
 type GetImageIntegrationsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Cluster       *string                `protobuf:"bytes,2,opt,name=cluster" json:"cluster,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Cluster     *string                `protobuf:"bytes,2,opt,name=cluster"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetImageIntegrationsRequest) Reset() {
@@ -59,47 +59,57 @@ func (x *GetImageIntegrationsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GetImageIntegrationsRequest) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetImageIntegrationsRequest) GetCluster() string {
-	if x != nil && x.Cluster != nil {
-		return *x.Cluster
+	if x != nil {
+		if x.xxx_hidden_Cluster != nil {
+			return *x.xxx_hidden_Cluster
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetImageIntegrationsRequest) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetImageIntegrationsRequest) SetCluster(v string) {
-	x.Cluster = &v
+	x.xxx_hidden_Cluster = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetImageIntegrationsRequest) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetImageIntegrationsRequest) HasCluster() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cluster != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetImageIntegrationsRequest) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *GetImageIntegrationsRequest) ClearCluster() {
-	x.Cluster = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Cluster = nil
 }
 
 type GetImageIntegrationsRequest_builder struct {
@@ -113,16 +123,22 @@ func (b0 GetImageIntegrationsRequest_builder) Build() *GetImageIntegrationsReque
 	m0 := &GetImageIntegrationsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Cluster = b.Cluster
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Cluster != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Cluster = b.Cluster
+	}
 	return m0
 }
 
 type GetImageIntegrationsResponse struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Integrations  []*storage.ImageIntegration `protobuf:"bytes,1,rep,name=integrations" json:"integrations,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_Integrations *[]*storage.ImageIntegration `protobuf:"bytes,1,rep,name=integrations"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetImageIntegrationsResponse) Reset() {
@@ -152,13 +168,15 @@ func (x *GetImageIntegrationsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetImageIntegrationsResponse) GetIntegrations() []*storage.ImageIntegration {
 	if x != nil {
-		return x.Integrations
+		if x.xxx_hidden_Integrations != nil {
+			return *x.xxx_hidden_Integrations
+		}
 	}
 	return nil
 }
 
 func (x *GetImageIntegrationsResponse) SetIntegrations(v []*storage.ImageIntegration) {
-	x.Integrations = v
+	x.xxx_hidden_Integrations = &v
 }
 
 type GetImageIntegrationsResponse_builder struct {
@@ -171,17 +189,18 @@ func (b0 GetImageIntegrationsResponse_builder) Build() *GetImageIntegrationsResp
 	m0 := &GetImageIntegrationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Integrations = b.Integrations
+	x.xxx_hidden_Integrations = &b.Integrations
 	return m0
 }
 
 type UpdateImageIntegrationRequest struct {
-	state  protoimpl.MessageState    `protogen:"hybrid.v1"`
-	Config *storage.ImageIntegration `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	// When false, use the stored credentials of an existing image integration given its ID.
-	UpdatePassword *bool `protobuf:"varint,2,opt,name=updatePassword" json:"updatePassword,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_Config         *storage.ImageIntegration `protobuf:"bytes,1,opt,name=config"`
+	xxx_hidden_UpdatePassword bool                      `protobuf:"varint,2,opt,name=updatePassword"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *UpdateImageIntegrationRequest) Reset() {
@@ -211,46 +230,48 @@ func (x *UpdateImageIntegrationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateImageIntegrationRequest) GetConfig() *storage.ImageIntegration {
 	if x != nil {
-		return x.Config
+		return x.xxx_hidden_Config
 	}
 	return nil
 }
 
 func (x *UpdateImageIntegrationRequest) GetUpdatePassword() bool {
-	if x != nil && x.UpdatePassword != nil {
-		return *x.UpdatePassword
+	if x != nil {
+		return x.xxx_hidden_UpdatePassword
 	}
 	return false
 }
 
 func (x *UpdateImageIntegrationRequest) SetConfig(v *storage.ImageIntegration) {
-	x.Config = v
+	x.xxx_hidden_Config = v
 }
 
 func (x *UpdateImageIntegrationRequest) SetUpdatePassword(v bool) {
-	x.UpdatePassword = &v
+	x.xxx_hidden_UpdatePassword = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *UpdateImageIntegrationRequest) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.Config != nil
+	return x.xxx_hidden_Config != nil
 }
 
 func (x *UpdateImageIntegrationRequest) HasUpdatePassword() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpdatePassword != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *UpdateImageIntegrationRequest) ClearConfig() {
-	x.Config = nil
+	x.xxx_hidden_Config = nil
 }
 
 func (x *UpdateImageIntegrationRequest) ClearUpdatePassword() {
-	x.UpdatePassword = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_UpdatePassword = false
 }
 
 type UpdateImageIntegrationRequest_builder struct {
@@ -265,8 +286,11 @@ func (b0 UpdateImageIntegrationRequest_builder) Build() *UpdateImageIntegrationR
 	m0 := &UpdateImageIntegrationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Config = b.Config
-	x.UpdatePassword = b.UpdatePassword
+	x.xxx_hidden_Config = b.Config
+	if b.UpdatePassword != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_UpdatePassword = *b.UpdatePassword
+	}
 	return m0
 }
 
@@ -292,7 +316,7 @@ const file_api_v1_image_integration_service_proto_rawDesc = "" +
 	"\x16DeleteImageIntegration\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\"\x82\xd3\xe4\x93\x02\x1c*\x1a/v1/imageintegrations/{id}\x12t\n" +
 	"\x16UpdateImageIntegration\x12!.v1.UpdateImageIntegrationRequest\x1a\t.v1.Empty\",\x82\xd3\xe4\x93\x02&:\x01*2!/v1/imageintegrations/{config.id}\x12z\n" +
 	"\x1bTestUpdatedImageIntegration\x12!.v1.UpdateImageIntegrationRequest\x1a\t.v1.Empty\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/v1/imageintegrations/test/updatedB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_image_integration_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_api_v1_image_integration_service_proto_goTypes = []any{

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/compliance/compliance_data.proto
 
-//go:build !protoopaque
-
 package compliance
 
 import (
@@ -27,10 +25,12 @@ const (
 
 // Next Available Tag: 2
 type GZIPDataChunk struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Gzip          []byte                 `protobuf:"bytes,1,opt,name=gzip" json:"gzip,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Gzip        []byte                 `protobuf:"bytes,1,opt,name=gzip"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GZIPDataChunk) Reset() {
@@ -60,7 +60,7 @@ func (x *GZIPDataChunk) ProtoReflect() protoreflect.Message {
 
 func (x *GZIPDataChunk) GetGzip() []byte {
 	if x != nil {
-		return x.Gzip
+		return x.xxx_hidden_Gzip
 	}
 	return nil
 }
@@ -69,18 +69,20 @@ func (x *GZIPDataChunk) SetGzip(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Gzip = v
+	x.xxx_hidden_Gzip = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *GZIPDataChunk) HasGzip() bool {
 	if x == nil {
 		return false
 	}
-	return x.Gzip != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GZIPDataChunk) ClearGzip() {
-	x.Gzip = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Gzip = nil
 }
 
 type GZIPDataChunk_builder struct {
@@ -93,24 +95,29 @@ func (b0 GZIPDataChunk_builder) Build() *GZIPDataChunk {
 	m0 := &GZIPDataChunk{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Gzip = b.Gzip
+	if b.Gzip != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Gzip = b.Gzip
+	}
 	return m0
 }
 
 // Next Available Tag: 8
 type File struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Path          *string                `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	User          *uint32                `protobuf:"varint,2,opt,name=user" json:"user,omitempty"`
-	UserName      *string                `protobuf:"bytes,3,opt,name=user_name,json=userName" json:"user_name,omitempty"`
-	Group         *uint32                `protobuf:"varint,4,opt,name=group" json:"group,omitempty"`
-	GroupName     *string                `protobuf:"bytes,5,opt,name=group_name,json=groupName" json:"group_name,omitempty"`
-	Permissions   *uint32                `protobuf:"varint,6,opt,name=permissions" json:"permissions,omitempty"`
-	Content       []byte                 `protobuf:"bytes,7,opt,name=content" json:"content,omitempty"`
-	IsDir         *bool                  `protobuf:"varint,8,opt,name=is_dir,json=isDir" json:"is_dir,omitempty"`
-	Children      []*File                `protobuf:"bytes,9,rep,name=children" json:"children,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Path        *string                `protobuf:"bytes,1,opt,name=path"`
+	xxx_hidden_User        uint32                 `protobuf:"varint,2,opt,name=user"`
+	xxx_hidden_UserName    *string                `protobuf:"bytes,3,opt,name=user_name,json=userName"`
+	xxx_hidden_Group       uint32                 `protobuf:"varint,4,opt,name=group"`
+	xxx_hidden_GroupName   *string                `protobuf:"bytes,5,opt,name=group_name,json=groupName"`
+	xxx_hidden_Permissions uint32                 `protobuf:"varint,6,opt,name=permissions"`
+	xxx_hidden_Content     []byte                 `protobuf:"bytes,7,opt,name=content"`
+	xxx_hidden_IsDir       bool                   `protobuf:"varint,8,opt,name=is_dir,json=isDir"`
+	xxx_hidden_Children    *[]*File               `protobuf:"bytes,9,rep,name=children"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *File) Reset() {
@@ -139,193 +146,220 @@ func (x *File) ProtoReflect() protoreflect.Message {
 }
 
 func (x *File) GetPath() string {
-	if x != nil && x.Path != nil {
-		return *x.Path
+	if x != nil {
+		if x.xxx_hidden_Path != nil {
+			return *x.xxx_hidden_Path
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *File) GetUser() uint32 {
-	if x != nil && x.User != nil {
-		return *x.User
+	if x != nil {
+		return x.xxx_hidden_User
 	}
 	return 0
 }
 
 func (x *File) GetUserName() string {
-	if x != nil && x.UserName != nil {
-		return *x.UserName
+	if x != nil {
+		if x.xxx_hidden_UserName != nil {
+			return *x.xxx_hidden_UserName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *File) GetGroup() uint32 {
-	if x != nil && x.Group != nil {
-		return *x.Group
+	if x != nil {
+		return x.xxx_hidden_Group
 	}
 	return 0
 }
 
 func (x *File) GetGroupName() string {
-	if x != nil && x.GroupName != nil {
-		return *x.GroupName
+	if x != nil {
+		if x.xxx_hidden_GroupName != nil {
+			return *x.xxx_hidden_GroupName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *File) GetPermissions() uint32 {
-	if x != nil && x.Permissions != nil {
-		return *x.Permissions
+	if x != nil {
+		return x.xxx_hidden_Permissions
 	}
 	return 0
 }
 
 func (x *File) GetContent() []byte {
 	if x != nil {
-		return x.Content
+		return x.xxx_hidden_Content
 	}
 	return nil
 }
 
 func (x *File) GetIsDir() bool {
-	if x != nil && x.IsDir != nil {
-		return *x.IsDir
+	if x != nil {
+		return x.xxx_hidden_IsDir
 	}
 	return false
 }
 
 func (x *File) GetChildren() []*File {
 	if x != nil {
-		return x.Children
+		if x.xxx_hidden_Children != nil {
+			return *x.xxx_hidden_Children
+		}
 	}
 	return nil
 }
 
 func (x *File) SetPath(v string) {
-	x.Path = &v
+	x.xxx_hidden_Path = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
 }
 
 func (x *File) SetUser(v uint32) {
-	x.User = &v
+	x.xxx_hidden_User = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
 }
 
 func (x *File) SetUserName(v string) {
-	x.UserName = &v
+	x.xxx_hidden_UserName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
 }
 
 func (x *File) SetGroup(v uint32) {
-	x.Group = &v
+	x.xxx_hidden_Group = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
 }
 
 func (x *File) SetGroupName(v string) {
-	x.GroupName = &v
+	x.xxx_hidden_GroupName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
 }
 
 func (x *File) SetPermissions(v uint32) {
-	x.Permissions = &v
+	x.xxx_hidden_Permissions = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
 }
 
 func (x *File) SetContent(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Content = v
+	x.xxx_hidden_Content = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
 }
 
 func (x *File) SetIsDir(v bool) {
-	x.IsDir = &v
+	x.xxx_hidden_IsDir = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
 }
 
 func (x *File) SetChildren(v []*File) {
-	x.Children = v
+	x.xxx_hidden_Children = &v
 }
 
 func (x *File) HasPath() bool {
 	if x == nil {
 		return false
 	}
-	return x.Path != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *File) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.User != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *File) HasUserName() bool {
 	if x == nil {
 		return false
 	}
-	return x.UserName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *File) HasGroup() bool {
 	if x == nil {
 		return false
 	}
-	return x.Group != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *File) HasGroupName() bool {
 	if x == nil {
 		return false
 	}
-	return x.GroupName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *File) HasPermissions() bool {
 	if x == nil {
 		return false
 	}
-	return x.Permissions != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *File) HasContent() bool {
 	if x == nil {
 		return false
 	}
-	return x.Content != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
 func (x *File) HasIsDir() bool {
 	if x == nil {
 		return false
 	}
-	return x.IsDir != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *File) ClearPath() {
-	x.Path = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Path = nil
 }
 
 func (x *File) ClearUser() {
-	x.User = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_User = 0
 }
 
 func (x *File) ClearUserName() {
-	x.UserName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_UserName = nil
 }
 
 func (x *File) ClearGroup() {
-	x.Group = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Group = 0
 }
 
 func (x *File) ClearGroupName() {
-	x.GroupName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_GroupName = nil
 }
 
 func (x *File) ClearPermissions() {
-	x.Permissions = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Permissions = 0
 }
 
 func (x *File) ClearContent() {
-	x.Content = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_Content = nil
 }
 
 func (x *File) ClearIsDir() {
-	x.IsDir = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_IsDir = false
 }
 
 type File_builder struct {
@@ -346,25 +380,51 @@ func (b0 File_builder) Build() *File {
 	m0 := &File{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Path = b.Path
-	x.User = b.User
-	x.UserName = b.UserName
-	x.Group = b.Group
-	x.GroupName = b.GroupName
-	x.Permissions = b.Permissions
-	x.Content = b.Content
-	x.IsDir = b.IsDir
-	x.Children = b.Children
+	if b.Path != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
+		x.xxx_hidden_Path = b.Path
+	}
+	if b.User != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
+		x.xxx_hidden_User = *b.User
+	}
+	if b.UserName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
+		x.xxx_hidden_UserName = b.UserName
+	}
+	if b.Group != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
+		x.xxx_hidden_Group = *b.Group
+	}
+	if b.GroupName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
+		x.xxx_hidden_GroupName = b.GroupName
+	}
+	if b.Permissions != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
+		x.xxx_hidden_Permissions = *b.Permissions
+	}
+	if b.Content != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
+		x.xxx_hidden_Content = b.Content
+	}
+	if b.IsDir != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
+		x.xxx_hidden_IsDir = *b.IsDir
+	}
+	x.xxx_hidden_Children = &b.Children
 	return m0
 }
 
 // Next Available Tag: 3
 type CommandLine struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Process       *string                `protobuf:"bytes,1,opt,name=process" json:"process,omitempty"`
-	Args          []*CommandLine_Args    `protobuf:"bytes,2,rep,name=args" json:"args,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Process     *string                `protobuf:"bytes,1,opt,name=process"`
+	xxx_hidden_Args        *[]*CommandLine_Args   `protobuf:"bytes,2,rep,name=args"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CommandLine) Reset() {
@@ -393,36 +453,43 @@ func (x *CommandLine) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CommandLine) GetProcess() string {
-	if x != nil && x.Process != nil {
-		return *x.Process
+	if x != nil {
+		if x.xxx_hidden_Process != nil {
+			return *x.xxx_hidden_Process
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CommandLine) GetArgs() []*CommandLine_Args {
 	if x != nil {
-		return x.Args
+		if x.xxx_hidden_Args != nil {
+			return *x.xxx_hidden_Args
+		}
 	}
 	return nil
 }
 
 func (x *CommandLine) SetProcess(v string) {
-	x.Process = &v
+	x.xxx_hidden_Process = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *CommandLine) SetArgs(v []*CommandLine_Args) {
-	x.Args = v
+	x.xxx_hidden_Args = &v
 }
 
 func (x *CommandLine) HasProcess() bool {
 	if x == nil {
 		return false
 	}
-	return x.Process != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CommandLine) ClearProcess() {
-	x.Process = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Process = nil
 }
 
 type CommandLine_builder struct {
@@ -436,17 +503,20 @@ func (b0 CommandLine_builder) Build() *CommandLine {
 	m0 := &CommandLine{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Process = b.Process
-	x.Args = b.Args
+	if b.Process != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Process = b.Process
+	}
+	x.xxx_hidden_Args = &b.Args
 	return m0
 }
 
 type InsecureRegistriesConfig struct {
-	state              protoimpl.MessageState `protogen:"hybrid.v1"`
-	InsecureRegistries []string               `protobuf:"bytes,1,rep,name=insecure_registries,json=insecureRegistries" json:"insecure_registries,omitempty"`
-	InsecureCidrs      []string               `protobuf:"bytes,2,rep,name=insecure_cidrs,json=insecureCidrs" json:"insecure_cidrs,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_InsecureRegistries []string               `protobuf:"bytes,1,rep,name=insecure_registries,json=insecureRegistries"`
+	xxx_hidden_InsecureCidrs      []string               `protobuf:"bytes,2,rep,name=insecure_cidrs,json=insecureCidrs"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *InsecureRegistriesConfig) Reset() {
@@ -476,24 +546,24 @@ func (x *InsecureRegistriesConfig) ProtoReflect() protoreflect.Message {
 
 func (x *InsecureRegistriesConfig) GetInsecureRegistries() []string {
 	if x != nil {
-		return x.InsecureRegistries
+		return x.xxx_hidden_InsecureRegistries
 	}
 	return nil
 }
 
 func (x *InsecureRegistriesConfig) GetInsecureCidrs() []string {
 	if x != nil {
-		return x.InsecureCidrs
+		return x.xxx_hidden_InsecureCidrs
 	}
 	return nil
 }
 
 func (x *InsecureRegistriesConfig) SetInsecureRegistries(v []string) {
-	x.InsecureRegistries = v
+	x.xxx_hidden_InsecureRegistries = v
 }
 
 func (x *InsecureRegistriesConfig) SetInsecureCidrs(v []string) {
-	x.InsecureCidrs = v
+	x.xxx_hidden_InsecureCidrs = v
 }
 
 type InsecureRegistriesConfig_builder struct {
@@ -507,16 +577,16 @@ func (b0 InsecureRegistriesConfig_builder) Build() *InsecureRegistriesConfig {
 	m0 := &InsecureRegistriesConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.InsecureRegistries = b.InsecureRegistries
-	x.InsecureCidrs = b.InsecureCidrs
+	x.xxx_hidden_InsecureRegistries = b.InsecureRegistries
+	x.xxx_hidden_InsecureCidrs = b.InsecureCidrs
 	return m0
 }
 
 type ContainerRuntimeInfo struct {
-	state              protoimpl.MessageState    `protogen:"hybrid.v1"`
-	InsecureRegistries *InsecureRegistriesConfig `protobuf:"bytes,1,opt,name=insecure_registries,json=insecureRegistries" json:"insecure_registries,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                         protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_InsecureRegistries *InsecureRegistriesConfig `protobuf:"bytes,1,opt,name=insecure_registries,json=insecureRegistries"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *ContainerRuntimeInfo) Reset() {
@@ -546,24 +616,24 @@ func (x *ContainerRuntimeInfo) ProtoReflect() protoreflect.Message {
 
 func (x *ContainerRuntimeInfo) GetInsecureRegistries() *InsecureRegistriesConfig {
 	if x != nil {
-		return x.InsecureRegistries
+		return x.xxx_hidden_InsecureRegistries
 	}
 	return nil
 }
 
 func (x *ContainerRuntimeInfo) SetInsecureRegistries(v *InsecureRegistriesConfig) {
-	x.InsecureRegistries = v
+	x.xxx_hidden_InsecureRegistries = v
 }
 
 func (x *ContainerRuntimeInfo) HasInsecureRegistries() bool {
 	if x == nil {
 		return false
 	}
-	return x.InsecureRegistries != nil
+	return x.xxx_hidden_InsecureRegistries != nil
 }
 
 func (x *ContainerRuntimeInfo) ClearInsecureRegistries() {
-	x.InsecureRegistries = nil
+	x.xxx_hidden_InsecureRegistries = nil
 }
 
 type ContainerRuntimeInfo_builder struct {
@@ -576,16 +646,16 @@ func (b0 ContainerRuntimeInfo_builder) Build() *ContainerRuntimeInfo {
 	m0 := &ContainerRuntimeInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.InsecureRegistries = b.InsecureRegistries
+	x.xxx_hidden_InsecureRegistries = b.InsecureRegistries
 	return m0
 }
 
 type ComplianceStandardResult struct {
-	state               protoimpl.MessageState                    `protogen:"hybrid.v1"`
-	NodeCheckResults    map[string]*storage.ComplianceResultValue `protobuf:"bytes,1,rep,name=node_check_results,json=nodeCheckResults" json:"node_check_results,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	ClusterCheckResults map[string]*storage.ComplianceResultValue `protobuf:"bytes,2,rep,name=cluster_check_results,json=clusterCheckResults" json:"cluster_check_results,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState                    `protogen:"opaque.v1"`
+	xxx_hidden_NodeCheckResults    map[string]*storage.ComplianceResultValue `protobuf:"bytes,1,rep,name=node_check_results,json=nodeCheckResults" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_ClusterCheckResults map[string]*storage.ComplianceResultValue `protobuf:"bytes,2,rep,name=cluster_check_results,json=clusterCheckResults" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *ComplianceStandardResult) Reset() {
@@ -615,24 +685,24 @@ func (x *ComplianceStandardResult) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceStandardResult) GetNodeCheckResults() map[string]*storage.ComplianceResultValue {
 	if x != nil {
-		return x.NodeCheckResults
+		return x.xxx_hidden_NodeCheckResults
 	}
 	return nil
 }
 
 func (x *ComplianceStandardResult) GetClusterCheckResults() map[string]*storage.ComplianceResultValue {
 	if x != nil {
-		return x.ClusterCheckResults
+		return x.xxx_hidden_ClusterCheckResults
 	}
 	return nil
 }
 
 func (x *ComplianceStandardResult) SetNodeCheckResults(v map[string]*storage.ComplianceResultValue) {
-	x.NodeCheckResults = v
+	x.xxx_hidden_NodeCheckResults = v
 }
 
 func (x *ComplianceStandardResult) SetClusterCheckResults(v map[string]*storage.ComplianceResultValue) {
-	x.ClusterCheckResults = v
+	x.xxx_hidden_ClusterCheckResults = v
 }
 
 type ComplianceStandardResult_builder struct {
@@ -646,25 +716,27 @@ func (b0 ComplianceStandardResult_builder) Build() *ComplianceStandardResult {
 	m0 := &ComplianceStandardResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.NodeCheckResults = b.NodeCheckResults
-	x.ClusterCheckResults = b.ClusterCheckResults
+	x.xxx_hidden_NodeCheckResults = b.NodeCheckResults
+	x.xxx_hidden_ClusterCheckResults = b.ClusterCheckResults
 	return m0
 }
 
 // Next Available Tag: 11
 type ComplianceReturn struct {
-	state                protoimpl.MessageState  `protogen:"hybrid.v1"`
-	NodeName             *string                 `protobuf:"bytes,1,opt,name=node_name,json=nodeName" json:"node_name,omitempty"`
-	ScrapeId             *string                 `protobuf:"bytes,2,opt,name=scrape_id,json=scrapeId" json:"scrape_id,omitempty"`
-	DockerData           *GZIPDataChunk          `protobuf:"bytes,3,opt,name=docker_data,json=dockerData" json:"docker_data,omitempty"`
-	CommandLines         map[string]*CommandLine `protobuf:"bytes,4,rep,name=command_lines,json=commandLines" json:"command_lines,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Files                map[string]*File        `protobuf:"bytes,5,rep,name=files" json:"files,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	SystemdFiles         map[string]*File        `protobuf:"bytes,6,rep,name=systemd_files,json=systemdFiles" json:"systemd_files,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	ContainerRuntimeInfo *ContainerRuntimeInfo   `protobuf:"bytes,9,opt,name=container_runtime_info,json=containerRuntimeInfo" json:"container_runtime_info,omitempty"`
-	Time                 *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time" json:"time,omitempty"`
-	Evidence             *GZIPDataChunk          `protobuf:"bytes,10,opt,name=evidence" json:"evidence,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                           protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_NodeName             *string                 `protobuf:"bytes,1,opt,name=node_name,json=nodeName"`
+	xxx_hidden_ScrapeId             *string                 `protobuf:"bytes,2,opt,name=scrape_id,json=scrapeId"`
+	xxx_hidden_DockerData           *GZIPDataChunk          `protobuf:"bytes,3,opt,name=docker_data,json=dockerData"`
+	xxx_hidden_CommandLines         map[string]*CommandLine `protobuf:"bytes,4,rep,name=command_lines,json=commandLines" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_Files                map[string]*File        `protobuf:"bytes,5,rep,name=files" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_SystemdFiles         map[string]*File        `protobuf:"bytes,6,rep,name=systemd_files,json=systemdFiles" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_ContainerRuntimeInfo *ContainerRuntimeInfo   `protobuf:"bytes,9,opt,name=container_runtime_info,json=containerRuntimeInfo"`
+	xxx_hidden_Time                 *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time"`
+	xxx_hidden_Evidence             *GZIPDataChunk          `protobuf:"bytes,10,opt,name=evidence"`
+	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
+	XXX_presence                    [1]uint32
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *ComplianceReturn) Reset() {
@@ -693,168 +765,178 @@ func (x *ComplianceReturn) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ComplianceReturn) GetNodeName() string {
-	if x != nil && x.NodeName != nil {
-		return *x.NodeName
+	if x != nil {
+		if x.xxx_hidden_NodeName != nil {
+			return *x.xxx_hidden_NodeName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ComplianceReturn) GetScrapeId() string {
-	if x != nil && x.ScrapeId != nil {
-		return *x.ScrapeId
+	if x != nil {
+		if x.xxx_hidden_ScrapeId != nil {
+			return *x.xxx_hidden_ScrapeId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ComplianceReturn) GetDockerData() *GZIPDataChunk {
 	if x != nil {
-		return x.DockerData
+		return x.xxx_hidden_DockerData
 	}
 	return nil
 }
 
 func (x *ComplianceReturn) GetCommandLines() map[string]*CommandLine {
 	if x != nil {
-		return x.CommandLines
+		return x.xxx_hidden_CommandLines
 	}
 	return nil
 }
 
 func (x *ComplianceReturn) GetFiles() map[string]*File {
 	if x != nil {
-		return x.Files
+		return x.xxx_hidden_Files
 	}
 	return nil
 }
 
 func (x *ComplianceReturn) GetSystemdFiles() map[string]*File {
 	if x != nil {
-		return x.SystemdFiles
+		return x.xxx_hidden_SystemdFiles
 	}
 	return nil
 }
 
 func (x *ComplianceReturn) GetContainerRuntimeInfo() *ContainerRuntimeInfo {
 	if x != nil {
-		return x.ContainerRuntimeInfo
+		return x.xxx_hidden_ContainerRuntimeInfo
 	}
 	return nil
 }
 
 func (x *ComplianceReturn) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Time
+		return x.xxx_hidden_Time
 	}
 	return nil
 }
 
 func (x *ComplianceReturn) GetEvidence() *GZIPDataChunk {
 	if x != nil {
-		return x.Evidence
+		return x.xxx_hidden_Evidence
 	}
 	return nil
 }
 
 func (x *ComplianceReturn) SetNodeName(v string) {
-	x.NodeName = &v
+	x.xxx_hidden_NodeName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
 }
 
 func (x *ComplianceReturn) SetScrapeId(v string) {
-	x.ScrapeId = &v
+	x.xxx_hidden_ScrapeId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
 }
 
 func (x *ComplianceReturn) SetDockerData(v *GZIPDataChunk) {
-	x.DockerData = v
+	x.xxx_hidden_DockerData = v
 }
 
 func (x *ComplianceReturn) SetCommandLines(v map[string]*CommandLine) {
-	x.CommandLines = v
+	x.xxx_hidden_CommandLines = v
 }
 
 func (x *ComplianceReturn) SetFiles(v map[string]*File) {
-	x.Files = v
+	x.xxx_hidden_Files = v
 }
 
 func (x *ComplianceReturn) SetSystemdFiles(v map[string]*File) {
-	x.SystemdFiles = v
+	x.xxx_hidden_SystemdFiles = v
 }
 
 func (x *ComplianceReturn) SetContainerRuntimeInfo(v *ContainerRuntimeInfo) {
-	x.ContainerRuntimeInfo = v
+	x.xxx_hidden_ContainerRuntimeInfo = v
 }
 
 func (x *ComplianceReturn) SetTime(v *timestamppb.Timestamp) {
-	x.Time = v
+	x.xxx_hidden_Time = v
 }
 
 func (x *ComplianceReturn) SetEvidence(v *GZIPDataChunk) {
-	x.Evidence = v
+	x.xxx_hidden_Evidence = v
 }
 
 func (x *ComplianceReturn) HasNodeName() bool {
 	if x == nil {
 		return false
 	}
-	return x.NodeName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ComplianceReturn) HasScrapeId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ScrapeId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ComplianceReturn) HasDockerData() bool {
 	if x == nil {
 		return false
 	}
-	return x.DockerData != nil
+	return x.xxx_hidden_DockerData != nil
 }
 
 func (x *ComplianceReturn) HasContainerRuntimeInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.ContainerRuntimeInfo != nil
+	return x.xxx_hidden_ContainerRuntimeInfo != nil
 }
 
 func (x *ComplianceReturn) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.Time != nil
+	return x.xxx_hidden_Time != nil
 }
 
 func (x *ComplianceReturn) HasEvidence() bool {
 	if x == nil {
 		return false
 	}
-	return x.Evidence != nil
+	return x.xxx_hidden_Evidence != nil
 }
 
 func (x *ComplianceReturn) ClearNodeName() {
-	x.NodeName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_NodeName = nil
 }
 
 func (x *ComplianceReturn) ClearScrapeId() {
-	x.ScrapeId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ScrapeId = nil
 }
 
 func (x *ComplianceReturn) ClearDockerData() {
-	x.DockerData = nil
+	x.xxx_hidden_DockerData = nil
 }
 
 func (x *ComplianceReturn) ClearContainerRuntimeInfo() {
-	x.ContainerRuntimeInfo = nil
+	x.xxx_hidden_ContainerRuntimeInfo = nil
 }
 
 func (x *ComplianceReturn) ClearTime() {
-	x.Time = nil
+	x.xxx_hidden_Time = nil
 }
 
 func (x *ComplianceReturn) ClearEvidence() {
-	x.Evidence = nil
+	x.xxx_hidden_Evidence = nil
 }
 
 type ComplianceReturn_builder struct {
@@ -875,25 +957,33 @@ func (b0 ComplianceReturn_builder) Build() *ComplianceReturn {
 	m0 := &ComplianceReturn{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.NodeName = b.NodeName
-	x.ScrapeId = b.ScrapeId
-	x.DockerData = b.DockerData
-	x.CommandLines = b.CommandLines
-	x.Files = b.Files
-	x.SystemdFiles = b.SystemdFiles
-	x.ContainerRuntimeInfo = b.ContainerRuntimeInfo
-	x.Time = b.Time
-	x.Evidence = b.Evidence
+	if b.NodeName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
+		x.xxx_hidden_NodeName = b.NodeName
+	}
+	if b.ScrapeId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
+		x.xxx_hidden_ScrapeId = b.ScrapeId
+	}
+	x.xxx_hidden_DockerData = b.DockerData
+	x.xxx_hidden_CommandLines = b.CommandLines
+	x.xxx_hidden_Files = b.Files
+	x.xxx_hidden_SystemdFiles = b.SystemdFiles
+	x.xxx_hidden_ContainerRuntimeInfo = b.ContainerRuntimeInfo
+	x.xxx_hidden_Time = b.Time
+	x.xxx_hidden_Evidence = b.Evidence
 	return m0
 }
 
 type CommandLine_Args struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Key           *string                `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	Values        []string               `protobuf:"bytes,2,rep,name=values" json:"values,omitempty"`
-	File          *File                  `protobuf:"bytes,3,opt,name=file" json:"file,omitempty"` // This will be set if it looks like the value defines a file and we found the file
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Key         *string                `protobuf:"bytes,1,opt,name=key"`
+	xxx_hidden_Values      []string               `protobuf:"bytes,2,rep,name=values"`
+	xxx_hidden_File        *File                  `protobuf:"bytes,3,opt,name=file"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CommandLine_Args) Reset() {
@@ -922,58 +1012,63 @@ func (x *CommandLine_Args) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CommandLine_Args) GetKey() string {
-	if x != nil && x.Key != nil {
-		return *x.Key
+	if x != nil {
+		if x.xxx_hidden_Key != nil {
+			return *x.xxx_hidden_Key
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *CommandLine_Args) GetValues() []string {
 	if x != nil {
-		return x.Values
+		return x.xxx_hidden_Values
 	}
 	return nil
 }
 
 func (x *CommandLine_Args) GetFile() *File {
 	if x != nil {
-		return x.File
+		return x.xxx_hidden_File
 	}
 	return nil
 }
 
 func (x *CommandLine_Args) SetKey(v string) {
-	x.Key = &v
+	x.xxx_hidden_Key = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *CommandLine_Args) SetValues(v []string) {
-	x.Values = v
+	x.xxx_hidden_Values = v
 }
 
 func (x *CommandLine_Args) SetFile(v *File) {
-	x.File = v
+	x.xxx_hidden_File = v
 }
 
 func (x *CommandLine_Args) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.Key != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CommandLine_Args) HasFile() bool {
 	if x == nil {
 		return false
 	}
-	return x.File != nil
+	return x.xxx_hidden_File != nil
 }
 
 func (x *CommandLine_Args) ClearKey() {
-	x.Key = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Key = nil
 }
 
 func (x *CommandLine_Args) ClearFile() {
-	x.File = nil
+	x.xxx_hidden_File = nil
 }
 
 type CommandLine_Args_builder struct {
@@ -988,9 +1083,12 @@ func (b0 CommandLine_Args_builder) Build() *CommandLine_Args {
 	m0 := &CommandLine_Args{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Key = b.Key
-	x.Values = b.Values
-	x.File = b.File
+	if b.Key != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Key = b.Key
+	}
+	x.xxx_hidden_Values = b.Values
+	x.xxx_hidden_File = b.File
 	return m0
 }
 
@@ -1056,7 +1154,7 @@ const file_internalapi_compliance_compliance_data_proto_rawDesc = "" +
 	"\x11SystemdFilesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12&\n" +
 	"\x05value\x18\x02 \x01(\v2\x10.compliance.FileR\x05value:\x028\x01BK\n" +
-	"\x1cio.stackrox.proto.complianceZ#./internalapi/compliance;compliance\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x1cio.stackrox.proto.complianceZ#./internalapi/compliance;compliance\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_compliance_compliance_data_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_internalapi_compliance_compliance_data_proto_goTypes = []any{

@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: tools/local-sensor/message.proto
 
-//go:build !protoopaque
-
 package local_sensor
 
 import (
@@ -25,10 +23,10 @@ const (
 )
 
 type LocalSensorPolicies struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Policies      []*storage.Policy      `protobuf:"bytes,1,rep,name=policies" json:"policies,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Policies *[]*storage.Policy     `protobuf:"bytes,1,rep,name=policies"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *LocalSensorPolicies) Reset() {
@@ -58,13 +56,15 @@ func (x *LocalSensorPolicies) ProtoReflect() protoreflect.Message {
 
 func (x *LocalSensorPolicies) GetPolicies() []*storage.Policy {
 	if x != nil {
-		return x.Policies
+		if x.xxx_hidden_Policies != nil {
+			return *x.xxx_hidden_Policies
+		}
 	}
 	return nil
 }
 
 func (x *LocalSensorPolicies) SetPolicies(v []*storage.Policy) {
-	x.Policies = v
+	x.xxx_hidden_Policies = &v
 }
 
 type LocalSensorPolicies_builder struct {
@@ -77,7 +77,7 @@ func (b0 LocalSensorPolicies_builder) Build() *LocalSensorPolicies {
 	m0 := &LocalSensorPolicies{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Policies = b.Policies
+	x.xxx_hidden_Policies = &b.Policies
 	return m0
 }
 
@@ -87,7 +87,7 @@ const file_tools_local_sensor_message_proto_rawDesc = "" +
 	"\n" +
 	" tools/local-sensor/message.proto\x12\vlocalSensor\x1a\x14storage/policy.proto\x1a!google/protobuf/go_features.proto\"B\n" +
 	"\x13LocalSensorPolicies\x12+\n" +
-	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpoliciesB\b\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpoliciesB\b\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_tools_local_sensor_message_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_tools_local_sensor_message_proto_goTypes = []any{

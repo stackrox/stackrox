@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/process_baseline.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -72,15 +70,15 @@ func (x ContainerNameAndBaselineStatus_BaselineStatus) Number() protoreflect.Enu
 }
 
 type ProcessBaselineKey struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The idea is for the keys to be flexible.
-	// Only certain combinations of these will be supported.
-	DeploymentId  *string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"type(uuid),index=hash"` // @gotags: search:"Deployment ID,hidden" sql:"type(uuid),index=hash"
-	ContainerName *string `protobuf:"bytes,2,opt,name=container_name,json=containerName" json:"container_name,omitempty"`
-	ClusterId     *string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-	Namespace     *string `protobuf:"bytes,4,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,hidden,store"`                  // @gotags: search:"Namespace,hidden,store"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_DeploymentId  *string                `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
+	xxx_hidden_ContainerName *string                `protobuf:"bytes,2,opt,name=container_name,json=containerName"`
+	xxx_hidden_ClusterId     *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Namespace     *string                `protobuf:"bytes,4,opt,name=namespace"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ProcessBaselineKey) Reset() {
@@ -109,91 +107,111 @@ func (x *ProcessBaselineKey) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ProcessBaselineKey) GetDeploymentId() string {
-	if x != nil && x.DeploymentId != nil {
-		return *x.DeploymentId
+	if x != nil {
+		if x.xxx_hidden_DeploymentId != nil {
+			return *x.xxx_hidden_DeploymentId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProcessBaselineKey) GetContainerName() string {
-	if x != nil && x.ContainerName != nil {
-		return *x.ContainerName
+	if x != nil {
+		if x.xxx_hidden_ContainerName != nil {
+			return *x.xxx_hidden_ContainerName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProcessBaselineKey) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProcessBaselineKey) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProcessBaselineKey) SetDeploymentId(v string) {
-	x.DeploymentId = &v
+	x.xxx_hidden_DeploymentId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *ProcessBaselineKey) SetContainerName(v string) {
-	x.ContainerName = &v
+	x.xxx_hidden_ContainerName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *ProcessBaselineKey) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *ProcessBaselineKey) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *ProcessBaselineKey) HasDeploymentId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ProcessBaselineKey) HasContainerName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ContainerName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ProcessBaselineKey) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ProcessBaselineKey) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *ProcessBaselineKey) ClearDeploymentId() {
-	x.DeploymentId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_DeploymentId = nil
 }
 
 func (x *ProcessBaselineKey) ClearContainerName() {
-	x.ContainerName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ContainerName = nil
 }
 
 func (x *ProcessBaselineKey) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *ProcessBaselineKey) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Namespace = nil
 }
 
 type ProcessBaselineKey_builder struct {
@@ -211,25 +229,39 @@ func (b0 ProcessBaselineKey_builder) Build() *ProcessBaselineKey {
 	m0 := &ProcessBaselineKey{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DeploymentId = b.DeploymentId
-	x.ContainerName = b.ContainerName
-	x.ClusterId = b.ClusterId
-	x.Namespace = b.Namespace
+	if b.DeploymentId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_DeploymentId = b.DeploymentId
+	}
+	if b.ContainerName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_ContainerName = b.ContainerName
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
 	return m0
 }
 
 type ProcessBaseline struct {
-	state                   protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id                      *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Key                     *ProcessBaselineKey    `protobuf:"bytes,2,opt,name=key" json:"key,omitempty"`
-	Elements                []*BaselineElement     `protobuf:"bytes,3,rep,name=elements" json:"elements,omitempty"`
-	ElementGraveyard        []*BaselineElement     `protobuf:"bytes,8,rep,name=element_graveyard,json=elementGraveyard" json:"element_graveyard,omitempty" search:"-"` // @gotags: search:"-"
-	Created                 *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created" json:"created,omitempty"`
-	UserLockedTimestamp     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=user_locked_timestamp,json=userLockedTimestamp" json:"user_locked_timestamp,omitempty"`
-	StackRoxLockedTimestamp *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=stack_rox_locked_timestamp,json=stackRoxLockedTimestamp" json:"stack_rox_locked_timestamp,omitempty"`
-	LastUpdate              *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_update,json=lastUpdate" json:"last_update,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id                      *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Key                     *ProcessBaselineKey    `protobuf:"bytes,2,opt,name=key"`
+	xxx_hidden_Elements                *[]*BaselineElement    `protobuf:"bytes,3,rep,name=elements"`
+	xxx_hidden_ElementGraveyard        *[]*BaselineElement    `protobuf:"bytes,8,rep,name=element_graveyard,json=elementGraveyard"`
+	xxx_hidden_Created                 *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created"`
+	xxx_hidden_UserLockedTimestamp     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=user_locked_timestamp,json=userLockedTimestamp"`
+	xxx_hidden_StackRoxLockedTimestamp *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=stack_rox_locked_timestamp,json=stackRoxLockedTimestamp"`
+	xxx_hidden_LastUpdate              *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_update,json=lastUpdate"`
+	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
+	XXX_presence                       [1]uint32
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *ProcessBaseline) Reset() {
@@ -258,157 +290,166 @@ func (x *ProcessBaseline) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ProcessBaseline) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProcessBaseline) GetKey() *ProcessBaselineKey {
 	if x != nil {
-		return x.Key
+		return x.xxx_hidden_Key
 	}
 	return nil
 }
 
 func (x *ProcessBaseline) GetElements() []*BaselineElement {
 	if x != nil {
-		return x.Elements
+		if x.xxx_hidden_Elements != nil {
+			return *x.xxx_hidden_Elements
+		}
 	}
 	return nil
 }
 
 func (x *ProcessBaseline) GetElementGraveyard() []*BaselineElement {
 	if x != nil {
-		return x.ElementGraveyard
+		if x.xxx_hidden_ElementGraveyard != nil {
+			return *x.xxx_hidden_ElementGraveyard
+		}
 	}
 	return nil
 }
 
 func (x *ProcessBaseline) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Created
+		return x.xxx_hidden_Created
 	}
 	return nil
 }
 
 func (x *ProcessBaseline) GetUserLockedTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.UserLockedTimestamp
+		return x.xxx_hidden_UserLockedTimestamp
 	}
 	return nil
 }
 
 func (x *ProcessBaseline) GetStackRoxLockedTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.StackRoxLockedTimestamp
+		return x.xxx_hidden_StackRoxLockedTimestamp
 	}
 	return nil
 }
 
 func (x *ProcessBaseline) GetLastUpdate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastUpdate
+		return x.xxx_hidden_LastUpdate
 	}
 	return nil
 }
 
 func (x *ProcessBaseline) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
 }
 
 func (x *ProcessBaseline) SetKey(v *ProcessBaselineKey) {
-	x.Key = v
+	x.xxx_hidden_Key = v
 }
 
 func (x *ProcessBaseline) SetElements(v []*BaselineElement) {
-	x.Elements = v
+	x.xxx_hidden_Elements = &v
 }
 
 func (x *ProcessBaseline) SetElementGraveyard(v []*BaselineElement) {
-	x.ElementGraveyard = v
+	x.xxx_hidden_ElementGraveyard = &v
 }
 
 func (x *ProcessBaseline) SetCreated(v *timestamppb.Timestamp) {
-	x.Created = v
+	x.xxx_hidden_Created = v
 }
 
 func (x *ProcessBaseline) SetUserLockedTimestamp(v *timestamppb.Timestamp) {
-	x.UserLockedTimestamp = v
+	x.xxx_hidden_UserLockedTimestamp = v
 }
 
 func (x *ProcessBaseline) SetStackRoxLockedTimestamp(v *timestamppb.Timestamp) {
-	x.StackRoxLockedTimestamp = v
+	x.xxx_hidden_StackRoxLockedTimestamp = v
 }
 
 func (x *ProcessBaseline) SetLastUpdate(v *timestamppb.Timestamp) {
-	x.LastUpdate = v
+	x.xxx_hidden_LastUpdate = v
 }
 
 func (x *ProcessBaseline) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ProcessBaseline) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	return x.Key != nil
+	return x.xxx_hidden_Key != nil
 }
 
 func (x *ProcessBaseline) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return x.Created != nil
+	return x.xxx_hidden_Created != nil
 }
 
 func (x *ProcessBaseline) HasUserLockedTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.UserLockedTimestamp != nil
+	return x.xxx_hidden_UserLockedTimestamp != nil
 }
 
 func (x *ProcessBaseline) HasStackRoxLockedTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.StackRoxLockedTimestamp != nil
+	return x.xxx_hidden_StackRoxLockedTimestamp != nil
 }
 
 func (x *ProcessBaseline) HasLastUpdate() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastUpdate != nil
+	return x.xxx_hidden_LastUpdate != nil
 }
 
 func (x *ProcessBaseline) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *ProcessBaseline) ClearKey() {
-	x.Key = nil
+	x.xxx_hidden_Key = nil
 }
 
 func (x *ProcessBaseline) ClearCreated() {
-	x.Created = nil
+	x.xxx_hidden_Created = nil
 }
 
 func (x *ProcessBaseline) ClearUserLockedTimestamp() {
-	x.UserLockedTimestamp = nil
+	x.xxx_hidden_UserLockedTimestamp = nil
 }
 
 func (x *ProcessBaseline) ClearStackRoxLockedTimestamp() {
-	x.StackRoxLockedTimestamp = nil
+	x.xxx_hidden_StackRoxLockedTimestamp = nil
 }
 
 func (x *ProcessBaseline) ClearLastUpdate() {
-	x.LastUpdate = nil
+	x.xxx_hidden_LastUpdate = nil
 }
 
 type ProcessBaseline_builder struct {
@@ -428,23 +469,28 @@ func (b0 ProcessBaseline_builder) Build() *ProcessBaseline {
 	m0 := &ProcessBaseline{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Key = b.Key
-	x.Elements = b.Elements
-	x.ElementGraveyard = b.ElementGraveyard
-	x.Created = b.Created
-	x.UserLockedTimestamp = b.UserLockedTimestamp
-	x.StackRoxLockedTimestamp = b.StackRoxLockedTimestamp
-	x.LastUpdate = b.LastUpdate
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
+		x.xxx_hidden_Id = b.Id
+	}
+	x.xxx_hidden_Key = b.Key
+	x.xxx_hidden_Elements = &b.Elements
+	x.xxx_hidden_ElementGraveyard = &b.ElementGraveyard
+	x.xxx_hidden_Created = b.Created
+	x.xxx_hidden_UserLockedTimestamp = b.UserLockedTimestamp
+	x.xxx_hidden_StackRoxLockedTimestamp = b.StackRoxLockedTimestamp
+	x.xxx_hidden_LastUpdate = b.LastUpdate
 	return m0
 }
 
 type BaselineElement struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Element       *BaselineItem          `protobuf:"bytes,1,opt,name=element" json:"element,omitempty"`
-	Auto          *bool                  `protobuf:"varint,2,opt,name=auto" json:"auto,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Element     *BaselineItem          `protobuf:"bytes,1,opt,name=element"`
+	xxx_hidden_Auto        bool                   `protobuf:"varint,2,opt,name=auto"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *BaselineElement) Reset() {
@@ -474,46 +520,48 @@ func (x *BaselineElement) ProtoReflect() protoreflect.Message {
 
 func (x *BaselineElement) GetElement() *BaselineItem {
 	if x != nil {
-		return x.Element
+		return x.xxx_hidden_Element
 	}
 	return nil
 }
 
 func (x *BaselineElement) GetAuto() bool {
-	if x != nil && x.Auto != nil {
-		return *x.Auto
+	if x != nil {
+		return x.xxx_hidden_Auto
 	}
 	return false
 }
 
 func (x *BaselineElement) SetElement(v *BaselineItem) {
-	x.Element = v
+	x.xxx_hidden_Element = v
 }
 
 func (x *BaselineElement) SetAuto(v bool) {
-	x.Auto = &v
+	x.xxx_hidden_Auto = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *BaselineElement) HasElement() bool {
 	if x == nil {
 		return false
 	}
-	return x.Element != nil
+	return x.xxx_hidden_Element != nil
 }
 
 func (x *BaselineElement) HasAuto() bool {
 	if x == nil {
 		return false
 	}
-	return x.Auto != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *BaselineElement) ClearElement() {
-	x.Element = nil
+	x.xxx_hidden_Element = nil
 }
 
 func (x *BaselineElement) ClearAuto() {
-	x.Auto = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Auto = false
 }
 
 type BaselineElement_builder struct {
@@ -527,19 +575,19 @@ func (b0 BaselineElement_builder) Build() *BaselineElement {
 	m0 := &BaselineElement{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Element = b.Element
-	x.Auto = b.Auto
+	x.xxx_hidden_Element = b.Element
+	if b.Auto != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Auto = *b.Auto
+	}
 	return m0
 }
 
 type BaselineItem struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Item:
-	//
-	//	*BaselineItem_ProcessName
-	Item          isBaselineItem_Item `protobuf_oneof:"item"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Item isBaselineItem_Item    `protobuf_oneof:"item"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *BaselineItem) Reset() {
@@ -567,16 +615,9 @@ func (x *BaselineItem) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *BaselineItem) GetItem() isBaselineItem_Item {
-	if x != nil {
-		return x.Item
-	}
-	return nil
-}
-
 func (x *BaselineItem) GetProcessName() string {
 	if x != nil {
-		if x, ok := x.Item.(*BaselineItem_ProcessName); ok {
+		if x, ok := x.xxx_hidden_Item.(*baselineItem_ProcessName); ok {
 			return x.ProcessName
 		}
 	}
@@ -584,31 +625,31 @@ func (x *BaselineItem) GetProcessName() string {
 }
 
 func (x *BaselineItem) SetProcessName(v string) {
-	x.Item = &BaselineItem_ProcessName{v}
+	x.xxx_hidden_Item = &baselineItem_ProcessName{v}
 }
 
 func (x *BaselineItem) HasItem() bool {
 	if x == nil {
 		return false
 	}
-	return x.Item != nil
+	return x.xxx_hidden_Item != nil
 }
 
 func (x *BaselineItem) HasProcessName() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Item.(*BaselineItem_ProcessName)
+	_, ok := x.xxx_hidden_Item.(*baselineItem_ProcessName)
 	return ok
 }
 
 func (x *BaselineItem) ClearItem() {
-	x.Item = nil
+	x.xxx_hidden_Item = nil
 }
 
 func (x *BaselineItem) ClearProcessName() {
-	if _, ok := x.Item.(*BaselineItem_ProcessName); ok {
-		x.Item = nil
+	if _, ok := x.xxx_hidden_Item.(*baselineItem_ProcessName); ok {
+		x.xxx_hidden_Item = nil
 	}
 }
 
@@ -619,8 +660,8 @@ func (x *BaselineItem) WhichItem() case_BaselineItem_Item {
 	if x == nil {
 		return BaselineItem_Item_not_set_case
 	}
-	switch x.Item.(type) {
-	case *BaselineItem_ProcessName:
+	switch x.xxx_hidden_Item.(type) {
+	case *baselineItem_ProcessName:
 		return BaselineItem_ProcessName_case
 	default:
 		return BaselineItem_Item_not_set_case
@@ -630,9 +671,9 @@ func (x *BaselineItem) WhichItem() case_BaselineItem_Item {
 type BaselineItem_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Item:
+	// Fields of oneof xxx_hidden_Item:
 	ProcessName *string
-	// -- end of Item
+	// -- end of xxx_hidden_Item
 }
 
 func (b0 BaselineItem_builder) Build() *BaselineItem {
@@ -640,7 +681,7 @@ func (b0 BaselineItem_builder) Build() *BaselineItem {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.ProcessName != nil {
-		x.Item = &BaselineItem_ProcessName{*b.ProcessName}
+		x.xxx_hidden_Item = &baselineItem_ProcessName{*b.ProcessName}
 	}
 	return m0
 }
@@ -659,21 +700,23 @@ type isBaselineItem_Item interface {
 	isBaselineItem_Item()
 }
 
-type BaselineItem_ProcessName struct {
+type baselineItem_ProcessName struct {
 	ProcessName string `protobuf:"bytes,1,opt,name=process_name,json=processName,oneof"`
 }
 
-func (*BaselineItem_ProcessName) isBaselineItem_Item() {}
+func (*baselineItem_ProcessName) isBaselineItem_Item() {}
 
 // `ContainerNameAndBaselineStatus` represents a cached result
 // of process evaluation on a specific container name.
 type ContainerNameAndBaselineStatus struct {
-	state                      protoimpl.MessageState                         `protogen:"hybrid.v1"`
-	ContainerName              *string                                        `protobuf:"bytes,1,opt,name=container_name,json=containerName" json:"container_name,omitempty"`
-	BaselineStatus             *ContainerNameAndBaselineStatus_BaselineStatus `protobuf:"varint,2,opt,name=baseline_status,json=baselineStatus,enum=storage.ContainerNameAndBaselineStatus_BaselineStatus" json:"baseline_status,omitempty"`
-	AnomalousProcessesExecuted *bool                                          `protobuf:"varint,3,opt,name=anomalous_processes_executed,json=anomalousProcessesExecuted" json:"anomalous_processes_executed,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state                                 protoimpl.MessageState                        `protogen:"opaque.v1"`
+	xxx_hidden_ContainerName              *string                                       `protobuf:"bytes,1,opt,name=container_name,json=containerName"`
+	xxx_hidden_BaselineStatus             ContainerNameAndBaselineStatus_BaselineStatus `protobuf:"varint,2,opt,name=baseline_status,json=baselineStatus,enum=storage.ContainerNameAndBaselineStatus_BaselineStatus"`
+	xxx_hidden_AnomalousProcessesExecuted bool                                          `protobuf:"varint,3,opt,name=anomalous_processes_executed,json=anomalousProcessesExecuted"`
+	XXX_raceDetectHookData                protoimpl.RaceDetectHookData
+	XXX_presence                          [1]uint32
+	unknownFields                         protoimpl.UnknownFields
+	sizeCache                             protoimpl.SizeCache
 }
 
 func (x *ContainerNameAndBaselineStatus) Reset() {
@@ -702,69 +745,80 @@ func (x *ContainerNameAndBaselineStatus) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ContainerNameAndBaselineStatus) GetContainerName() string {
-	if x != nil && x.ContainerName != nil {
-		return *x.ContainerName
+	if x != nil {
+		if x.xxx_hidden_ContainerName != nil {
+			return *x.xxx_hidden_ContainerName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ContainerNameAndBaselineStatus) GetBaselineStatus() ContainerNameAndBaselineStatus_BaselineStatus {
-	if x != nil && x.BaselineStatus != nil {
-		return *x.BaselineStatus
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_BaselineStatus
+		}
 	}
 	return ContainerNameAndBaselineStatus_INVALID
 }
 
 func (x *ContainerNameAndBaselineStatus) GetAnomalousProcessesExecuted() bool {
-	if x != nil && x.AnomalousProcessesExecuted != nil {
-		return *x.AnomalousProcessesExecuted
+	if x != nil {
+		return x.xxx_hidden_AnomalousProcessesExecuted
 	}
 	return false
 }
 
 func (x *ContainerNameAndBaselineStatus) SetContainerName(v string) {
-	x.ContainerName = &v
+	x.xxx_hidden_ContainerName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *ContainerNameAndBaselineStatus) SetBaselineStatus(v ContainerNameAndBaselineStatus_BaselineStatus) {
-	x.BaselineStatus = &v
+	x.xxx_hidden_BaselineStatus = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ContainerNameAndBaselineStatus) SetAnomalousProcessesExecuted(v bool) {
-	x.AnomalousProcessesExecuted = &v
+	x.xxx_hidden_AnomalousProcessesExecuted = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ContainerNameAndBaselineStatus) HasContainerName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ContainerName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ContainerNameAndBaselineStatus) HasBaselineStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.BaselineStatus != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ContainerNameAndBaselineStatus) HasAnomalousProcessesExecuted() bool {
 	if x == nil {
 		return false
 	}
-	return x.AnomalousProcessesExecuted != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ContainerNameAndBaselineStatus) ClearContainerName() {
-	x.ContainerName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_ContainerName = nil
 }
 
 func (x *ContainerNameAndBaselineStatus) ClearBaselineStatus() {
-	x.BaselineStatus = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_BaselineStatus = ContainerNameAndBaselineStatus_INVALID
 }
 
 func (x *ContainerNameAndBaselineStatus) ClearAnomalousProcessesExecuted() {
-	x.AnomalousProcessesExecuted = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_AnomalousProcessesExecuted = false
 }
 
 type ContainerNameAndBaselineStatus_builder struct {
@@ -779,21 +833,32 @@ func (b0 ContainerNameAndBaselineStatus_builder) Build() *ContainerNameAndBaseli
 	m0 := &ContainerNameAndBaselineStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ContainerName = b.ContainerName
-	x.BaselineStatus = b.BaselineStatus
-	x.AnomalousProcessesExecuted = b.AnomalousProcessesExecuted
+	if b.ContainerName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_ContainerName = b.ContainerName
+	}
+	if b.BaselineStatus != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_BaselineStatus = *b.BaselineStatus
+	}
+	if b.AnomalousProcessesExecuted != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_AnomalousProcessesExecuted = *b.AnomalousProcessesExecuted
+	}
 	return m0
 }
 
 // `ProcessBaselineResults` represent cached results of process baseline evaluation.
 type ProcessBaselineResults struct {
-	state            protoimpl.MessageState            `protogen:"hybrid.v1"`
-	DeploymentId     *string                           `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	ClusterId        *string                           `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`          // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
-	Namespace        *string                           `protobuf:"bytes,4,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,hidden,store"`                           // @gotags: search:"Namespace,hidden,store"
-	BaselineStatuses []*ContainerNameAndBaselineStatus `protobuf:"bytes,2,rep,name=baseline_statuses,json=baselineStatuses" json:"baseline_statuses,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_DeploymentId     *string                            `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
+	xxx_hidden_ClusterId        *string                            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Namespace        *string                            `protobuf:"bytes,4,opt,name=namespace"`
+	xxx_hidden_BaselineStatuses *[]*ContainerNameAndBaselineStatus `protobuf:"bytes,2,rep,name=baseline_statuses,json=baselineStatuses"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *ProcessBaselineResults) Reset() {
@@ -822,80 +887,97 @@ func (x *ProcessBaselineResults) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ProcessBaselineResults) GetDeploymentId() string {
-	if x != nil && x.DeploymentId != nil {
-		return *x.DeploymentId
+	if x != nil {
+		if x.xxx_hidden_DeploymentId != nil {
+			return *x.xxx_hidden_DeploymentId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProcessBaselineResults) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProcessBaselineResults) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ProcessBaselineResults) GetBaselineStatuses() []*ContainerNameAndBaselineStatus {
 	if x != nil {
-		return x.BaselineStatuses
+		if x.xxx_hidden_BaselineStatuses != nil {
+			return *x.xxx_hidden_BaselineStatuses
+		}
 	}
 	return nil
 }
 
 func (x *ProcessBaselineResults) SetDeploymentId(v string) {
-	x.DeploymentId = &v
+	x.xxx_hidden_DeploymentId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *ProcessBaselineResults) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *ProcessBaselineResults) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *ProcessBaselineResults) SetBaselineStatuses(v []*ContainerNameAndBaselineStatus) {
-	x.BaselineStatuses = v
+	x.xxx_hidden_BaselineStatuses = &v
 }
 
 func (x *ProcessBaselineResults) HasDeploymentId() bool {
 	if x == nil {
 		return false
 	}
-	return x.DeploymentId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ProcessBaselineResults) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ProcessBaselineResults) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ProcessBaselineResults) ClearDeploymentId() {
-	x.DeploymentId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_DeploymentId = nil
 }
 
 func (x *ProcessBaselineResults) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *ProcessBaselineResults) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Namespace = nil
 }
 
 type ProcessBaselineResults_builder struct {
@@ -911,10 +993,19 @@ func (b0 ProcessBaselineResults_builder) Build() *ProcessBaselineResults {
 	m0 := &ProcessBaselineResults{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DeploymentId = b.DeploymentId
-	x.ClusterId = b.ClusterId
-	x.Namespace = b.Namespace
-	x.BaselineStatuses = b.BaselineStatuses
+	if b.DeploymentId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_DeploymentId = b.DeploymentId
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	x.xxx_hidden_BaselineStatuses = &b.BaselineStatuses
 	return m0
 }
 
@@ -961,7 +1052,7 @@ const file_storage_process_baseline_proto_rawDesc = "" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12\x1c\n" +
 	"\tnamespace\x18\x04 \x01(\tR\tnamespace\x12T\n" +
 	"\x11baseline_statuses\x18\x02 \x03(\v2'.storage.ContainerNameAndBaselineStatusR\x10baselineStatusesB9\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_process_baseline_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_process_baseline_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
@@ -999,7 +1090,7 @@ func file_storage_process_baseline_proto_init() {
 		return
 	}
 	file_storage_process_baseline_proto_msgTypes[3].OneofWrappers = []any{
-		(*BaselineItem_ProcessName)(nil),
+		(*baselineItem_ProcessName)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

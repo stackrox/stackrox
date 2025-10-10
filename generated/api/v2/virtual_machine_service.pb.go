@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v2/virtual_machine_service.proto
 
-//go:build !protoopaque
-
 package v2
 
 import (
@@ -114,19 +112,21 @@ func (x VirtualMachineScan_Note) Number() protoreflect.EnumNumber {
 }
 
 type VirtualMachine struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Namespace     *string                `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
-	Name          *string                `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	ClusterId     *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
-	ClusterName   *string                `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
-	Facts         map[string]string      `protobuf:"bytes,6,rep,name=facts" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty"`
-	VsockCid      *int32                 `protobuf:"varint,8,opt,name=vsock_cid,json=vsockCid" json:"vsock_cid,omitempty"`
-	State         *VirtualMachine_State  `protobuf:"varint,9,opt,name=state,enum=v2.VirtualMachine_State" json:"state,omitempty"`
-	Scan          *VirtualMachineScan    `protobuf:"bytes,10,opt,name=scan" json:"scan,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Namespace   *string                `protobuf:"bytes,2,opt,name=namespace"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,3,opt,name=name"`
+	xxx_hidden_ClusterId   *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_ClusterName *string                `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName"`
+	xxx_hidden_Facts       map[string]string      `protobuf:"bytes,6,rep,name=facts" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_LastUpdated *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_updated,json=lastUpdated"`
+	xxx_hidden_VsockCid    int32                  `protobuf:"varint,8,opt,name=vsock_cid,json=vsockCid"`
+	xxx_hidden_State       VirtualMachine_State   `protobuf:"varint,9,opt,name=state,enum=v2.VirtualMachine_State"`
+	xxx_hidden_Scan        *VirtualMachineScan    `protobuf:"bytes,10,opt,name=scan"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VirtualMachine) Reset() {
@@ -155,212 +155,243 @@ func (x *VirtualMachine) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VirtualMachine) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetClusterName() string {
-	if x != nil && x.ClusterName != nil {
-		return *x.ClusterName
+	if x != nil {
+		if x.xxx_hidden_ClusterName != nil {
+			return *x.xxx_hidden_ClusterName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachine) GetFacts() map[string]string {
 	if x != nil {
-		return x.Facts
+		return x.xxx_hidden_Facts
 	}
 	return nil
 }
 
 func (x *VirtualMachine) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastUpdated
+		return x.xxx_hidden_LastUpdated
 	}
 	return nil
 }
 
 func (x *VirtualMachine) GetVsockCid() int32 {
-	if x != nil && x.VsockCid != nil {
-		return *x.VsockCid
+	if x != nil {
+		return x.xxx_hidden_VsockCid
 	}
 	return 0
 }
 
 func (x *VirtualMachine) GetState() VirtualMachine_State {
-	if x != nil && x.State != nil {
-		return *x.State
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
+			return x.xxx_hidden_State
+		}
 	}
 	return VirtualMachine_UNKNOWN
 }
 
 func (x *VirtualMachine) GetScan() *VirtualMachineScan {
 	if x != nil {
-		return x.Scan
+		return x.xxx_hidden_Scan
 	}
 	return nil
 }
 
 func (x *VirtualMachine) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 10)
 }
 
 func (x *VirtualMachine) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
 }
 
 func (x *VirtualMachine) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 10)
 }
 
 func (x *VirtualMachine) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 10)
 }
 
 func (x *VirtualMachine) SetClusterName(v string) {
-	x.ClusterName = &v
+	x.xxx_hidden_ClusterName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 10)
 }
 
 func (x *VirtualMachine) SetFacts(v map[string]string) {
-	x.Facts = v
+	x.xxx_hidden_Facts = v
 }
 
 func (x *VirtualMachine) SetLastUpdated(v *timestamppb.Timestamp) {
-	x.LastUpdated = v
+	x.xxx_hidden_LastUpdated = v
 }
 
 func (x *VirtualMachine) SetVsockCid(v int32) {
-	x.VsockCid = &v
+	x.xxx_hidden_VsockCid = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 10)
 }
 
 func (x *VirtualMachine) SetState(v VirtualMachine_State) {
-	x.State = &v
+	x.xxx_hidden_State = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
 }
 
 func (x *VirtualMachine) SetScan(v *VirtualMachineScan) {
-	x.Scan = v
+	x.xxx_hidden_Scan = v
 }
 
 func (x *VirtualMachine) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VirtualMachine) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VirtualMachine) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *VirtualMachine) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *VirtualMachine) HasClusterName() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *VirtualMachine) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastUpdated != nil
+	return x.xxx_hidden_LastUpdated != nil
 }
 
 func (x *VirtualMachine) HasVsockCid() bool {
 	if x == nil {
 		return false
 	}
-	return x.VsockCid != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
 func (x *VirtualMachine) HasState() bool {
 	if x == nil {
 		return false
 	}
-	return x.State != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *VirtualMachine) HasScan() bool {
 	if x == nil {
 		return false
 	}
-	return x.Scan != nil
+	return x.xxx_hidden_Scan != nil
 }
 
 func (x *VirtualMachine) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *VirtualMachine) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *VirtualMachine) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *VirtualMachine) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *VirtualMachine) ClearClusterName() {
-	x.ClusterName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_ClusterName = nil
 }
 
 func (x *VirtualMachine) ClearLastUpdated() {
-	x.LastUpdated = nil
+	x.xxx_hidden_LastUpdated = nil
 }
 
 func (x *VirtualMachine) ClearVsockCid() {
-	x.VsockCid = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_VsockCid = 0
 }
 
 func (x *VirtualMachine) ClearState() {
-	x.State = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_State = VirtualMachine_UNKNOWN
 }
 
 func (x *VirtualMachine) ClearScan() {
-	x.Scan = nil
+	x.xxx_hidden_Scan = nil
 }
 
 type VirtualMachine_builder struct {
@@ -382,27 +413,50 @@ func (b0 VirtualMachine_builder) Build() *VirtualMachine {
 	m0 := &VirtualMachine{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Namespace = b.Namespace
-	x.Name = b.Name
-	x.ClusterId = b.ClusterId
-	x.ClusterName = b.ClusterName
-	x.Facts = b.Facts
-	x.LastUpdated = b.LastUpdated
-	x.VsockCid = b.VsockCid
-	x.State = b.State
-	x.Scan = b.Scan
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 10)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 10)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 10)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.ClusterName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 10)
+		x.xxx_hidden_ClusterName = b.ClusterName
+	}
+	x.xxx_hidden_Facts = b.Facts
+	x.xxx_hidden_LastUpdated = b.LastUpdated
+	if b.VsockCid != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
+		x.xxx_hidden_VsockCid = *b.VsockCid
+	}
+	if b.State != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
+		x.xxx_hidden_State = *b.State
+	}
+	x.xxx_hidden_Scan = b.Scan
 	return m0
 }
 
 type VirtualMachineScan struct {
-	state           protoimpl.MessageState    `protogen:"hybrid.v1"`
-	ScanTime        *timestamppb.Timestamp    `protobuf:"bytes,1,opt,name=scan_time,json=scanTime" json:"scan_time,omitempty"`
-	OperatingSystem *string                   `protobuf:"bytes,2,opt,name=operating_system,json=operatingSystem" json:"operating_system,omitempty"`
-	Notes           []VirtualMachineScan_Note `protobuf:"varint,3,rep,packed,name=notes,enum=v2.VirtualMachineScan_Note" json:"notes,omitempty"`
-	Components      []*ScanComponent          `protobuf:"bytes,4,rep,name=components" json:"components,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_ScanTime        *timestamppb.Timestamp    `protobuf:"bytes,1,opt,name=scan_time,json=scanTime"`
+	xxx_hidden_OperatingSystem *string                   `protobuf:"bytes,2,opt,name=operating_system,json=operatingSystem"`
+	xxx_hidden_Notes           []VirtualMachineScan_Note `protobuf:"varint,3,rep,packed,name=notes,enum=v2.VirtualMachineScan_Note"`
+	xxx_hidden_Components      *[]*ScanComponent         `protobuf:"bytes,4,rep,name=components"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *VirtualMachineScan) Reset() {
@@ -432,68 +486,75 @@ func (x *VirtualMachineScan) ProtoReflect() protoreflect.Message {
 
 func (x *VirtualMachineScan) GetScanTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ScanTime
+		return x.xxx_hidden_ScanTime
 	}
 	return nil
 }
 
 func (x *VirtualMachineScan) GetOperatingSystem() string {
-	if x != nil && x.OperatingSystem != nil {
-		return *x.OperatingSystem
+	if x != nil {
+		if x.xxx_hidden_OperatingSystem != nil {
+			return *x.xxx_hidden_OperatingSystem
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *VirtualMachineScan) GetNotes() []VirtualMachineScan_Note {
 	if x != nil {
-		return x.Notes
+		return x.xxx_hidden_Notes
 	}
 	return nil
 }
 
 func (x *VirtualMachineScan) GetComponents() []*ScanComponent {
 	if x != nil {
-		return x.Components
+		if x.xxx_hidden_Components != nil {
+			return *x.xxx_hidden_Components
+		}
 	}
 	return nil
 }
 
 func (x *VirtualMachineScan) SetScanTime(v *timestamppb.Timestamp) {
-	x.ScanTime = v
+	x.xxx_hidden_ScanTime = v
 }
 
 func (x *VirtualMachineScan) SetOperatingSystem(v string) {
-	x.OperatingSystem = &v
+	x.xxx_hidden_OperatingSystem = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *VirtualMachineScan) SetNotes(v []VirtualMachineScan_Note) {
-	x.Notes = v
+	x.xxx_hidden_Notes = v
 }
 
 func (x *VirtualMachineScan) SetComponents(v []*ScanComponent) {
-	x.Components = v
+	x.xxx_hidden_Components = &v
 }
 
 func (x *VirtualMachineScan) HasScanTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.ScanTime != nil
+	return x.xxx_hidden_ScanTime != nil
 }
 
 func (x *VirtualMachineScan) HasOperatingSystem() bool {
 	if x == nil {
 		return false
 	}
-	return x.OperatingSystem != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *VirtualMachineScan) ClearScanTime() {
-	x.ScanTime = nil
+	x.xxx_hidden_ScanTime = nil
 }
 
 func (x *VirtualMachineScan) ClearOperatingSystem() {
-	x.OperatingSystem = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_OperatingSystem = nil
 }
 
 type VirtualMachineScan_builder struct {
@@ -509,19 +570,24 @@ func (b0 VirtualMachineScan_builder) Build() *VirtualMachineScan {
 	m0 := &VirtualMachineScan{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ScanTime = b.ScanTime
-	x.OperatingSystem = b.OperatingSystem
-	x.Notes = b.Notes
-	x.Components = b.Components
+	x.xxx_hidden_ScanTime = b.ScanTime
+	if b.OperatingSystem != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_OperatingSystem = b.OperatingSystem
+	}
+	x.xxx_hidden_Notes = b.Notes
+	x.xxx_hidden_Components = &b.Components
 	return m0
 }
 
 type GetVirtualMachineRequest struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id               *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	StripDescription *bool                  `protobuf:"varint,2,opt,name=strip_description,json=stripDescription" json:"strip_description,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id               *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_StripDescription bool                   `protobuf:"varint,2,opt,name=strip_description,json=stripDescription"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *GetVirtualMachineRequest) Reset() {
@@ -550,47 +616,54 @@ func (x *GetVirtualMachineRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GetVirtualMachineRequest) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetVirtualMachineRequest) GetStripDescription() bool {
-	if x != nil && x.StripDescription != nil {
-		return *x.StripDescription
+	if x != nil {
+		return x.xxx_hidden_StripDescription
 	}
 	return false
 }
 
 func (x *GetVirtualMachineRequest) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *GetVirtualMachineRequest) SetStripDescription(v bool) {
-	x.StripDescription = &v
+	x.xxx_hidden_StripDescription = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *GetVirtualMachineRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetVirtualMachineRequest) HasStripDescription() bool {
 	if x == nil {
 		return false
 	}
-	return x.StripDescription != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *GetVirtualMachineRequest) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *GetVirtualMachineRequest) ClearStripDescription() {
-	x.StripDescription = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_StripDescription = false
 }
 
 type GetVirtualMachineRequest_builder struct {
@@ -604,17 +677,25 @@ func (b0 GetVirtualMachineRequest_builder) Build() *GetVirtualMachineRequest {
 	m0 := &GetVirtualMachineRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.StripDescription = b.StripDescription
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.StripDescription != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_StripDescription = *b.StripDescription
+	}
 	return m0
 }
 
 type ListVirtualMachinesResponse struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	VirtualMachines []*VirtualMachine      `protobuf:"bytes,1,rep,name=virtual_machines,json=virtualMachines" json:"virtual_machines,omitempty"`
-	TotalCount      *int32                 `protobuf:"varint,2,opt,name=total_count,json=totalCount" json:"total_count,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_VirtualMachines *[]*VirtualMachine     `protobuf:"bytes,1,rep,name=virtual_machines,json=virtualMachines"`
+	xxx_hidden_TotalCount      int32                  `protobuf:"varint,2,opt,name=total_count,json=totalCount"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *ListVirtualMachinesResponse) Reset() {
@@ -644,35 +725,39 @@ func (x *ListVirtualMachinesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListVirtualMachinesResponse) GetVirtualMachines() []*VirtualMachine {
 	if x != nil {
-		return x.VirtualMachines
+		if x.xxx_hidden_VirtualMachines != nil {
+			return *x.xxx_hidden_VirtualMachines
+		}
 	}
 	return nil
 }
 
 func (x *ListVirtualMachinesResponse) GetTotalCount() int32 {
-	if x != nil && x.TotalCount != nil {
-		return *x.TotalCount
+	if x != nil {
+		return x.xxx_hidden_TotalCount
 	}
 	return 0
 }
 
 func (x *ListVirtualMachinesResponse) SetVirtualMachines(v []*VirtualMachine) {
-	x.VirtualMachines = v
+	x.xxx_hidden_VirtualMachines = &v
 }
 
 func (x *ListVirtualMachinesResponse) SetTotalCount(v int32) {
-	x.TotalCount = &v
+	x.xxx_hidden_TotalCount = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ListVirtualMachinesResponse) HasTotalCount() bool {
 	if x == nil {
 		return false
 	}
-	return x.TotalCount != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ListVirtualMachinesResponse) ClearTotalCount() {
-	x.TotalCount = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_TotalCount = 0
 }
 
 type ListVirtualMachinesResponse_builder struct {
@@ -686,16 +771,19 @@ func (b0 ListVirtualMachinesResponse_builder) Build() *ListVirtualMachinesRespon
 	m0 := &ListVirtualMachinesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.VirtualMachines = b.VirtualMachines
-	x.TotalCount = b.TotalCount
+	x.xxx_hidden_VirtualMachines = &b.VirtualMachines
+	if b.TotalCount != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_TotalCount = *b.TotalCount
+	}
 	return m0
 }
 
 type ListVirtualMachinesRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query *RawQuery              `protobuf:"bytes,1,opt,name=query"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ListVirtualMachinesRequest) Reset() {
@@ -725,24 +813,24 @@ func (x *ListVirtualMachinesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListVirtualMachinesRequest) GetQuery() *RawQuery {
 	if x != nil {
-		return x.Query
+		return x.xxx_hidden_Query
 	}
 	return nil
 }
 
 func (x *ListVirtualMachinesRequest) SetQuery(v *RawQuery) {
-	x.Query = v
+	x.xxx_hidden_Query = v
 }
 
 func (x *ListVirtualMachinesRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return x.xxx_hidden_Query != nil
 }
 
 func (x *ListVirtualMachinesRequest) ClearQuery() {
-	x.Query = nil
+	x.xxx_hidden_Query = nil
 }
 
 type ListVirtualMachinesRequest_builder struct {
@@ -755,7 +843,7 @@ func (b0 ListVirtualMachinesRequest_builder) Build() *ListVirtualMachinesRequest
 	m0 := &ListVirtualMachinesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Query = b.Query
+	x.xxx_hidden_Query = b.Query
 	return m0
 }
 
@@ -809,7 +897,7 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\x15VirtualMachineService\x12g\n" +
 	"\x11GetVirtualMachine\x12\x1c.v2.GetVirtualMachineRequest\x1a\x12.v2.VirtualMachine\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v2/virtualmachines/{id}\x12s\n" +
 	"\x13ListVirtualMachines\x12\x1e.v2.ListVirtualMachinesRequest\x1a\x1f.v2.ListVirtualMachinesResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v2/virtualmachinesB/\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v2_virtual_machine_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v2_virtual_machine_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)

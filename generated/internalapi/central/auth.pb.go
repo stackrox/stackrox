@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/auth.proto
 
-//go:build !protoopaque
-
 package central
 
 import (
@@ -25,11 +23,13 @@ const (
 )
 
 type ServiceCertAuth struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	CertDer       []byte                 `protobuf:"bytes,1,opt,name=cert_der,json=certDer" json:"cert_der,omitempty"`
-	CurrentTime   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=current_time,json=currentTime" json:"current_time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CertDer     []byte                 `protobuf:"bytes,1,opt,name=cert_der,json=certDer"`
+	xxx_hidden_CurrentTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=current_time,json=currentTime"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ServiceCertAuth) Reset() {
@@ -59,14 +59,14 @@ func (x *ServiceCertAuth) ProtoReflect() protoreflect.Message {
 
 func (x *ServiceCertAuth) GetCertDer() []byte {
 	if x != nil {
-		return x.CertDer
+		return x.xxx_hidden_CertDer
 	}
 	return nil
 }
 
 func (x *ServiceCertAuth) GetCurrentTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CurrentTime
+		return x.xxx_hidden_CurrentTime
 	}
 	return nil
 }
@@ -75,33 +75,35 @@ func (x *ServiceCertAuth) SetCertDer(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.CertDer = v
+	x.xxx_hidden_CertDer = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *ServiceCertAuth) SetCurrentTime(v *timestamppb.Timestamp) {
-	x.CurrentTime = v
+	x.xxx_hidden_CurrentTime = v
 }
 
 func (x *ServiceCertAuth) HasCertDer() bool {
 	if x == nil {
 		return false
 	}
-	return x.CertDer != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ServiceCertAuth) HasCurrentTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CurrentTime != nil
+	return x.xxx_hidden_CurrentTime != nil
 }
 
 func (x *ServiceCertAuth) ClearCertDer() {
-	x.CertDer = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_CertDer = nil
 }
 
 func (x *ServiceCertAuth) ClearCurrentTime() {
-	x.CurrentTime = nil
+	x.xxx_hidden_CurrentTime = nil
 }
 
 type ServiceCertAuth_builder struct {
@@ -115,8 +117,11 @@ func (b0 ServiceCertAuth_builder) Build() *ServiceCertAuth {
 	m0 := &ServiceCertAuth{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CertDer = b.CertDer
-	x.CurrentTime = b.CurrentTime
+	if b.CertDer != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_CertDer = b.CertDer
+	}
+	x.xxx_hidden_CurrentTime = b.CurrentTime
 	return m0
 }
 
@@ -127,7 +132,7 @@ const file_internalapi_central_auth_proto_rawDesc = "" +
 	"\x1einternalapi/central/auth.proto\x12\acentral\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"k\n" +
 	"\x0fServiceCertAuth\x12\x19\n" +
 	"\bcert_der\x18\x01 \x01(\fR\acertDer\x12=\n" +
-	"\fcurrent_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\vcurrentTimeB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\fcurrent_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\vcurrentTimeB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_central_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_central_auth_proto_goTypes = []any{

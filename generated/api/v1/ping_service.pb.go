@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/ping_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -25,10 +23,12 @@ const (
 )
 
 type PongMessage struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Status        *string                `protobuf:"bytes,1,opt,name=status" json:"status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Status      *string                `protobuf:"bytes,1,opt,name=status"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PongMessage) Reset() {
@@ -57,25 +57,30 @@ func (x *PongMessage) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PongMessage) GetStatus() string {
-	if x != nil && x.Status != nil {
-		return *x.Status
+	if x != nil {
+		if x.xxx_hidden_Status != nil {
+			return *x.xxx_hidden_Status
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *PongMessage) SetStatus(v string) {
-	x.Status = &v
+	x.xxx_hidden_Status = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *PongMessage) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.Status != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *PongMessage) ClearStatus() {
-	x.Status = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Status = nil
 }
 
 type PongMessage_builder struct {
@@ -88,7 +93,10 @@ func (b0 PongMessage_builder) Build() *PongMessage {
 	m0 := &PongMessage{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Status = b.Status
+	if b.Status != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Status = b.Status
+	}
 	return m0
 }
 
@@ -102,7 +110,7 @@ const file_api_v1_ping_service_proto_rawDesc = "" +
 	"\vPingService\x124\n" +
 	"\x04Ping\x12\t.v1.Empty\x1a\x0f.v1.PongMessage\"\x10\x82\xd3\xe4\x93\x02\n" +
 	"\x12\b/v1/pingB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x01b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_ping_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v1_ping_service_proto_goTypes = []any{

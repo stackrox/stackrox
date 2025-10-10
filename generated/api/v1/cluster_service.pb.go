@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/cluster_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -118,14 +116,10 @@ func (x LoadBalancerType) Number() protoreflect.EnumNumber {
 
 // next available tag: 3
 type DecommissionedClusterRetentionInfo struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to RetentionInfo:
-	//
-	//	*DecommissionedClusterRetentionInfo_IsExcluded
-	//	*DecommissionedClusterRetentionInfo_DaysUntilDeletion
-	RetentionInfo isDecommissionedClusterRetentionInfo_RetentionInfo `protobuf_oneof:"RetentionInfo"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState                             `protogen:"opaque.v1"`
+	xxx_hidden_RetentionInfo isDecommissionedClusterRetentionInfo_RetentionInfo `protobuf_oneof:"RetentionInfo"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *DecommissionedClusterRetentionInfo) Reset() {
@@ -153,16 +147,9 @@ func (x *DecommissionedClusterRetentionInfo) ProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-func (x *DecommissionedClusterRetentionInfo) GetRetentionInfo() isDecommissionedClusterRetentionInfo_RetentionInfo {
-	if x != nil {
-		return x.RetentionInfo
-	}
-	return nil
-}
-
 func (x *DecommissionedClusterRetentionInfo) GetIsExcluded() bool {
 	if x != nil {
-		if x, ok := x.RetentionInfo.(*DecommissionedClusterRetentionInfo_IsExcluded); ok {
+		if x, ok := x.xxx_hidden_RetentionInfo.(*decommissionedClusterRetentionInfo_IsExcluded); ok {
 			return x.IsExcluded
 		}
 	}
@@ -171,7 +158,7 @@ func (x *DecommissionedClusterRetentionInfo) GetIsExcluded() bool {
 
 func (x *DecommissionedClusterRetentionInfo) GetDaysUntilDeletion() int32 {
 	if x != nil {
-		if x, ok := x.RetentionInfo.(*DecommissionedClusterRetentionInfo_DaysUntilDeletion); ok {
+		if x, ok := x.xxx_hidden_RetentionInfo.(*decommissionedClusterRetentionInfo_DaysUntilDeletion); ok {
 			return x.DaysUntilDeletion
 		}
 	}
@@ -179,25 +166,25 @@ func (x *DecommissionedClusterRetentionInfo) GetDaysUntilDeletion() int32 {
 }
 
 func (x *DecommissionedClusterRetentionInfo) SetIsExcluded(v bool) {
-	x.RetentionInfo = &DecommissionedClusterRetentionInfo_IsExcluded{v}
+	x.xxx_hidden_RetentionInfo = &decommissionedClusterRetentionInfo_IsExcluded{v}
 }
 
 func (x *DecommissionedClusterRetentionInfo) SetDaysUntilDeletion(v int32) {
-	x.RetentionInfo = &DecommissionedClusterRetentionInfo_DaysUntilDeletion{v}
+	x.xxx_hidden_RetentionInfo = &decommissionedClusterRetentionInfo_DaysUntilDeletion{v}
 }
 
 func (x *DecommissionedClusterRetentionInfo) HasRetentionInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.RetentionInfo != nil
+	return x.xxx_hidden_RetentionInfo != nil
 }
 
 func (x *DecommissionedClusterRetentionInfo) HasIsExcluded() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RetentionInfo.(*DecommissionedClusterRetentionInfo_IsExcluded)
+	_, ok := x.xxx_hidden_RetentionInfo.(*decommissionedClusterRetentionInfo_IsExcluded)
 	return ok
 }
 
@@ -205,23 +192,23 @@ func (x *DecommissionedClusterRetentionInfo) HasDaysUntilDeletion() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RetentionInfo.(*DecommissionedClusterRetentionInfo_DaysUntilDeletion)
+	_, ok := x.xxx_hidden_RetentionInfo.(*decommissionedClusterRetentionInfo_DaysUntilDeletion)
 	return ok
 }
 
 func (x *DecommissionedClusterRetentionInfo) ClearRetentionInfo() {
-	x.RetentionInfo = nil
+	x.xxx_hidden_RetentionInfo = nil
 }
 
 func (x *DecommissionedClusterRetentionInfo) ClearIsExcluded() {
-	if _, ok := x.RetentionInfo.(*DecommissionedClusterRetentionInfo_IsExcluded); ok {
-		x.RetentionInfo = nil
+	if _, ok := x.xxx_hidden_RetentionInfo.(*decommissionedClusterRetentionInfo_IsExcluded); ok {
+		x.xxx_hidden_RetentionInfo = nil
 	}
 }
 
 func (x *DecommissionedClusterRetentionInfo) ClearDaysUntilDeletion() {
-	if _, ok := x.RetentionInfo.(*DecommissionedClusterRetentionInfo_DaysUntilDeletion); ok {
-		x.RetentionInfo = nil
+	if _, ok := x.xxx_hidden_RetentionInfo.(*decommissionedClusterRetentionInfo_DaysUntilDeletion); ok {
+		x.xxx_hidden_RetentionInfo = nil
 	}
 }
 
@@ -233,10 +220,10 @@ func (x *DecommissionedClusterRetentionInfo) WhichRetentionInfo() case_Decommiss
 	if x == nil {
 		return DecommissionedClusterRetentionInfo_RetentionInfo_not_set_case
 	}
-	switch x.RetentionInfo.(type) {
-	case *DecommissionedClusterRetentionInfo_IsExcluded:
+	switch x.xxx_hidden_RetentionInfo.(type) {
+	case *decommissionedClusterRetentionInfo_IsExcluded:
 		return DecommissionedClusterRetentionInfo_IsExcluded_case
-	case *DecommissionedClusterRetentionInfo_DaysUntilDeletion:
+	case *decommissionedClusterRetentionInfo_DaysUntilDeletion:
 		return DecommissionedClusterRetentionInfo_DaysUntilDeletion_case
 	default:
 		return DecommissionedClusterRetentionInfo_RetentionInfo_not_set_case
@@ -246,12 +233,12 @@ func (x *DecommissionedClusterRetentionInfo) WhichRetentionInfo() case_Decommiss
 type DecommissionedClusterRetentionInfo_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof RetentionInfo:
+	// Fields of oneof xxx_hidden_RetentionInfo:
 	// indicates whether a cluster is protected from deletion
 	IsExcluded *bool
 	// days after which cluster will be deleted if sensor health remains UNHEALTHY
 	DaysUntilDeletion *int32
-	// -- end of RetentionInfo
+	// -- end of xxx_hidden_RetentionInfo
 }
 
 func (b0 DecommissionedClusterRetentionInfo_builder) Build() *DecommissionedClusterRetentionInfo {
@@ -259,10 +246,10 @@ func (b0 DecommissionedClusterRetentionInfo_builder) Build() *DecommissionedClus
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.IsExcluded != nil {
-		x.RetentionInfo = &DecommissionedClusterRetentionInfo_IsExcluded{*b.IsExcluded}
+		x.xxx_hidden_RetentionInfo = &decommissionedClusterRetentionInfo_IsExcluded{*b.IsExcluded}
 	}
 	if b.DaysUntilDeletion != nil {
-		x.RetentionInfo = &DecommissionedClusterRetentionInfo_DaysUntilDeletion{*b.DaysUntilDeletion}
+		x.xxx_hidden_RetentionInfo = &decommissionedClusterRetentionInfo_DaysUntilDeletion{*b.DaysUntilDeletion}
 	}
 	return m0
 }
@@ -281,28 +268,28 @@ type isDecommissionedClusterRetentionInfo_RetentionInfo interface {
 	isDecommissionedClusterRetentionInfo_RetentionInfo()
 }
 
-type DecommissionedClusterRetentionInfo_IsExcluded struct {
+type decommissionedClusterRetentionInfo_IsExcluded struct {
 	// indicates whether a cluster is protected from deletion
 	IsExcluded bool `protobuf:"varint,1,opt,name=is_excluded,json=isExcluded,oneof"`
 }
 
-type DecommissionedClusterRetentionInfo_DaysUntilDeletion struct {
+type decommissionedClusterRetentionInfo_DaysUntilDeletion struct {
 	// days after which cluster will be deleted if sensor health remains UNHEALTHY
 	DaysUntilDeletion int32 `protobuf:"varint,2,opt,name=days_until_deletion,json=daysUntilDeletion,oneof"`
 }
 
-func (*DecommissionedClusterRetentionInfo_IsExcluded) isDecommissionedClusterRetentionInfo_RetentionInfo() {
+func (*decommissionedClusterRetentionInfo_IsExcluded) isDecommissionedClusterRetentionInfo_RetentionInfo() {
 }
 
-func (*DecommissionedClusterRetentionInfo_DaysUntilDeletion) isDecommissionedClusterRetentionInfo_RetentionInfo() {
+func (*decommissionedClusterRetentionInfo_DaysUntilDeletion) isDecommissionedClusterRetentionInfo_RetentionInfo() {
 }
 
 type ClusterResponse struct {
-	state                protoimpl.MessageState              `protogen:"hybrid.v1"`
-	Cluster              *storage.Cluster                    `protobuf:"bytes,1,opt,name=cluster" json:"cluster,omitempty"`
-	ClusterRetentionInfo *DecommissionedClusterRetentionInfo `protobuf:"bytes,2,opt,name=cluster_retention_info,json=clusterRetentionInfo" json:"cluster_retention_info,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                           protoimpl.MessageState              `protogen:"opaque.v1"`
+	xxx_hidden_Cluster              *storage.Cluster                    `protobuf:"bytes,1,opt,name=cluster"`
+	xxx_hidden_ClusterRetentionInfo *DecommissionedClusterRetentionInfo `protobuf:"bytes,2,opt,name=cluster_retention_info,json=clusterRetentionInfo"`
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *ClusterResponse) Reset() {
@@ -332,46 +319,46 @@ func (x *ClusterResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ClusterResponse) GetCluster() *storage.Cluster {
 	if x != nil {
-		return x.Cluster
+		return x.xxx_hidden_Cluster
 	}
 	return nil
 }
 
 func (x *ClusterResponse) GetClusterRetentionInfo() *DecommissionedClusterRetentionInfo {
 	if x != nil {
-		return x.ClusterRetentionInfo
+		return x.xxx_hidden_ClusterRetentionInfo
 	}
 	return nil
 }
 
 func (x *ClusterResponse) SetCluster(v *storage.Cluster) {
-	x.Cluster = v
+	x.xxx_hidden_Cluster = v
 }
 
 func (x *ClusterResponse) SetClusterRetentionInfo(v *DecommissionedClusterRetentionInfo) {
-	x.ClusterRetentionInfo = v
+	x.xxx_hidden_ClusterRetentionInfo = v
 }
 
 func (x *ClusterResponse) HasCluster() bool {
 	if x == nil {
 		return false
 	}
-	return x.Cluster != nil
+	return x.xxx_hidden_Cluster != nil
 }
 
 func (x *ClusterResponse) HasClusterRetentionInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterRetentionInfo != nil
+	return x.xxx_hidden_ClusterRetentionInfo != nil
 }
 
 func (x *ClusterResponse) ClearCluster() {
-	x.Cluster = nil
+	x.xxx_hidden_Cluster = nil
 }
 
 func (x *ClusterResponse) ClearClusterRetentionInfo() {
-	x.ClusterRetentionInfo = nil
+	x.xxx_hidden_ClusterRetentionInfo = nil
 }
 
 type ClusterResponse_builder struct {
@@ -385,18 +372,20 @@ func (b0 ClusterResponse_builder) Build() *ClusterResponse {
 	m0 := &ClusterResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Cluster = b.Cluster
-	x.ClusterRetentionInfo = b.ClusterRetentionInfo
+	x.xxx_hidden_Cluster = b.Cluster
+	x.xxx_hidden_ClusterRetentionInfo = b.ClusterRetentionInfo
 	return m0
 }
 
 type ClusterDefaultsResponse struct {
-	state                    protoimpl.MessageState `protogen:"hybrid.v1"`
-	MainImageRepository      *string                `protobuf:"bytes,1,opt,name=main_image_repository,json=mainImageRepository" json:"main_image_repository,omitempty"`
-	CollectorImageRepository *string                `protobuf:"bytes,2,opt,name=collector_image_repository,json=collectorImageRepository" json:"collector_image_repository,omitempty"`
-	KernelSupportAvailable   *bool                  `protobuf:"varint,3,opt,name=kernel_support_available,json=kernelSupportAvailable" json:"kernel_support_available,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state                               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_MainImageRepository      *string                `protobuf:"bytes,1,opt,name=main_image_repository,json=mainImageRepository"`
+	xxx_hidden_CollectorImageRepository *string                `protobuf:"bytes,2,opt,name=collector_image_repository,json=collectorImageRepository"`
+	xxx_hidden_KernelSupportAvailable   bool                   `protobuf:"varint,3,opt,name=kernel_support_available,json=kernelSupportAvailable"`
+	XXX_raceDetectHookData              protoimpl.RaceDetectHookData
+	XXX_presence                        [1]uint32
+	unknownFields                       protoimpl.UnknownFields
+	sizeCache                           protoimpl.SizeCache
 }
 
 func (x *ClusterDefaultsResponse) Reset() {
@@ -425,69 +414,81 @@ func (x *ClusterDefaultsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ClusterDefaultsResponse) GetMainImageRepository() string {
-	if x != nil && x.MainImageRepository != nil {
-		return *x.MainImageRepository
+	if x != nil {
+		if x.xxx_hidden_MainImageRepository != nil {
+			return *x.xxx_hidden_MainImageRepository
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterDefaultsResponse) GetCollectorImageRepository() string {
-	if x != nil && x.CollectorImageRepository != nil {
-		return *x.CollectorImageRepository
+	if x != nil {
+		if x.xxx_hidden_CollectorImageRepository != nil {
+			return *x.xxx_hidden_CollectorImageRepository
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ClusterDefaultsResponse) GetKernelSupportAvailable() bool {
-	if x != nil && x.KernelSupportAvailable != nil {
-		return *x.KernelSupportAvailable
+	if x != nil {
+		return x.xxx_hidden_KernelSupportAvailable
 	}
 	return false
 }
 
 func (x *ClusterDefaultsResponse) SetMainImageRepository(v string) {
-	x.MainImageRepository = &v
+	x.xxx_hidden_MainImageRepository = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *ClusterDefaultsResponse) SetCollectorImageRepository(v string) {
-	x.CollectorImageRepository = &v
+	x.xxx_hidden_CollectorImageRepository = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ClusterDefaultsResponse) SetKernelSupportAvailable(v bool) {
-	x.KernelSupportAvailable = &v
+	x.xxx_hidden_KernelSupportAvailable = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ClusterDefaultsResponse) HasMainImageRepository() bool {
 	if x == nil {
 		return false
 	}
-	return x.MainImageRepository != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ClusterDefaultsResponse) HasCollectorImageRepository() bool {
 	if x == nil {
 		return false
 	}
-	return x.CollectorImageRepository != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ClusterDefaultsResponse) HasKernelSupportAvailable() bool {
 	if x == nil {
 		return false
 	}
-	return x.KernelSupportAvailable != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ClusterDefaultsResponse) ClearMainImageRepository() {
-	x.MainImageRepository = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_MainImageRepository = nil
 }
 
 func (x *ClusterDefaultsResponse) ClearCollectorImageRepository() {
-	x.CollectorImageRepository = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_CollectorImageRepository = nil
 }
 
 func (x *ClusterDefaultsResponse) ClearKernelSupportAvailable() {
-	x.KernelSupportAvailable = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_KernelSupportAvailable = false
 }
 
 type ClusterDefaultsResponse_builder struct {
@@ -502,19 +503,27 @@ func (b0 ClusterDefaultsResponse_builder) Build() *ClusterDefaultsResponse {
 	m0 := &ClusterDefaultsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.MainImageRepository = b.MainImageRepository
-	x.CollectorImageRepository = b.CollectorImageRepository
-	x.KernelSupportAvailable = b.KernelSupportAvailable
+	if b.MainImageRepository != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_MainImageRepository = b.MainImageRepository
+	}
+	if b.CollectorImageRepository != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_CollectorImageRepository = b.CollectorImageRepository
+	}
+	if b.KernelSupportAvailable != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_KernelSupportAvailable = *b.KernelSupportAvailable
+	}
 	return m0
 }
 
 type ClustersList struct {
-	state    protoimpl.MessageState `protogen:"hybrid.v1"`
-	Clusters []*storage.Cluster     `protobuf:"bytes,1,rep,name=clusters" json:"clusters,omitempty"`
-	// Maps 'UNHEALTHY' clusters' IDs to their retention info
-	ClusterIdToRetentionInfo map[string]*DecommissionedClusterRetentionInfo `protobuf:"bytes,2,rep,name=cluster_id_to_retention_info,json=clusterIdToRetentionInfo" json:"cluster_id_to_retention_info,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state                               protoimpl.MessageState                         `protogen:"opaque.v1"`
+	xxx_hidden_Clusters                 *[]*storage.Cluster                            `protobuf:"bytes,1,rep,name=clusters"`
+	xxx_hidden_ClusterIdToRetentionInfo map[string]*DecommissionedClusterRetentionInfo `protobuf:"bytes,2,rep,name=cluster_id_to_retention_info,json=clusterIdToRetentionInfo" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields                       protoimpl.UnknownFields
+	sizeCache                           protoimpl.SizeCache
 }
 
 func (x *ClustersList) Reset() {
@@ -544,24 +553,26 @@ func (x *ClustersList) ProtoReflect() protoreflect.Message {
 
 func (x *ClustersList) GetClusters() []*storage.Cluster {
 	if x != nil {
-		return x.Clusters
+		if x.xxx_hidden_Clusters != nil {
+			return *x.xxx_hidden_Clusters
+		}
 	}
 	return nil
 }
 
 func (x *ClustersList) GetClusterIdToRetentionInfo() map[string]*DecommissionedClusterRetentionInfo {
 	if x != nil {
-		return x.ClusterIdToRetentionInfo
+		return x.xxx_hidden_ClusterIdToRetentionInfo
 	}
 	return nil
 }
 
 func (x *ClustersList) SetClusters(v []*storage.Cluster) {
-	x.Clusters = v
+	x.xxx_hidden_Clusters = &v
 }
 
 func (x *ClustersList) SetClusterIdToRetentionInfo(v map[string]*DecommissionedClusterRetentionInfo) {
-	x.ClusterIdToRetentionInfo = v
+	x.xxx_hidden_ClusterIdToRetentionInfo = v
 }
 
 type ClustersList_builder struct {
@@ -576,16 +587,18 @@ func (b0 ClustersList_builder) Build() *ClustersList {
 	m0 := &ClustersList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Clusters = b.Clusters
-	x.ClusterIdToRetentionInfo = b.ClusterIdToRetentionInfo
+	x.xxx_hidden_Clusters = &b.Clusters
+	x.xxx_hidden_ClusterIdToRetentionInfo = b.ClusterIdToRetentionInfo
 	return m0
 }
 
 type GetClustersRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Query         *string                `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query       *string                `protobuf:"bytes,1,opt,name=query"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetClustersRequest) Reset() {
@@ -614,25 +627,30 @@ func (x *GetClustersRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *GetClustersRequest) GetQuery() string {
-	if x != nil && x.Query != nil {
-		return *x.Query
+	if x != nil {
+		if x.xxx_hidden_Query != nil {
+			return *x.xxx_hidden_Query
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *GetClustersRequest) SetQuery(v string) {
-	x.Query = &v
+	x.xxx_hidden_Query = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *GetClustersRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.Query != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *GetClustersRequest) ClearQuery() {
-	x.Query = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Query = nil
 }
 
 type GetClustersRequest_builder struct {
@@ -645,16 +663,21 @@ func (b0 GetClustersRequest_builder) Build() *GetClustersRequest {
 	m0 := &GetClustersRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Query = b.Query
+	if b.Query != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Query = b.Query
+	}
 	return m0
 }
 
 // Deprecated: Marked as deprecated in api/v1/cluster_service.proto.
 type KernelSupportAvailableResponse struct {
-	state                  protoimpl.MessageState `protogen:"hybrid.v1"`
-	KernelSupportAvailable *bool                  `protobuf:"varint,1,opt,name=kernel_support_available,json=kernelSupportAvailable" json:"kernel_support_available,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_KernelSupportAvailable bool                   `protobuf:"varint,1,opt,name=kernel_support_available,json=kernelSupportAvailable"`
+	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
+	XXX_presence                      [1]uint32
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *KernelSupportAvailableResponse) Reset() {
@@ -683,25 +706,27 @@ func (x *KernelSupportAvailableResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *KernelSupportAvailableResponse) GetKernelSupportAvailable() bool {
-	if x != nil && x.KernelSupportAvailable != nil {
-		return *x.KernelSupportAvailable
+	if x != nil {
+		return x.xxx_hidden_KernelSupportAvailable
 	}
 	return false
 }
 
 func (x *KernelSupportAvailableResponse) SetKernelSupportAvailable(v bool) {
-	x.KernelSupportAvailable = &v
+	x.xxx_hidden_KernelSupportAvailable = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *KernelSupportAvailableResponse) HasKernelSupportAvailable() bool {
 	if x == nil {
 		return false
 	}
-	return x.KernelSupportAvailable != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *KernelSupportAvailableResponse) ClearKernelSupportAvailable() {
-	x.KernelSupportAvailable = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_KernelSupportAvailable = false
 }
 
 // Deprecated: Marked as deprecated in api/v1/cluster_service.proto.
@@ -715,7 +740,10 @@ func (b0 KernelSupportAvailableResponse_builder) Build() *KernelSupportAvailable
 	m0 := &KernelSupportAvailableResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.KernelSupportAvailable = b.KernelSupportAvailable
+	if b.KernelSupportAvailable != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_KernelSupportAvailable = *b.KernelSupportAvailable
+	}
 	return m0
 }
 
@@ -765,7 +793,7 @@ const file_api_v1_cluster_service_proto_rawDesc = "" +
 	"\rDeleteCluster\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/clusters/{id}\x12\x80\x01\n" +
 	"\x19GetKernelSupportAvailable\x12\t.v1.Empty\x1a\".v1.KernelSupportAvailableResponse\"4\x82\xd3\xe4\x93\x02+\x12)/v1/clusters-env/kernel-support-available\x88\x02\x01\x12_\n" +
 	"\x17GetClusterDefaultValues\x12\t.v1.Empty\x1a\x1b.v1.ClusterDefaultsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/cluster-defaultsB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x02b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_cluster_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v1_cluster_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
@@ -818,8 +846,8 @@ func file_api_v1_cluster_service_proto_init() {
 	file_api_v1_common_proto_init()
 	file_api_v1_empty_proto_init()
 	file_api_v1_cluster_service_proto_msgTypes[0].OneofWrappers = []any{
-		(*DecommissionedClusterRetentionInfo_IsExcluded)(nil),
-		(*DecommissionedClusterRetentionInfo_DaysUntilDeletion)(nil),
+		(*decommissionedClusterRetentionInfo_IsExcluded)(nil),
+		(*decommissionedClusterRetentionInfo_DaysUntilDeletion)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

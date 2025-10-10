@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/risk.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -87,13 +85,15 @@ func (x RiskSubjectType) Number() protoreflect.EnumNumber {
 }
 
 type Risk struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Subject       *RiskSubject           `protobuf:"bytes,2,opt,name=subject" json:"subject,omitempty"`
-	Score         *float32               `protobuf:"fixed32,3,opt,name=score" json:"score,omitempty" search:"Risk Score,hidden"` // @gotags: search:"Risk Score,hidden"
-	Results       []*Risk_Result         `protobuf:"bytes,4,rep,name=results" json:"results,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Subject     *RiskSubject           `protobuf:"bytes,2,opt,name=subject"`
+	xxx_hidden_Score       float32                `protobuf:"fixed32,3,opt,name=score"`
+	xxx_hidden_Results     *[]*Risk_Result        `protobuf:"bytes,4,rep,name=results"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Risk) Reset() {
@@ -122,80 +122,89 @@ func (x *Risk) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Risk) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Risk) GetSubject() *RiskSubject {
 	if x != nil {
-		return x.Subject
+		return x.xxx_hidden_Subject
 	}
 	return nil
 }
 
 func (x *Risk) GetScore() float32 {
-	if x != nil && x.Score != nil {
-		return *x.Score
+	if x != nil {
+		return x.xxx_hidden_Score
 	}
 	return 0
 }
 
 func (x *Risk) GetResults() []*Risk_Result {
 	if x != nil {
-		return x.Results
+		if x.xxx_hidden_Results != nil {
+			return *x.xxx_hidden_Results
+		}
 	}
 	return nil
 }
 
 func (x *Risk) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *Risk) SetSubject(v *RiskSubject) {
-	x.Subject = v
+	x.xxx_hidden_Subject = v
 }
 
 func (x *Risk) SetScore(v float32) {
-	x.Score = &v
+	x.xxx_hidden_Score = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *Risk) SetResults(v []*Risk_Result) {
-	x.Results = v
+	x.xxx_hidden_Results = &v
 }
 
 func (x *Risk) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Risk) HasSubject() bool {
 	if x == nil {
 		return false
 	}
-	return x.Subject != nil
+	return x.xxx_hidden_Subject != nil
 }
 
 func (x *Risk) HasScore() bool {
 	if x == nil {
 		return false
 	}
-	return x.Score != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Risk) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *Risk) ClearSubject() {
-	x.Subject = nil
+	x.xxx_hidden_Subject = nil
 }
 
 func (x *Risk) ClearScore() {
-	x.Score = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Score = 0
 }
 
 type Risk_builder struct {
@@ -211,21 +220,29 @@ func (b0 Risk_builder) Build() *Risk {
 	m0 := &Risk{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Subject = b.Subject
-	x.Score = b.Score
-	x.Results = b.Results
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Id = b.Id
+	}
+	x.xxx_hidden_Subject = b.Subject
+	if b.Score != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Score = *b.Score
+	}
+	x.xxx_hidden_Results = &b.Results
 	return m0
 }
 
 type RiskSubject struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            *string                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Namespace     *string                `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,store"`                     // @gotags: search:"Namespace,store"
-	ClusterId     *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`    // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	Type          *RiskSubjectType       `protobuf:"varint,4,opt,name=type,enum=storage.RiskSubjectType" json:"type,omitempty" search:"Risk Subject Type,hidden"` // @gotags: search:"Risk Subject Type,hidden"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Namespace   *string                `protobuf:"bytes,2,opt,name=namespace"`
+	xxx_hidden_ClusterId   *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
+	xxx_hidden_Type        RiskSubjectType        `protobuf:"varint,4,opt,name=type,enum=storage.RiskSubjectType"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *RiskSubject) Reset() {
@@ -254,91 +271,110 @@ func (x *RiskSubject) ProtoReflect() protoreflect.Message {
 }
 
 func (x *RiskSubject) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *RiskSubject) GetNamespace() string {
-	if x != nil && x.Namespace != nil {
-		return *x.Namespace
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *RiskSubject) GetClusterId() string {
-	if x != nil && x.ClusterId != nil {
-		return *x.ClusterId
+	if x != nil {
+		if x.xxx_hidden_ClusterId != nil {
+			return *x.xxx_hidden_ClusterId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *RiskSubject) GetType() RiskSubjectType {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return RiskSubjectType_UNKNOWN
 }
 
 func (x *RiskSubject) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *RiskSubject) SetNamespace(v string) {
-	x.Namespace = &v
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *RiskSubject) SetClusterId(v string) {
-	x.ClusterId = &v
+	x.xxx_hidden_ClusterId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *RiskSubject) SetType(v RiskSubjectType) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *RiskSubject) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *RiskSubject) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	return x.Namespace != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *RiskSubject) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	return x.ClusterId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *RiskSubject) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *RiskSubject) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *RiskSubject) ClearNamespace() {
-	x.Namespace = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Namespace = nil
 }
 
 func (x *RiskSubject) ClearClusterId() {
-	x.ClusterId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_ClusterId = nil
 }
 
 func (x *RiskSubject) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Type = RiskSubjectType_UNKNOWN
 }
 
 type RiskSubject_builder struct {
@@ -354,20 +390,34 @@ func (b0 RiskSubject_builder) Build() *RiskSubject {
 	m0 := &RiskSubject{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Namespace = b.Namespace
-	x.ClusterId = b.ClusterId
-	x.Type = b.Type
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.ClusterId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_ClusterId = b.ClusterId
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Type = *b.Type
+	}
 	return m0
 }
 
 type Risk_Result struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          *string                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Factors       []*Risk_Result_Factor  `protobuf:"bytes,2,rep,name=factors" json:"factors,omitempty"`
-	Score         *float32               `protobuf:"fixed32,3,opt,name=score" json:"score,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Factors     *[]*Risk_Result_Factor `protobuf:"bytes,2,rep,name=factors"`
+	xxx_hidden_Score       float32                `protobuf:"fixed32,3,opt,name=score"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Risk_Result) Reset() {
@@ -396,58 +446,67 @@ func (x *Risk_Result) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Risk_Result) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Risk_Result) GetFactors() []*Risk_Result_Factor {
 	if x != nil {
-		return x.Factors
+		if x.xxx_hidden_Factors != nil {
+			return *x.xxx_hidden_Factors
+		}
 	}
 	return nil
 }
 
 func (x *Risk_Result) GetScore() float32 {
-	if x != nil && x.Score != nil {
-		return *x.Score
+	if x != nil {
+		return x.xxx_hidden_Score
 	}
 	return 0
 }
 
 func (x *Risk_Result) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *Risk_Result) SetFactors(v []*Risk_Result_Factor) {
-	x.Factors = v
+	x.xxx_hidden_Factors = &v
 }
 
 func (x *Risk_Result) SetScore(v float32) {
-	x.Score = &v
+	x.xxx_hidden_Score = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *Risk_Result) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Risk_Result) HasScore() bool {
 	if x == nil {
 		return false
 	}
-	return x.Score != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *Risk_Result) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *Risk_Result) ClearScore() {
-	x.Score = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Score = 0
 }
 
 type Risk_Result_builder struct {
@@ -462,18 +521,26 @@ func (b0 Risk_Result_builder) Build() *Risk_Result {
 	m0 := &Risk_Result{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Factors = b.Factors
-	x.Score = b.Score
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Name = b.Name
+	}
+	x.xxx_hidden_Factors = &b.Factors
+	if b.Score != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Score = *b.Score
+	}
 	return m0
 }
 
 type Risk_Result_Factor struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Message       *string                `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	Url           *string                `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Message     *string                `protobuf:"bytes,1,opt,name=message"`
+	xxx_hidden_Url         *string                `protobuf:"bytes,2,opt,name=url"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Risk_Result_Factor) Reset() {
@@ -502,47 +569,57 @@ func (x *Risk_Result_Factor) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Risk_Result_Factor) GetMessage() string {
-	if x != nil && x.Message != nil {
-		return *x.Message
+	if x != nil {
+		if x.xxx_hidden_Message != nil {
+			return *x.xxx_hidden_Message
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Risk_Result_Factor) GetUrl() string {
-	if x != nil && x.Url != nil {
-		return *x.Url
+	if x != nil {
+		if x.xxx_hidden_Url != nil {
+			return *x.xxx_hidden_Url
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *Risk_Result_Factor) SetMessage(v string) {
-	x.Message = &v
+	x.xxx_hidden_Message = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *Risk_Result_Factor) SetUrl(v string) {
-	x.Url = &v
+	x.xxx_hidden_Url = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *Risk_Result_Factor) HasMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Message != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *Risk_Result_Factor) HasUrl() bool {
 	if x == nil {
 		return false
 	}
-	return x.Url != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Risk_Result_Factor) ClearMessage() {
-	x.Message = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Message = nil
 }
 
 func (x *Risk_Result_Factor) ClearUrl() {
-	x.Url = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Url = nil
 }
 
 type Risk_Result_Factor_builder struct {
@@ -556,8 +633,14 @@ func (b0 Risk_Result_Factor_builder) Build() *Risk_Result_Factor {
 	m0 := &Risk_Result_Factor{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Message = b.Message
-	x.Url = b.Url
+	if b.Message != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Message = b.Message
+	}
+	if b.Url != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Url = b.Url
+	}
 	return m0
 }
 
@@ -595,7 +678,7 @@ const file_storage_risk_proto_rawDesc = "" +
 	"\x05IMAGE\x10\x04\x12\x13\n" +
 	"\x0fIMAGE_COMPONENT\x10\x06\x12\x12\n" +
 	"\x0eSERVICEACCOUNT\x10\x05B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_risk_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_risk_proto_msgTypes = make([]protoimpl.MessageInfo, 4)

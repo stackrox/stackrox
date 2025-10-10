@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/integration_health.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -119,16 +117,17 @@ func (x IntegrationHealth_Type) Number() protoreflect.EnumNumber {
 }
 
 type IntegrationHealth struct {
-	state        protoimpl.MessageState    `protogen:"hybrid.v1"`
-	Id           *string                   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name         *string                   `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Type         *IntegrationHealth_Type   `protobuf:"varint,3,opt,name=type,enum=storage.IntegrationHealth_Type" json:"type,omitempty"`
-	Status       *IntegrationHealth_Status `protobuf:"varint,4,opt,name=status,enum=storage.IntegrationHealth_Status" json:"status,omitempty"`
-	ErrorMessage *string                   `protobuf:"bytes,5,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
-	// Timestamp when the status was ascertained
-	LastTimestamp *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_timestamp,json=lastTimestamp" json:"last_timestamp,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_Id            *string                  `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name          *string                  `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Type          IntegrationHealth_Type   `protobuf:"varint,3,opt,name=type,enum=storage.IntegrationHealth_Type"`
+	xxx_hidden_Status        IntegrationHealth_Status `protobuf:"varint,4,opt,name=status,enum=storage.IntegrationHealth_Status"`
+	xxx_hidden_ErrorMessage  *string                  `protobuf:"bytes,5,opt,name=error_message,json=errorMessage"`
+	xxx_hidden_LastTimestamp *timestamppb.Timestamp   `protobuf:"bytes,6,opt,name=last_timestamp,json=lastTimestamp"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *IntegrationHealth) Reset() {
@@ -157,135 +156,158 @@ func (x *IntegrationHealth) ProtoReflect() protoreflect.Message {
 }
 
 func (x *IntegrationHealth) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *IntegrationHealth) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *IntegrationHealth) GetType() IntegrationHealth_Type {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return IntegrationHealth_UNKNOWN
 }
 
 func (x *IntegrationHealth) GetStatus() IntegrationHealth_Status {
-	if x != nil && x.Status != nil {
-		return *x.Status
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			return x.xxx_hidden_Status
+		}
 	}
 	return IntegrationHealth_UNINITIALIZED
 }
 
 func (x *IntegrationHealth) GetErrorMessage() string {
-	if x != nil && x.ErrorMessage != nil {
-		return *x.ErrorMessage
+	if x != nil {
+		if x.xxx_hidden_ErrorMessage != nil {
+			return *x.xxx_hidden_ErrorMessage
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *IntegrationHealth) GetLastTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastTimestamp
+		return x.xxx_hidden_LastTimestamp
 	}
 	return nil
 }
 
 func (x *IntegrationHealth) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *IntegrationHealth) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *IntegrationHealth) SetType(v IntegrationHealth_Type) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *IntegrationHealth) SetStatus(v IntegrationHealth_Status) {
-	x.Status = &v
+	x.xxx_hidden_Status = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *IntegrationHealth) SetErrorMessage(v string) {
-	x.ErrorMessage = &v
+	x.xxx_hidden_ErrorMessage = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
 }
 
 func (x *IntegrationHealth) SetLastTimestamp(v *timestamppb.Timestamp) {
-	x.LastTimestamp = v
+	x.xxx_hidden_LastTimestamp = v
 }
 
 func (x *IntegrationHealth) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *IntegrationHealth) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *IntegrationHealth) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *IntegrationHealth) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.Status != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *IntegrationHealth) HasErrorMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.ErrorMessage != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *IntegrationHealth) HasLastTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastTimestamp != nil
+	return x.xxx_hidden_LastTimestamp != nil
 }
 
 func (x *IntegrationHealth) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *IntegrationHealth) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *IntegrationHealth) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Type = IntegrationHealth_UNKNOWN
 }
 
 func (x *IntegrationHealth) ClearStatus() {
-	x.Status = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Status = IntegrationHealth_UNINITIALIZED
 }
 
 func (x *IntegrationHealth) ClearErrorMessage() {
-	x.ErrorMessage = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_ErrorMessage = nil
 }
 
 func (x *IntegrationHealth) ClearLastTimestamp() {
-	x.LastTimestamp = nil
+	x.xxx_hidden_LastTimestamp = nil
 }
 
 type IntegrationHealth_builder struct {
@@ -304,12 +326,27 @@ func (b0 IntegrationHealth_builder) Build() *IntegrationHealth {
 	m0 := &IntegrationHealth{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Type = b.Type
-	x.Status = b.Status
-	x.ErrorMessage = b.ErrorMessage
-	x.LastTimestamp = b.LastTimestamp
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_Type = *b.Type
+	}
+	if b.Status != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_Status = *b.Status
+	}
+	if b.ErrorMessage != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_ErrorMessage = b.ErrorMessage
+	}
+	x.xxx_hidden_LastTimestamp = b.LastTimestamp
 	return m0
 }
 
@@ -336,7 +373,7 @@ const file_storage_integration_health_proto_rawDesc = "" +
 	"\n" +
 	"\x06BACKUP\x10\x03\x12\x16\n" +
 	"\x12DECLARATIVE_CONFIG\x10\x04B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_integration_health_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_integration_health_proto_msgTypes = make([]protoimpl.MessageInfo, 1)

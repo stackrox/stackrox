@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/virtual_machine_iservice.proto
 
-//go:build !protoopaque
-
 package sensor
 
 import (
@@ -25,10 +23,10 @@ const (
 )
 
 type UpsertVirtualMachineIndexReportRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	IndexReport   *v1.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport" json:"index_report,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_IndexReport *v1.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpsertVirtualMachineIndexReportRequest) Reset() {
@@ -58,24 +56,24 @@ func (x *UpsertVirtualMachineIndexReportRequest) ProtoReflect() protoreflect.Mes
 
 func (x *UpsertVirtualMachineIndexReportRequest) GetIndexReport() *v1.IndexReport {
 	if x != nil {
-		return x.IndexReport
+		return x.xxx_hidden_IndexReport
 	}
 	return nil
 }
 
 func (x *UpsertVirtualMachineIndexReportRequest) SetIndexReport(v *v1.IndexReport) {
-	x.IndexReport = v
+	x.xxx_hidden_IndexReport = v
 }
 
 func (x *UpsertVirtualMachineIndexReportRequest) HasIndexReport() bool {
 	if x == nil {
 		return false
 	}
-	return x.IndexReport != nil
+	return x.xxx_hidden_IndexReport != nil
 }
 
 func (x *UpsertVirtualMachineIndexReportRequest) ClearIndexReport() {
-	x.IndexReport = nil
+	x.xxx_hidden_IndexReport = nil
 }
 
 type UpsertVirtualMachineIndexReportRequest_builder struct {
@@ -88,15 +86,17 @@ func (b0 UpsertVirtualMachineIndexReportRequest_builder) Build() *UpsertVirtualM
 	m0 := &UpsertVirtualMachineIndexReportRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.IndexReport = b.IndexReport
+	x.xxx_hidden_IndexReport = b.IndexReport
 	return m0
 }
 
 type UpsertVirtualMachineIndexReportResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Success       *bool                  `protobuf:"varint,1,opt,name=success" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Success     bool                   `protobuf:"varint,1,opt,name=success"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpsertVirtualMachineIndexReportResponse) Reset() {
@@ -125,25 +125,27 @@ func (x *UpsertVirtualMachineIndexReportResponse) ProtoReflect() protoreflect.Me
 }
 
 func (x *UpsertVirtualMachineIndexReportResponse) GetSuccess() bool {
-	if x != nil && x.Success != nil {
-		return *x.Success
+	if x != nil {
+		return x.xxx_hidden_Success
 	}
 	return false
 }
 
 func (x *UpsertVirtualMachineIndexReportResponse) SetSuccess(v bool) {
-	x.Success = &v
+	x.xxx_hidden_Success = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *UpsertVirtualMachineIndexReportResponse) HasSuccess() bool {
 	if x == nil {
 		return false
 	}
-	return x.Success != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *UpsertVirtualMachineIndexReportResponse) ClearSuccess() {
-	x.Success = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Success = false
 }
 
 type UpsertVirtualMachineIndexReportResponse_builder struct {
@@ -156,7 +158,10 @@ func (b0 UpsertVirtualMachineIndexReportResponse_builder) Build() *UpsertVirtual
 	m0 := &UpsertVirtualMachineIndexReportResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Success = b.Success
+	if b.Success != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Success = *b.Success
+	}
 	return m0
 }
 
@@ -170,7 +175,7 @@ const file_internalapi_sensor_virtual_machine_iservice_proto_rawDesc = "" +
 	"'UpsertVirtualMachineIndexReportResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess2\xa9\x01\n" +
 	" VirtualMachineIndexReportService\x12\x84\x01\n" +
-	"\x1fUpsertVirtualMachineIndexReport\x12..sensor.UpsertVirtualMachineIndexReportRequest\x1a/.sensor.UpsertVirtualMachineIndexReportResponse\"\x00B%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x1fUpsertVirtualMachineIndexReport\x12..sensor.UpsertVirtualMachineIndexReportRequest\x1a/.sensor.UpsertVirtualMachineIndexReportResponse\"\x00B%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_virtual_machine_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_sensor_virtual_machine_iservice_proto_goTypes = []any{

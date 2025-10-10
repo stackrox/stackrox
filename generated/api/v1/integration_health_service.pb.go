@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: api/v1/integration_health_service.proto
 
-//go:build !protoopaque
-
 package v1
 
 import (
@@ -68,10 +66,10 @@ func (x VulnDefinitionsInfoRequest_Component) Number() protoreflect.EnumNumber {
 }
 
 type GetIntegrationHealthResponse struct {
-	state             protoimpl.MessageState       `protogen:"hybrid.v1"`
-	IntegrationHealth []*storage.IntegrationHealth `protobuf:"bytes,1,rep,name=integrationHealth" json:"integrationHealth,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_IntegrationHealth *[]*storage.IntegrationHealth `protobuf:"bytes,1,rep,name=integrationHealth"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *GetIntegrationHealthResponse) Reset() {
@@ -101,13 +99,15 @@ func (x *GetIntegrationHealthResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetIntegrationHealthResponse) GetIntegrationHealth() []*storage.IntegrationHealth {
 	if x != nil {
-		return x.IntegrationHealth
+		if x.xxx_hidden_IntegrationHealth != nil {
+			return *x.xxx_hidden_IntegrationHealth
+		}
 	}
 	return nil
 }
 
 func (x *GetIntegrationHealthResponse) SetIntegrationHealth(v []*storage.IntegrationHealth) {
-	x.IntegrationHealth = v
+	x.xxx_hidden_IntegrationHealth = &v
 }
 
 type GetIntegrationHealthResponse_builder struct {
@@ -120,15 +120,17 @@ func (b0 GetIntegrationHealthResponse_builder) Build() *GetIntegrationHealthResp
 	m0 := &GetIntegrationHealthResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.IntegrationHealth = b.IntegrationHealth
+	x.xxx_hidden_IntegrationHealth = &b.IntegrationHealth
 	return m0
 }
 
 type VulnDefinitionsInfoRequest struct {
-	state         protoimpl.MessageState                `protogen:"hybrid.v1"`
-	Component     *VulnDefinitionsInfoRequest_Component `protobuf:"varint,1,opt,name=component,enum=v1.VulnDefinitionsInfoRequest_Component" json:"component,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState               `protogen:"opaque.v1"`
+	xxx_hidden_Component   VulnDefinitionsInfoRequest_Component `protobuf:"varint,1,opt,name=component,enum=v1.VulnDefinitionsInfoRequest_Component"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VulnDefinitionsInfoRequest) Reset() {
@@ -157,25 +159,29 @@ func (x *VulnDefinitionsInfoRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *VulnDefinitionsInfoRequest) GetComponent() VulnDefinitionsInfoRequest_Component {
-	if x != nil && x.Component != nil {
-		return *x.Component
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
+			return x.xxx_hidden_Component
+		}
 	}
 	return VulnDefinitionsInfoRequest_SCANNER
 }
 
 func (x *VulnDefinitionsInfoRequest) SetComponent(v VulnDefinitionsInfoRequest_Component) {
-	x.Component = &v
+	x.xxx_hidden_Component = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *VulnDefinitionsInfoRequest) HasComponent() bool {
 	if x == nil {
 		return false
 	}
-	return x.Component != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *VulnDefinitionsInfoRequest) ClearComponent() {
-	x.Component = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Component = VulnDefinitionsInfoRequest_SCANNER
 }
 
 type VulnDefinitionsInfoRequest_builder struct {
@@ -188,15 +194,18 @@ func (b0 VulnDefinitionsInfoRequest_builder) Build() *VulnDefinitionsInfoRequest
 	m0 := &VulnDefinitionsInfoRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Component = b.Component
+	if b.Component != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_Component = *b.Component
+	}
 	return m0
 }
 
 type VulnDefinitionsInfo struct {
-	state                protoimpl.MessageState `protogen:"hybrid.v1"`
-	LastUpdatedTimestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=last_updated_timestamp,json=lastUpdatedTimestamp" json:"last_updated_timestamp,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_LastUpdatedTimestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=last_updated_timestamp,json=lastUpdatedTimestamp"`
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *VulnDefinitionsInfo) Reset() {
@@ -226,24 +235,24 @@ func (x *VulnDefinitionsInfo) ProtoReflect() protoreflect.Message {
 
 func (x *VulnDefinitionsInfo) GetLastUpdatedTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastUpdatedTimestamp
+		return x.xxx_hidden_LastUpdatedTimestamp
 	}
 	return nil
 }
 
 func (x *VulnDefinitionsInfo) SetLastUpdatedTimestamp(v *timestamppb.Timestamp) {
-	x.LastUpdatedTimestamp = v
+	x.xxx_hidden_LastUpdatedTimestamp = v
 }
 
 func (x *VulnDefinitionsInfo) HasLastUpdatedTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastUpdatedTimestamp != nil
+	return x.xxx_hidden_LastUpdatedTimestamp != nil
 }
 
 func (x *VulnDefinitionsInfo) ClearLastUpdatedTimestamp() {
-	x.LastUpdatedTimestamp = nil
+	x.xxx_hidden_LastUpdatedTimestamp = nil
 }
 
 type VulnDefinitionsInfo_builder struct {
@@ -256,7 +265,7 @@ func (b0 VulnDefinitionsInfo_builder) Build() *VulnDefinitionsInfo {
 	m0 := &VulnDefinitionsInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LastUpdatedTimestamp = b.LastUpdatedTimestamp
+	x.xxx_hidden_LastUpdatedTimestamp = b.LastUpdatedTimestamp
 	return m0
 }
 
@@ -281,7 +290,7 @@ const file_api_v1_integration_health_service_proto_rawDesc = "" +
 	"\x10GetBackupPlugins\x12\t.v1.Empty\x1a .v1.GetIntegrationHealthResponse\"-\x82\xd3\xe4\x93\x02'\x12%/v1/integrationhealth/externalbackups\x12v\n" +
 	"\x15GetDeclarativeConfigs\x12\t.v1.Empty\x1a .v1.GetIntegrationHealthResponse\"0\x82\xd3\xe4\x93\x02*\x12(/v1/integrationhealth/declarativeconfigs\x12\x80\x01\n" +
 	"\x16GetVulnDefinitionsInfo\x12\x1e.v1.VulnDefinitionsInfoRequest\x1a\x17.v1.VulnDefinitionsInfo\"-\x82\xd3\xe4\x93\x02'\x12%/v1/integrationhealth/vulndefinitionsB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x02X\x01b\beditionsp\xe8\a"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_integration_health_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v1_integration_health_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)

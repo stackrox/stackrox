@@ -4,8 +4,6 @@
 // 	protoc        v6.32.1
 // source: storage/discovered_cluster.proto
 
-//go:build !protoopaque
-
 package storage
 
 import (
@@ -119,14 +117,16 @@ func (x DiscoveredCluster_Metadata_ProviderType) Number() protoreflect.EnumNumbe
 //
 // Refer to v1.DiscoveredCluster for a more detailed doc.
 type DiscoveredCluster struct {
-	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
-	Id            *string                     `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	Metadata      *DiscoveredCluster_Metadata `protobuf:"bytes,2,opt,name=metadata" json:"metadata,omitempty"`
-	Status        *DiscoveredCluster_Status   `protobuf:"varint,3,opt,name=status,enum=storage.DiscoveredCluster_Status" json:"status,omitempty" search:"Cluster Status,hidden"` // @gotags: search:"Cluster Status,hidden"
-	SourceId      *string                     `protobuf:"bytes,4,opt,name=source_id,json=sourceId" json:"source_id,omitempty" search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"`                    // @gotags: search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"
-	LastUpdatedAt *timestamppb.Timestamp      `protobuf:"bytes,5,opt,name=last_updated_at,json=lastUpdatedAt" json:"last_updated_at,omitempty" search:"Last Updated,hidden"`   // @gotags: search:"Last Updated,hidden"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Id            *string                     `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Metadata      *DiscoveredCluster_Metadata `protobuf:"bytes,2,opt,name=metadata"`
+	xxx_hidden_Status        DiscoveredCluster_Status    `protobuf:"varint,3,opt,name=status,enum=storage.DiscoveredCluster_Status"`
+	xxx_hidden_SourceId      *string                     `protobuf:"bytes,4,opt,name=source_id,json=sourceId"`
+	xxx_hidden_LastUpdatedAt *timestamppb.Timestamp      `protobuf:"bytes,5,opt,name=last_updated_at,json=lastUpdatedAt"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *DiscoveredCluster) Reset() {
@@ -155,113 +155,127 @@ func (x *DiscoveredCluster) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DiscoveredCluster) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DiscoveredCluster) GetMetadata() *DiscoveredCluster_Metadata {
 	if x != nil {
-		return x.Metadata
+		return x.xxx_hidden_Metadata
 	}
 	return nil
 }
 
 func (x *DiscoveredCluster) GetStatus() DiscoveredCluster_Status {
-	if x != nil && x.Status != nil {
-		return *x.Status
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Status
+		}
 	}
 	return DiscoveredCluster_STATUS_UNSPECIFIED
 }
 
 func (x *DiscoveredCluster) GetSourceId() string {
-	if x != nil && x.SourceId != nil {
-		return *x.SourceId
+	if x != nil {
+		if x.xxx_hidden_SourceId != nil {
+			return *x.xxx_hidden_SourceId
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DiscoveredCluster) GetLastUpdatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastUpdatedAt
+		return x.xxx_hidden_LastUpdatedAt
 	}
 	return nil
 }
 
 func (x *DiscoveredCluster) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
 }
 
 func (x *DiscoveredCluster) SetMetadata(v *DiscoveredCluster_Metadata) {
-	x.Metadata = v
+	x.xxx_hidden_Metadata = v
 }
 
 func (x *DiscoveredCluster) SetStatus(v DiscoveredCluster_Status) {
-	x.Status = &v
+	x.xxx_hidden_Status = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *DiscoveredCluster) SetSourceId(v string) {
-	x.SourceId = &v
+	x.xxx_hidden_SourceId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *DiscoveredCluster) SetLastUpdatedAt(v *timestamppb.Timestamp) {
-	x.LastUpdatedAt = v
+	x.xxx_hidden_LastUpdatedAt = v
 }
 
 func (x *DiscoveredCluster) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DiscoveredCluster) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.Metadata != nil
+	return x.xxx_hidden_Metadata != nil
 }
 
 func (x *DiscoveredCluster) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.Status != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DiscoveredCluster) HasSourceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.SourceId != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *DiscoveredCluster) HasLastUpdatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.LastUpdatedAt != nil
+	return x.xxx_hidden_LastUpdatedAt != nil
 }
 
 func (x *DiscoveredCluster) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *DiscoveredCluster) ClearMetadata() {
-	x.Metadata = nil
+	x.xxx_hidden_Metadata = nil
 }
 
 func (x *DiscoveredCluster) ClearStatus() {
-	x.Status = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Status = DiscoveredCluster_STATUS_UNSPECIFIED
 }
 
 func (x *DiscoveredCluster) ClearSourceId() {
-	x.SourceId = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_SourceId = nil
 }
 
 func (x *DiscoveredCluster) ClearLastUpdatedAt() {
-	x.LastUpdatedAt = nil
+	x.xxx_hidden_LastUpdatedAt = nil
 }
 
 type DiscoveredCluster_builder struct {
@@ -278,24 +292,35 @@ func (b0 DiscoveredCluster_builder) Build() *DiscoveredCluster {
 	m0 := &DiscoveredCluster{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Metadata = b.Metadata
-	x.Status = b.Status
-	x.SourceId = b.SourceId
-	x.LastUpdatedAt = b.LastUpdatedAt
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Id = b.Id
+	}
+	x.xxx_hidden_Metadata = b.Metadata
+	if b.Status != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Status = *b.Status
+	}
+	if b.SourceId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_SourceId = b.SourceId
+	}
+	x.xxx_hidden_LastUpdatedAt = b.LastUpdatedAt
 	return m0
 }
 
 type DiscoveredCluster_Metadata struct {
-	state             protoimpl.MessageState                   `protogen:"hybrid.v1"`
-	Id                *string                                  `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name              *string                                  `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Cluster,hidden"`                                    // @gotags: search:"Cluster,hidden"
-	Type              *ClusterMetadata_Type                    `protobuf:"varint,3,opt,name=type,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type,hidden"` // @gotags: search:"Cluster Type,hidden"
-	ProviderType      *DiscoveredCluster_Metadata_ProviderType `protobuf:"varint,4,opt,name=provider_type,json=providerType,enum=storage.DiscoveredCluster_Metadata_ProviderType" json:"provider_type,omitempty"`
-	Region            *string                                  `protobuf:"bytes,5,opt,name=region" json:"region,omitempty"`
-	FirstDiscoveredAt *timestamppb.Timestamp                   `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt" json:"first_discovered_at,omitempty" search:"Cluster Discovered Time,hidden"` // @gotags: search:"Cluster Discovered Time,hidden"
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState                  `protogen:"opaque.v1"`
+	xxx_hidden_Id                *string                                 `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Name              *string                                 `protobuf:"bytes,2,opt,name=name"`
+	xxx_hidden_Type              ClusterMetadata_Type                    `protobuf:"varint,3,opt,name=type,enum=storage.ClusterMetadata_Type"`
+	xxx_hidden_ProviderType      DiscoveredCluster_Metadata_ProviderType `protobuf:"varint,4,opt,name=provider_type,json=providerType,enum=storage.DiscoveredCluster_Metadata_ProviderType"`
+	xxx_hidden_Region            *string                                 `protobuf:"bytes,5,opt,name=region"`
+	xxx_hidden_FirstDiscoveredAt *timestamppb.Timestamp                  `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *DiscoveredCluster_Metadata) Reset() {
@@ -324,135 +349,158 @@ func (x *DiscoveredCluster_Metadata) ProtoReflect() protoreflect.Message {
 }
 
 func (x *DiscoveredCluster_Metadata) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DiscoveredCluster_Metadata) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DiscoveredCluster_Metadata) GetType() ClusterMetadata_Type {
-	if x != nil && x.Type != nil {
-		return *x.Type
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_Type
+		}
 	}
 	return ClusterMetadata_UNSPECIFIED
 }
 
 func (x *DiscoveredCluster_Metadata) GetProviderType() DiscoveredCluster_Metadata_ProviderType {
-	if x != nil && x.ProviderType != nil {
-		return *x.ProviderType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
+			return x.xxx_hidden_ProviderType
+		}
 	}
 	return DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
 }
 
 func (x *DiscoveredCluster_Metadata) GetRegion() string {
-	if x != nil && x.Region != nil {
-		return *x.Region
+	if x != nil {
+		if x.xxx_hidden_Region != nil {
+			return *x.xxx_hidden_Region
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *DiscoveredCluster_Metadata) GetFirstDiscoveredAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.FirstDiscoveredAt
+		return x.xxx_hidden_FirstDiscoveredAt
 	}
 	return nil
 }
 
 func (x *DiscoveredCluster_Metadata) SetId(v string) {
-	x.Id = &v
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *DiscoveredCluster_Metadata) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *DiscoveredCluster_Metadata) SetType(v ClusterMetadata_Type) {
-	x.Type = &v
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *DiscoveredCluster_Metadata) SetProviderType(v DiscoveredCluster_Metadata_ProviderType) {
-	x.ProviderType = &v
+	x.xxx_hidden_ProviderType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *DiscoveredCluster_Metadata) SetRegion(v string) {
-	x.Region = &v
+	x.xxx_hidden_Region = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
 }
 
 func (x *DiscoveredCluster_Metadata) SetFirstDiscoveredAt(v *timestamppb.Timestamp) {
-	x.FirstDiscoveredAt = v
+	x.xxx_hidden_FirstDiscoveredAt = v
 }
 
 func (x *DiscoveredCluster_Metadata) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.Id != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *DiscoveredCluster_Metadata) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *DiscoveredCluster_Metadata) HasType() bool {
 	if x == nil {
 		return false
 	}
-	return x.Type != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *DiscoveredCluster_Metadata) HasProviderType() bool {
 	if x == nil {
 		return false
 	}
-	return x.ProviderType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *DiscoveredCluster_Metadata) HasRegion() bool {
 	if x == nil {
 		return false
 	}
-	return x.Region != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *DiscoveredCluster_Metadata) HasFirstDiscoveredAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.FirstDiscoveredAt != nil
+	return x.xxx_hidden_FirstDiscoveredAt != nil
 }
 
 func (x *DiscoveredCluster_Metadata) ClearId() {
-	x.Id = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
 }
 
 func (x *DiscoveredCluster_Metadata) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *DiscoveredCluster_Metadata) ClearType() {
-	x.Type = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Type = ClusterMetadata_UNSPECIFIED
 }
 
 func (x *DiscoveredCluster_Metadata) ClearProviderType() {
-	x.ProviderType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_ProviderType = DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
 }
 
 func (x *DiscoveredCluster_Metadata) ClearRegion() {
-	x.Region = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Region = nil
 }
 
 func (x *DiscoveredCluster_Metadata) ClearFirstDiscoveredAt() {
-	x.FirstDiscoveredAt = nil
+	x.xxx_hidden_FirstDiscoveredAt = nil
 }
 
 type DiscoveredCluster_Metadata_builder struct {
@@ -470,12 +518,27 @@ func (b0 DiscoveredCluster_Metadata_builder) Build() *DiscoveredCluster_Metadata
 	m0 := &DiscoveredCluster_Metadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Type = b.Type
-	x.ProviderType = b.ProviderType
-	x.Region = b.Region
-	x.FirstDiscoveredAt = b.FirstDiscoveredAt
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Type != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_Type = *b.Type
+	}
+	if b.ProviderType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_ProviderType = *b.ProviderType
+	}
+	if b.Region != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_Region = b.Region
+	}
+	x.xxx_hidden_FirstDiscoveredAt = b.FirstDiscoveredAt
 	return m0
 }
 
@@ -506,7 +569,7 @@ const file_storage_discovered_cluster_proto_rawDesc = "" +
 	"\x12STATUS_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eSTATUS_SECURED\x10\x01\x12\x14\n" +
 	"\x10STATUS_UNSECURED\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x02b\beditionsp\xe8\a"
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_storage_discovered_cluster_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_discovered_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
