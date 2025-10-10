@@ -1,6 +1,11 @@
 package env
 
 var (
+	// VirtualMachinesMaxConcurrentVsockConnections defines the maximum number of vsock connections handled in parallel.
+	VirtualMachinesMaxConcurrentVsockConnections = RegisterIntegerSetting(
+		"ROX_VIRTUAL_MACHINES_MAX_CONCURRENT_VSOCK_CONNECTIONS", 50).
+		WithMinimum(1).WithMaximum(100)
+
 	// VirtualMachinesVsockConnMaxSizeKB defines the maximum size of incoming vsock connections. The 16 MB default
 	// allows connections carrying index reports with up to approximately 6400 packages.
 	VirtualMachinesVsockConnMaxSizeKB = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_VSOCK_CONN_MAX_SIZE_KB", 16384)
