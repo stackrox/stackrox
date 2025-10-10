@@ -31,7 +31,7 @@ export function getVirtualMachineSeveritiesCount(
         UNKNOWN_VULNERABILITY_SEVERITY: 0,
     };
 
-    virtualMachine.scan.components.forEach((component) => {
+    virtualMachine.scan?.components.forEach((component) => {
         component.vulns.forEach((vuln) => {
             severityCounts[vuln.severity] += 1;
         });
@@ -99,7 +99,7 @@ export function getVirtualMachineCveTableData(virtualMachine?: VirtualMachine): 
                     severity,
                     isFixable: !!fixedBy,
                     cvss,
-                    epssProbability: epss.epssProbability,
+                    epssProbability: epss?.epssProbability,
                     affectedComponents: [],
                 };
                 map.set(cve, row);

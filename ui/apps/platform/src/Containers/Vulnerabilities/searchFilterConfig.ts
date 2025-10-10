@@ -114,6 +114,12 @@ export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEnti
     attributes: [VirtualMachineComponentName, VirtualMachineComponentVersion],
 };
 
+export const virtualMachinesClusterSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Cluster',
+    searchCategory: 'CLUSTERS',
+    attributes: [clusterIdAttribute, clusterNameAttribute],
+};
+
 // This array includes filter configs that are relevant to view-based reports.
 // Only add configs here if they should be available as filters in vulnerability reports.
 export const viewBasedReportSearchFilterConfigs = [
