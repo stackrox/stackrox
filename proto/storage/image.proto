@@ -214,7 +214,7 @@ message V1Metadata {
   repeated string command = 6; // @gotags: search:"Image Command"
   repeated string entrypoint = 7; // @gotags: search:"Image Entrypoint"
   repeated string volumes = 8; // @gotags: search:"Image Volumes"
-  map<string, string> labels = 9; // @gotags: search:"Image Label,store"
+  map<string, string> labels = 9 [lazy = true]; // @gotags: search:"Image Label,store"
 }
 
 message ImageLayer {

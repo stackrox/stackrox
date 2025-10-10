@@ -102,11 +102,11 @@ message SplunkViolation {
     string deployment_type = 103;
     string deployment_namespace = 104;
     string deployment_namespace_id = 105;
-    map<string, string> deployment_labels = 106;
+    map<string, string> deployment_labels = 106 [lazy = true];
     string cluster_id = 107;
     string cluster_name = 108;
     repeated storage.Alert.Deployment.Container deployment_containers = 109;
-    map<string, string> deployment_annotations = 110;
+    map<string, string> deployment_annotations = 110 [lazy = true];
 
     storage.ContainerImage deployment_image = 201;
   }

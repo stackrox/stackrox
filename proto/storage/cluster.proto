@@ -135,7 +135,7 @@ message CompleteClusterConfig {
   DynamicClusterConfig dynamic_config = 1;
   StaticClusterConfig static_config = 2;
   string config_fingerprint = 3;
-  map<string, string> cluster_labels = 4;
+  map<string, string> cluster_labels = 4 [lazy = true];
 }
 
 // StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine
@@ -155,7 +155,7 @@ message Cluster {
   string id = 1; // @gotags: search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Cluster,store" sql:"unique"
   ClusterType type = 3; // @gotags: search:"Cluster Platform Type"
-  map<string, string> labels = 27; // @gotags: search:"Cluster Label"
+  map<string, string> labels = 27 [lazy = true]; // @gotags: search:"Cluster Label"
   string main_image = 4;
   string collector_image = 16;
   string central_api_endpoint = 5;

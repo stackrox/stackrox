@@ -168,8 +168,8 @@ message ComplianceOperatorCheckResultV2 {
   ComplianceOperatorRuleSeverity severity = 6;
   string description = 7;
   string instructions = 8;
-  map<string, string> labels = 9;
-  map<string, string> annotations = 10;
+  map<string, string> labels = 9 [lazy = true];
+  map<string, string> annotations = 10 [lazy = true];
   google.protobuf.Timestamp created_time = 11;
   reserved 12;
   reserved 13;
@@ -187,8 +187,8 @@ message ComplianceOperatorProfileV2 {
   string profile_id = 2;
   string name = 3;
   string profile_version = 4;
-  map<string, string> labels = 5;
-  map<string, string> annotations = 6;
+  map<string, string> labels = 5 [lazy = true];
+  map<string, string> annotations = 6 [lazy = true];
   string description = 7;
   message Rule {
     string rule_name = 1;
@@ -206,8 +206,8 @@ message ComplianceOperatorRuleV2 {
   string name = 3;
   string rule_type = 4;
   ComplianceOperatorRuleSeverity severity = 5;
-  map<string, string> labels = 6;
-  map<string, string> annotations = 7;
+  map<string, string> labels = 6 [lazy = true];
+  map<string, string> annotations = 7 [lazy = true];
   string title = 8;
   string description = 9;
   string rationale = 10;
@@ -224,8 +224,8 @@ message ComplianceOperatorScanV2 {
   string id = 1;
   string name = 2;
   string profile_id = 3;
-  map<string, string> labels = 4;
-  map<string, string> annotations = 5;
+  map<string, string> labels = 4 [lazy = true];
+  map<string, string> annotations = 5 [lazy = true];
   string scan_type = 6;
   ComplianceOperatorScanStatusV2 status = 7;
 }
@@ -251,8 +251,8 @@ message ComplianceOperatorScanSettingBindingV2 {
   string scan_setting_name = 4;
 
   reserved 5;
-  map<string, string> labels = 6;
-  map<string, string> annotations = 7;
+  map<string, string> labels = 6 [lazy = true];
+  map<string, string> annotations = 7 [lazy = true];
   ComplianceOperatorStatus status = 8;
 }
 

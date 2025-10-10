@@ -12,7 +12,7 @@ message VirtualMachine {
   string namespace = 2;
   string name = 3;
   string cluster_id = 4;
-  map<string, string> facts = 5;
+  map<string, string> facts = 5 [lazy = true];
   int32 vsock_cid = 6;
   bool vsock_cid_set = 7;
   enum State {

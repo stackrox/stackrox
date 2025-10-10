@@ -16,8 +16,8 @@ message NetworkPolicy {
   string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
   string cluster_name = 4;
   string namespace = 5; // @gotags: search:"Namespace,hidden,store"
-  map<string, string> labels = 6;
-  map<string, string> annotations = 7;
+  map<string, string> labels = 6 [lazy = true];
+  map<string, string> annotations = 7 [lazy = true];
 
   NetworkPolicySpec spec = 8;
   string yaml = 9;

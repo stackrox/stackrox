@@ -36,7 +36,7 @@ message TestSingleKeyStruct {
   float float = 7; // @gotags: search:"Test Float"
   // repeated float float_slice: currently unsupported
 
-  map<string, string> labels = 8; // @gotags: search:"Test Labels"
+  map<string, string> labels = 8 [lazy = true]; // @gotags: search:"Test Labels"
   google.protobuf.Timestamp timestamp = 9; // @gotags: search:"Test Timestamp"
 
   Enum enum = 10; // @gotags: search:"Test Enum"
@@ -100,7 +100,7 @@ message TestSingleUUIDKeyStruct {
   float float = 7; // @gotags: search:"Test Float"
   // repeated float float_slice: currently unsupported
 
-  map<string, string> labels = 8; // @gotags: search:"Test Labels"
+  map<string, string> labels = 8 [lazy = true]; // @gotags: search:"Test Labels"
   google.protobuf.Timestamp timestamp = 9; // @gotags: search:"Test Timestamp"
 
   Enum enum = 10; // @gotags: search:"Test Enum"
@@ -166,7 +166,7 @@ message TestStruct {
   float float = 7; // @gotags: search:"Test Float"
   // repeated float float_slice: currently unsupported
 
-  map<string, string> labels = 8; // @gotags: search:"Test Labels"
+  map<string, string> labels = 8 [lazy = true]; // @gotags: search:"Test Labels"
   google.protobuf.Timestamp timestamp = 9; // @gotags: search:"Test Timestamp"
 
   Enum enum = 10; // @gotags: search:"Test Enum"

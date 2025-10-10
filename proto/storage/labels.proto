@@ -29,7 +29,7 @@ message LabelSelector {
 
   // This is actually a oneof, but we can't make it one due to backwards
   // compatibility constraints.
-  map<string, string> match_labels = 1;
+  map<string, string> match_labels = 1 [lazy = true];
   repeated Requirement requirements = 2;
 }
 

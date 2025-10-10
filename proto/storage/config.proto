@@ -52,7 +52,7 @@ message AlertRetentionConfig {
 // next available tag: 5
 message DecommissionedClusterRetentionConfig {
   int32 retention_duration_days = 1;
-  map<string, string> ignore_cluster_labels = 2;
+  map<string, string> ignore_cluster_labels = 2 [lazy = true];
   google.protobuf.Timestamp last_updated = 3;
   google.protobuf.Timestamp created_at = 4;
 }

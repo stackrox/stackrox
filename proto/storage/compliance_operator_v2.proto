@@ -51,8 +51,8 @@ message ComplianceOperatorProfileV2 {
   string profile_version = 4; // @gotags: search:"Compliance Profile Version,hidden"
   string product_type = 5; // @gotags: search:"Compliance Profile Product Type,hidden"
   string standard = 6; // @gotags: search:"Compliance Standard,hidden"
-  map<string, string> labels = 7;
-  map<string, string> annotations = 8;
+  map<string, string> labels = 7 [lazy = true];
+  map<string, string> annotations = 8 [lazy = true];
   string description = 9;
   message Rule {
     string rule_name = 1; // @gotags: search:"-" sql:"fk(ComplianceOperatorRuleV2:name),no-fk-constraint"
@@ -71,8 +71,8 @@ message ComplianceOperatorRuleV2 {
   string name = 3; // @gotags: search:"Compliance Rule Name,hidden"
   string rule_type = 4; // @gotags: search:"Compliance Rule Type,hidden"
   RuleSeverity severity = 5; // @gotags: search:"Compliance Rule Severity,hidden"
-  map<string, string> labels = 6;
-  map<string, string> annotations = 7;
+  map<string, string> labels = 6 [lazy = true];
+  map<string, string> annotations = 7 [lazy = true];
   string title = 8;
   string description = 9;
   string rationale = 10;
@@ -103,8 +103,8 @@ message ComplianceOperatorScanConfigurationV2 {
   bool auto_apply_remediations = 3;
   bool auto_update_remediations = 4;
   bool one_time_scan = 5;
-  map<string, string> labels = 6;
-  map<string, string> annotations = 7;
+  map<string, string> labels = 6 [lazy = true];
+  map<string, string> annotations = 7 [lazy = true];
   message ProfileName {
     string profile_name = 1; // @gotags: search:"Compliance Config Profile Name,hidden" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
   }
@@ -180,8 +180,8 @@ message ComplianceOperatorCheckResultV2 {
   RuleSeverity severity = 6; // @gotags: search:"Compliance Rule Severity,hidden"
   string description = 7;
   string instructions = 8;
-  map<string, string> labels = 9;
-  map<string, string> annotations = 10;
+  map<string, string> labels = 9 [lazy = true];
+  map<string, string> annotations = 10 [lazy = true];
   google.protobuf.Timestamp created_time = 11; // @gotags: search:"Compliance Check Result Created Time,hidden"
   repeated string valuesUsed = 12;
   repeated string warnings = 13;
@@ -211,8 +211,8 @@ message ComplianceOperatorScanV2 {
   string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   string errors = 4;
   ProfileShim profile = 5;
-  map<string, string> labels = 6;
-  map<string, string> annotations = 7;
+  map<string, string> labels = 6 [lazy = true];
+  map<string, string> annotations = 7 [lazy = true];
   ScanType scan_type = 8;
   NodeRole node_selector = 9;
   ScanStatus status = 10;
@@ -237,8 +237,8 @@ message ComplianceOperatorScanSettingBindingV2 {
   string scan_setting_name = 5; // @gotags: search:"Compliance Scan Config Name"
 
   reserved 6;
-  map<string, string> labels = 7;
-  map<string, string> annotations = 8;
+  map<string, string> labels = 7 [lazy = true];
+  map<string, string> annotations = 8 [lazy = true];
   ComplianceOperatorStatus status = 9;
 }
 

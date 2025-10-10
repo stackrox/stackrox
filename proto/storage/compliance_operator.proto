@@ -26,8 +26,8 @@ message ComplianceOperatorCheckResult {
   CheckStatus status = 5;
   string description = 6;
   string instructions = 7;
-  map<string, string> labels = 8;
-  map<string, string> annotations = 9;
+  map<string, string> labels = 8 [lazy = true];
+  map<string, string> annotations = 9 [lazy = true];
 }
 
 // Next Tag: 9
@@ -36,8 +36,8 @@ message ComplianceOperatorProfile {
   string profile_id = 2;
   string name = 3;
   string cluster_id = 4;
-  map<string, string> labels = 5;
-  map<string, string> annotations = 6;
+  map<string, string> labels = 5 [lazy = true];
+  map<string, string> annotations = 6 [lazy = true];
   string description = 7;
   message Rule {
     string name = 1;
@@ -51,8 +51,8 @@ message ComplianceOperatorRule {
   string rule_id = 2;
   string name = 3;
   string cluster_id = 4;
-  map<string, string> labels = 5;
-  map<string, string> annotations = 6;
+  map<string, string> labels = 5 [lazy = true];
+  map<string, string> annotations = 6 [lazy = true];
   string title = 7;
   string description = 8;
   string rationale = 9;
@@ -63,8 +63,8 @@ message ComplianceOperatorScanSettingBinding {
   string id = 1; // @gotags: sql:"pk"
   string name = 2;
   string cluster_id = 3;
-  map<string, string> labels = 4;
-  map<string, string> annotations = 5;
+  map<string, string> labels = 4 [lazy = true];
+  map<string, string> annotations = 5 [lazy = true];
   message Profile {
     string name = 1;
   }
@@ -76,6 +76,6 @@ message ComplianceOperatorScan {
   string name = 2;
   string cluster_id = 3;
   string profile_id = 4;
-  map<string, string> labels = 5;
-  map<string, string> annotations = 6;
+  map<string, string> labels = 5 [lazy = true];
+  map<string, string> annotations = 6 [lazy = true];
 }

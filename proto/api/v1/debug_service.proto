@@ -69,7 +69,7 @@ message AuthorizationTraceResponse {
       int32 namespaces_total_num = 2;
       map<string, int32> denied_authz_decisions = 3;
       map<string, int32> allowed_authz_decisions = 4;
-      map<string, string> effective_access_scopes = 5;
+      map<string, string> effective_access_scopes = 5 [lazy = true];
     }
 
     string scope_checker_type = 1;

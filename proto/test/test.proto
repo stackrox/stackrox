@@ -26,7 +26,7 @@ message TestClone {
   repeated string string_slice = 2;
   repeated TestCloneSubMessage sub_messages = 3;
   map<string, TestCloneSubMessage> message_map = 4;
-  map<string, string> string_map = 5;
+  map<string, string> string_map = 5 [lazy = true];
   repeated CloneEnum enum_slice = 6;
   google.protobuf.Timestamp ts = 7;
 

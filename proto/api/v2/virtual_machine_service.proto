@@ -18,7 +18,7 @@ message VirtualMachine {
   string name = 3;
   string cluster_id = 4;
   string cluster_name = 5;
-  map<string, string> facts = 6;
+  map<string, string> facts = 6 [lazy = true];
 
   google.protobuf.Timestamp last_updated = 7;
 

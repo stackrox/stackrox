@@ -25,8 +25,8 @@ message K8sRole {
   string cluster_id = 4; // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
   string cluster_name = 5; // @gotags: search:"Cluster"
   bool cluster_role = 6; // @gotags: search:"Cluster Role"
-  map<string, string> labels = 7; // @gotags: search:"Role Label"
-  map<string, string> annotations = 8; // @gotags: search:"Role Annotation"
+  map<string, string> labels = 7 [lazy = true]; // @gotags: search:"Role Label"
+  map<string, string> annotations = 8 [lazy = true]; // @gotags: search:"Role Annotation"
   google.protobuf.Timestamp created_at = 9;
 
   repeated PolicyRule rules = 10; // @gotags: sensorhash:"set"
@@ -54,8 +54,8 @@ message K8sRoleBinding {
   // the binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is
   // empty and cluster role is true, the binding is a cluster role binding.
   bool cluster_role = 6; // @gotags: search:"Cluster Role"
-  map<string, string> labels = 7; // @gotags: search:"Role Binding Label"
-  map<string, string> annotations = 8; // @gotags: search:"Role Binding Annotation"
+  map<string, string> labels = 7 [lazy = true]; // @gotags: search:"Role Binding Label"
+  map<string, string> annotations = 8 [lazy = true]; // @gotags: search:"Role Binding Annotation"
   google.protobuf.Timestamp created_at = 9;
 
   repeated Subject subjects = 10;

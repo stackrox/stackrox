@@ -110,7 +110,7 @@ message Splunk {
     // derived_source_type is deprecated in lieu of source_types
     bool derived_source_type = 6 [deprecated = true];
   }
-  map<string, string> source_types = 7;
+  map<string, string> source_types = 7 [lazy = true];
 }
 
 message PagerDuty {

@@ -107,14 +107,14 @@ message EffectiveAccessScope {
     string id = 1;
     string name = 2;
     State state = 3;
-    map<string, string> labels = 4;
+    map<string, string> labels = 4 [lazy = true];
   }
 
   message Cluster {
     string id = 1;
     string name = 2;
     State state = 3;
-    map<string, string> labels = 5;
+    map<string, string> labels = 5 [lazy = true];
 
     repeated Namespace namespaces = 4;
   }

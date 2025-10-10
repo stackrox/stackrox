@@ -25,15 +25,15 @@ message Deployment {
   string namespace_id = 23; // @gotags: search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"
   bool orchestrator_component = 33; // @gotags: search:"Orchestrator Component"
   int64 replicas = 6; // @gotags: policy:"Replicas"
-  map<string, string> labels = 7; // @gotags: search:"Deployment Label,store"
-  map<string, string> pod_labels = 19; // @gotags: search:"Pod Label,store"
+  map<string, string> labels = 7 [lazy = true]; // @gotags: search:"Deployment Label,store"
+  map<string, string> pod_labels = 19 [lazy = true]; // @gotags: search:"Pod Label,store"
   LabelSelector label_selector = 20;
   google.protobuf.Timestamp created = 8; // @gotags: search:"Created,store,hidden" hash:"ignore"
   string cluster_id = 9; // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
   string cluster_name = 10; // @gotags: search:"Cluster,store"
   repeated Container containers = 11;
   reserved 12;
-  map<string, string> annotations = 14; // @gotags: search:"Deployment Annotation"
+  map<string, string> annotations = 14 [lazy = true]; // @gotags: search:"Deployment Annotation"
   int64 priority = 15; // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
   bool inactive = 16;
   repeated string image_pull_secrets = 17; // @gotags: search:"Image Pull Secret"

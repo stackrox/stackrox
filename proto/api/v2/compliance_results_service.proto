@@ -36,8 +36,8 @@ message ComplianceCheckResult {
   repeated string warnings = 10;
   ComplianceCheckStatus status = 11;
   string rule_name = 12;
-  map<string, string> labels = 13;
-  map<string, string> annotations = 14;
+  map<string, string> labels = 13 [lazy = true];
+  map<string, string> annotations = 14 [lazy = true];
   repeated ComplianceControl controls = 15;
 }
 
@@ -60,8 +60,8 @@ message ComplianceClusterCheckStatus {
   string rationale = 8;
   repeated string valuesUsed = 9;
   repeated string warnings = 10;
-  map<string, string> labels = 11;
-  map<string, string> annotations = 12;
+  map<string, string> labels = 11 [lazy = true];
+  map<string, string> annotations = 12 [lazy = true];
   repeated ComplianceControl controls = 13;
 }
 
