@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,13 +27,18 @@ import (
 var log = logging.LoggerForModule()
 
 type VsockServer struct {
-	listener *vsock.Listener
-	port     uint32
+	listener  *vsock.Listener
+	port      uint32
+	semaphore *semaphore.Weighted
 }
 
 func newVsockServer() *VsockServer {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
-	return &VsockServer{port: uint32(port)}
+	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
+	return &VsockServer{
+		port:      uint32(port),
+		semaphore: semaphore.NewWeighted(int64(maxConcurrentConnections)),
+	}
 }
 
 func (s *VsockServer) Start() error {
