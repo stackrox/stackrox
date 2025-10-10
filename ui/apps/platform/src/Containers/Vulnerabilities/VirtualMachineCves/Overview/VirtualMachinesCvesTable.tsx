@@ -118,7 +118,7 @@ function VirtualMachinesCvesTable() {
                             <Th>CVEs by severity</Th>
                             <Th>Cluster</Th>
                             <Th>Namespace</Th>
-                            <Th modifier="fitContent">Scanned packages</Th>
+                            <Th>Scanned packages</Th>
                             <Th>Last updated</Th>
                         </Tr>
                     </Thead>
