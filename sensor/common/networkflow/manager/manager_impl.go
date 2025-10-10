@@ -241,6 +241,8 @@ type networkFlowManager struct {
 
 	policyDetector detector.Detector
 
+	processesQueue []*storage.ProcessListeningOnPortFromSensor
+
 	stopper concurrency.Stopper
 	purger  networkFlowComponent
 	pubSub  *internalmessage.MessageSubscriber
@@ -530,24 +532,42 @@ func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*s
 
 // sendProcesses sends ProcessListeningOnPortsUpdate updates in batches. It returns true only if ALL batches were sent successfully.
 func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListeningOnPortFromSensor) bool {
-	processBatches := batchSlice(processes, maxMessageBatchSize)
 
-	for i, batch := range processBatches {
-		processesToSend := &central.ProcessListeningOnPortsUpdate{
-			ProcessesListeningOnPorts: batch,
-			Time:                      protocompat.TimestampNow(),
-		}
-
-		log.Debugf("Processes update batch %d/%d: %d processes", i+1, len(processBatches), len(batch))
-		if sent := m.sendToCentral(&central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
-				ProcessListeningOnPortUpdate: processesToSend,
-			},
-		}); !sent {
-			// If sending any batch fails, we stop and return false.
-			return false
-		}
+	if len(processes) == 0 {
+		return true
 	}
+
+	var processesToBeSent []*storage.ProcessListeningOnPortFromSensor
+
+	if features.BatchSensorToCentralMessages.Enabled() {
+		m.processesQueue = append(m.processesQueue, processes...)
+		nToSend := min(len(m.processesQueue), maxMessageBatchSize)
+
+		processesToBeSent = m.processesQueue[0:nToSend]
+
+		if len(m.processesQueue) > nToSend {
+			m.processesQueue = m.processesQueue[nToSend:]
+		} else {
+			m.processesQueue = nil
+		}
+	} else {
+		processesToBeSent = processes
+	}
+
+	processesToSend := &central.ProcessListeningOnPortsUpdate{
+		ProcessesListeningOnPorts: processesToBeSent,
+		Time:                      protocompat.TimestampNow(),
+	}
+
+	if sent := m.sendToCentral(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
+			ProcessListeningOnPortUpdate: processesToSend,
+		},
+	}); !sent {
+		// If sending any batch fails, we stop and return false.
+		return false
+	}
+
 	return true
 }
 
