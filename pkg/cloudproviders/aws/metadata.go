@@ -61,17 +61,17 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 
 	clusterMetadata := getClusterMetadata(ctx, mdClient, doc)
 
-	return &storage.ProviderMetadata{
-		Region: doc.Region,
-		Zone:   doc.AvailabilityZone,
-		Provider: &storage.ProviderMetadata_Aws{
-			Aws: &storage.AWSProviderMetadata{
-				AccountId: doc.AccountID,
-			},
-		},
-		Verified: verified,
+	awsMetadata := storage.AWSProviderMetadata_builder{
+		AccountId: &doc.AccountID,
+	}.Build()
+
+	return storage.ProviderMetadata_builder{
+		Region:   &doc.Region,
+		Zone:     &doc.AvailabilityZone,
+		Aws:      awsMetadata,
+		Verified: &verified,
 		Cluster:  clusterMetadata,
-	}, nil
+	}.Build(), nil
 }
 
 func signedIdentityDoc(ctx context.Context, mdClient *imds.Client) (*imds.InstanceIdentityDocument, error) {
@@ -170,5 +170,10 @@ func getClusterNameFromNodeLabels(ctx context.Context, k8sClient kubernetes.Inte
 func clusterMetadataFromName(clusterName string, doc *imds.InstanceIdentityDocument,
 ) *storage.ClusterMetadata {
 	clusterARN := fmt.Sprintf("arn:aws:eks:%s:%s:cluster/%s", doc.Region, doc.AccountID, clusterName)
-	return &storage.ClusterMetadata{Type: storage.ClusterMetadata_EKS, Name: clusterName, Id: clusterARN}
+	clusterType := storage.ClusterMetadata_EKS
+	return storage.ClusterMetadata_builder{
+		Type: &clusterType,
+		Name: &clusterName,
+		Id:   &clusterARN,
+	}.Build()
 }

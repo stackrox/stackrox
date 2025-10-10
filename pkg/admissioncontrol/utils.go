@@ -10,32 +10,39 @@ import (
 func SensorEventToAdmCtrlReq(event *central.SensorEvent) (*sensor.AdmCtrlUpdateResourceRequest, error) {
 	switch res := event.GetResource().(type) {
 	case *central.SensorEvent_Synced:
-		return &sensor.AdmCtrlUpdateResourceRequest{
-			Resource: &sensor.AdmCtrlUpdateResourceRequest_Synced{
-				Synced: &sensor.AdmCtrlUpdateResourceRequest_ResourcesSynced{},
-			},
-		}, nil
+		syncedResource := &sensor.AdmCtrlUpdateResourceRequest_Synced{
+			Synced: &sensor.AdmCtrlUpdateResourceRequest_ResourcesSynced{},
+		}
+		return sensor.AdmCtrlUpdateResourceRequest_builder{
+			Resource: syncedResource,
+		}.Build(), nil
 	case *central.SensorEvent_Pod:
-		return &sensor.AdmCtrlUpdateResourceRequest{
-			Action: event.GetAction(),
-			Resource: &sensor.AdmCtrlUpdateResourceRequest_Pod{
-				Pod: event.GetPod(),
-			},
-		}, nil
+		action := event.GetAction()
+		podResource := &sensor.AdmCtrlUpdateResourceRequest_Pod{
+			Pod: event.GetPod(),
+		}
+		return sensor.AdmCtrlUpdateResourceRequest_builder{
+			Action:   &action,
+			Resource: podResource,
+		}.Build(), nil
 	case *central.SensorEvent_Deployment:
-		return &sensor.AdmCtrlUpdateResourceRequest{
-			Action: event.GetAction(),
-			Resource: &sensor.AdmCtrlUpdateResourceRequest_Deployment{
-				Deployment: event.GetDeployment(),
-			},
-		}, nil
+		action := event.GetAction()
+		deploymentResource := &sensor.AdmCtrlUpdateResourceRequest_Deployment{
+			Deployment: event.GetDeployment(),
+		}
+		return sensor.AdmCtrlUpdateResourceRequest_builder{
+			Action:   &action,
+			Resource: deploymentResource,
+		}.Build(), nil
 	case *central.SensorEvent_Namespace:
-		return &sensor.AdmCtrlUpdateResourceRequest{
-			Action: event.GetAction(),
-			Resource: &sensor.AdmCtrlUpdateResourceRequest_Namespace{
-				Namespace: event.GetNamespace(),
-			},
-		}, nil
+		action := event.GetAction()
+		namespaceResource := &sensor.AdmCtrlUpdateResourceRequest_Namespace{
+			Namespace: event.GetNamespace(),
+		}
+		return sensor.AdmCtrlUpdateResourceRequest_builder{
+			Action:   &action,
+			Resource: namespaceResource,
+		}.Build(), nil
 	default:
 		return nil, errors.Errorf("Cannot transform sensor event of type %T to admission control request message", res)
 	}

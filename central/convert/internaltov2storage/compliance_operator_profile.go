@@ -10,27 +10,41 @@ import (
 func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV2, clusterID string) *storage.ComplianceOperatorProfileV2 {
 	var rules []*storage.ComplianceOperatorProfileV2_Rule
 	for _, r := range internalMsg.GetRules() {
-		rules = append(rules, &storage.ComplianceOperatorProfileV2_Rule{
-			RuleName: r.GetRuleName(),
-		})
+		ruleName := r.GetRuleName()
+		rule := storage.ComplianceOperatorProfileV2_Rule_builder{
+			RuleName: &ruleName,
+		}.Build()
+		rules = append(rules, rule)
 	}
 
 	productType := internalMsg.GetAnnotations()[v1alpha1.ProductTypeAnnotation]
 
-	return &storage.ComplianceOperatorProfileV2{
-		Id:             internalMsg.GetId(),
-		ProfileId:      internalMsg.GetProfileId(),
-		Name:           internalMsg.GetName(),
-		ProfileVersion: internalMsg.GetProfileVersion(),
-		ProductType:    productType,
-		Labels:         internalMsg.GetLabels(),
-		Annotations:    internalMsg.GetAnnotations(),
-		Description:    internalMsg.GetDescription(),
+	id := internalMsg.GetId()
+	profileId := internalMsg.GetProfileId()
+	name := internalMsg.GetName()
+	profileVersion := internalMsg.GetProfileVersion()
+	labels := internalMsg.GetLabels()
+	annotations := internalMsg.GetAnnotations()
+	description := internalMsg.GetDescription()
+	product := internalMsg.GetAnnotations()[v1alpha1.ProductAnnotation]
+	title := internalMsg.GetTitle()
+	values := internalMsg.GetValues()
+	profileRefId := BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType)
+
+	return storage.ComplianceOperatorProfileV2_builder{
+		Id:             &id,
+		ProfileId:      &profileId,
+		Name:           &name,
+		ProfileVersion: &profileVersion,
+		ProductType:    &productType,
+		Labels:         labels,
+		Annotations:    annotations,
+		Description:    &description,
 		Rules:          rules,
-		Product:        internalMsg.GetAnnotations()[v1alpha1.ProductAnnotation],
-		Title:          internalMsg.GetTitle(),
-		Values:         internalMsg.GetValues(),
-		ClusterId:      clusterID,
-		ProfileRefId:   BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
-	}
+		Product:        &product,
+		Title:          &title,
+		Values:         values,
+		ClusterId:      &clusterID,
+		ProfileRefId:   &profileRefId,
+	}.Build()
 }

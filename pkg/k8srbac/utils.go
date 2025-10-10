@@ -37,57 +37,57 @@ func IsClusterRoleBinding(binding *storage.K8SRoleBinding) bool {
 }
 
 // EffectiveAdmin represents the rule that grants admin if granted by a policy rule.
-var EffectiveAdmin = &storage.PolicyRule{
+var EffectiveAdmin = storage.PolicyRule_builder{
 	Verbs:     []string{"*"},
 	ApiGroups: []string{""},
 	Resources: []string{"*"},
-}
+}.Build()
 
 // xxxxxAnything, represents being able to xxxxx on any single resource type. If you can "get deployments", then
 // ruleSet.Grants(getAnything) will return true for instance. You do not need to be able to get EVERYTHING, just
 // ANYTHING.
 
 // GetAnything is the permission that if granted means something in some api group can have 'get' called on it.
-var GetAnything = &storage.PolicyRule{
+var GetAnything = storage.PolicyRule_builder{
 	Verbs: []string{"get"},
-}
+}.Build()
 
 // ListAnything is the permission that if granted means something in some api group can have 'list' called on it.
-var ListAnything = &storage.PolicyRule{
+var ListAnything = storage.PolicyRule_builder{
 	Verbs: []string{"list"},
-}
+}.Build()
 
 // WatchAnything is the permission that if granted means something in some api group can have 'watch' called on it.
-var WatchAnything = &storage.PolicyRule{
+var WatchAnything = storage.PolicyRule_builder{
 	Verbs: []string{"watch"},
-}
+}.Build()
 
 // CreateAnything is the permission that if granted means something in some api group can have 'create' called on it.
-var CreateAnything = &storage.PolicyRule{
+var CreateAnything = storage.PolicyRule_builder{
 	Verbs: []string{"create"},
-}
+}.Build()
 
 // BindAnything is the permission that if granted means something in some api group can have 'bind' called on it.
-var BindAnything = &storage.PolicyRule{
+var BindAnything = storage.PolicyRule_builder{
 	Verbs: []string{"bind"},
-}
+}.Build()
 
 // PatchAnything is the permission that if granted means something in some api group can have 'patch' called on it.
-var PatchAnything = &storage.PolicyRule{
+var PatchAnything = storage.PolicyRule_builder{
 	Verbs: []string{"patch"},
-}
+}.Build()
 
 // UpdateAnything is the permission that if granted means something in some api group can have 'update' called on it.
-var UpdateAnything = &storage.PolicyRule{
+var UpdateAnything = storage.PolicyRule_builder{
 	Verbs: []string{"update"},
-}
+}.Build()
 
 // DeleteAnything is the permission that if granted means something in some api group can have 'delete' called on it.
-var DeleteAnything = &storage.PolicyRule{
+var DeleteAnything = storage.PolicyRule_builder{
 	Verbs: []string{"delete"},
-}
+}.Build()
 
 // DeletecollectionAnything is the permission that if granted means something in some api group can have 'deletecollection' called on it.
-var DeletecollectionAnything = &storage.PolicyRule{
+var DeletecollectionAnything = storage.PolicyRule_builder{
 	Verbs: []string{"deletecollection"},
-}
+}.Build()

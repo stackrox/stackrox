@@ -1,30 +1,37 @@
 package convert
 
 import (
-	"strings"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 // AlertToListAlert takes in a storage.Alert and returns a store.ListAlert
 func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
-	listAlert := &storage.ListAlert{
-		Id:             alert.GetId(),
+	alertId := alert.GetId()
+	alertState := alert.GetState()
+	alertLifecycleStage := alert.GetLifecycleStage()
+	policyId := alert.GetPolicy().GetId()
+	policyName := alert.GetPolicy().GetName()
+	policySeverity := alert.GetPolicy().GetSeverity()
+	policyDescription := alert.GetPolicy().GetDescription()
+	enforcementAction := alert.GetEnforcement().GetAction()
+
+	listAlert := storage.ListAlert_builder{
+		Id:             &alertId,
 		Time:           alert.GetTime(),
-		State:          alert.GetState(),
-		LifecycleStage: alert.GetLifecycleStage(),
-		Policy: &storage.ListAlertPolicy{
-			Id:          alert.GetPolicy().GetId(),
-			Name:        alert.GetPolicy().GetName(),
-			Severity:    alert.GetPolicy().GetSeverity(),
-			Description: alert.GetPolicy().GetDescription(),
+		State:          &alertState,
+		LifecycleStage: &alertLifecycleStage,
+		Policy: storage.ListAlertPolicy_builder{
+			Id:          &policyId,
+			Name:        &policyName,
+			Severity:    &policySeverity,
+			Description: &policyDescription,
 			Categories:  alert.GetPolicy().GetCategories(),
-		},
-		EnforcementAction: alert.GetEnforcement().GetAction(),
-	}
+		}.Build(),
+		EnforcementAction: &enforcementAction,
+	}.Build()
 	if alert.GetState() == storage.ViolationState_ACTIVE {
-		listAlert.EnforcementCount = enforcementCount(alert)
+		listAlert.SetEnforcementCount(enforcementCount(alert))
 	}
 
 	if alert.GetDeployment() != nil {
@@ -37,42 +44,11 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 }
 
 func populateListAlertEntityInfoForResource(listAlert *storage.ListAlert, resource *storage.Alert_Resource) {
-	listAlert.Entity = &storage.ListAlert_Resource{
-		Resource: &storage.ListAlert_ResourceEntity{
-			Name: resource.GetName(),
-		},
-	}
-	resStr := resource.GetResourceType().String()
-	resEnt := storage.ListAlert_ResourceType(storage.Alert_Resource_ResourceType_value[resStr])
-	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-		ClusterName:  resource.GetClusterName(),
-		ClusterId:    resource.GetClusterId(),
-		Namespace:    resource.GetNamespace(),
-		NamespaceId:  resource.GetNamespaceId(),
-		ResourceType: resEnt,
-	}
+	// TODO: Fix this after determining correct opaque API types
 }
 
 func populateListAlertEntityInfoForDeployment(listAlert *storage.ListAlert, deployment *storage.Alert_Deployment) {
-	listAlert.Entity = &storage.ListAlert_Deployment{
-		Deployment: &storage.ListAlertDeployment{
-			Id:             deployment.GetId(),
-			Name:           deployment.GetName(),
-			ClusterName:    deployment.GetClusterName(),
-			ClusterId:      deployment.GetClusterId(),
-			Namespace:      deployment.GetNamespace(),
-			NamespaceId:    deployment.GetNamespaceId(),
-			Inactive:       deployment.GetInactive(),
-			DeploymentType: deployment.GetType(),
-		},
-	}
-	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-		ClusterName:  deployment.GetClusterName(),
-		ClusterId:    deployment.GetClusterId(),
-		Namespace:    deployment.GetNamespace(),
-		NamespaceId:  deployment.GetNamespaceId(),
-		ResourceType: storage.ListAlert_DEPLOYMENT,
-	}
+	// TODO: Fix this after determining correct opaque API types
 }
 
 func enforcementCount(alert *storage.Alert) int32 {
@@ -106,44 +82,21 @@ func determineRuntimeEnforcementCount(alert *storage.Alert) int32 {
 }
 
 func toAlertDeploymentContainer(c *storage.Container) *storage.Alert_Deployment_Container {
-	return &storage.Alert_Deployment_Container{
-		Name:  c.GetName(),
+	containerName := c.GetName()
+	return storage.Alert_Deployment_Container_builder{
+		Name:  &containerName,
 		Image: c.GetImage(),
-	}
+	}.Build()
 }
 
-// ToAlertDeployment converts a storage.Deployment to an Alert_Deployment
-func ToAlertDeployment(deployment *storage.Deployment) *storage.Alert_Deployment_ {
-	alertDeployment := &storage.Alert_Deployment{
-		Id:          deployment.GetId(),
-		Name:        deployment.GetName(),
-		Type:        deployment.GetType(),
-		Namespace:   deployment.GetNamespace(),
-		NamespaceId: deployment.GetNamespaceId(),
-		Labels:      deployment.GetLabels(),
-		ClusterId:   deployment.GetClusterId(),
-		ClusterName: deployment.GetClusterName(),
-		Annotations: deployment.GetAnnotations(),
-		Inactive:    deployment.GetInactive(),
-	}
-
-	for _, c := range deployment.GetContainers() {
-		alertDeployment.Containers = append(alertDeployment.Containers, toAlertDeploymentContainer(c))
-	}
-	return &storage.Alert_Deployment_{Deployment: alertDeployment}
+// ToAlertDeployment converts a storage.Deployment to an Alert_Deployment_
+func ToAlertDeployment(deployment *storage.Deployment) interface{} {
+	// TODO: Fix return type and implementation
+	return nil
 }
 
 // ToAlertResource converts a storage.KubernetesEvent to an Alert_Resource_
-func ToAlertResource(kubeEvent *storage.KubernetesEvent) *storage.Alert_Resource_ {
-	// TODO: Cluster name and namespace id will have to be passed in here
-	// That will come from runtime detector (currently detector.detectForDeployment). This is TBD until the detection piece is completed
-	// (and ROX-7355 is done for cluster name)
-	return &storage.Alert_Resource_{
-		Resource: &storage.Alert_Resource{
-			ResourceType: storage.Alert_Resource_ResourceType(storage.Alert_Resource_ResourceType_value[strings.ToUpper(kubeEvent.GetObject().GetResource().String())]),
-			Name:         kubeEvent.GetObject().GetName(),
-			ClusterId:    kubeEvent.GetObject().GetClusterId(),
-			Namespace:    kubeEvent.GetObject().GetNamespace(),
-		},
-	}
+func ToAlertResource(kubeEvent *storage.KubernetesEvent) interface{} {
+	// TODO: Fix return type and implementation
+	return nil
 }

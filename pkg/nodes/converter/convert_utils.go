@@ -2,6 +2,7 @@ package converter
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"google.golang.org/protobuf/proto"
 )
 
 // FillV2NodeVulnerabilities populates the Vulnerabilities node scan component field from the Vulns one.
@@ -24,28 +25,28 @@ func MoveNodeVulnsToNewField(node *storage.Node) {
 
 // EmbeddedVulnerabilityToNodeVulnerability converts a *storage.EmbeddedVulnerability object to a *storage.NodeVulnerability one.
 func EmbeddedVulnerabilityToNodeVulnerability(vuln *storage.EmbeddedVulnerability) *storage.NodeVulnerability {
-	ret := &storage.NodeVulnerability{
-		CveBaseInfo: &storage.CVEInfo{
-			Cve:          vuln.GetCve(),
-			Summary:      vuln.GetSummary(),
-			Link:         vuln.GetLink(),
+	ret := storage.NodeVulnerability_builder{
+		CveBaseInfo: storage.CVEInfo_builder{
+			Cve:          proto.String(vuln.GetCve()),
+			Summary:      proto.String(vuln.GetSummary()),
+			Link:         proto.String(vuln.GetLink()),
 			PublishedOn:  vuln.GetPublishedOn(),
 			CreatedAt:    vuln.GetFirstSystemOccurrence(),
 			LastModified: vuln.GetLastModified(),
 			CvssV3:       vuln.GetCvssV3(),
 			CvssV2:       vuln.GetCvssV2(),
-			ScoreVersion: cveInfoScoreVersion(vuln.GetScoreVersion()),
-		},
-		Cvss:         vuln.GetCvss(),
-		Severity:     vuln.GetSeverity(),
-		Snoozed:      vuln.GetSuppressed(),
+			ScoreVersion: &cveInfoScoreVersion(vuln.GetScoreVersion()),
+		}.Build(),
+		Cvss:         proto.Float32(vuln.GetCvss()),
+		Severity:     &vuln.GetSeverity(),
+		Snoozed:      proto.Bool(vuln.GetSuppressed()),
 		SnoozeStart:  vuln.GetSuppressActivation(),
 		SnoozeExpiry: vuln.GetSuppressExpiry(),
-	}
+	}.Build()
 	if vuln.GetSetFixedBy() != nil {
-		ret.SetFixedBy = &storage.NodeVulnerability_FixedBy{
-			FixedBy: vuln.GetFixedBy(),
-		}
+		ret.SetFixedBy = storage.NodeVulnerability_FixedBy_builder{
+			FixedBy: proto.String(vuln.GetFixedBy()),
+		}.Build()
 	}
 	return ret
 }

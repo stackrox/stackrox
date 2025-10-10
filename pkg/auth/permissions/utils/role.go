@@ -10,10 +10,11 @@ import (
 func resourcesWithAccessToPermissions(resourceWithAccess ...permissions.ResourceWithAccess) []*v1.Permission {
 	var perms []*v1.Permission
 	for _, rAndA := range resourceWithAccess {
-		perms = append(perms, &v1.Permission{
-			Resource: string(rAndA.Resource.GetResource()),
-			Access:   rAndA.Access,
-		})
+		resource := string(rAndA.Resource.GetResource())
+		perms = append(perms, v1.Permission_builder{
+			Resource: &resource,
+			Access:   &rAndA.Access,
+		}.Build())
 	}
 	return perms
 }
@@ -95,11 +96,12 @@ func RoleNamesFromUserInfo(roles []*storage.UserInfo_Role) []string {
 func ExtractRolesForUserInfo(roles []permissions.ResolvedRole) []*storage.UserInfo_Role {
 	result := make([]*storage.UserInfo_Role, 0, len(roles))
 	for _, role := range roles {
-		role := &storage.UserInfo_Role{
-			Name:             role.GetRoleName(),
+		roleName := role.GetRoleName()
+		roleInfo := storage.UserInfo_Role_builder{
+			Name:             &roleName,
 			ResourceToAccess: role.GetPermissions(),
-		}
-		result = append(result, role)
+		}.Build()
+		result = append(result, roleInfo)
 	}
 	return result
 }

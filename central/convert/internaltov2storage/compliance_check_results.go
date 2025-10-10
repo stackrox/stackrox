@@ -36,26 +36,45 @@ var (
 // ComplianceOperatorCheckResult converts internal api V2 check result to a V2 storage check result
 func ComplianceOperatorCheckResult(sensorData *central.ComplianceOperatorCheckResultV2, clusterID string, clusterName string) *storage.ComplianceOperatorCheckResultV2 {
 	lastStartedTimestamp, _ := protocompat.ParseRFC3339NanoTimestamp(sensorData.GetAnnotations()[LastScannedAnnotationKey])
-	return &storage.ComplianceOperatorCheckResultV2{
-		Id:              sensorData.GetId(),
-		CheckId:         sensorData.GetCheckId(),
-		CheckName:       sensorData.GetCheckName(),
-		ClusterId:       clusterID,
-		ClusterName:     clusterName,
-		Status:          statusToV2[sensorData.GetStatus()],
-		Severity:        severityToV2[sensorData.GetSeverity()],
-		Description:     sensorData.GetDescription(),
-		Instructions:    sensorData.GetInstructions(),
-		Labels:          sensorData.GetLabels(),
-		Annotations:     sensorData.GetAnnotations(),
-		CreatedTime:     sensorData.GetCreatedTime(),
-		ScanName:        sensorData.GetScanName(),
-		ScanConfigName:  sensorData.GetSuiteName(),
-		Rationale:       sensorData.GetRationale(),
-		ValuesUsed:      sensorData.GetValuesUsed(),
-		Warnings:        sensorData.GetWarnings(),
-		ScanRefId:       BuildNameRefID(clusterID, sensorData.GetScanName()),
-		RuleRefId:       BuildNameRefID(clusterID, sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]),
+
+	id := sensorData.GetId()
+	checkId := sensorData.GetCheckId()
+	checkName := sensorData.GetCheckName()
+	status := statusToV2[sensorData.GetStatus()]
+	severity := severityToV2[sensorData.GetSeverity()]
+	description := sensorData.GetDescription()
+	instructions := sensorData.GetInstructions()
+	labels := sensorData.GetLabels()
+	annotations := sensorData.GetAnnotations()
+	createdTime := sensorData.GetCreatedTime()
+	scanName := sensorData.GetScanName()
+	scanConfigName := sensorData.GetSuiteName()
+	rationale := sensorData.GetRationale()
+	valuesUsed := sensorData.GetValuesUsed()
+	warnings := sensorData.GetWarnings()
+	scanRefId := BuildNameRefID(clusterID, sensorData.GetScanName())
+	ruleRefId := BuildNameRefID(clusterID, sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey])
+
+	return storage.ComplianceOperatorCheckResultV2_builder{
+		Id:              &id,
+		CheckId:         &checkId,
+		CheckName:       &checkName,
+		ClusterId:       &clusterID,
+		ClusterName:     &clusterName,
+		Status:          &status,
+		Severity:        &severity,
+		Description:     &description,
+		Instructions:    &instructions,
+		Labels:          labels,
+		Annotations:     annotations,
+		CreatedTime:     createdTime,
+		ScanName:        &scanName,
+		ScanConfigName:  &scanConfigName,
+		Rationale:       &rationale,
+		ValuesUsed:      valuesUsed,
+		Warnings:        warnings,
+		ScanRefId:       &scanRefId,
+		RuleRefId:       &ruleRefId,
 		LastStartedTime: lastStartedTimestamp,
-	}
+	}.Build()
 }

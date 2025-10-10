@@ -13,9 +13,9 @@ type stringCollector struct {
 
 func newStringCollector(runID string) *stringCollector {
 	return &stringCollector{
-		stringsProto: &storage.ComplianceStrings{
-			Id: runID,
-		},
+		stringsProto: storage.ComplianceStrings_builder{
+			Id: &runID,
+		}.Build(),
 		stringIndices: make(map[string]int),
 	}
 }

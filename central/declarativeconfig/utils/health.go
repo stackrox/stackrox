@@ -56,18 +56,25 @@ func HealthStatusForProtoMessage(message protocompat.Message, handler string, er
 		messageID = HealthStatusIDForRole(messageID)
 	}
 
-	return &storage.DeclarativeConfigHealth{
-		Id: messageID,
-		Name: utils.IfThenElse(handler != "",
-			fmt.Sprintf("%s in config map %s", messageName, path.Base(handler)),
-			name),
-		ResourceName: name,
-		ResourceType: resourceType,
-		Status: utils.IfThenElse(err != nil, storage.DeclarativeConfigHealth_UNHEALTHY,
-			storage.DeclarativeConfigHealth_HEALTHY),
-		ErrorMessage:  errMsg,
-		LastTimestamp: protocompat.TimestampNow(),
-	}
+	id := messageID
+	healthName := utils.IfThenElse(handler != "",
+		fmt.Sprintf("%s in config map %s", messageName, path.Base(handler)),
+		name)
+	resourceName := name
+	status := utils.IfThenElse(err != nil, storage.DeclarativeConfigHealth_UNHEALTHY,
+		storage.DeclarativeConfigHealth_HEALTHY)
+	errorMessage := errMsg
+	lastTimestamp := protocompat.TimestampNow()
+
+	return storage.DeclarativeConfigHealth_builder{
+		Id:            &id,
+		Name:          &healthName,
+		ResourceName:  &resourceName,
+		ResourceType:  &resourceType,
+		Status:        &status,
+		ErrorMessage:  &errorMessage,
+		LastTimestamp: lastTimestamp,
+	}.Build()
 }
 
 // HealthStatusForHandler will create a storage.DeclarativeConfigHealth object for a handler.
@@ -78,16 +85,24 @@ func HealthStatusForHandler(handlerID string, err error) *storage.DeclarativeCon
 		errMsg = err.Error()
 	}
 
-	return &storage.DeclarativeConfigHealth{
-		Id:           declarativeconfig.NewDeclarativeHandlerUUID(path.Base(handlerID)).String(),
-		Name:         fmt.Sprintf("Config Map %s", path.Base(handlerID)),
-		ResourceName: path.Base(handlerID),
-		ResourceType: storage.DeclarativeConfigHealth_CONFIG_MAP,
-		Status: utils.IfThenElse(err != nil, storage.DeclarativeConfigHealth_UNHEALTHY,
-			storage.DeclarativeConfigHealth_HEALTHY),
-		ErrorMessage:  errMsg,
-		LastTimestamp: protocompat.TimestampNow(),
-	}
+	id := declarativeconfig.NewDeclarativeHandlerUUID(path.Base(handlerID)).String()
+	name := fmt.Sprintf("Config Map %s", path.Base(handlerID))
+	resourceName := path.Base(handlerID)
+	resourceType := storage.DeclarativeConfigHealth_CONFIG_MAP
+	status := utils.IfThenElse(err != nil, storage.DeclarativeConfigHealth_UNHEALTHY,
+		storage.DeclarativeConfigHealth_HEALTHY)
+	errorMessage := errMsg
+	lastTimestamp := protocompat.TimestampNow()
+
+	return storage.DeclarativeConfigHealth_builder{
+		Id:            &id,
+		Name:          &name,
+		ResourceName:  &resourceName,
+		ResourceType:  &resourceType,
+		Status:        &status,
+		ErrorMessage:  &errorMessage,
+		LastTimestamp: lastTimestamp,
+	}.Build()
 }
 
 // resourceNameFromProtoMessage will return the resource name to use within a storage.DeclarativeConfigHealth.

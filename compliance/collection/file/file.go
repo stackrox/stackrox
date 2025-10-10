@@ -202,13 +202,15 @@ func EvaluatePath(path string, withContents, recurse bool) (*compliance.File, bo
 func getFile(path string, fi os.FileInfo) *compliance.File {
 	gid := fi.Sys().(*syscall.Stat_t).Gid
 	uid := fi.Sys().(*syscall.Stat_t).Uid
-	return &compliance.File{
-		Path:        path,
-		User:        uid,
-		UserName:    userMap[uid],
-		Group:       gid,
-		GroupName:   groupMap[gid],
-		Permissions: uint32(fi.Mode().Perm()),
-		IsDir:       fi.IsDir(),
-	}
+
+	file := &compliance.File{}
+	file.SetPath(path)
+	file.SetUser(uid)
+	file.SetUserName(userMap[uid])
+	file.SetGroup(gid)
+	file.SetGroupName(groupMap[gid])
+	file.SetPermissions(uint32(fi.Mode().Perm()))
+	file.SetIsDir(fi.IsDir())
+
+	return file
 }

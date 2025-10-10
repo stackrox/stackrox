@@ -54,21 +54,36 @@ func (np KubernetesNetworkPolicyWrap) ToYaml() (string, error) {
 // ToRoxNetworkPolicy converts a k8s network policy to a proto network policy
 // This code allows for our tests to call the conversion on k8s network policies
 func (np KubernetesNetworkPolicyWrap) ToRoxNetworkPolicy() *storage.NetworkPolicy {
-	return &storage.NetworkPolicy{
-		Id:          string(np.GetUID()),
-		Name:        np.GetName(),
-		Namespace:   np.GetNamespace(),
-		Labels:      np.GetLabels(),
-		Annotations: np.GetAnnotations(),
-		Created:     protoconv.ConvertTimeToTimestamp(np.GetCreationTimestamp().Time),
-		ApiVersion:  np.APIVersion,
-		Spec: &storage.NetworkPolicySpec{
-			PodSelector: np.convertSelector(&np.Spec.PodSelector),
-			Ingress:     np.convertIngressRules(np.Spec.Ingress),
-			Egress:      np.convertEgressRules(np.Spec.Egress),
-			PolicyTypes: k8sPolicyTypesToRox(&np.Spec),
-		},
-	}
+	id := string(np.GetUID())
+	name := np.GetName()
+	namespace := np.GetNamespace()
+	labels := np.GetLabels()
+	annotations := np.GetAnnotations()
+	created := protoconv.ConvertTimeToTimestamp(np.GetCreationTimestamp().Time)
+	apiVersion := np.APIVersion
+
+	podSelector := np.convertSelector(&np.Spec.PodSelector)
+	ingress := np.convertIngressRules(np.Spec.Ingress)
+	egress := np.convertEgressRules(np.Spec.Egress)
+	policyTypes := k8sPolicyTypesToRox(&np.Spec)
+
+	spec := storage.NetworkPolicySpec_builder{
+		PodSelector: podSelector,
+		Ingress:     ingress,
+		Egress:      egress,
+		PolicyTypes: policyTypes,
+	}.Build()
+
+	return storage.NetworkPolicy_builder{
+		Id:          &id,
+		Name:        &name,
+		Namespace:   &namespace,
+		Labels:      labels,
+		Annotations: annotations,
+		Created:     created,
+		ApiVersion:  &apiVersion,
+		Spec:        spec,
+	}.Build()
 }
 
 func (np KubernetesNetworkPolicyWrap) convertSelector(sel *k8sMetaV1.LabelSelector) *storage.LabelSelector {
@@ -97,18 +112,21 @@ func (np KubernetesNetworkPolicyWrap) convertProtocol(p *k8sCoreV1.Protocol) sto
 func (np KubernetesNetworkPolicyWrap) convertPorts(k8sPorts []networkingV1.NetworkPolicyPort) []*storage.NetworkPolicyPort {
 	ports := make([]*storage.NetworkPolicyPort, 0, len(k8sPorts))
 	for _, p := range k8sPorts {
-		netPolPort := &storage.NetworkPolicyPort{
-			Protocol: np.convertProtocol(p.Protocol),
-		}
+		protocol := np.convertProtocol(p.Protocol)
+		netPolPort := storage.NetworkPolicyPort_builder{
+			Protocol: &protocol,
+		}.Build()
 		if p.Port != nil {
 			switch p.Port.Type {
 			case intstr.Int:
+				portVal := p.Port.IntVal
 				netPolPort.PortRef = &storage.NetworkPolicyPort_Port{
-					Port: p.Port.IntVal,
+					Port: portVal,
 				}
 			case intstr.String:
+				portName := p.Port.StrVal
 				netPolPort.PortRef = &storage.NetworkPolicyPort_PortName{
-					PortName: p.Port.StrVal,
+					PortName: portName,
 				}
 			default:
 				utils.Should(errors.Errorf(
@@ -124,20 +142,27 @@ func (np KubernetesNetworkPolicyWrap) convertIPBlock(ipBlock *networkingV1.IPBlo
 	if ipBlock == nil {
 		return nil
 	}
-	return &storage.IPBlock{
-		Cidr:   ipBlock.CIDR,
-		Except: ipBlock.Except,
-	}
+	cidr := ipBlock.CIDR
+	except := ipBlock.Except
+	return storage.IPBlock_builder{
+		Cidr:   &cidr,
+		Except: except,
+	}.Build()
 }
 
 func (np KubernetesNetworkPolicyWrap) convertNetworkPolicyPeer(k8sPeers []networkingV1.NetworkPolicyPeer) []*storage.NetworkPolicyPeer {
 	peers := make([]*storage.NetworkPolicyPeer, 0, len(k8sPeers))
 	for _, peer := range k8sPeers {
-		peers = append(peers, &storage.NetworkPolicyPeer{
-			PodSelector:       np.convertSelector(peer.PodSelector),
-			NamespaceSelector: np.convertSelector(peer.NamespaceSelector),
-			IpBlock:           np.convertIPBlock(peer.IPBlock),
-		})
+		podSelector := np.convertSelector(peer.PodSelector)
+		namespaceSelector := np.convertSelector(peer.NamespaceSelector)
+		ipBlock := np.convertIPBlock(peer.IPBlock)
+
+		peerProto := storage.NetworkPolicyPeer_builder{
+			PodSelector:       podSelector,
+			NamespaceSelector: namespaceSelector,
+			IpBlock:           ipBlock,
+		}.Build()
+		peers = append(peers, peerProto)
 	}
 	return peers
 }
@@ -148,10 +173,14 @@ func (np KubernetesNetworkPolicyWrap) convertIngressRules(k8sIngressRules []netw
 	}
 	ingressRules := make([]*storage.NetworkPolicyIngressRule, 0, len(k8sIngressRules))
 	for _, rule := range k8sIngressRules {
-		ingressRules = append(ingressRules, &storage.NetworkPolicyIngressRule{
-			Ports: np.convertPorts(rule.Ports),
-			From:  np.convertNetworkPolicyPeer(rule.From),
-		})
+		ports := np.convertPorts(rule.Ports)
+		from := np.convertNetworkPolicyPeer(rule.From)
+
+		ingressRule := storage.NetworkPolicyIngressRule_builder{
+			Ports: ports,
+			From:  from,
+		}.Build()
+		ingressRules = append(ingressRules, ingressRule)
 	}
 	return ingressRules
 }
@@ -162,10 +191,14 @@ func (np KubernetesNetworkPolicyWrap) convertEgressRules(k8sEgressRules []networ
 	}
 	egressRules := make([]*storage.NetworkPolicyEgressRule, 0, len(k8sEgressRules))
 	for _, rule := range k8sEgressRules {
-		egressRules = append(egressRules, &storage.NetworkPolicyEgressRule{
-			Ports: np.convertPorts(rule.Ports),
-			To:    np.convertNetworkPolicyPeer(rule.To),
-		})
+		ports := np.convertPorts(rule.Ports)
+		to := np.convertNetworkPolicyPeer(rule.To)
+
+		egressRule := storage.NetworkPolicyEgressRule_builder{
+			Ports: ports,
+			To:    to,
+		}.Build()
+		egressRules = append(egressRules, egressRule)
 	}
 	return egressRules
 }

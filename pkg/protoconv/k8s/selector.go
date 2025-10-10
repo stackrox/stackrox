@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"google.golang.org/protobuf/proto"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -82,10 +83,10 @@ func ToRoxLabelSelector(sel *v1.LabelSelector) (*storage.LabelSelector, error) {
 			roxReqs[i] = roxReq
 		}
 	}
-	return &storage.LabelSelector{
+	return storage.LabelSelector_builder{
 		MatchLabels:  sel.MatchLabels,
 		Requirements: roxReqs,
-	}, nil
+	}.Build(), nil
 }
 
 // ToRoxLabelSelectorRequirement converts a Kubernetes LabelSelectorRequirement into the corresponding StackRox
@@ -96,9 +97,9 @@ func ToRoxLabelSelectorRequirement(req *v1.LabelSelectorRequirement) (*storage.L
 		return nil, fmt.Errorf("label selector operator %v not supported by StackRox", req.Operator)
 	}
 
-	return &storage.LabelSelector_Requirement{
-		Key:    req.Key,
-		Op:     op,
+	return storage.LabelSelector_Requirement_builder{
+		Key:    proto.String(req.Key),
+		Op:     &op,
 		Values: req.Values,
-	}, nil
+	}.Build(), nil
 }

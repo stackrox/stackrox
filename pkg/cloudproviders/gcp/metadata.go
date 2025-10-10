@@ -68,25 +68,30 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	}
 	clusterMetadata := getClusterMetadataFromAttributes(c)
 
-	return &storage.ProviderMetadata{
-		Region: region,
-		Zone:   md.Zone,
-		Provider: &storage.ProviderMetadata_Google{
-			Google: &storage.GoogleProviderMetadata{
-				Project:     md.ProjectID,
-				ClusterName: clusterName,
-			},
-		},
-		Verified: verified,
+	googleMetadata := storage.GoogleProviderMetadata_builder{
+		Project:     &md.ProjectID,
+		ClusterName: &clusterName,
+	}.Build()
+
+	return storage.ProviderMetadata_builder{
+		Region:   &region,
+		Zone:     &md.Zone,
+		Google:   googleMetadata,
+		Verified: &verified,
 		Cluster:  clusterMetadata,
-	}, nil
+	}.Build(), nil
 }
 
 func getClusterMetadataFromAttributes(client *metadata.Client) *storage.ClusterMetadata {
 	name, _ := client.InstanceAttributeValue("cluster-name")
 	id, _ := client.InstanceAttributeValue("cluster-uid")
 	if name != "" && id != "" {
-		return &storage.ClusterMetadata{Type: storage.ClusterMetadata_GKE, Name: name, Id: id}
+		clusterType := storage.ClusterMetadata_GKE
+		return storage.ClusterMetadata_builder{
+			Type: &clusterType,
+			Name: &name,
+			Id:   &id,
+		}.Build()
 	}
 	return nil
 }

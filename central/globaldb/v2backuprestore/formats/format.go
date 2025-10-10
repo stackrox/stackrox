@@ -52,15 +52,17 @@ func (f *ExportFormat) FileHandlers() map[string]*common.FileHandlerDesc {
 func (f *ExportFormat) ToProto() *v1.DBExportFormat {
 	files := make([]*v1.DBExportFormat_File, 0, len(f.fileHandlers))
 	for _, fileHandler := range f.fileHandlers {
-		files = append(files, &v1.DBExportFormat_File{
-			Name:     fileHandler.FileName(),
-			Optional: fileHandler.Optional(),
-		})
+		name := fileHandler.FileName()
+		optional := fileHandler.Optional()
+		files = append(files, v1.DBExportFormat_File_builder{
+			Name:     &name,
+			Optional: &optional,
+		}.Build())
 	}
-	return &v1.DBExportFormat{
-		FormatName: f.name,
+	return v1.DBExportFormat_builder{
+		FormatName: &f.name,
 		Files:      files,
-	}
+	}.Build()
 }
 
 // ToProtos returns a slice of protobuf representations of an export format.

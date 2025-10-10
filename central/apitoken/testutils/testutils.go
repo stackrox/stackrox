@@ -13,12 +13,14 @@ import (
 func GenerateToken(t *testing.T, now time.Time, expiration time.Time, revoked bool) *storage.TokenMetadata {
 	truncatedNow := now.Truncate(time.Microsecond)
 	truncatedExpiration := expiration.Truncate(time.Microsecond)
-	return &storage.TokenMetadata{
-		Id:         uuid.NewV4().String(),
-		Name:       "Generated Test Token",
+	id := uuid.NewV4().String()
+	name := "Generated Test Token"
+	return storage.TokenMetadata_builder{
+		Id:         &id,
+		Name:       &name,
 		Roles:      []string{"Admin"},
 		IssuedAt:   protocompat.ConvertTimeToTimestampOrNil(&truncatedNow),
 		Expiration: protocompat.ConvertTimeToTimestampOrNil(&truncatedExpiration),
-		Revoked:    revoked,
-	}
+		Revoked:    &revoked,
+	}.Build()
 }

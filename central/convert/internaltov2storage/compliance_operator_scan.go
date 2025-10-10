@@ -15,28 +15,50 @@ var (
 
 // ComplianceOperatorScanObject converts internal api V2 compliance scan object to a V2 storage compliance scan object
 func ComplianceOperatorScanObject(sensorData *central.ComplianceOperatorScanV2, clusterID string) *storage.ComplianceOperatorScanV2 {
-	return &storage.ComplianceOperatorScanV2{
-		Id:             sensorData.GetId(),
-		ScanConfigName: sensorData.GetLabels()[v1alpha1.SuiteLabel],
-		ScanName:       sensorData.GetName(),
-		ClusterId:      clusterID,
-		Errors:         sensorData.GetStatus().GetErrorMessage(),
-		Profile: &storage.ProfileShim{
-			ProfileId:    sensorData.GetProfileId(),
-			ProfileRefId: BuildProfileRefID(clusterID, sensorData.GetProfileId(), sensorData.GetScanType()),
-		},
-		Labels:      sensorData.GetLabels(),
-		Annotations: sensorData.GetAnnotations(),
-		ScanType:    scanTypeToV2[sensorData.GetScanType()],
-		Status: &storage.ScanStatus{
-			Phase:    sensorData.GetStatus().GetPhase(),
-			Result:   sensorData.GetStatus().GetResult(),
-			Warnings: sensorData.GetStatus().GetWarnings(),
-		},
-		CreatedTime:      sensorData.GetStatus().GetStartTime(),
-		LastStartedTime:  sensorData.GetStatus().GetLastStartTime(),
-		LastExecutedTime: sensorData.GetStatus().GetEndTime(),
-		ProductType:      sensorData.GetScanType(),
-		ScanRefId:        BuildNameRefID(clusterID, sensorData.GetName()),
-	}
+	id := sensorData.GetId()
+	scanConfigName := sensorData.GetLabels()[v1alpha1.SuiteLabel]
+	scanName := sensorData.GetName()
+	errors := sensorData.GetStatus().GetErrorMessage()
+	labels := sensorData.GetLabels()
+	annotations := sensorData.GetAnnotations()
+	scanType := scanTypeToV2[sensorData.GetScanType()]
+	createdTime := sensorData.GetStatus().GetStartTime()
+	lastStartedTime := sensorData.GetStatus().GetLastStartTime()
+	lastExecutedTime := sensorData.GetStatus().GetEndTime()
+	productType := sensorData.GetScanType()
+	scanRefId := BuildNameRefID(clusterID, sensorData.GetName())
+
+	profileId := sensorData.GetProfileId()
+	profileRefId := BuildProfileRefID(clusterID, sensorData.GetProfileId(), sensorData.GetScanType())
+	profile := storage.ProfileShim_builder{
+		ProfileId:    &profileId,
+		ProfileRefId: &profileRefId,
+	}.Build()
+
+	phase := sensorData.GetStatus().GetPhase()
+	result := sensorData.GetStatus().GetResult()
+	warnings := sensorData.GetStatus().GetWarnings()
+	status := storage.ScanStatus_builder{
+		Phase:    &phase,
+		Result:   &result,
+		Warnings: &warnings,
+	}.Build()
+
+	return storage.ComplianceOperatorScanV2_builder{
+		Id:               &id,
+		ScanConfigName:   &scanConfigName,
+		ScanName:         &scanName,
+		ClusterId:        &clusterID,
+		Errors:           &errors,
+		Profile:          profile,
+		Labels:           labels,
+		Annotations:      annotations,
+		ScanType:         &scanType,
+		Status:           status,
+		CreatedTime:      createdTime,
+		LastStartedTime:  lastStartedTime,
+		LastExecutedTime: lastExecutedTime,
+		ProductType:      &productType,
+		ScanRefId:        &scanRefId,
+	}.Build()
 }

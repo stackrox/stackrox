@@ -28,56 +28,92 @@ type LightPolicy struct {
 }
 
 func (l *LightPolicy) convert() *storage.Policy {
-	p := &storage.Policy{
-		Id:       stringutils.OrDefault(l.ID, uuid.NewV4().String()),
-		Name:     l.Name,
-		Disabled: l.Disabled,
-		PolicySections: []*storage.PolicySection{
-			{
-				SectionName: "section-1",
-				PolicyGroups: []*storage.PolicyGroup{
-					{
-						FieldName: fieldnames.ImageRegistry,
-						Values: []*storage.PolicyValue{
-							{
-								Value: l.ImageRegistry,
-							},
-						},
-					},
-					{
-						FieldName: fieldnames.CVE,
-						Values: []*storage.PolicyValue{
-							{
-								Value: l.CVE,
-							},
-						},
-					},
-				},
-			},
-		},
-		Notifiers:     l.Notifiers,
-		PolicyVersion: "1.1",
-	}
+	id := stringutils.OrDefault(l.ID, uuid.NewV4().String())
+	name := l.Name
+	disabled := l.Disabled
+	notifiers := l.Notifiers
+	policyVersion := "1.1"
+	sectionName := "section-1"
+
+	// Create PolicyValue for ImageRegistry
+	imageRegistryValue := l.ImageRegistry
+	imageRegistryPolicyValue := storage.PolicyValue_builder{
+		Value: &imageRegistryValue,
+	}.Build()
+
+	// Create PolicyValue for CVE
+	cveValue := l.CVE
+	cvePolicyValue := storage.PolicyValue_builder{
+		Value: &cveValue,
+	}.Build()
+
+	// Create PolicyGroup for ImageRegistry
+	imageRegistryFieldName := fieldnames.ImageRegistry
+	imageRegistryValues := []*storage.PolicyValue{imageRegistryPolicyValue}
+	imageRegistryGroup := storage.PolicyGroup_builder{
+		FieldName: &imageRegistryFieldName,
+		Values:    imageRegistryValues,
+	}.Build()
+
+	// Create PolicyGroup for CVE
+	cveFieldName := fieldnames.CVE
+	cveValues := []*storage.PolicyValue{cvePolicyValue}
+	cveGroup := storage.PolicyGroup_builder{
+		FieldName: &cveFieldName,
+		Values:    cveValues,
+	}.Build()
+
+	// Create PolicySection
+	policyGroups := []*storage.PolicyGroup{imageRegistryGroup, cveGroup}
+	policySection := storage.PolicySection_builder{
+		SectionName:  &sectionName,
+		PolicyGroups: policyGroups,
+	}.Build()
+
+	policySections := []*storage.PolicySection{policySection}
+
+	p := storage.Policy_builder{
+		Id:             &id,
+		Name:           &name,
+		Disabled:       &disabled,
+		PolicySections: policySections,
+		Notifiers:      notifiers,
+		PolicyVersion:  &policyVersion,
+	}.Build()
 	if l.CVSSGreaterThan > 0 {
 		s := fmt.Sprintf("> %0.3f", l.CVSSGreaterThan)
-		p.PolicySections[0].PolicyGroups = append(p.PolicySections[0].PolicyGroups, &storage.PolicyGroup{
-			FieldName: fieldnames.CVSS,
-			Values: []*storage.PolicyValue{
-				{
-					Value: s,
-				},
-			},
-		})
+
+		// Create PolicyValue for CVSS
+		cvssValue := storage.PolicyValue_builder{
+			Value: &s,
+		}.Build()
+
+		// Create PolicyGroup for CVSS
+		cvssFieldName := fieldnames.CVSS
+		cvssValues := []*storage.PolicyValue{cvssValue}
+		cvssGroup := storage.PolicyGroup_builder{
+			FieldName: &cvssFieldName,
+			Values:    cvssValues,
+		}.Build()
+
+		p.PolicySections[0].PolicyGroups = append(p.PolicySections[0].PolicyGroups, cvssGroup)
 	}
 	if l.EnvKey != "" || l.EnvValue != "" {
-		p.PolicySections[0].PolicyGroups = append(p.PolicySections[0].PolicyGroups, &storage.PolicyGroup{
-			FieldName: fieldnames.EnvironmentVariable,
-			Values: []*storage.PolicyValue{
-				{
-					Value: fmt.Sprintf("=%s=%s", l.EnvKey, l.EnvValue),
-				},
-			},
-		})
+		// Create PolicyValue for EnvironmentVariable
+		envValueStr := fmt.Sprintf("=%s=%s", l.EnvKey, l.EnvValue)
+		envValue := storage.PolicyValue_builder{
+			Value: &envValueStr,
+		}.Build()
+
+		// Create PolicyGroup for EnvironmentVariable
+		envFieldName := fieldnames.EnvironmentVariable
+		envValues := []*storage.PolicyValue{envValue}
+		envGroup := storage.PolicyGroup_builder{
+			FieldName: &envFieldName,
+			Values:    envValues,
+		}.Build()
+
+		p.PolicySections[0].PolicyGroups = append(p.PolicySections[0].PolicyGroups, envGroup)
 	}
 	if l.Enforced {
 		p.EnforcementActions = append(p.EnforcementActions, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
