@@ -350,22 +350,6 @@ func (s *Sensor) Stop() {
 	log.Info("Sensor shutdown complete")
 }
 
-func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(s.clusterID, false, false, s.components...)
-
-	syncDone := concurrency.NewSignal()
-	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
-	go s.notifySyncDone(&syncDone, s.centralCommunication)
-
-	if err := s.centralCommunication.Stopped().Wait(); err != nil {
-		log.Errorf("Sensor reported an error: %v", err)
-		s.stoppedSig.SignalWithError(err)
-	} else {
-		log.Info("Terminating central connection.")
-		s.stoppedSig.Signal()
-	}
-}
-
 func (s *Sensor) changeState(state common.SensorComponentEvent) {
 	s.currentStateMtx.Lock()
 	defer s.currentStateMtx.Unlock()
