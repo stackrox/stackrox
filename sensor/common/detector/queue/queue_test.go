@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/suite"
 )
 
