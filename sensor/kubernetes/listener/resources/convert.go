@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/mitchellh/hashstructure/v2"
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
+	"github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
@@ -611,7 +611,7 @@ func (w *deploymentWrap) updateHash() error {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
-	hashValue, err := hashstructure.Hash(w.GetDeployment(), hashstructure.FormatV2, &hashstructure.HashOptions{})
+	hashValue, err := hashstructure.Hash(w.GetDeployment(), &hashstructure.HashOptions{})
 	if err != nil {
 		return errors.Wrap(err, "calculating deployment hash")
 	}
