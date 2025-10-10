@@ -38,16 +38,11 @@ type Pipeline struct {
 	stopper            concurrency.Stopper
 	// enricher context
 	cancelEnricherCtx context.CancelCauseFunc
-	// message context
-	msgCtxMux    *sync.Mutex
-	msgCtx       context.Context
-	msgCtxCancel context.CancelCauseFunc
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
 func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
 	log.Debug("Calling NewProcessPipeline")
-	msgCtx, cancelMsgCtx := context.WithCancelCause(context.Background())
 	enricherCtx, cancelEnricherCtx := context.WithCancelCause(context.Background())
 	en := newEnricher(enricherCtx, clusterEntities)
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
@@ -65,9 +60,6 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 		detector:           detector,
 		cm:                 cm,
 		cancelEnricherCtx:  cancelEnricherCtx,
-		msgCtxMux:          &sync.Mutex{},
-		msgCtx:             msgCtx,
-		msgCtxCancel:       cancelMsgCtx,
 		stopper:            concurrency.NewStopper(),
 	}
 	go p.sendIndicatorEvent()
