@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -132,17 +131,6 @@ func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer b.RUnlock()
 
 	return b.storage.Count(ctx, q)
-}
-
-func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
-		return nil, err
-	}
-
-	b.RLock()
-	defer b.RUnlock()
-
-	return b.storage.Search(ctx, q)
 }
 
 func (b *datastoreImpl) SearchRawTokens(ctx context.Context, q *v1.Query) ([]*storage.TokenMetadata, error) {
