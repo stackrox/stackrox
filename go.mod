@@ -77,7 +77,6 @@ require (
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/jeremywohl/flatten v1.0.1
-	github.com/johannes94/hashstructure v0.0.3
 	github.com/joshdk/go-junit v1.0.0
 	github.com/klauspost/compress v1.18.0
 	github.com/lib/pq v1.10.9
@@ -125,6 +124,7 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
+	github.com/stackrox/hashstructure v0.0.4
 	github.com/stackrox/helmtest v0.0.8
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20250224110925-13b5b47fd812
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d

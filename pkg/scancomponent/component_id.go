@@ -3,7 +3,7 @@ package scancomponent
 import (
 	"strconv"
 
-	"github.com/johannes94/hashstructure"
+	"github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/generated/storage"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )

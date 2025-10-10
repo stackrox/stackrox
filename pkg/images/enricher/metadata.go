@@ -1,7 +1,7 @@
 package enricher
 
 import (
-	hashstructure "github.com/johannes94/hashstructure"
+	hashstructure "github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 )

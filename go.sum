@@ -1046,8 +1046,6 @@ github.com/jmhodges/clock v1.2.0 h1:eq4kys+NI0PLngzaHEe7AmPT90XMGIEySD1JfV1PDIs=
 github.com/jmhodges/clock v1.2.0/go.mod h1:qKjhA7x7u/lQpPB1XAqX1b1lCI/w3/fNuYpI/ZjLynI=
 github.com/jmoiron/sqlx v1.4.0 h1:1PLqN7S1UYp5t4SrVVnt4nUVNemrDAtxlulVe+Qgm3o=
 github.com/jmoiron/sqlx v1.4.0/go.mod h1:ZrZ7UsYB/weZdl2Bxg6jCRO9c3YHl8r3ahlKmRT4JLY=
-github.com/johannes94/hashstructure v0.0.3 h1:9AVt5reFaqdqEue5UO8GwZPVcTa8XKe3JwJGFSJ12sM=
-github.com/johannes94/hashstructure v0.0.3/go.mod h1:AFxupI2O5z1RkPflKZHrWkLaVvOYNhTM8rBwspdQt0c=
 github.com/jonboulle/clockwork v0.5.0 h1:Hyh9A8u51kptdkR+cqRpT1EebBwTn1oK9YfGYbdFz6I=
 github.com/jonboulle/clockwork v0.5.0/go.mod h1:3mZlmanh0g2NDKO5TWZVJAfofYk64M7XN3SzBPjZF60=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=
@@ -1516,6 +1514,8 @@ github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q6
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd/go.mod h1:HILeV3i/EyJz844GcrC3+oU7oZONhjfujaIYBMJ/bZE=
 github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2 h1:gRDa1g3wlX7UDjv8nwkXcvnMbjFQkLPa6kDZJ6WpyZo=
 github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2/go.mod h1:M22zIb5zuZCYbYwcn9iOWswNBrxE+YPkAHU5Bkg5XE4=
+github.com/stackrox/hashstructure v0.0.4 h1:m6n9oRdmsfI7/oIZjsGU6hDCHPzQn5rQ1fQkUqgTq+c=
+github.com/stackrox/hashstructure v0.0.4/go.mod h1:FkaQJi8DJhUs7swo1VKuqzh9kYSKAr2R23/gMC26Gqc=
 github.com/stackrox/helm-operator v0.8.1-0.20250929095149-d1ee3c386305 h1:dadnq2BFipWy3Guy086qzbDrlCXqzAm0EOPM/2ZvaFk=
 github.com/stackrox/helm-operator v0.8.1-0.20250929095149-d1ee3c386305/go.mod h1:Sc+8bE38xTCgCChBUvtq/PxatEg9fAypr7S5iAw8nlA=
 github.com/stackrox/helmtest v0.0.8 h1:42gop8zRw0/Q9bIJ/f9rgcILSugTs2vs2G0QXYaGDeU=
