@@ -179,4 +179,6 @@ var (
 	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.
 	// Both ScannerV4StoreExternalIndexReports and SBOMGeneration features must be enabled to store the index reports.
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
+
+	BatchSensorToCentralMessages = registerFeature("Batches messages from sensor to central", "ROX_BATCH_SENSOR_TO_CENTRAL_MESSAGES")
 )

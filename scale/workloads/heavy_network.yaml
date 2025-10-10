@@ -1,0 +1,26 @@
+deploymentWorkload:
+- deploymentType: Deployment
+  lifecycleDuration: 10m0s
+  numDeployments: 2500
+  numLifecycles: 0
+  podWorkload:
+    containerWorkload:
+      numImages: 0
+    lifecycleDuration: 2m0s
+    numContainers: 3
+    numPods: 5
+    processWorkload:
+      alertRate: 0.001
+      processInterval: 30s
+  updateInterval: 100s
+networkWorkload:
+  batchSize: 40000
+  flowInterval: 1s
+  generateUnclosedEndpoints: true
+  openPortReuseProbability: 0.05
+nodeWorkload:
+  numNodes: 1000
+rbacWorkload:
+  numBindings: 1000
+  numRoles: 1000
+  numServiceAccounts: 1000
