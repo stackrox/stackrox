@@ -30,6 +30,11 @@ type VsockServer struct {
 	port     uint32
 }
 
+func newVsockServer() *VsockServer {
+	port := env.VirtualMachinesVsockPort.IntegerSetting()
+	return &VsockServer{port: uint32(port)}
+}
+
 func (s *VsockServer) Start() error {
 	log.Debugf("Starting vsock server on port %d", s.port)
 	l, err := vsock.ListenContextID(vsock.Host, s.port, nil)
@@ -53,17 +58,16 @@ type Relay struct {
 	connectionReadTimeout time.Duration
 	ctx                   context.Context
 	sensorClient          sensor.VirtualMachineIndexReportServiceClient
-	vsockServer           VsockServer
+	vsockServer           *VsockServer
 	waitAfterFailedAccept time.Duration
 }
 
 func NewRelay(ctx context.Context, conn grpc.ClientConnInterface) *Relay {
-	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	return &Relay{
 		connectionReadTimeout: 10 * time.Second,
 		ctx:                   ctx,
 		sensorClient:          sensor.NewVirtualMachineIndexReportServiceClient(conn),
-		vsockServer:           VsockServer{port: uint32(port)},
+		vsockServer:           newVsockServer(),
 		waitAfterFailedAccept: time.Second,
 	}
 }

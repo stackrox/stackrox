@@ -240,7 +240,7 @@ func (s *relayTestSuite) defaultRelay(ctx context.Context, sensorClient sensor.V
 		connectionReadTimeout: 10 * time.Second,
 		ctx:                   ctx,
 		sensorClient:          sensorClient,
-		vsockServer:           VsockServer{port: 12345},
+		vsockServer:           &VsockServer{port: 12345},
 		waitAfterFailedAccept: time.Second,
 	}
 }
