@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -452,39 +451,6 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 				},
 			},
 		},
-		"Enrichment for disabled SensorCapturesIntermediateEvents feature should yield EnrichmentReasonEpFeatureDisabled": {
-			isPastContainerResolutionDeadline: false,
-			isFresh:                           false,
-			shouldFindContainerID:             true,
-			processKey:                        nonEmptyProcessInfo,
-			epInActiveEndpoints: &containerEndpointIndicatorWithAge{
-				ContainerEndpoint: containerEndpointIndicator1,
-				lastUpdate:        now - 1,
-			},
-			plopFeatEnabled:              true,
-			offlineEnrichmentFeatEnabled: false,
-			lastSeen:                     timestamp.InfiniteFuture,
-			enrichedEndpointsProcesses:   make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp),
-			expected: struct {
-				resultNG   EnrichmentResult
-				resultPLOP EnrichmentResult
-				reasonNG   EnrichmentReasonEp
-				reasonPLOP EnrichmentReasonEp
-				action     PostEnrichmentAction
-				endpoint   *indicator.ContainerEndpoint
-			}{
-				resultNG:   EnrichmentResultSuccess,
-				resultPLOP: EnrichmentResultSuccess,
-				reasonNG:   EnrichmentReasonEpFeatureDisabled,
-				reasonPLOP: EnrichmentReasonEp(""),
-				action:     PostEnrichmentActionCheckRemove,
-				endpoint: &indicator.ContainerEndpoint{
-					Entity:   networkgraph.EntityForDeployment(id),
-					Port:     80,
-					Protocol: net.TCP.ToProtobuf(),
-				},
-			},
-		},
 	}
 
 	for name, tc := range cases {
@@ -493,7 +459,6 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 
 			// Setup environment variables
 			s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), strconv.FormatBool(tc.plopFeatEnabled))
-			s.T().Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), strconv.FormatBool(tc.offlineEnrichmentFeatEnabled))
 
 			// Setup mocks using helper
 			mocks := newMockExpectations(mockEntityStore, nil)
