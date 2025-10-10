@@ -687,7 +687,7 @@ check_stackrox_logs() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     check_for_stackrox_OOMs "$dir"
@@ -703,7 +703,7 @@ check_for_stackrox_OOMs() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     local objects
@@ -790,7 +790,7 @@ check_for_stackrox_restarts() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     local previous_logs
@@ -822,7 +822,7 @@ check_for_errors_in_stackrox_logs() {
     local dir="$1/stackrox/pods"
 
     if [[ ! -d "${dir}" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     local pod_objects=()
@@ -881,7 +881,7 @@ _verify_item_count() {
     # used by ./scripts/ci/collect-service-logs.sh
 
     if [[ ! -f "${dir}/ITEM_COUNT.txt" ]]; then
-        die "ITEM_COUNT.txt is missing. (Check output from ./scripts/ci/collect-service-logs.sh"
+        die "ITEM_COUNT.txt is missing. (Check output from ./scripts/ci/collect-service-logs.sh)"
     fi
 
     local item_count

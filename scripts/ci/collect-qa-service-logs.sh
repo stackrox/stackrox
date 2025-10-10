@@ -7,20 +7,20 @@ set -eu
 # future examination.
 #
 # Usage:
-#   collect-qa-service-logs.sh [DIR]
+#   collect-qa-service-logs.sh DIR
 #
 # Example:
-# $ ./scripts/ci/collect-qa-service-logs.sh
+# $ ./scripts/ci/collect-qa-service-logs.sh /tmp/some-directory
 #
 # Assumptions:
 # - Must be called from the root of the Apollo git repository.
-# - Logs are saved under /tmp/k8s-service-logs/ or DIR if passed
+# - Requires a single argument: path to save logs to.
 
 main() {
 	set +e
     for ns in $(kubectl get ns -o json | jq -r '.items[].metadata.name' | grep -E '^qa'); do
         echo "Collecting from namespace: ${ns}"
-        ./scripts/ci/collect-service-logs.sh "${ns}" $@
+        ./scripts/ci/collect-service-logs.sh "${ns}" "$@"
     done
 }
 

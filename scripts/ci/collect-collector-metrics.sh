@@ -4,7 +4,7 @@ set -eu
 # Gather collector metrics script
 
 usage() {
-    echo "$0 <namespace> <output-dir> <pod-port> <path>"
+    echo "$0 <namespace> <output-dir> [<pod-port> [<path>]]"
     echo "e.g. $0 stackrox /logs 9090 metrics"
 }
 
@@ -16,16 +16,18 @@ die() {
 main() {
     service="collector"
 
-    if [ $# -gt 0 ]; then
-        namespace="$1"
+    if [ $# -eq 0 ]; then
+        usage
+        die "Please specify the namespace argument."
     else
-        namespace="stackrox"
+        namespace="$1"
     fi
 
-    if [ $# -gt 1 ]; then
-        metrics_dir="$2"
+    if [ $# -lt 2 ]; then
+        usage
+        die "Please specify the metrics dir argument."
     else
-        metrics_dir="/tmp/k8s-service-logs/$namespace/metrics"
+        metrics_dir="$2"
     fi
     mkdir -p "${metrics_dir}"
 

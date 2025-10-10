@@ -7,24 +7,24 @@ set -eu
 # future examination.
 #
 # Usage:
-#   collect-infrastructure-logs.sh [<output-dir>]
+#   collect-infrastructure-logs.sh <output-dir>
 #
 # Example:
-# $ ./scripts/ci/collect-infrastructure-logs.sh
+# $ ./scripts/ci/collect-infrastructure-logs.sh /tmp/logs-dir
 #
 # Assumptions:
 # - Must be called from the root of the Apollo git repository.
-# - Logs are saved under /tmp/k8s-service-logs/ by default
+# - Requires a single argument: path to save logs to.
 
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/ci/lib.sh
 source "$SCRIPTS_ROOT/scripts/lib.sh"
 
-if [ $# -gt 0 ]; then
-    log_dir="$1"
+if [ $# -eq 0 ]; then
+    die "Usage: $0 <path-to-collect-logs-to>"
 else
-    log_dir="/tmp/k8s-service-logs"
+    log_dir="$1"
 fi
 
 # This will attempt to collect kube API server audit logs on OpenShift.
