@@ -83,10 +83,11 @@ func request_CloudSourcesService_GetCloudSource_0(ctx context.Context, marshaler
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.GetCloudSource(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -101,10 +102,11 @@ func local_request_CloudSourcesService_GetCloudSource_0(ctx context.Context, mar
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.GetCloudSource(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -149,9 +151,11 @@ func request_CloudSourcesService_CreateCloudSource_0(ctx context.Context, marsha
 		protoReq CreateCloudSourceRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData CreateCloudSourceRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -164,9 +168,11 @@ func local_request_CloudSourcesService_CreateCloudSource_0(ctx context.Context, 
 		protoReq CreateCloudSourceRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData CreateCloudSourceRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	msg, err := server.CreateCloudSource(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -177,9 +183,11 @@ func request_CloudSourcesService_UpdateCloudSource_0(ctx context.Context, marsha
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData UpdateCloudSourceRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -201,9 +209,11 @@ func local_request_CloudSourcesService_UpdateCloudSource_0(ctx context.Context, 
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData UpdateCloudSourceRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	val, ok := pathParams["cloud_source.id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cloud_source.id")
@@ -229,10 +239,11 @@ func request_CloudSourcesService_DeleteCloudSource_0(ctx context.Context, marsha
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.DeleteCloudSource(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -247,10 +258,11 @@ func local_request_CloudSourcesService_DeleteCloudSource_0(ctx context.Context, 
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.DeleteCloudSource(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -260,9 +272,11 @@ func request_CloudSourcesService_TestCloudSource_0(ctx context.Context, marshale
 		protoReq TestCloudSourceRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData TestCloudSourceRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -275,9 +289,11 @@ func local_request_CloudSourcesService_TestCloudSource_0(ctx context.Context, ma
 		protoReq TestCloudSourceRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData TestCloudSourceRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	msg, err := server.TestCloudSource(ctx, &protoReq)
 	return msg, metadata, err
 }

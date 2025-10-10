@@ -61,9 +61,11 @@ func request_SensorUpgradeService_UpdateSensorUpgradeConfig_0(ctx context.Contex
 		protoReq UpdateSensorUpgradeConfigRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData UpdateSensorUpgradeConfigRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -76,9 +78,11 @@ func local_request_SensorUpgradeService_UpdateSensorUpgradeConfig_0(ctx context.
 		protoReq UpdateSensorUpgradeConfigRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData UpdateSensorUpgradeConfigRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	msg, err := server.UpdateSensorUpgradeConfig(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -96,10 +100,11 @@ func request_SensorUpgradeService_TriggerSensorUpgrade_0(ctx context.Context, ma
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.TriggerSensorUpgrade(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -114,10 +119,11 @@ func local_request_SensorUpgradeService_TriggerSensorUpgrade_0(ctx context.Conte
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.TriggerSensorUpgrade(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -135,10 +141,11 @@ func request_SensorUpgradeService_TriggerSensorCertRotation_0(ctx context.Contex
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.TriggerSensorCertRotation(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -153,10 +160,11 @@ func local_request_SensorUpgradeService_TriggerSensorCertRotation_0(ctx context.
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.TriggerSensorCertRotation(ctx, &protoReq)
 	return msg, metadata, err
 }

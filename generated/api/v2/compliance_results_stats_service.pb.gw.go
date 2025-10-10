@@ -50,10 +50,11 @@ func request_ComplianceResultsStatsService_GetComplianceProfileStats_0(ctx conte
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-	protoReq.ProfileName, err = runtime.String(val)
+	convertedProfileName, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
+	protoReq.SetProfileName(convertedProfileName)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -74,10 +75,11 @@ func local_request_ComplianceResultsStatsService_GetComplianceProfileStats_0(ctx
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-	protoReq.ProfileName, err = runtime.String(val)
+	convertedProfileName, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
+	protoReq.SetProfileName(convertedProfileName)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -138,10 +140,11 @@ func request_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0(c
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -162,10 +165,11 @@ func local_request_ComplianceResultsStatsService_GetComplianceProfilesClusterSta
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -191,18 +195,20 @@ func request_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0(ctx 
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-	protoReq.ProfileName, err = runtime.String(val)
+	convertedProfileName, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
+	protoReq.SetProfileName(convertedProfileName)
 	val, ok = pathParams["check_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "check_name")
 	}
-	protoReq.CheckName, err = runtime.String(val)
+	convertedCheckName, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "check_name", err)
 	}
+	protoReq.SetCheckName(convertedCheckName)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -223,18 +229,20 @@ func local_request_ComplianceResultsStatsService_GetComplianceProfileCheckStats_
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-	protoReq.ProfileName, err = runtime.String(val)
+	convertedProfileName, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
+	protoReq.SetProfileName(convertedProfileName)
 	val, ok = pathParams["check_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "check_name")
 	}
-	protoReq.CheckName, err = runtime.String(val)
+	convertedCheckName, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "check_name", err)
 	}
+	protoReq.SetCheckName(convertedCheckName)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -260,10 +268,11 @@ func request_ComplianceResultsStatsService_GetComplianceClusterScanStats_0(ctx c
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -284,10 +293,11 @@ func local_request_ComplianceResultsStatsService_GetComplianceClusterScanStats_0
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -348,10 +358,11 @@ func request_ComplianceResultsStatsService_GetComplianceClusterStats_0(ctx conte
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-	protoReq.ProfileName, err = runtime.String(val)
+	convertedProfileName, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
+	protoReq.SetProfileName(convertedProfileName)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -372,10 +383,11 @@ func local_request_ComplianceResultsStatsService_GetComplianceClusterStats_0(ctx
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-	protoReq.ProfileName, err = runtime.String(val)
+	convertedProfileName, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
+	protoReq.SetProfileName(convertedProfileName)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}

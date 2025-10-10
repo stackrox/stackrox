@@ -41,9 +41,11 @@ func request_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(ctx conte
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData NetworkBaselineStatusRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -51,10 +53,11 @@ func request_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(ctx conte
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := client.GetNetworkBaselineStatusForFlows(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -65,17 +68,20 @@ func local_request_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(ctx
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData NetworkBaselineStatusRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	val, ok := pathParams["deployment_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := server.GetNetworkBaselineStatusForFlows(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -95,10 +101,11 @@ func request_NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_0(c
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -119,10 +126,11 @@ func local_request_NetworkBaselineService_GetNetworkBaselineStatusForExternalFlo
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -146,10 +154,11 @@ func request_NetworkBaselineService_GetNetworkBaseline_0(ctx context.Context, ma
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.GetNetworkBaseline(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -164,10 +173,11 @@ func local_request_NetworkBaselineService_GetNetworkBaseline_0(ctx context.Conte
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.GetNetworkBaseline(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -178,9 +188,11 @@ func request_NetworkBaselineService_ModifyBaselineStatusForPeers_0(ctx context.C
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData ModifyBaselineStatusForPeersRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -188,10 +200,11 @@ func request_NetworkBaselineService_ModifyBaselineStatusForPeers_0(ctx context.C
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := client.ModifyBaselineStatusForPeers(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -202,17 +215,20 @@ func local_request_NetworkBaselineService_ModifyBaselineStatusForPeers_0(ctx con
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData ModifyBaselineStatusForPeersRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	val, ok := pathParams["deployment_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := server.ModifyBaselineStatusForPeers(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -223,9 +239,11 @@ func request_NetworkBaselineService_LockNetworkBaseline_0(ctx context.Context, m
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData ResourceByID
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -233,10 +251,11 @@ func request_NetworkBaselineService_LockNetworkBaseline_0(ctx context.Context, m
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.LockNetworkBaseline(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -247,17 +266,20 @@ func local_request_NetworkBaselineService_LockNetworkBaseline_0(ctx context.Cont
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData ResourceByID
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.LockNetworkBaseline(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -268,9 +290,11 @@ func request_NetworkBaselineService_UnlockNetworkBaseline_0(ctx context.Context,
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData ResourceByID
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -278,10 +302,11 @@ func request_NetworkBaselineService_UnlockNetworkBaseline_0(ctx context.Context,
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.UnlockNetworkBaseline(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -292,17 +317,20 @@ func local_request_NetworkBaselineService_UnlockNetworkBaseline_0(ctx context.Co
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData ResourceByID
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.UnlockNetworkBaseline(ctx, &protoReq)
 	return msg, metadata, err
 }

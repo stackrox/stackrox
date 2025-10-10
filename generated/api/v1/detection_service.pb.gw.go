@@ -40,9 +40,11 @@ func request_DetectionService_DetectBuildTime_0(ctx context.Context, marshaler r
 		protoReq BuildDetectionRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData BuildDetectionRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -55,9 +57,11 @@ func local_request_DetectionService_DetectBuildTime_0(ctx context.Context, marsh
 		protoReq BuildDetectionRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData BuildDetectionRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	msg, err := server.DetectBuildTime(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -67,9 +71,11 @@ func request_DetectionService_DetectDeployTime_0(ctx context.Context, marshaler 
 		protoReq DeployDetectionRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData DeployDetectionRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -82,9 +88,11 @@ func local_request_DetectionService_DetectDeployTime_0(ctx context.Context, mars
 		protoReq DeployDetectionRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData DeployDetectionRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	msg, err := server.DetectDeployTime(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -94,9 +102,11 @@ func request_DetectionService_DetectDeployTimeFromYAML_0(ctx context.Context, ma
 		protoReq DeployYAMLDetectionRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData DeployYAMLDetectionRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -109,9 +119,11 @@ func local_request_DetectionService_DetectDeployTimeFromYAML_0(ctx context.Conte
 		protoReq DeployYAMLDetectionRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData DeployYAMLDetectionRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	msg, err := server.DetectDeployTimeFromYAML(ctx, &protoReq)
 	return msg, metadata, err
 }

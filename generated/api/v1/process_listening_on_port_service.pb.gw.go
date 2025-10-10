@@ -50,10 +50,11 @@ func request_ListeningEndpointsService_GetListeningEndpoints_0(ctx context.Conte
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -74,10 +75,11 @@ func local_request_ListeningEndpointsService_GetListeningEndpoints_0(ctx context
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}

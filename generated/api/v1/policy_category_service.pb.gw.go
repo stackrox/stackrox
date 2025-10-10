@@ -48,10 +48,11 @@ func request_PolicyCategoryService_GetPolicyCategory_0(ctx context.Context, mars
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.GetPolicyCategory(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -66,10 +67,11 @@ func local_request_PolicyCategoryService_GetPolicyCategory_0(ctx context.Context
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.GetPolicyCategory(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -114,9 +116,11 @@ func request_PolicyCategoryService_PostPolicyCategory_0(ctx context.Context, mar
 		protoReq PostPolicyCategoryRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.PolicyCategory); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData PostPolicyCategoryRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq.SetPolicyCategory(bodyData.GetPolicyCategory())
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -129,9 +133,11 @@ func local_request_PolicyCategoryService_PostPolicyCategory_0(ctx context.Contex
 		protoReq PostPolicyCategoryRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.PolicyCategory); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData PostPolicyCategoryRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq.SetPolicyCategory(bodyData.GetPolicyCategory())
 	msg, err := server.PostPolicyCategory(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -141,9 +147,11 @@ func request_PolicyCategoryService_RenamePolicyCategory_0(ctx context.Context, m
 		protoReq RenamePolicyCategoryRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData RenamePolicyCategoryRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -156,9 +164,11 @@ func local_request_PolicyCategoryService_RenamePolicyCategory_0(ctx context.Cont
 		protoReq RenamePolicyCategoryRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData RenamePolicyCategoryRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	msg, err := server.RenamePolicyCategory(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -176,10 +186,11 @@ func request_PolicyCategoryService_DeletePolicyCategory_0(ctx context.Context, m
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.DeletePolicyCategory(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -194,10 +205,11 @@ func local_request_PolicyCategoryService_DeletePolicyCategory_0(ctx context.Cont
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.DeletePolicyCategory(ctx, &protoReq)
 	return msg, metadata, err
 }

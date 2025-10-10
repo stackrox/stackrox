@@ -83,10 +83,11 @@ func request_ProcessService_GetProcessesByDeployment_0(ctx context.Context, mars
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := client.GetProcessesByDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -101,10 +102,11 @@ func local_request_ProcessService_GetProcessesByDeployment_0(ctx context.Context
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := server.GetProcessesByDeployment(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -122,10 +124,11 @@ func request_ProcessService_GetGroupedProcessByDeployment_0(ctx context.Context,
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := client.GetGroupedProcessByDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -140,10 +143,11 @@ func local_request_ProcessService_GetGroupedProcessByDeployment_0(ctx context.Co
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := server.GetGroupedProcessByDeployment(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -161,10 +165,11 @@ func request_ProcessService_GetGroupedProcessByDeploymentAndContainer_0(ctx cont
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := client.GetGroupedProcessByDeploymentAndContainer(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -179,10 +184,11 @@ func local_request_ProcessService_GetGroupedProcessByDeploymentAndContainer_0(ct
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := server.GetGroupedProcessByDeploymentAndContainer(ctx, &protoReq)
 	return msg, metadata, err
 }

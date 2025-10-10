@@ -103,9 +103,11 @@ func request_ConfigService_UpdateVulnerabilityExceptionConfig_0(ctx context.Cont
 		protoReq UpdateVulnerabilityExceptionConfigRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData UpdateVulnerabilityExceptionConfigRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -118,9 +120,11 @@ func local_request_ConfigService_UpdateVulnerabilityExceptionConfig_0(ctx contex
 		protoReq UpdateVulnerabilityExceptionConfigRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData UpdateVulnerabilityExceptionConfigRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	msg, err := server.UpdateVulnerabilityExceptionConfig(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -151,9 +155,11 @@ func request_ConfigService_UpdatePlatformComponentConfig_0(ctx context.Context, 
 		protoReq PutPlatformComponentConfigRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData PutPlatformComponentConfigRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -166,9 +172,11 @@ func local_request_ConfigService_UpdatePlatformComponentConfig_0(ctx context.Con
 		protoReq PutPlatformComponentConfigRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData PutPlatformComponentConfigRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	msg, err := server.UpdatePlatformComponentConfig(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -199,9 +207,11 @@ func request_ConfigService_PutConfig_0(ctx context.Context, marshaler runtime.Ma
 		protoReq PutConfigRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData PutConfigRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -214,9 +224,11 @@ func local_request_ConfigService_PutConfig_0(ctx context.Context, marshaler runt
 		protoReq PutConfigRequest
 		metadata runtime.ServerMetadata
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData PutConfigRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	msg, err := server.PutConfig(ctx, &protoReq)
 	return msg, metadata, err
 }

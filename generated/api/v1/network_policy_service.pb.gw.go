@@ -48,10 +48,11 @@ func request_NetworkPolicyService_GetNetworkPolicy_0(ctx context.Context, marsha
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.GetNetworkPolicy(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -66,10 +67,11 @@ func local_request_NetworkPolicyService_GetNetworkPolicy_0(ctx context.Context, 
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.GetNetworkPolicy(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -124,10 +126,11 @@ func request_NetworkPolicyService_GetNetworkGraph_0(ctx context.Context, marshal
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -148,10 +151,11 @@ func local_request_NetworkPolicyService_GetNetworkGraph_0(ctx context.Context, m
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -203,9 +207,11 @@ func request_NetworkPolicyService_ApplyNetworkPolicy_0(ctx context.Context, mars
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData ApplyNetworkPolicyYamlRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq.SetModification(bodyData.GetModification())
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -213,10 +219,11 @@ func request_NetworkPolicyService_ApplyNetworkPolicy_0(ctx context.Context, mars
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	msg, err := client.ApplyNetworkPolicy(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -227,17 +234,20 @@ func local_request_NetworkPolicyService_ApplyNetworkPolicy_0(ctx context.Context
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData ApplyNetworkPolicyYamlRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq.SetModification(bodyData.GetModification())
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	msg, err := server.ApplyNetworkPolicy(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -255,10 +265,11 @@ func request_NetworkPolicyService_GetUndoModification_0(ctx context.Context, mar
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	msg, err := client.GetUndoModification(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -273,10 +284,11 @@ func local_request_NetworkPolicyService_GetUndoModification_0(ctx context.Contex
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	msg, err := server.GetUndoModification(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -289,9 +301,11 @@ func request_NetworkPolicyService_SimulateNetworkGraph_0(ctx context.Context, ma
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData SimulateNetworkGraphRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq.SetModification(bodyData.GetModification())
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -299,10 +313,11 @@ func request_NetworkPolicyService_SimulateNetworkGraph_0(ctx context.Context, ma
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -319,17 +334,20 @@ func local_request_NetworkPolicyService_SimulateNetworkGraph_0(ctx context.Conte
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData SimulateNetworkGraphRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq.SetModification(bodyData.GetModification())
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -348,9 +366,11 @@ func request_NetworkPolicyService_SendNetworkPolicyYAML_0(ctx context.Context, m
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData SendNetworkPolicyYamlRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq.SetModification(bodyData.GetModification())
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -358,10 +378,11 @@ func request_NetworkPolicyService_SendNetworkPolicyYAML_0(ctx context.Context, m
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -378,17 +399,20 @@ func local_request_NetworkPolicyService_SendNetworkPolicyYAML_0(ctx context.Cont
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData SendNetworkPolicyYamlRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq.SetModification(bodyData.GetModification())
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -414,10 +438,11 @@ func request_NetworkPolicyService_GenerateNetworkPolicies_0(ctx context.Context,
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -438,10 +463,11 @@ func local_request_NetworkPolicyService_GenerateNetworkPolicies_0(ctx context.Co
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-	protoReq.ClusterId, err = runtime.String(val)
+	convertedClusterId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
+	protoReq.SetClusterId(convertedClusterId)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -458,9 +484,11 @@ func request_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData GetBaselineGeneratedPolicyForDeploymentRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -468,10 +496,11 @@ func request_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := client.GetBaselineGeneratedNetworkPolicyForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -482,17 +511,20 @@ func local_request_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDepl
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData GetBaselineGeneratedPolicyForDeploymentRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	val, ok := pathParams["deployment_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := server.GetBaselineGeneratedNetworkPolicyForDeployment(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -510,10 +542,11 @@ func request_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.GetAllowedPeersFromCurrentPolicyForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -528,10 +561,11 @@ func local_request_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeplo
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.GetAllowedPeersFromCurrentPolicyForDeployment(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -542,9 +576,11 @@ func request_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0(ctx cont
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData ApplyNetworkPolicyYamlForDeploymentRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -552,10 +588,11 @@ func request_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0(ctx cont
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := client.ApplyNetworkPolicyYamlForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -566,17 +603,20 @@ func local_request_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0(ct
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+	var bodyData ApplyNetworkPolicyYamlForDeploymentRequest
+	if err := marshaler.NewDecoder(req.Body).Decode(&bodyData); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	protoReq = bodyData
 	val, ok := pathParams["deployment_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-	protoReq.DeploymentId, err = runtime.String(val)
+	convertedDeploymentId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
+	protoReq.SetDeploymentId(convertedDeploymentId)
 	msg, err := server.ApplyNetworkPolicyYamlForDeployment(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -594,10 +634,11 @@ func request_NetworkPolicyService_GetUndoModificationForDeployment_0(ctx context
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.GetUndoModificationForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -612,10 +653,11 @@ func local_request_NetworkPolicyService_GetUndoModificationForDeployment_0(ctx c
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.GetUndoModificationForDeployment(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -633,10 +675,11 @@ func request_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeploym
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -651,10 +694,11 @@ func local_request_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForD
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx, &protoReq)
 	return msg, metadata, err
 }
@@ -672,10 +716,11 @@ func request_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := client.GetDiffFlowsFromUndoModificationForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -690,10 +735,11 @@ func local_request_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeplo
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	convertedId, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
+	protoReq.SetId(convertedId)
 	msg, err := server.GetDiffFlowsFromUndoModificationForDeployment(ctx, &protoReq)
 	return msg, metadata, err
 }

@@ -50,10 +50,11 @@ func request_ComplianceRuleService_GetComplianceRule_0(ctx context.Context, mars
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "rule_name")
 	}
-	protoReq.RuleName, err = runtime.String(val)
+	convertedRuleName, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "rule_name", err)
 	}
+	protoReq.SetRuleName(convertedRuleName)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -74,10 +75,11 @@ func local_request_ComplianceRuleService_GetComplianceRule_0(ctx context.Context
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "rule_name")
 	}
-	protoReq.RuleName, err = runtime.String(val)
+	convertedRuleName, err := runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "rule_name", err)
 	}
+	protoReq.SetRuleName(convertedRuleName)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
