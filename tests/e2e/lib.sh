@@ -21,6 +21,50 @@ export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 # `envsubst`` before passing it to `env`.
 envsubst=$(command -v envsubst)
 
+# Detect stat variant (GNU vs BSD) and save the original stdin's device and inode
+# This is used by the kubectl wrapper function to detect stdin redirection
+_KUBECTL_WRAPPER_USE_GNU_STAT="true"
+if stat --version >/dev/null 2>&1; then
+    _KUBECTL_WRAPPER_ORIGINAL_STDIN_ID=$(stat -c '%d:%i' /dev/fd/0 2>/dev/null || echo "")
+else
+    # BSD stat (macOS)
+    _KUBECTL_WRAPPER_USE_GNU_STAT="false"
+    _KUBECTL_WRAPPER_ORIGINAL_STDIN_ID=$(stat -f '%d:%i' /dev/fd/0 2>/dev/null || echo "")
+fi
+
+# Validate that we successfully captured the original stdin ID
+if [[ -z "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" ]]; then
+    echo "Warning: Failed to capture original stdin ID. This is required for retrying kubectl wrapper."
+fi
+
+# kubectl() - Wrapper function that calls retry-kubectl.sh with proper stdin handling
+# When kubectl is invoked with stdin being the same as the shell's original stdin,
+# we redirect it to /dev/null because retry-kubectl.sh needs to buffer stdin.
+# When stdin is redirected (from a file or pipe), we pass it through directly.
+kubectl() {
+    local current_stdin_id=""
+
+    if [[ -z "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" ]]; then
+        die "kubectl wrapper: original stdin ID not captured, cannot proceed"
+    fi
+
+    if [[ -e /dev/fd/0 ]]; then
+        if [[ "$_KUBECTL_WRAPPER_USE_GNU_STAT" == "true" ]]; then
+            current_stdin_id=$(stat -c '%d:%i' /dev/fd/0 2>/dev/null || echo "")
+        else
+            current_stdin_id=$(stat -f '%d:%i' /dev/fd/0 2>/dev/null || echo "")
+        fi
+    fi
+
+    # If we couldn't get stdin ID, or if stdin has changed, pass through as-is.
+    # Otherwise (stdin unchanged), redirect to /dev/null.
+    if [[ "$current_stdin_id" == "" || "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" == "$current_stdin_id" ]]; then
+        "${TEST_ROOT}/scripts/retry-kubectl.sh" "$@" < /dev/null
+    else
+        "${TEST_ROOT}/scripts/retry-kubectl.sh" "$@"
+    fi
+}
+
 CHECK_POD_RESTARTS_TEST_NAME="Check unexpected pod restarts"
 # Define map of all stackrox pod->containers and their log dump files.
 declare -A POD_CONTAINERS_MAP
