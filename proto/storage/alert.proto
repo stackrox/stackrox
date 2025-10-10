@@ -148,7 +148,7 @@ message Alert {
 
   ViolationState state = 11; // @gotags: search:"Violation State,store" sql:"index=btree"
   reserved 12;
-  reserved "snooze_till";
+  reserved snooze_till;
   reserved 14; // was tags
 
   bool platform_component = 22; // @gotags: search:"Platform Component"
@@ -239,7 +239,7 @@ message ListAlertDeployment {
 enum ViolationState {
   ACTIVE = 0;
   reserved 1;
-  reserved "SNOOZED";
+  reserved SNOOZED;
   RESOLVED = 2;
   ATTEMPTED = 3;
 }

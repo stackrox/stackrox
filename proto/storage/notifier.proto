@@ -37,7 +37,7 @@ message Notifier {
   // just isn't familiar enough yet to determine whether they can be deleted
   // outright.
   reserved 5; // Deleted 2021-03-18.
-  reserved "enabled"; // Deleted 2021-03-18.
+  reserved enabled; // Deleted 2021-03-18.
 }
 
 message AWSSecurityHub {
