@@ -145,7 +145,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    0,
 						VsockCidSet: false,
 						State:       virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:       nil,
+						Facts:       getFactsForTest(t, UnknownGuestOS),
 					},
 				},
 			},
@@ -204,7 +204,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    0,
 						VsockCidSet: false,
 						State:       virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:       nil,
+						Facts:       getFactsForTest(t, UnknownGuestOS),
 					},
 				},
 			},
@@ -294,7 +294,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    0,
 						VsockCidSet: false,
 						State:       virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:       nil,
+						Facts:       getFactsForTest(t, UnknownGuestOS),
 					},
 				},
 			},
@@ -336,5 +336,11 @@ func TestCreateEvent(t *testing.T) {
 			event := createEvent(tt.action, tt.clusterID, tt.inputVM)
 			protoassert.Equal(it, tt.expected, event)
 		})
+	}
+}
+
+func getFactsForTest(_ *testing.T, guestOS string) map[string]string {
+	return map[string]string{
+		GuestOSKey: guestOS,
 	}
 }

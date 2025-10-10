@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	GuestOSKey = "Guest OS"
+	GuestOSKey     = "Guest OS"
+	UnknownGuestOS = "unknown"
 )
 
 type VirtualMachineDispatcher struct {

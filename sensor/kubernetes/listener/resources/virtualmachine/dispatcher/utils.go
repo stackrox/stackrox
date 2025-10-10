@@ -40,12 +40,13 @@ func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) (int32, bool) {
 }
 
 func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
-	if vm.GuestOS == "" {
-		return nil
+	facts := map[string]string{
+		GuestOSKey: UnknownGuestOS,
 	}
-	return map[string]string{
-		GuestOSKey: vm.GuestOS,
+	if vm.GuestOS != "" {
+		facts[GuestOSKey] = vm.GuestOS
 	}
+	return facts
 }
 
 func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info) *central.SensorEvent {
