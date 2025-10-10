@@ -65,7 +65,7 @@ export function getVirtualMachineScannedPackagesCount(virtualMachine: VirtualMac
             (component) => !component.notes.includes('UNSCANNED')
         ).length ?? 0;
 
-    return `${scannedComponents}/${totalComponents}`;
+    return `${scannedComponents}/${totalComponents} scanned packages`;
 }
 
 export function getVirtualMachineCveSeverityStatusCounts(
