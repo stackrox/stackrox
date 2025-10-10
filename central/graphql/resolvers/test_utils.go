@@ -753,16 +753,10 @@ func contextWithClusterPerm(t testing.TB, ctrl *gomock.Controller) context.Conte
 	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
 }
 
-func getTestComponentID(t *testing.T, testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
-	id, err := scancomponent.ComponentIDV2(testComponent, imageID)
-	require.NoError(t, err)
-
-	return id
+func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string, index int) string {
+	return scancomponent.ComponentIDV2(testComponent, imageID, index)
 }
 
-func getTestCVEID(t *testing.T, testCVE *storage.EmbeddedVulnerability, componentID string) string {
-	id, err := cve.IDV2(testCVE, componentID)
-	require.NoError(t, err)
-
-	return id
+func getTestCVEID(testCVE *storage.EmbeddedVulnerability, componentID string, index int) string {
+	return cve.IDV2(testCVE, componentID, index)
 }

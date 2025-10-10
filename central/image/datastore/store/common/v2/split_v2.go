@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -35,19 +37,28 @@ func SplitV2(image *storage.Image, withComponents bool) (ImageParts, error) {
 func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 	ret := make([]ComponentParts, 0, len(parts.Image.GetScan().GetComponents()))
 	componentMap := make(map[string]*storage.EmbeddedImageScanComponent)
-	for _, component := range parts.Image.GetScan().GetComponents() {
-		generatedComponentV2, err := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
+	for index, component := range parts.Image.GetScan().GetComponents() {
+		generatedComponentV2, err := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, index, component)
 		if err != nil {
 			return nil, err
 		}
 
+		// Create content-based deduplication key (not including index)
+		dedupKey := fmt.Sprintf("%s:%s:%d:%s:%s:%d",
+			component.GetName(),
+			component.GetVersion(),
+			component.GetLayerIndex(),
+			component.GetSource().String(),
+			component.GetLocation(),
+			index)
+
 		// dedupe components within the component
-		if _, ok := componentMap[generatedComponentV2.GetId()]; ok {
+		if _, ok := componentMap[dedupKey]; ok {
 			log.Infof("Component %s-%s has already been processed in the image. Skipping...", component.GetName(), component.GetVersion())
 			continue
 		}
 
-		componentMap[generatedComponentV2.GetId()] = component
+		componentMap[dedupKey] = component
 
 		cves, err := splitCVEsV2(parts.Image.GetId(), generatedComponentV2.GetId(), component)
 		if err != nil {
@@ -68,19 +79,28 @@ func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedImageScanComponent) ([]CVEParts, error) {
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	cveMap := make(map[string]*storage.EmbeddedVulnerability)
-	for _, cve := range embedded.GetVulns() {
-		convertedCVE, err := utils.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, cve)
+	for index, cve := range embedded.GetVulns() {
+		convertedCVE, err := utils.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, index, cve)
 		if err != nil {
 			return nil, err
 		}
 
+		// Create content-based deduplication key (not including index)
+		dedupKey := fmt.Sprintf("%s:%s:%s:%s:%v:%d",
+			cve.GetCve(),
+			cve.GetFixedBy(),
+			cve.GetSummary(),
+			cve.GetLink(),
+			cve.GetCvss(),
+			index)
+
 		// dedupe CVEs within the component
-		if _, ok := cveMap[convertedCVE.GetId()]; ok {
+		if _, ok := cveMap[dedupKey]; ok {
 			log.Infof("CVE %s has already been processed in the image. Skipping...", cve.GetCve())
 			continue
 		}
 
-		cveMap[convertedCVE.GetId()] = cve
+		cveMap[dedupKey] = cve
 
 		cp := CVEParts{
 			CVEV2: convertedCVE,
@@ -92,11 +112,8 @@ func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedI
 }
 
 // GenerateImageComponentV2 returns top-level image component from embedded component.
-func GenerateImageComponentV2(os string, image *storage.Image, from *storage.EmbeddedImageScanComponent) (*storage.ImageComponentV2, error) {
-	componentID, err := scancomponent.ComponentIDV2(from, image.GetId())
-	if err != nil {
-		return nil, err
-	}
+func GenerateImageComponentV2(os string, image *storage.Image, index int, from *storage.EmbeddedImageScanComponent) (*storage.ImageComponentV2, error) {
+	componentID := scancomponent.ComponentIDV2(from, image.GetId(), index)
 
 	ret := &storage.ImageComponentV2{
 		Id:              componentID,
