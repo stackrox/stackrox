@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/auth/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -27,9 +26,8 @@ type Service interface {
 // Singleton returns a new auth service instance.
 func Singleton() Service {
 	once.Do(func() {
-		svc := &serviceImpl{}
-		if features.AuthMachineToMachine.Enabled() {
-			svc.authDataStore = datastore.Singleton()
+		svc := &serviceImpl{
+			authDataStore: datastore.Singleton(),
 		}
 		s = svc
 	})
