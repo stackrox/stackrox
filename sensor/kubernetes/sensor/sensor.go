@@ -85,8 +85,16 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		cfg.introspectionK8sClient = cfg.k8sClient
 	}
 
-	deploymentIdentification := FetchDeploymentIdentification(context.Background(), cfg.introspectionK8sClient.Kubernetes())
-	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	var deploymentIdentification *storage.SensorDeploymentIdentification
+	if cfg.deploymentIdentification != nil {
+		// Use explicitly provided deployment identification (e.g., from local-sensor)
+		deploymentIdentification = cfg.deploymentIdentification
+		log.Infof("Using provided deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	} else {
+		// Fetch deployment identification from service account files and Kubernetes API
+		deploymentIdentification = FetchDeploymentIdentification(context.Background(), cfg.introspectionK8sClient.Kubernetes())
+		log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	}
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager(clusterID)

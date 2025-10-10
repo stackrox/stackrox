@@ -5,6 +5,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -29,6 +30,7 @@ type CreateOptions struct {
 	networkFlowWriter                  io.Writer
 	processIndicatorWriter             io.Writer
 	networkFlowTicker                  <-chan time.Time
+	deploymentIdentification           *storage.SensorDeploymentIdentification
 }
 
 type clusterIDHandler interface {
@@ -157,5 +159,13 @@ func (cfg *CreateOptions) WithProcessIndicatorTraceWriter(writer io.Writer) *Cre
 // Default: nil
 func (cfg *CreateOptions) WithNetworkFlowTicker(ticker <-chan time.Time) *CreateOptions {
 	cfg.networkFlowTicker = ticker
+	return cfg
+}
+
+// WithDeploymentIdentification overrides the deployment identification.
+// This is primarily used by local-sensor to provide explicit namespace when running outside a pod.
+// Default: nil (will call FetchDeploymentIdentification)
+func (cfg *CreateOptions) WithDeploymentIdentification(deploymentID *storage.SensorDeploymentIdentification) *CreateOptions {
+	cfg.deploymentIdentification = deploymentID
 	return cfg
 }
