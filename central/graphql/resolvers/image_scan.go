@@ -41,58 +41,11 @@ func (resolver *imageScanResolver) ImageComponents(_ context.Context, args Pagin
 	if err != nil {
 		return nil, err
 	}
-	if features.FlattenCVEData.Enabled() {
-		return getImageComponentV2Resolvers(resolver.ctx, resolver.root, resolver.data, query)
-	}
-	return getImageComponentResolvers(resolver.ctx, resolver.root, resolver.data, query)
+	return getImageComponentV2Resolvers(resolver.ctx, resolver.root, resolver.data, query)
 }
 
 func (resolver *imageScanResolver) ImageComponentCount(_ context.Context, args RawQuery) (int32, error) {
 	return resolver.root.ImageComponentCount(resolver.ctx, args)
-}
-
-func getImageComponentResolvers(ctx context.Context, root *Resolver, imageScan *storage.ImageScan, query *v1.Query) ([]ImageComponentResolver, error) {
-	query, _ = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
-	predicate, err := componentPredicateFactory.GeneratePredicate(query)
-	if err != nil {
-		return nil, err
-	}
-
-	idToComponent := make(map[string]*imageComponentResolver)
-	for _, embeddedComponent := range imageScan.GetComponents() {
-		if !predicate.Matches(embeddedComponent) {
-			continue
-		}
-
-		os := imageScan.GetOperatingSystem()
-		id := scancomponent.ComponentID(embeddedComponent.GetName(), embeddedComponent.GetVersion(), os)
-		if _, exists := idToComponent[id]; !exists {
-			component := common.GenerateImageComponent(os, embeddedComponent)
-			resolver, err := root.wrapImageComponent(component, true, nil)
-			if err != nil {
-				return nil, err
-			}
-			imageScanTime := protocompat.ConvertTimestampToTimeOrNil(imageScan.GetScanTime())
-			resolver.ctx = embeddedobjs.ComponentContext(ctx, os, imageScanTime, embeddedComponent)
-			idToComponent[id] = resolver
-		}
-	}
-
-	// For now, sort by IDs.
-	resolvers := make([]*imageComponentResolver, 0, len(idToComponent))
-	for _, component := range idToComponent {
-		resolvers = append(resolvers, component)
-	}
-	if len(query.GetPagination().GetSortOptions()) == 0 {
-		sort.SliceStable(resolvers, func(i, j int) bool {
-			return resolvers[i].data.GetId() < resolvers[j].data.GetId()
-		})
-	}
-	resolverI := make([]ImageComponentResolver, 0, len(resolvers))
-	for _, resolver := range resolvers {
-		resolverI = append(resolverI, resolver)
-	}
-	return paginate(query.GetPagination(), resolverI, nil)
 }
 
 func getImageComponentV2Resolvers(ctx context.Context, root *Resolver, imageScan *storage.ImageScan, query *v1.Query) ([]ImageComponentResolver, error) {

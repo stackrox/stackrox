@@ -66,20 +66,6 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 	return ds.storage.Search(ctx, q)
 }
 
-func (ds *datastoreImpl) SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	cves, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
-	}
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-	return convertMany(cves, results)
-}
-
 func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error) {
 	var cves []*storage.ImageCVE
 	err := ds.storage.GetByQueryFn(ctx, q, func(cve *storage.ImageCVE) error {
@@ -288,26 +274,4 @@ func gatherKeys(vulns []*storage.ImageCVE) [][]byte {
 		keys = append(keys, []byte(vuln.GetId()))
 	}
 	return keys
-}
-
-func convertMany(cves []*storage.ImageCVE, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
-	if len(cves) != len(results) {
-		return nil, errors.Errorf("expected %d CVEs but got %d", len(results), len(cves))
-	}
-
-	outputResults := make([]*v1.SearchResult, len(cves))
-	for index, sar := range cves {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults, nil
-}
-
-func convertOne(cve *storage.ImageCVE, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_VULNERABILITIES,
-		Id:             cve.GetId(),
-		Name:           cve.GetCveBaseInfo().GetCve(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
 }
