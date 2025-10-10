@@ -38,7 +38,7 @@ var IndexReportsSentToSensor = prometheus.NewCounterVec(
 )
 
 // VsockConnectionsAccepted is a counter for the number of vsock connections accepted by this relay. A mismatch between
-// this and IndexReportsReceived indicates issues reading or parsing data
+// this and IndexReportsReceived indicates issues reading or parsing data.
 var VsockConnectionsAccepted = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -48,11 +48,40 @@ var VsockConnectionsAccepted = prometheus.NewCounter(
 	},
 )
 
+// VsockConnectionsRejected is a counter for the number of vsock connections rejected due to concurrency limits.
+var VsockConnectionsRejected = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_vsock_connections_rejected_total",
+		Help:      "Total number of vsock connections rejected due to concurrency limits",
+	},
+)
+
+var VsockSemaphoreHoldingSize = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_vsock_sem_holding_size",
+		Help:      "Number of vsock connections being handled",
+	})
+
+var VsockSemaphoreQueueSize = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_vsock_sem_queue_size",
+		Help:      "Number of vsock connections waiting to be handled",
+	})
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsMismatchingVsockCID,
 		IndexReportsReceived,
 		IndexReportsSentToSensor,
 		VsockConnectionsAccepted,
+		VsockConnectionsRejected,
+		VsockSemaphoreHoldingSize,
+		VsockSemaphoreQueueSize,
 	)
 }
