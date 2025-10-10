@@ -619,6 +619,11 @@ jobs:
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
 
+      - name: Install operator-sdk build dependencies
+        run: |
+          # operator-sdk depends on github.com/proglottis/gpgme which requires these packages
+          yum install -y pkgconf gpgme-devel
+
       - name: Build Operator Bundle image
         run: |
           make -C operator/ bundle bundle-build
