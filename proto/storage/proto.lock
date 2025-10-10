@@ -8101,6 +8101,151 @@
       }
     },
     {
+      "protopath": "file_activity.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "FileActivity.Operation",
+            "enum_fields": [
+              {
+                "name": "CREATE"
+              },
+              {
+                "name": "UNLINK",
+                "integer": 1
+              },
+              {
+                "name": "RENAME",
+                "integer": 2
+              },
+              {
+                "name": "PERMISSION_CHANGE",
+                "integer": 3
+              },
+              {
+                "name": "OWNERSHIP_CHANGE",
+                "integer": 4
+              },
+              {
+                "name": "WRITE",
+                "integer": 5
+              },
+              {
+                "name": "OPEN",
+                "integer": 6
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "FileActivity",
+            "fields": [
+              {
+                "id": 1,
+                "name": "timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 2,
+                "name": "process",
+                "type": "ProcessIndicator"
+              },
+              {
+                "id": 3,
+                "name": "operation",
+                "type": "Operation"
+              },
+              {
+                "id": 4,
+                "name": "file",
+                "type": "File"
+              },
+              {
+                "id": 5,
+                "name": "moved",
+                "type": "File",
+                "optional": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "FileMetadata",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "uid",
+                    "type": "uint32"
+                  },
+                  {
+                    "id": 2,
+                    "name": "gid",
+                    "type": "uint32"
+                  },
+                  {
+                    "id": 3,
+                    "name": "mode",
+                    "type": "uint32"
+                  },
+                  {
+                    "id": 4,
+                    "name": "username",
+                    "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "group",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "File",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "path",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "host_path",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "meta",
+                    "type": "FileMetadata"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/process_indicator.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
       "protopath": "group.proto",
       "def": {
         "messages": [
