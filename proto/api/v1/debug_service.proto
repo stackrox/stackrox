@@ -52,14 +52,14 @@ message AuthorizationTraceResponse {
   message User {
     message Role {
       string name = 1;
-      map<string, storage.Access> permissions = 2;
+      map<string, storage.Access> permissions = 2 [lazy = true];
       string access_scope_name = 3;
-      storage.SimpleAccessScope.Rules access_scope = 4;
+      storage.SimpleAccessScope.Rules access_scope = 4 [lazy = true];
     }
 
     string username = 1;
     string friendly_name = 2;
-    map<string, storage.Access> aggregated_permissions = 3;
+    map<string, storage.Access> aggregated_permissions = 3 [lazy = true];
     repeated Role roles = 4 [lazy = true];
   }
 
@@ -78,8 +78,8 @@ message AuthorizationTraceResponse {
     }
   }
 
-  google.protobuf.Timestamp arrived_at = 1;
-  google.protobuf.Timestamp processed_at = 2;
+  google.protobuf.Timestamp arrived_at = 1 [lazy = true];
+  google.protobuf.Timestamp processed_at = 2 [lazy = true];
   Request request = 3;
   Response response = 4;
   User user = 5;

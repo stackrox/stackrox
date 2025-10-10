@@ -10,6 +10,6 @@ option go_package = "./internalapi/central;central";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message ProcessListeningOnPortsUpdate {
-  repeated storage.ProcessListeningOnPortFromSensor processes_listening_on_ports = 1;
-  google.protobuf.Timestamp time = 2;
+  repeated storage.ProcessListeningOnPortFromSensor processes_listening_on_ports = 1 [lazy = true];
+  google.protobuf.Timestamp time = 2 [lazy = true];
 }

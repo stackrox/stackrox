@@ -29,7 +29,7 @@ message GetGroupsRequest {
 // API for updating Groups and getting users.
 // Next Available Tag: 2
 message GetGroupsResponse {
-  repeated storage.Group groups = 1;
+  repeated storage.Group groups = 1 [lazy = true];
 }
 
 // GroupBatchUpdateRequest is an in transaction batch update to the groups present.
@@ -40,10 +40,10 @@ message GroupBatchUpdateRequest {
   // 1) if in previous_groups but not required_groups, it gets deleted.
   // 2) if in previous_groups and required_groups, it gets updated.
   // 3) if not in previous_groups but in required_groups, it gets added.
-  repeated storage.Group previous_groups = 1;
+  repeated storage.Group previous_groups = 1 [lazy = true];
 
   // Required groups are the groups we want to mutate the previous groups into.
-  repeated storage.Group required_groups = 2;
+  repeated storage.Group required_groups = 2 [lazy = true];
 
   bool force = 3;
 }
@@ -59,7 +59,7 @@ message DeleteGroupRequest {
 }
 
 message UpdateGroupRequest {
-  storage.Group group = 1;
+  storage.Group group = 1 [lazy = true];
 
   bool force = 2;
 }

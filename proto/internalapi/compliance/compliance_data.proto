@@ -50,8 +50,8 @@ message ContainerRuntimeInfo {
 }
 
 message ComplianceStandardResult {
-  map<string, storage.ComplianceResultValue> node_check_results = 1;
-  map<string, storage.ComplianceResultValue> cluster_check_results = 2;
+  map<string, storage.ComplianceResultValue> node_check_results = 1 [lazy = true];
+  map<string, storage.ComplianceResultValue> cluster_check_results = 2 [lazy = true];
 }
 
 // Next Available Tag: 11
@@ -66,7 +66,7 @@ message ComplianceReturn {
 
   ContainerRuntimeInfo container_runtime_info = 9;
 
-  google.protobuf.Timestamp time = 7;
+  google.protobuf.Timestamp time = 7 [lazy = true];
 
   GZIPDataChunk evidence = 10;
 }

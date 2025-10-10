@@ -13,8 +13,8 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 // TimeRange allows for requesting data by a time range.
 message TimeRange {
-  google.protobuf.Timestamp from = 1;
-  google.protobuf.Timestamp to = 2;
+  google.protobuf.Timestamp from = 1 [lazy = true];
+  google.protobuf.Timestamp to = 2 [lazy = true];
 }
 
 // SecuredUnitsUsageResponse holds the values of the currently observable
@@ -28,9 +28,9 @@ message SecuredUnitsUsageResponse {
 // and CPU Units (as reported by Kubernetes) with the time at which these
 // values were aggregated, with the aggregation period accuracy (1h).
 message MaxSecuredUnitsUsageResponse {
-  google.protobuf.Timestamp max_nodes_at = 1;
+  google.protobuf.Timestamp max_nodes_at = 1 [lazy = true];
   int64 max_nodes = 2;
-  google.protobuf.Timestamp max_cpu_units_at = 3;
+  google.protobuf.Timestamp max_cpu_units_at = 3 [lazy = true];
   int64 max_cpu_units = 4;
 }
 

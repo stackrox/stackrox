@@ -65,7 +65,7 @@ message ImageV2 {
 
   ScanStats scan_stats = 8;
 
-  google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden"
+  google.protobuf.Timestamp last_updated = 9 [lazy = true]; // @gotags: search:"Last Updated,hidden"
 
   bool not_pullable = 10;
   bool is_cluster_local = 11;
@@ -91,8 +91,8 @@ message ListImageV2 {
   int32 component_count = 3;
   int32 cve_count = 4;
   int32 fixable_cve_count = 5;
-  google.protobuf.Timestamp created = 6;
-  google.protobuf.Timestamp last_updated = 8;
+  google.protobuf.Timestamp created = 6 [lazy = true];
+  google.protobuf.Timestamp last_updated = 8 [lazy = true];
 
   reserved 9; // was map<string, string> clusterns_scopes
   int64 priority = 10;

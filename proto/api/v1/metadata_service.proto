@@ -72,7 +72,7 @@ message DatabaseStatus {
 }
 
 message DatabaseBackupStatus {
-  storage.BackupInfo backup_info = 1;
+  storage.BackupInfo backup_info = 1 [lazy = true];
 }
 
 // Provides availability of certain functionality of Central Services in the current configuration.

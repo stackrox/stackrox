@@ -26,8 +26,8 @@ message VulnMgmtExportWorkloadsRequest {
 // The workloads response contains the full image details including the
 // vulnerability data.
 message VulnMgmtExportWorkloadsResponse {
-  storage.Deployment deployment = 1;
-  repeated storage.Image images = 2;
+  storage.Deployment deployment = 1 [lazy = true];
+  repeated storage.Image images = 2 [lazy = true];
   int32 live_pods = 3;
 }
 

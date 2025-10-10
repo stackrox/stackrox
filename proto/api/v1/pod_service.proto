@@ -12,7 +12,7 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message PodsResponse {
-  repeated storage.Pod pods = 1;
+  repeated storage.Pod pods = 1 [lazy = true];
 }
 
 message ExportPodRequest {
@@ -21,7 +21,7 @@ message ExportPodRequest {
 }
 
 message ExportPodResponse {
-  storage.Pod pod = 1;
+  storage.Pod pod = 1 [lazy = true];
 }
 
 // PodService APIs can be used to manage pods.

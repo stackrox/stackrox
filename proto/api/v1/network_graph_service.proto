@@ -23,7 +23,7 @@ message NetworkEdgeProperties {
   uint32 port = 1;
   storage.L4Protocol protocol = 2;
 
-  google.protobuf.Timestamp last_active_timestamp = 3;
+  google.protobuf.Timestamp last_active_timestamp = 3 [lazy = true];
 }
 
 message NetworkEdgePropertiesBundle {
@@ -31,7 +31,7 @@ message NetworkEdgePropertiesBundle {
 }
 
 message NetworkNode {
-  storage.NetworkEntityInfo entity = 1;
+  storage.NetworkEntityInfo entity = 1 [lazy = true];
   bool internet_access = 2;
   repeated string policy_ids = 3;
   bool non_isolated_ingress = 5;
@@ -44,7 +44,7 @@ message NetworkNode {
 message NetworkGraphRequest {
   string cluster_id = 1;
   string query = 2;
-  google.protobuf.Timestamp since = 3;
+  google.protobuf.Timestamp since = 3 [lazy = true];
   bool include_ports = 4;
   NetworkGraphScope scope = 5;
   bool include_policies = 6;
@@ -57,7 +57,7 @@ message NetworkGraph {
 
 message CreateNetworkEntityRequest {
   string cluster_id = 1;
-  storage.NetworkEntityInfo.ExternalSource entity = 2;
+  storage.NetworkEntityInfo.ExternalSource entity = 2 [lazy = true];
 }
 
 message PatchNetworkEntityRequest {
@@ -71,32 +71,32 @@ message GetExternalNetworkEntitiesRequest {
 }
 
 message GetExternalNetworkEntitiesResponse {
-  repeated storage.NetworkEntity entities = 1;
+  repeated storage.NetworkEntity entities = 1 [lazy = true];
 }
 
 message GetExternalNetworkFlowsRequest {
   string cluster_id = 1;
   string entity_id = 2;
   string query = 3;
-  google.protobuf.Timestamp since = 4;
+  google.protobuf.Timestamp since = 4 [lazy = true];
   Pagination pagination = 5;
 }
 
 message GetExternalNetworkFlowsResponse {
-  storage.NetworkEntityInfo entity = 1;
+  storage.NetworkEntityInfo entity = 1 [lazy = true];
   int32 total_flows = 2;
-  repeated storage.NetworkFlow flows = 3;
+  repeated storage.NetworkFlow flows = 3 [lazy = true];
 }
 
 message GetExternalNetworkFlowsMetadataRequest {
   string cluster_id = 1;
   string query = 2;
-  google.protobuf.Timestamp since = 3;
+  google.protobuf.Timestamp since = 3 [lazy = true];
   Pagination pagination = 4;
 }
 
 message ExternalNetworkFlowMetadata {
-  storage.NetworkEntityInfo entity = 1;
+  storage.NetworkEntityInfo entity = 1 [lazy = true];
   int32 flowsCount = 2;
 }
 
@@ -106,7 +106,7 @@ message GetExternalNetworkFlowsMetadataResponse {
 }
 
 message PutNetworkGraphConfigRequest {
-  storage.NetworkGraphConfig config = 1;
+  storage.NetworkGraphConfig config = 1 [lazy = true];
 }
 
 service NetworkGraphService {

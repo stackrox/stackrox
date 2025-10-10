@@ -26,7 +26,7 @@ message Node {
   map<string, string> labels = 6 [lazy = true]; // @gotags: search:"Node Label"
   map<string, string> annotations = 7 [lazy = true]; // @gotags: search:"Node Annotation"
   // When the cluster reported the node was added
-  google.protobuf.Timestamp joined_at = 13; // @gotags: search:"Node Join Time,store"
+  google.protobuf.Timestamp joined_at = 13 [lazy = true]; // @gotags: search:"Node Join Time,store"
   // node internal IP addresses
   repeated string internal_ip_addresses = 8;
   // node external IP addresses
@@ -42,9 +42,9 @@ message Node {
   string kubelet_version = 15;
   string kube_proxy_version = 16;
 
-  google.protobuf.Timestamp last_updated = 25; // @gotags: search:"Last Updated,hidden"
+  google.protobuf.Timestamp last_updated = 25 [lazy = true]; // @gotags: search:"Last Updated,hidden"
   // Time we received an update from Kubernetes.
-  google.protobuf.Timestamp k8s_updated = 26; // @gotags: sensorhash:"ignore"
+  google.protobuf.Timestamp k8s_updated = 26 [lazy = true]; // @gotags: sensorhash:"ignore"
 
   NodeScan scan = 18; // @gotags: policy:"Node Scan"
   oneof set_components {
@@ -70,7 +70,7 @@ message Node {
 
 // Next tag: 5
 message NodeScan {
-  google.protobuf.Timestamp scan_time = 1; // @gotags: search:"Node Scan Time,store"
+  google.protobuf.Timestamp scan_time = 1 [lazy = true]; // @gotags: search:"Node Scan Time,store"
   string operating_system = 3;
   repeated EmbeddedNodeScanComponent components = 2 [lazy = true]; // @gotags: sql:"-"
 
@@ -91,7 +91,7 @@ message NodeScan {
 message NodeInventory {
   string node_id = 1;
   string node_name = 2;
-  google.protobuf.Timestamp scan_time = 3;
+  google.protobuf.Timestamp scan_time = 3 [lazy = true];
 
   // Components represents a subset of the scannerV1.Components proto message containing only fields required for RHCOS node scanning.
   // Keep scanner Components and NodeInventory_Components in sync to the degree defined by fuctions:

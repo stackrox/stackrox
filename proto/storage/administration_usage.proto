@@ -17,7 +17,7 @@ message SecuredUnits {
   string id = 1; // @gotags: sql:"pk,type(uuid)"
   // timestamp stores the moment at which the values of the metrics below are
   // aggregated.
-  google.protobuf.Timestamp timestamp = 2; // @gotags: sql:"unique" search:"Administration Usage Timestamp,hidden"
+  google.protobuf.Timestamp timestamp = 2 [lazy = true]; // @gotags: sql:"unique" search:"Administration Usage Timestamp,hidden"
   // num_nodes is the maximum number of secured nodes, observed across all
   // registered clusters during last aggregation period.
   int64 num_nodes = 3; // @gotags: search:"Administration Usage Nodes,hidden"

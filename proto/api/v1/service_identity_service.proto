@@ -12,7 +12,7 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message ServiceIdentityResponse {
-  repeated storage.ServiceIdentity identities = 1;
+  repeated storage.ServiceIdentity identities = 1 [lazy = true];
 }
 
 message CreateServiceIdentityRequest {
@@ -21,7 +21,7 @@ message CreateServiceIdentityRequest {
 }
 
 message CreateServiceIdentityResponse {
-  storage.ServiceIdentity identity = 1;
+  storage.ServiceIdentity identity = 1 [lazy = true];
   bytes certificate_pem = 2;
   bytes private_key_pem = 3;
 }

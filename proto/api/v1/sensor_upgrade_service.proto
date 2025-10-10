@@ -13,7 +13,7 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message UpdateSensorUpgradeConfigRequest {
-  storage.SensorUpgradeConfig config = 1;
+  storage.SensorUpgradeConfig config = 1 [lazy = true];
 }
 
 message GetSensorUpgradeConfigResponse {

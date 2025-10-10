@@ -20,17 +20,17 @@ message GetScrapeConfigRequest {
 
 message AuditEvents {
   // events are ordered with the most recent being the last element
-  repeated storage.KubernetesEvent events = 1;
+  repeated storage.KubernetesEvent events = 1 [lazy = true];
 }
 
 message MsgFromCompliance {
   string node = 1;
 
   oneof msg {
-    compliance.ComplianceReturn return = 2;
+    compliance.ComplianceReturn return = 2 [lazy = true];
     AuditEvents audit_events = 3;
-    storage.NodeInventory node_inventory = 4;
-    scanner.v4.IndexReport index_report = 5;
+    storage.NodeInventory node_inventory = 4 [lazy = true];
+    scanner.v4.IndexReport index_report = 5 [lazy = true];
   }
 }
 
@@ -46,7 +46,7 @@ message MsgToCompliance {
   message AuditLogCollectionRequest {
     message StartRequest {
       string cluster_id = 1;
-      storage.AuditLogFileState collect_start_state = 2;
+      storage.AuditLogFileState collect_start_state = 2 [lazy = true];
     }
     message StopRequest {}
 

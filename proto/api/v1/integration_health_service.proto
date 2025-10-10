@@ -13,7 +13,7 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message GetIntegrationHealthResponse {
-  repeated storage.IntegrationHealth integrationHealth = 1;
+  repeated storage.IntegrationHealth integrationHealth = 1 [lazy = true];
 }
 
 message VulnDefinitionsInfoRequest {
@@ -26,7 +26,7 @@ message VulnDefinitionsInfoRequest {
 }
 
 message VulnDefinitionsInfo {
-  google.protobuf.Timestamp last_updated_timestamp = 1;
+  google.protobuf.Timestamp last_updated_timestamp = 1 [lazy = true];
 }
 
 service IntegrationHealthService {

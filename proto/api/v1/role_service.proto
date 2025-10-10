@@ -21,7 +21,7 @@ message Permission {
 }
 
 message GetRolesResponse {
-  repeated storage.Role roles = 1;
+  repeated storage.Role roles = 1 [lazy = true];
 }
 
 // GetPermissionsResponse is wire-compatible with the old format of the Role
@@ -29,7 +29,7 @@ message GetRolesResponse {
 message GetPermissionsResponse {
   reserved 1; // for compatibility with Role.name
   reserved 2; // for compatibility with Role.global_access
-  map<string, storage.Access> resource_to_access = 3;
+  map<string, storage.Access> resource_to_access = 3 [lazy = true];
 }
 
 message GetResourcesResponse {
@@ -37,11 +37,11 @@ message GetResourcesResponse {
 }
 
 message ListPermissionSetsResponse {
-  repeated storage.PermissionSet permission_sets = 1;
+  repeated storage.PermissionSet permission_sets = 1 [lazy = true];
 }
 
 message ListSimpleAccessScopesResponse {
-  repeated storage.SimpleAccessScope access_scopes = 1;
+  repeated storage.SimpleAccessScope access_scopes = 1 [lazy = true];
 }
 
 // ScopeObject represents an ID, name pair, which can apply to any
@@ -70,7 +70,7 @@ message ComputeEffectiveAccessScopeRequest {
     // Other definitions of access scope rules is science fiction for now;
     // however, prepare for that possible future.
     oneof rules_opt {
-      storage.SimpleAccessScope.Rules simple_rules = 1;
+      storage.SimpleAccessScope.Rules simple_rules = 1 [lazy = true];
     }
   }
 
@@ -82,7 +82,7 @@ message ComputeEffectiveAccessScopeRequest {
 // This way we can verify that name in the path and name in the body are identical.
 message CreateRoleRequest {
   string name = 1;
-  storage.Role role = 2;
+  storage.Role role = 2 [lazy = true];
 }
 
 message GetClustersForPermissionsRequest {

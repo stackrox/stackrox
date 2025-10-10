@@ -20,7 +20,7 @@ message Comment {
   string id = 1;
   string message = 2;
   SlimUser user = 3;
-  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp created_at = 4 [lazy = true];
 }
 
 // Indicates the status of a request.
@@ -48,7 +48,7 @@ message ExceptionExpiry {
   // `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
   ExpiryType expiry_type = 1;
   // Indicates the timestamp when the exception expires. This field is REQUIRED only if the expiry type is set to TIME.
-  google.protobuf.Timestamp expires_on = 2;
+  google.protobuf.Timestamp expires_on = 2 [lazy = true];
 }
 
 message DeferralRequest {
@@ -81,8 +81,8 @@ message VulnerabilityException {
   bool expired = 5;
   SlimUser requester = 6;
   repeated SlimUser approvers = 7 [lazy = true];
-  google.protobuf.Timestamp created_at = 8;
-  google.protobuf.Timestamp last_updated = 9;
+  google.protobuf.Timestamp created_at = 8 [lazy = true];
+  google.protobuf.Timestamp last_updated = 9 [lazy = true];
   repeated Comment comments = 10 [lazy = true];
   // Indicates the scope of enforcement of the exception.
   Scope scope = 11;
@@ -130,7 +130,7 @@ message CreateDeferVulnerabilityExceptionRequest {
   // REQUIRED. The rationale for creating the exception.
   string comment = 2;
   // REQUIRED. The scope of enforcement of the exception.
-  VulnerabilityException.Scope scope = 3;
+  VulnerabilityException.Scope scope = 3 [lazy = true];
   // REQUIRED. The type of expiry to be enforced for the request.
   ExceptionExpiry exception_expiry = 4;
 }
@@ -143,7 +143,7 @@ message CreateFalsePositiveVulnerabilityExceptionRequest {
   // REQUIRED. The CVEs to which the exception should be applied.
   repeated string cves = 1;
   // REQUIRED. The scope of enforcement of the exception.
-  VulnerabilityException.Scope scope = 2;
+  VulnerabilityException.Scope scope = 2 [lazy = true];
   // REQUIRED. The rationale for creating the exception.
   string comment = 3;
 }

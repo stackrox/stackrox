@@ -17,9 +17,9 @@ message InitBundleMeta {
   }
   string id = 1; // @gotags: sql:"pk"
   string name = 2;
-  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp created_at = 3 [lazy = true];
   User created_by = 4;
   bool is_revoked = 5;
-  google.protobuf.Timestamp expires_at = 6;
+  google.protobuf.Timestamp expires_at = 6 [lazy = true];
   InitBundleVersion version = 7;
 }

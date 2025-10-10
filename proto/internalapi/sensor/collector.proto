@@ -61,7 +61,7 @@ message ProcessSignal {
   string container_id = 2;
 
   // Process creation time
-  google.protobuf.Timestamp creation_time = 3;
+  google.protobuf.Timestamp creation_time = 3 [lazy = true];
 
   // Process name
   string name = 4;

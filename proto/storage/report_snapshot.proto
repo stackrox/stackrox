@@ -30,7 +30,7 @@ message ReportSnapshot {
     ViewBasedVulnerabilityReportFilters view_based_vuln_report_filters = 12;
   }
   CollectionSnapshot collection = 7;
-  storage.Schedule schedule = 8;
+  storage.Schedule schedule = 8 [lazy = true];
   ReportStatus report_status = 9;
   repeated NotifierSnapshot notifiers = 10 [lazy = true];
   SlimUser requester = 11;
@@ -74,8 +74,8 @@ message ReportStatus {
   }
 
   RunState run_state = 1; // @gotags: search:"Report State"
-  google.protobuf.Timestamp queued_at = 2; // @gotags: search:"Report Init Time"
-  google.protobuf.Timestamp completed_at = 3; // @gotags: search:"Report Completion Time"
+  google.protobuf.Timestamp queued_at = 2 [lazy = true]; // @gotags: search:"Report Init Time"
+  google.protobuf.Timestamp completed_at = 3 [lazy = true]; // @gotags: search:"Report Completion Time"
   string error_msg = 4;
   RunMethod report_request_type = 5; // @gotags: search:"Report Request Type"
   NotificationMethod report_notification_method = 6; // @gotags: search:"Report Notification Method"

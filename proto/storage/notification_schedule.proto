@@ -11,5 +11,5 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message NotificationSchedule {
   reserved 1; // id, future field
-  google.protobuf.Timestamp last_run = 2;
+  google.protobuf.Timestamp last_run = 2 [lazy = true];
 }

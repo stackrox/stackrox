@@ -93,7 +93,7 @@ message Alert {
     // Indicates violation time. This field differs from top-level field 'time' which represents last time the alert
     // occurred in case of multiple occurrences of the policy alert. As of 55.0, this field is set only for kubernetes
     // event violations, but may not be limited to it in future.
-    google.protobuf.Timestamp time = 6;
+    google.protobuf.Timestamp time = 6 [lazy = true];
   }
 
   message ProcessViolation {
@@ -142,11 +142,11 @@ message Alert {
 
   Enforcement enforcement = 6;
 
-  google.protobuf.Timestamp time = 7; // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
-  google.protobuf.Timestamp first_occurred = 10; // @gotags: sensorhash:"ignore"
+  google.protobuf.Timestamp time = 7 [lazy = true]; // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
+  google.protobuf.Timestamp first_occurred = 10 [lazy = true]; // @gotags: sensorhash:"ignore"
 
   // The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
-  google.protobuf.Timestamp resolved_at = 17; // @gotags: sensorhash:"ignore"
+  google.protobuf.Timestamp resolved_at = 17 [lazy = true]; // @gotags: sensorhash:"ignore"
 
   ViolationState state = 11; // @gotags: search:"Violation State,store" sql:"index=btree"
   reserved 12;
@@ -186,7 +186,7 @@ message ListAlert {
 
   string id = 1;
   LifecycleStage lifecycle_stage = 2;
-  google.protobuf.Timestamp time = 3;
+  google.protobuf.Timestamp time = 3 [lazy = true];
   ListAlertPolicy policy = 4;
   ViolationState state = 6;
   int32 enforcement_count = 7;

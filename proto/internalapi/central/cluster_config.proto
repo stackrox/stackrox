@@ -9,5 +9,5 @@ option go_package = "./internalapi/central;central";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message ClusterConfig {
-  storage.DynamicClusterConfig config = 1;
+  storage.DynamicClusterConfig config = 1 [lazy = true];
 }

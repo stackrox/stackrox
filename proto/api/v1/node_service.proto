@@ -15,7 +15,7 @@ message ListNodesRequest {
 }
 
 message ListNodesResponse {
-  repeated storage.Node nodes = 1;
+  repeated storage.Node nodes = 1 [lazy = true];
 }
 
 message GetNodeRequest {
@@ -29,7 +29,7 @@ message ExportNodeRequest {
 }
 
 message ExportNodeResponse {
-  storage.Node node = 1;
+  storage.Node node = 1 [lazy = true];
 }
 
 // storage.Node represents information about a node in the cluster.

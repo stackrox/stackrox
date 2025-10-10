@@ -19,7 +19,7 @@ message IssueLocalScannerCertsRequest {
 message IssueLocalScannerCertsResponse {
   string request_id = 1;
   oneof response {
-    storage.TypedServiceCertificateSet certificates = 2;
+    storage.TypedServiceCertificateSet certificates = 2 [lazy = true];
     LocalScannerCertsIssueError error = 3;
   }
 }

@@ -27,13 +27,13 @@ message GetNetworkPoliciesRequest {
 }
 
 message NetworkPoliciesResponse {
-  repeated storage.NetworkPolicy network_policies = 1;
+  repeated storage.NetworkPolicy network_policies = 1 [lazy = true];
 }
 
 message SendNetworkPolicyYamlRequest {
   string cluster_id = 1;
   repeated string notifier_ids = 2;
-  storage.NetworkPolicyModification modification = 3;
+  storage.NetworkPolicyModification modification = 3 [lazy = true];
 }
 
 message GetNetworkGraphRequest {
@@ -48,7 +48,7 @@ message GetNetworkGraphRequest {
 message SimulateNetworkGraphRequest {
   string cluster_id = 1;
   string query = 2;
-  storage.NetworkPolicyModification modification = 3;
+  storage.NetworkPolicyModification modification = 3 [lazy = true];
 
   // If set to true, include port-level information in the network policy graph.
   bool include_ports = 4;
@@ -58,7 +58,7 @@ message SimulateNetworkGraphRequest {
 
 message ApplyNetworkPolicyYamlRequest {
   string cluster_id = 1;
-  storage.NetworkPolicyModification modification = 2;
+  storage.NetworkPolicyModification modification = 2 [lazy = true];
 }
 
 message GetUndoModificationRequest {
@@ -66,7 +66,7 @@ message GetUndoModificationRequest {
 }
 
 message GetUndoModificationResponse {
-  storage.NetworkPolicyApplicationUndoRecord undo_record = 1;
+  storage.NetworkPolicyApplicationUndoRecord undo_record = 1 [lazy = true];
 }
 
 message NetworkPolicyInSimulation {
@@ -78,9 +78,9 @@ message NetworkPolicyInSimulation {
     DELETED = 4;
   }
 
-  storage.NetworkPolicy policy = 1;
+  storage.NetworkPolicy policy = 1 [lazy = true];
   Status status = 2;
-  storage.NetworkPolicy old_policy = 3; // if status is MODIFIED or DELETED, this contains the previous network policy.
+  storage.NetworkPolicy old_policy = 3 [lazy = true]; // if status is MODIFIED or DELETED, this contains the previous network policy.
 }
 
 message NetworkNodeDiff {
@@ -126,14 +126,14 @@ message GenerateNetworkPoliciesRequest {
   string query = 2;
   DeleteExistingPoliciesMode delete_existing = 3;
 
-  google.protobuf.Timestamp network_data_since = 4;
+  google.protobuf.Timestamp network_data_since = 4 [lazy = true];
 
   bool include_ports = 5;
 }
 
 // Next available tag: 2
 message GenerateNetworkPoliciesResponse {
-  storage.NetworkPolicyModification modification = 1;
+  storage.NetworkPolicyModification modification = 1 [lazy = true];
 }
 
 message GetBaselineGeneratedPolicyForDeploymentRequest {
@@ -143,7 +143,7 @@ message GetBaselineGeneratedPolicyForDeploymentRequest {
 }
 
 message GetBaselineGeneratedPolicyForDeploymentResponse {
-  storage.NetworkPolicyModification modification = 1;
+  storage.NetworkPolicyModification modification = 1 [lazy = true];
 }
 
 message GetAllowedPeersFromCurrentPolicyForDeploymentResponse {
@@ -152,23 +152,23 @@ message GetAllowedPeersFromCurrentPolicyForDeploymentResponse {
 
 message ApplyNetworkPolicyYamlForDeploymentRequest {
   string deployment_id = 1;
-  storage.NetworkPolicyModification modification = 2;
+  storage.NetworkPolicyModification modification = 2 [lazy = true];
 }
 
 message GetUndoModificationForDeploymentResponse {
-  storage.NetworkPolicyApplicationUndoRecord undo_record = 1;
+  storage.NetworkPolicyApplicationUndoRecord undo_record = 1 [lazy = true];
 }
 
 message GetDiffFlowsReconciledFlow {
-  storage.NetworkEntityInfo entity = 1;
-  repeated storage.NetworkBaselineConnectionProperties added = 2;
-  repeated storage.NetworkBaselineConnectionProperties removed = 3;
-  repeated storage.NetworkBaselineConnectionProperties unchanged = 4;
+  storage.NetworkEntityInfo entity = 1 [lazy = true];
+  repeated storage.NetworkBaselineConnectionProperties added = 2 [lazy = true];
+  repeated storage.NetworkBaselineConnectionProperties removed = 3 [lazy = true];
+  repeated storage.NetworkBaselineConnectionProperties unchanged = 4 [lazy = true];
 }
 
 message GetDiffFlowsGroupedFlow {
-  storage.NetworkEntityInfo entity = 1;
-  repeated storage.NetworkBaselineConnectionProperties properties = 2;
+  storage.NetworkEntityInfo entity = 1 [lazy = true];
+  repeated storage.NetworkBaselineConnectionProperties properties = 2 [lazy = true];
 }
 
 message GetDiffFlowsResponse {

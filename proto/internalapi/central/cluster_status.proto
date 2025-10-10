@@ -15,15 +15,15 @@ message DeploymentEnvironmentUpdate {
 message ClusterStatusUpdate {
   // Making it a oneof for future proofing.
   oneof msg {
-    storage.ClusterStatus status = 1;
+    storage.ClusterStatus status = 1 [lazy = true];
     DeploymentEnvironmentUpdate deployment_env_update = 2;
   }
 }
 
 message RawClusterHealthInfo {
-  storage.CollectorHealthInfo collector_health_info = 1;
-  storage.AdmissionControlHealthInfo admission_control_health_info = 2;
-  storage.ScannerHealthInfo scanner_health_info = 3;
+  storage.CollectorHealthInfo collector_health_info = 1 [lazy = true];
+  storage.AdmissionControlHealthInfo admission_control_health_info = 2 [lazy = true];
+  storage.ScannerHealthInfo scanner_health_info = 3 [lazy = true];
 }
 
 message ClusterHealthResponse {}

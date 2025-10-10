@@ -11,6 +11,6 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message LogImbue {
   string id = 1; // @gotags: sql:"pk"
-  google.protobuf.Timestamp timestamp = 2; // @gotags: search:"Log Imbue Creation Time,hidden"
+  google.protobuf.Timestamp timestamp = 2 [lazy = true]; // @gotags: search:"Log Imbue Creation Time,hidden"
   bytes log = 3;
 }

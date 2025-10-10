@@ -9,5 +9,5 @@ option go_package = "./internalapi/central;central";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message NetworkBaselineSync {
-  repeated storage.NetworkBaseline network_baselines = 1;
+  repeated storage.NetworkBaseline network_baselines = 1 [lazy = true];
 }

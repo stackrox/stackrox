@@ -61,10 +61,10 @@ message AdministrationEvent {
   int64 num_occurrences = 8;
 
   // Specifies the time when the event has last occurred.
-  google.protobuf.Timestamp last_occurred_at = 9;
+  google.protobuf.Timestamp last_occurred_at = 9 [lazy = true];
 
   // Specifies the time when the event has been created.
-  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp created_at = 10 [lazy = true];
 }
 
 // AdministrationEventType exposes the different types of events.
@@ -85,10 +85,10 @@ enum AdministrationEventLevel {
 
 message AdministrationEventsFilter {
   // Matches events with last_occurred_at after a specific timestamp, i.e. the lower boundary.
-  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp from = 1 [lazy = true];
 
   // Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary.
-  google.protobuf.Timestamp until = 2;
+  google.protobuf.Timestamp until = 2 [lazy = true];
 
   // Matches events from a specific domain.
   repeated string domain = 3;

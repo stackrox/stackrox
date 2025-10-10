@@ -44,7 +44,7 @@ message DBRestoreProcessMetadata {
   DBRestoreRequestHeader header = 2;
 
   // The time at which the restore process was started.
-  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp start_time = 3 [lazy = true];
   // The user who initiated the database restore process.
   string initiating_user_name = 4;
 }
@@ -128,7 +128,7 @@ message InterruptDBRestoreProcessRequest {
 }
 
 message InterruptDBRestoreProcessResponse {
-  DBRestoreProcessStatus.ResumeInfo resume_info = 1;
+  DBRestoreProcessStatus.ResumeInfo resume_info = 1 [lazy = true];
 }
 
 service DBService {

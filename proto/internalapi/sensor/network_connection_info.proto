@@ -22,7 +22,7 @@ message NetworkConnectionInfo {
   // For active connections, the timestamp of the entire message serves as the latest timestamp
   // that connection was deemed active = the connection was not closed yet at that moment.
   // This is set by Collector and it is the time of creation of the message in Collector.
-  google.protobuf.Timestamp time = 2;
+  google.protobuf.Timestamp time = 2 [lazy = true];
 }
 
 // NetworkConnection tracks connection information about client and server.
@@ -36,7 +36,7 @@ message NetworkConnection {
 
   // If this connection was closed, this gives the timestamp when it was closed. If this is unset, we treat it as an
   // open connection.
-  google.protobuf.Timestamp close_timestamp = 11;
+  google.protobuf.Timestamp close_timestamp = 11 [lazy = true];
 }
 
 message NetworkEndpoint {
@@ -49,9 +49,9 @@ message NetworkEndpoint {
 
   // If we're no longer listening on this endpoint, this gives the timestamp when the listen socket
   // was shutdown. If this is unset, we treat it as an actively listening endpoint.
-  google.protobuf.Timestamp close_timestamp = 5;
+  google.protobuf.Timestamp close_timestamp = 5 [lazy = true];
 
-  storage.NetworkProcessUniqueKey originator = 6;
+  storage.NetworkProcessUniqueKey originator = 6 [lazy = true];
 }
 
 message NetworkAddress {

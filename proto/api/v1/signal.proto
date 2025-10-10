@@ -14,6 +14,6 @@ option features.(pb.go).api_level = API_OPAQUE;
 // Specifically, process launches and network connects/accepts.
 message Signal {
   oneof signal {
-    storage.ProcessSignal process_signal = 1;
+    storage.ProcessSignal process_signal = 1 [lazy = true];
   }
 }

@@ -30,5 +30,5 @@ message IntegrationHealth {
   string error_message = 5;
 
   // Timestamp when the status was ascertained
-  google.protobuf.Timestamp last_timestamp = 6;
+  google.protobuf.Timestamp last_timestamp = 6 [lazy = true];
 }

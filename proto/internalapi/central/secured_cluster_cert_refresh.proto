@@ -21,7 +21,7 @@ message IssueSecuredClusterCertsRequest {
 message IssueSecuredClusterCertsResponse {
   string request_id = 1;
   oneof response {
-    storage.TypedServiceCertificateSet certificates = 2;
+    storage.TypedServiceCertificateSet certificates = 2 [lazy = true];
     SecuredClusterCertsIssueError error = 3;
   }
 }

@@ -49,7 +49,7 @@ message NetworkBaseline {
   // we see the flow again.
   repeated NetworkBaselinePeer forbidden_peers = 5 [lazy = true]; // @gotags: search:"-"
 
-  google.protobuf.Timestamp observation_period_end = 6;
+  google.protobuf.Timestamp observation_period_end = 6 [lazy = true];
 
   // Indicates if this baseline has been locked by user.
   // Here locking means:

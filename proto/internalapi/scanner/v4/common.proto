@@ -18,7 +18,7 @@ message Contents {
   repeated Repository repositoriesDEPRECATED = 3 [deprecated = true];
   map<string, Repository> repositories = 7;
   map<string, Environment.List> environmentsDEPRECATED = 4 [deprecated = true];
-  map<string, Environment.List> environments = 8;
+  map<string, Environment.List> environments = 8 [lazy = true];
 }
 
 message Package {

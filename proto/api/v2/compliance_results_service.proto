@@ -17,9 +17,9 @@ option features.(pb.go).api_level = API_OPAQUE;
 message ClusterCheckStatus {
   ComplianceScanCluster cluster = 1;
   ComplianceCheckStatus status = 2;
-  google.protobuf.Timestamp created_time = 3;
+  google.protobuf.Timestamp created_time = 3 [lazy = true];
   string check_uid = 4;
-  google.protobuf.Timestamp last_scan_time = 5;
+  google.protobuf.Timestamp last_scan_time = 5 [lazy = true];
 }
 
 // ComplianceCheckResult details of an instance of a compliance check result
@@ -98,7 +98,7 @@ message ListComplianceCheckResultResponse {
   string profile_name = 2;
   string cluster_id = 3;
   int32 total_count = 4;
-  google.protobuf.Timestamp last_scan_time = 5;
+  google.protobuf.Timestamp last_scan_time = 5 [lazy = true];
 }
 
 message ComplianceScanResultsRequest {

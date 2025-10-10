@@ -9,7 +9,7 @@ option go_package = "./internalapi/central;central";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message HelmManagedConfigInit {
-  storage.CompleteClusterConfig cluster_config = 1;
+  storage.CompleteClusterConfig cluster_config = 1 [lazy = true];
   string cluster_name = 2;
   string cluster_id = 3;
   reserved 4; // was not_helm_managed
@@ -26,7 +26,7 @@ message SensorHello {
   string sensor_version = 1;
   repeated string capabilities = 2;
 
-  storage.SensorDeploymentIdentification deployment_identification = 5;
+  storage.SensorDeploymentIdentification deployment_identification = 5 [lazy = true];
 
   HelmManagedConfigInit helm_managed_config_init = 3;
 

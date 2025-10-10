@@ -11,5 +11,5 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message InstallationInfo {
   string id = 1;
-  google.protobuf.Timestamp created = 2;
+  google.protobuf.Timestamp created = 2 [lazy = true];
 }

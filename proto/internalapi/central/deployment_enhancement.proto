@@ -10,7 +10,7 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message DeploymentEnhancementMessage {
   string id = 1;
-  repeated storage.Deployment deployments = 2;
+  repeated storage.Deployment deployments = 2 [lazy = true];
 }
 
 message DeploymentEnhancementRequest {

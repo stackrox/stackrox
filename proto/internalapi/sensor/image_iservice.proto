@@ -10,13 +10,13 @@ option go_package = "./internalapi/sensor;sensor";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message GetImageRequest {
-  storage.ContainerImage image = 1;
+  storage.ContainerImage image = 1 [lazy = true];
   string namespace = 3;
   bool scan_inline = 2;
 }
 
 message GetImageResponse {
-  storage.Image image = 1;
+  storage.Image image = 1 [lazy = true];
 }
 
 // A Sensor service that allows Admission Controller to retrieve images from Sensor

@@ -36,7 +36,7 @@ message ResolveAlertsRequest {
 }
 
 message ListAlertsResponse {
-  repeated storage.ListAlert alerts = 1;
+  repeated storage.ListAlert alerts = 1 [lazy = true];
 }
 
 message DeleteAlertsRequest {
@@ -51,7 +51,7 @@ message DeleteAlertsResponse {
 
 message GetAlertsGroupResponse {
   message PolicyGroup {
-    storage.ListAlertPolicy policy = 1;
+    storage.ListAlertPolicy policy = 1 [lazy = true];
     int64 num_alerts = 2;
   }
 

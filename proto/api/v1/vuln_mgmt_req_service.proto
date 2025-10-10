@@ -15,11 +15,11 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message GetVulnerabilityRequestResponse {
-  storage.VulnerabilityRequest request_info = 1;
+  storage.VulnerabilityRequest request_info = 1 [lazy = true];
 }
 
 message ListVulnerabilityRequestsResponse {
-  repeated storage.VulnerabilityRequest request_infos = 1;
+  repeated storage.VulnerabilityRequest request_infos = 1 [lazy = true];
 }
 
 // next available tag: 6
@@ -27,26 +27,26 @@ message DeferVulnRequest {
   // This field indicates the CVEs requested to be deferred.
   string cve = 1;
   string comment = 2;
-  storage.VulnerabilityRequest.Scope scope = 3;
+  storage.VulnerabilityRequest.Scope scope = 3 [lazy = true];
   oneof expiry {
     bool expires_when_fixed = 4;
-    google.protobuf.Timestamp expires_on = 5;
+    google.protobuf.Timestamp expires_on = 5 [lazy = true];
   }
 }
 
 message DeferVulnResponse {
-  storage.VulnerabilityRequest request_info = 1;
+  storage.VulnerabilityRequest request_info = 1 [lazy = true];
 }
 
 message FalsePositiveVulnRequest {
   // This field indicates the CVE requested to be marked as false-positive.
   string cve = 1;
-  storage.VulnerabilityRequest.Scope scope = 2;
+  storage.VulnerabilityRequest.Scope scope = 2 [lazy = true];
   string comment = 3;
 }
 
 message FalsePositiveVulnResponse {
-  storage.VulnerabilityRequest request_info = 1;
+  storage.VulnerabilityRequest request_info = 1 [lazy = true];
 }
 
 message ApproveVulnRequest {
@@ -55,7 +55,7 @@ message ApproveVulnRequest {
 }
 
 message ApproveVulnRequestResponse {
-  storage.VulnerabilityRequest request_info = 1;
+  storage.VulnerabilityRequest request_info = 1 [lazy = true];
 }
 
 message DenyVulnRequest {
@@ -64,22 +64,22 @@ message DenyVulnRequest {
 }
 
 message DenyVulnRequestResponse {
-  storage.VulnerabilityRequest request_info = 1;
+  storage.VulnerabilityRequest request_info = 1 [lazy = true];
 }
 
 message UpdateVulnRequest {
   string id = 1;
   string comment = 2;
-  storage.RequestExpiry expiry = 3;
+  storage.RequestExpiry expiry = 3 [lazy = true];
   // Currently, only expiry can be updated
 }
 
 message UpdateVulnRequestResponse {
-  storage.VulnerabilityRequest request_info = 1;
+  storage.VulnerabilityRequest request_info = 1 [lazy = true];
 }
 
 message UndoVulnRequestResponse {
-  storage.VulnerabilityRequest request_info = 1;
+  storage.VulnerabilityRequest request_info = 1 [lazy = true];
 }
 
 // VulnerabilityRequestService APIs can be used to manage create and manage vulnerability requests.

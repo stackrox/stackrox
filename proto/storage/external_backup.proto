@@ -14,7 +14,7 @@ message ExternalBackup {
   string id = 1; // @gotags: sql:"pk"
   string name = 2;
   string type = 3;
-  storage.Schedule schedule = 4;
+  storage.Schedule schedule = 4 [lazy = true];
   int32 backups_to_keep = 5;
 
   oneof Config {

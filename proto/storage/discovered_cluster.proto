@@ -31,7 +31,7 @@ message DiscoveredCluster {
     ProviderType provider_type = 4;
 
     string region = 5;
-    google.protobuf.Timestamp first_discovered_at = 6; // @gotags: search:"Cluster Discovered Time,hidden"
+    google.protobuf.Timestamp first_discovered_at = 6 [lazy = true]; // @gotags: search:"Cluster Discovered Time,hidden"
   }
   Metadata metadata = 2;
 
@@ -44,5 +44,5 @@ message DiscoveredCluster {
 
   string source_id = 4; // @gotags: search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"
 
-  google.protobuf.Timestamp last_updated_at = 5; // @gotags: search:"Last Updated,hidden"
+  google.protobuf.Timestamp last_updated_at = 5 [lazy = true]; // @gotags: search:"Last Updated,hidden"
 }

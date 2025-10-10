@@ -48,7 +48,7 @@ message ImageCVEEdge {
   option deprecated = true;
   // base 64 encoded Image:CVE ids.
   string id = 1; // @gotags: sql:"pk,id"
-  google.protobuf.Timestamp first_image_occurrence = 2; // @gotags: search:"First Image Occurrence Timestamp,hidden"
+  google.protobuf.Timestamp first_image_occurrence = 2 [lazy = true]; // @gotags: search:"First Image Occurrence Timestamp,hidden"
   VulnerabilityState state = 3; // @gotags: search:"Vulnerability State"
   string image_id = 4; // @gotags: sql:"fk(Image:id),index=hash"
   string image_cve_id = 5; // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"

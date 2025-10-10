@@ -35,7 +35,7 @@ message GetSBOMResponse {
 }
 
 message Metadata {
-  google.protobuf.Timestamp LastVulnerabilityUpdate = 1;
+  google.protobuf.Timestamp LastVulnerabilityUpdate = 1 [lazy = true];
 }
 
 // Matcher finds vulnerabilities in index reports.

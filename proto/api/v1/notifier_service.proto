@@ -17,7 +17,7 @@ message GetNotifiersRequest {
 }
 
 message GetNotifiersResponse {
-  repeated storage.Notifier notifiers = 1;
+  repeated storage.Notifier notifiers = 1 [lazy = true];
 }
 
 message DeleteNotifierRequest {
@@ -26,7 +26,7 @@ message DeleteNotifierRequest {
 }
 
 message UpdateNotifierRequest {
-  storage.Notifier notifier = 1;
+  storage.Notifier notifier = 1 [lazy = true];
   // When false, use the stored credentials of an existing notifier configuration given its ID.
   bool update_password = 2;
 }

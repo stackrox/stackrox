@@ -30,9 +30,9 @@ message ReportConfiguration {
   oneof notifier_config {
     EmailNotifierConfiguration email_config = 7;
   }
-  storage.Schedule schedule = 8;
+  storage.Schedule schedule = 8 [lazy = true];
   ReportLastRunStatus last_run_status = 9;
-  google.protobuf.Timestamp last_successful_run_time = 10;
+  google.protobuf.Timestamp last_successful_run_time = 10 [lazy = true];
   ResourceScope resource_scope = 11;
   repeated NotifierConfiguration notifiers = 12 [lazy = true];
   SlimUser creator = 13; // @gotags: sql:"ignore_labels(User ID)"
@@ -45,7 +45,7 @@ message ReportLastRunStatus {
     FAILURE = 1;
   }
   RunStatus report_status = 1;
-  google.protobuf.Timestamp last_run_time = 2;
+  google.protobuf.Timestamp last_run_time = 2 [lazy = true];
   string error_msg = 3;
 }
 
@@ -68,7 +68,7 @@ message VulnerabilityReportFilters {
   oneof cves_since {
     bool all_vuln = 5;
     bool since_last_sent_scheduled_report = 6;
-    google.protobuf.Timestamp since_start_date = 7;
+    google.protobuf.Timestamp since_start_date = 7 [lazy = true];
   }
   repeated SimpleAccessScope.Rules access_scope_rules = 8 [lazy = true];
   bool include_nvd_cvss = 9;

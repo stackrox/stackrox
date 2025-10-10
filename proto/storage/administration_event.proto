@@ -28,8 +28,8 @@ message AdministrationEvent {
   }
   Resource resource = 7;
   int64 num_occurrences = 8; // @gotags: search:"Event Occurrence,hidden"
-  google.protobuf.Timestamp last_occurred_at = 9; // @gotags: search:"Last Updated,hidden"
-  google.protobuf.Timestamp created_at = 10; // @gotags: search:"Created Time,hidden"
+  google.protobuf.Timestamp last_occurred_at = 9 [lazy = true]; // @gotags: search:"Last Updated,hidden"
+  google.protobuf.Timestamp created_at = 10 [lazy = true]; // @gotags: search:"Created Time,hidden"
 }
 
 // AdministrationEventType is the storage representation of the event type.

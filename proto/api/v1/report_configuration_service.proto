@@ -14,24 +14,24 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message GetReportConfigurationsResponse {
-  repeated storage.ReportConfiguration report_configs = 1;
+  repeated storage.ReportConfiguration report_configs = 1 [lazy = true];
 }
 
 message GetReportConfigurationResponse {
-  storage.ReportConfiguration report_config = 1;
+  storage.ReportConfiguration report_config = 1 [lazy = true];
 }
 
 message PostReportConfigurationResponse {
-  storage.ReportConfiguration report_config = 1;
+  storage.ReportConfiguration report_config = 1 [lazy = true];
 }
 
 message PostReportConfigurationRequest {
-  storage.ReportConfiguration report_config = 1;
+  storage.ReportConfiguration report_config = 1 [lazy = true];
 }
 
 message UpdateReportConfigurationRequest {
   string id = 1;
-  storage.ReportConfiguration report_config = 2;
+  storage.ReportConfiguration report_config = 2 [lazy = true];
 }
 
 message CountReportConfigurationsResponse {

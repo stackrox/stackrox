@@ -74,7 +74,7 @@ message MsgToSensor {
     ReprocessDeployment reprocess_deployment = 15;
     InvalidateImageCache invalidate_image_cache = 16;
     IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
-    storage.Image updated_image = 18;
+    storage.Image updated_image = 18 [lazy = true];
     ReprocessDeployments reprocess_deployments = 19;
     NodeInventoryACK node_inventory_ack = 20;
     DelegatedRegistryConfig delegated_registry_config = 21;
@@ -117,11 +117,11 @@ message NodeInventoryACK {
 }
 
 message AuditLogSync {
-  map<string, storage.AuditLogFileState> node_audit_log_file_states = 1;
+  map<string, storage.AuditLogFileState> node_audit_log_file_states = 1 [lazy = true];
 }
 
 message AuditLogStatusInfo {
-  map<string, storage.AuditLogFileState> node_audit_log_file_states = 1;
+  map<string, storage.AuditLogFileState> node_audit_log_file_states = 1 [lazy = true];
 }
 
 message ReprocessDeployment {

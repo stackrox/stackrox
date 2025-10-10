@@ -29,8 +29,8 @@ message CollectionDeploymentMatchOptions {
 }
 
 message GetCollectionResponse {
-  storage.ResourceCollection collection = 1;
-  repeated storage.ListDeployment deployments = 2;
+  storage.ResourceCollection collection = 1 [lazy = true];
+  repeated storage.ListDeployment deployments = 2 [lazy = true];
 }
 
 message GetCollectionCountRequest {
@@ -44,37 +44,37 @@ message GetCollectionCountResponse {
 message CreateCollectionRequest {
   string name = 1;
   string description = 2;
-  repeated storage.ResourceSelector resource_selectors = 3;
+  repeated storage.ResourceSelector resource_selectors = 3 [lazy = true];
   repeated string embedded_collection_ids = 4;
 }
 
 message CreateCollectionResponse {
-  storage.ResourceCollection collection = 1;
+  storage.ResourceCollection collection = 1 [lazy = true];
 }
 
 message UpdateCollectionRequest {
   string id = 1;
   string name = 2;
   string description = 3;
-  repeated storage.ResourceSelector resource_selectors = 4;
+  repeated storage.ResourceSelector resource_selectors = 4 [lazy = true];
   repeated string embedded_collection_ids = 5;
 }
 
 message UpdateCollectionResponse {
-  storage.ResourceCollection collection = 1;
+  storage.ResourceCollection collection = 1 [lazy = true];
 }
 
 message DryRunCollectionRequest {
   string name = 1;
   string id = 2; // set if dryrun on existing collections
   string description = 3;
-  repeated storage.ResourceSelector resource_selectors = 4;
+  repeated storage.ResourceSelector resource_selectors = 4 [lazy = true];
   repeated string embedded_collection_ids = 5;
   CollectionDeploymentMatchOptions options = 6;
 }
 
 message DryRunCollectionResponse {
-  repeated storage.ListDeployment deployments = 1;
+  repeated storage.ListDeployment deployments = 1 [lazy = true];
 }
 
 message ListCollectionsRequest {
@@ -82,7 +82,7 @@ message ListCollectionsRequest {
 }
 
 message ListCollectionsResponse {
-  repeated storage.ResourceCollection collections = 1;
+  repeated storage.ResourceCollection collections = 1 [lazy = true];
 }
 
 service CollectionService {

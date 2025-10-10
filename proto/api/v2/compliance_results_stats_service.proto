@@ -16,7 +16,7 @@ option features.(pb.go).api_level = API_OPAQUE;
 message ComplianceScanStatsShim {
   string scan_name = 1;
   repeated ComplianceCheckStatusCount check_stats = 2 [lazy = true];
-  google.protobuf.Timestamp last_scan = 3;
+  google.protobuf.Timestamp last_scan = 3 [lazy = true];
   string scan_config_id = 4;
 }
 

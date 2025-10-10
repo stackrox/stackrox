@@ -15,7 +15,7 @@ message NamespaceMetadata {
   string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
   string cluster_name = 4; // @gotags: search:"Cluster"
   map<string, string> labels = 5 [lazy = true]; // @gotags: search:"Namespace Label"
-  google.protobuf.Timestamp creation_time = 6;
+  google.protobuf.Timestamp creation_time = 6 [lazy = true];
   int64 priority = 7;
   map<string, string> annotations = 8 [lazy = true]; // @gotags: search:"Namespace Annotation"
 }

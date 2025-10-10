@@ -27,7 +27,7 @@ message K8sRole {
   bool cluster_role = 6; // @gotags: search:"Cluster Role"
   map<string, string> labels = 7 [lazy = true]; // @gotags: search:"Role Label"
   map<string, string> annotations = 8 [lazy = true]; // @gotags: search:"Role Annotation"
-  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp created_at = 9 [lazy = true];
 
   repeated PolicyRule rules = 10 [lazy = true]; // @gotags: sensorhash:"set"
 }
@@ -56,7 +56,7 @@ message K8sRoleBinding {
   bool cluster_role = 6; // @gotags: search:"Cluster Role"
   map<string, string> labels = 7 [lazy = true]; // @gotags: search:"Role Binding Label"
   map<string, string> annotations = 8 [lazy = true]; // @gotags: search:"Role Binding Annotation"
-  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp created_at = 9 [lazy = true];
 
   repeated Subject subjects = 10 [lazy = true];
   string role_id = 11; // @gotags: search:"Role ID" sql:"type(uuid)"

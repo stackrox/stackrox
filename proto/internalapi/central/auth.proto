@@ -10,5 +10,5 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message ServiceCertAuth {
   bytes cert_der = 1;
-  google.protobuf.Timestamp current_time = 2;
+  google.protobuf.Timestamp current_time = 2 [lazy = true];
 }

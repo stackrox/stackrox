@@ -119,7 +119,7 @@ message ECRConfig {
   message AuthorizationData {
     string username = 1;
     string password = 2; // @gotags: scrub:"always"
-    google.protobuf.Timestamp expires_at = 3;
+    google.protobuf.Timestamp expires_at = 3 [lazy = true];
   }
 }
 

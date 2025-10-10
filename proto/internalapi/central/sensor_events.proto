@@ -47,7 +47,7 @@ message AlertResults {
   }
   // Only relevant if source == DEPLOYMENT.
   string deployment_id = 1;
-  repeated storage.Alert alerts = 2;
+  repeated storage.Alert alerts = 2 [lazy = true];
   storage.LifecycleStage stage = 3;
   Source source = 4;
 }
@@ -73,34 +73,34 @@ message SensorEvent {
   }
 
   oneof resource {
-    storage.NetworkPolicy network_policy = 4;
-    storage.Deployment deployment = 5;
-    storage.Pod pod = 19;
-    storage.NamespaceMetadata namespace = 6;
-    storage.Secret secret = 7;
-    storage.Node node = 9;
-    storage.NodeInventory node_inventory = 25;
-    scanner.v4.IndexReport index_report = 34;
-    storage.ServiceAccount service_account = 14;
-    storage.K8sRole role = 15;
-    storage.K8sRoleBinding binding = 16;
+    storage.NetworkPolicy network_policy = 4 [lazy = true];
+    storage.Deployment deployment = 5 [lazy = true];
+    storage.Pod pod = 19 [lazy = true];
+    storage.NamespaceMetadata namespace = 6 [lazy = true];
+    storage.Secret secret = 7 [lazy = true];
+    storage.Node node = 9 [lazy = true];
+    storage.NodeInventory node_inventory = 25 [lazy = true];
+    scanner.v4.IndexReport index_report = 34 [lazy = true];
+    storage.ServiceAccount service_account = 14 [lazy = true];
+    storage.K8sRole role = 15 [lazy = true];
+    storage.K8sRoleBinding binding = 16 [lazy = true];
 
-    storage.ProcessIndicator process_indicator = 8;
-    storage.ProviderMetadata provider_metadata = 10;
+    storage.ProcessIndicator process_indicator = 8 [lazy = true];
+    storage.ProviderMetadata provider_metadata = 10 [lazy = true];
     ResourcesSynced synced = 11;
-    storage.OrchestratorMetadata orchestrator_metadata = 12;
-    storage.ImageIntegration image_integration = 13;
+    storage.OrchestratorMetadata orchestrator_metadata = 12 [lazy = true];
+    storage.ImageIntegration image_integration = 13 [lazy = true];
     ReprocessDeploymentRisk reprocess_deployment = 17;
     AlertResults alert_results = 18;
 
-    storage.ComplianceOperatorCheckResult compliance_operator_result = 20;
-    storage.ComplianceOperatorProfile compliance_operator_profile = 21;
-    storage.ComplianceOperatorRule compliance_operator_rule = 22;
-    storage.ComplianceOperatorScanSettingBinding compliance_operator_scan_setting_binding = 23;
-    storage.ComplianceOperatorScan compliance_operator_scan = 24;
+    storage.ComplianceOperatorCheckResult compliance_operator_result = 20 [lazy = true];
+    storage.ComplianceOperatorProfile compliance_operator_profile = 21 [lazy = true];
+    storage.ComplianceOperatorRule compliance_operator_rule = 22 [lazy = true];
+    storage.ComplianceOperatorScanSettingBinding compliance_operator_scan_setting_binding = 23 [lazy = true];
+    storage.ComplianceOperatorScan compliance_operator_scan = 24 [lazy = true];
 
-    virtualmachine.v1.IndexReportEvent virtual_machine_index_report = 35;
-    virtualmachine.v1.VirtualMachine virtual_machine = 36;
+    virtualmachine.v1.IndexReportEvent virtual_machine_index_report = 35 [lazy = true];
+    virtualmachine.v1.VirtualMachine virtual_machine = 36 [lazy = true];
 
     // V2 Compliance
     ComplianceOperatorCheckResultV2 compliance_operator_result_v2 = 27;
@@ -168,7 +168,7 @@ message ScrapeUpdate {
   string scrape_id = 1;
 
   oneof update {
-    compliance.ComplianceReturn compliance_return = 2;
+    compliance.ComplianceReturn compliance_return = 2 [lazy = true];
     ScrapeStarted scrape_started = 3;
     ScrapeKilled scrape_killed = 4;
   }
@@ -188,7 +188,7 @@ message ScrapeKilled {
 message NetworkPoliciesCommand {
   message Apply {
     string apply_id = 1;
-    storage.NetworkPolicyModification modification = 2;
+    storage.NetworkPolicyModification modification = 2 [lazy = true];
   }
 
   message Payload {
@@ -204,7 +204,7 @@ message NetworkPoliciesCommand {
 message NetworkPoliciesResponse {
   message Apply {
     string apply_id = 1;
-    storage.NetworkPolicyModification undo_modification = 2;
+    storage.NetworkPolicyModification undo_modification = 2 [lazy = true];
   }
 
   message Error {

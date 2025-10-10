@@ -23,7 +23,7 @@ message GetImageRequest {
 }
 
 message ListImagesResponse {
-  repeated storage.ListImage images = 1;
+  repeated storage.ListImage images = 1 [lazy = true];
 }
 
 message CountImagesResponse {
@@ -49,38 +49,38 @@ message ScanImageInternalRequest {
     repeated string image_pull_secrets = 3;
   }
 
-  storage.ContainerImage image = 1;
+  storage.ContainerImage image = 1 [lazy = true];
   reserved 2;
   bool cached_only = 3;
   Source source = 4;
 }
 
 message ScanImageInternalResponse {
-  storage.Image image = 1;
+  storage.Image image = 1 [lazy = true];
 }
 
 message GetImageVulnerabilitiesInternalRequest {
   string image_id = 1;
-  storage.ImageName image_name = 2;
-  storage.ImageMetadata metadata = 3;
+  storage.ImageName image_name = 2 [lazy = true];
+  storage.ImageMetadata metadata = 3 [lazy = true];
   bool is_cluster_local = 6;
-  scannerV1.Components components = 4;
+  scannerV1.Components components = 4 [lazy = true];
   repeated scannerV1.Note notes = 5;
 }
 
 message EnrichLocalImageInternalRequest {
   string indexer_version = 12;
   string image_id = 1;
-  storage.ImageName image_name = 2;
-  storage.ImageMetadata metadata = 3;
-  storage.ImageSignature image_signature = 4;
-  scannerV1.Components components = 5;
+  storage.ImageName image_name = 2 [lazy = true];
+  storage.ImageMetadata metadata = 3 [lazy = true];
+  storage.ImageSignature image_signature = 4 [lazy = true];
+  scannerV1.Components components = 5 [lazy = true];
   repeated scannerV1.Note notes = 6;
   repeated storage.Image.Note image_notes = 7;
   string error = 8;
   string request_id = 9;
   bool force = 10;
-  scanner.v4.Contents v4_contents = 11;
+  scanner.v4.Contents v4_contents = 11 [lazy = true];
 }
 
 message UpdateLocalScanStatusInternalRequest {
@@ -131,7 +131,7 @@ message UnwatchImageRequest {
 }
 
 message GetWatchedImagesResponse {
-  repeated storage.WatchedImage watched_images = 1;
+  repeated storage.WatchedImage watched_images = 1 [lazy = true];
 }
 
 // ScanImageInternalResponseDetails contains proto messages that are added to details
@@ -148,7 +148,7 @@ message ExportImageRequest {
 }
 
 message ExportImageResponse {
-  storage.Image image = 1;
+  storage.Image image = 1 [lazy = true];
 }
 
 // ImageService APIs manages image metadata.

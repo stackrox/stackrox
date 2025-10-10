@@ -19,10 +19,10 @@ message PolicyCategory {
 }
 
 message PostPolicyCategoryRequest {
-  v1.PolicyCategory policyCategory = 1;
+  v1.PolicyCategory policyCategory = 1 [lazy = true];
 }
 message GetPolicyCategoriesResponse {
-  repeated v1.PolicyCategory categories = 1;
+  repeated v1.PolicyCategory categories = 1 [lazy = true];
 }
 
 message RenamePolicyCategoryRequest {

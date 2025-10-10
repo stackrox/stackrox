@@ -48,7 +48,7 @@ message DiscoveredCluster {
     // The region as reported by the cloud provider.
     string region = 5;
     // Timestamp at which the cluster was first discovered by the cloud source.
-    google.protobuf.Timestamp first_discovered_at = 6;
+    google.protobuf.Timestamp first_discovered_at = 6 [lazy = true];
   }
   Metadata metadata = 2;
 

@@ -15,7 +15,7 @@ message RequestComment {
   string id = 1;
   string message = 2;
   SlimUser user = 3; // @gotags: sql:"ignore_labels(User ID)"
-  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp created_at = 4 [lazy = true];
 }
 
 // Indicates the status of a request. Requests canceled by the user before they are acted upon by the approver
@@ -42,7 +42,7 @@ message RequestExpiry {
     // Indicates that this request expires when the associated vulnerability is fixed.
     bool expires_when_fixed = 1; // @gotags: search:"Request Expires When Fixed"
     // Indicates the timestamp when this request expires.
-    google.protobuf.Timestamp expires_on = 2; // @gotags: search:"Request Expiry Time"
+    google.protobuf.Timestamp expires_on = 2 [lazy = true]; // @gotags: search:"Request Expiry Time"
   }
 
   // This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.
@@ -114,8 +114,8 @@ message VulnerabilityRequest {
   bool expired = 4; // @gotags: search:"Expired Request"
   SlimUser requestor = 5 [deprecated = true]; // @gotags: sql:"ignore_labels(User ID)"
   repeated SlimUser approvers = 6 [deprecated = true]; // @gotags: sql:"ignore_labels(User ID)"
-  google.protobuf.Timestamp created_at = 7; // @gotags: search:"Created Time"
-  google.protobuf.Timestamp last_updated = 8; // @gotags: search:"Last Updated"
+  google.protobuf.Timestamp created_at = 7 [lazy = true]; // @gotags: search:"Created Time"
+  google.protobuf.Timestamp last_updated = 8 [lazy = true]; // @gotags: search:"Last Updated"
   repeated RequestComment comments = 9 [lazy = true];
   Scope scope = 10;
   Requester requester_v2 = 28;

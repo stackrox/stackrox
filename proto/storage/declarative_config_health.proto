@@ -34,5 +34,5 @@ message DeclarativeConfigHealth {
   ResourceType resource_type = 7;
 
   // Timestamp when the current status was set.
-  google.protobuf.Timestamp last_timestamp = 8;
+  google.protobuf.Timestamp last_timestamp = 8 [lazy = true];
 }

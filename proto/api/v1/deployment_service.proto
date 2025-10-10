@@ -24,7 +24,7 @@ message DeploymentLabelsResponse {
 }
 
 message ListDeploymentsResponse {
-  repeated storage.ListDeployment deployments = 1;
+  repeated storage.ListDeployment deployments = 1 [lazy = true];
 }
 
 message CountDeploymentsResponse {
@@ -33,16 +33,16 @@ message CountDeploymentsResponse {
 
 message ListDeploymentsWithProcessInfoResponse {
   message DeploymentWithProcessInfo {
-    storage.ListDeployment deployment = 1;
+    storage.ListDeployment deployment = 1 [lazy = true];
     reserved 2; // formerly whitelist_statuses
-    repeated storage.ContainerNameAndBaselineStatus baseline_statuses = 3;
+    repeated storage.ContainerNameAndBaselineStatus baseline_statuses = 3 [lazy = true];
   }
   repeated DeploymentWithProcessInfo deployments = 1 [lazy = true];
 }
 
 message GetDeploymentWithRiskResponse {
-  storage.Deployment deployment = 1;
-  storage.Risk risk = 2;
+  storage.Deployment deployment = 1 [lazy = true];
+  storage.Risk risk = 2 [lazy = true];
 }
 
 message ExportDeploymentRequest {
@@ -51,7 +51,7 @@ message ExportDeploymentRequest {
 }
 
 message ExportDeploymentResponse {
-  storage.Deployment deployment = 1;
+  storage.Deployment deployment = 1 [lazy = true];
 }
 
 // DeploymentService APIs can be used to manage deployments.

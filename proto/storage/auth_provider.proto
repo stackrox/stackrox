@@ -119,5 +119,5 @@ message AuthProvider {
   // In case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered
   // invalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional
   // login attempt).
-  google.protobuf.Timestamp last_updated = 14;
+  google.protobuf.Timestamp last_updated = 14 [lazy = true];
 }

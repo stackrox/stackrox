@@ -7,5 +7,5 @@ import "google/protobuf/go_features.proto";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message LocalSensorPolicies {
-  repeated storage.Policy policies = 1;
+  repeated storage.Policy policies = 1 [lazy = true];
 }

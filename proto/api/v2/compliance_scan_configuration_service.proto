@@ -28,7 +28,7 @@ message ClusterScanStatus {
     string phase = 1;
     string result = 2;
     string error_message = 3;
-    google.protobuf.Timestamp last_transition_time = 4;
+    google.protobuf.Timestamp last_transition_time = 4 [lazy = true];
   }
 
   SuiteStatus suite_status = 4;
@@ -57,8 +57,8 @@ message ComplianceScanConfigurationStatus {
   string scan_name = 2;
   BaseComplianceScanConfigurationSettings scan_config = 3;
   repeated ClusterScanStatus cluster_status = 4 [lazy = true];
-  google.protobuf.Timestamp created_time = 5;
-  google.protobuf.Timestamp last_updated_time = 6;
+  google.protobuf.Timestamp created_time = 5 [lazy = true];
+  google.protobuf.Timestamp last_updated_time = 6 [lazy = true];
   // Most recent user to update the scan settings
   SlimUser modified_by = 7;
   google.protobuf.Timestamp last_executed_time = 8;

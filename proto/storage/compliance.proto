@@ -101,8 +101,8 @@ message ComplianceRunMetadata {
   string standard_id = 2; // @gotags: search:"Standard ID,hidden,store"
   string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
 
-  google.protobuf.Timestamp start_timestamp = 4;
-  google.protobuf.Timestamp finish_timestamp = 5; // @gotags: search:"Compliance Run Finished Timestamp,hidden,store"
+  google.protobuf.Timestamp start_timestamp = 4 [lazy = true];
+  google.protobuf.Timestamp finish_timestamp = 5 [lazy = true]; // @gotags: search:"Compliance Run Finished Timestamp,hidden,store"
 
   bool success = 6;
   string error_message = 7;
@@ -165,8 +165,8 @@ message ComplianceAggregation {
     string cluster_id = 1;
     string standard_id = 2;
 
-    storage.ComplianceRunMetadata successful_run = 3;
-    repeated storage.ComplianceRunMetadata failed_runs = 4;
+    storage.ComplianceRunMetadata successful_run = 3 [lazy = true];
+    repeated storage.ComplianceRunMetadata failed_runs = 4 [lazy = true];
   }
 
   // Next available tag: 3

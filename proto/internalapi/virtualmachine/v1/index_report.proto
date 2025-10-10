@@ -12,7 +12,7 @@ option features.(pb.go).api_level = API_OPAQUE;
 // the package information.
 message IndexReport {
   string vsock_cid = 1;
-  scanner.v4.IndexReport index_v4 = 2;
+  scanner.v4.IndexReport index_v4 = 2 [lazy = true];
 }
 
 // The index report event is sent to Central and contains additional information

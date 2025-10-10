@@ -13,7 +13,7 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message BuildDetectionRequest {
   oneof Resource {
-    storage.ContainerImage image = 1;
+    storage.ContainerImage image = 1 [lazy = true];
     string image_name = 3;
   }
   bool no_external_metadata = 2;
@@ -29,12 +29,12 @@ message BuildDetectionRequest {
 }
 
 message BuildDetectionResponse {
-  repeated storage.Alert alerts = 1;
+  repeated storage.Alert alerts = 1 [lazy = true];
 }
 
 message DeployDetectionRequest {
   oneof Resource {
-    storage.Deployment deployment = 1;
+    storage.Deployment deployment = 1 [lazy = true];
   }
   bool no_external_metadata = 2;
   bool enforcement_only = 3;
@@ -56,7 +56,7 @@ message DeployDetectionResponse {
   message Run {
     string name = 1;
     string type = 2;
-    repeated storage.Alert alerts = 3;
+    repeated storage.Alert alerts = 3 [lazy = true];
   }
 
   repeated Run runs = 1 [lazy = true];
@@ -73,7 +73,7 @@ message DeployDetectionRemark {
 
 // This is a helper message for the roxctl JSON report, as jsonpb can only serialize protobuf messages
 message ResultAggregation {
-  repeated storage.Alert alerts = 1;
+  repeated storage.Alert alerts = 1 [lazy = true];
   repeated DeployDetectionRemark remarks = 2 [lazy = true];
 }
 

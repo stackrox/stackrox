@@ -42,11 +42,11 @@ message EnableDisablePolicyNotificationRequest {
 }
 
 message ListPoliciesResponse {
-  repeated storage.ListPolicy policies = 1;
+  repeated storage.ListPolicy policies = 1 [lazy = true];
 }
 
 message PostPolicyRequest {
-  storage.Policy policy = 1;
+  storage.Policy policy = 1 [lazy = true];
   bool enable_strict_validation = 2;
 }
 
@@ -84,7 +84,7 @@ message ImportPoliciesMetadata {
 
 message ImportPoliciesRequest {
   ImportPoliciesMetadata metadata = 1;
-  repeated storage.Policy policies = 2;
+  repeated storage.Policy policies = 2 [lazy = true];
 }
 
 message ImportPolicyError {
@@ -98,7 +98,7 @@ message ImportPolicyError {
 
 message ImportPolicyResponse {
   bool succeeded = 1;
-  storage.Policy policy = 2;
+  storage.Policy policy = 2 [lazy = true];
   repeated ImportPolicyError errors = 3 [lazy = true];
 }
 
@@ -108,7 +108,7 @@ message ImportPoliciesResponse {
 }
 
 message PolicyFromSearchResponse {
-  storage.Policy policy = 1;
+  storage.Policy policy = 1 [lazy = true];
   repeated string altered_search_terms = 2;
   bool has_nested_fields = 3;
 }
@@ -124,8 +124,8 @@ message GetPolicyMitreVectorsRequest {
 }
 
 message GetPolicyMitreVectorsResponse {
-  storage.Policy policy = 1;
-  repeated storage.MitreAttackVector vectors = 2;
+  storage.Policy policy = 1 [lazy = true];
+  repeated storage.MitreAttackVector vectors = 2 [lazy = true];
 }
 
 // PolicyService APIs can be used to manage policies.

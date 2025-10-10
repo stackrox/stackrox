@@ -56,7 +56,7 @@ message VulnerabilityReportFilters {
   oneof cves_since {
     bool all_vuln = 4;
     bool since_last_sent_scheduled_report = 5;
-    google.protobuf.Timestamp since_start_date = 6;
+    google.protobuf.Timestamp since_start_date = 6 [lazy = true];
   }
   bool include_nvd_cvss = 7;
   bool include_epss_probability = 8;
@@ -182,7 +182,7 @@ message ReportStatus {
   }
 
   RunState run_state = 1;
-  google.protobuf.Timestamp completed_at = 2;
+  google.protobuf.Timestamp completed_at = 2 [lazy = true];
   string error_msg = 3;
   ReportMethod report_request_type = 4;
   NotificationMethod report_notification_method = 5;

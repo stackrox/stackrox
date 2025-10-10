@@ -12,7 +12,7 @@ option java_package = "io.stackrox.proto.storage";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message BackupInfo {
-  google.protobuf.Timestamp backup_last_run_at = 1;
+  google.protobuf.Timestamp backup_last_run_at = 1 [lazy = true];
   OperationStatus status = 2;
   SlimUser requestor = 3; // @gotags: sql:"ignore_labels(User ID)"
 }

@@ -51,7 +51,7 @@ message Policy {
   repeated EnforcementAction enforcement_actions = 13; // @gotags: search:"Enforcement" crYaml:"enforcementActions,omitempty,stringer"
   // List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API.
   repeated string notifiers = 14; // @gotags: crYaml:",omitempty"
-  google.protobuf.Timestamp last_updated = 15; // @gotags: search:"Policy Last Updated" crYaml:"-"
+  google.protobuf.Timestamp last_updated = 15 [lazy = true]; // @gotags: search:"Policy Last Updated" crYaml:"-"
 
   // For internal use only.
   string SORT_name = 16; // @gotags: search:"SORT_Policy,hidden,analyzer=keyword" crYaml:"-"
@@ -130,7 +130,7 @@ message ListPolicy {
   bool disabled = 5;
   repeated LifecycleStage lifecycle_stages = 6;
   repeated string notifiers = 7;
-  google.protobuf.Timestamp last_updated = 8;
+  google.protobuf.Timestamp last_updated = 8 [lazy = true];
   EventSource event_source = 9;
   bool is_default = 10;
   PolicySource source = 11;
@@ -193,11 +193,11 @@ message Exclusion {
   }
   Image image = 7; // @gotags: crYaml:",omitempty"
 
-  google.protobuf.Timestamp expiration = 6; // @gotags: crYaml:",timestamp,omitempty"
+  google.protobuf.Timestamp expiration = 6 [lazy = true]; // @gotags: crYaml:",timestamp,omitempty"
 }
 
 // ExportPoliciesResponse is used by the API but it is defined in storage because we expect customers to store them.
 // We do backwards-compatibility checks on objects in the storge folder and those checks should be applied to this object
 message ExportPoliciesResponse {
-  repeated storage.Policy policies = 1;
+  repeated storage.Policy policies = 1 [lazy = true];
 }

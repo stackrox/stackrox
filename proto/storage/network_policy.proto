@@ -22,7 +22,7 @@ message NetworkPolicy {
   NetworkPolicySpec spec = 8;
   string yaml = 9;
   string api_version = 10;
-  google.protobuf.Timestamp created = 11;
+  google.protobuf.Timestamp created = 11 [lazy = true];
 }
 
 message NetworkPolicySpec {
@@ -90,7 +90,7 @@ message NetworkPolicyModification {
 message NetworkPolicyApplicationUndoRecord {
   string cluster_id = 5; // @gotags: sql:"pk,type(uuid)"
   string user = 1;
-  google.protobuf.Timestamp apply_timestamp = 2;
+  google.protobuf.Timestamp apply_timestamp = 2 [lazy = true];
 
   NetworkPolicyModification original_modification = 3;
   NetworkPolicyModification undo_modification = 4;

@@ -18,21 +18,21 @@ option features.(pb.go).api_level = API_OPAQUE;
 // A list of k8s roles (free of scoped information)
 // Next Tag: 2
 message ListRolesResponse {
-  repeated storage.K8sRole roles = 1;
+  repeated storage.K8sRole roles = 1 [lazy = true];
 }
 
 message GetRoleResponse {
-  storage.K8sRole role = 1;
+  storage.K8sRole role = 1 [lazy = true];
 }
 
 // A list of k8s role bindings (free of scoped information)
 // Next Tag: 2
 message ListRoleBindingsResponse {
-  repeated storage.K8sRoleBinding bindings = 1;
+  repeated storage.K8sRoleBinding bindings = 1 [lazy = true];
 }
 
 message GetRoleBindingResponse {
-  storage.K8sRoleBinding binding = 1;
+  storage.K8sRoleBinding binding = 1 [lazy = true];
 }
 
 // A list of k8s subjects (users and groups only, for service accounts, try the service account service)
@@ -42,19 +42,19 @@ message ListSubjectsResponse {
 }
 
 message SubjectAndRoles {
-  storage.Subject subject = 1;
-  repeated storage.K8sRole roles = 2;
+  storage.Subject subject = 1 [lazy = true];
+  repeated storage.K8sRole roles = 2 [lazy = true];
 }
 
 message GetSubjectResponse {
-  storage.Subject subject = 1;
-  repeated storage.K8sRole cluster_roles = 2;
+  storage.Subject subject = 1 [lazy = true];
+  repeated storage.K8sRole cluster_roles = 2 [lazy = true];
   repeated ScopedRoles scoped_roles = 3 [lazy = true];
 }
 
 message ScopedRoles {
   string namespace = 1;
-  repeated storage.K8sRole roles = 2;
+  repeated storage.K8sRole roles = 2 [lazy = true];
 }
 
 service RbacService {

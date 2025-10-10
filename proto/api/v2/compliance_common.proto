@@ -90,7 +90,7 @@ message ComplianceClusterOverallStats {
   ComplianceScanCluster cluster = 1;
   repeated ComplianceCheckStatusCount check_stats = 2 [lazy = true];
   repeated string cluster_errors = 3;
-  google.protobuf.Timestamp last_scan_time = 4;
+  google.protobuf.Timestamp last_scan_time = 4 [lazy = true];
 }
 
 // ListComplianceCheckScanStatsResponse provides stats per cluster

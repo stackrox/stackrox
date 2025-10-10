@@ -22,7 +22,7 @@ message ExtendedRpcStatus {
 
   // Additional error information that the client code can use to handle
   // the error, such as retry info or a help link.
-  repeated google.protobuf.Any details = 3;
+  repeated google.protobuf.Any details = 3 [lazy = true];
 
   // Backward compatibility to gRPC Gateway V1 returned error payload.
   // It contains the same string returned in "message" field.

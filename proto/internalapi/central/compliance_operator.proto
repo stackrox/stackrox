@@ -170,7 +170,7 @@ message ComplianceOperatorCheckResultV2 {
   string instructions = 8;
   map<string, string> labels = 9 [lazy = true];
   map<string, string> annotations = 10 [lazy = true];
-  google.protobuf.Timestamp created_time = 11;
+  google.protobuf.Timestamp created_time = 11 [lazy = true];
   reserved 12;
   reserved 13;
   string scan_name = 14;
@@ -238,10 +238,10 @@ message ComplianceOperatorScanStatusV2 {
   string warnings = 5;
   int64 remaining_retries = 6;
   // start_time is the creation time of the Scan resource
-  google.protobuf.Timestamp start_time = 7;
-  google.protobuf.Timestamp end_time = 8;
+  google.protobuf.Timestamp start_time = 7 [lazy = true];
+  google.protobuf.Timestamp end_time = 8 [lazy = true];
   // last_start_time is the last time the Scan resource was triggered
-  google.protobuf.Timestamp last_start_time = 9;
+  google.protobuf.Timestamp last_start_time = 9 [lazy = true];
 }
 
 message ComplianceOperatorScanSettingBindingV2 {
@@ -261,7 +261,7 @@ message ComplianceOperatorCondition {
   string status = 2;
   string reason = 3;
   string message = 4;
-  google.protobuf.Timestamp last_transition_time = 5;
+  google.protobuf.Timestamp last_transition_time = 5 [lazy = true];
 }
 
 message ComplianceOperatorStatus {

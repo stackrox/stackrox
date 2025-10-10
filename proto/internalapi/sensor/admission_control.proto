@@ -14,15 +14,15 @@ option go_package = "./internalapi/sensor;sensor";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message AdmissionControlSettings {
-  storage.DynamicClusterConfig cluster_config = 1;
-  storage.PolicyList enforced_deploy_time_policies = 2;
-  google.protobuf.Timestamp timestamp = 3;
+  storage.DynamicClusterConfig cluster_config = 1 [lazy = true];
+  storage.PolicyList enforced_deploy_time_policies = 2 [lazy = true];
+  google.protobuf.Timestamp timestamp = 3 [lazy = true];
   string cache_version = 4;
 
   string central_endpoint = 5;
 
   string cluster_id = 6;
-  storage.PolicyList runtime_policies = 7;
+  storage.PolicyList runtime_policies = 7 [lazy = true];
 }
 
 message AdmissionControlAlerts {
@@ -34,9 +34,9 @@ message AdmCtrlUpdateResourceRequest {
 
   central.ResourceAction action = 1;
   oneof resource {
-    storage.Deployment deployment = 2;
-    storage.Pod pod = 3;
-    storage.NamespaceMetadata namespace = 4;
+    storage.Deployment deployment = 2 [lazy = true];
+    storage.Pod pod = 3 [lazy = true];
+    storage.NamespaceMetadata namespace = 4 [lazy = true];
 
     ResourcesSynced synced = 5;
   }

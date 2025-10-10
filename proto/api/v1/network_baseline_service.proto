@@ -65,7 +65,7 @@ message NetworkBaselineStatusResponse {
 message NetworkBaselineExternalStatusRequest {
   string deployment_id = 1;
   string query = 2;
-  google.protobuf.Timestamp since = 3;
+  google.protobuf.Timestamp since = 3 [lazy = true];
   Pagination pagination = 4;
 }
 

@@ -12,7 +12,7 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message PutConfigRequest {
-  storage.Config config = 1;
+  storage.Config config = 1 [lazy = true];
 }
 
 message DayOption {
@@ -56,7 +56,7 @@ message UpdateVulnerabilityExceptionConfigResponse {
 }
 
 message PutPlatformComponentConfigRequest {
-  repeated storage.PlatformComponentConfig.Rule rules = 1;
+  repeated storage.PlatformComponentConfig.Rule rules = 1 [lazy = true];
 }
 
 message GetDefaultRedHatLayeredProductsRegexResponse {

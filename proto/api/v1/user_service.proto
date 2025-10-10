@@ -14,7 +14,7 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 // Next Tag: 2
 message GetUsersResponse {
-  repeated storage.User users = 1;
+  repeated storage.User users = 1 [lazy = true];
 }
 
 // UserAttributeTuple descript the auth:key:value tuple that decides group membership.

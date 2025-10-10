@@ -13,11 +13,11 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message GetExternalBackupsResponse {
-  repeated storage.ExternalBackup external_backups = 1;
+  repeated storage.ExternalBackup external_backups = 1 [lazy = true];
 }
 
 message UpdateExternalBackupRequest {
-  storage.ExternalBackup external_backup = 1;
+  storage.ExternalBackup external_backup = 1 [lazy = true];
   // When false, use the stored credentials of an existing external backup configuration given its ID.
   bool update_password = 2;
 }

@@ -22,7 +22,7 @@ message SuppressCVERequest {
   // For example, 3 seconds with 0 nanoseconds should be encoded in JSON format as "3s",
   // while 3 seconds and 1 nanosecond should be expressed in JSON format as "3.000000001s",
   // and 3 seconds and 1 microsecond should be expressed in JSON format as "3.000001s".
-  google.protobuf.Duration duration = 3;
+  google.protobuf.Duration duration = 3 [lazy = true];
 }
 
 message UnsuppressCVERequest {

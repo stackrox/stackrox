@@ -113,9 +113,9 @@ message ComplianceOperatorScanConfigurationV2 {
   // Will be configurable via env var
   bool strict_node_scan = 10;
   // Starting point for schedule will probably have to build upon it
-  storage.Schedule schedule = 11;
-  google.protobuf.Timestamp created_time = 12;
-  google.protobuf.Timestamp last_updated_time = 13;
+  storage.Schedule schedule = 11 [lazy = true];
+  google.protobuf.Timestamp created_time = 12 [lazy = true];
+  google.protobuf.Timestamp last_updated_time = 13 [lazy = true];
   // Most recent user to update the scan configurations
   SlimUser modified_by = 14; // @gotags: sql:"ignore_labels(User ID)"
   string description = 15;
@@ -134,7 +134,7 @@ message ComplianceOperatorClusterScanConfigStatus {
   string cluster_id = 1; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
   string scan_config_id = 2; // @gotags: search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"
   repeated string errors = 3;
-  google.protobuf.Timestamp last_updated_time = 4; // @gotags: search:"Compliance Scan Config Last Updated Time,hidden"
+  google.protobuf.Timestamp last_updated_time = 4 [lazy = true]; // @gotags: search:"Compliance Scan Config Last Updated Time,hidden"
   string cluster_name = 5;
 }
 
@@ -182,7 +182,7 @@ message ComplianceOperatorCheckResultV2 {
   string instructions = 8;
   map<string, string> labels = 9 [lazy = true];
   map<string, string> annotations = 10 [lazy = true];
-  google.protobuf.Timestamp created_time = 11; // @gotags: search:"Compliance Check Result Created Time,hidden"
+  google.protobuf.Timestamp created_time = 11 [lazy = true]; // @gotags: search:"Compliance Check Result Created Time,hidden"
   repeated string valuesUsed = 12;
   repeated string warnings = 13;
   string scan_name = 14;
@@ -192,7 +192,7 @@ message ComplianceOperatorCheckResultV2 {
   string scan_ref_id = 18; // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
   string rule_ref_id = 19; // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
   // last_started_time is the last time the Scan resource was triggered
-  google.protobuf.Timestamp last_started_time = 20; // @gotags: search:"Compliance Check Last Started Time,hidden"
+  google.protobuf.Timestamp last_started_time = 20 [lazy = true]; // @gotags: search:"Compliance Check Last Started Time,hidden"
 }
 
 //Next Tag: 4
@@ -216,14 +216,14 @@ message ComplianceOperatorScanV2 {
   ScanType scan_type = 8;
   NodeRole node_selector = 9;
   ScanStatus status = 10;
-  google.protobuf.Timestamp created_time = 11;
-  google.protobuf.Timestamp last_executed_time = 12; // @gotags: search:"Compliance Scan Last Executed Time,hidden"
+  google.protobuf.Timestamp created_time = 11 [lazy = true];
+  google.protobuf.Timestamp last_executed_time = 12 [lazy = true]; // @gotags: search:"Compliance Scan Last Executed Time,hidden"
   string scan_name = 13; // @gotags: search:"Compliance Scan Name,hidden"
   string warnings = 14;
   string product_type = 15;
   string scan_ref_id = 16; // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
   // last_started_time is the last time the Scan resource was triggered
-  google.protobuf.Timestamp last_started_time = 17; // @gotags: search:"Compliance Scan Last Started Time,hidden"
+  google.protobuf.Timestamp last_started_time = 17 [lazy = true]; // @gotags: search:"Compliance Scan Last Started Time,hidden"
 }
 
 // ComplianceOperatorScanSettingBindingV2 associates a scan setting with one or more compliance profiles
@@ -249,7 +249,7 @@ message ComplianceOperatorCondition {
   string status = 2;
   string reason = 3;
   string message = 4;
-  google.protobuf.Timestamp last_transition_time = 5;
+  google.protobuf.Timestamp last_transition_time = 5 [lazy = true];
 }
 
 // Next Tag: 5
@@ -300,7 +300,7 @@ message ComplianceOperatorReportSnapshotV2 {
 
   message Scan {
     string scan_ref_id = 1; // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"
-    google.protobuf.Timestamp last_started_time = 2; // @gotags: search:"Compliance Scan Last Started Time,hidden" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"
+    google.protobuf.Timestamp last_started_time = 2 [lazy = true]; // @gotags: search:"Compliance Scan Last Started Time,hidden" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"
   }
 
   repeated Scan scans = 7 [lazy = true];
@@ -325,7 +325,7 @@ message ComplianceOperatorReportData {
     string phase = 1;
     string result = 2;
     string error_message = 3;
-    google.protobuf.Timestamp last_transition_time = 4;
+    google.protobuf.Timestamp last_transition_time = 4 [lazy = true];
   }
 
   // Next available tag: 5
@@ -339,7 +339,7 @@ message ComplianceOperatorReportData {
 
   ComplianceOperatorScanConfigurationV2 scan_configuration = 1; // @gotags: search:"-" sql:"-"
   repeated ClusterStatus cluster_status = 2 [lazy = true];
-  google.protobuf.Timestamp last_executed_time = 3;
+  google.protobuf.Timestamp last_executed_time = 3 [lazy = true];
 }
 
 // Next Tag: 7
@@ -363,8 +363,8 @@ message ComplianceOperatorReportStatus {
     SCHEDULED = 1;
   }
   RunState run_state = 1; // @gotags: search:"Compliance Report State"
-  google.protobuf.Timestamp started_at = 2; // @gotags: search:"Compliance Report Started Time"
-  google.protobuf.Timestamp completed_at = 3; // @gotags: search:"Compliance Report Completed Time"
+  google.protobuf.Timestamp started_at = 2 [lazy = true]; // @gotags: search:"Compliance Report Started Time"
+  google.protobuf.Timestamp completed_at = 3 [lazy = true]; // @gotags: search:"Compliance Report Completed Time"
   string error_msg = 4;
   RunMethod report_request_type = 5; // @gotags: search:"Compliance Report Request Type"
   NotificationMethod report_notification_method = 6; // @gotags: search:"Compliance Report Notification Method"

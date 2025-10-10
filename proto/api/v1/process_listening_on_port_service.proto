@@ -17,7 +17,7 @@ message GetProcessesListeningOnPortsRequest {
 }
 
 message GetProcessesListeningOnPortsResponse {
-  repeated storage.ProcessListeningOnPort listening_endpoints = 1;
+  repeated storage.ProcessListeningOnPort listening_endpoints = 1 [lazy = true];
   int32 total_listening_endpoints = 2;
 }
 

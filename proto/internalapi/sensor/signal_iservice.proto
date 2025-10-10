@@ -18,7 +18,7 @@ message SignalStreamMessage {
     CollectorRegisterRequest collector_register_request = 1;
 
     // A signal event observed by Collector.
-    v1.Signal signal = 2;
+    v1.Signal signal = 2 [lazy = true];
   }
 }
 

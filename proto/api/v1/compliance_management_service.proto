@@ -42,8 +42,8 @@ message ComplianceRun {
 
   reserved 4;
 
-  google.protobuf.Timestamp start_time = 5;
-  google.protobuf.Timestamp finish_time = 6;
+  google.protobuf.Timestamp start_time = 5 [lazy = true];
+  google.protobuf.Timestamp finish_time = 6 [lazy = true];
 
   State state = 7;
   string error_message = 8;
@@ -56,7 +56,7 @@ message GetRecentComplianceRunsRequest {
   oneof standard_id_opt {
     string standard_id = 2;
   }
-  google.protobuf.Timestamp since = 3;
+  google.protobuf.Timestamp since = 3 [lazy = true];
 }
 
 message GetRecentComplianceRunsResponse {

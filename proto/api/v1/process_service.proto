@@ -16,12 +16,12 @@ message GetProcessesByDeploymentRequest {
 }
 
 message GetProcessesResponse {
-  repeated storage.ProcessIndicator processes = 1;
+  repeated storage.ProcessIndicator processes = 1 [lazy = true];
 }
 
 message ProcessGroup {
   string args = 1;
-  repeated storage.ProcessIndicator signals = 2;
+  repeated storage.ProcessIndicator signals = 2 [lazy = true];
 }
 
 message ProcessNameGroup {

@@ -12,7 +12,7 @@ option features.(pb.go).api_level = API_OPAQUE;
 message NetworkFlow {
   NetworkFlowProperties props = 1;
 
-  google.protobuf.Timestamp last_seen_timestamp = 2; // @gotags: sql:"index=brin"
+  google.protobuf.Timestamp last_seen_timestamp = 2 [lazy = true]; // @gotags: sql:"index=brin"
 
   // Need the clusterID as that is part of the key in RocksDB
   string cluster_id = 3; // @gotags: sql:"pk,type(uuid)"
@@ -20,7 +20,7 @@ message NetworkFlow {
   // This field is set by Central everytime a flow is upserted.
   // This should not be set by Sensor.
   // For more context: https://github.com/stackrox/stackrox/pull/14483
-  google.protobuf.Timestamp updated_at = 4; // @gotags: sql:"index=brin"
+  google.protobuf.Timestamp updated_at = 4 [lazy = true]; // @gotags: sql:"index=brin"
 }
 
 message NetworkFlowProperties {
@@ -36,7 +36,7 @@ message NetworkFlowProperties {
 message NetworkEndpoint {
   NetworkEndpointProperties props = 1;
 
-  google.protobuf.Timestamp last_active_timestamp = 2;
+  google.protobuf.Timestamp last_active_timestamp = 2 [lazy = true];
 }
 
 message NetworkEndpointProperties {

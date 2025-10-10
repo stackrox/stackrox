@@ -13,11 +13,11 @@ option java_package = "io.stackrox.proto.api.v1";
 option features.(pb.go).api_level = API_OPAQUE;
 
 message ListMitreAttackVectorsResponse {
-  repeated storage.MitreAttackVector mitre_attack_vectors = 1;
+  repeated storage.MitreAttackVector mitre_attack_vectors = 1 [lazy = true];
 }
 
 message GetMitreVectorResponse {
-  storage.MitreAttackVector mitre_attack_vector = 1;
+  storage.MitreAttackVector mitre_attack_vector = 1 [lazy = true];
 }
 
 // MitreAttackService can be used to retrieve information about MITRE ATT&CK matrix.

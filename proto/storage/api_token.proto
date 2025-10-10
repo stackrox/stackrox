@@ -15,8 +15,8 @@ message TokenMetadata {
   string id = 1; // @gotags: sql:"pk"
   string name = 2;
   repeated string roles = 7;
-  google.protobuf.Timestamp issued_at = 4;
-  google.protobuf.Timestamp expiration = 5; // @gotags: search:"Expiration,store"
+  google.protobuf.Timestamp issued_at = 4 [lazy = true];
+  google.protobuf.Timestamp expiration = 5 [lazy = true]; // @gotags: search:"Expiration,store"
   bool revoked = 6; // @gotags: search:"Revoked,store"
 
   string role = 3 [deprecated = true];

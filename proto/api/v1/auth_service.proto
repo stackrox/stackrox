@@ -24,12 +24,12 @@ message UserAttribute {
 message AuthStatus {
   oneof id {
     string user_id = 1;
-    storage.ServiceIdentity service_id = 2;
+    storage.ServiceIdentity service_id = 2 [lazy = true];
   }
-  google.protobuf.Timestamp expires = 3;
+  google.protobuf.Timestamp expires = 3 [lazy = true];
   string refresh_url = 4;
-  storage.AuthProvider auth_provider = 5;
-  storage.UserInfo user_info = 6;
+  storage.AuthProvider auth_provider = 5 [lazy = true];
+  storage.UserInfo user_info = 6 [lazy = true];
   repeated UserAttribute user_attributes = 7 [lazy = true];
   // Token returned to ACS by the underlying identity provider. This field is set only in a few,
   // specific contexts. Do not rely on this field being present in the response.

@@ -20,7 +20,7 @@ message VirtualMachine {
   string cluster_name = 5;
   map<string, string> facts = 6 [lazy = true];
 
-  google.protobuf.Timestamp last_updated = 7;
+  google.protobuf.Timestamp last_updated = 7 [lazy = true];
 
   int32 vsock_cid = 8;
   enum State {
@@ -34,7 +34,7 @@ message VirtualMachine {
 }
 
 message VirtualMachineScan {
-  google.protobuf.Timestamp scan_time = 1;
+  google.protobuf.Timestamp scan_time = 1 [lazy = true];
   string operating_system = 2;
   enum Note {
     UNSET = 0;

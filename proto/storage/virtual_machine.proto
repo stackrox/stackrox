@@ -17,7 +17,7 @@ message VirtualMachine {
   string cluster_name = 5; // @gotags: search:"Cluster,store"
   map<string, string> facts = 6 [lazy = true];
 
-  google.protobuf.Timestamp last_updated = 7;
+  google.protobuf.Timestamp last_updated = 7 [lazy = true];
 
   enum Note {
     MISSING_METADATA = 0;
@@ -39,7 +39,7 @@ message VirtualMachine {
 }
 
 message VirtualMachineScan {
-  google.protobuf.Timestamp scan_time = 1;
+  google.protobuf.Timestamp scan_time = 1 [lazy = true];
   string operating_system = 2;
   enum Note {
     UNSET = 0;
@@ -84,10 +84,10 @@ message VirtualMachineCVEInfo {
   string summary = 2;
   string link = 3;
   // This indicates the timestamp when the cve was first published in the cve feeds.
-  google.protobuf.Timestamp published_on = 4;
+  google.protobuf.Timestamp published_on = 4 [lazy = true];
   // Time when the CVE was first seen in the system.
-  google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp last_modified = 6;
+  google.protobuf.Timestamp created_at = 5 [lazy = true];
+  google.protobuf.Timestamp last_modified = 6 [lazy = true];
   repeated Reference references = 7 [lazy = true];
 
   // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc

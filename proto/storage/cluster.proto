@@ -75,7 +75,7 @@ message OrchestratorMetadata {
   oneof is_openshift {
     string openshift_version = 4;
   }
-  google.protobuf.Timestamp build_date = 2;
+  google.protobuf.Timestamp build_date = 2 [lazy = true];
   repeated string api_versions = 3;
 }
 
@@ -200,14 +200,14 @@ enum ManagerType {
 }
 
 message ClusterCertExpiryStatus {
-  google.protobuf.Timestamp sensor_cert_expiry = 1;
-  google.protobuf.Timestamp sensor_cert_not_before = 2;
+  google.protobuf.Timestamp sensor_cert_expiry = 1 [lazy = true];
+  google.protobuf.Timestamp sensor_cert_not_before = 2 [lazy = true];
 }
 
 message ClusterStatus {
   string sensor_version = 1;
   // This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
-  google.protobuf.Timestamp DEPRECATED_last_contact = 2;
+  google.protobuf.Timestamp DEPRECATED_last_contact = 2 [lazy = true];
   ProviderMetadata provider_metadata = 3;
   OrchestratorMetadata orchestrator_metadata = 4;
   ClusterUpgradeStatus upgrade_status = 5;
@@ -247,7 +247,7 @@ message ClusterUpgradeStatus {
     string id = 2;
     string target_version = 3; // only relevant if type == Upgrade
     string upgrader_image = 4;
-    google.protobuf.Timestamp initiated_at = 5;
+    google.protobuf.Timestamp initiated_at = 5 [lazy = true];
     UpgradeProgress progress = 6;
 
     UpgradeProcessType type = 7;
@@ -287,13 +287,13 @@ message UpgradeProgress {
 
   UpgradeState upgrade_state = 1;
   string upgrade_status_detail = 2;
-  google.protobuf.Timestamp since = 3;
+  google.protobuf.Timestamp since = 3 [lazy = true];
 }
 
 // AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance
 // For internal use only
 message AuditLogFileState {
-  google.protobuf.Timestamp collect_logs_since = 1;
+  google.protobuf.Timestamp collect_logs_since = 1 [lazy = true];
   string last_audit_id = 2; // Previously received audit id. May be empty
 }
 
@@ -330,7 +330,7 @@ message ClusterHealthStatus {
   // to re-run the CRS-flow which would then equip the attacker with a certificate & key issued to the cluster A.
   // As countermeasure we only allow re-running the CRS-flow only as long as the last_contact field is empty,
   // indicating that the legit cluster A's sensor has not yet connected with the CRS-issued service certificates.
-  google.protobuf.Timestamp last_contact = 5; // @gotags: search:"Last Contact,store"
+  google.protobuf.Timestamp last_contact = 5 [lazy = true]; // @gotags: search:"Last Contact,store"
 
   // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
   bool health_info_complete = 6;

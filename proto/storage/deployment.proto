@@ -28,7 +28,7 @@ message Deployment {
   map<string, string> labels = 7 [lazy = true]; // @gotags: search:"Deployment Label,store"
   map<string, string> pod_labels = 19 [lazy = true]; // @gotags: search:"Pod Label,store"
   LabelSelector label_selector = 20;
-  google.protobuf.Timestamp created = 8; // @gotags: search:"Created,store,hidden" hash:"ignore"
+  google.protobuf.Timestamp created = 8 [lazy = true]; // @gotags: search:"Created,store,hidden" hash:"ignore"
   string cluster_id = 9; // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
   string cluster_name = 10; // @gotags: search:"Cluster,store"
   repeated Container containers = 11 [lazy = true];
@@ -129,7 +129,7 @@ message Pod {
   // There is one bucket (list) per container name.
   repeated ContainerInstanceList terminated_instances = 7 [lazy = true]; // @gotags: search:"-"
   // Time Kubernetes reports the pod was created.
-  google.protobuf.Timestamp started = 8;
+  google.protobuf.Timestamp started = 8 [lazy = true];
 
   message ContainerInstanceList {
     repeated ContainerInstance instances = 1 [lazy = true];
@@ -151,13 +151,13 @@ message ContainerInstance {
   repeated string container_ips = 3;
 
   // The start time of the container
-  google.protobuf.Timestamp started = 4;
+  google.protobuf.Timestamp started = 4 [lazy = true];
 
   // Image ID
   string image_digest = 5; // @gotags: search:"Container Image Digest,hidden"
 
   // The finish time of the container, if it finished.
-  google.protobuf.Timestamp finished = 7;
+  google.protobuf.Timestamp finished = 7 [lazy = true];
 
   // The exit code of the container. Only valid when finished is populated.
   int32 exit_code = 8;
@@ -279,6 +279,6 @@ message ListDeployment {
   string cluster = 3;
   string cluster_id = 4;
   string namespace = 5;
-  google.protobuf.Timestamp created = 6;
+  google.protobuf.Timestamp created = 6 [lazy = true];
   int64 priority = 7;
 }

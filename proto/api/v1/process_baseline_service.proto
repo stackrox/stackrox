@@ -14,22 +14,22 @@ option features.(pb.go).api_level = API_OPAQUE;
 // and are identical to them except named differently. Reason: inclusive language.
 
 message GetProcessBaselineRequest {
-  storage.ProcessBaselineKey key = 1;
+  storage.ProcessBaselineKey key = 1 [lazy = true];
 }
 
 message UpdateProcessBaselinesRequest {
-  repeated storage.ProcessBaselineKey keys = 1;
-  repeated storage.BaselineItem add_elements = 2;
-  repeated storage.BaselineItem remove_elements = 3;
+  repeated storage.ProcessBaselineKey keys = 1 [lazy = true];
+  repeated storage.BaselineItem add_elements = 2 [lazy = true];
+  repeated storage.BaselineItem remove_elements = 3 [lazy = true];
 }
 
 message ProcessBaselinesResponse {
-  repeated storage.ProcessBaseline baselines = 1;
+  repeated storage.ProcessBaseline baselines = 1 [lazy = true];
 }
 
 message ProcessBaselineUpdateError {
   string error = 1;
-  storage.ProcessBaselineKey key = 2;
+  storage.ProcessBaselineKey key = 2 [lazy = true];
 }
 
 message BulkUpdateProcessBaselinesResponse {
@@ -37,12 +37,12 @@ message BulkUpdateProcessBaselinesResponse {
 }
 
 message UpdateProcessBaselinesResponse {
-  repeated storage.ProcessBaseline baselines = 1;
+  repeated storage.ProcessBaseline baselines = 1 [lazy = true];
   repeated ProcessBaselineUpdateError errors = 2 [lazy = true];
 }
 
 message LockProcessBaselinesRequest {
-  repeated storage.ProcessBaselineKey keys = 1;
+  repeated storage.ProcessBaselineKey keys = 1 [lazy = true];
   bool locked = 2;
 }
 

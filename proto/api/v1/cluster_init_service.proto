@@ -22,17 +22,17 @@ message InitBundleMeta {
   string id = 1;
   string name = 2;
   repeated ImpactedCluster impacted_clusters = 6 [lazy = true];
-  google.protobuf.Timestamp created_at = 3;
-  storage.User created_by = 4;
-  google.protobuf.Timestamp expires_at = 5;
+  google.protobuf.Timestamp created_at = 3 [lazy = true];
+  storage.User created_by = 4 [lazy = true];
+  google.protobuf.Timestamp expires_at = 5 [lazy = true];
 }
 
 message CRSMeta {
   string id = 1;
   string name = 2;
-  google.protobuf.Timestamp created_at = 3;
-  storage.User created_by = 4;
-  google.protobuf.Timestamp expires_at = 5;
+  google.protobuf.Timestamp created_at = 3 [lazy = true];
+  storage.User created_by = 4 [lazy = true];
+  google.protobuf.Timestamp expires_at = 5 [lazy = true];
 }
 
 message InitBundleGenResponse {
@@ -68,8 +68,8 @@ message CRSGenRequest {
 
 message CRSGenRequestExtended {
   string name = 1;
-  google.protobuf.Timestamp valid_until = 2;
-  google.protobuf.Duration valid_for = 3;
+  google.protobuf.Timestamp valid_until = 2 [lazy = true];
+  google.protobuf.Duration valid_for = 3 [lazy = true];
   int32 max_registrations = 4; // Support for this is to be implemented in ROX-26769.
 }
 
