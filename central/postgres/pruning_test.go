@@ -527,7 +527,7 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 }
 
 func (s *PostgresPruningSuite) TestPruneAPITokens() {
-	datastore := apitokenDS.NewTestPostgres(s.T(), s.testDB)
+	datastore := apitokenDS.GetTestPostgresDataStore(s.T(), s.testDB)
 	now := time.Now()
 	notExpired := now.Add(48 * time.Hour)
 	isExpired := now.Add(-48 * time.Hour)
