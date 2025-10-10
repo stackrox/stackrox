@@ -29,6 +29,7 @@ operator/tests/img/*.png
 pkg/booleanpolicy/default_policies_test.go
 pkg/branding/files/red_hat_acs_logo_rgb.png
 pkg/branding/files/stackrox_integration_logo.png
+pkg/cve/testdata_IDV2Golden.txt
 pkg/docker/types/types_easyjson.go
 pkg/fixtures/graph.go
 pkg/fixtures/image.go
@@ -37,10 +38,12 @@ pkg/images/enricher/enricher_impl_test.go
 pkg/images/enricher/enricher_v2_impl_test.go
 pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
+pkg/scancomponent/testdata_ComponentIDV2Golden.txt
 pkg/scannerv4/mappers/mappers.go
 pkg/scannerv4/mappers/mappers_test.go
 pkg/search/postgres/common_test.go
 pkg/sliceutils/gen-builtins-generic.go
+pkg/testutils/hashdata/image.json
 proto/storage/proto.lock
 qa-tests-backend/artifacts/**/*
 qa-tests-backend/gradle/wrapper/gradle-wrapper.jar

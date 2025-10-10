@@ -3,7 +3,7 @@ package scancomponent
 import (
 	"strconv"
 
-	"github.com/mitchellh/hashstructure/v2"
+	"github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/generated/storage"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -23,7 +23,7 @@ func ComponentIDV2(component *storage.EmbeddedImageScanComponent, imageID string
 	clonedComponent := component.CloneVT()
 	clonedComponent.SetTopCvss = nil
 
-	hash, err := hashstructure.Hash(clonedComponent, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
+	hash, err := hashstructure.Hash(clonedComponent, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {
 		return "", err
 	}
