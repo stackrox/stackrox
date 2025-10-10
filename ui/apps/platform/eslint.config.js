@@ -764,7 +764,7 @@ module.exports = [
     {
         files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: [
-            'src/Components/**',
+            'src/Components/CompoundSearchFilter/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/MitreAttackVectors/**',
             'src/Containers/Policies/**',

@@ -1,4 +1,5 @@
-import React, { AnchorHTMLAttributes, ReactElement } from 'react';
+import React from 'react';
+import type { AnchorHTMLAttributes, ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 
 /*

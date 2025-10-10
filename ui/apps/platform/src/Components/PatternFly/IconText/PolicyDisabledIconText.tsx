@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { CheckIcon, MinusIcon } from '@patternfly/react-icons';
 
 import IconText from './IconText';

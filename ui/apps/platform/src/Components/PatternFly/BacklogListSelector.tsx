@@ -1,4 +1,5 @@
-import React, { Key, ReactNode } from 'react';
+import React from 'react';
+import type { Key, ReactElement, ReactNode } from 'react';
 import {
     Badge,
     Button,
@@ -12,7 +13,8 @@ import {
 } from '@patternfly/react-core';
 import { CubesIcon, MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
-import { BaseCellProps, Table, Tbody, Td, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Tr } from '@patternfly/react-table';
+import type { BaseCellProps } from '@patternfly/react-table';
 
 type BacklogTableProps<Item> = {
     type: 'selected' | 'deselected';
@@ -40,7 +42,7 @@ function BacklogTable<Item>({
     buttonText,
     searchFilter = () => true,
     showBadge,
-}: BacklogTableProps<Item>) {
+}: BacklogTableProps<Item>): ReactElement {
     const actionIcon =
         type === 'selected' ? (
             <Icon>
