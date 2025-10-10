@@ -112,6 +112,8 @@ func TestSecretInformer(t *testing.T) {
 			k8sClient := fake.NewSimpleClientset()
 			var onAddCnt, onUpdateCnt, onDeleteCnt int
 			var mutex sync.RWMutex
+			syncChan := make(chan struct{})
+
 			informer := NewSecretInformer(
 				namespace,
 				secretName,
@@ -121,17 +123,20 @@ func TestSecretInformer(t *testing.T) {
 					defer mutex.Unlock()
 					onAddCnt++
 					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
+					syncChan <- struct{}{}
 				},
 				func(s *v1.Secret) {
 					mutex.Lock()
 					defer mutex.Unlock()
 					onUpdateCnt++
 					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
+					syncChan <- struct{}{}
 				},
 				func() {
 					mutex.Lock()
 					defer mutex.Unlock()
 					onDeleteCnt++
+					syncChan <- struct{}{}
 				},
 			)
 
@@ -142,13 +147,14 @@ func TestSecretInformer(t *testing.T) {
 			err = c.setupFn(k8sClient)
 			require.NoError(t, err)
 
-			assert.EventuallyWithT(t, func(t *assert.CollectT) {
-				mutex.RLock()
-				defer mutex.RUnlock()
-				assert.Equal(t, c.expectedOnAddCnt, onAddCnt)
-				assert.Equal(t, c.expectedOnUpdateCnt, onUpdateCnt)
-				assert.Equal(t, c.expectedOnDeleteCnt, onDeleteCnt)
-			}, 5*time.Second, 100*time.Millisecond)
+			for range c.expectedOnAddCnt + c.expectedOnDeleteCnt + c.expectedOnUpdateCnt {
+				<-syncChan
+			}
+			mutex.RLock()
+			defer mutex.RUnlock()
+			assert.Equal(t, c.expectedOnAddCnt, onAddCnt)
+			assert.Equal(t, c.expectedOnUpdateCnt, onUpdateCnt)
+			assert.Equal(t, c.expectedOnDeleteCnt, onDeleteCnt)
 		})
 	}
 }
