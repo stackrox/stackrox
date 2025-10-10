@@ -1,15 +1,25 @@
-import React, { ReactElement, ReactNode, useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
+import type {
+    FocusEvent,
+    FocusEventHandler,
+    MouseEvent as ReactMouseEvent,
+    ReactElement,
+    ReactNode,
+    Ref,
+} from 'react';
 import {
     Select,
     SelectOption,
-    SelectOptionProps,
     SelectGroup,
     MenuToggle,
-    MenuToggleElement,
     Badge,
     Flex,
     FlexItem,
     SelectList,
+} from '@patternfly/react-core';
+import type {
+    MenuToggleElement,
+    SelectOptionProps,
     SelectPopperProps,
 } from '@patternfly/react-core';
 
@@ -46,7 +56,7 @@ export type CheckboxSelectProps = {
     id?: string;
     selections: string[];
     onChange: (selection: string[]) => void;
-    onBlur?: React.FocusEventHandler<HTMLDivElement>;
+    onBlur?: FocusEventHandler<HTMLDivElement>;
     ariaLabel: string;
     children: ReactElement<SelectOptionProps>[];
     placeholderText?: string;
@@ -76,7 +86,7 @@ function CheckboxSelect({
         setIsOpen(!isOpen);
     }
 
-    function handleBlur(event: React.FocusEvent<HTMLDivElement>) {
+    function handleBlur(event: FocusEvent<HTMLDivElement>) {
         const { currentTarget, relatedTarget } = event;
 
         // Wait for focus to settle, then check if it moved outside the component
@@ -104,7 +114,7 @@ function CheckboxSelect({
     }
 
     function onSelect(
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         selection: string | number | undefined
     ) {
         if (typeof selection !== 'string' || !selections || !onChange) {
@@ -117,7 +127,7 @@ function CheckboxSelect({
         }
     }
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             className="pf-v5-u-w-100"
             id={toggleId}
