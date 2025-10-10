@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
+	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,15 +38,61 @@ type Event struct {
 }
 
 func TestPod(testT *testing.T) {
-	testT.Skip("Flaky: https://issues.redhat.com/browse/ROX-29771")
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
 
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
 	client := createK8sClient(testT)
-	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
+
+	// Increased outer retry: 5 attempts instead of 3 to handle transient infrastructure issues
+	testutils.Retry(testT, 5, 10*time.Second, func(retryT testutils.T) {
 		defer teardownPod(testT, client, kPod)
 		createPod(testT, client, kPod)
+
+		// Wait for pod to be fully running before proceeding
+		// Increased timeout to 3 minutes to handle slow CI environments (image pull, scheduling, etc.)
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		defer cancel()
+
+		var k8sPod *coreV1.Pod
+		// Increased from 30×2s (60s) to 60×3s (180s) to account for slower pod startup in CI
+		testutils.Retry(retryT, 60, 3*time.Second, func(waitT testutils.T) {
+			var err error
+			k8sPod, err = client.CoreV1().Pods(kPod.GetNamespace()).Get(ctx, kPod.GetName(), metav1.GetOptions{})
+			require.NoError(waitT, err, "failed to get pod %s", kPod.GetName())
+
+			// Log pod status for debugging
+			testT.Logf("Pod phase: %s, Reason: %s, Message: %s",
+				k8sPod.Status.Phase, k8sPod.Status.Reason, k8sPod.Status.Message)
+
+			// Provide detailed error message if pod is not running
+			if k8sPod.Status.Phase != coreV1.PodRunning {
+				var containerInfo strings.Builder
+				for _, status := range k8sPod.Status.ContainerStatuses {
+					containerInfo.WriteString(fmt.Sprintf("\n  - %s: ready=%v, started=%v",
+						status.Name, status.Ready, status.Started != nil && *status.Started))
+					if status.State.Waiting != nil {
+						containerInfo.WriteString(fmt.Sprintf(", waiting: %s - %s",
+							status.State.Waiting.Reason, status.State.Waiting.Message))
+					}
+				}
+				require.Failf(waitT, "pod not in Running phase",
+					"Pod %s is in %s phase (expected Running)\nContainers:%s\nPod Reason: %s\nPod Message: %s",
+					kPod.GetName(), k8sPod.Status.Phase, containerInfo.String(),
+					k8sPod.Status.Reason, k8sPod.Status.Message)
+			}
+
+			// Ensure all containers are ready before checking for process events
+			for _, status := range k8sPod.Status.ContainerStatuses {
+				require.True(waitT, status.Ready, "container %s not ready (state: %+v)",
+					status.Name, status.State)
+			}
+		})
+
+		testT.Logf("Pod %s is running with all containers ready", k8sPod.Name)
+
+		// Give collector a moment to start detecting processes after containers are ready
+		time.Sleep(5 * time.Second)
 
 		// Get the test deployment.
 		deploymentID := getDeploymentID(retryT, kPod.GetName())
@@ -64,60 +112,38 @@ func TestPod(testT *testing.T) {
 		// Verify the container count.
 		require.Equal(retryT, int32(2), pod.ContainerCount)
 
+		// Verify Pod start time is the creation time.
+		testT.Logf("Creation timestamps comparison: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
+		require.Equal(retryT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
+
 		if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
 			testT.Logf("Skipping parts of TestPod that relate to events because env var \"COLLECTION_METHOD\" is " +
 				"set to \"NO_COLLECTION\"")
-		} else {
-			// Verify the events.
-			var loopCount int
-			var events []Event
-			for {
-				events = getEvents(retryT, pod)
-				testT.Logf("%d: Events: %+v", loopCount, events)
-				if len(events) == 4 {
-					break
-				}
-				loopCount++
-				require.LessOrEqual(retryT, loopCount, 20)
-				time.Sleep(4 * time.Second)
-			}
+			return
+		}
+		testutils.Retry(retryT, 30, 5*time.Second, func(retryEventsT testutils.T) {
+			events := getEvents(retryEventsT, pod)
+			testT.Logf("Found %d events (expected 4): %+v", len(events), events)
+
+			// Verify we have all 4 expected events
+			require.Len(retryEventsT, events, 4, "expected 4 process events")
 
 			// Expecting processes: nginx, sh, date, sleep
 			eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
 			expected := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
 
 			testT.Logf("Event names: %+v", eventNames)
-			testT.Logf("Expected name: %+v", expected)
-			require.ElementsMatch(retryT, eventNames, expected)
+			testT.Logf("Expected names: %+v", expected)
+			require.ElementsMatch(retryEventsT, eventNames, expected)
 
 			// Verify the pod's timestamp is no later than the timestamp of the earliest event.
 			testT.Logf("Pod start comparison: %s vs %s", pod.Started, events[0].Timestamp.Time)
-			require.False(retryT, pod.Started.After(events[0].Timestamp.Time))
+			require.False(retryEventsT, pod.Started.After(events[0].Timestamp.Time))
 
 			// Verify risk event timeline csv
-			testT.Logf("Before CSV Check")
-			verifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
-			testT.Logf("After CSV Check")
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		k8sPod, err := client.CoreV1().Pods(kPod.GetNamespace()).Get(ctx, kPod.GetName(), metav1.GetOptions{})
-		if err != nil {
-			testT.Errorf("Error: %v", err)
-
-			pList, err := client.CoreV1().Pods(kPod.GetNamespace()).List(context.Background(), metav1.ListOptions{})
-			if err != nil {
-				testT.Errorf("error listing pods: %v", err)
-			}
-			testT.Logf("Pods list: %+v", pList)
-		}
-		testT.Logf("K8s pod: %+v", k8sPod)
-		require.NoError(retryT, err)
-		// Verify Pod start time is the creation time.
-		testT.Logf("Creation timestamps comparison: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
-		require.Equal(retryT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
+			testT.Logf("Verifying CSV export with %d events", len(eventNames))
+			verifyRiskEventTimelineCSV(retryEventsT, deploymentID, eventNames)
+		})
 	})
 }
 
