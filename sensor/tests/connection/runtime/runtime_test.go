@@ -29,7 +29,6 @@ var (
 )
 
 func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
-	t.Setenv(features.PreventSensorRestartOnDisconnect.EnvVar(), "true")
 	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
 	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stackrox/rox/sensor/testutils"
 	"github.com/stretchr/testify/require"
@@ -19,12 +18,6 @@ var (
 )
 
 func Test_AlertsAreSentAfterConnectionRestart(t *testing.T) {
-	t.Setenv(features.PreventSensorRestartOnDisconnect.EnvVar(), "true")
-	if !features.PreventSensorRestartOnDisconnect.Enabled() {
-		t.Skip("Skip tests when ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT is disabled")
-		t.SkipNow()
-	}
-
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
 

@@ -284,9 +284,6 @@ func (s *Sensor) Start() {
 	}
 	log.Info("All components have started")
 
-	okSig := s.centralConnectionFactory.OkSignal()
-	errSig := s.centralConnectionFactory.StopSignal()
-
 	err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message *internalmessage.SensorInternalMessage) {
 		if message.IsExpired() {
 			return
@@ -306,25 +303,8 @@ func (s *Sensor) Start() {
 		log.Warnf("Failed to register subscription to sensor internal message: %q", err)
 	}
 
-	if features.PreventSensorRestartOnDisconnect.Enabled() {
-		log.Info("Running Sensor with connection retry: preventing sensor restart on disconnect")
-		go s.communicationWithCentralWithRetries(&centralReachable)
-	} else {
-		log.Info("Running Sensor without connection retries: sensor will restart on disconnect")
-		// This has to be checked only if retries are not enabled. With retries, this signal will be checked
-		// inside communicationWithCentralWithRetries since it has to be re-checked on reconnects, and not
-		// crash if it fails.
-		select {
-		case <-errSig.Done():
-			s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
-			return
-		case <-okSig.Done():
-			s.changeState(common.SensorComponentEventCentralReachableHTTP)
-		case <-s.stoppedSig.Done():
-			return
-		}
-		go s.communicationWithCentral(&centralReachable)
-	}
+	log.Info("Running Sensor with connection retry: preventing sensor restart on disconnect")
+	go s.communicationWithCentralWithRetries(&centralReachable)
 }
 
 // newScannerDefinitionsRoute returns a custom route that serves scanner
@@ -345,14 +325,7 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 
 // Stop shuts down background tasks.
 func (s *Sensor) Stop() {
-	if features.PreventSensorRestartOnDisconnect.Enabled() {
-		s.stoppedSig.Signal()
-	} else {
-		// Stop communication with central.
-		if s.centralConnection != nil {
-			s.centralCommunication.Stop()
-		}
-	}
+	s.stoppedSig.Signal()
 
 	for _, c := range s.components {
 		c.Stop()
