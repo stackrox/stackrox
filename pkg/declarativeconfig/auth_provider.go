@@ -24,11 +24,13 @@ type OIDCConfig struct {
 	Issuer string `yaml:"issuer,omitempty"`
 	// Depending on callback mode, different OAuth 2.0 would be preferred.
 	// Possible values are: auto, post, query, fragment.
-	CallbackMode string `yaml:"mode,omitempty"`
-	ClientID     string `yaml:"clientID,omitempty"`
-	ClientSecret string `yaml:"clientSecret,omitempty"`
+	CallbackMode         string `yaml:"mode,omitempty"`
+	ClientID             string `yaml:"clientID,omitempty"`
+	ClientSecret         string `yaml:"clientSecret,omitempty"`
+	DoNotUseClientSecret bool   `yaml:"doNotUseClientSecret,omitempty"`
 	// Disables request for "offline_access" scope from OIDC identity provider.
-	DisableOfflineAccessScope bool `yaml:"disableOfflineAccessScope,omitempty"`
+	DisableOfflineAccessScope bool   `yaml:"disableOfflineAccessScope,omitempty"`
+	ExtraScopes               string `yaml:"extraScopes,omitempty"`
 }
 
 // SAMLConfig contains config values for SAML 2.0 auth provider.
