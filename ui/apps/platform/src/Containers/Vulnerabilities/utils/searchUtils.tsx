@@ -1,5 +1,4 @@
 import qs from 'qs';
-import { cloneDeep } from 'lodash';
 
 import {
     vulnerabilitiesNodeCvesPath,
@@ -13,21 +12,14 @@ import {
 } from 'types/cve.proto';
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
-import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import {
+    searchValueAsArray,
+    getRequestQueryStringForSearchFilter,
+    applyRegexSearchModifiers,
+} from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
 import { ensureStringArray } from 'utils/ensure';
-
-import {
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-} from '../searchFilterConfig';
 
 import {
     FixableStatus,
@@ -263,38 +255,4 @@ export function getStatusesForExceptionCount(
     vulnerabilityState: VulnerabilityState | undefined
 ): string[] {
     return vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'];
-}
-
-/*
- Search terms that will default to regex search.
-
- We only convert to regex search if the search field is of type 'text' or 'autocomplete'
-*/
-const regexSearchOptions = [
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-]
-    .flatMap((config) => config.attributes)
-    .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
-    .map(({ searchTerm }) => searchTerm);
-
-/**
- * Adds the regex search modifier to the search filter for any search options that support it.
- */
-export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFilter {
-    const regexSearchFilter = cloneDeep(searchFilter);
-
-    Object.entries(regexSearchFilter).forEach(([key, value]) => {
-        if (regexSearchOptions.some((option) => option.toLowerCase() === key.toLowerCase())) {
-            regexSearchFilter[key] = searchValueAsArray(value).map((val) => `r/${val}`);
-        }
-    });
-
-    return regexSearchFilter;
 }

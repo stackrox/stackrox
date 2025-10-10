@@ -10,6 +10,22 @@ import type {
 } from 'types/search';
 import type { ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
+import cloneDeep from 'lodash/cloneDeep';
+import { nodeAttributes } from 'Components/CompoundSearchFilter/attributes/node';
+import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
+import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
+import { imageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
+import { deploymentAttributes } from 'Components/CompoundSearchFilter/attributes/deployment';
+import { namespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
+import {
+    clusterIdAttribute,
+    clusterKubernetesVersionAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
+    clusterPlatformTypeAttribute,
+    clusterTypeAttribute,
+} from 'Components/CompoundSearchFilter/attributes/cluster';
+import { policyAttributes } from 'Components/CompoundSearchFilter/attributes/policy';
 
 /**
  *  Checks if the modifier exists in the searchOptions
@@ -385,4 +401,43 @@ export function deleteKeysCaseInsensitive(searchFilter: SearchFilter, keysToDele
         }
     });
     return nextFilter;
+}
+
+/*
+ Search terms that will default to regex search.
+
+ We only convert to regex search if the search field is of type 'text' or 'autocomplete'
+*/
+const regexSearchOptions = [
+    nodeAttributes,
+    imageAttributes,
+    imageCVEAttributes,
+    imageComponentAttributes,
+    deploymentAttributes,
+    namespaceAttributes,
+    clusterIdAttribute,
+    clusterKubernetesVersionAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
+    clusterPlatformTypeAttribute,
+    clusterTypeAttribute,
+    policyAttributes,
+]
+    .flat()
+    .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
+    .map(({ searchTerm }) => searchTerm);
+
+/**
+ * Adds the regex search modifier to the search filter for any search options that support it.
+ */
+export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFilter {
+    const regexSearchFilter = cloneDeep(searchFilter);
+
+    Object.entries(regexSearchFilter).forEach(([key, value]) => {
+        if (regexSearchOptions.some((option) => option.toLowerCase() === key.toLowerCase())) {
+            regexSearchFilter[key] = searchValueAsArray(value).map((val) => `r/${val}`);
+        }
+    });
+
+    return regexSearchFilter;
 }
