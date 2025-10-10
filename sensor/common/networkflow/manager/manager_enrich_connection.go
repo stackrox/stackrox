@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -221,9 +220,6 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
 			if oldTS, found := enrichedConnections[ind.NetworkConn]; !found || oldTS < status.lastSeen {
 				enrichedConnections[ind.NetworkConn] = status.lastSeen
-				if !features.SensorCapturesIntermediateEvents.Enabled() {
-					continue
-				}
 
 				concurrency.WithLock(&m.activeConnectionsMutex, func() {
 					if !status.isClosed() {
