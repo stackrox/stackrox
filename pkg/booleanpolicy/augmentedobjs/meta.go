@@ -32,6 +32,14 @@ var (
 			AddAugmentedObjectAt([]string{networkFlowAugKey}, NetworkFlowMeta).
 			AddAugmentedObjectAt([]string{networkPoliciesAppliedKey}, NetworkPoliciesAppliedMeta)
 
+	DeploymentFileActivityMeta = pathutil.NewAugmentedObjMeta((*storage.Deployment)(nil)).
+					AddAugmentedObjectAt([]string{"Containers", imageAugmentKey}, ImageMeta).
+					AddPlainObjectAt([]string{"Containers", "Config", "Env", envVarAugmentKey}, (*envVar)(nil)).
+					AddPlainObjectAt([]string{kubeEventAugKey}, (*storage.KubernetesEvent)(nil)).
+					AddAugmentedObjectAt([]string{networkFlowAugKey}, NetworkFlowMeta).
+					AddAugmentedObjectAt([]string{networkPoliciesAppliedKey}, NetworkPoliciesAppliedMeta).
+					AddAugmentedObjectAt([]string{"FileActivity"}, FileActivityMeta)
+
 	ImageMeta = pathutil.NewAugmentedObjMeta((*storage.Image)(nil)).
 			AddPlainObjectAt([]string{"Metadata", "V1", "Layers", dockerfileLineAugmentKey}, (*dockerfileLine)(nil)).
 			AddPlainObjectAt([]string{"Scan", "Components", componentAndVersionAugmentKey}, (*componentAndVersion)(nil)).

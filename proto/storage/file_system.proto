@@ -10,12 +10,12 @@ option java_package = "io.stackrox.proto.storage";
 
 message FileActivity {
   message File {
-    string path = 1;
-    string host_path = 2;
+    string path = 1; // @gotags: search:"File Path"
+    string host_path = 2; // @gotags: search:"File Host Path"
   }
 
   enum Operation {
-    CREAT = 0;
+    CREATE = 0;
     UNLINK = 1;
     RENAME = 2;
     PERMISSION_CHANGE = 3;
@@ -29,12 +29,10 @@ message FileActivity {
   ProcessIndicator process = 2;
   Operation operation = 3; // @gotags: search:"File Operation"
   File file = 4;
-  File moved = 5;
+  File moved = 5; // @gotags: search:"-"
   uint32 uid = 6;
   uint32 gid = 7;
   uint32 mode = 8;
   string username = 9;
   string group = 10;
-
-  string unexpected_activity = 11; // @gotags: policy:"Unexpected Filesystem Access"
 }

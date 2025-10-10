@@ -673,7 +673,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"process: ProcessIndicator",
 		"timestamp: Time",
 		"uid: Int!",
-		"unexpectedActivity: String!",
 		"username: String!",
 	}))
 	utils.Must(builder.AddType("FileActivity_File", []string{
@@ -8079,11 +8078,6 @@ func (resolver *fileActivityResolver) Timestamp(ctx context.Context) (*graphql.T
 func (resolver *fileActivityResolver) Uid(ctx context.Context) int32 {
 	value := resolver.data.GetUid()
 	return int32(value)
-}
-
-func (resolver *fileActivityResolver) UnexpectedActivity(ctx context.Context) string {
-	value := resolver.data.GetUnexpectedActivity()
-	return value
 }
 
 func (resolver *fileActivityResolver) Username(ctx context.Context) string {

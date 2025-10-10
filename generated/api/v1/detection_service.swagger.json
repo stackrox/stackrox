@@ -288,7 +288,7 @@
     "FileActivityOperation": {
       "type": "string",
       "enum": [
-        "CREAT",
+        "CREATE",
         "UNLINK",
         "RENAME",
         "PERMISSION_CHANGE",
@@ -296,7 +296,7 @@
         "WRITE",
         "OPEN"
       ],
-      "default": "CREAT"
+      "default": "CREATE"
     },
     "KeyValueAttrsKeyValueAttr": {
       "type": "object",
@@ -1028,9 +1028,6 @@
           "type": "string"
         },
         "group": {
-          "type": "string"
-        },
-        "unexpectedActivity": {
           "type": "string"
         }
       }

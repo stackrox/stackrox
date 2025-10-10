@@ -74,29 +74,36 @@ func ContainsValueWithFieldName(policy *storage.Policy, fieldName string) bool {
 // ContainsDiscreteRuntimeFieldCategorySections returns false if the policy groups
 // contain combination of process and kubernetes events fields.
 func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
+
 	if len(policy.GetPolicySections()) == 0 {
 		return false
 	}
 
 	for _, section := range policy.GetPolicySections() {
-		var numRuntimeCategories int
+		processCategories := 0
+		fileCategories := 0
+		otherRuntimeCategories := 0
+
 		if SectionContainsFieldOfType(section, KubeEvent) {
-			log.Info("Kube:", section)
-			numRuntimeCategories++
+			otherRuntimeCategories++
 		}
 		if SectionContainsFieldOfType(section, Process) {
-			log.Info("Process:", section)
-			numRuntimeCategories++
+			processCategories++
 		}
 		if SectionContainsFieldOfType(section, NetworkFlow) {
-			log.Info("Network:", section)
-			numRuntimeCategories++
+			otherRuntimeCategories++
 		}
 		if SectionContainsFieldOfType(section, FileActivity) {
-			log.Info("File:", section)
-			numRuntimeCategories++
+			fileCategories++
 		}
-		if numRuntimeCategories > 1 {
+
+		// No support for KubeEvent + NetworkFlow policies
+		if otherRuntimeCategories > 1 {
+			return false
+		}
+
+		// No support for (process/file activity) + (kubeevent/networkflow)
+		if otherRuntimeCategories != 0 && (processCategories != 0 || fileCategories != 0) {
 			return false
 		}
 	}

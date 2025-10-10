@@ -25,7 +25,7 @@ const (
 type FileActivity_Operation int32
 
 const (
-	FileActivity_CREAT             FileActivity_Operation = 0
+	FileActivity_CREATE            FileActivity_Operation = 0
 	FileActivity_UNLINK            FileActivity_Operation = 1
 	FileActivity_RENAME            FileActivity_Operation = 2
 	FileActivity_PERMISSION_CHANGE FileActivity_Operation = 3
@@ -37,7 +37,7 @@ const (
 // Enum value maps for FileActivity_Operation.
 var (
 	FileActivity_Operation_name = map[int32]string{
-		0: "CREAT",
+		0: "CREATE",
 		1: "UNLINK",
 		2: "RENAME",
 		3: "PERMISSION_CHANGE",
@@ -46,7 +46,7 @@ var (
 		6: "OPEN",
 	}
 	FileActivity_Operation_value = map[string]int32{
-		"CREAT":             0,
+		"CREATE":            0,
 		"UNLINK":            1,
 		"RENAME":            2,
 		"PERMISSION_CHANGE": 3,
@@ -84,20 +84,19 @@ func (FileActivity_Operation) EnumDescriptor() ([]byte, []int) {
 }
 
 type FileActivity struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Timestamp          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Process            *ProcessIndicator      `protobuf:"bytes,2,opt,name=process,proto3" json:"process,omitempty"`
-	Operation          FileActivity_Operation `protobuf:"varint,3,opt,name=operation,proto3,enum=storage.FileActivity_Operation" json:"operation,omitempty" search:"File Operation"` // @gotags: search:"File Operation"
-	File               *FileActivity_File     `protobuf:"bytes,4,opt,name=file,proto3" json:"file,omitempty"`
-	Moved              *FileActivity_File     `protobuf:"bytes,5,opt,name=moved,proto3" json:"moved,omitempty"`
-	Uid                uint32                 `protobuf:"varint,6,opt,name=uid,proto3" json:"uid,omitempty"`
-	Gid                uint32                 `protobuf:"varint,7,opt,name=gid,proto3" json:"gid,omitempty"`
-	Mode               uint32                 `protobuf:"varint,8,opt,name=mode,proto3" json:"mode,omitempty"`
-	Username           string                 `protobuf:"bytes,9,opt,name=username,proto3" json:"username,omitempty"`
-	Group              string                 `protobuf:"bytes,10,opt,name=group,proto3" json:"group,omitempty"`
-	UnexpectedActivity string                 `protobuf:"bytes,11,opt,name=unexpected_activity,json=unexpectedActivity,proto3" json:"unexpected_activity,omitempty" policy:"Unexpected Filesystem Access"` // @gotags: policy:"Unexpected Filesystem Access"
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Process       *ProcessIndicator      `protobuf:"bytes,2,opt,name=process,proto3" json:"process,omitempty"`
+	Operation     FileActivity_Operation `protobuf:"varint,3,opt,name=operation,proto3,enum=storage.FileActivity_Operation" json:"operation,omitempty" search:"File Operation"` // @gotags: search:"File Operation"
+	File          *FileActivity_File     `protobuf:"bytes,4,opt,name=file,proto3" json:"file,omitempty"`
+	Moved         *FileActivity_File     `protobuf:"bytes,5,opt,name=moved,proto3" json:"moved,omitempty" search:"-"` // @gotags: search:"-"
+	Uid           uint32                 `protobuf:"varint,6,opt,name=uid,proto3" json:"uid,omitempty"`
+	Gid           uint32                 `protobuf:"varint,7,opt,name=gid,proto3" json:"gid,omitempty"`
+	Mode          uint32                 `protobuf:"varint,8,opt,name=mode,proto3" json:"mode,omitempty"`
+	Username      string                 `protobuf:"bytes,9,opt,name=username,proto3" json:"username,omitempty"`
+	Group         string                 `protobuf:"bytes,10,opt,name=group,proto3" json:"group,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FileActivity) Reset() {
@@ -148,7 +147,7 @@ func (x *FileActivity) GetOperation() FileActivity_Operation {
 	if x != nil {
 		return x.Operation
 	}
-	return FileActivity_CREAT
+	return FileActivity_CREATE
 }
 
 func (x *FileActivity) GetFile() *FileActivity_File {
@@ -200,17 +199,10 @@ func (x *FileActivity) GetGroup() string {
 	return ""
 }
 
-func (x *FileActivity) GetUnexpectedActivity() string {
-	if x != nil {
-		return x.UnexpectedActivity
-	}
-	return ""
-}
-
 type FileActivity_File struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	HostPath      string                 `protobuf:"bytes,2,opt,name=host_path,json=hostPath,proto3" json:"host_path,omitempty"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty" search:"File Path"`                         // @gotags: search:"File Path"
+	HostPath      string                 `protobuf:"bytes,2,opt,name=host_path,json=hostPath,proto3" json:"host_path,omitempty" search:"File Host Path"` // @gotags: search:"File Host Path"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -263,7 +255,7 @@ var File_storage_file_system_proto protoreflect.FileDescriptor
 
 const file_storage_file_system_proto_rawDesc = "" +
 	"\n" +
-	"\x19storage/file_system.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xe4\x04\n" +
+	"\x19storage/file_system.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xb4\x04\n" +
 	"\fFileActivity\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
 	"\aprocess\x18\x02 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12=\n" +
@@ -275,13 +267,13 @@ const file_storage_file_system_proto_rawDesc = "" +
 	"\x04mode\x18\b \x01(\rR\x04mode\x12\x1a\n" +
 	"\busername\x18\t \x01(\tR\busername\x12\x14\n" +
 	"\x05group\x18\n" +
-	" \x01(\tR\x05group\x12/\n" +
-	"\x13unexpected_activity\x18\v \x01(\tR\x12unexpectedActivity\x1a7\n" +
+	" \x01(\tR\x05group\x1a7\n" +
 	"\x04File\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
-	"\thost_path\x18\x02 \x01(\tR\bhostPath\"p\n" +
-	"\tOperation\x12\t\n" +
-	"\x05CREAT\x10\x00\x12\n" +
+	"\thost_path\x18\x02 \x01(\tR\bhostPath\"q\n" +
+	"\tOperation\x12\n" +
+	"\n" +
+	"\x06CREATE\x10\x00\x12\n" +
 	"\n" +
 	"\x06UNLINK\x10\x01\x12\n" +
 	"\n" +
