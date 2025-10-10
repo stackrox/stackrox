@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { Collection, CollectionRequest } from 'services/CollectionsService';
 import { generateRequest } from '../converter';
 import type { ClientCollection } from '../types';

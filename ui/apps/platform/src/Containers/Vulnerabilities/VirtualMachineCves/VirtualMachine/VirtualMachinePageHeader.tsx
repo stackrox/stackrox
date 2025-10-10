@@ -1,49 +1,25 @@
 import React from 'react';
-import { Flex, Title, LabelGroup, Label } from '@patternfly/react-core';
+import { Flex, Title, LabelGroup, Label, Alert } from '@patternfly/react-core';
 
-import { getDateTime } from 'utils/dateUtils';
 import DeveloperPreviewLabel from 'Components/PatternFly/DeveloperPreviewLabel';
+import { VirtualMachine } from 'services/VirtualMachineService';
+import { getDateTime } from 'utils/dateUtils';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 
-// TODO: Move this to the service layer when it's implemented
-export type VirtualMachineMetadata = {
-    id: string;
-    name: string;
-    namespace: string;
-    description: string;
-    status: string;
-    ipAddress: string;
-    operatingSystem: string;
-    guestOS: string;
-    agent: string;
-    scanTime?: string;
-    createdAt?: string;
-    owner: string;
-    pod: string;
-    template: string;
-    bootOrder: string[];
-    workloadProfile: string;
-    cdroms: {
-        name: string;
-        source: string;
-    }[];
-    labels: {
-        key: string;
-        value: string;
-    }[];
-    annotations: {
-        key: string;
-        value: string;
-    }[];
-};
-
 export type VirtualMachinePageHeaderProps = {
-    data: VirtualMachineMetadata | undefined;
+    virtualMachineData: VirtualMachine | undefined;
+    isLoading: boolean;
+    error: Error | undefined;
 };
 
-function VirtualMachinePageHeader({ data }: VirtualMachinePageHeaderProps) {
-    if (!data) {
+function VirtualMachinePageHeader({
+    virtualMachineData,
+    isLoading,
+    error,
+}: VirtualMachinePageHeaderProps) {
+    if (isLoading) {
         return (
             <HeaderLoadingSkeleton
                 nameScreenreaderText="Loading Virtual Machine name"
@@ -52,18 +28,36 @@ function VirtualMachinePageHeader({ data }: VirtualMachinePageHeaderProps) {
         );
     }
 
+    if (error) {
+        return (
+            <Alert
+                variant="danger"
+                title="Unable to fetch virtual machine data"
+                component="p"
+                isInline
+            >
+                {getAxiosErrorMessage(error)}
+            </Alert>
+        );
+    }
+
+    if (!virtualMachineData) {
+        return null;
+    }
+
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
             <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                <Title headingLevel="h1">{data.name}</Title>
+                <Title headingLevel="h1">{virtualMachineData.name}</Title>
                 <DeveloperPreviewLabel />
             </Flex>
             <LabelGroup numLabels={5}>
-                <Label>GuestOS: {data.guestOS}</Label>
-                <Label>In: {data.namespace}</Label>
-                <Label>Agent: {data.agent}</Label>
-                {data.scanTime && <Label>Scan time: {getDateTime(data.scanTime)}</Label>}
-                {data.createdAt && <Label>Created: {getDateTime(data.createdAt)}</Label>}
+                <Label>
+                    In: {virtualMachineData.clusterName}/{virtualMachineData.namespace}
+                </Label>
+                {virtualMachineData.scan?.scanTime && (
+                    <Label>Scan time: {getDateTime(virtualMachineData.scan.scanTime)}</Label>
+                )}
             </LabelGroup>
         </Flex>
     );

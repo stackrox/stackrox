@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/pkg/rhctag"
+	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -29,9 +30,13 @@ var (
 
 const (
 	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
-	// From ClairCore rhel-vex matcher
-	goldenName = "Red Hat Container Catalog"
-	goldenURI  = `https://catalog.redhat.com/software/containers/explore`
+
+	goldenKey = rhcc.RepositoryKey
+)
+
+var (
+	goldenName = rhcc.GoldRepo.Name
+	goldenURI  = rhcc.GoldRepo.URI
 )
 
 type nodeInventoryHandlerImpl struct {
@@ -378,7 +383,17 @@ func extractArch(rpm *v4.IndexReport) string {
 			return distro.GetArch()
 		}
 	}
+	for _, distro := range rpm.GetContents().GetDistributionsDEPRECATED() {
+		if distro.GetArch() != "" && distro.GetArch() != "noarch" {
+			return distro.GetArch()
+		}
+	}
 	for _, p := range rpm.GetContents().GetPackages() {
+		if p.GetArch() != "" && p.GetArch() != "noarch" {
+			return p.GetArch()
+		}
+	}
+	for _, p := range rpm.GetContents().GetPackagesDEPRECATED() {
 		if p.GetArch() != "" && p.GetArch() != "noarch" {
 			return p.GetArch()
 		}
@@ -388,17 +403,31 @@ func extractArch(rpm *v4.IndexReport) string {
 
 func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport {
 	idCandidate := 600 // Arbitrary selected. RHCOS has usually 520-560 rpm packages.
-	for idTaken(rpm.GetContents().GetEnvironments(), idCandidate) {
+	envs := rpm.GetContents().GetEnvironments()
+	if len(envs) == 0 {
+		envs = rpm.GetContents().GetEnvironmentsDEPRECATED()
+	}
+	for idTaken(envs, idCandidate) {
 		idCandidate++
 	}
 	strID := strconv.Itoa(idCandidate)
 	oci := buildRHCOSIndexReport(strID, version, arch)
-	oci.Contents.Packages = append(oci.Contents.Packages, rpm.GetContents().GetPackages()...)
-	oci.Contents.Repositories = append(oci.Contents.Repositories, rpm.GetContents().GetRepositories()...)
+	for pkgID, pkg := range rpm.GetContents().GetPackages() {
+		oci.Contents.Packages[pkgID] = pkg
+	}
+	oci.Contents.PackagesDEPRECATED = append(oci.Contents.PackagesDEPRECATED, rpm.GetContents().GetPackagesDEPRECATED()...)
+	for repoID, repo := range rpm.GetContents().GetRepositories() {
+		oci.Contents.Repositories[repoID] = repo
+	}
+	oci.Contents.RepositoriesDEPRECATED = append(oci.Contents.RepositoriesDEPRECATED, rpm.GetContents().GetRepositoriesDEPRECATED()...)
 	for envId, list := range rpm.GetContents().GetEnvironments() {
 		oci.Contents.Environments[envId] = list
 	}
+	for envId, list := range rpm.GetContents().GetEnvironmentsDEPRECATED() {
+		oci.Contents.EnvironmentsDEPRECATED[envId] = list
+	}
 	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
+	oci.Contents.DistributionsDEPRECATED = rpm.GetContents().GetDistributionsDEPRECATED()
 	return oci
 }
 
@@ -410,7 +439,28 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 		Success: true,
 		Err:     "",
 		Contents: &v4.Contents{
-			Packages: []*v4.Package{
+			Packages: map[string]*v4.Package{
+				Id: {
+					Id:      Id,
+					Name:    "rhcos",
+					Version: version,
+					NormalizedVersion: &v4.NormalizedVersion{
+						Kind: "rhctag",
+						V:    normalizeVersion(version), // Only two first fields matter for the db-query.
+					},
+					Kind: "binary",
+					Source: &v4.Package{
+						Id:      Id,
+						Name:    "rhcos",
+						Kind:    "source",
+						Version: version,
+						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
+					},
+					Arch: arch,
+					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
+				},
+			},
+			PackagesDEPRECATED: []*v4.Package{
 				{
 					Id:      Id,
 					Name:    "rhcos",
@@ -431,17 +481,38 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
 				},
 			},
-			Repositories: []*v4.Repository{
+			Repositories: map[string]*v4.Repository{
+				Id: {
+					Id:   Id,
+					Name: goldenName,
+					Key:  goldenKey,
+					Uri:  goldenURI,
+					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
+				},
+			},
+			RepositoriesDEPRECATED: []*v4.Repository{
 				{
 					Id:   Id,
 					Name: goldenName,
-					Key:  "",
+					Key:  goldenKey,
 					Uri:  goldenURI,
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
 				},
 			},
 			// Environments must be present for the matcher to discover records
 			Environments: map[string]*v4.Environment_List{
+				Id: {
+					Environments: []*v4.Environment{
+						{
+							PackageDb: "",
+							// IntroducedIn must be a valid sha256, but the value is not important.
+							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+							RepositoryIds: []string{Id},
+						},
+					},
+				},
+			},
+			EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
 				Id: {
 					Environments: []*v4.Environment{
 						{

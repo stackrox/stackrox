@@ -11,7 +11,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,24 +24,8 @@ import (
 const inactiveGathererTTL = 2 * 24 * time.Hour
 
 var (
-	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
-	ErrStopIterator = errors.New("stopped")
+	log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
 )
-
-type Finding interface {
-	GetError() error
-	GetIncrement() int
-}
-
-type CommonFinding struct{}
-
-func (f *CommonFinding) GetError() error {
-	return nil
-}
-
-func (f *CommonFinding) GetIncrement() int {
-	return 1
-}
 
 // LazyLabel enables deferred evaluation of a label's value.
 // Computing and storing values for all labels for every finding would be
@@ -84,8 +67,11 @@ type Tracker interface {
 	Reconfigure(*Configuration)
 }
 
+// FindingErrorSequence is a sequence of pairs of findings and errors.
+type FindingErrorSequence[F Finding] = iter.Seq2[F, error]
+
 // FindingGenerator returns an iterator to the sequence of findings.
-type FindingGenerator[F Finding] func(context.Context, MetricDescriptors) iter.Seq[F]
+type FindingGenerator[F Finding] func(context.Context, MetricDescriptors) FindingErrorSequence[F]
 
 type gatherer struct {
 	http.Handler
@@ -239,8 +225,8 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics
 		return nil
 	}
 	aggregator := makeAggregator(metrics, tracker.labelOrder, tracker.getters)
-	for finding := range tracker.generator(ctx, metrics) {
-		if err := finding.GetError(); err != nil {
+	for finding, err := range tracker.generator(ctx, metrics) {
+		if err != nil {
 			return err
 		}
 		aggregator.count(finding)
@@ -272,6 +258,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if gatherer == nil {
 		return
 	}
+	defer tracker.cleanupInactiveGatherers()
 	defer gatherer.running.Store(false)
 
 	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
@@ -313,7 +300,6 @@ func getLabels(metrics MetricDescriptors) []Label {
 // on the gatherer registry.
 // Returns nil on error, or if the gatherer for this userID is still running.
 func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configuration) *gatherer {
-	defer tracker.cleanupInactiveGatherers()
 	var gr *gatherer
 	if g, ok := tracker.gatherers.Load(userID); !ok {
 		r, err := tracker.registryFactory(userID)

@@ -72,7 +72,7 @@ func (s *PodDatastoreSuite) SetupTest() {
 
 func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndicator {
 	indicatorsFromDB := []*storage.ProcessIndicator{}
-	err := s.indicatorDataStore.WalkAll(s.plopAndPiCtx,
+	err := s.indicatorDataStore.WalkByQuery(s.plopAndPiCtx, nil,
 		func(processIndicator *storage.ProcessIndicator) error {
 			indicatorsFromDB = append(indicatorsFromDB, processIndicator)
 			return nil

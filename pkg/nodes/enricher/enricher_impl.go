@@ -130,7 +130,11 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *
 	if scanner.Type() == types.ScannerV4 {
 		scan, err = scanner.GetNodeInventoryScan(node, nil, indexReport)
 		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
-		e.metrics.SetNodeInventoryNumberComponents(len(indexReport.GetContents().GetPackages()), node.GetClusterName(), node.GetName(), scanner.Name())
+		count := len(indexReport.GetContents().GetPackages())
+		if count == 0 {
+			count = len(indexReport.GetContents().GetPackagesDEPRECATED())
+		}
+		e.metrics.SetNodeInventoryNumberComponents(count, node.GetClusterName(), node.GetName(), scanner.Name())
 	} else {
 		scan, err = scanner.GetNodeInventoryScan(node, nodeInventory, nil)
 		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)

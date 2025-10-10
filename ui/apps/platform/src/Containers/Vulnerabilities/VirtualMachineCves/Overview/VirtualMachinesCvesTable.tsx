@@ -11,16 +11,17 @@ import {
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import DateDistance from 'Components/DateDistance';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import {
-    clusterSearchFilterConfig,
-    namespaceSearchFilterConfig,
+    virtualMachinesClusterSearchFilterConfig,
     virtualMachinesSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 import { listVirtualMachines } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
@@ -33,21 +34,31 @@ import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
 
 const searchFilterConfig = [
     virtualMachinesSearchFilterConfig,
-    clusterSearchFilterConfig,
-    namespaceSearchFilterConfig,
+    virtualMachinesClusterSearchFilterConfig,
 ];
 
-function VirtualMachinesCvesTable() {
-    const fetchVirtualMachines = useCallback(() => listVirtualMachines(), []);
+export const sortFields = ['Virtual Machine Name'];
 
-    const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
+export const defaultSortOption = { field: 'Virtual Machine Name', direction: 'asc' } as const;
+
+function VirtualMachinesCvesTable() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const isFiltered = getHasSearchApplied(searchFilter);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => setPage(1),
+    });
 
+    const fetchVirtualMachines = useCallback(
+        () => listVirtualMachines({ searchFilter, page, perPage, sortOption }),
+        [searchFilter, page, perPage, sortOption]
+    );
+    const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
     const tableState = getTableUIState({
         isLoading,
-        data: data ?? [],
+        data: data?.virtualMachines ?? [],
         error,
         searchFilter,
     });
@@ -71,7 +82,7 @@ function VirtualMachinesCvesTable() {
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">
                                 {!isLoading ? (
-                                    `${pluralize(0, 'result')} found - TODO: get count from api`
+                                    `${pluralize(data?.totalCount ?? 0, 'result')} found`
                                 ) : (
                                     <Skeleton screenreaderText="Loading virtual machine count" />
                                 )}
@@ -81,7 +92,7 @@ function VirtualMachinesCvesTable() {
                     </SplitItem>
                     <SplitItem>
                         <Pagination
-                            itemCount={0} // TODO: get count from api
+                            itemCount={data?.totalCount ?? 0}
                             perPage={perPage}
                             page={page}
                             onSetPage={(_, newPage) => setPage(newPage)}
@@ -99,13 +110,12 @@ function VirtualMachinesCvesTable() {
                 >
                     <Thead>
                         <Tr>
-                            <Th>Virtual machine</Th>
+                            <Th sort={getSortParams('Virtual Machine Name')}>Virtual machine</Th>
                             <Th>CVEs by severity</Th>
-                            <Th>Guest OS</Th>
                             <Th>Cluster</Th>
                             <Th>Namespace</Th>
-                            <Th>Pod</Th>
-                            <Th>Created</Th>
+                            <Th>Scanned packages</Th>
+                            <Th>Last updated</Th>
                         </Tr>
                     </Thead>
                     <TbodyUnified
@@ -153,15 +163,16 @@ function VirtualMachinesCvesTable() {
                                                     }
                                                 />
                                             </Td>
-                                            <Td dataLabel="Guest OS">ROX-30535</Td>
                                             <Td dataLabel="Cluster">
                                                 {virtualMachine.clusterName}
                                             </Td>
                                             <Td dataLabel="Namespace">
                                                 {virtualMachine.namespace}
                                             </Td>
-                                            <Td dataLabel="Pod">ROX-30535</Td>
-                                            <Td dataLabel="Created">ROX-30535</Td>
+                                            <Td dataLabel="Scanned packages">?</Td>
+                                            <Td dataLabel="Last updated">
+                                                <DateDistance date={virtualMachine.lastUpdated} />
+                                            </Td>
                                         </Tr>
                                     );
                                 })}

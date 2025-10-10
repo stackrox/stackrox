@@ -16,6 +16,15 @@ message ScanComponent {
   string architecture = 5;
   repeated EmbeddedVulnerability vulns = 6;
   SourceType source = 7;
+  // Note specifies a conditional status of the scan component.
+  enum Note {
+    UNSPECIFIED = 0;
+    // Scan components remain unscanned if the corresponding package is not
+    // associated with a valid Common Platform Enumeration (CPE).
+    UNSCANNED = 1;
+  }
+  repeated Note notes = 8;
+
   // TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
 }
 

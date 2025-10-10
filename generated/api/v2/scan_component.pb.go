@@ -85,6 +85,55 @@ func (SourceType) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_scan_component_proto_rawDescGZIP(), []int{0}
 }
 
+// Note specifies a conditional status of the scan component.
+type ScanComponent_Note int32
+
+const (
+	ScanComponent_UNSPECIFIED ScanComponent_Note = 0
+	// Scan components remain unscanned if the corresponding package is not
+	// associated with a valid Common Platform Enumeration (CPE).
+	ScanComponent_UNSCANNED ScanComponent_Note = 1
+)
+
+// Enum value maps for ScanComponent_Note.
+var (
+	ScanComponent_Note_name = map[int32]string{
+		0: "UNSPECIFIED",
+		1: "UNSCANNED",
+	}
+	ScanComponent_Note_value = map[string]int32{
+		"UNSPECIFIED": 0,
+		"UNSCANNED":   1,
+	}
+)
+
+func (x ScanComponent_Note) Enum() *ScanComponent_Note {
+	p := new(ScanComponent_Note)
+	*p = x
+	return p
+}
+
+func (x ScanComponent_Note) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ScanComponent_Note) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_v2_scan_component_proto_enumTypes[1].Descriptor()
+}
+
+func (ScanComponent_Note) Type() protoreflect.EnumType {
+	return &file_api_v2_scan_component_proto_enumTypes[1]
+}
+
+func (x ScanComponent_Note) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ScanComponent_Note.Descriptor instead.
+func (ScanComponent_Note) EnumDescriptor() ([]byte, []int) {
+	return file_api_v2_scan_component_proto_rawDescGZIP(), []int{0, 0}
+}
+
 type ScanComponent struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Name    string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -96,7 +145,8 @@ type ScanComponent struct {
 	RiskScore     float32                    `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
 	Architecture  string                     `protobuf:"bytes,5,opt,name=architecture,proto3" json:"architecture,omitempty"`
 	Vulns         []*EmbeddedVulnerability   `protobuf:"bytes,6,rep,name=vulns,proto3" json:"vulns,omitempty"`
-	Source        SourceType                 `protobuf:"varint,7,opt,name=source,proto3,enum=v2.SourceType" json:"source,omitempty"` // TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
+	Source        SourceType                 `protobuf:"varint,7,opt,name=source,proto3,enum=v2.SourceType" json:"source,omitempty"`
+	Notes         []ScanComponent_Note       `protobuf:"varint,8,rep,packed,name=notes,proto3,enum=v2.ScanComponent_Note" json:"notes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -189,6 +239,13 @@ func (x *ScanComponent) GetSource() SourceType {
 	return SourceType_OS
 }
 
+func (x *ScanComponent) GetNotes() []ScanComponent_Note {
+	if x != nil {
+		return x.Notes
+	}
+	return nil
+}
+
 type isScanComponent_SetTopCvss interface {
 	isScanComponent_SetTopCvss()
 }
@@ -203,7 +260,7 @@ var File_api_v2_scan_component_proto protoreflect.FileDescriptor
 
 const file_api_v2_scan_component_proto_rawDesc = "" +
 	"\n" +
-	"\x1bapi/v2/scan_component.proto\x12\x02v2\x1a\x1aapi/v2/vulnerability.proto\"\x86\x02\n" +
+	"\x1bapi/v2/scan_component.proto\x12\x02v2\x1a\x1aapi/v2/vulnerability.proto\"\xdc\x02\n" +
 	"\rScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1b\n" +
@@ -212,7 +269,11 @@ const file_api_v2_scan_component_proto_rawDesc = "" +
 	"risk_score\x18\x04 \x01(\x02R\triskScore\x12\"\n" +
 	"\farchitecture\x18\x05 \x01(\tR\farchitecture\x12/\n" +
 	"\x05vulns\x18\x06 \x03(\v2\x19.v2.EmbeddedVulnerabilityR\x05vulns\x12&\n" +
-	"\x06source\x18\a \x01(\x0e2\x0e.v2.SourceTypeR\x06sourceB\x0e\n" +
+	"\x06source\x18\a \x01(\x0e2\x0e.v2.SourceTypeR\x06source\x12,\n" +
+	"\x05notes\x18\b \x03(\x0e2\x16.v2.ScanComponent.NoteR\x05notes\"&\n" +
+	"\x04Note\x12\x0f\n" +
+	"\vUNSPECIFIED\x10\x00\x12\r\n" +
+	"\tUNSCANNED\x10\x01B\x0e\n" +
 	"\fset_top_cvss*s\n" +
 	"\n" +
 	"SourceType\x12\x06\n" +
@@ -240,21 +301,23 @@ func file_api_v2_scan_component_proto_rawDescGZIP() []byte {
 	return file_api_v2_scan_component_proto_rawDescData
 }
 
-var file_api_v2_scan_component_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_api_v2_scan_component_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v2_scan_component_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v2_scan_component_proto_goTypes = []any{
 	(SourceType)(0),               // 0: v2.SourceType
-	(*ScanComponent)(nil),         // 1: v2.ScanComponent
-	(*EmbeddedVulnerability)(nil), // 2: v2.EmbeddedVulnerability
+	(ScanComponent_Note)(0),       // 1: v2.ScanComponent.Note
+	(*ScanComponent)(nil),         // 2: v2.ScanComponent
+	(*EmbeddedVulnerability)(nil), // 3: v2.EmbeddedVulnerability
 }
 var file_api_v2_scan_component_proto_depIdxs = []int32{
-	2, // 0: v2.ScanComponent.vulns:type_name -> v2.EmbeddedVulnerability
+	3, // 0: v2.ScanComponent.vulns:type_name -> v2.EmbeddedVulnerability
 	0, // 1: v2.ScanComponent.source:type_name -> v2.SourceType
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	1, // 2: v2.ScanComponent.notes:type_name -> v2.ScanComponent.Note
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_scan_component_proto_init() }
@@ -271,7 +334,7 @@ func file_api_v2_scan_component_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_scan_component_proto_rawDesc), len(file_api_v2_scan_component_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,

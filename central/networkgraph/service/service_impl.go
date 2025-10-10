@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"sort"
 	"time"
@@ -39,7 +40,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -180,12 +180,9 @@ func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, reque
 
 	// To ensure pagination is consistent/deterministic, sort the keys
 	// and construct the list of metadata objects in order of key (entity ID)
-	keys := maps.Keys(entityMeta)
-	slices.Sort(keys)
+	values := make([]*v1.ExternalNetworkFlowMetadata, 0, len(entityMeta))
 
-	values := make([]*v1.ExternalNetworkFlowMetadata, 0, len(keys))
-
-	for _, key := range keys {
+	for _, key := range slices.Sorted(maps.Keys(entityMeta)) {
 		values = append(values, entityMeta[key])
 	}
 

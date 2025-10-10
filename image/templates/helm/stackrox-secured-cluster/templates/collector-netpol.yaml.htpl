@@ -37,6 +37,10 @@ spec:
       protocol: TCP
     - port: 9091
       protocol: TCP
+    [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+    - port: 9001
+      protocol: TCP
+    [<- end >]
   podSelector:
     matchLabels:
       app: collector

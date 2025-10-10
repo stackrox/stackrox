@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
-	"github.com/stackrox/rox/pkg/version"
 )
 
 // RenderOptions are options that control the rendering.
@@ -32,7 +31,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 		return nil, err
 	}
 
-	baseValues := getBaseMetaValues(c, imageFlavor.Versions, imageFlavor.ScannerSlimImageName, imageFlavor.ChartRepo, &opts)
+	baseValues := getBaseMetaValues(c, imageFlavor, imageFlavor.ChartRepo, &opts)
 	setMainOverride(mainImage, baseValues)
 	deriveScannerRemoteFromMain(mainImage, baseValues)
 	baseValues.EnablePodSecurityPolicies = !opts.DisablePodSecurityPolicies
@@ -122,7 +121,9 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 	}
 }
 
-func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSlimImageRemote string, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {
+func getBaseMetaValues(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {
+	versions := imageFlavor.Versions
+
 	command := "kubectl"
 	if c.Type == storage.ClusterType_OPENSHIFT_CLUSTER || c.Type == storage.ClusterType_OPENSHIFT4_CLUSTER {
 		command = "oc"
@@ -148,8 +149,11 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 
 		OfflineMode: env.OfflineModeEnv.BooleanSetting(),
 
+		FactImageTag:    versions.FactVersion,
+		FactImageRemote: imageFlavor.FactImageName,
+
 		ScannerImageTag:        versions.ScannerVersion,
-		ScannerSlimImageRemote: scannerSlimImageRemote,
+		ScannerSlimImageRemote: imageFlavor.ScannerSlimImageName,
 
 		KubectlOutput: true,
 

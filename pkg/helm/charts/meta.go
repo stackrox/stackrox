@@ -17,6 +17,9 @@ type MetaValues struct {
 	CollectorRegistry                string
 	CollectorImageRemote             string
 	CollectorImageTag                string
+	FactRegistry                     string
+	FactImageRemote                  string
+	FactImageTag                     string
 	ScannerImageRemote               string
 	ScannerSlimImageRemote           string
 	ScannerImageTag                  string
@@ -75,6 +78,9 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		CollectorRegistry:        imageFlavor.CollectorRegistry,
 		CollectorImageRemote:     imageFlavor.CollectorImageName,
 		CollectorImageTag:        imageFlavor.CollectorImageTag,
+		FactRegistry:             imageFlavor.FactRegistry,
+		FactImageRemote:          imageFlavor.FactImageName,
+		FactImageTag:             imageFlavor.FactImageTag,
 		ScannerImageRemote:       imageFlavor.ScannerImageName,
 		ScannerSlimImageRemote:   imageFlavor.ScannerSlimImageName,
 		ScannerImageTag:          imageFlavor.ScannerImageTag,

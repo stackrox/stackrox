@@ -1301,7 +1301,7 @@ func (rb *requestBuilder) runRequest(responseWriter http.ResponseWriter) {
 		q["from_checkpoint"] = rb.checkpointParams
 		u.RawQuery = q.Encode()
 	}
-	r := httptest.NewRequest("GET", u.String(), nil)
+	r := httptest.NewRequest(http.MethodGet, u.String(), nil)
 	r = r.WithContext(rb.ctx)
 
 	handler.ServeHTTP(responseWriter, r)

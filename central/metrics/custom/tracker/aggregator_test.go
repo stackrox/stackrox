@@ -139,3 +139,28 @@ func Test_collectMatchingLabels(t *testing.T) {
 	}
 	assert.Equal(t, 1, i)
 }
+
+type withIncrement struct {
+	n int
+}
+
+func (f *withIncrement) GetIncrement() int { return f.n }
+
+var _ WithIncrement = (*withIncrement)(nil)
+
+func TestFinding_GetIncrement(t *testing.T) {
+	var f withIncrement
+	f.n = 5
+
+	getters := map[Label]func(*withIncrement) string{
+		"l1": func(tf *withIncrement) string { return "v1" },
+	}
+	a := makeAggregator(
+		MetricDescriptors{"m1": []Label{"l1"}},
+		map[Label]int{"l1": 0}, getters)
+	a.count(&f)
+	f.n = 7
+	a.count(&f)
+
+	assert.Equal(t, 12, a.result["m1"]["v1"].total)
+}

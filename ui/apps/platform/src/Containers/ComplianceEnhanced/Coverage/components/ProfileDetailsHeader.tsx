@@ -6,9 +6,9 @@ import {
     FlexItem,
     Label,
     LabelGroup,
+    Skeleton,
     Text,
     Title,
-    Skeleton,
 } from '@patternfly/react-core';
 
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';

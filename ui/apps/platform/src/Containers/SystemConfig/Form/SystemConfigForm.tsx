@@ -43,6 +43,7 @@ import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
 import { getPlatformComponentsConfigRules, PlatformComponentsConfigRules } from '../configUtils';
 import { Values } from './formTypes';
 import PlatformComponentsConfigForm from './PlatformComponentsConfigForm';
+import { PrometheusMetricsForm } from '../Details/components/PrometheusMetricsCard';
 
 function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
     return {
@@ -530,6 +531,30 @@ const SystemConfigForm = ({
                                 />
                             </FormGroup>
                         </GridItem>
+                    </Grid>
+                    <Title headingLevel="h2">Prometheus metrics configuration</Title>
+                    <Grid hasGutter>
+                        <PrometheusMetricsForm
+                            pcfg={values?.privateConfig}
+                            category="imageVulnerabilities"
+                            title="Image vulnerabilities"
+                            onChange={onChange}
+                            onCustomChange={onCustomChange}
+                        />
+                        <PrometheusMetricsForm
+                            pcfg={values?.privateConfig}
+                            category="nodeVulnerabilities"
+                            title="Node vulnerabilities"
+                            onChange={onChange}
+                            onCustomChange={onCustomChange}
+                        />
+                        <PrometheusMetricsForm
+                            pcfg={values?.privateConfig}
+                            category="policyViolations"
+                            title="Policy violations"
+                            onChange={onChange}
+                            onCustomChange={onCustomChange}
+                        />
                     </Grid>
                     <Title headingLevel="h2">Public configuration</Title>
                     <Grid hasGutter>

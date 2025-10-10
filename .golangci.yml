@@ -24,6 +24,7 @@ linters:
     - errcheck
     - forbidigo
     - gocritic
+    - exptostd
     - gosec
     - govet
     - ineffassign
@@ -36,6 +37,7 @@ linters:
   # - unconvert TODO: add in follow-up
   # - unparam TODO: add in follow-up
   # - unused // enabled in Makefile as it fails with release tag
+    - usestdlibvars
   settings:
     errcheck:
       disable-default-exclusions: false
@@ -171,7 +173,7 @@ linters:
         path: ^(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor/tests/helper|tests|tools|scale)/
       - linters:
           - forbidigo
-        path: (central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale|govulncheck)/
+        path: (central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale|govulncheck|compliance/virtualmachines/agent)/
       - linters:
           - forbidigo
         path: roxctl/central/generate/interactive.go
