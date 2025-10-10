@@ -28,7 +28,6 @@ MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
 MERGED_API_SWAGGER_SPEC_V2 = $(GENERATED_DOC_PATH)/api/v2/swagger.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
 GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
-GENERATED_VT_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_vtproto.pb.go)
 GENERATED_API_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_grpc.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
@@ -43,7 +42,6 @@ endif
 
 $(call go-tool, PROTOC_GEN_GO_BIN, google.golang.org/protobuf/cmd/protoc-gen-go)
 $(call go-tool, PROTOC_GEN_GO_GRPC_BIN, google.golang.org/grpc/cmd/protoc-gen-go-grpc, tools/proto)
-$(call go-tool, PROTOC_GEN_GO_VTPROTO_BIN, github.com/planetscale/vtprotobuf/cmd/protoc-gen-go-vtproto)
 $(call go-tool, PROTOC_GEN_OPENAPIV2, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2)
 $(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway)
 $(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag, tools/proto)
@@ -53,7 +51,7 @@ $(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag
 ##############
 # Set some platform variables for protoc.
 # If the proto version is changed, be sure it is also changed in qa-tests-backend/build.gradle.
-PROTOC_VERSION := 25.3
+PROTOC_VERSION := 32.1
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 PROTOC_OS = linux
@@ -206,25 +204,8 @@ endif
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--plugin protoc-gen-go="${PROTOC_GEN_GO_BIN}" \
+		--go_opt=default_api_level=API_OPAQUE \
 		--go_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
-		$(dir $<)/*.proto
-
-# Generate all of the vt proto extensions
-$(GENERATED_BASE_PATH)/%_vtproto.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(ALL_PROTOS) $(PROTOC) $(PROTOC_GEN_GO_VTPROTO_BIN)
-	@echo "+ $@"
-ifeq ($(SCANNER_DIR),)
-	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
-endif
-	$(SILENT)mkdir -p $(dir $@)
-	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
-		--fatal_warnings \
-		-I$(PROTOC_INCLUDES) \
-		-I$(GOOGLE_API_INCLUDES) \
-		-I$(SCANNER_PROTO_BASE_PATH) \
-		--proto_path=$(PROTO_BASE_PATH) \
-		--plugin protoc-gen-go-vtproto="${PROTOC_GEN_GO_VTPROTO_BIN}" \
-		--go-vtproto_opt=features=marshal+size+equal+clone+unmarshal+unmarshal_unsafe \
-		--go-vtproto_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
 # Generate gRPC services.
