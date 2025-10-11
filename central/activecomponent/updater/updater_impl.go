@@ -285,17 +285,20 @@ func (u *updaterImpl) getActiveExecPath(deploymentID string, update *aggregator.
 		return update.NewPaths, nil
 	}
 	containerName := update.ContainerName
-	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentID).AddExactMatches(search.ContainerName, containerName).ProtoQuery()
-	pis, err := u.piStore.SearchRawProcessIndicators(updaterCtx, query)
-	if err != nil {
-		return nil, err
-	}
 	execSet := set.NewStringSet()
-	for _, pi := range pis {
+
+	fn := func(pi *storage.ProcessIndicator) error {
 		if update.ImageID != pi.GetImageId() {
-			continue
+			return nil
 		}
 		execSet.Add(pi.GetSignal().GetExecFilePath())
+		return nil
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentID).AddExactMatches(search.ContainerName, containerName).ProtoQuery()
+	err := u.piStore.GetByQueryFn(updaterCtx, query, fn)
+	if err != nil {
+		return nil, err
 	}
 	log.Debugf("Active executables for %s:%s: %v", deploymentID, containerName, execSet)
 	return execSet, nil

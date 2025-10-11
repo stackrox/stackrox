@@ -197,7 +197,15 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetLoadProcessBaseline() {
 
 	requestByKey := &v1.GetProcessBaselineRequest{Key: knownBaseline.GetKey()}
 	suite.deployments.EXPECT().GetDeployment(hasWriteCtx, gomock.Any()).Return(nil, true, nil)
-	suite.indicatorMockStore.EXPECT().SearchRawProcessIndicators(hasWriteCtx, gomock.Any()).Return(indicators, nil)
+	suite.indicatorMockStore.EXPECT().GetByQueryFn(hasWriteCtx, gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
+			for _, indicator := range indicators {
+				if err := fn(indicator); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 
 	baseline, _ := suite.service.GetProcessBaseline(hasWriteCtx, requestByKey)
 
