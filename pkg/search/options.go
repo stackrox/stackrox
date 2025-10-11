@@ -211,6 +211,9 @@ var (
 	ProcessCreationTime       = newFieldLabel("Process Creation Time")
 	ProcessContainerStartTime = newFieldLabel("Process Container Start Time")
 
+	FilePath      = newFieldLabel("File Path")
+	FileOperation = newFieldLabel("File Operation")
+
 	// ProcessListeningOnPort Search fields
 	Closed     = newFieldLabel("Closed")
 	ClosedTime = newFieldLabel("Closed Time")

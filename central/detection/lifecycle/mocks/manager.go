@@ -68,6 +68,20 @@ func (mr *MockManagerMockRecorder) HandleDeploymentAlerts(deploymentID, alerts, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeploymentAlerts", reflect.TypeOf((*MockManager)(nil).HandleDeploymentAlerts), deploymentID, alerts, stage)
 }
 
+// HandleHostAlerts mocks base method.
+func (m *MockManager) HandleHostAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleHostAlerts", clusterID, alerts, stage)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleHostAlerts indicates an expected call of HandleHostAlerts.
+func (mr *MockManagerMockRecorder) HandleHostAlerts(clusterID, alerts, stage any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleHostAlerts", reflect.TypeOf((*MockManager)(nil).HandleHostAlerts), clusterID, alerts, stage)
+}
+
 // HandleResourceAlerts mocks base method.
 func (m *MockManager) HandleResourceAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
 	m.ctrl.T.Helper()

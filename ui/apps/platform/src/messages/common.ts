@@ -57,6 +57,7 @@ export const eventSourceLabels: Record<PolicyEventSource, string> = Object.freez
     NOT_APPLICABLE: 'N/A',
     DEPLOYMENT_EVENT: 'Deployment',
     AUDIT_LOG_EVENT: 'Audit log',
+    FILE_EVENT: 'File',
 });
 
 export const accessControl = Object.freeze({

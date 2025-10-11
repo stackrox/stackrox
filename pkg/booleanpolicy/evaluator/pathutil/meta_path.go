@@ -26,6 +26,14 @@ type metaPathAndMetadata struct {
 	preferParent bool
 }
 
+func (m *metaPathAndMetadata) Path() string {
+	parts := []string{}
+	for _, p := range m.metaPath {
+		parts = append(parts, p.FieldName)
+	}
+	return strings.Join(parts, "/")
+}
+
 // FieldToMetaPathMap helps store and retrieve meta paths given a field tag.
 type FieldToMetaPathMap struct {
 	underlying map[string]metaPathAndMetadata
@@ -45,6 +53,10 @@ func (m *FieldToMetaPathMap) add(tag string, metaPath MetaPath, shouldPreferPare
 	}
 	m.underlying[lowerTag] = metaPathAndMetadata{preferParent: shouldPreferParent, metaPath: metaPath}
 	return nil
+}
+
+func (m *FieldToMetaPathMap) Into() map[string]metaPathAndMetadata {
+	return m.underlying
 }
 
 // Get returns the MetaPath for the given tag, and a bool indicates whether it exists.
