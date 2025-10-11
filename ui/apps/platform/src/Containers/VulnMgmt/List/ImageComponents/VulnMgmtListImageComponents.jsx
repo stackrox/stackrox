@@ -18,10 +18,10 @@ import removeEntityContextColumns from 'utils/tableUtils';
 import { componentSortFields } from 'constants/sortFields';
 
 import TableCellLink from 'Components/TableCellLink';
-import TableCountLink from 'Components/workflow/TableCountLink';
 import { getFilteredComponentColumns } from './ListImageComponents.utils';
 import WorkflowListPage from '../WorkflowListPage';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
+import TableCountLink from '../../TableCountLink';
 
 export const defaultComponentSort = [
     {

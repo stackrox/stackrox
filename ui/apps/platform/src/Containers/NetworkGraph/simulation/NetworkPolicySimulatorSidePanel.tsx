@@ -6,7 +6,6 @@ import {
     Checkbox,
     CodeBlockAction,
     Divider,
-    DropEvent,
     Flex,
     FlexItem,
     Popover,
@@ -20,9 +19,10 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
+import type { DropEvent } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import sortBy from 'lodash/sortBy';
-import { ParsedQs } from 'qs';
+import type { ParsedQs } from 'qs';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import usePermissions from 'hooks/usePermissions';
@@ -34,7 +34,7 @@ import { getQueryObject } from 'utils/queryStringUtils';
 import { fetchNetworkPoliciesByClusterId } from 'services/NetworkService';
 
 import ViewActiveYAMLs from './ViewActiveYAMLs';
-import {
+import type {
     NetworkPolicySimulator,
     SetNetworkPolicyModification,
 } from '../hooks/useNetworkPolicySimulator';
@@ -46,7 +46,7 @@ import {
 import UploadYAMLButton from './UploadYAMLButton';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
 import NotifyYAMLModal from './NotifyYAMLModal';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import CompareYAMLModal from './CompareYAMLModal';
 import CodeCompareIcon from './CodeCompareIcon';
 import NetworkPoliciesGenerationScope from './NetworkPoliciesGenerationScope';

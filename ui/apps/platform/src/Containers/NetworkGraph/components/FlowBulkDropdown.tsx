@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement, Ref } from 'react';
 import {
     Badge,
     Divider,
@@ -6,8 +7,8 @@ import {
     DropdownItem,
     DropdownList,
     MenuToggle,
-    MenuToggleElement,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
 type Props = {
     selectedCount: number;
@@ -22,7 +23,7 @@ export function FlowBulkDropdown({ selectedCount, isOpen, setOpen, onClear, chil
         <Dropdown
             isOpen={isOpen}
             onOpenChange={setOpen}
-            toggle={(ref: React.Ref<MenuToggleElement>) => (
+            toggle={(ref: Ref<MenuToggleElement>) => (
                 <MenuToggle
                     ref={ref}
                     isExpanded={isOpen}

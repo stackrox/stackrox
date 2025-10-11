@@ -1,7 +1,7 @@
-import { EdgeModel, EdgeTerminalType, Model, NodeModel } from '@patternfly/react-topology';
+import type { EdgeModel, EdgeTerminalType, Model, NodeModel } from '@patternfly/react-topology';
 
-import { DeploymentDetails, EdgeProperties, OutEdges } from 'types/networkFlow.proto';
-import { Override } from 'utils/type.utils';
+import type { DeploymentDetails, EdgeProperties, OutEdges } from 'types/networkFlow.proto';
+import type { Override } from 'utils/type.utils';
 
 export type CustomModel = Override<Model, { nodes: CustomNodeModel[]; edges: CustomEdgeModel[] }>;
 

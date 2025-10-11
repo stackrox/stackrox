@@ -19,14 +19,14 @@ import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternf
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useRestQuery from 'hooks/useRestQuery';
-import { QueryValue } from 'hooks/useURLParameter';
+import type { QueryValue } from 'hooks/useURLParameter';
 import { getExternalNetworkFlows } from 'services/NetworkService';
 import { getTableUIState } from 'utils/getTableUIState';
-import { ExternalNetworkFlowsResponse } from 'types/networkFlow.proto';
+import type { ExternalNetworkFlowsResponse } from 'types/networkFlow.proto';
 
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import {
     SIDE_PANEL_SEARCH_PREFIX,
     usePagination,

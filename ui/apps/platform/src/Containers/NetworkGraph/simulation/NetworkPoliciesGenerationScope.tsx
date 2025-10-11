@@ -2,7 +2,7 @@ import React from 'react';
 import { Button, Flex, pluralize } from '@patternfly/react-core';
 
 import DeploymentScopeModal from './DeploymentScopeModal';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { ClusterIcon, DeploymentIcon, NamespaceIcon } from '../common/NetworkGraphIcons';
 
 import './NetworkPoliciesGenerationScope.css';

@@ -15,14 +15,16 @@ import {
     DefaultNode,
     getDefaultShapeDecoratorCenter,
     Layer,
-    Node,
     NodeShape,
     observer,
     ScaleDetailsLevel,
-    ShapeProps,
     TOP_LAYER,
     TopologyQuadrant,
     useHover,
+} from '@patternfly/react-topology';
+import type {
+    Node,
+    ShapeProps,
     WithContextMenuProps,
     WithCreateConnectorProps,
     WithDragNodeProps,
@@ -31,14 +33,14 @@ import {
 import DefaultIcon from '@patternfly/react-icons/dist/esm/icons/builder-image-icon';
 import { PficonNetworkRangeIcon, ZoneIcon } from '@patternfly/react-icons';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
-import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
+import type { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 import BothPolicyRules from 'images/network-graph/both-policy-rules.svg?react';
 import EgressOnly from 'images/network-graph/egress-only.svg?react';
 import IngressOnly from 'images/network-graph/ingress-only.svg?react';
 import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
 import { ensureExhaustive } from 'utils/type.utils';
-import { NetworkPolicyState, DeploymentData, NodeDataType } from '../types/topology.type';
+import type { NetworkPolicyState, DeploymentData, NodeDataType } from '../types/topology.type';
 
 const ICON_PADDING = 20;
 const CUSTOM_DECORATOR_PADDING = 2.5;

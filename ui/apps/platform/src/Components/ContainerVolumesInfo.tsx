@@ -13,7 +13,7 @@ import {
     StackItem,
 } from '@patternfly/react-core';
 
-import { ContainerVolume } from 'types/deployment.proto';
+import type { ContainerVolume } from 'types/deployment.proto';
 
 type ContainerVolumesInfoProps = {
     volumes: ContainerVolume[];

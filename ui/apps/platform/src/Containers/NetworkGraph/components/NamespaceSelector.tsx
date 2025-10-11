@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { ReactElement, Ref } from 'react';
 import {
     Badge,
     Button,
@@ -15,12 +16,12 @@ import {
     MenuSearchInput,
     Select,
     MenuToggle,
-    MenuToggleElement,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
-import { NamespaceScopeObject } from 'services/RolesService';
+import type { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
+import type { NamespaceScopeObject } from 'services/RolesService';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
 
 export function getDeploymentLookupMap(
@@ -60,7 +61,7 @@ function NamespaceSelector({
     deploymentsByNamespace = [],
     searchFilter,
     setSearchFilter,
-}: NamespaceSelectorProps) {
+}: NamespaceSelectorProps): ReactElement {
     const { isOpen: isNamespaceOpen, toggleSelect: toggleIsNamespaceOpen } = useSelectToggle();
     const [input, setInput] = React.useState('');
 
@@ -162,7 +163,7 @@ function NamespaceSelector({
         </Menu>
     );
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             onClick={() => toggleIsNamespaceOpen(!isNamespaceOpen)}

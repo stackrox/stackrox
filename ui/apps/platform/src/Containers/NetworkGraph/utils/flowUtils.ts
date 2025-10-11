@@ -1,17 +1,17 @@
 import uniq from 'lodash/uniq';
 
-import { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
-import {
+import type { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
+import type {
     ExternalNetworkFlowProperties,
     L4Protocol,
     NetworkEntityInfoType as EntityType,
     DeploymentNetworkEntityInfo,
 } from 'types/networkFlow.proto';
-import { GroupedDiffFlows } from 'types/networkPolicyService';
+import type { GroupedDiffFlows } from 'types/networkPolicyService';
 
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';
-import {
+import type { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import type { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';
+import type {
     CustomEdgeModel,
     CustomNodeModel,
     CustomSingleNodeData,

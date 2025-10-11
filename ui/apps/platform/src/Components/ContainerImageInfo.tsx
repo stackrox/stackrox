@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import { Card, CardBody, CardTitle } from '@patternfly/react-core';
 
 import { vulnerabilitiesAllImagesPath } from 'routePaths';
-import { ContainerImage } from 'types/deployment.proto';
+import type { ContainerImage } from 'types/deployment.proto';
 
 type ContainerImageInfoProps = {
     image: ContainerImage; // note: the k8s API, and our data of it, use singular "command" for this array

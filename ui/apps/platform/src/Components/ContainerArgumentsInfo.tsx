@@ -1,4 +1,5 @@
-import React, { CSSProperties } from 'react';
+import React from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import { Card, CardBody, CardTitle, EmptyState, List, ListItem } from '@patternfly/react-core';
 
 type ContainerArgumentsInfoProps = {
@@ -10,7 +11,7 @@ const styleConstant = {
     '--pf-v5-u-max-height--MaxHeight': '12ch',
 } as CSSProperties;
 
-function ContainerArgumentsInfo({ args }: ContainerArgumentsInfoProps) {
+function ContainerArgumentsInfo({ args }: ContainerArgumentsInfoProps): ReactElement {
     return (
         <Card>
             <CardTitle>Arguments</CardTitle>

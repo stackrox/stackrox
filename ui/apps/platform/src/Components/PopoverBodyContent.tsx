@@ -1,4 +1,5 @@
-import React, { ReactElement, ReactNode } from 'react';
+import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 type PopoverBodyContentProps =
     | {
@@ -7,12 +8,12 @@ type PopoverBodyContentProps =
       }
     | {
           headerContent: ReactNode;
-          headerIcon?: React.ReactNode;
+          headerIcon?: ReactNode;
           bodyContent: ReactNode;
       }
     | {
           headerContent: ReactNode;
-          headerIcon?: React.ReactNode;
+          headerIcon?: ReactNode;
           bodyContent: ReactNode;
           footerContent: ReactNode;
       };
