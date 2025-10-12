@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common"
 )
 
 // CentralReceiver handles receiving data from central.
@@ -15,10 +14,10 @@ type CentralReceiver interface {
 }
 
 // NewCentralReceiver returns a new instance of a Receiver.
-func NewCentralReceiver(finished *sync.WaitGroup, receivers ...common.SensorComponent) CentralReceiver {
+func NewCentralReceiver(finished *sync.WaitGroup, processor *ComponentProcessor) CentralReceiver {
 	return &centralReceiverImpl{
 		stopper:   concurrency.NewStopper(),
-		receivers: receivers,
+		processor: processor,
 		finished:  finished,
 	}
 }

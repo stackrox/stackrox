@@ -2,8 +2,11 @@ package sensor
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -18,13 +21,23 @@ type CentralCommunication interface {
 }
 
 // NewCentralCommunication returns a new CentralCommunication.
-func NewCentralCommunication(clusterID clusterIDPeekSetter, reconnect bool, clientReconcile bool, components ...common.SensorComponent) CentralCommunication {
+func NewCentralCommunication(clusterID clusterIDPeekSetter, reconnect bool, clientReconcile bool, processor *ComponentProcessor, components ...common.SensorComponent) CentralCommunication {
 	finished := sync.WaitGroup{}
+
+	// Compute capabilities from all components
+	capsSet := set.NewSet[centralsensor.SensorCapability]()
+	for _, component := range components {
+		capsSet.AddAll(component.Capabilities()...)
+	}
+	capsSet.Add(centralsensor.SendDeduperStateOnReconnect)
+	capabilities := sliceutils.StringSlice(capsSet.AsSlice()...)
+
 	return &centralCommunicationImpl{
-		allFinished: &finished,
-		receiver:    NewCentralReceiver(&finished, components...),
-		sender:      NewCentralSender(&finished, components...),
-		components:  components,
+		allFinished:  &finished,
+		receiver:     NewCentralReceiver(&finished, processor),
+		sender:       NewCentralSender(&finished, components...),
+		processor:    processor,
+		capabilities: capabilities,
 
 		stopper:         concurrency.NewStopper(),
 		isReconnect:     reconnect,
