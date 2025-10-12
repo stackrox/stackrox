@@ -1,0 +1,5 @@
+name: ${PERMISSION_SET_KEY}
+description: invalid declarative permission set used in testing
+resources:
+- resource: non-existent-resource
+  access: READ_ACCESS
