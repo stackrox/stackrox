@@ -14,8 +14,8 @@ deploymentWorkload:
       processInterval: 30s
   updateInterval: 100s
 networkWorkload:
-  batchSize: 40000
-  flowInterval: 1s
+  batchSize: 80000
+  flowInterval: 30s
   generateUnclosedEndpoints: true
   openPortReuseProbability: 0.05
 nodeWorkload:
