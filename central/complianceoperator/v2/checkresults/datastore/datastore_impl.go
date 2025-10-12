@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -115,7 +114,11 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
-	countResults, err := pgSearch.RunSelectRequestForSchema[ResourceResultCountByClusterScan](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	var countResults []*ResourceResultCountByClusterScan
+	err = pgSearch.RunSelectRequestForSchemaFn[ResourceResultCountByClusterScan](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultCountByClusterScan) error {
+		countResults = append(countResults, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +158,11 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
-	countResults, err := pgSearch.RunSelectRequestForSchema[ResourceResultCountByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	var countResults []*ResourceResultCountByProfile
+	err = pgSearch.RunSelectRequestForSchemaFn[ResourceResultCountByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultCountByProfile) error {
+		countResults = append(countResults, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +217,11 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
-	results, err := pgSearch.RunSelectRequestForSchema[ResourceResultsByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	var results []*ResourceResultsByProfile
+	err = pgSearch.RunSelectRequestForSchemaFn[ResourceResultsByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultsByProfile) error {
+		results = append(results, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +268,11 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
-	countResults, err := pgSearch.RunSelectRequestForSchema[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	var countResults []*ResultStatusCountByCluster
+	err = pgSearch.RunSelectRequestForSchemaFn[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResultStatusCountByCluster) error {
+		countResults = append(countResults, r)
+		return nil
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to retrieve data")
 	}
@@ -295,71 +310,47 @@ func (d *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn fun
 }
 
 func (d *datastoreImpl) countByCluster(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error) {
-	var results []*clusterCount
-	results, err := pgSearch.RunSelectRequestForSchema[clusterCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ClusterID))
+	result, err := pgSearch.RunSelectOneForSchema[clusterCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ClusterID))
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return 0, nil
 	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", query.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].TotalCount, nil
+	return result.TotalCount, nil
 }
 
 func (d *datastoreImpl) countByProfile(ctx context.Context, query *v1.Query) (int, error) {
-	var results []*profileCount
-	results, err := pgSearch.RunSelectRequestForSchema[profileCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName))
+	result, err := pgSearch.RunSelectOneForSchema[profileCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName))
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return 0, nil
 	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", query.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].TotalCount, nil
+	return result.TotalCount, nil
 }
 
 func (d *datastoreImpl) countByCheck(ctx context.Context, query *v1.Query) (int, error) {
-	var results []*complianceCheckCount
-	results, err := pgSearch.RunSelectRequestForSchema[complianceCheckCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorCheckName))
+	result, err := pgSearch.RunSelectOneForSchema[complianceCheckCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorCheckName))
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return 0, nil
 	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", query.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].TotalCount, nil
+	return result.TotalCount, nil
 }
 
 func (d *datastoreImpl) countByConfiguration(ctx context.Context, query *v1.Query) (int, error) {
-	var results []*configurationCount
-	results, err := pgSearch.RunSelectRequestForSchema[configurationCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorScanConfigName))
+	result, err := pgSearch.RunSelectOneForSchema[configurationCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorScanConfigName))
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
+	if result == nil {
 		return 0, nil
 	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", query.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].TotalCount, nil
+	return result.TotalCount, nil
 }
 
 func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
