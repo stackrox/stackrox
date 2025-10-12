@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
 	"github.com/stackrox/rox/central/auth/store"
 	mockAuthStore "github.com/stackrox/rox/central/auth/store/mocks"
@@ -26,7 +27,7 @@ const (
 	testRole2        = "Super-Admin"
 	testRole3        = "Super Continuous Integration"
 	configController = "Configuration Controller"
-	testIssuer       = "https://localhost"
+	testIssuer       = m2m.LegacyServiceAccountIssuer
 
 	missingRoleName = "missing role"
 )
@@ -76,11 +77,8 @@ func (s *datastoreMockedTestSuite) SetupTest() {
 	s.mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
 	s.mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(s.mockCtrl)
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return("https://localhost", nil).AnyTimes()
-
 	s.authStore = mockAuthStore.NewMockStore(s.mockCtrl)
-	s.authDataStore = New(s.authStore, s.roleDataStore, s.mockSet, issuerFetcher)
+	s.authDataStore = New(s.authStore, s.roleDataStore, s.mockSet)
 }
 
 func (s *datastoreMockedTestSuite) TearDownTest() {
@@ -123,7 +121,6 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 	const missingDeclarativeRole = "missing declarative role"
 
 	const testID = "test ID"
-	const k8sIssuer = "https://kubernetes.default.svc"
 
 	for name, tc := range map[string]struct {
 		prepare           func()
@@ -138,7 +135,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 					Times(1).
 					Return([]*storage.Role{declarativeRole1}, nil, nil)
 			},
-			m2mConfig: getBasicM2mConfig(declarativeTraits, testID, k8sIssuer, existingDeclarativeRole1),
+			m2mConfig: getBasicM2mConfig(declarativeTraits, testID, testIssuer, existingDeclarativeRole1),
 		},
 		"machine to machine declarative config referencing missing role declarative role triggers error": {
 			prepare: func() {
@@ -147,7 +144,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 					Times(1).
 					Return(nil, []string{missingRoleName}, nil)
 			},
-			m2mConfig:     getBasicM2mConfig(declarativeTraits, testID, k8sIssuer, missingRole),
+			m2mConfig:     getBasicM2mConfig(declarativeTraits, testID, testIssuer, missingRole),
 			expectedError: errox.InvalidArgs,
 		},
 		"machine to machine declarative config referencing at least one missing role triggers error": {
@@ -167,7 +164,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 			m2mConfig: getBasicM2mConfig(
 				declarativeTraits,
 				testID,
-				k8sIssuer,
+				testIssuer,
 				existingDeclarativeRole1,
 				existingDeclarativeRole2,
 				missingImperativeRole,
@@ -191,14 +188,14 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 			m2mConfig: getBasicM2mConfig(
 				declarativeTraits,
 				testID,
-				k8sIssuer,
+				testIssuer,
 				existingDeclarativeRole1,
 				missingDeclarativeRole,
 				existingImperativeRole,
 			),
 			expectedError: errox.InvalidArgs,
 			expectedErrorText: "imperative roles [existing imperative role] and missing roles [missing declarative role] can't be referenced by non-imperative " +
-				"auth machine to machine configuration \"test ID\" for issuer \"https://kubernetes.default.svc\"",
+				"auth machine to machine configuration \"test ID\" for issuer \"kubernetes/serviceaccount\"",
 		},
 		"machine to machine declarative config referencing at least one imperative role triggers error": {
 			prepare: func() {
@@ -217,7 +214,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 			m2mConfig: getBasicM2mConfig(
 				declarativeTraits,
 				testID,
-				k8sIssuer,
+				testIssuer,
 				existingDeclarativeRole1,
 				existingDeclarativeRole2,
 				existingImperativeRole,
@@ -231,7 +228,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 					Times(1).
 					Return(nil, nil, testStoreError)
 			},
-			m2mConfig:     getBasicM2mConfig(declarativeTraits, testID, k8sIssuer, existingDeclarativeRole1),
+			m2mConfig:     getBasicM2mConfig(declarativeTraits, testID, testIssuer, existingDeclarativeRole1),
 			expectedError: testStoreError,
 		},
 	} {
