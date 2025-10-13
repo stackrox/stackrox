@@ -8143,29 +8143,29 @@
             "fields": [
               {
                 "id": 1,
-                "name": "timestamp",
-                "type": "google.protobuf.Timestamp"
-              },
-              {
-                "id": 2,
-                "name": "process",
-                "type": "ProcessIndicator"
-              },
-              {
-                "id": 3,
-                "name": "operation",
-                "type": "Operation"
-              },
-              {
-                "id": 4,
                 "name": "file",
                 "type": "File"
               },
               {
-                "id": 5,
+                "id": 2,
+                "name": "operation",
+                "type": "Operation"
+              },
+              {
+                "id": 3,
                 "name": "moved",
                 "type": "File",
                 "optional": true
+              },
+              {
+                "id": 4,
+                "name": "timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "process",
+                "type": "ProcessIndicator"
               }
             ],
             "messages": [
