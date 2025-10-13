@@ -1,6 +1,8 @@
 package booleanpolicy
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
@@ -292,4 +294,27 @@ func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, enhancedDeployment
 		return Violations{}, err
 	}
 	return *violations, nil
+}
+
+type fileMatcherImpl struct {
+	fileEvaluators []evaluator.Evaluator
+	matcherImpl
+}
+
+func (m *fileMatcherImpl) MatchHostFileActivity(cache *CacheReceptacle, activity *storage.FileActivity) (Violations, error) {
+	return Violations{
+		FileViolation: &storage.Alert_FileSystemViolation{
+			Message:      fmt.Sprintf("Unexpected file system activity %s on Node", activity.GetFile().GetPath()),
+			FileActivity: []*storage.FileActivity{activity},
+		},
+	}, nil
+}
+
+func (m *fileMatcherImpl) MatchDeploymentWithFileActivity(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, activity *storage.FileActivity) (Violations, error) {
+	return Violations{
+		FileViolation: &storage.Alert_FileSystemViolation{
+			Message:      fmt.Sprintf("Unexpected file system activity in Deployment %s", enhancedDeployment.Deployment.GetName()),
+			FileActivity: []*storage.FileActivity{activity},
+		},
+	}, nil
 }

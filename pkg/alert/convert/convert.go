@@ -31,9 +31,25 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 		populateListAlertEntityInfoForDeployment(listAlert, alert.GetDeployment())
 	} else if alert.GetResource() != nil {
 		populateListAlertEntityInfoForResource(listAlert, alert.GetResource())
+	} else if alert.GetHost() != nil {
+		populateListAlertEntityInfoForHost(listAlert, alert, alert.GetHost())
 	}
 
 	return listAlert
+}
+
+func populateListAlertEntityInfoForHost(listAlert *storage.ListAlert, alert *storage.Alert, host *storage.Alert_Host) {
+	listAlert.Entity = &storage.ListAlert_Host{
+		Host: &storage.ListAlert_HostEntity{
+			Hostname: host.GetName(),
+		},
+	}
+
+	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+		ClusterId:    alert.GetClusterId(),
+		ClusterName:  alert.GetClusterName(),
+		ResourceType: storage.ListAlert_HOST,
+	}
 }
 
 func populateListAlertEntityInfoForResource(listAlert *storage.ListAlert, resource *storage.Alert_Resource) {
@@ -144,6 +160,14 @@ func ToAlertResource(kubeEvent *storage.KubernetesEvent) *storage.Alert_Resource
 			Name:         kubeEvent.GetObject().GetName(),
 			ClusterId:    kubeEvent.GetObject().GetClusterId(),
 			Namespace:    kubeEvent.GetObject().GetNamespace(),
+		},
+	}
+}
+
+func ToAlertHost(activity *storage.FileActivity) *storage.Alert_Host_ {
+	return &storage.Alert_Host_{
+		Host: &storage.Alert_Host{
+			Name: "This is a host",
 		},
 	}
 }

@@ -68,6 +68,8 @@ var (
 	Severity                       = newFieldName("Severity")
 	UnexpectedNetworkFlowDetected  = newFieldName("Unexpected Network Flow Detected")
 	UnexpectedProcessExecuted      = newFieldName("Unexpected Process Executed")
+	UnexpectedFilesystemAccess     = newFieldName("Unexpected Filesystem Access")
+	FileOperation                  = newFieldName("File Operation")
 	UnscannedImage                 = newFieldName("Unscanned Image")
 	VolumeDestination              = newFieldName("Volume Destination")
 	VolumeName                     = newFieldName("Volume Name")
