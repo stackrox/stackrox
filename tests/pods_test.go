@@ -46,8 +46,8 @@ func TestPod(testT *testing.T) {
 
 	// Increased outer retry: 5 attempts instead of 3 to handle transient infrastructure issues
 	testutils.Retry(testT, 5, 10*time.Second, func(retryT testutils.T) {
-		defer teardownPod(testT, client, kPod)
-		createPod(testT, client, kPod)
+		defer teardownPod(retryT, client, kPod)
+		createPod(retryT, client, kPod)
 
 		// Wait for pod to be fully running before proceeding
 		// Increased timeout to 3 minutes to handle slow CI environments (image pull, scheduling, etc.)
