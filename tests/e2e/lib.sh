@@ -1071,9 +1071,9 @@ remove_existing_stackrox_resources() {
             # See https://issues.redhat.com/browse/ROX-30450
             kubectl -n stackrox-operator delete --ignore-not-found --wait subscription.operators.coreos.com --all
             # Then delete remaining OLM resources.
-            # The grep is a quick hack to omit templating that might confuse kubectl's YAML parser.
+            # The awk is a quick hack to omit templating that might confuse kubectl's YAML parser.
             # We only care about apiVersion, kind and metadata, which do not contain any templating.
-            grep -v '[$]' operator/hack/operator.envsubst.yaml | \
+            awk 'BEGIN{interesting=1} /^spec:/{interesting=0} /^---$/{interesting=1} interesting{print}' operator/hack/operator.envsubst.yaml | \
               kubectl -n stackrox-operator delete --ignore-not-found --wait -f -
         fi
         kubectl delete --ignore-not-found ns stackrox-operator --wait
