@@ -247,7 +247,7 @@ func main() {
 		}
 
 		if props.ConversionFuncs {
-			if err := generateConversionFuncs(schema, props.SchemaDirectory, props.Json); err != nil {
+			if err := generateConversionFuncs(schema, props.SchemaDirectory); err != nil {
 				return err
 			}
 		}
@@ -277,10 +277,9 @@ func main() {
 	}
 }
 
-func generateConversionFuncs(s *walker.Schema, dir string, json bool) error {
+func generateConversionFuncs(s *walker.Schema, dir string) error {
 	templateMap := map[string]interface{}{
 		"Schema": s,
-		"Json":   json,
 	}
 
 	if err := common.RenderFile(templateMap, migrationToolTemplate, getConversionToolFileName(dir, s.Table)); err != nil {
