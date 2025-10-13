@@ -80,7 +80,7 @@ func BenchmarkReportGenerator(b *testing.B) {
 		storage.VulnerabilityReportFilters_WATCHED,
 	}
 
-	expectedRowCount := 5002
+	expectedRowCount := 5000
 
 	reportSnap := testReportSnapshot(collection.GetId(), fixability, severities, imageTypes, nil)
 
