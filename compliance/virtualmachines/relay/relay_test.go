@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/suite"
@@ -93,7 +94,8 @@ func (s *relayTestSuite) TestHandleVsockConnection_RejectsMismatchingVsockCID() 
 			s.Require().NoError(err)
 			client := newMockSensorClient()
 
-			err = handleVsockConnection(s.ctx, conn, client, 10*time.Second)
+			relay := s.defaultRelay(s.ctx, client)
+			err = relay.handleVsockConnection(conn)
 			if c.shouldError {
 				s.Require().Error(err)
 				s.Contains(err.Error(), "mismatch")
@@ -109,8 +111,9 @@ func (s *relayTestSuite) TestHandleVsockConnection_RejectsMismatchingVsockCID() 
 func (s *relayTestSuite) TestHandleVsockConnection_RejectsMalformedData() {
 	conn := s.defaultVsockConn().withData([]byte("malformed-data"))
 	client := newMockSensorClient()
+	relay := s.defaultRelay(s.ctx, client)
 
-	err := handleVsockConnection(s.ctx, conn, client, 10*time.Second)
+	err := relay.handleVsockConnection(conn)
 	s.Error(err)
 }
 
@@ -118,13 +121,15 @@ func (s *relayTestSuite) TestHandleVsockConnection_HandlesContextCancellation() 
 	conn := s.defaultVsockConn()
 	client := newMockSensorClient().withDelay(500 * time.Millisecond)
 	ctx, cancel := context.WithCancel(s.ctx)
+	relay := s.defaultRelay(s.ctx, client)
+	relay.ctx = ctx
 
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		cancel()
 	}()
 
-	err := handleVsockConnection(ctx, conn, client, 10*time.Second)
+	err := relay.handleVsockConnection(conn)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context canceled")
 }
@@ -222,6 +227,16 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 			retried := len(client.capturedRequests) > 1
 			s.Equal(c.shouldRetry, retried)
 		})
+	}
+}
+
+func (s *relayTestSuite) defaultRelay(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) *Relay {
+	return &Relay{
+		connectionReadTimeout: 10 * time.Second,
+		ctx:                   ctx,
+		sensorClient:          sensorClient,
+		vsockServer:           VsockServer{port: 12345},
+		waitAfterFailedAccept: time.Second,
 	}
 }
 
