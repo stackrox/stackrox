@@ -83,6 +83,13 @@ func (FileActivity_Operation) EnumDescriptor() ([]byte, []int) {
 	return file_storage_file_activity_proto_rawDescGZIP(), []int{0, 0}
 }
 
+// FileActivity contains fields related to arbitrary file activity
+// performed by a given process. This activity can come from k8s, or
+// directly on a node.
+//
+// It is currently intended to be used in Sensor and for detection,
+// but will only be stored embedded in an Alert. As a result, it
+// does not currently define a primary key.
 type FileActivity struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	File      *FileActivity_File     `protobuf:"bytes,1,opt,name=file,proto3" json:"file,omitempty"`
