@@ -67,7 +67,6 @@ const rules = {
     // TODO move rule to pluginGeneric after all errors have been fixed.
     'no-default-import-react': {
         // Omit default import of React because it is not needed for JSX tranform.
-        // See related rule that reports React.createElement as error and recommends named import.
         meta: {
             type: 'problem',
             docs: {
