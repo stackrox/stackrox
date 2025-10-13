@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/chore-make-handleVsockConnection-relay-method",
     "hash": "d53e11bff5dc2fe1b2c8ecf8f749784412045596"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/relay-concurrency-control"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 17243,
+        "gqlID": "PR_kwDOGd6UEM6tGvCY"
+      }
+    }
   }
 }
