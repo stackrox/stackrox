@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -233,6 +234,23 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 			s.Equal(c.shouldRetry, retried)
 		})
 	}
+}
+
+func (s *relayTestSuite) TestAcquireSemaphore() {
+	vsockServer := &VsockServer{
+		semaphore:            semaphore.NewWeighted(1),
+		maxSemaphoreWaitTime: 5 * time.Millisecond,
+	}
+
+	// First should succeed
+	err := vsockServer.acquireSemaphore(s.ctx)
+	s.Require().NoError(err)
+
+	// Second should time out
+	err = vsockServer.acquireSemaphore(s.ctx)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "failed to acquire semaphore")
+
 }
 
 func (s *relayTestSuite) defaultRelay(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) *Relay {
