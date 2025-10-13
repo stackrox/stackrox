@@ -50,5 +50,5 @@ type ServiceAccounts struct {
 	ClusterID   string            `gorm:"column:clusterid;type:uuid;index:serviceaccounts_sac_filter,type:btree"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
-	Serialized  []byte            `gorm:"column:serialized;type:jsonb"`
+	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
 }

@@ -39,5 +39,5 @@ const (
 // ClusterInitBundles holds the Gorm model for Postgres table `cluster_init_bundles`.
 type ClusterInitBundles struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:jsonb"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

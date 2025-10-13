@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
 	"slices"
 	"time"
 
@@ -96,7 +95,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoAPITokens(batch *pgx.Batch, obj *storage.TokenMetadata) error {
 
-	serialized, marshalErr := json.Marshal(obj)
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -140,7 +139,7 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 				"to simply use the object.  %s", obj)
 
-			serialized, marshalErr := json.Marshal(obj)
+			serialized, marshalErr := obj.MarshalVT()
 			if marshalErr != nil {
 				return marshalErr
 			}

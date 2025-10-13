@@ -55,5 +55,5 @@ type ComplianceOperatorSuiteV2 struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar"`
 	ClusterID  string `gorm:"column:clusterid;type:uuid;index:complianceoperatorsuitev2_sac_filter,type:hash"`
-	Serialized []byte `gorm:"column:serialized;type:jsonb"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

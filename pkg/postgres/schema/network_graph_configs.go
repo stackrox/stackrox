@@ -39,5 +39,5 @@ const (
 // NetworkGraphConfigs holds the Gorm model for Postgres table `network_graph_configs`.
 type NetworkGraphConfigs struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:jsonb"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

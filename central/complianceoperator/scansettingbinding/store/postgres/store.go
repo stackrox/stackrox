@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
 	"slices"
 	"time"
 
@@ -92,7 +91,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoComplianceOperatorScanSettingBindings(batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingBinding) error {
 
-	serialized, marshalErr := json.Marshal(obj)
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -132,7 +131,7 @@ func copyFromComplianceOperatorScanSettingBindings(ctx context.Context, s pgSear
 				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 				"to simply use the object.  %s", obj)
 
-			serialized, marshalErr := json.Marshal(obj)
+			serialized, marshalErr := obj.MarshalVT()
 			if marshalErr != nil {
 				return marshalErr
 			}

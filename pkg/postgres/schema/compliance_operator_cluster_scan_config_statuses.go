@@ -58,5 +58,5 @@ type ComplianceOperatorClusterScanConfigStatuses struct {
 	ClusterID       string     `gorm:"column:clusterid;type:uuid;index:complianceoperatorclusterscanconfigstatuses_sac_filter,type:hash"`
 	ScanConfigID    string     `gorm:"column:scanconfigid;type:uuid"`
 	LastUpdatedTime *time.Time `gorm:"column:lastupdatedtime;type:timestamp"`
-	Serialized      []byte     `gorm:"column:serialized;type:jsonb"`
+	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
 }

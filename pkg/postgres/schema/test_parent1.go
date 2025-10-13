@@ -64,7 +64,7 @@ type TestParent1 struct {
 	ParentID            string           `gorm:"column:parentid;type:varchar"`
 	Val                 string           `gorm:"column:val;type:varchar"`
 	StringSlice         *pq.StringArray  `gorm:"column:stringslice;type:text[]"`
-	Serialized          []byte           `gorm:"column:serialized;type:jsonb"`
+	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 

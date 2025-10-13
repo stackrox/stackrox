@@ -111,6 +111,9 @@ type properties struct {
 
 	// Provides options map for sort option transforms
 	TransformSortOptions string
+
+	// Makes the `serialized` field use the jsonb type instead of bytea
+	Json bool
 }
 
 type parsedReference struct {
@@ -149,6 +152,7 @@ func main() {
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
+	c.Flags().BoolVar(&props.Json, "json", false, "if set, will use jsonb data type for the serialized field instead of bytea")
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
 		fmt.Println(readable.Time(time.Now()), "Generating for", typ)
@@ -161,6 +165,17 @@ func main() {
 			props.Table = pgutils.NamingStrategy.TableName(trimmedType)
 		}
 		schema := walker.Walk(mt, props.Table)
+		schema.Json = props.Json
+		if schema.Json {
+			for idx, field := range schema.Fields {
+				if field.Name != "serialized" {
+					continue
+				}
+				field.SQLType = "jsonb"
+				schema.Fields[idx] = field
+				break
+			}
+		}
 		if schema.NoPrimaryKey() && !props.SingletonStore {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
@@ -232,7 +247,7 @@ func main() {
 		}
 
 		if props.ConversionFuncs {
-			if err := generateConversionFuncs(schema, props.SchemaDirectory); err != nil {
+			if err := generateConversionFuncs(schema, props.SchemaDirectory, props.Json); err != nil {
 				return err
 			}
 		}
@@ -262,9 +277,10 @@ func main() {
 	}
 }
 
-func generateConversionFuncs(s *walker.Schema, dir string) error {
+func generateConversionFuncs(s *walker.Schema, dir string, json bool) error {
 	templateMap := map[string]interface{}{
 		"Schema": s,
+		"Json":   json,
 	}
 
 	if err := common.RenderFile(templateMap, migrationToolTemplate, getConversionToolFileName(dir, s.Table)); err != nil {

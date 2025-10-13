@@ -5,7 +5,9 @@
 
 import (
     "context"
+    {{if .Schema.Json -}}
     "encoding/json"
+    {{ end -}}
     "strings"
     "time"
 
@@ -70,7 +72,11 @@ func New(db postgres.DB) Store {
 {{- define "insertObject"}}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgres.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
+    {{if $schema.Json -}}
     serialized, marshalErr := json.Marshal(obj)
+    {{- else -}}
+    serialized, marshalErr := obj.MarshalVT()
+    {{- end }}
     if marshalErr != nil {
         return marshalErr
     }
@@ -168,7 +174,11 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) 
 	}
 
 	var msg {{.Type}}
-	if err := json.Unmarshal(data, &msg); err != nil {
+    {{if .Schema.Json -}}
+    if err := json.Unmarshal(data, &msg); err != nil {
+    {{- else -}}
+    if err := msg.UnmarshalVTUnsafe(data); err != nil {
+    {{- end }}
         return nil, false, err
 	}
 	return &msg, true, nil

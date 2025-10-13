@@ -70,5 +70,5 @@ type Namespaces struct {
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
-	Serialized  []byte            `gorm:"column:serialized;type:jsonb"`
+	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
 }

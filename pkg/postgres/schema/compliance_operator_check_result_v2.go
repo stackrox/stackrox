@@ -69,5 +69,5 @@ type ComplianceOperatorCheckResultV2 struct {
 	ScanRefID       string                                              `gorm:"column:scanrefid;type:uuid"`
 	RuleRefID       string                                              `gorm:"column:rulerefid;type:uuid"`
 	LastStartedTime *time.Time                                          `gorm:"column:laststartedtime;type:timestamp"`
-	Serialized      []byte                                              `gorm:"column:serialized;type:jsonb"`
+	Serialized      []byte                                              `gorm:"column:serialized;type:bytea"`
 }

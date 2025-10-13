@@ -65,5 +65,5 @@ type NodeCves struct {
 	SnoozeExpiry                   *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
 	Orphaned                       bool                          `gorm:"column:orphaned;type:bool"`
 	OrphanedTime                   *time.Time                    `gorm:"column:orphanedtime;type:timestamp"`
-	Serialized                     []byte                        `gorm:"column:serialized;type:jsonb"`
+	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
 }

@@ -82,7 +82,7 @@ type ImageCvesV2 struct {
 	AdvisoryName                   string                        `gorm:"column:advisory_name;type:varchar"`
 	AdvisoryLink                   string                        `gorm:"column:advisory_link;type:varchar"`
 	ImageIDV2                      string                        `gorm:"column:imageidv2;type:varchar;index:imagecvesv2_imageidv2,type:btree"`
-	Serialized                     []byte                        `gorm:"column:serialized;type:jsonb"`
+	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
 	ImagesRef                      Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImageComponentV2Ref            ImageComponentV2              `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImagesV2Ref                    ImagesV2                      `gorm:"foreignKey:imageidv2;references:id;belongsTo;constraint:OnDelete:CASCADE"`

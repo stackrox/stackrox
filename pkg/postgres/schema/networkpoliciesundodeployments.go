@@ -39,5 +39,5 @@ const (
 // Networkpoliciesundodeployments holds the Gorm model for Postgres table `networkpoliciesundodeployments`.
 type Networkpoliciesundodeployments struct {
 	DeploymentID string `gorm:"column:deploymentid;type:uuid;primaryKey"`
-	Serialized   []byte `gorm:"column:serialized;type:jsonb"`
+	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

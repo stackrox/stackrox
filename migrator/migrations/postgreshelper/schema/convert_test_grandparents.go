@@ -2,14 +2,12 @@
 package schema
 
 import (
-	"encoding/json"
-
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // ConvertTestGrandparentFromProto converts a `*storage.TestGrandparent` to Gorm model
 func ConvertTestGrandparentFromProto(obj *storage.TestGrandparent) (*TestGrandparents, error) {
-	serialized, err := json.Marshal(obj)
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +45,8 @@ func ConvertTestGrandparent_Embedded_Embedded2FromProto(obj *storage.TestGrandpa
 // ConvertTestGrandparentToProto converts Gorm model `TestGrandparents` to its protobuf type object
 func ConvertTestGrandparentToProto(m *TestGrandparents) (*storage.TestGrandparent, error) {
 	var msg storage.TestGrandparent
-	if err := json.Unmarshal(m.Serialized, &msg); err != nil {
+
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

@@ -3,7 +3,6 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/stackrox/rox/central/metrics"
@@ -51,7 +50,7 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoConfigs(ctx context.Context, tx *postgres.Tx, obj *storage.Config) error {
-	serialized, marshalErr := json.Marshal(obj)
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -139,7 +138,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Config, bool, er
 	}
 
 	var msg storage.Config
-	if err := json.Unmarshal(data, &msg); err != nil {
+	if err := msg.UnmarshalVTUnsafe(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

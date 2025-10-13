@@ -47,5 +47,5 @@ type APITokens struct {
 	ID         string     `gorm:"column:id;type:varchar;primaryKey"`
 	Expiration *time.Time `gorm:"column:expiration;type:timestamp"`
 	Revoked    bool       `gorm:"column:revoked;type:bool"`
-	Serialized []byte     `gorm:"column:serialized;type:jsonb"`
+	Serialized []byte     `gorm:"column:serialized;type:bytea"`
 }

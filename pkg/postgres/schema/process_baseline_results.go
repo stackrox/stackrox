@@ -46,5 +46,5 @@ type ProcessBaselineResults struct {
 	DeploymentID string `gorm:"column:deploymentid;type:uuid;primaryKey"`
 	ClusterID    string `gorm:"column:clusterid;type:uuid;index:processbaselineresults_sac_filter,type:btree"`
 	Namespace    string `gorm:"column:namespace;type:varchar;index:processbaselineresults_sac_filter,type:btree"`
-	Serialized   []byte `gorm:"column:serialized;type:jsonb"`
+	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

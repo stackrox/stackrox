@@ -11,7 +11,9 @@ package postgres
 
 import (
     "context"
+    {{if .Schema.Json -}}
     "encoding/json"
+    {{ end -}}
     "slices"
     "strings"
     "time"
@@ -212,7 +214,12 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     {{if not $schema.Parent }}
+
+    {{if $schema.Json -}}
     serialized, marshalErr := json.Marshal(obj)
+    {{- else -}}
+    serialized, marshalErr := obj.MarshalVT()
+    {{- end }}
     if marshalErr != nil {
         return marshalErr
     }
@@ -283,7 +290,11 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
             "to simply use the object.  %s", obj)
             {{/* If embedded, the top-level has the full serialized object */}}
             {{if not $schema.Parent }}
+            {{if $schema.Json }}
             serialized, marshalErr := json.Marshal(obj)
+            {{- else -}}
+            serialized, marshalErr := obj.MarshalVT()
+            {{- end }}
             if marshalErr != nil {
                 return marshalErr
             }

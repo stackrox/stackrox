@@ -48,5 +48,5 @@ type ComplianceRunResults struct {
 	RunMetadataStandardID      string     `gorm:"column:runmetadata_standardid;type:varchar"`
 	RunMetadataClusterID       string     `gorm:"column:runmetadata_clusterid;type:uuid;index:compliancerunresults_sac_filter,type:hash"`
 	RunMetadataFinishTimestamp *time.Time `gorm:"column:runmetadata_finishtimestamp;type:timestamp"`
-	Serialized                 []byte     `gorm:"column:serialized;type:jsonb"`
+	Serialized                 []byte     `gorm:"column:serialized;type:bytea"`
 }

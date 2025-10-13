@@ -44,5 +44,5 @@ const (
 // ComplianceDomains holds the Gorm model for Postgres table `compliance_domains`.
 type ComplianceDomains struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:jsonb"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

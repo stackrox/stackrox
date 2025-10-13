@@ -46,5 +46,5 @@ type CloudSources struct {
 	ID         string                   `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string                   `gorm:"column:name;type:varchar;unique"`
 	Type       storage.CloudSource_Type `gorm:"column:type;type:integer"`
-	Serialized []byte                   `gorm:"column:serialized;type:jsonb"`
+	Serialized []byte                   `gorm:"column:serialized;type:bytea"`
 }

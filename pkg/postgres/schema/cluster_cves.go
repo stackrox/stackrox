@@ -60,5 +60,5 @@ type ClusterCves struct {
 	Snoozed                        bool                          `gorm:"column:snoozed;type:bool"`
 	SnoozeExpiry                   *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
 	Type                           storage.CVE_CVEType           `gorm:"column:type;type:integer"`
-	Serialized                     []byte                        `gorm:"column:serialized;type:jsonb"`
+	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
 }

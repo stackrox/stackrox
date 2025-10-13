@@ -73,7 +73,7 @@ type ImageComponentV2 struct {
 	ImageID         string             `gorm:"column:imageid;type:varchar;index:imagecomponentv2_imageid,type:btree"`
 	Location        string             `gorm:"column:location;type:varchar"`
 	ImageIDV2       string             `gorm:"column:imageidv2;type:varchar;index:imagecomponentv2_imageidv2,type:btree"`
-	Serialized      []byte             `gorm:"column:serialized;type:jsonb"`
+	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
 	ImagesRef       Images             `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImagesV2Ref     ImagesV2           `gorm:"foreignKey:imageidv2;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

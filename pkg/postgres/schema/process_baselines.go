@@ -47,5 +47,5 @@ type ProcessBaselines struct {
 	KeyDeploymentID string `gorm:"column:key_deploymentid;type:uuid;index:processbaselines_key_deploymentid,type:hash"`
 	KeyClusterID    string `gorm:"column:key_clusterid;type:uuid;index:processbaselines_sac_filter,type:btree"`
 	KeyNamespace    string `gorm:"column:key_namespace;type:varchar;index:processbaselines_sac_filter,type:btree"`
-	Serialized      []byte `gorm:"column:serialized;type:jsonb"`
+	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 }

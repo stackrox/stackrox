@@ -40,6 +40,10 @@ var (
 )
 
 func getSerializedField(s *Schema) Field {
+	SQLType := "bytea"
+	if s.Json {
+		SQLType = "jsonb"
+	}
 	return Field{
 		ObjectGetter: ObjectGetter{
 			variable: true,
@@ -47,7 +51,7 @@ func getSerializedField(s *Schema) Field {
 		},
 		Name:       "serialized",
 		ColumnName: "serialized",
-		SQLType:    "jsonb",
+		SQLType:    SQLType,
 		Type:       "[]byte",
 		ModelType:  "[]byte",
 		Schema:     s,
@@ -153,6 +157,9 @@ type Schema struct {
 	SearchScope map[v1.SearchCategory]struct{}
 
 	ScopingResource permissions.ResourceMetadata
+
+	// Use JSON Serialization instead of byte arrays for the `serialized` field
+	Json bool
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,

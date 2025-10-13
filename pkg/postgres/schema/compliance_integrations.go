@@ -59,5 +59,5 @@ type ComplianceIntegrations struct {
 	ClusterID         string           `gorm:"column:clusterid;type:uuid;uniqueIndex:compliance_unique_indicator;index:complianceintegrations_sac_filter,type:hash"`
 	OperatorInstalled bool             `gorm:"column:operatorinstalled;type:bool"`
 	OperatorStatus    storage.COStatus `gorm:"column:operatorstatus;type:integer"`
-	Serialized        []byte           `gorm:"column:serialized;type:jsonb"`
+	Serialized        []byte           `gorm:"column:serialized;type:bytea"`
 }

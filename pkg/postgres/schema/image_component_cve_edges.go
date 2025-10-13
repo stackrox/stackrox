@@ -68,6 +68,6 @@ type ImageComponentCveEdges struct {
 	FixedBy            string          `gorm:"column:fixedby;type:varchar"`
 	ImageComponentID   string          `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentcveedges_imagecomponentid,type:hash"`
 	ImageCveID         string          `gorm:"column:imagecveid;type:varchar;index:imagecomponentcveedges_imagecveid,type:hash"`
-	Serialized         []byte          `gorm:"column:serialized;type:jsonb"`
+	Serialized         []byte          `gorm:"column:serialized;type:bytea"`
 	ImageComponentsRef ImageComponents `gorm:"foreignKey:imagecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -93,7 +93,7 @@ type ImagesV2 struct {
 	Priority                          int64             `gorm:"column:priority;type:bigint"`
 	RiskScore                         float32           `gorm:"column:riskscore;type:numeric"`
 	TopCvss                           float32           `gorm:"column:topcvss;type:numeric"`
-	Serialized                        []byte            `gorm:"column:serialized;type:jsonb"`
+	Serialized                        []byte            `gorm:"column:serialized;type:bytea"`
 }
 
 // ImagesV2Layers holds the Gorm model for Postgres table `images_v2_layers`.

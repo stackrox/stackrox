@@ -65,7 +65,7 @@ type ComplianceOperatorRuleV2 struct {
 	Severity   storage.RuleSeverity `gorm:"column:severity;type:integer"`
 	ClusterID  string               `gorm:"column:clusterid;type:uuid;index:complianceoperatorrulev2_sac_filter,type:hash"`
 	RuleRefID  string               `gorm:"column:rulerefid;type:uuid"`
-	Serialized []byte               `gorm:"column:serialized;type:jsonb"`
+	Serialized []byte               `gorm:"column:serialized;type:bytea"`
 }
 
 // ComplianceOperatorRuleV2Controls holds the Gorm model for Postgres table `compliance_operator_rule_v2_controls`.

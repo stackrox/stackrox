@@ -48,5 +48,5 @@ type VirtualMachines struct {
 	Name        string `gorm:"column:name;type:varchar"`
 	ClusterID   string `gorm:"column:clusterid;type:uuid;index:virtualmachines_sac_filter,type:btree"`
 	ClusterName string `gorm:"column:clustername;type:varchar"`
-	Serialized  []byte `gorm:"column:serialized;type:jsonb"`
+	Serialized  []byte `gorm:"column:serialized;type:bytea"`
 }

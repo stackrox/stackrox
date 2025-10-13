@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
 	"slices"
 	"time"
 
@@ -93,7 +92,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoNetworkpolicyapplicationundorecords(batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoRecord) error {
 
-	serialized, marshalErr := json.Marshal(obj)
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -133,7 +132,7 @@ func copyFromNetworkpolicyapplicationundorecords(ctx context.Context, s pgSearch
 				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 				"to simply use the object.  %s", obj)
 
-			serialized, marshalErr := json.Marshal(obj)
+			serialized, marshalErr := obj.MarshalVT()
 			if marshalErr != nil {
 				return marshalErr
 			}

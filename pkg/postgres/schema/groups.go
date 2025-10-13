@@ -43,5 +43,5 @@ type Groups struct {
 	PropsKey            string `gorm:"column:props_key;type:varchar;uniqueIndex:groups_unique_indicator"`
 	PropsValue          string `gorm:"column:props_value;type:varchar;uniqueIndex:groups_unique_indicator"`
 	RoleName            string `gorm:"column:rolename;type:varchar;uniqueIndex:groups_unique_indicator"`
-	Serialized          []byte `gorm:"column:serialized;type:jsonb"`
+	Serialized          []byte `gorm:"column:serialized;type:bytea"`
 }

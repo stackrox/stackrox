@@ -56,5 +56,5 @@ type ComplianceOperatorScanSettingBindingV2 struct {
 	Name            string `gorm:"column:name;type:varchar"`
 	ClusterID       string `gorm:"column:clusterid;type:uuid;index:complianceoperatorscansettingbindingv2_sac_filter,type:hash"`
 	ScanSettingName string `gorm:"column:scansettingname;type:varchar"`
-	Serialized      []byte `gorm:"column:serialized;type:jsonb"`
+	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 }
