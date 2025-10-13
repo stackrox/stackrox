@@ -1413,11 +1413,6 @@ openshift_ci_e2e_mods() {
 }
 
 operator_e2e_test_setup() {
-    # Install operator-sdk build dependencies
-    # operator-sdk depends on github.com/proglottis/gpgme which requires these packages
-    info "Installing operator-sdk build dependencies"
-    yum install -y pkgconf gpgme-devel
-
     # TODO(ROX-11901): pass the brand explicitly from the CI config file rather than hardcode here
     registry_ro_login "quay.io/rhacs-eng"
     export ROX_PRODUCT_BRANDING="RHACS_BRANDING"
