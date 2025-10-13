@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"runtime/debug"
 	"strconv"
@@ -1125,7 +1126,13 @@ func handleRowsWithCallback[T any, PT pgutils.Unmarshaler[T]](ctx context.Contex
 
 		msg := new(T)
 		if errUnmarshal := PT(msg).UnmarshalVTUnsafe(data); errUnmarshal != nil {
-			return errUnmarshal
+			errList := errorhelpers.NewErrorList("Unmarshalling error")
+			errList.AddError(errUnmarshal)
+			jsonUnmarshalErr := json.Unmarshal(data, &msg)
+			if jsonUnmarshalErr != nil {
+				errList.AddError(jsonUnmarshalErr)
+				return errList
+			}
 		}
 		return callback(msg)
 	})
