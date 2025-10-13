@@ -21,52 +21,88 @@ type ContainerNameGroup struct {
 }
 
 func TestContainerInstances(testT *testing.T) {
-	testT.Skip("Flaky: https://issues.redhat.com/browse/ROX-30400")
+	// testT.Skip("Flaky: https://issues.redhat.com/browse/ROX-30400")
 	// https://stack-rox.atlassian.net/browse/ROX-6493
 	// - the process events expected in this test are not reliably detected.
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
 	client := createK8sClient(testT)
-	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
-		// Set up testing environment
-		defer teardownPod(testT, client, kPod)
-		createPod(testT, client, kPod)
 
-		// Get the test pod.
-		deploymentID := getDeploymentID(retryT, kPod.GetName())
-		pods := getPods(retryT, deploymentID)
-		require.Len(retryT, pods, 1)
-		pod := pods[0]
+	// Ensure pod is cleaned up at test end, after all assertions
+	defer teardownPod(testT, client, kPod)
 
-		// Retry to ensure all processes start up.
-		testutils.Retry(retryT, 20, 4*time.Second, func(retryEventsT testutils.T) {
-			// Get the container groups.
-			groupedContainers := getGroupedContainerInstances(retryEventsT, string(pod.ID))
+	// Retry the entire setup to handle transient K8s API issues, slow pod startup, and Central ingestion lag
+	testutils.Retry(testT, 5, 10*time.Second, func(retryT testutils.T) {
+		// Ensure pod exists (idempotent - safe to retry even if pod already exists)
+		ensurePodExists(retryT, client, kPod)
 
-			// Verify the number of containers.
-			require.Len(retryEventsT, groupedContainers, 2)
-			// Verify default sort is by name.
-			names := sliceutils.Map(groupedContainers, func(g ContainerNameGroup) string { return g.Name })
-			require.Equal(retryEventsT, names, []string{"1st", "2nd"})
-			// Verify the events.
-			// Expecting 1 process: nginx
-			require.Len(retryEventsT, groupedContainers[0].Events, 1)
-			firstContainerEvents :=
-				sliceutils.Map(groupedContainers[0].Events, func(event Event) string { return event.Name })
-			require.ElementsMatch(retryEventsT, firstContainerEvents, []string{"/usr/sbin/nginx"})
-			// Expecting 3 processes: sh, date, sleep
-			require.Len(retryEventsT, groupedContainers[1].Events, 3)
-			secondContainerEvents :=
-				sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name })
-			require.ElementsMatch(retryEventsT, secondContainerEvents, []string{"/bin/sh", "/bin/date", "/bin/sleep"})
+		// Wait for pod to be fully running with all containers ready
+		waitForPodRunning(retryT, client, kPod.GetNamespace(), kPod.GetName())
+		testT.Logf("Pod %s is running with all containers ready", kPod.GetName())
 
-			// Verify the container group's timestamp is no later than the timestamp of the first event
-			require.False(retryEventsT, groupedContainers[0].StartTime.After(groupedContainers[0].Events[0].Timestamp.Time))
-			require.False(retryEventsT, groupedContainers[1].StartTime.After(groupedContainers[1].Events[0].Timestamp.Time))
+		// Wait for Central to see the deployment
+		testT.Logf("Waiting for Central to see deployment %s", kPod.GetName())
+		waitForDeployment(retryT, kPod.GetName())
+		testT.Logf("Central now sees deployment %s", kPod.GetName())
+	})
 
-			// Number of events expected should be the aggregate of the above
+	// Get deployment and pod data from Central with retry
+	var deploymentID string
+	var pod Pod
+	testutils.Retry(testT, 5, 10*time.Second, func(deplRetryT testutils.T) {
+		deploymentID = getDeploymentID(deplRetryT, kPod.GetName())
+		deplRetryT.Logf("Central sees the deployment under ID %s", deploymentID)
 
-			verifyRiskEventTimelineCSV(retryEventsT, deploymentID, append(firstContainerEvents, secondContainerEvents...))
-		})
+		pods := getPods(deplRetryT, deploymentID)
+		require.Len(deplRetryT, pods, 1)
+		pod = pods[0]
+	})
+
+	// Retry to ensure all processes start up and are detected
+	testutils.Retry(testT, 20, 4*time.Second, func(retryEventsT testutils.T) {
+		// Get the container groups.
+		groupedContainers := getGroupedContainerInstances(retryEventsT, string(pod.ID))
+
+		// Verify the number of containers.
+		require.Len(retryEventsT, groupedContainers, 2)
+		// Verify default sort is by name.
+		names := sliceutils.Map(groupedContainers, func(g ContainerNameGroup) string { return g.Name })
+		require.Equal(retryEventsT, names, []string{"1st", "2nd"})
+		// Verify the events.
+		// Expecting 1 process: nginx
+		require.Len(retryEventsT, groupedContainers[0].Events, 1)
+		firstContainerEvents :=
+			sliceutils.Map(groupedContainers[0].Events, func(event Event) string { return event.Name })
+		require.ElementsMatch(retryEventsT, firstContainerEvents, []string{"/usr/sbin/nginx"})
+		// Expecting 3 processes: sh, date, sleep
+		require.Len(retryEventsT, groupedContainers[1].Events, 3)
+		secondContainerEvents :=
+			sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name })
+		require.ElementsMatch(retryEventsT, secondContainerEvents, []string{"/bin/sh", "/bin/date", "/bin/sleep"})
+
+		// Verify the container group's timestamp is no later than the timestamp of the earliest event
+		// Find the actual earliest event for each container (GraphQL doesn't guarantee ordering)
+		firstContainerEarliestTime := groupedContainers[0].Events[0].Timestamp.Time
+		for _, event := range groupedContainers[0].Events[1:] {
+			if event.Timestamp.Time.Before(firstContainerEarliestTime) {
+				firstContainerEarliestTime = event.Timestamp.Time
+			}
+		}
+		require.False(retryEventsT, groupedContainers[0].StartTime.After(firstContainerEarliestTime),
+			"container 0 start time (%s) should not be after earliest event time (%s)",
+			groupedContainers[0].StartTime, firstContainerEarliestTime)
+
+		secondContainerEarliestTime := groupedContainers[1].Events[0].Timestamp.Time
+		for _, event := range groupedContainers[1].Events[1:] {
+			if event.Timestamp.Time.Before(secondContainerEarliestTime) {
+				secondContainerEarliestTime = event.Timestamp.Time
+			}
+		}
+		require.False(retryEventsT, groupedContainers[1].StartTime.After(secondContainerEarliestTime),
+			"container 1 start time (%s) should not be after earliest event time (%s)",
+			groupedContainers[1].StartTime, secondContainerEarliestTime)
+
+		// Verify risk event timeline CSV
+		verifyRiskEventTimelineCSV(retryEventsT, deploymentID, append(firstContainerEvents, secondContainerEvents...))
 	})
 }
 

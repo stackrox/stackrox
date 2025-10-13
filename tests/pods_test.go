@@ -3,10 +3,8 @@
 package tests
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -16,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type IDStruct struct {
@@ -44,106 +41,87 @@ func TestPod(testT *testing.T) {
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
 	client := createK8sClient(testT)
 
-	// Increased outer retry: 5 attempts instead of 3 to handle transient infrastructure issues
+	var k8sPod *coreV1.Pod
+	// Ensure pod is cleaned up at test end, after all assertions
+	defer teardownPod(testT, client, kPod)
+
+	// Retry the entire setup to handle transient K8s API issues, slow pod startup, and Central ingestion lag
 	testutils.Retry(testT, 5, 10*time.Second, func(retryT testutils.T) {
-		defer teardownPod(retryT, client, kPod)
-		createPod(retryT, client, kPod)
+		// Ensure pod exists (idempotent - safe to retry even if pod already exists)
+		ensurePodExists(retryT, client, kPod)
+		// Wait for pod to be fully running with all containers ready
+		k8sPod = waitForPodRunning(retryT, client, kPod.GetNamespace(), kPod.GetName())
+		testT.Logf("Pod %s is running with all containers ready", kPod.GetName())
 
-		// Wait for pod to be fully running before proceeding
-		// Increased timeout to 3 minutes to handle slow CI environments (image pull, scheduling, etc.)
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-		defer cancel()
+		// Now wait for Central to see the deployment
+		// This can take time as Sensor needs to detect the pod and report it to Central
+		testT.Logf("Waiting for Central to see deployment %s", kPod.GetName())
+		waitForDeployment(retryT, kPod.GetName())
+		testT.Logf("Central now sees deployment %s", kPod.GetName())
+	})
 
-		var k8sPod *coreV1.Pod
-		// Increased from 30×2s (60s) to 60×3s (180s) to account for slower pod startup in CI
-		testutils.Retry(retryT, 60, 3*time.Second, func(waitT testutils.T) {
-			var err error
-			k8sPod, err = client.CoreV1().Pods(kPod.GetNamespace()).Get(ctx, kPod.GetName(), metav1.GetOptions{})
-			require.NoError(waitT, err, "failed to get pod %s", kPod.GetName())
-
-			// Log pod status for debugging
-			testT.Logf("Pod phase: %s, Reason: %s, Message: %s",
-				k8sPod.Status.Phase, k8sPod.Status.Reason, k8sPod.Status.Message)
-
-			// Provide detailed error message if pod is not running
-			if k8sPod.Status.Phase != coreV1.PodRunning {
-				var containerInfo strings.Builder
-				for _, status := range k8sPod.Status.ContainerStatuses {
-					containerInfo.WriteString(fmt.Sprintf("\n  - %s: ready=%v, started=%v",
-						status.Name, status.Ready, status.Started != nil && *status.Started))
-					if status.State.Waiting != nil {
-						containerInfo.WriteString(fmt.Sprintf(", waiting: %s - %s",
-							status.State.Waiting.Reason, status.State.Waiting.Message))
-					}
-				}
-				require.Failf(waitT, "pod not in Running phase",
-					"Pod %s is in %s phase (expected Running)\nContainers:%s\nPod Reason: %s\nPod Message: %s",
-					kPod.GetName(), k8sPod.Status.Phase, containerInfo.String(),
-					k8sPod.Status.Reason, k8sPod.Status.Message)
-			}
-
-			// Ensure all containers are ready before checking for process events
-			for _, status := range k8sPod.Status.ContainerStatuses {
-				require.True(waitT, status.Ready, "container %s not ready (state: %+v)",
-					status.Name, status.State)
-			}
-		})
-
-		testT.Logf("Pod %s is running with all containers ready", k8sPod.Name)
-
-		// Give collector a moment to start detecting processes after containers are ready
-		time.Sleep(5 * time.Second)
-
+	deploymentID := ""
+	var pod Pod
+	testutils.Retry(testT, 5, 10*time.Second, func(deplRetryT testutils.T) {
 		// Get the test deployment.
-		deploymentID := getDeploymentID(retryT, kPod.GetName())
+		deploymentID = getDeploymentID(deplRetryT, kPod.GetName())
+		deplRetryT.Logf("Central sees the deployment under ID %s", deploymentID)
 
-		podCount := getPodCount(retryT, deploymentID)
-		testT.Logf("Pod count: %d", podCount)
-		require.Equal(retryT, 1, podCount)
+		podCount := getPodCount(deplRetryT, deploymentID)
+		deplRetryT.Logf("Pod count: %d", podCount)
+		require.Equal(deplRetryT, 1, podCount)
 
 		// Get the test pod.
-		pods := getPods(retryT, deploymentID)
-		testT.Logf("Num pods: %d", len(pods))
-		require.Len(retryT, pods, 1)
-		pod := pods[0]
+		pods := getPods(deplRetryT, deploymentID)
+		deplRetryT.Logf("Num pods: %d", len(pods))
+		require.Len(deplRetryT, pods, 1)
+		pod = pods[0]
 
-		testT.Logf("Pod: %+v", pod)
+		deplRetryT.Logf("Pod: %+v", pod)
 
 		// Verify the container count.
-		require.Equal(retryT, int32(2), pod.ContainerCount)
+		require.Equal(deplRetryT, int32(2), pod.ContainerCount)
 
 		// Verify Pod start time is the creation time.
-		testT.Logf("Creation timestamps comparison: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
-		require.Equal(retryT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
+		deplRetryT.Logf("Creation timestamps comparison: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
+		require.Equal(deplRetryT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
+	})
 
-		if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
-			testT.Logf("Skipping parts of TestPod that relate to events because env var \"COLLECTION_METHOD\" is " +
-				"set to \"NO_COLLECTION\"")
-			return
+	if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
+		testT.Logf("Skipping parts of TestPod that relate to events because env var \"COLLECTION_METHOD\" is " +
+			"set to \"NO_COLLECTION\"")
+		return
+	}
+	testutils.Retry(testT, 30, 5*time.Second, func(retryEventsT testutils.T) {
+		events := getEvents(retryEventsT, pod)
+		retryEventsT.Logf("Found %d events (expected 4): %+v", len(events), events)
+
+		// Verify we have all 4 expected events
+		require.Len(retryEventsT, events, 4, "expected 4 process events")
+
+		// Expecting processes: nginx, sh, date, sleep
+		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
+		expected := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
+
+		retryEventsT.Logf("Event names: %+v", eventNames)
+		retryEventsT.Logf("Expected names: %+v", expected)
+		require.ElementsMatch(retryEventsT, eventNames, expected)
+
+		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
+		// Find the actual earliest event (GraphQL doesn't guarantee ordering)
+		earliestEventTime := events[0].Timestamp.Time
+		for _, event := range events[1:] {
+			if event.Timestamp.Time.Before(earliestEventTime) {
+				earliestEventTime = event.Timestamp.Time
+			}
 		}
-		testutils.Retry(retryT, 30, 5*time.Second, func(retryEventsT testutils.T) {
-			events := getEvents(retryEventsT, pod)
-			testT.Logf("Found %d events (expected 4): %+v", len(events), events)
+		retryEventsT.Logf("Pod start comparison: %s vs %s (earliest event)", pod.Started, earliestEventTime)
+		require.False(retryEventsT, pod.Started.After(earliestEventTime),
+			"pod start time (%s) should not be after earliest event time (%s)", pod.Started, earliestEventTime)
 
-			// Verify we have all 4 expected events
-			require.Len(retryEventsT, events, 4, "expected 4 process events")
-
-			// Expecting processes: nginx, sh, date, sleep
-			eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
-			expected := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
-
-			testT.Logf("Event names: %+v", eventNames)
-			testT.Logf("Expected names: %+v", expected)
-			require.ElementsMatch(retryEventsT, eventNames, expected)
-
-			// Verify the pod's timestamp is no later than the timestamp of the earliest event.
-			testT.Logf("Pod start comparison: %s vs %s", pod.Started, events[0].Timestamp.Time)
-			require.False(retryEventsT, pod.Started.After(events[0].Timestamp.Time))
-
-			// Verify risk event timeline csv
-			testT.Logf("Verifying CSV export with %d events", len(eventNames))
-			verifyRiskEventTimelineCSV(retryEventsT, deploymentID, eventNames)
-		})
+		// Verify risk event timeline csv
+		retryEventsT.Logf("Verifying CSV export with %d events", len(eventNames))
+		verifyRiskEventTimelineCSV(retryEventsT, deploymentID, eventNames)
 	})
 }
 
