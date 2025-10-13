@@ -20,9 +20,9 @@ import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
-import useURLSort from 'hooks/useURLSort';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { VirtualMachine } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
@@ -32,36 +32,32 @@ import {
     applyVirtualMachinePackagesTableSort,
     getVirtualMachinePackagesTableData,
 } from '../aggregateUtils';
-import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { virtualMachineComponentSearchFilterConfig } from '../../searchFilterConfig';
-import { COMPONENT_SORT_FIELD } from '../../utils/sortFields';
 import VirtualMachinePackagesTable from './VirtualMachinePackagesTable';
 
 export type VirtualMachinePagePackagesProps = {
     virtualMachineData: VirtualMachine | undefined;
     isLoadingVirtualMachineData: boolean;
     errorVirtualMachineData: Error | undefined;
+    urlSearch: UseUrlSearchReturn;
+    urlSorting: UseURLSortResult;
+    urlPagination: UseURLPaginationResult;
 };
 
 const searchFilterConfig = [virtualMachineComponentSearchFilterConfig];
-
-const sortFields = [COMPONENT_SORT_FIELD];
-
-const defaultSortOption = { field: COMPONENT_SORT_FIELD, direction: 'asc' } as const;
 
 function VirtualMachinePagePackages({
     virtualMachineData,
     isLoadingVirtualMachineData,
     errorVirtualMachineData,
+    urlSearch,
+    urlSorting,
+    urlPagination,
 }: VirtualMachinePagePackagesProps) {
-    const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
-    const { page, perPage, setPage, setPerPage } = pagination;
-    const { searchFilter, setSearchFilter } = useURLSearch();
-    const { sortOption, getSortParams } = useURLSort({
-        sortFields,
-        defaultSortOption,
-        onSort: () => setPage(1, 'replace'),
-    });
+    const { searchFilter, setSearchFilter } = urlSearch;
+    const { page, perPage, setPage, setPerPage } = urlPagination;
+    const { sortOption, getSortParams } = urlSorting;
+
     const isFiltered = getHasSearchApplied(searchFilter);
 
     const virtualMachinePackagesTableData = useMemo(
@@ -109,6 +105,7 @@ function VirtualMachinePagePackages({
 
     const onSearch = (payload: OnSearchPayload) => {
         onURLSearch(searchFilter, setSearchFilter, payload);
+        setPage(1);
     };
 
     const onScannableStatusSelect = (
@@ -120,6 +117,7 @@ function VirtualMachinePagePackages({
         const category = filterType;
         const value = selection;
         onURLSearch(searchFilter, setSearchFilter, { action, category, value });
+        setPage(1);
     };
 
     return (

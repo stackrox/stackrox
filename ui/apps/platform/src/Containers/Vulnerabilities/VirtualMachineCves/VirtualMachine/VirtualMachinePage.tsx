@@ -14,12 +14,23 @@ import {
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import { DEFAULT_VM_PAGE_SIZE } from 'Containers/Vulnerabilities/constants';
 import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { getVirtualMachine } from 'services/VirtualMachineService';
 
 import { detailsTabValues } from '../../types';
 import { getOverviewPagePath } from '../../utils/searchUtils';
+import {
+    COMPONENT_SORT_FIELD,
+    CVE_EPSS_PROBABILITY_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../../utils/sortFields';
 import VirtualMachinePageHeader from './VirtualMachinePageHeader';
 import VirtualMachinePagePackages from './VirtualMachinePagePackages';
 import VirtualMachinePageVulnerabilities from './VirtualMachinePageVulnerabilities';
@@ -31,8 +42,30 @@ const virtualMachineCveOverviewPath = getOverviewPagePath('VirtualMachine', {
     entityTab: 'VirtualMachine',
 });
 
+const sortFields = [
+    COMPONENT_SORT_FIELD,
+    CVE_EPSS_PROBABILITY_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVSS_SORT_FIELD,
+];
+
+const defaultPackagesSortOption = { field: COMPONENT_SORT_FIELD, direction: 'asc' } as const;
+
+const defaultVulnerabilitiesSortOption = {
+    field: CVE_SEVERITY_SORT_FIELD,
+    direction: 'desc',
+} as const;
+
 function VirtualMachinePage() {
     const { virtualMachineId } = useParams() as { virtualMachineId: string };
+    const urlPagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const urlSearch = useURLSearch();
+    const urlSorting = useURLSort({
+        sortFields,
+        defaultSortOption: defaultVulnerabilitiesSortOption,
+        onSort: () => urlPagination.setPage(1, 'replace'),
+    });
 
     const fetchVirtualMachine = useCallback(
         () => getVirtualMachine(virtualMachineId),
@@ -47,6 +80,17 @@ function VirtualMachinePage() {
     const packagesTabKey = detailsTabValues[4];
 
     const virtualMachineName = virtualMachineData?.name;
+
+    function onTabChange(value: string | number) {
+        if (value === packagesTabKey) {
+            urlSorting.setSortOption(defaultPackagesSortOption);
+        } else {
+            urlSorting.setSortOption(defaultVulnerabilitiesSortOption);
+        }
+        setActiveTabKey(value);
+        urlPagination.setPage(1, 'replace');
+        urlSearch.setSearchFilter({});
+    }
 
     return (
         <>
@@ -78,7 +122,7 @@ function VirtualMachinePage() {
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={(_, key) => {
-                        setActiveTabKey(key);
+                        onTabChange(key);
                     }}
                     className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                 >
@@ -118,6 +162,9 @@ function VirtualMachinePage() {
                             virtualMachineData={virtualMachineData}
                             isLoadingVirtualMachineData={isLoading}
                             errorVirtualMachineData={error}
+                            urlSearch={urlSearch}
+                            urlSorting={urlSorting}
+                            urlPagination={urlPagination}
                         />
                     </TabContent>
                 )}
@@ -127,6 +174,9 @@ function VirtualMachinePage() {
                             virtualMachineData={virtualMachineData}
                             isLoadingVirtualMachineData={isLoading}
                             errorVirtualMachineData={error}
+                            urlSearch={urlSearch}
+                            urlSorting={urlSorting}
+                            urlPagination={urlPagination}
                         />
                     </TabContent>
                 )}

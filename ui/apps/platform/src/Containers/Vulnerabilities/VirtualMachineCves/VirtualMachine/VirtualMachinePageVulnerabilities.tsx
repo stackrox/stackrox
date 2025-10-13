@@ -11,14 +11,13 @@ import {
 } from '@patternfly/react-core';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
-import { DEFAULT_VM_PAGE_SIZE } from 'Containers/Vulnerabilities/constants';
 import {
     virtualMachineCVESearchFilterConfig,
     virtualMachineComponentSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
-import useURLSort from 'hooks/useURLSort';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { VirtualMachine } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
@@ -39,12 +38,6 @@ import {
     getHiddenStatuses,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
-import {
-    CVE_EPSS_PROBABILITY_SORT_FIELD,
-    CVE_SEVERITY_SORT_FIELD,
-    CVE_SORT_FIELD,
-    CVSS_SORT_FIELD,
-} from '../../utils/sortFields';
 import VirtualMachineVulnerabilitiesTable from './VirtualMachineVulnerabilitiesTable';
 
 // Currently we need all vm info to be fetched in the root component, hence this being passed in
@@ -53,6 +46,9 @@ export type VirtualMachinePageVulnerabilitiesProps = {
     virtualMachineData: VirtualMachine | undefined;
     isLoadingVirtualMachineData: boolean;
     errorVirtualMachineData: Error | undefined;
+    urlSearch: UseUrlSearchReturn;
+    urlSorting: UseURLSortResult;
+    urlPagination: UseURLPaginationResult;
 };
 
 const searchFilterConfig = [
@@ -60,28 +56,17 @@ const searchFilterConfig = [
     virtualMachineComponentSearchFilterConfig,
 ];
 
-const sortFields = [
-    CVE_EPSS_PROBABILITY_SORT_FIELD,
-    CVE_SORT_FIELD,
-    CVE_SEVERITY_SORT_FIELD,
-    CVSS_SORT_FIELD,
-];
-
-const defaultSortOption = { field: CVE_SEVERITY_SORT_FIELD, direction: 'desc' } as const;
-
 function VirtualMachinePageVulnerabilities({
     virtualMachineData,
     isLoadingVirtualMachineData,
     errorVirtualMachineData,
+    urlSearch,
+    urlSorting,
+    urlPagination,
 }: VirtualMachinePageVulnerabilitiesProps) {
-    const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
-    const { sortOption, getSortParams } = useURLSort({
-        sortFields,
-        defaultSortOption,
-        onSort: () => setPage(1, 'replace'),
-    });
-    const { page, perPage, setPage, setPerPage } = pagination;
-    const { searchFilter, setSearchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = urlSearch;
+    const { sortOption, getSortParams } = urlSorting;
+    const { page, perPage, setPage, setPerPage } = urlPagination;
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);

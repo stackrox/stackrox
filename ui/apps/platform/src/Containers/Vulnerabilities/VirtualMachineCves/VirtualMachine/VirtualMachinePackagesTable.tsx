@@ -49,7 +49,7 @@ function VirtualMachinePackagesTable({
                     <Tbody>
                         {data.map((packageRow) => {
                             return (
-                                <Tr key={packageRow.name}>
+                                <Tr key={`${packageRow.name}-${packageRow.version}`}>
                                     <Td dataLabel="Name">{packageRow.name} </Td>
                                     <Td dataLabel="Status">
                                         {packageRow.isScannable ? 'Scanned' : 'Not scanned'}

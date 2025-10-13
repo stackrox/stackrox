@@ -59,11 +59,15 @@ export type CveTableRow = {
 };
 
 export function getVirtualMachineScannedPackagesCount(virtualMachine: VirtualMachine): string {
-    const totalComponents = virtualMachine.scan?.components.length ?? 0;
-    const scannedComponents =
-        virtualMachine.scan?.components.filter(
-            (component) => !component.notes.includes('UNSCANNED')
-        ).length ?? 0;
+    const components = virtualMachine.scan?.components;
+    if (!Array.isArray(components)) {
+        return 'Not available';
+    }
+
+    const totalComponents = components.length;
+    const scannedComponents = components.filter(
+        (component) => !component.notes?.includes('UNSCANNED')
+    ).length;
 
     return `${scannedComponents}/${totalComponents} scanned packages`;
 }
