@@ -471,7 +471,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(imageCVE)
 			s.Equal(cveName, imageCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, imageCVE.Cvss)
+			s.Equal(cvss, imageCVE.GetCvss())
 		} else {
 			s.Nil(imageCVE)
 		}
@@ -492,7 +492,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSharedAcrossComponents() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(imageCVE)
 			s.Equal(cveName, imageCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, imageCVE.Cvss)
+			s.Equal(cvss, imageCVE.GetCvss())
 		} else {
 			s.Nil(imageCVE)
 		}
@@ -513,7 +513,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetFromSharedComponent() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(imageCVE)
 			s.Equal(cveName, imageCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, imageCVE.Cvss)
+			s.Equal(cvss, imageCVE.GetCvss())
 		} else {
 			s.Nil(imageCVE)
 		}
@@ -723,7 +723,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSingleScopeOnly() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(nodeCVE)
 			s.Equal(cveName, nodeCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, nodeCVE.Cvss)
+			s.Equal(cvss, nodeCVE.GetCvss())
 		} else {
 			s.Nil(nodeCVE)
 		}
@@ -744,7 +744,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSharedAcrossComponents() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(nodeCVE)
 			s.Equal(cveName, nodeCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, nodeCVE.Cvss)
+			s.Equal(cvss, nodeCVE.GetCvss())
 		} else {
 			s.Nil(nodeCVE)
 		}
@@ -765,7 +765,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetFromSharedComponent() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(nodeCVE)
 			s.Equal(cveName, nodeCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, nodeCVE.Cvss)
+			s.Equal(cvss, nodeCVE.GetCvss())
 		} else {
 			s.Nil(nodeCVE)
 		}

@@ -414,9 +414,9 @@ func TestPopulateImageMetadata(t *testing.T) {
 
 			wrap.populateImageMetadata(localImages, pods...)
 			for i, m := range c.expectedMetadata {
-				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
-				assert.Equal(t, m.expectedNotPullable, wrap.Deployment.Containers[i].Image.NotPullable)
-				assert.Equal(t, m.expectedIsClusterLocal, wrap.Deployment.Containers[i].Image.IsClusterLocal)
+				assert.Equal(t, m.expectedID, wrap.GetDeployment().GetContainers()[i].GetImage().GetId())
+				assert.Equal(t, m.expectedNotPullable, wrap.GetDeployment().GetContainers()[i].GetImage().GetNotPullable())
+				assert.Equal(t, m.expectedIsClusterLocal, wrap.GetDeployment().GetContainers()[i].GetImage().GetIsClusterLocal())
 			}
 		})
 	}
@@ -569,8 +569,8 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 
 			wrap.populateImageMetadata(localImages, pods...)
 			for i, m := range c.expectedMetadata {
-				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
-				protoassert.Equal(t, m.expectedImageName, wrap.Deployment.Containers[i].Image.Name)
+				assert.Equal(t, m.expectedID, wrap.GetDeployment().GetContainers()[i].GetImage().GetId())
+				protoassert.Equal(t, m.expectedImageName, wrap.GetDeployment().GetContainers()[i].GetImage().GetName())
 			}
 		})
 	}

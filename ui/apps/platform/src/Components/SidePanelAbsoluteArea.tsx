@@ -1,4 +1,5 @@
-import React, { ReactElement, ReactNode } from 'react';
+import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 export type SidePanelAbsoluteAreaProps = {
     children: ReactNode;

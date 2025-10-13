@@ -218,8 +218,8 @@ func (s *configDataStoreTestSuite) TestAllowsUpdate() {
 
 func (s *configDataStoreTestSuite) TestGetPlatformComponentConfig() {
 	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.PublicConfig,
-		PrivateConfig: sampleConfig.PrivateConfig,
+		PublicConfig:  sampleConfig.GetPublicConfig(),
+		PrivateConfig: sampleConfig.GetPrivateConfig(),
 		PlatformComponentConfig: &storage.PlatformComponentConfig{
 			NeedsReevaluation: true,
 			Rules: []*storage.PlatformComponentConfig_Rule{
@@ -232,15 +232,15 @@ func (s *configDataStoreTestSuite) TestGetPlatformComponentConfig() {
 	platformConfig, _, err := s.dataStore.GetPlatformComponentConfig(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 	s.NotNil(platformConfig)
-	s.True(platformConfig.NeedsReevaluation)
-	s.Equal(2, len(platformConfig.Rules))
+	s.True(platformConfig.GetNeedsReevaluation())
+	s.Equal(2, len(platformConfig.GetRules()))
 }
 
 func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 	// Test when no update is required
 	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.PublicConfig,
-		PrivateConfig: sampleConfig.PrivateConfig,
+		PublicConfig:  sampleConfig.GetPublicConfig(),
+		PrivateConfig: sampleConfig.GetPrivateConfig(),
 		PlatformComponentConfig: &storage.PlatformComponentConfig{
 			NeedsReevaluation: false,
 			Rules: []*storage.PlatformComponentConfig_Rule{
@@ -257,13 +257,13 @@ func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 	})
 	s.NoError(err, "expected no error trying to upsert basic config")
 	s.NotNil(config)
-	s.False(config.NeedsReevaluation)
-	s.Equal(2, len(config.Rules))
+	s.False(config.GetNeedsReevaluation())
+	s.Equal(2, len(config.GetRules()))
 
 	// Test when a re-evaluation should be triggered
 	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.PublicConfig,
-		PrivateConfig: sampleConfig.PrivateConfig,
+		PublicConfig:  sampleConfig.GetPublicConfig(),
+		PrivateConfig: sampleConfig.GetPrivateConfig(),
 		PlatformComponentConfig: &storage.PlatformComponentConfig{
 			NeedsReevaluation: false,
 			Rules: []*storage.PlatformComponentConfig_Rule{
@@ -285,13 +285,13 @@ func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 	})
 	s.NoError(err, "expected no error when upserting new rule")
 	s.NotNil(config)
-	s.True(config.NeedsReevaluation)
-	s.Equal(3, len(config.Rules))
+	s.True(config.GetNeedsReevaluation())
+	s.Equal(3, len(config.GetRules()))
 
 	// Test updating a system rule a couple ways
 	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.PublicConfig,
-		PrivateConfig: sampleConfig.PrivateConfig,
+		PublicConfig:  sampleConfig.GetPublicConfig(),
+		PrivateConfig: sampleConfig.GetPrivateConfig(),
 		PlatformComponentConfig: &storage.PlatformComponentConfig{
 			NeedsReevaluation: false,
 			Rules: []*storage.PlatformComponentConfig_Rule{
@@ -314,8 +314,8 @@ func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 	s.Nil(config)
 
 	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.PublicConfig,
-		PrivateConfig: sampleConfig.PrivateConfig,
+		PublicConfig:  sampleConfig.GetPublicConfig(),
+		PrivateConfig: sampleConfig.GetPrivateConfig(),
 		PlatformComponentConfig: &storage.PlatformComponentConfig{
 			NeedsReevaluation: false,
 			Rules: []*storage.PlatformComponentConfig_Rule{
@@ -332,13 +332,13 @@ func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 	})
 	s.NoError(err, "expected no error trying to add duplicate system rule")
 	s.NotNil(config)
-	s.False(config.NeedsReevaluation)
-	s.Equal(2, len(config.Rules))
+	s.False(config.GetNeedsReevaluation())
+	s.Equal(2, len(config.GetRules()))
 
 	// Test duplicating the layered products rule
 	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.PublicConfig,
-		PrivateConfig: sampleConfig.PrivateConfig,
+		PublicConfig:  sampleConfig.GetPublicConfig(),
+		PrivateConfig: sampleConfig.GetPrivateConfig(),
 		PlatformComponentConfig: &storage.PlatformComponentConfig{
 			NeedsReevaluation: false,
 			Rules: []*storage.PlatformComponentConfig_Rule{
@@ -352,7 +352,7 @@ func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 		defaultPlatformConfigSystemRule,
 		defaultPlatformConfigLayeredProductsRule,
 		{
-			Name: defaultPlatformConfigLayeredProductsRule.Name,
+			Name: defaultPlatformConfigLayeredProductsRule.GetName(),
 			NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
 				Regex: ".*",
 			},
@@ -360,7 +360,7 @@ func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 	})
 	s.NoError(err, "expected no error trying to add duplicate system rule")
 	s.NotNil(config)
-	s.Equal(2, len(config.Rules))
+	s.Equal(2, len(config.GetRules()))
 }
 
 var (

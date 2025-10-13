@@ -98,7 +98,7 @@ func (s *NodesStoreSuite) TestStore() {
 	s.True(exists)
 
 	// Reconcile the timestamps that are set during upsert.
-	cloned.LastUpdated = foundNode.LastUpdated
+	cloned.LastUpdated = foundNode.GetLastUpdated()
 	protoassert.Equal(s.T(), cloned, foundNode)
 
 	s.NoError(store.Delete(s.ctx, node.GetId()))

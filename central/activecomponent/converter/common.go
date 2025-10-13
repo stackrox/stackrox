@@ -13,7 +13,7 @@ func ConvertActiveContextsMapToSlice(contextMap map[string]*storage.ActiveCompon
 		contexts = append(contexts, ctx)
 	}
 	sort.SliceStable(contexts, func(i, j int) bool {
-		return contexts[i].ContainerName < contexts[j].ContainerName
+		return contexts[i].GetContainerName() < contexts[j].GetContainerName()
 	})
 	return contexts
 }

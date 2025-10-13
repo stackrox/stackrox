@@ -127,7 +127,7 @@ func (s *namespaceDatastoreComprehensiveSuite) TestGetManyNamespaces() {
 
 			// Verify all returned namespaces have priority set
 			for _, ns := range namespaces {
-				s.GreaterOrEqual(ns.Priority, int64(0))
+				s.GreaterOrEqual(ns.GetPriority(), int64(0))
 			}
 		})
 	}
@@ -151,14 +151,14 @@ func (s *namespaceDatastoreComprehensiveSuite) TestPriorityAndRanking() {
 		ns, found, err := s.datastore.GetNamespace(s.testContexts[testutils.UnrestrictedReadCtx], ns1.GetId())
 		s.NoError(err)
 		s.True(found)
-		s.GreaterOrEqual(ns.Priority, int64(0))
+		s.GreaterOrEqual(ns.GetPriority(), int64(0))
 	})
 
 	s.Run("GetAllNamespaces sets priorities", func() {
 		namespaces, err := s.datastore.GetAllNamespaces(s.testContexts[testutils.UnrestrictedReadCtx])
 		s.NoError(err)
 		for _, ns := range namespaces {
-			s.GreaterOrEqual(ns.Priority, int64(0))
+			s.GreaterOrEqual(ns.GetPriority(), int64(0))
 		}
 	})
 
@@ -166,7 +166,7 @@ func (s *namespaceDatastoreComprehensiveSuite) TestPriorityAndRanking() {
 		namespaces, err := s.datastore.SearchNamespaces(s.testContexts[testutils.UnrestrictedReadCtx], searchPkg.EmptyQuery())
 		s.NoError(err)
 		for _, ns := range namespaces {
-			s.GreaterOrEqual(ns.Priority, int64(0))
+			s.GreaterOrEqual(ns.GetPriority(), int64(0))
 		}
 	})
 }
@@ -336,7 +336,7 @@ func (s *namespaceDatastoreComprehensiveSuite) TestRankingRemovalOnDelete() {
 	retrievedNs, found, err := s.datastore.GetNamespace(s.testContexts[testutils.UnrestrictedReadCtx], ns.GetId())
 	s.NoError(err)
 	s.True(found)
-	s.GreaterOrEqual(retrievedNs.Priority, int64(0))
+	s.GreaterOrEqual(retrievedNs.GetPriority(), int64(0))
 
 	// Remove namespace
 	err = s.datastore.RemoveNamespace(s.testContexts[testutils.UnrestrictedReadWriteCtx], ns.GetId())
@@ -600,7 +600,7 @@ func (s *namespaceDatastoreComprehensiveSuite) TestGetNamespacesForSACEdgeCases(
 					if retrievedNs.GetId() == ns.GetId() {
 						found = true
 						if tc.expectPrioritySet {
-							s.GreaterOrEqual(retrievedNs.Priority, int64(0))
+							s.GreaterOrEqual(retrievedNs.GetPriority(), int64(0))
 						}
 						break
 					}

@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { ENFORCEMENT_ACTIONS, ENFORCEMENT_ACTIONS_AS_STRING } from 'constants/enforcementActions';
-import { LifecycleStage } from 'types/policy.proto';
+import type { LifecycleStage } from 'types/policy.proto';
 
 function getDeployHeader(count) {
     let message = '';

@@ -246,7 +246,7 @@ func TestBuildPriorityQuery(t *testing.T) {
 				assert.NotNil(t, query)
 				assert.Equal(t, tt.expectedReversed, reversed)
 				// Verify pagination was removed
-				assert.Nil(t, query.Pagination)
+				assert.Nil(t, query.GetPagination())
 				// Verify original query content is preserved
 				assert.Equal(t, tt.query.GetQuery(), query.GetQuery())
 			}

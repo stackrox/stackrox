@@ -50,7 +50,7 @@ func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.De
 	imageRiskResults := make(map[string][]*storage.Risk_Result)
 	for _, risk := range images {
 		for _, result := range risk.GetResults() {
-			imageRiskResults[result.Name] = append(imageRiskResults[result.Name], result)
+			imageRiskResults[result.GetName()] = append(imageRiskResults[result.GetName()], result)
 		}
 	}
 

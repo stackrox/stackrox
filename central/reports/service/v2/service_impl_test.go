@@ -108,9 +108,9 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 			ctx := authn.ContextWithIdentity(s.ctx, mockID, s.T())
 
 			if !tc.isValidationError {
-				mockID.EXPECT().UID().Return(creator.Id).AnyTimes()
-				mockID.EXPECT().FullName().Return(creator.Name).AnyTimes()
-				mockID.EXPECT().FriendlyName().Return(creator.Name).AnyTimes()
+				mockID.EXPECT().UID().Return(creator.GetId()).AnyTimes()
+				mockID.EXPECT().FullName().Return(creator.GetName()).AnyTimes()
+				mockID.EXPECT().FriendlyName().Return(creator.GetName()).AnyTimes()
 
 				mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
 				mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
@@ -118,7 +118,7 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 
 				protoReportConfig := tc.reportConfigGen()
 				protoReportConfig.Creator = creator
-				protoReportConfig.GetVulnReportFilters().AccessScopeRules = []*storage.SimpleAccessScope_Rules{accessScope.Rules}
+				protoReportConfig.GetVulnReportFilters().AccessScopeRules = []*storage.SimpleAccessScope_Rules{accessScope.GetRules()}
 				s.reportConfigDataStore.EXPECT().AddReportConfiguration(ctx, protoReportConfig).Return(protoReportConfig.GetId(), nil).Times(1)
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(ctx, protoReportConfig.GetId()).Return(protoReportConfig, true, nil).Times(1)
 			}
@@ -286,9 +286,9 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			s.reportConfigDataStore.EXPECT().GetReportConfigurations(allAccessContext, tc.expectedQ).
 				Return([]*storage.ReportConfiguration{fixtures.GetValidReportConfigWithMultipleNotifiersV2()}, nil).Times(1)
 
-			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[0])
-			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[1])
-			s.mockGetCollectionCall(expectedResp.ReportConfigs[0])
+			s.mockGetNotifierCall(expectedResp.GetReportConfigs()[0].GetNotifiers()[0])
+			s.mockGetNotifierCall(expectedResp.GetReportConfigs()[0].GetNotifiers()[1])
+			s.mockGetCollectionCall(expectedResp.GetReportConfigs()[0])
 
 			configs, err := s.service.ListReportConfigurations(allAccessContext, tc.query)
 			s.NoError(err)
@@ -743,7 +743,7 @@ func (s *ReportServiceTestSuite) TestGetReportStatus() {
 	}
 	repStatusResponse, err := s.service.GetReportStatus(s.ctx, &id)
 	assert.NoError(s.T(), err)
-	assert.Equal(s.T(), repStatusResponse.Status.GetErrorMsg(), status.GetErrorMsg())
+	assert.Equal(s.T(), repStatusResponse.GetStatus().GetErrorMsg(), status.GetErrorMsg())
 }
 
 func (s *ReportServiceTestSuite) TestGetReportHistory() {
@@ -767,8 +767,8 @@ func (s *ReportServiceTestSuite) TestGetReportHistory() {
 
 	res, err := s.service.GetReportHistory(s.ctx, req)
 	assert.NoError(s.T(), err)
-	assert.Equal(s.T(), res.ReportSnapshots[0].GetReportJobId(), "test_report")
-	assert.Equal(s.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
+	assert.Equal(s.T(), res.GetReportSnapshots()[0].GetReportJobId(), "test_report")
+	assert.Equal(s.T(), res.GetReportSnapshots()[0].GetReportStatus().GetErrorMsg(), "Error msg")
 
 	req = &apiV2.GetReportHistoryRequest{
 		Id:               "",
@@ -786,8 +786,8 @@ func (s *ReportServiceTestSuite) TestGetReportHistory() {
 
 	res, err = s.service.GetReportHistory(s.ctx, req)
 	assert.NoError(s.T(), err)
-	assert.Equal(s.T(), res.ReportSnapshots[0].GetReportJobId(), "test_report")
-	assert.Equal(s.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
+	assert.Equal(s.T(), res.GetReportSnapshots()[0].GetReportJobId(), "test_report")
+	assert.Equal(s.T(), res.GetReportSnapshots()[0].GetReportStatus().GetErrorMsg(), "Error msg")
 }
 
 func (s *ReportServiceTestSuite) TestGetMyReportHistory() {
@@ -820,8 +820,8 @@ func (s *ReportServiceTestSuite) TestGetMyReportHistory() {
 
 	res, err := s.service.GetMyReportHistory(s.getContextForUser(userA), req)
 	assert.NoError(s.T(), err)
-	assert.Equal(s.T(), res.ReportSnapshots[0].GetReportJobId(), "test_report")
-	assert.Equal(s.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
+	assert.Equal(s.T(), res.GetReportSnapshots()[0].GetReportJobId(), "test_report")
+	assert.Equal(s.T(), res.GetReportSnapshots()[0].GetReportStatus().GetErrorMsg(), "Error msg")
 
 	req = &apiV2.GetReportHistoryRequest{
 		Id:               "",
@@ -888,9 +888,9 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 	}
 
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
-	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
 
 	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
 	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
@@ -918,7 +918,7 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		{
 			desc: "User info not present in context",
 			req: &apiV2.RunReportRequest{
-				ReportConfigId:           reportConfig.Id,
+				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
 			},
 			ctx:     s.ctx,
@@ -928,12 +928,12 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		{
 			desc: "Report config not found",
 			req: &apiV2.RunReportRequest{
-				ReportConfigId:           reportConfig.Id,
+				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
 			},
 			ctx: userContext,
 			mockGen: func() {
-				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.Id).
+				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.GetId()).
 					Return(nil, false, nil).Times(1)
 			},
 			isError: true,
@@ -941,12 +941,12 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		{
 			desc: "Collection not found",
 			req: &apiV2.RunReportRequest{
-				ReportConfigId:           reportConfig.Id,
+				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
 			},
 			ctx: userContext,
 			mockGen: func() {
-				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.Id).
+				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.GetId()).
 					Return(reportConfig, true, nil).Times(1)
 				s.collectionDataStore.EXPECT().Get(gomock.Any(), reportConfig.GetResourceScope().GetCollectionId()).
 					Return(nil, false, nil)
@@ -956,12 +956,12 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		{
 			desc: "One of the notifiers not found",
 			req: &apiV2.RunReportRequest{
-				ReportConfigId:           reportConfig.Id,
+				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
 			},
 			ctx: userContext,
 			mockGen: func() {
-				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.Id).
+				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.GetId()).
 					Return(reportConfig, true, nil).Times(1)
 				s.collectionDataStore.EXPECT().Get(gomock.Any(), reportConfig.GetResourceScope().GetCollectionId()).
 					Return(collection, true, nil).Times(1)
@@ -973,12 +973,12 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		{
 			desc: "Successful submission; Notification method email",
 			req: &apiV2.RunReportRequest{
-				ReportConfigId:           reportConfig.Id,
+				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
 			},
 			ctx: userContext,
 			mockGen: func() {
-				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.Id).
+				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.GetId()).
 					Return(reportConfig, true, nil).Times(1)
 				s.collectionDataStore.EXPECT().Get(gomock.Any(), reportConfig.GetResourceScope().GetCollectionId()).
 					Return(collection, true, nil).Times(1)
@@ -989,19 +989,19 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 			},
 			isError: false,
 			resp: &apiV2.RunReportResponse{
-				ReportConfigId: reportConfig.Id,
+				ReportConfigId: reportConfig.GetId(),
 				ReportId:       "reportID",
 			},
 		},
 		{
 			desc: "Successful submission; Notification method download",
 			req: &apiV2.RunReportRequest{
-				ReportConfigId:           reportConfig.Id,
+				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_DOWNLOAD,
 			},
 			ctx: userContext,
 			mockGen: func() {
-				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.Id).
+				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.GetId()).
 					Return(reportConfig, true, nil).Times(1)
 				s.collectionDataStore.EXPECT().Get(gomock.Any(), reportConfig.GetResourceScope().GetCollectionId()).
 					Return(collection, true, nil).Times(1)
@@ -1012,7 +1012,7 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 			},
 			isError: false,
 			resp: &apiV2.RunReportResponse{
-				ReportConfigId: reportConfig.Id,
+				ReportConfigId: reportConfig.GetId(),
 				ReportId:       "reportID",
 			},
 		},
@@ -1085,8 +1085,8 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
 				snap.Requester = &storage.SlimUser{
-					Id:   reportSnapshot.Requester.Id + "-1",
-					Name: reportSnapshot.Requester.Name + "-1",
+					Id:   reportSnapshot.GetRequester().GetId() + "-1",
+					Name: reportSnapshot.GetRequester().GetName() + "-1",
 				}
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1248,8 +1248,8 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
 				snap.Requester = &storage.SlimUser{
-					Id:   reportSnapshot.Requester.Id + "-1",
-					Name: reportSnapshot.Requester.Name + "-1",
+					Id:   reportSnapshot.GetRequester().GetId() + "-1",
+					Name: reportSnapshot.GetRequester().GetName() + "-1",
 				}
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1462,7 +1462,7 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(response.ReportID, tc.resp.ReportID)
+				s.Equal(response.GetReportID(), tc.resp.GetReportID())
 			}
 		})
 	}
@@ -1567,7 +1567,7 @@ func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
 			} else {
 				s.NoError(err)
 				s.NotNil(response)
-				s.NotNil(response.ReportSnapshots)
+				s.NotNil(response.GetReportSnapshots())
 			}
 		})
 	}
@@ -1668,7 +1668,7 @@ func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
 			} else {
 				s.NoError(err)
 				s.NotNil(response)
-				s.NotNil(response.ReportSnapshots)
+				s.NotNil(response.GetReportSnapshots())
 			}
 		})
 	}
@@ -1676,9 +1676,9 @@ func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
 
 func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) context.Context {
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
-	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
 
 	// Create a mock role with a default access scope for testing
 	accessScope := &storage.SimpleAccessScope{

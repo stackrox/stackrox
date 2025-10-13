@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { markNetworkBaselineStatuses } from 'services/NetworkService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { BaselineStatusType, Flow } from '../types/flow.type';
+import type { BaselineStatusType, Flow } from '../types/flow.type';
 
 type Result = {
     isModifying: boolean;

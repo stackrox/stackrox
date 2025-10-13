@@ -490,10 +490,10 @@ func TestRegistryStore_CentralIntegrations(t *testing.T) {
 // is properly set based on the provided registry.
 func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {
 	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, "http://example.com")
-	assert.Equal(t, ii.Type, types.DockerType)
+	assert.Equal(t, ii.GetType(), types.DockerType)
 
 	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, "https://registry.redhat.io")
-	assert.Equal(t, ii.Type, types.RedHatType)
+	assert.Equal(t, ii.GetType(), types.RedHatType)
 }
 
 // TestRegistryStore_IsLocal validates that the store properly detects if an image
@@ -1070,7 +1070,7 @@ func TestRegistyStore_Metrics(t *testing.T) {
 		require.Len(t, regs, 1)
 
 		ii := regs[0].Source()
-		ii.Name = ii.Name + "1234567890" // Add 10 'bytes' to the integration name
+		ii.Name = ii.GetName() + "1234567890" // Add 10 'bytes' to the integration name
 
 		regStore.DeleteSecret(fakeNamespace, fakeSecretName)
 		assert.Equal(t, -10.0, testutil.ToFloat64(c))

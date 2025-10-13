@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 
 import { resourceTypes } from 'constants/entityTypes';
-import TableCountLink from 'Components/workflow/TableCountLink';
+import TableCountLink from '../../TableCountLink';
 
 type ClusterTableCountLinksProps = {
     row: {

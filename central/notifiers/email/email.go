@@ -144,7 +144,7 @@ func Validate(emailConf *storage.Email, validateSecret bool) error {
 		errorList.AddString("Sender must be specified")
 	}
 	// username and password are optional for unauthenticated smtp
-	if !emailConf.AllowUnauthenticatedSmtp {
+	if !emailConf.GetAllowUnauthenticatedSmtp() {
 		if emailConf.GetUsername() == "" {
 			errorList.AddString("Username must be specified")
 		}
@@ -305,7 +305,7 @@ func (*email) Close(context.Context) error {
 // AlertNotify takes in an alert and generates the email.
 func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	subject := notifiers.SummaryForAlert(alert)
-	body, err := PlainTextAlert(alert, e.notifier.UiEndpoint, e.mitreStore)
+	body, err := PlainTextAlert(alert, e.notifier.GetUiEndpoint(), e.mitreStore)
 	if err != nil {
 		return err
 	}
@@ -520,7 +520,7 @@ func (e *email) startTLSConn(dialCtx context.Context) (conn net.Conn, auth smtp.
 func (e *email) tlsConfig() *tls.Config {
 	return &tls.Config{
 		ServerName:         e.smtpServer.host,
-		InsecureSkipVerify: e.config.SkipTLSVerify,
+		InsecureSkipVerify: e.config.GetSkipTLSVerify(),
 	}
 }
 

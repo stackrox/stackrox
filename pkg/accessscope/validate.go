@@ -57,7 +57,7 @@ func validateSelectorRequirement(labelSelector *storage.SetBasedLabelSelector) e
 	var multiErr error
 	for _, requirement := range labelSelector.GetRequirements() {
 		op := effectiveaccessscope.ConvertLabelSelectorOperatorToSelectionOperator(requirement.GetOp())
-		_, err := labels.NewRequirement(requirement.GetKey(), op, requirement.Values)
+		_, err := labels.NewRequirement(requirement.GetKey(), op, requirement.GetValues())
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		}

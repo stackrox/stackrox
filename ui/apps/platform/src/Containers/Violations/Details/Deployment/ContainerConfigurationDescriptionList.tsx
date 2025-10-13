@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { DescriptionList, Flex, FlexItem } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import { Container } from 'types/deployment.proto';
+import type { Container } from 'types/deployment.proto';
 
 import ContainerImage from './ContainerImage';
 import ContainerResourcesDescriptionList from './ContainerResourcesDescriptionList';

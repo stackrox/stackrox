@@ -1,4 +1,5 @@
-import React, { ReactElement, ReactNode, CSSProperties } from 'react';
+import React from 'react';
+import type { ReactElement, ReactNode, CSSProperties } from 'react';
 import { Divider, Text, TextVariants } from '@patternfly/react-core';
 
 export type DetailedTooltipContentProps = {

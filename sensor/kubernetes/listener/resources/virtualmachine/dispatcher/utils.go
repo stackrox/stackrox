@@ -39,6 +39,16 @@ func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) (int32, bool) {
 	return int32(*vm.VSOCKCID), true
 }
 
+func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
+	facts := map[string]string{
+		GuestOSKey: UnknownGuestOS,
+	}
+	if vm.GuestOS != "" {
+		facts[GuestOSKey] = vm.GuestOS
+	}
+	return facts
+}
+
 func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info) *central.SensorEvent {
 	if vm == nil {
 		return nil
@@ -56,6 +66,7 @@ func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirt
 				VsockCid:    vSockCID,
 				VsockCidSet: vSockCIDSet,
 				State:       getVirtualMachineState(vm),
+				Facts:       getFacts(vm),
 			},
 		},
 	}

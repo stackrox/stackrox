@@ -255,20 +255,28 @@ function WorkloadCvesOverviewPage() {
     }
 
     // Track the current entity tab when the page is initially visited.
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         onEntityTabChange(activeEntityTabKey);
     }, []);
+    // activeEntityTabKey
+    // onEntityTabChange
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     // When the page is initially visited and no local filters are applied, apply the default filters.
     //
     // Note that this _does not_ take into account a direct navigation via the left navigation when the user
     // is already on the page. This is because we do not distinguish between navigation via the
     // sidebar and e.g. clearing the page filters.
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         if (shouldSyncDefaultFilters) {
             applyDefaultFilters();
         }
     }, []);
+    // applyDefaultFilters
+    // shouldSyncDefaultFilters
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     const [defaultWatchedImageName, setDefaultWatchedImageName] = useState('');
     const watchedImagesModalToggle = useSelectToggle();

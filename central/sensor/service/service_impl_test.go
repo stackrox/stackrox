@@ -264,7 +264,7 @@ func newCluster(clusterName string, hello *central.SensorHello) *storage.Cluster
 		Id:                 uuid.NewV4().String(),
 		Name:               clusterName,
 		HealthStatus:       &storage.ClusterHealthStatus{},
-		MostRecentSensorId: hello.DeploymentIdentification,
+		MostRecentSensorId: hello.GetDeploymentIdentification(),
 	}
 }
 

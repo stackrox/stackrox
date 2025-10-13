@@ -1,4 +1,5 @@
-import React, { useEffect, useState, ReactElement } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Bullseye,
@@ -21,14 +22,14 @@ import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { VIOLATION_STATES } from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
-import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
-import { SearchFilter } from 'types/search';
+import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
+import type { SearchFilter } from 'types/search';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useURLSort from 'hooks/useURLSort';
-import { SortOption } from 'types/table';
+import type { SortOption } from 'types/table';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
@@ -36,7 +37,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import { getViolationsTableColumnDescriptors } from './violationsTableColumnDescriptors';
-import { ViolationStateTab, violationStateTabs } from './types';
+import { violationStateTabs } from './types';
+import type { ViolationStateTab } from './types';
 
 import './ViolationsTablePage.css';
 

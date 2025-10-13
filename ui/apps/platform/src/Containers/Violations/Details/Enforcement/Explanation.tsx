@@ -1,9 +1,10 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Divider } from '@patternfly/react-core';
 
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import { LifecycleStage } from 'types/policy.proto';
+import type { LifecycleStage } from 'types/policy.proto';
 
 function getEnforcementExplanation(lifecycleStage: LifecycleStage, message: string) {
     if (lifecycleStage === LIFECYCLE_STAGES.DEPLOY) {

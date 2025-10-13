@@ -574,7 +574,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 				require.NoError(t, pods.UpsertPod(ctx, c.pod))
 			}
 			for _, image := range c.images {
-				image.Id = types.NewDigest(image.Id).Digest()
+				image.Id = types.NewDigest(image.GetId()).Digest()
 				require.NoError(t, images.UpsertImage(ctx, image))
 			}
 
@@ -599,12 +599,12 @@ func (s *PruningTestSuite) TestImagePruning() {
 
 			var cleanUpIDs []string
 			for _, image := range c.images {
-				cleanUpIDs = append(cleanUpIDs, image.Id)
+				cleanUpIDs = append(cleanUpIDs, image.GetId())
 			}
 			require.NoError(t, images.DeleteImages(ctx, cleanUpIDs...))
 
 			if c.pod != nil {
-				require.NoError(t, pods.RemovePod(ctx, c.pod.Id))
+				require.NoError(t, pods.RemovePod(ctx, c.pod.GetId()))
 			}
 		})
 	}
@@ -813,7 +813,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 			for _, cluster := range c.clusters {
 				clusterID, err := clusterDS.AddCluster(ctx, cluster)
 				require.NoError(t, err)
-				require.NoError(t, clusterDS.UpdateClusterHealth(ctx, clusterID, cluster.HealthStatus))
+				require.NoError(t, clusterDS.UpdateClusterHealth(ctx, clusterID, cluster.GetHealthStatus()))
 			}
 
 			if c.recentlyRun {
@@ -925,7 +925,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			}
 			clusterID, err := clusterDS.AddCluster(ctx, cluster)
 			require.NoError(t, err)
-			require.NoError(t, clusterDS.UpdateClusterHealth(ctx, clusterID, cluster.HealthStatus))
+			require.NoError(t, clusterDS.UpdateClusterHealth(ctx, clusterID, cluster.GetHealthStatus()))
 
 			// Add the deployments whose params are being changed for this test
 			for _, d := range c.deploys {
@@ -2127,7 +2127,7 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 			gc.pruneLogImbues()
 
 			err := logImbueStore.Walk(pruningCtx, func(li *storage.LogImbue) error {
-				assert.False(t, c.expectedLogDeletions.Contains(li.Id))
+				assert.False(t, c.expectedLogDeletions.Contains(li.GetId()))
 				return nil
 			})
 			assert.NoError(t, err)

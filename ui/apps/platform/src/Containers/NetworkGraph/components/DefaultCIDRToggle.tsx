@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Flex, Switch } from '@patternfly/react-core';
 
 import { getHideDefaultExternalSrcs, setHideDefaultExternalSrcs } from 'services/NetworkService';

@@ -338,7 +338,7 @@ func (c *TestContext) StartFakeGRPC(centralCaps ...string) {
 		message.PolicySync(c.config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}),
 		message.NetworkBaselineSync(nil),
-		message.DeduperState(c.deduperState.ResourceHashes, c.deduperState.Current, c.deduperState.Total))
+		message.DeduperState(c.deduperState.GetResourceHashes(), c.deduperState.GetCurrent(), c.deduperState.GetTotal()))
 
 	fakeCentral.EnableDeduperState(c.config.SendDeduperState)
 	fakeCentral.SetDeduperState(c.deduperState)

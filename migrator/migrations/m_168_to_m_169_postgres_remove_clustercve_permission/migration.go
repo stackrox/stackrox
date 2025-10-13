@@ -68,9 +68,9 @@ func cleanupPermissionSets(db postgres.DB) error {
 					resource = replacements[resource]
 				}
 				newPermissionSet.ResourceToAccess[resource] =
-					propagateAccessForPermission(resource, accessLevel, newPermissionSet.ResourceToAccess)
+					propagateAccessForPermission(resource, accessLevel, newPermissionSet.GetResourceToAccess())
 			}
-			delete(newPermissionSet.ResourceToAccess, ClusterCVE)
+			delete(newPermissionSet.GetResourceToAccess(), ClusterCVE)
 			permissionSetsToInsert = append(permissionSetsToInsert, newPermissionSet)
 			if len(permissionSetsToInsert) >= batchSize {
 				err := permissionSetStore.UpsertMany(ctx, permissionSetsToInsert)

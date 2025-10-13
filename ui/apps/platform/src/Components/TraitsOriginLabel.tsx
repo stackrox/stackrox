@@ -1,6 +1,7 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Label } from '@patternfly/react-core';
-import { Traits } from 'types/traits.proto';
+import type { Traits } from 'types/traits.proto';
 import { getOriginLabel, originLabelColours } from 'utils/traits.utils';
 
 export type TraitsOriginLabelProps = {
