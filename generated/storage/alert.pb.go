@@ -7,6 +7,7 @@
 package storage
 
 import (
+	"google.golang.org/protobuf/encoding/protojson"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -510,6 +511,10 @@ func (x *Alert) GetEntityType() Alert_EntityType {
 		return x.EntityType
 	}
 	return Alert_UNSET
+}
+
+func (a *Alert) UnmarshalJSON(b []byte) error {
+	return protojson.Unmarshal(b, a)
 }
 
 type isAlert_Entity interface {
