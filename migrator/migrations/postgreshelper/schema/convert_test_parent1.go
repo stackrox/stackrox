@@ -35,7 +35,6 @@ func ConvertTestParent1_Child1RefFromProto(obj *storage.TestParent1_Child1Ref, i
 // ConvertTestParent1ToProto converts Gorm model `TestParent1` to its protobuf type object
 func ConvertTestParent1ToProto(m *TestParent1) (*storage.TestParent1, error) {
 	var msg storage.TestParent1
-
 	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}

@@ -43,7 +43,6 @@
     // Convert{{$schema.TypeName}}ToProto converts Gorm model `{{$schema.Table|upperCamelCase}}` to its protobuf type object
     func Convert{{$schema.TypeName}}ToProto(m *{{$schema.Table|upperCamelCase}}) ({{$schema.Type}}, error) {
         var msg storage.{{$schema.TypeName}}
-
         {{if $schema.Json -}}
         if err := json.Unmarshal(m.Serialized, &msg); err != nil {
         {{- else -}}

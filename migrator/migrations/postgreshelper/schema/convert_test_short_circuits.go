@@ -23,7 +23,6 @@ func ConvertTestShortCircuitFromProto(obj *storage.TestShortCircuit) (*TestShort
 // ConvertTestShortCircuitToProto converts Gorm model `TestShortCircuits` to its protobuf type object
 func ConvertTestShortCircuitToProto(m *TestShortCircuits) (*storage.TestShortCircuit, error) {
 	var msg storage.TestShortCircuit
-
 	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}

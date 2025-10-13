@@ -34,7 +34,6 @@ func ConvertTestSingleKeyStructFromProto(obj *storage.TestSingleKeyStruct) (*Tes
 // ConvertTestSingleKeyStructToProto converts Gorm model `TestSingleKeyStructs` to its protobuf type object
 func ConvertTestSingleKeyStructToProto(m *TestSingleKeyStructs) (*storage.TestSingleKeyStruct, error) {
 	var msg storage.TestSingleKeyStruct
-
 	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
