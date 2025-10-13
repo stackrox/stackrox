@@ -59,10 +59,10 @@ func testDeployment(deploymentName string, namespace *storage.NamespaceMetadata,
 	return &storage.Deployment{
 		Name:        deploymentName,
 		Id:          uuid.NewV4().String(),
-		ClusterName: namespace.ClusterName,
-		ClusterId:   namespace.ClusterId,
-		Namespace:   namespace.Name,
-		NamespaceId: namespace.Id,
+		ClusterName: namespace.GetClusterName(),
+		ClusterId:   namespace.GetClusterId(),
+		Namespace:   namespace.GetName(),
+		NamespaceId: namespace.GetId(),
 		Containers: []*storage.Container{
 			{
 				Name:  fmt.Sprintf("%s_container", deploymentName),
