@@ -71,7 +71,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 // Transform imageVulnerabilities to vulns for CVETable compatibility
                 const transformedComponent = {
                     ...component,
-                    vulns: component.imageVulnerabilities || []
+                    vulns: component.imageVulnerabilities || [],
                 };
                 layers[component.layerIndex].components.push(transformedComponent);
                 layers[component.layerIndex].cvesCount += component.imageVulnerabilities.length;
