@@ -18,6 +18,11 @@ if [ "$(id -u)" == 0 ]; then
         echo >&2 "Warning: failed to change permissions of one or more directories. Startup may fail."
      fi
 
+    # TODO(DO NOT MERGE): exec: su-exec: not found
+    #  Is this entire conditional still relevant? If so, perhaps we can make it
+    #  better.
+    #  Doesn't seem to work in UBI8 either.
+    #  Also, the conditional itself isn't POSIX-compliant (should be `[ "$(id -u)" = "0" ]`)
      exec su-exec 4000:4000 "$0" "$@"
 fi
 

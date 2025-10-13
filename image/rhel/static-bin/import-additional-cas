@@ -10,7 +10,9 @@ set -euo pipefail
 copy_existing () {
     src=$1
     if [ -d "$src" ] && [ "$(ls -A -I "..*" "$src")" ]; then
-        cp -v -L "$src"/* /etc/pki/ca-trust/source/anchors
+        # TODO(DO NOT MERGE): Is `--update` the correct operation here?
+        cp --verbose --dereference --update \
+            "$src"/* /etc/pki/ca-trust/source/anchors
     else
         echo "No certificates found in $src"
     fi
@@ -21,4 +23,13 @@ copy_existing /usr/local/share/ca-certificates
 # Copy the custom trusted CA bundles injected by the Openshift Network Operator.
 copy_existing /etc/pki/injected-ca-trust
 
-update-ca-trust extract
+# update-ca-trust runs `chmod u-w "$DEST/pem/directory-hash"` at the end. Add
+# it back before running update-ca-trust again. Currently only relevant for
+# sensor since its init-container and main service both run this script.
+if [ -d "/etc/pki/ca-trust/extracted/pem/directory-hash" ]; then
+    chmod u+w /etc/pki/ca-trust/extracted/pem/directory-hash
+fi
+
+# Though /etc/pki/ca-trust/extracted is the default output, update-ca-trust
+# will create the necessary directories if the `--output` flag is used.
+update-ca-trust extract --output /etc/pki/ca-trust/extracted

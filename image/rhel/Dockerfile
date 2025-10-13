@@ -1,8 +1,8 @@
 ARG RPMS_REGISTRY=registry.access.redhat.com
-ARG RPMS_BASE_IMAGE=ubi8
+ARG RPMS_BASE_IMAGE=ubi9
 ARG RPMS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8-minimal
+ARG BASE_IMAGE=ubi9-minimal
 ARG BASE_TAG=latest
 
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
@@ -65,7 +65,7 @@ RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
     # by the script `save-dir-contents` during the image build. The directory
     # contents are then restored by the script `restore-all-dir-contents`
     # during the container start.
-    chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
+    chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust/source /etc/ssl && \
     mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
