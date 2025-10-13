@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { gql, useQuery } from '@apollo/client';
 
 import { fetchMitreAttackVectors } from 'services/MitreService';
-import { MitreAttackVector } from 'types/mitre.proto';
+import type { MitreAttackVector } from 'types/mitre.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import {

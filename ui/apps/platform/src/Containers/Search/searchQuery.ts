@@ -1,8 +1,9 @@
 import qs from 'qs';
 
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
-import { SearchNavCategory, searchNavMap } from './searchCategories';
+import { searchNavMap } from './searchCategories';
+import type { SearchNavCategory } from './searchCategories';
 
 export type SearchQueryObject = {
     searchFilter: SearchFilter;

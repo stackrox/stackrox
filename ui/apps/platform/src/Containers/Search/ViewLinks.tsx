@@ -1,12 +1,13 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Flex, FlexItem } from '@patternfly/react-core';
 
-import { SearchResult } from 'services/SearchService';
+import type { SearchResult } from 'services/SearchService';
 import { safeGeneratePath } from 'utils/urlUtils';
 
 import NotApplicable from './NotApplicable';
-import { SearchResultCategoryMap } from './searchCategories';
+import type { SearchResultCategoryMap } from './searchCategories';
 
 type ViewLinksProps = {
     searchResult: SearchResult & {
