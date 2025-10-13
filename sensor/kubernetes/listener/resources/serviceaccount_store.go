@@ -55,7 +55,7 @@ func (sas *ServiceAccountStore) Add(sa *storage.ServiceAccount) {
 	sas.lock.Lock()
 	defer sas.lock.Unlock()
 	sas.serviceAccountToPullSecrets[key(sa.GetNamespace(), sa.GetName())] = sa.GetImagePullSecrets()
-	sas.serviceAccountIDs.Add(sa.Id)
+	sas.serviceAccountIDs.Add(sa.GetId())
 }
 
 // Remove removes the service account from the map
@@ -63,5 +63,5 @@ func (sas *ServiceAccountStore) Remove(sa *storage.ServiceAccount) {
 	sas.lock.Lock()
 	defer sas.lock.Unlock()
 	delete(sas.serviceAccountToPullSecrets, key(sa.GetNamespace(), sa.GetName()))
-	sas.serviceAccountIDs.Remove(sa.Id)
+	sas.serviceAccountIDs.Remove(sa.GetId())
 }

@@ -66,7 +66,7 @@ func (s *IndexSuite) getStruct(i int, f func(s *storage.TestStruct)) *storage.Te
 }
 
 func getID(s *storage.TestStruct) string {
-	return s.Key1
+	return s.GetKey1()
 }
 
 type testCase struct {
@@ -579,7 +579,7 @@ func (s *IndexSuite) TestTime() {
 		{
 			desc: "range time query",
 			q: search.NewQueryBuilder().AddTimeRangeField(search.TestTimestamp,
-				protoconv.ConvertTimestampToTimeOrNow(testStruct2020Mar09Noon.Timestamp), protoconv.ConvertTimestampToTimeOrNow(testStruct2022Feb09Noon.Timestamp)).ProtoQuery(),
+				protoconv.ConvertTimestampToTimeOrNow(testStruct2020Mar09Noon.GetTimestamp()), protoconv.ConvertTimestampToTimeOrNow(testStruct2022Feb09Noon.GetTimestamp())).ProtoQuery(),
 			expectedResults: []*storage.TestStruct{testStruct2020Mar09Noon, testStruct2021Mar09Noon},
 		},
 	})

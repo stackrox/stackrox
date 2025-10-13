@@ -80,9 +80,9 @@ func ensureCertificatesAreFresh(ctx context.Context, certsDescription string, re
 	}
 
 	// Update CA bundle ConfigMap if we received fresh CA bundle data from Central
-	if len(certificates.CaBundlePem) > 0 {
+	if len(certificates.GetCaBundlePem()) > 0 {
 		log.Debug("Updating TLS CA bundle ConfigMap from cert refresh)")
-		if err := updateCABundleConfigMap(ctx, certificates.CaBundlePem, k8sClient); err != nil {
+		if err := updateCABundleConfigMap(ctx, certificates.GetCaBundlePem(), k8sClient); err != nil {
 			return 0, errors.Wrap(err, "failed to update CA bundle ConfigMap during cert refresh")
 		}
 	}
@@ -114,7 +114,7 @@ func updateCABundleConfigMap(ctx context.Context, caBundlePem []byte, k8sClient 
 func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate) []string {
 	serviceTypeNames := make([]string, 0, len(serviceCertificates))
 	for _, c := range serviceCertificates {
-		serviceTypeNames = append(serviceTypeNames, c.ServiceType.String())
+		serviceTypeNames = append(serviceTypeNames, c.GetServiceType().String())
 	}
 	return serviceTypeNames
 }

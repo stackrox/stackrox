@@ -99,12 +99,12 @@ func (c *configHandlerImpl) ProcessMessage(_ context.Context, msg *central.MsgTo
 			log.Infof("Received configuration from Central: %s", protoutils.NewWrapper(config))
 			c.lock.Lock()
 			defer c.lock.Unlock()
-			c.config = config.Config
+			c.config = config.GetConfig()
 			if c.admCtrlSettingsMgr != nil {
 				c.admCtrlSettingsMgr.UpdateConfig(config.GetConfig())
 			}
 
-			if c.config.DisableAuditLogs {
+			if c.config.GetDisableAuditLogs() {
 				log.Info("Stopping audit log collection")
 				c.auditLogCollectionManager.DisableCollection()
 			} else {

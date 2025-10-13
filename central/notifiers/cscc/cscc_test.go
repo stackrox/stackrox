@@ -130,10 +130,10 @@ func TestCSCC(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, alertID, findingID)
 			assert.NotEmpty(t, finding)
-			assert.Equal(t, securitycenterpb.Finding_HIGH, finding.Severity)
-			assert.Equal(t, sourceID, finding.Parent)
-			assert.Contains(t, finding.ExternalUri, alertID)
-			assert.Equal(t, tc.resourceName, finding.ResourceName)
+			assert.Equal(t, securitycenterpb.Finding_HIGH, finding.GetSeverity())
+			assert.Equal(t, sourceID, finding.GetParent())
+			assert.Contains(t, finding.GetExternalUri(), alertID)
+			assert.Equal(t, tc.resourceName, finding.GetResourceName())
 		})
 	}
 }

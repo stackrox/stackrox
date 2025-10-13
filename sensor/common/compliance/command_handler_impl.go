@@ -121,7 +121,7 @@ func (c *commandHandlerImpl) run() {
 }
 
 func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) []*central.ScrapeUpdate {
-	switch command.Command.(type) {
+	switch command.GetCommand().(type) {
 	case *central.ScrapeCommand_StartScrape:
 		return c.startScrape(command.GetScrapeId(), command.GetStartScrape().GetHostnames(), command.GetStartScrape().GetStandards())
 	case *central.ScrapeCommand_KillScrape:

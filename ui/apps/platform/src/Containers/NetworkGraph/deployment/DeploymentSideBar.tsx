@@ -1,4 +1,5 @@
-import React, { useEffect, CSSProperties } from 'react';
+import React, { useEffect } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import {
     Alert,
     Bullseye,
@@ -16,12 +17,13 @@ import {
 } from '@patternfly/react-core';
 
 import useFetchDeployment from 'hooks/useFetchDeployment';
-import usePermissions, { HasReadAccess } from 'hooks/usePermissions';
-import { QueryValue } from 'hooks/useURLParameter';
+import usePermissions from 'hooks/usePermissions';
+import type { HasReadAccess } from 'hooks/usePermissions';
+import type { QueryValue } from 'hooks/useURLParameter';
 import { ensureExhaustive } from 'utils/type.utils';
 
 import { getListenPorts, getNodeById } from '../utils/networkGraphUtils';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
 import DeploymentDetails from './DeploymentDetails';
@@ -29,7 +31,7 @@ import DeploymentFlows from './DeploymentFlows';
 import DeploymentBaseline from './DeploymentBaseline';
 import NetworkPolicies from '../common/NetworkPolicies';
 import useSimulation from '../hooks/useSimulation';
-import { EdgeState } from '../components/EdgeStateSelect';
+import type { EdgeState } from '../components/EdgeStateSelect';
 import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE } from '../NetworkGraph.constants';
 import {
     usePagination,
@@ -81,7 +83,7 @@ function DeploymentSideBar({
     edges,
     edgeState,
     onNodeSelect,
-}: DeploymentSideBarProps) {
+}: DeploymentSideBarProps): ReactElement {
     // component state
     const { setPerPage: setPerPageAnomalous } = usePagination();
     const { setPerPage: setPerPageBaseline } = usePaginationSecondary();

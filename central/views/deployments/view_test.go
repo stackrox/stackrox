@@ -220,8 +220,8 @@ func (s *DeploymentViewTestSuite) TestGet() {
 			matchFilter: matchAllFilter(),
 			less: func(records []*deploymentResponse) func(i int, j int) bool {
 				return func(i int, j int) bool {
-					scorei := s.testDeploymentsMap[records[i].DeploymentID].RiskScore
-					scorej := s.testDeploymentsMap[records[j].DeploymentID].RiskScore
+					scorei := s.testDeploymentsMap[records[i].GetDeploymentID()].GetRiskScore()
+					scorej := s.testDeploymentsMap[records[j].GetDeploymentID()].GetRiskScore()
 					if scorei == scorej {
 						return records[i].DeploymentID < records[j].DeploymentID
 					}
@@ -245,8 +245,8 @@ func (s *DeploymentViewTestSuite) TestGet() {
 			}),
 			less: func(records []*deploymentResponse) func(i int, j int) bool {
 				return func(i int, j int) bool {
-					scorei := s.testDeploymentsMap[records[i].DeploymentID].RiskScore
-					scorej := s.testDeploymentsMap[records[j].DeploymentID].RiskScore
+					scorei := s.testDeploymentsMap[records[i].GetDeploymentID()].GetRiskScore()
+					scorej := s.testDeploymentsMap[records[j].GetDeploymentID()].GetRiskScore()
 					if scorei == scorej {
 						return records[i].DeploymentID < records[j].DeploymentID
 					}
@@ -327,8 +327,8 @@ func (s *DeploymentViewTestSuite) TestGet() {
 				ProtoQuery(),
 			hasSortBySeverityCounts: true,
 			matchFilter: matchAllFilter().withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-				return vuln.Severity == storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY ||
-					vuln.Severity == storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+				return vuln.GetSeverity() == storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY ||
+					vuln.GetSeverity() == storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
 			}),
 			less: func(records []*deploymentResponse) func(i int, j int) bool {
 				return func(i int, j int) bool {

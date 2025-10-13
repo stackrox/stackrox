@@ -137,7 +137,7 @@ func (s *suiteImpl) policies() map[string]*storage.Policy {
 	}
 
 	for _, p := range policies {
-		policiesMap[p.Name] = p
+		policiesMap[p.GetName()] = p
 	}
 
 	return policiesMap

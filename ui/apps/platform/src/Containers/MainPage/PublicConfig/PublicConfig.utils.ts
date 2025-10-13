@@ -1,6 +1,6 @@
-import { CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
 
-import { BannerConfig, BannerConfigSize } from 'types/config.proto';
+import type { BannerConfig, BannerConfigSize } from 'types/config.proto';
 
 const sizeVarMap: Record<BannerConfigSize, string> = {
     UNSET: 'var(--pf-v5-global--FontSize--xs)',

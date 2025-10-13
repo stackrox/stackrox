@@ -97,8 +97,8 @@ func (s *ReprocessorPostgresTestSuite) TestUnsuppressWithPostgres() {
 		return components[i].GetName() < components[j].GetName()
 	})
 	for _, comp := range components {
-		sort.SliceStable(comp.Vulns, func(i, j int) bool {
-			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
+		sort.SliceStable(comp.GetVulns(), func(i, j int) bool {
+			return comp.GetVulns()[i].GetCve() < comp.GetVulns()[j].GetCve()
 		})
 	}
 

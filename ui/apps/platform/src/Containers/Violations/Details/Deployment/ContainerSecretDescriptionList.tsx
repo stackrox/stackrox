@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import { EmbeddedSecret } from 'types/deployment.proto';
+import type { EmbeddedSecret } from 'types/deployment.proto';
 
 export type ContainerSecretDescriptionListProps = {
     secret: EmbeddedSecret;

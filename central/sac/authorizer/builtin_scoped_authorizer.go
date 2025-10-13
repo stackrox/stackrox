@@ -324,10 +324,10 @@ func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.S
 	//   is replicated in central/reports/common/utils.go for access scoping vulnerability reports for reporting 2.0 feature.
 	//   Vulnerability report config stores the access scope rules of the user that creates the config and uses those
 	//   rules for scoping future scheduled reports. If the below behavior changes, central/reports/common/utils.go should be updated as well.
-	if accessScope == nil || accessScope.Id == rolePkg.AccessScopeExcludeAll.Id {
+	if accessScope == nil || accessScope.GetId() == rolePkg.AccessScopeExcludeAll.GetId() {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
-	if accessScope.Id == rolePkg.AccessScopeIncludeAll.Id {
+	if accessScope.GetId() == rolePkg.AccessScopeIncludeAll.GetId() {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
 	eas, err := effectiveaccessscope.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)

@@ -81,7 +81,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.v2ProfileDatastore.DeleteProfileForCluster(ctx, profile.Id, clusterID)
+		return s.v2ProfileDatastore.DeleteProfileForCluster(ctx, profile.GetId(), clusterID)
 	default:
 		return s.v2ProfileDatastore.UpsertProfile(ctx, internaltov2storage.ComplianceOperatorProfileV2(profile, clusterID))
 	}

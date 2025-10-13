@@ -19,7 +19,7 @@ import pluralize from 'pluralize';
 import usePermissions from 'hooks/usePermissions';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import type { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import {
     filterNetworkFlows,
     getAllUniquePorts,
@@ -27,9 +27,9 @@ import {
     getNumExtraneousIngressFlows,
     getNumFlows,
 } from '../utils/flowUtils';
-import { CustomNodeModel } from '../types/topology.type';
-import { EdgeState } from '../components/EdgeStateSelect';
-import { Flow } from '../types/flow.type';
+import type { CustomNodeModel } from '../types/topology.type';
+import type { EdgeState } from '../components/EdgeStateSelect';
+import type { Flow } from '../types/flow.type';
 
 import AdvancedFlowsFilter, {
     defaultAdvancedFlowsFilters,

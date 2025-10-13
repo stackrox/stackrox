@@ -58,6 +58,9 @@ updates:
       # so we ensure Scanner V4 does not have any unexpected changes.
       - dependency-name: "github.com/quay/claircore"
     groups:
+      golang.org/x:
+        patterns:
+          - "golang.org/x/*"
       k8s.io:
         update-types:
           - "patch"

@@ -23,12 +23,12 @@ func TestParseCVSSV2(t *testing.T) {
 							t.Run(v, func(t *testing.T) {
 								v2, err := ParseCVSSV2(v)
 								assert.NoError(t, err)
-								assert.Equal(t, attackVectorMap[av], v2.AttackVector)
-								assert.Equal(t, accessComplexityMap[ac], v2.AccessComplexity)
-								assert.Equal(t, authenticationMap[au], v2.Authentication)
-								assert.Equal(t, impactMap[c], v2.Confidentiality)
-								assert.Equal(t, impactMap[i], v2.Integrity)
-								assert.Equal(t, impactMap[a], v2.Availability)
+								assert.Equal(t, attackVectorMap[av], v2.GetAttackVector())
+								assert.Equal(t, accessComplexityMap[ac], v2.GetAccessComplexity())
+								assert.Equal(t, authenticationMap[au], v2.GetAuthentication())
+								assert.Equal(t, impactMap[c], v2.GetConfidentiality())
+								assert.Equal(t, impactMap[i], v2.GetIntegrity())
+								assert.Equal(t, impactMap[a], v2.GetAvailability())
 							})
 						}
 					}
@@ -70,9 +70,9 @@ func Test_CalculateScores(t *testing.T) {
 			assert.NoError(t, err)
 			err = CalculateScores(cvssV2)
 			assert.NoError(t, err)
-			assert.InEpsilon(t, bS, cvssV2.Score, 0.09)
-			assert.InEpsilon(t, eS, cvssV2.ExploitabilityScore, 0.09)
-			assert.InEpsilon(t, iS, cvssV2.ImpactScore, 0.09)
+			assert.InEpsilon(t, bS, cvssV2.GetScore(), 0.09)
+			assert.InEpsilon(t, eS, cvssV2.GetExploitabilityScore(), 0.09)
+			assert.InEpsilon(t, iS, cvssV2.GetImpactScore(), 0.09)
 		})
 	}
 	require.NoError(t, s.Err())

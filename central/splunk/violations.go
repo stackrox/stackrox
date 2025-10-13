@@ -109,7 +109,7 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request, paginat
 
 	response := integrations.SplunkViolationsResponse{}
 
-	for len(response.Violations) < pagination.violationsPerResponse {
+	for len(response.GetViolations()) < pagination.violationsPerResponse {
 		alerts, err := queryAlerts(r.Context(), alertDS, checkpoint, pagination.maxAlertsFromQuery)
 		if err != nil {
 			return nil, err
@@ -130,7 +130,7 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request, paginat
 
 			// We cannot strictly limit number of violations in the response without further complicating the checkpoint
 			// format. Therefore we stop after we got enough violations and processed the entire Alert.
-			if len(response.Violations) >= pagination.violationsPerResponse {
+			if len(response.GetViolations()) >= pagination.violationsPerResponse {
 				break
 			}
 		}
@@ -350,11 +350,11 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 
 	var podID, containerName string
 	for _, kv := range msgAttrs {
-		if kv.Key == printer.PodKey {
-			podID = kv.Value
+		if kv.GetKey() == printer.PodKey {
+			podID = kv.GetValue()
 		}
-		if kv.Key == printer.ContainerKey {
-			containerName = kv.Value
+		if kv.GetKey() == printer.ContainerKey {
+			containerName = kv.GetValue()
 		}
 	}
 
@@ -389,10 +389,10 @@ func extractViolationMessageAttrs(fromViolation *storage.Alert_Violation) []*sto
 
 	// Filter out some message attributes, but only for K8S Events
 	// This is done so that we can reduce the amount of unnecessary bytes to Splunk for fields that can be inferred.
-	if fromViolation.Type == storage.Alert_Violation_K8S_EVENT {
+	if fromViolation.GetType() == storage.Alert_Violation_K8S_EVENT {
 		var filteredAttrs []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr
 		for _, kvp := range msgAttrs {
-			if !violationMessagesToRemoveForK8SEvent.Contains(kvp.Key) {
+			if !violationMessagesToRemoveForK8SEvent.Contains(kvp.GetKey()) {
 				filteredAttrs = append(filteredAttrs, kvp)
 			}
 		}

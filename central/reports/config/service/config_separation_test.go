@@ -87,24 +87,24 @@ func (s *ServiceLevelConfigSeparationSuite) TestGetReportConfigurations() {
 	// Empty Query
 	res, err := s.service.GetReportConfigurations(s.ctx, &apiV1.RawQuery{Query: ""})
 	s.Require().NoError(err)
-	protoassert.ElementsMatch(s.T(), s.v1Configs, res.ReportConfigs)
+	protoassert.ElementsMatch(s.T(), s.v1Configs, res.GetReportConfigs())
 
 	// Non empty query
 	res, err = s.service.GetReportConfigurations(s.ctx,
-		&apiV1.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v1Configs[0].Name)})
+		&apiV1.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v1Configs[0].GetName())})
 	s.Require().NoError(err)
-	s.Require().Equal(1, len(res.ReportConfigs))
-	protoassert.Equal(s.T(), s.v1Configs[0], res.ReportConfigs[0])
+	s.Require().Equal(1, len(res.GetReportConfigs()))
+	protoassert.Equal(s.T(), s.v1Configs[0], res.GetReportConfigs()[0])
 }
 
 func (s *ServiceLevelConfigSeparationSuite) TestGetReportConfiguration() {
 	// returns v1 config
-	res, err := s.service.GetReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: s.v1Configs[0].Id})
+	res, err := s.service.GetReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: s.v1Configs[0].GetId()})
 	s.Require().NoError(err)
-	protoassert.Equal(s.T(), s.v1Configs[0], res.ReportConfig)
+	protoassert.Equal(s.T(), s.v1Configs[0], res.GetReportConfig())
 
 	// error on requesting v2 config
-	_, err = s.service.GetReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: s.v2Configs[0].Id})
+	_, err = s.service.GetReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: s.v2Configs[0].GetId()})
 	s.Require().Error(err)
 }
 
@@ -112,20 +112,20 @@ func (s *ServiceLevelConfigSeparationSuite) TestCountReportConfigurations() {
 	// Empty query
 	res, err := s.service.CountReportConfigurations(s.ctx, &apiV1.RawQuery{Query: ""})
 	s.Require().NoError(err)
-	s.Require().Equal(int32(len(s.v1Configs)), res.Count)
+	s.Require().Equal(int32(len(s.v1Configs)), res.GetCount())
 
 	// Non empty query
 	res, err = s.service.CountReportConfigurations(s.ctx,
-		&apiV1.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v1Configs[0].Name)})
+		&apiV1.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v1Configs[0].GetName())})
 	s.Require().NoError(err)
-	s.Require().Equal(int32(1), res.Count)
+	s.Require().Equal(int32(1), res.GetCount())
 }
 
 func (s *ServiceLevelConfigSeparationSuite) TestPostReportConfiguration() {
 	// Error on v2 config
 	config := s.v2Configs[0].CloneVT()
 	config.Id = ""
-	config.NotifierConfig = s.v1Configs[0].NotifierConfig
+	config.NotifierConfig = s.v1Configs[0].GetNotifierConfig()
 	_, err := s.service.PostReportConfiguration(s.ctx, &apiV1.PostReportConfigurationRequest{ReportConfig: config})
 	s.Require().Error(err)
 
@@ -136,14 +136,14 @@ func (s *ServiceLevelConfigSeparationSuite) TestPostReportConfiguration() {
 	res, err := s.service.PostReportConfiguration(s.ctx, &apiV1.PostReportConfigurationRequest{ReportConfig: config})
 	s.Require().NoError(err)
 
-	err = s.reportConfigDatastore.RemoveReportConfiguration(s.ctx, res.ReportConfig.Id)
+	err = s.reportConfigDatastore.RemoveReportConfiguration(s.ctx, res.GetReportConfig().GetId())
 	s.Require().NoError(err)
 }
 
 func (s *ServiceLevelConfigSeparationSuite) TestUpdateReportConfiguration() {
 	// Error on v2 config
 	config := s.v2Configs[0].CloneVT()
-	config.NotifierConfig = s.v1Configs[0].NotifierConfig
+	config.NotifierConfig = s.v1Configs[0].GetNotifierConfig()
 	config.GetVulnReportFilters().SinceLastReport = true
 	_, err := s.service.UpdateReportConfiguration(s.ctx, &apiV1.UpdateReportConfigurationRequest{ReportConfig: config})
 	s.Require().Error(err)
@@ -157,7 +157,7 @@ func (s *ServiceLevelConfigSeparationSuite) TestUpdateReportConfiguration() {
 
 func (s *ServiceLevelConfigSeparationSuite) TestDeleteReportConfiguration() {
 	// Error on v2 config ID
-	_, err := s.service.DeleteReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: s.v2Configs[0].Id})
+	_, err := s.service.DeleteReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: s.v2Configs[0].GetId()})
 	s.Require().Error(err)
 
 	// No error on v1 config ID
@@ -167,6 +167,6 @@ func (s *ServiceLevelConfigSeparationSuite) TestDeleteReportConfiguration() {
 	config.Name = "Delete report config"
 	config.Id, err = s.reportConfigDatastore.AddReportConfiguration(s.ctx, config)
 	s.Require().NoError(err)
-	_, err = s.service.DeleteReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: config.Id})
+	_, err = s.service.DeleteReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: config.GetId()})
 	s.Require().NoError(err)
 }

@@ -61,6 +61,7 @@ function useCreateReport({ onCompleted }: UseCreateReportProps): CreateReportRes
     const { analyticsTrack } = useAnalytics();
     const [result, setResult] = useState<Result>(defaultResult);
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     const createReport = useCallback((formValues: ReportFormValues) => {
         setResult({
             data: null,
@@ -89,6 +90,9 @@ function useCreateReport({ onCompleted }: UseCreateReportProps): CreateReportRes
                 });
             });
     }, []);
+    // analyticsTrack
+    // onCompleted
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     return {
         ...result,

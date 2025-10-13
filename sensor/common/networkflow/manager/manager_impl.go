@@ -663,9 +663,9 @@ func getProcessKey(originator *storage.NetworkProcessUniqueKey) indicator.Proces
 	}
 
 	return indicator.ProcessInfo{
-		ProcessName: originator.ProcessName,
-		ProcessArgs: originator.ProcessArgs,
-		ProcessExec: originator.ProcessExecFilePath,
+		ProcessName: originator.GetProcessName(),
+		ProcessArgs: originator.GetProcessArgs(),
+		ProcessExec: originator.GetProcessExecFilePath(),
 	}
 }
 
@@ -683,7 +683,7 @@ func getIPAndPort(address *sensor.NetworkAddress) net.NetworkPeerID {
 
 func processConnection(conn *sensor.NetworkConnection) (*connection, error) {
 	var incoming bool
-	switch conn.Role {
+	switch conn.GetRole() {
 	case sensor.ClientServerRole_ROLE_SERVER:
 		incoming = true
 	case sensor.ClientServerRole_ROLE_CLIENT:
@@ -729,7 +729,7 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) (map[conne
 		}
 
 		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.
-		ts := timestamp.FromProtobuf(conn.CloseTimestamp)
+		ts := timestamp.FromProtobuf(conn.GetCloseTimestamp())
 		if ts == 0 {
 			ts = timestamp.InfiniteFuture
 		} else {

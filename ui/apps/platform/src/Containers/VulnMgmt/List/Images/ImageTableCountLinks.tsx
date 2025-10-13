@@ -1,8 +1,8 @@
 import React, { ReactElement, useContext } from 'react';
 
 import { ResourceType, resourceTypes } from 'constants/entityTypes';
-import TableCountLink from 'Components/workflow/TableCountLink';
 import workflowStateContext from 'Containers/workflowStateContext';
+import TableCountLink from '../../TableCountLink';
 
 type ImageTableCountLinksProps = {
     row: {

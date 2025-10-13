@@ -21,8 +21,8 @@ func testNamespaces(clusters []*storage.Cluster, namespacesPerCluster int) []*st
 			namespaces = append(namespaces, &storage.NamespaceMetadata{
 				Id:          uuid.NewV4().String(),
 				Name:        namespaceName,
-				ClusterId:   cluster.Id,
-				ClusterName: cluster.Name,
+				ClusterId:   cluster.GetId(),
+				ClusterName: cluster.GetName(),
 			})
 		}
 	}
@@ -45,13 +45,13 @@ func testDeploymentsWithImages(namespaces []*storage.NamespaceMetadata, numDeplo
 
 	for j, namespace := range namespaces {
 		for i := 0; i < numDeploymentsPerNamespace; i++ {
-			depName := fmt.Sprintf("%s_%s_dep%d", namespace.ClusterName, namespace.Name, i)
+			depName := fmt.Sprintf("%s_%s_dep%d", namespace.GetClusterName(), namespace.GetName(), i)
 			image := testImage(depName)
 			var deployment *storage.Deployment
 			if j == 0 && i == 0 {
 				// Add a copy of image with same SHA, components and CVEs, but different name
 				image2 := image.CloneVT()
-				image2.Name.FullName = image.Name.FullName + "_copy"
+				image2.Name.FullName = image.GetName().GetFullName() + "_copy"
 				deployment = testDeployment(depName, namespace, image, image2)
 			} else {
 				deployment = testDeployment(depName, namespace, image)
@@ -67,10 +67,10 @@ func testDeployment(deploymentName string, namespace *storage.NamespaceMetadata,
 	dep := &storage.Deployment{
 		Name:        deploymentName,
 		Id:          uuid.NewV4().String(),
-		ClusterName: namespace.ClusterName,
-		ClusterId:   namespace.ClusterId,
-		Namespace:   namespace.Name,
-		NamespaceId: namespace.Id,
+		ClusterName: namespace.GetClusterName(),
+		ClusterId:   namespace.GetClusterId(),
+		Namespace:   namespace.GetName(),
+		NamespaceId: namespace.GetId(),
 	}
 
 	containers := make([]*storage.Container, 0, len(images))
