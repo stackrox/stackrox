@@ -12,87 +12,260 @@ import "storage/vuln_requests.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// GetVulnerabilityRequestResponse contains the vulnerability request details.
 message GetVulnerabilityRequestResponse {
+  // The vulnerability request information.
   storage.VulnerabilityRequest request_info = 1;
 }
 
+// ListVulnerabilityRequestsResponse contains the list of vulnerability requests.
 message ListVulnerabilityRequestsResponse {
+  // List of vulnerability requests matching the search criteria.
+  // Limited to maximum 1000 requests per response.
   repeated storage.VulnerabilityRequest request_infos = 1;
 }
 
-// next available tag: 6
+// DeferVulnRequest contains parameters for creating a vulnerability deferral request.
+//
+// **Deferral Request Rules:**
+// - CVE must be in valid format (e.g., "CVE-2021-1234")
+// - Scope must be valid (image scope or global scope)
+// - Expiry must be specified (either expires_when_fixed or expires_on)
+// - Comment is required for request creation
+// - Cannot create request for CVEs already covered by approved requests
+// - Only one request can exist per CVE-scope combination
+//
+// **Expiry Options:**
+// - expires_when_fixed: Request expires when CVE is fixed
+// - expires_on: Request expires at specific timestamp
+// - Cannot specify both expiry options
+//
+// **Scope Validation:**
+// - Image scope: Must specify valid registry, remote, and tag
+// - Global scope: Applies to all images (deprecated)
 message DeferVulnRequest {
-  // This field indicates the CVEs requested to be deferred.
+  // CVE identifier to be deferred (e.g., "CVE-2021-1234").
+  // Must be in valid CVE format and not already covered by approved requests.
   string cve = 1;
+  
+  // Comment explaining the reason for the deferral request.
+  // Required for request creation.
   string comment = 2;
+  
+  // Scope defining where the deferral applies.
+  // Must be valid image scope or global scope.
   storage.VulnerabilityRequest.Scope scope = 3;
+  
   oneof expiry {
+    // When true, the deferral expires when the CVE is fixed.
+    // Cannot be used with expires_on.
     bool expires_when_fixed = 4;
+    
+    // Timestamp when the deferral expires.
+    // Cannot be used with expires_when_fixed.
     google.protobuf.Timestamp expires_on = 5;
   }
 }
 
+// DeferVulnResponse contains the created deferral request information.
 message DeferVulnResponse {
+  // The created vulnerability deferral request.
   storage.VulnerabilityRequest request_info = 1;
 }
 
+// FalsePositiveVulnRequest contains parameters for creating a false-positive request.
+//
+// **False-Positive Request Rules:**
+// - CVE must be in valid format (e.g., "CVE-2021-1234")
+// - Scope must be valid (image scope or global scope)
+// - Comment is required for request creation
+// - Cannot create request for CVEs already covered by approved requests
+// - Only one request can exist per CVE-scope combination
+// - False-positive requests do not have expiry (permanent)
 message FalsePositiveVulnRequest {
-  // This field indicates the CVE requested to be marked as false-positive.
+  // CVE identifier to be marked as false-positive (e.g., "CVE-2021-1234").
+  // Must be in valid CVE format and not already covered by approved requests.
   string cve = 1;
+  
+  // Scope defining where the false-positive marking applies.
+  // Must be valid image scope or global scope.
   storage.VulnerabilityRequest.Scope scope = 2;
+  
+  // Comment explaining why the CVE is considered false-positive.
+  // Required for request creation.
   string comment = 3;
 }
 
+// FalsePositiveVulnResponse contains the created false-positive request information.
 message FalsePositiveVulnResponse {
+  // The created false-positive request.
   storage.VulnerabilityRequest request_info = 1;
 }
 
+// ApproveVulnRequest contains parameters for approving a vulnerability request.
+//
+// **Approval Rules:**
+// - Comment is required for approval
+// - Only pending requests can be approved
+// - Approval automatically denies conflicting pending requests
+// - Approved requests are enforced immediately
 message ApproveVulnRequest {
+  // ID of the vulnerability request to approve.
   string id = 1;
+  
+  // Comment explaining the approval decision.
+  // Required for approval action.
   string comment = 2;
 }
 
+// ApproveVulnRequestResponse contains the approved request information.
 message ApproveVulnRequestResponse {
+  // The approved vulnerability request.
   storage.VulnerabilityRequest request_info = 1;
 }
 
+// DenyVulnRequest contains parameters for denying a vulnerability request.
+//
+// **Denial Rules:**
+// - Comment is required for denial
+// - Only pending requests can be denied
+// - Denied requests are permanently closed
 message DenyVulnRequest {
+  // ID of the vulnerability request to deny.
   string id = 1;
+  
+  // Comment explaining the denial decision.
+  // Required for denial action.
   string comment = 2;
 }
 
+// DenyVulnRequestResponse contains the denied request information.
 message DenyVulnRequestResponse {
+  // The denied vulnerability request.
   storage.VulnerabilityRequest request_info = 1;
 }
 
+// UpdateVulnRequest contains parameters for updating a vulnerability request.
+//
+// **Update Limitations:**
+// - Currently, only expiry can be updated
+// - Comment is required for update
+// - Only pending requests can be updated
+// - Update creates a new pending update request
 message UpdateVulnRequest {
+  // ID of the vulnerability request to update.
   string id = 1;
+  
+  // Comment explaining the update.
+  // Required for update action.
   string comment = 2;
+  
+  // New expiry configuration for the request.
+  // Currently, only expiry can be updated.
   storage.RequestExpiry expiry = 3;
-  // Currently, only expiry can be updated
 }
 
+// UpdateVulnRequestResponse contains the updated request information.
 message UpdateVulnRequestResponse {
+  // The updated vulnerability request.
   storage.VulnerabilityRequest request_info = 1;
 }
 
+// UndoVulnRequestResponse contains the undone request information.
 message UndoVulnRequestResponse {
+  // The undone vulnerability request.
   storage.VulnerabilityRequest request_info = 1;
 }
 
-// VulnerabilityRequestService APIs can be used to manage create and manage vulnerability requests.
+// VulnerabilityRequestService provides comprehensive vulnerability request management capabilities.
+//
+// **⚠️ DEPRECATION NOTICE:**
+// This service is deprecated when UnifiedCVEDeferral feature is enabled.
+// Use /v2/vulnerability-exceptions/* APIs instead for new implementations.
+//
+// **Key Features:**
+// - Create deferral requests for temporary vulnerability suppression
+// - Create false-positive requests for permanent vulnerability suppression
+// - Approve/deny vulnerability requests with required comments
+// - Update request expiry configurations
+// - Undo approved requests to re-enable vulnerability detection
+// - Delete pending requests
+//
+// **Access Control:**
+// - View operations: VulnerabilityManagementRequests or VulnerabilityManagementApprovals View permissions
+// - Create operations: VulnerabilityManagementRequests Modify permissions
+// - Approval operations: VulnerabilityManagementApprovals Modify permissions
+// - Update/Undo operations: Either VulnerabilityManagementRequests or VulnerabilityManagementApprovals Modify permissions
+//
+// **Request Lifecycle:**
+// - PENDING: New request awaiting approval/denial
+// - APPROVED: Request approved and enforced
+// - DENIED: Request denied and closed
+// - APPROVED_PENDING_UPDATE: Approved request with pending update
+//
+// **Validation Rules:**
+// - CVE format must be valid (e.g., "CVE-2021-1234")
+// - Scope must be valid (image scope with registry/remote/tag or global scope)
+// - Comments are required for all actions
+// - Cannot create duplicate requests for same CVE-scope combination
+// - Deferral requests must specify expiry (when fixed or timestamp)
+// - False-positive requests are permanent (no expiry)
+//
+// **Performance Considerations:**
+// - Maximum 1000 requests returned per list request
+// - Requests are processed sequentially to prevent race conditions
+// - Duplicate prevention checks are performed during creation
 service VulnerabilityRequestService {
   // GetVulnerabilityRequest returns the requested vulnerability request by ID.
+  //
+  // **Error Cases:**
+  // - 404: Request with specified ID does not exist
+  // - 403: Insufficient permissions to view the request
+  // - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
   rpc GetVulnerabilityRequest(ResourceByID) returns (GetVulnerabilityRequestResponse) {
     option (google.api.http) = {get: "/v1/cve/requests/{id}"};
   }
 
   // ListVulnerabilityRequests returns the list of vulnerability requests.
+  //
+  // **Query Behavior:**
+  // - Supports StackRox search syntax for filtering
+  // - Default pagination limit: 1000 requests
+  // - Maximum limit: 1000 requests per request
+  //
+  // **Search Examples:**
+  // - "CVE:CVE-2021-1234" - Requests for specific CVE
+  // - "Request Status:PENDING" - Pending requests only
+  // - "Requested Vulnerability State:DEFERRED" - Deferral requests only
+  //
+  // **Error Cases:**
+  // - 400: Invalid search query
+  // - 403: Insufficient permissions to view requests
+  // - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
   rpc ListVulnerabilityRequests(RawQuery) returns (ListVulnerabilityRequestsResponse) {
     option (google.api.http) = {get: "/v1/cve/requests"};
   }
 
   // DeferVulnerability starts the deferral process for the specified vulnerability.
+  //
+  // **Deferral Request Rules:**
+  // - CVE must be in valid format (e.g., "CVE-2021-1234")
+  // - Scope must be valid (image scope or global scope)
+  // - Expiry must be specified (either expires_when_fixed or expires_on)
+  // - Comment is required for request creation
+  // - Cannot create request for CVEs already covered by approved requests
+  // - Only one request can exist per CVE-scope combination
+  //
+  // **Expiry Options:**
+  // - expires_when_fixed: Request expires when CVE is fixed
+  // - expires_on: Request expires at specific timestamp
+  // - Cannot specify both expiry options
+  //
+  // **Error Cases:**
+  // - 400: Invalid CVE format, missing comment, invalid scope, or duplicate request
+  // - 403: Insufficient permissions to create requests
+  // - 409: CVE already covered by existing approved request
+  // - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
   rpc DeferVulnerability(DeferVulnRequest) returns (DeferVulnResponse) {
     option (google.api.http) = {
       post: "/v1/cve/requests/defer"
@@ -101,6 +274,20 @@ service VulnerabilityRequestService {
   }
 
   // FalsePositiveVulnerability starts the process to mark the specified vulnerability as false-positive.
+  //
+  // **False-Positive Request Rules:**
+  // - CVE must be in valid format (e.g., "CVE-2021-1234")
+  // - Scope must be valid (image scope or global scope)
+  // - Comment is required for request creation
+  // - Cannot create request for CVEs already covered by approved requests
+  // - Only one request can exist per CVE-scope combination
+  // - False-positive requests do not have expiry (permanent)
+  //
+  // **Error Cases:**
+  // - 400: Invalid CVE format, missing comment, or invalid scope
+  // - 403: Insufficient permissions to create requests
+  // - 409: CVE already covered by existing approved request
+  // - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
   rpc FalsePositiveVulnerability(FalsePositiveVulnRequest) returns (FalsePositiveVulnResponse) {
     option (google.api.http) = {
       post: "/v1/cve/requests/false-positive"
@@ -108,8 +295,25 @@ service VulnerabilityRequestService {
     };
   }
 
-  // ApproveVulnRequest approve a vulnerability request. If it is an unwatch vulnerability request then the
-  // associated vulnerabilities are not watched in workflows such as policy detection, risk, etc.
+  // ApproveVulnRequest approves a vulnerability request.
+  //
+  // **Approval Behavior:**
+  // - Request is approved and immediately enforced
+  // - Vulnerabilities are suppressed in policy detection and risk evaluation
+  // - Conflicting pending requests are automatically denied
+  // - Comment is required for approval
+  //
+  // **Approval Rules:**
+  // - Only pending requests can be approved
+  // - Comment is required for approval
+  // - Approval automatically denies conflicting pending requests
+  // - Approved requests are enforced immediately
+  //
+  // **Error Cases:**
+  // - 400: Missing comment or request not in pending state
+  // - 403: Insufficient permissions to approve requests
+  // - 404: Request with specified ID does not exist
+  // - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
   rpc ApproveVulnerabilityRequest(ApproveVulnRequest) returns (ApproveVulnRequestResponse) {
     option (google.api.http) = {
       post: "/v1/cve/requests/{id}/approve"
@@ -118,6 +322,22 @@ service VulnerabilityRequestService {
   }
 
   // DenyVulnRequest denies a vulnerability request.
+  //
+  // **Denial Behavior:**
+  // - Request is denied and permanently closed
+  // - No impact on vulnerability detection
+  // - Comment is required for denial
+  //
+  // **Denial Rules:**
+  // - Only pending requests can be denied
+  // - Comment is required for denial
+  // - Denied requests are permanently closed
+  //
+  // **Error Cases:**
+  // - 400: Missing comment or request not in pending state
+  // - 403: Insufficient permissions to deny requests
+  // - 404: Request with specified ID does not exist
+  // - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
   rpc DenyVulnerabilityRequest(DenyVulnRequest) returns (DenyVulnRequestResponse) {
     option (google.api.http) = {
       post: "/v1/cve/requests/{id}/deny"
@@ -125,7 +345,24 @@ service VulnerabilityRequestService {
     };
   }
 
-  // UpdateVulnerabilityRequest updates an existing vulnerability request. Currently only deferral expiration time can be updated.
+  // UpdateVulnerabilityRequest updates an existing vulnerability request.
+  //
+  // **Update Limitations:**
+  // - Currently, only expiry can be updated
+  // - Comment is required for update
+  // - Only pending requests can be updated
+  // - Update creates a new pending update request
+  //
+  // **Update Behavior:**
+  // - Creates a new pending update request
+  // - Original request remains in effect until update is approved
+  // - Only expiry configuration can be modified
+  //
+  // **Error Cases:**
+  // - 400: Missing comment, invalid expiry, or request not in pending state
+  // - 403: Insufficient permissions to update requests
+  // - 404: Request with specified ID does not exist
+  // - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
   rpc UpdateVulnerabilityRequest(UpdateVulnRequest) returns (UpdateVulnRequestResponse) {
     option (google.api.http) = {
       post: "/v1/cve/requests/{id}/update"
@@ -134,11 +371,37 @@ service VulnerabilityRequestService {
   }
 
   // UndoVulnerabilityRequest undoes a vulnerability request.
+  //
+  // **Undo Behavior:**
+  // - Request is marked as inactive
+  // - Vulnerabilities are re-enabled for detection
+  // - May not re-enable if other active requests cover same CVEs
+  //
+  // **Undo Rules:**
+  // - Only approved requests can be undone
+  // - Undo may not re-enable vulnerabilities if other active requests exist
+  // - Request is permanently marked as inactive
+  //
+  // **Error Cases:**
+  // - 403: Insufficient permissions to undo requests
+  // - 404: Request with specified ID does not exist
+  // - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
   rpc UndoVulnerabilityRequest(ResourceByID) returns (UndoVulnRequestResponse) {
     option (google.api.http) = {post: "/v1/cve/requests/{id}/undo"};
   }
 
   // DeleteVulnerabilityRequest deletes a vulnerability request.
+  //
+  // **Delete Rules:**
+  // - Only pending requests can be deleted
+  // - Approved or denied requests cannot be deleted
+  // - Deletion is permanent and cannot be undone
+  //
+  // **Error Cases:**
+  // - 400: Request not in pending state
+  // - 403: Insufficient permissions to delete requests
+  // - 404: Request with specified ID does not exist
+  // - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
   rpc DeleteVulnerabilityRequest(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/cve/requests/{id}"};
   }

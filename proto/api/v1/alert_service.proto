@@ -13,127 +13,390 @@ import "storage/policy.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// CountAlertsResponse contains the count of alerts matching the query.
 message CountAlertsResponse {
+  // Number of alerts matching the search criteria.
   int32 count = 1;
 }
 
+// ListAlertsRequest contains parameters for listing alerts.
+//
+// **Query Parameters:**
+// - query: Search query string using StackRox search syntax
+// - pagination: Pagination parameters (limit, offset, sort options)
+//
+// **Pagination Limits:**
+// - Maximum alerts returned: 1000 per request
+// - Default limit: 1000 if pagination not specified
+// - Default sorting: By violation time (newest first)
+//
+// **Search Query Examples:**
+// - "Severity:HIGH_SEVERITY" - High severity alerts
+// - "Cluster:production" - Alerts from production cluster
+// - "Violation State:ACTIVE" - Active alerts only
+// - "Policy:Disallow Root Containers" - Alerts from specific policy
 message ListAlertsRequest {
   reserved 1 to 9; // Removed individual filtered fields and moved towards querying
+  
+  // Search query string using StackRox search syntax.
+  // If empty, returns all alerts (subject to pagination limits).
+  // See https://docs.stackrox.com/docs/use-roxctl/#search for query syntax.
   string query = 10;
+  
+  // Pagination parameters for controlling result set size and ordering.
+  // If not specified, defaults to limit=1000 with violation time sorting.
   Pagination pagination = 11;
 }
 
+// ResolveAlertRequest contains parameters for resolving a single alert.
+//
+// **Alert Resolution Rules:**
+// - Only alerts with state ATTEMPTED or lifecycle stage RUNTIME can be resolved
+// - Process violations can be added to baselines for future reference
+// - Resolved alerts can be deleted (but only RESOLVED alerts can be deleted)
+// - Resolution triggers notification processing
+//
+// **Baseline Integration:**
+// - When add_to_baseline=true, process violations are added to deployment baselines
+// - Baseline updates are synchronized with sensor clusters
+// - Only applies to alerts with process violations
 message ResolveAlertRequest {
+  // Unique identifier of the alert to resolve.
+  // Must reference an existing alert.
   string id = 1;
+  
+  // Deprecated: Use add_to_baseline instead.
+  // When true, adds process violations to deployment baseline.
   bool whitelist = 2 [deprecated = true];
+  
+  // When true, adds process violations from this alert to the deployment baseline.
+  // This prevents future alerts for the same processes in the same deployment.
+  // Only applies to alerts with process violations.
   bool add_to_baseline = 3;
 }
 
+// ResolveAlertsRequest contains parameters for resolving multiple alerts by query.
+//
+// **Resolution Rules:**
+// - Only resolves RUNTIME lifecycle alerts matching the query
+// - All matching alerts are resolved in batches of 100
+// - Permission checks are performed for each alert
+// - Resolution triggers notification processing
+//
+// **Query Requirements:**
+// - Must be a valid search query string
+// - Only RUNTIME alerts are considered for resolution
+// - Non-RUNTIME alerts in the query are ignored
 message ResolveAlertsRequest {
+  // Search query to identify alerts to resolve.
+  // Only RUNTIME lifecycle alerts matching this query will be resolved.
+  // Must be a valid StackRox search query string.
   string query = 1;
 }
 
+// ListAlertsResponse contains the list of alerts matching the request criteria.
 message ListAlertsResponse {
+  // List of alerts matching the search criteria.
+  // Limited to maximum 1000 alerts per request.
   repeated storage.ListAlert alerts = 1;
 }
 
+// DeleteAlertsRequest contains parameters for deleting alerts.
+//
+// **Deletion Constraints:**
+// - Only RESOLVED alerts can be deleted
+// - Query MUST explicitly specify "Violation State:RESOLVED"
+// - Confirmation required for actual deletion (dry-run mode by default)
+// - Deletion is permanent and cannot be undone
+//
+// **Safety Features:**
+// - Dry-run mode shows how many alerts would be deleted
+// - Explicit confirmation required for actual deletion
+// - Query must specifically target RESOLVED alerts
 message DeleteAlertsRequest {
+  // Search query to identify alerts to delete.
+  // MUST include "Violation State:RESOLVED" in the query.
+  // Only RESOLVED alerts can be deleted.
   RawQuery query = 1;
+  
+  // When false (default), performs a dry-run showing how many alerts would be deleted.
+  // When true, actually deletes the matching RESOLVED alerts.
+  // Deletion is permanent and cannot be undone.
   bool confirm = 2;
 }
 
+// DeleteAlertsResponse contains the result of a delete operation.
 message DeleteAlertsResponse {
+  // Number of alerts that were (or would be) deleted.
   uint32 num_deleted = 1;
+  
+  // True if this was a dry-run (no actual deletion occurred).
+  // False if alerts were actually deleted.
   bool dry_run = 2;
 }
 
+// GetAlertsGroupResponse contains alerts grouped by policy.
+//
+// **Grouping Behavior:**
+// - Alerts are grouped by policy ID
+// - Each group contains policy info and alert count
+// - All alerts are fetched (no pagination limits)
+// - Useful for policy-based alert analysis
 message GetAlertsGroupResponse {
   message PolicyGroup {
+    // Policy information for this group.
     storage.ListAlertPolicy policy = 1;
+    
+    // Number of alerts for this policy.
     int64 num_alerts = 2;
   }
 
+  // Alerts grouped by policy, with counts per policy.
   repeated PolicyGroup alerts_by_policies = 1;
 }
 
+// GetAlertsCountsRequest contains parameters for getting alert counts by group.
+//
+// **Grouping Options:**
+// - CATEGORY: Group by policy category
+// - CLUSTER: Group by cluster
+// - UNSET: No grouping (single count)
+//
+// **Response Format:**
+// - Each group contains severity-based counts
+// - Counts include all severity levels (LOW, MEDIUM, HIGH, CRITICAL)
+// - Useful for dashboard metrics and reporting
 message GetAlertsCountsRequest {
+  // Base request parameters for alert filtering.
   ListAlertsRequest request = 1;
+  
+  // How to group the alert counts.
   enum RequestGroup {
-    UNSET = 0;
-    CATEGORY = 1;
-    CLUSTER = 2;
+    UNSET = 0;      // No grouping - single count
+    CATEGORY = 1;   // Group by policy category
+    CLUSTER = 2;    // Group by cluster
   }
+  
+  // Grouping method for the alert counts.
   RequestGroup group_by = 2;
 }
 
+// GetAlertsCountsResponse contains alert counts grouped by the specified criteria.
 message GetAlertsCountsResponse {
   message AlertGroup {
+    // Group identifier (category name or cluster name).
     string group = 1;
+    
     message AlertCounts {
+      // Severity level for this count.
       storage.Severity severity = 1;
+      
+      // Number of alerts with this severity in this group.
       int64 count = 2;
     }
+    
+    // Counts by severity level for this group.
     repeated AlertCounts counts = 2;
   }
+  
+  // Alert counts grouped by the requested criteria.
   repeated AlertGroup groups = 1;
 }
 
+// Type indicates the type of alert event in the timeseries.
 enum Type {
-  CREATED = 0;
-  REMOVED = 1;
+  CREATED = 0;  // Alert was created
+  REMOVED = 1;  // Alert was removed/resolved
 }
 
+// AlertEvent represents a single alert event in the timeseries.
 message AlertEvent {
+  // Timestamp of the event (Unix timestamp in seconds).
   int64 time = 1;
+  
+  // Type of event (created or removed).
   Type type = 2;
+  
+  // Alert ID associated with this event.
   string id = 3;
 }
 
+// GetAlertTimeseriesResponse contains alert events organized by time and cluster.
+//
+// **Timeseries Behavior:**
+// - Events are organized by cluster and severity
+// - Each severity level has its own event timeline
+// - Events include both alert creation and resolution
+// - Useful for trend analysis and monitoring
 message GetAlertTimeseriesResponse {
   message ClusterAlerts {
+    // Cluster name for this group of alerts.
     string cluster = 1;
+    
     message AlertEvents {
+      // Severity level for these events.
       storage.Severity severity = 1;
+      
+      // Timeline of alert events for this severity level.
       repeated AlertEvent events = 2;
     }
+    
+    // Alert events grouped by severity level.
     repeated AlertEvents severities = 2;
   }
+  
+  // Alert events organized by cluster.
   repeated ClusterAlerts clusters = 1;
 }
 
-// AlertService APIs can be used to manage alerts.
+// AlertService provides comprehensive alert management capabilities for StackRox Central.
+//
+// **Key Features:**
+// - Query and filter alerts using StackRox search syntax
+// - Resolve individual alerts or bulk resolve by query
+// - Delete resolved alerts with safety confirmations
+// - Group and count alerts by various criteria
+// - Generate alert timeseries for trend analysis
+// - Integrate with process baselines for violation management
+//
+// **Access Control:**
+// - View operations require Alert View permissions
+// - Modify operations require Alert Modify permissions
+// - SAC (Service Access Control) checks are performed for all operations
+//
+// **Performance Considerations:**
+// - Maximum 1000 alerts returned per list request
+// - Bulk operations process alerts in batches of 100
+// - Grouping operations may fetch all alerts (no pagination)
+// - Default sorting by violation time (newest first)
+//
+// **Alert States:**
+// - ACTIVE: Currently active violations
+// - ATTEMPTED: Enforcement was attempted but failed
+// - RESOLVED: Alert has been resolved (can be deleted)
+//
+// **Lifecycle Stages:**
+// - BUILD: Alerts from build-time policy violations
+// - DEPLOY: Alerts from deployment-time policy violations  
+// - RUNTIME: Alerts from runtime policy violations
 service AlertService {
   // GetAlert returns the alert given its id.
+  //
+  // Returns the full alert details including violations, enforcement actions,
+  // and entity information (deployment, image, or resource).
+  //
+  // **Error Cases:**
+  // - 404: Alert with specified ID does not exist
+  // - 403: Insufficient permissions to view the alert
   rpc GetAlert(ResourceByID) returns (storage.Alert) {
     option (google.api.http) = {get: "/v1/alerts/{id}"};
   }
 
-  // CountAlerts counts how many alerts match the get request.
+  // CountAlerts counts how many alerts match the search query.
+  //
+  // **Query Behavior:**
+  // - If query is empty, counts all alerts
+  // - Supports full StackRox search syntax
+  // - Returns total count of matching alerts
+  //
+  // **Use Cases:**
+  // - Dashboard metrics
+  // - Alert trend analysis
+  // - Policy effectiveness monitoring
   rpc CountAlerts(RawQuery) returns (CountAlertsResponse) {
     option (google.api.http) = {get: "/v1/alertscount"};
   }
 
-  // List returns the slim list version of the alerts.
+  // ListAlerts returns the slim list version of the alerts.
+  //
+  // **Pagination Behavior:**
+  // - Default limit: 1000 alerts per request
+  // - Maximum limit: 1000 alerts per request
+  // - Default sorting: By violation time (newest first)
+  // - Supports custom pagination and sorting
+  //
+  // **Response Format:**
+  // - Returns ListAlert objects (slimmed down version)
+  // - Includes essential fields for list views
+  // - Optimized for UI display and bulk operations
+  //
+  // **Query Examples:**
+  // - "Severity:HIGH_SEVERITY" - High severity alerts
+  // - "Cluster:production" - Production cluster alerts
+  // - "Violation State:ACTIVE" - Active alerts only
   rpc ListAlerts(ListAlertsRequest) returns (ListAlertsResponse) {
     option (google.api.http) = {get: "/v1/alerts"};
   }
 
   // GetAlertsGroup returns alerts grouped by policy.
+  //
+  // **Grouping Behavior:**
+  // - Groups alerts by policy ID
+  // - Returns policy information and alert counts
+  // - Fetches all matching alerts (no pagination limits)
+  // - Useful for policy-based analysis
+  //
+  // **Use Cases:**
+  // - Policy effectiveness analysis
+  // - Risk assessment by policy
+  // - Compliance reporting
   rpc GetAlertsGroup(ListAlertsRequest) returns (GetAlertsGroupResponse) {
     option (google.api.http) = {get: "/v1/alerts/summary/groups"};
   }
 
-  // GetAlertsCounts returns the number of alerts in the requested cluster or category.
+  // GetAlertsCounts returns the number of alerts grouped by category or cluster.
+  //
+  // **Grouping Options:**
+  // - CATEGORY: Group by policy category
+  // - CLUSTER: Group by cluster
+  // - UNSET: No grouping (single count)
+  //
+  // **Response Format:**
+  // - Each group contains severity-based counts
+  // - Includes all severity levels (LOW, MEDIUM, HIGH, CRITICAL)
+  // - Optimized for dashboard metrics
+  //
+  // **Use Cases:**
+  // - Dashboard widgets
+  // - Cluster risk assessment
+  // - Category-based reporting
   rpc GetAlertsCounts(GetAlertsCountsRequest) returns (GetAlertsCountsResponse) {
     option (google.api.http) = {get: "/v1/alerts/summary/counts"};
   }
 
-  // GetAlertTimeseries returns the alerts sorted by time.
+  // GetAlertTimeseries returns the alerts sorted by time for trend analysis.
+  //
+  // **Timeseries Behavior:**
+  // - Events organized by cluster and severity
+  // - Includes both alert creation and resolution events
+  // - Each severity level has its own timeline
+  // - Useful for trend analysis and monitoring
+  //
+  // **Use Cases:**
+  // - Alert trend visualization
+  // - Security posture monitoring
+  // - Incident response analysis
   rpc GetAlertTimeseries(ListAlertsRequest) returns (GetAlertTimeseriesResponse) {
     option (google.api.http) = {get: "/v1/alerts/summary/timeseries"};
   }
 
   // ResolveAlert marks the given alert (by ID) as resolved.
+  //
+  // **Resolution Rules:**
+  // - Only alerts with state ATTEMPTED or lifecycle stage RUNTIME can be resolved
+  // - Process violations can be added to baselines for future reference
+  // - Resolved alerts can be deleted (but only RESOLVED alerts can be deleted)
+  // - Resolution triggers notification processing
+  //
+  // **Baseline Integration:**
+  // - When add_to_baseline=true, process violations are added to deployment baselines
+  // - Baseline updates are synchronized with sensor clusters
+  // - Only applies to alerts with process violations
+  //
+  // **Error Cases:**
+  // - 404: Alert with specified ID does not exist
+  // - 403: Insufficient permissions to modify the alert
+  // - 400: Alert cannot be resolved (wrong state or lifecycle stage)
   rpc ResolveAlert(ResolveAlertRequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/alerts/{id}/resolve"
@@ -142,6 +405,22 @@ service AlertService {
   }
 
   // ResolveAlertsByQuery marks alerts matching search query as resolved.
+  //
+  // **Resolution Rules:**
+  // - Only resolves RUNTIME lifecycle alerts matching the query
+  // - All matching alerts are resolved in batches of 100
+  // - Permission checks are performed for each alert
+  // - Resolution triggers notification processing
+  //
+  // **Query Requirements:**
+  // - Must be a valid search query string
+  // - Only RUNTIME alerts are considered for resolution
+  // - Non-RUNTIME alerts in the query are ignored
+  //
+  // **Error Cases:**
+  // - 400: Invalid search query
+  // - 403: Insufficient permissions for some alerts
+  // - 500: Database errors during batch processing
   rpc ResolveAlerts(ResolveAlertsRequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/alerts/resolve"
@@ -149,6 +428,26 @@ service AlertService {
     };
   }
 
+  // DeleteAlerts is a maintenance function that deletes alerts from the store.
+  //
+  // **Deletion Constraints:**
+  // - Only RESOLVED alerts can be deleted
+  // - Query MUST explicitly specify "Violation State:RESOLVED"
+  // - Confirmation required for actual deletion (dry-run mode by default)
+  // - Deletion is permanent and cannot be undone
+  //
+  // **Safety Features:**
+  // - Dry-run mode shows how many alerts would be deleted
+  // - Explicit confirmation required for actual deletion
+  // - Query must specifically target RESOLVED alerts
+  //
+  // **Error Cases:**
+  // - 400: Query does not specify RESOLVED state or specifies invalid state
+  // - 400: No query provided
+  // - 403: Insufficient permissions to delete alerts
+  //
+  // **Example Query:**
+  // - "Violation State:RESOLVED+Cluster:production" - Delete resolved alerts from production cluster
   rpc DeleteAlerts(DeleteAlertsRequest) returns (DeleteAlertsResponse) {
     option (google.api.http) = {delete: "/v1/alerts"};
   }

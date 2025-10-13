@@ -49,7 +49,6 @@ func (m *Alert_Deployment) CloneVT() *Alert_Deployment {
 	r.Name = m.Name
 	r.Type = m.Type
 	r.Namespace = m.Namespace
-	r.NamespaceId = m.NamespaceId
 	r.ClusterId = m.ClusterId
 	r.ClusterName = m.ClusterName
 	r.Inactive = m.Inactive
@@ -578,9 +577,6 @@ func (this *Alert_Deployment) EqualVT(that *Alert_Deployment) bool {
 		}
 	}
 	if this.Inactive != that.Inactive {
-		return false
-	}
-	if this.NamespaceId != that.NamespaceId {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1374,15 +1370,6 @@ func (m *Alert_Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.NamespaceId) > 0 {
-		i -= len(m.NamespaceId)
-		copy(dAtA[i:], m.NamespaceId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.NamespaceId)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x82
 	}
 	if m.Inactive {
 		i--
@@ -2778,10 +2765,6 @@ func (m *Alert_Deployment) SizeVT() (n int) {
 	if m.Inactive {
 		n += 2
 	}
-	l = len(m.NamespaceId)
-	if l > 0 {
-		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -3958,38 +3941,6 @@ func (m *Alert_Deployment) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.Inactive = bool(v != 0)
-		case 16:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NamespaceId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.NamespaceId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -7803,42 +7754,6 @@ func (m *Alert_Deployment) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.Inactive = bool(v != 0)
-		case 16:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NamespaceId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.NamespaceId = stringValue
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

@@ -34,26 +34,192 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// VulnerabilityRequestService APIs can be used to manage create and manage vulnerability requests.
+// VulnerabilityRequestService provides comprehensive vulnerability request management capabilities.
+//
+// **⚠️ DEPRECATION NOTICE:**
+// This service is deprecated when UnifiedCVEDeferral feature is enabled.
+// Use /v2/vulnerability-exceptions/* APIs instead for new implementations.
+//
+// **Key Features:**
+// - Create deferral requests for temporary vulnerability suppression
+// - Create false-positive requests for permanent vulnerability suppression
+// - Approve/deny vulnerability requests with required comments
+// - Update request expiry configurations
+// - Undo approved requests to re-enable vulnerability detection
+// - Delete pending requests
+//
+// **Access Control:**
+// - View operations: VulnerabilityManagementRequests or VulnerabilityManagementApprovals View permissions
+// - Create operations: VulnerabilityManagementRequests Modify permissions
+// - Approval operations: VulnerabilityManagementApprovals Modify permissions
+// - Update/Undo operations: Either VulnerabilityManagementRequests or VulnerabilityManagementApprovals Modify permissions
+//
+// **Request Lifecycle:**
+// - PENDING: New request awaiting approval/denial
+// - APPROVED: Request approved and enforced
+// - DENIED: Request denied and closed
+// - APPROVED_PENDING_UPDATE: Approved request with pending update
+//
+// **Validation Rules:**
+// - CVE format must be valid (e.g., "CVE-2021-1234")
+// - Scope must be valid (image scope with registry/remote/tag or global scope)
+// - Comments are required for all actions
+// - Cannot create duplicate requests for same CVE-scope combination
+// - Deferral requests must specify expiry (when fixed or timestamp)
+// - False-positive requests are permanent (no expiry)
+//
+// **Performance Considerations:**
+// - Maximum 1000 requests returned per list request
+// - Requests are processed sequentially to prevent race conditions
+// - Duplicate prevention checks are performed during creation
 type VulnerabilityRequestServiceClient interface {
 	// GetVulnerabilityRequest returns the requested vulnerability request by ID.
+	//
+	// **Error Cases:**
+	// - 404: Request with specified ID does not exist
+	// - 403: Insufficient permissions to view the request
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	GetVulnerabilityRequest(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetVulnerabilityRequestResponse, error)
 	// ListVulnerabilityRequests returns the list of vulnerability requests.
+	//
+	// **Query Behavior:**
+	// - Supports StackRox search syntax for filtering
+	// - Default pagination limit: 1000 requests
+	// - Maximum limit: 1000 requests per request
+	//
+	// **Search Examples:**
+	// - "CVE:CVE-2021-1234" - Requests for specific CVE
+	// - "Request Status:PENDING" - Pending requests only
+	// - "Requested Vulnerability State:DEFERRED" - Deferral requests only
+	//
+	// **Error Cases:**
+	// - 400: Invalid search query
+	// - 403: Insufficient permissions to view requests
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	ListVulnerabilityRequests(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListVulnerabilityRequestsResponse, error)
 	// DeferVulnerability starts the deferral process for the specified vulnerability.
+	//
+	// **Deferral Request Rules:**
+	// - CVE must be in valid format (e.g., "CVE-2021-1234")
+	// - Scope must be valid (image scope or global scope)
+	// - Expiry must be specified (either expires_when_fixed or expires_on)
+	// - Comment is required for request creation
+	// - Cannot create request for CVEs already covered by approved requests
+	// - Only one request can exist per CVE-scope combination
+	//
+	// **Expiry Options:**
+	// - expires_when_fixed: Request expires when CVE is fixed
+	// - expires_on: Request expires at specific timestamp
+	// - Cannot specify both expiry options
+	//
+	// **Error Cases:**
+	// - 400: Invalid CVE format, missing comment, invalid scope, or duplicate request
+	// - 403: Insufficient permissions to create requests
+	// - 409: CVE already covered by existing approved request
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	DeferVulnerability(ctx context.Context, in *DeferVulnRequest, opts ...grpc.CallOption) (*DeferVulnResponse, error)
 	// FalsePositiveVulnerability starts the process to mark the specified vulnerability as false-positive.
+	//
+	// **False-Positive Request Rules:**
+	// - CVE must be in valid format (e.g., "CVE-2021-1234")
+	// - Scope must be valid (image scope or global scope)
+	// - Comment is required for request creation
+	// - Cannot create request for CVEs already covered by approved requests
+	// - Only one request can exist per CVE-scope combination
+	// - False-positive requests do not have expiry (permanent)
+	//
+	// **Error Cases:**
+	// - 400: Invalid CVE format, missing comment, or invalid scope
+	// - 403: Insufficient permissions to create requests
+	// - 409: CVE already covered by existing approved request
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	FalsePositiveVulnerability(ctx context.Context, in *FalsePositiveVulnRequest, opts ...grpc.CallOption) (*FalsePositiveVulnResponse, error)
-	// ApproveVulnRequest approve a vulnerability request. If it is an unwatch vulnerability request then the
-	// associated vulnerabilities are not watched in workflows such as policy detection, risk, etc.
+	// ApproveVulnRequest approves a vulnerability request.
+	//
+	// **Approval Behavior:**
+	// - Request is approved and immediately enforced
+	// - Vulnerabilities are suppressed in policy detection and risk evaluation
+	// - Conflicting pending requests are automatically denied
+	// - Comment is required for approval
+	//
+	// **Approval Rules:**
+	// - Only pending requests can be approved
+	// - Comment is required for approval
+	// - Approval automatically denies conflicting pending requests
+	// - Approved requests are enforced immediately
+	//
+	// **Error Cases:**
+	// - 400: Missing comment or request not in pending state
+	// - 403: Insufficient permissions to approve requests
+	// - 404: Request with specified ID does not exist
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	ApproveVulnerabilityRequest(ctx context.Context, in *ApproveVulnRequest, opts ...grpc.CallOption) (*ApproveVulnRequestResponse, error)
 	// DenyVulnRequest denies a vulnerability request.
+	//
+	// **Denial Behavior:**
+	// - Request is denied and permanently closed
+	// - No impact on vulnerability detection
+	// - Comment is required for denial
+	//
+	// **Denial Rules:**
+	// - Only pending requests can be denied
+	// - Comment is required for denial
+	// - Denied requests are permanently closed
+	//
+	// **Error Cases:**
+	// - 400: Missing comment or request not in pending state
+	// - 403: Insufficient permissions to deny requests
+	// - 404: Request with specified ID does not exist
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	DenyVulnerabilityRequest(ctx context.Context, in *DenyVulnRequest, opts ...grpc.CallOption) (*DenyVulnRequestResponse, error)
-	// UpdateVulnerabilityRequest updates an existing vulnerability request. Currently only deferral expiration time can be updated.
+	// UpdateVulnerabilityRequest updates an existing vulnerability request.
+	//
+	// **Update Limitations:**
+	// - Currently, only expiry can be updated
+	// - Comment is required for update
+	// - Only pending requests can be updated
+	// - Update creates a new pending update request
+	//
+	// **Update Behavior:**
+	// - Creates a new pending update request
+	// - Original request remains in effect until update is approved
+	// - Only expiry configuration can be modified
+	//
+	// **Error Cases:**
+	// - 400: Missing comment, invalid expiry, or request not in pending state
+	// - 403: Insufficient permissions to update requests
+	// - 404: Request with specified ID does not exist
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	UpdateVulnerabilityRequest(ctx context.Context, in *UpdateVulnRequest, opts ...grpc.CallOption) (*UpdateVulnRequestResponse, error)
 	// UndoVulnerabilityRequest undoes a vulnerability request.
+	//
+	// **Undo Behavior:**
+	// - Request is marked as inactive
+	// - Vulnerabilities are re-enabled for detection
+	// - May not re-enable if other active requests cover same CVEs
+	//
+	// **Undo Rules:**
+	// - Only approved requests can be undone
+	// - Undo may not re-enable vulnerabilities if other active requests exist
+	// - Request is permanently marked as inactive
+	//
+	// **Error Cases:**
+	// - 403: Insufficient permissions to undo requests
+	// - 404: Request with specified ID does not exist
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	UndoVulnerabilityRequest(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*UndoVulnRequestResponse, error)
 	// DeleteVulnerabilityRequest deletes a vulnerability request.
+	//
+	// **Delete Rules:**
+	// - Only pending requests can be deleted
+	// - Approved or denied requests cannot be deleted
+	// - Deletion is permanent and cannot be undone
+	//
+	// **Error Cases:**
+	// - 400: Request not in pending state
+	// - 403: Insufficient permissions to delete requests
+	// - 404: Request with specified ID does not exist
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	DeleteVulnerabilityRequest(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -159,26 +325,192 @@ func (c *vulnerabilityRequestServiceClient) DeleteVulnerabilityRequest(ctx conte
 // All implementations should embed UnimplementedVulnerabilityRequestServiceServer
 // for forward compatibility.
 //
-// VulnerabilityRequestService APIs can be used to manage create and manage vulnerability requests.
+// VulnerabilityRequestService provides comprehensive vulnerability request management capabilities.
+//
+// **⚠️ DEPRECATION NOTICE:**
+// This service is deprecated when UnifiedCVEDeferral feature is enabled.
+// Use /v2/vulnerability-exceptions/* APIs instead for new implementations.
+//
+// **Key Features:**
+// - Create deferral requests for temporary vulnerability suppression
+// - Create false-positive requests for permanent vulnerability suppression
+// - Approve/deny vulnerability requests with required comments
+// - Update request expiry configurations
+// - Undo approved requests to re-enable vulnerability detection
+// - Delete pending requests
+//
+// **Access Control:**
+// - View operations: VulnerabilityManagementRequests or VulnerabilityManagementApprovals View permissions
+// - Create operations: VulnerabilityManagementRequests Modify permissions
+// - Approval operations: VulnerabilityManagementApprovals Modify permissions
+// - Update/Undo operations: Either VulnerabilityManagementRequests or VulnerabilityManagementApprovals Modify permissions
+//
+// **Request Lifecycle:**
+// - PENDING: New request awaiting approval/denial
+// - APPROVED: Request approved and enforced
+// - DENIED: Request denied and closed
+// - APPROVED_PENDING_UPDATE: Approved request with pending update
+//
+// **Validation Rules:**
+// - CVE format must be valid (e.g., "CVE-2021-1234")
+// - Scope must be valid (image scope with registry/remote/tag or global scope)
+// - Comments are required for all actions
+// - Cannot create duplicate requests for same CVE-scope combination
+// - Deferral requests must specify expiry (when fixed or timestamp)
+// - False-positive requests are permanent (no expiry)
+//
+// **Performance Considerations:**
+// - Maximum 1000 requests returned per list request
+// - Requests are processed sequentially to prevent race conditions
+// - Duplicate prevention checks are performed during creation
 type VulnerabilityRequestServiceServer interface {
 	// GetVulnerabilityRequest returns the requested vulnerability request by ID.
+	//
+	// **Error Cases:**
+	// - 404: Request with specified ID does not exist
+	// - 403: Insufficient permissions to view the request
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	GetVulnerabilityRequest(context.Context, *ResourceByID) (*GetVulnerabilityRequestResponse, error)
 	// ListVulnerabilityRequests returns the list of vulnerability requests.
+	//
+	// **Query Behavior:**
+	// - Supports StackRox search syntax for filtering
+	// - Default pagination limit: 1000 requests
+	// - Maximum limit: 1000 requests per request
+	//
+	// **Search Examples:**
+	// - "CVE:CVE-2021-1234" - Requests for specific CVE
+	// - "Request Status:PENDING" - Pending requests only
+	// - "Requested Vulnerability State:DEFERRED" - Deferral requests only
+	//
+	// **Error Cases:**
+	// - 400: Invalid search query
+	// - 403: Insufficient permissions to view requests
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	ListVulnerabilityRequests(context.Context, *RawQuery) (*ListVulnerabilityRequestsResponse, error)
 	// DeferVulnerability starts the deferral process for the specified vulnerability.
+	//
+	// **Deferral Request Rules:**
+	// - CVE must be in valid format (e.g., "CVE-2021-1234")
+	// - Scope must be valid (image scope or global scope)
+	// - Expiry must be specified (either expires_when_fixed or expires_on)
+	// - Comment is required for request creation
+	// - Cannot create request for CVEs already covered by approved requests
+	// - Only one request can exist per CVE-scope combination
+	//
+	// **Expiry Options:**
+	// - expires_when_fixed: Request expires when CVE is fixed
+	// - expires_on: Request expires at specific timestamp
+	// - Cannot specify both expiry options
+	//
+	// **Error Cases:**
+	// - 400: Invalid CVE format, missing comment, invalid scope, or duplicate request
+	// - 403: Insufficient permissions to create requests
+	// - 409: CVE already covered by existing approved request
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	DeferVulnerability(context.Context, *DeferVulnRequest) (*DeferVulnResponse, error)
 	// FalsePositiveVulnerability starts the process to mark the specified vulnerability as false-positive.
+	//
+	// **False-Positive Request Rules:**
+	// - CVE must be in valid format (e.g., "CVE-2021-1234")
+	// - Scope must be valid (image scope or global scope)
+	// - Comment is required for request creation
+	// - Cannot create request for CVEs already covered by approved requests
+	// - Only one request can exist per CVE-scope combination
+	// - False-positive requests do not have expiry (permanent)
+	//
+	// **Error Cases:**
+	// - 400: Invalid CVE format, missing comment, or invalid scope
+	// - 403: Insufficient permissions to create requests
+	// - 409: CVE already covered by existing approved request
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	FalsePositiveVulnerability(context.Context, *FalsePositiveVulnRequest) (*FalsePositiveVulnResponse, error)
-	// ApproveVulnRequest approve a vulnerability request. If it is an unwatch vulnerability request then the
-	// associated vulnerabilities are not watched in workflows such as policy detection, risk, etc.
+	// ApproveVulnRequest approves a vulnerability request.
+	//
+	// **Approval Behavior:**
+	// - Request is approved and immediately enforced
+	// - Vulnerabilities are suppressed in policy detection and risk evaluation
+	// - Conflicting pending requests are automatically denied
+	// - Comment is required for approval
+	//
+	// **Approval Rules:**
+	// - Only pending requests can be approved
+	// - Comment is required for approval
+	// - Approval automatically denies conflicting pending requests
+	// - Approved requests are enforced immediately
+	//
+	// **Error Cases:**
+	// - 400: Missing comment or request not in pending state
+	// - 403: Insufficient permissions to approve requests
+	// - 404: Request with specified ID does not exist
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	ApproveVulnerabilityRequest(context.Context, *ApproveVulnRequest) (*ApproveVulnRequestResponse, error)
 	// DenyVulnRequest denies a vulnerability request.
+	//
+	// **Denial Behavior:**
+	// - Request is denied and permanently closed
+	// - No impact on vulnerability detection
+	// - Comment is required for denial
+	//
+	// **Denial Rules:**
+	// - Only pending requests can be denied
+	// - Comment is required for denial
+	// - Denied requests are permanently closed
+	//
+	// **Error Cases:**
+	// - 400: Missing comment or request not in pending state
+	// - 403: Insufficient permissions to deny requests
+	// - 404: Request with specified ID does not exist
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	DenyVulnerabilityRequest(context.Context, *DenyVulnRequest) (*DenyVulnRequestResponse, error)
-	// UpdateVulnerabilityRequest updates an existing vulnerability request. Currently only deferral expiration time can be updated.
+	// UpdateVulnerabilityRequest updates an existing vulnerability request.
+	//
+	// **Update Limitations:**
+	// - Currently, only expiry can be updated
+	// - Comment is required for update
+	// - Only pending requests can be updated
+	// - Update creates a new pending update request
+	//
+	// **Update Behavior:**
+	// - Creates a new pending update request
+	// - Original request remains in effect until update is approved
+	// - Only expiry configuration can be modified
+	//
+	// **Error Cases:**
+	// - 400: Missing comment, invalid expiry, or request not in pending state
+	// - 403: Insufficient permissions to update requests
+	// - 404: Request with specified ID does not exist
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	UpdateVulnerabilityRequest(context.Context, *UpdateVulnRequest) (*UpdateVulnRequestResponse, error)
 	// UndoVulnerabilityRequest undoes a vulnerability request.
+	//
+	// **Undo Behavior:**
+	// - Request is marked as inactive
+	// - Vulnerabilities are re-enabled for detection
+	// - May not re-enable if other active requests cover same CVEs
+	//
+	// **Undo Rules:**
+	// - Only approved requests can be undone
+	// - Undo may not re-enable vulnerabilities if other active requests exist
+	// - Request is permanently marked as inactive
+	//
+	// **Error Cases:**
+	// - 403: Insufficient permissions to undo requests
+	// - 404: Request with specified ID does not exist
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	UndoVulnerabilityRequest(context.Context, *ResourceByID) (*UndoVulnRequestResponse, error)
 	// DeleteVulnerabilityRequest deletes a vulnerability request.
+	//
+	// **Delete Rules:**
+	// - Only pending requests can be deleted
+	// - Approved or denied requests cannot be deleted
+	// - Deletion is permanent and cannot be undone
+	//
+	// **Error Cases:**
+	// - 400: Request not in pending state
+	// - 403: Insufficient permissions to delete requests
+	// - 404: Request with specified ID does not exist
+	// - 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)
 	DeleteVulnerabilityRequest(context.Context, *ResourceByID) (*Empty, error)
 }
 
