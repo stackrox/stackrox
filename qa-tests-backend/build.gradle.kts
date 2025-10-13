@@ -109,6 +109,32 @@ tasks.withType<Test>().configureEach {
     }
 }
 
+tasks.register<Test>("testBegin") {
+    useJUnitPlatform {
+        includeTags("Begin")
+    }
+}
+
+tasks.register<Test>("testParallel") {
+    systemProperty("spock.configuration", rootProject.file("src/test/resources/ParallelSpockConfig.groovy"))
+    useJUnitPlatform {
+        includeTags("Parallel")
+    }
+}
+
+tasks.register<Test>("testRest") {
+    useJUnitPlatform {
+        excludeTags("Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")
+    }
+}
+
+tasks.register<Test>("testParallelBAT") {
+    systemProperty("spock.configuration", rootProject.file("src/test/resources/ParallelSpockConfig.groovy"))
+    useJUnitPlatform {
+        includeTags("Parallel & BAT")
+    }
+}
+
 tasks.register<Test>("testBAT") {
     useJUnitPlatform {
         includeTags("BAT")
